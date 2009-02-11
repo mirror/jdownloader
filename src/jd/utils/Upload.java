@@ -56,7 +56,7 @@ public class Upload {
     public static String toRapidshareComPremium(File file, String userid, String pass) {
         try {
             Browser br = new Browser();
-
+            br.setDebug(true);
             String[] data = br.getPage("http://rapidshare.com/cgi-bin/upload.cgi?intsysdata=1").split("\\,");
             PostFormDataRequest r = (PostFormDataRequest) br.createPostFormDataRequest("http://rs" + data[0].trim() + "cg.rapidshare.com/cgi-bin/upload.cgi");
 
@@ -67,12 +67,14 @@ public class Upload {
 
             r.connect();
             String code = r.read();
+            System.out.println(code);
             String[] lines = Regex.getLines(code);
             return lines[1];
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
-        return "";
+
     }
 
     public static String toUploadedToPremium(File file, String username, String password) {

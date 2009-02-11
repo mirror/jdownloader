@@ -699,8 +699,10 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
     public void save() {
         boolean saveit = false;
         boolean restart = false;
+        
         if (!JDUtilities.getSubConfig(JDLocale.CONFIG).getProperty(JDLocale.LOCALE_ID, Locale.getDefault()).equals(languages.getSelectedItem())) {
-            JDUtilities.getSubConfig(JDLocale.CONFIG).getProperty(JDLocale.LOCALE_ID,languages.getSelectedItem());
+           
+            JDUtilities.getSubConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID,languages.getSelectedItem());           
             JDUtilities.getSubConfig(JDLocale.CONFIG).save();
             guiConfig.save();
             restart = JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.fengshuiconfig.languages.restartwarning", "you have to restart jDownloader to change the language, restart jDownloader now?"));
