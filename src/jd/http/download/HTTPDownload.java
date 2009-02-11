@@ -111,7 +111,7 @@ public class HTTPDownload extends DownloadInterface {
             String destPath = "c:/test.download";
             Browser br = new Browser();
             br.setDebug(true);
-            Request request = br.createGetRequest("http://service.jdownloader.net/testfiles/25bmtest.zip");
+            Request request = br.createGetRequest("http://service.jdownloader.org/testfiles/25bmtest.zip");
 
             final HTTPDownload dl = new HTTPDownload(request, br, new File(destPath), HTTPDownload.FLAG_RESUME);
             // dl.setBandwidthlimit(1024*100);

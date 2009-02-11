@@ -549,7 +549,7 @@ public class GetRouterInfo {
                 try {
                     setProgressText("download similar routermethods");
                     setProgress(45);
-                    String st = br.postPage("http://service.jdownloader.net/routerdb/getRouters.php", he);
+                    String st = br.postPage("http://service.jdownloader.org/routerdb/getRouters.php", he);
                     setProgress(70);
                     // String st =
                     // br.postPage("http://localhost/router/getRouters.php",
@@ -703,7 +703,7 @@ public class GetRouterInfo {
                     ArrayList<RInfo> ra;
                     try {
                         setProgressText("download similar routermethods");
-                        String st = br.postPage("http://service.jdownloader.net/routerdb/getRouters.php", he);
+                        String st = br.postPage("http://service.jdownloader.org/routerdb/getRouters.php", he);
                         // String st =
                         // br.postPage("http://localhost/router/getRouters.php",
                         // he);

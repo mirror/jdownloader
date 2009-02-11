@@ -214,7 +214,7 @@ public class JDInit {
                             } else {
                                 prev = prev.replaceAll(",|\\.", "");
                             }
-                            br.postPage("http://service.jdownloader.net/tools/s.php", "v=" + JDUtilities.getRevision().replaceAll(",|\\.", "") + "&p=" + prev + "&os=" + os + "&tz=" + Encoding.urlEncode(tz));
+                            br.postPage("http://service.jdownloader.org/tools/s.php", "v=" + JDUtilities.getRevision().replaceAll(",|\\.", "") + "&p=" + prev + "&os=" + os + "&tz=" + Encoding.urlEncode(tz));
                             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_VERSION, JDUtilities.getRevision());
                             JDUtilities.getConfiguration().save();
                         } catch (Exception e) {

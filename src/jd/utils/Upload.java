@@ -31,7 +31,7 @@ public class Upload {
     public static String toJDownloader(String str, String desc) {
         try {
             Browser br = new Browser();
-            String ret=br.postPage("http://service.jdownloader.net/tools/log.php", "upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
+            String ret=br.postPage("http://service.jdownloader.org/tools/log.php", "upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
             return "http://www.jdownloader.org/pastebin/" + ret;
         } catch (IOException e) {
             e.printStackTrace();

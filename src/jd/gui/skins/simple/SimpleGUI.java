@@ -1780,10 +1780,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static void showChangelogDialog() {
         JDTheme.setTheme("default");
-        int status = JDUtilities.getGUI().showHelpMessage(JDLocale.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), "Update successfull", false, "http://wiki.jdownloader.net/changes/index", JDLocale.L("system.update.showchangelogv2", "What's new?"), 60);
+        int status = JDUtilities.getGUI().showHelpMessage(JDLocale.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), "Update successfull", false, "http://jdownloader.org/changes/index", JDLocale.L("system.update.showchangelogv2", "What's new?"), 60);
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, true) && status != 0) {
             try {
-                JLinkButton.openURL("http://wiki.jdownloader.net/changes/index");
+                JLinkButton.openURL("http://jdownloader.org/changes/index");
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();

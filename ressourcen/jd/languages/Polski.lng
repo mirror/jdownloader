@@ -1283,7 +1283,7 @@ modules.reconnect.types.batch = Wsadowe
 modules.reconnect.types.clr = Skrypt CLR
 modules.reconnect.types.extern = Zewnętrzne
 modules.reconnect.types.liveheader = LiveHeader/Curl
-modules.unrar.enabled.instanthelp = http://jdownloader.net/page.php?id=17
+modules.unrar.enabled.instanthelp = http://jdownloader.org/knowledge/wiki/addons/list/jdunrar
 modules.unrar.name = Wypakowywanie RAR
 plugin.optional.jdchat.teamviewer.yourtvdata = Twoje dane Teamviewer:
 plugin.rapidshare.error.accountnotfound = Konto Premium nie zostało odnalezione

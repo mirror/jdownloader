@@ -46,7 +46,7 @@ public class test {
             for (Entry<String, String> iterable_element : he.entrySet()) {
                 System.out.println(iterable_element.getKey()+":"+iterable_element.getValue());
             }
-            String st = br.postPage("http://service.jdownloader.net/routerdb/getRouters.php", he);
+            String st = br.postPage("http://service.jdownloader.org/routerdb/getRouters.php", he);
             System.out.println(st);
             // String st = br.postPage("http://localhost/router/getRouters.php",
             // he);

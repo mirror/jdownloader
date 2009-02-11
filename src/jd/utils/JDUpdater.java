@@ -351,7 +351,7 @@ public class JDUpdater {
             map.put("addonlist", Encoding.urlEncode(addonlist));
             map.put("pw", JOptionPane.showInputDialog("Enter update password"));
             br.setDebug(true);
-            br.postPage("http://service.jdownloader.net/update/updatelist.php", map);
+            br.postPage("http://service.jdownloader.org/update/updatelist.php", map);
 
             System.out.println(br + "");
 
