@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Form;
+import jd.parser.Regex;
 
 /**
  * Extending the Request calss, this class is able to to HTML Formdata Posts.
@@ -115,6 +116,7 @@ public class PostFormDataRequest extends Request {
             while ((n = in.read(b)) > -1) {
                 outputByteWriter.write(b, 0, n);
             }
+            outputByteWriter.flush();
             in.close();
             
          
@@ -145,33 +147,27 @@ public class PostFormDataRequest extends Request {
     }
 
     public static void main(String args[]) throws IOException {
-        Browser br = new Browser();
-        br.setDebug(true);
-        br.getPage("http://bluehost.to");
-        Form[] forms = br.getForms();
-        Form upload = forms[2];
-        upload.put("filetarget_0",new File("G:\\Archive.zip").getName());
-        upload.put("filetarget_1","");
-        upload.put("usermail","");
-        upload.remove("upload_button");
-        upload.put("adminmail","");
-        upload.setFileToPost(new File("G:\\Archive.zip"), null);
-        br.submitForm(upload);
+        try {
+            Browser br = new Browser();
+            br.setDebug(true);
+            String[] data = br.getPage("http://rapidshare.com/cgi-bin/upload.cgi?intsysdata=1").split("\\,");
+            PostFormDataRequest r = (PostFormDataRequest) br.createPostFormDataRequest("http://rs" + data[0].trim() + "cg.rapidshare.com/cgi-bin/upload.cgi");
+File file = new File("G:\\pluginressourcen\\JDLowSpeed_2009-02-11_v3 (LIGHT).jdu");
+            r.addFormData(new FormData("toolmode2", "1"));
+            r.addFormData(new FormData("filecontent", file.getName(), file));
+            r.addFormData(new FormData("freeaccountid", ""));
+            r.addFormData(new FormData("password", "" ));
 
-        System.out.println(br + "");
-
-        // PostFormDataRequest r = new PostFormDataRequest("http://rs" +
-        // data[0].trim() + "cg.rapidshare.com/cgi-bin/upload.cgi");
-        // File file = new File("G:\\Archive.zip");
-        // r.addFormData(new FormData("toolmode2", "1"));
-        // r.addFormData(new FormData("filecontent", file.getName(),
-        // "application/octet-stream", file));
-        // r.addFormData(new FormData("freeaccountid", "6deb3b"));
-        // r.addFormData(new FormData("password", "1cc2e246"));
-        // r.connect();
-        // String ret = r.read();
-        //
-        // System.out.println(ret);
+            r.connect();
+            System.out.println(r.getHttpConnection());
+            String code = r.read();
+            System.out.println(code);
+            String[] lines = Regex.getLines(code);
+     
+        } catch (Exception e) {
+            e.printStackTrace();
+     
+        }
 
     }
 
