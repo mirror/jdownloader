@@ -80,8 +80,10 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
     }
 
     public void stop() {
+        if(th!=null){
         th.interrupt();
         th = null;
+        }
         fadeOut();
        
     }

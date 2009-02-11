@@ -1047,7 +1047,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     btnPause.setSelected(false);
                     btnStartStop.setIcon(new ImageIcon(JDUtilities.getImage(getStartStopDownloadImage())));
                     btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
-                    if (speedmeter != null) speedmeter.stop();
+
+                    if(speedmeter!=null)speedmeter.stop();
+
                     break;
                 case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                     break;
