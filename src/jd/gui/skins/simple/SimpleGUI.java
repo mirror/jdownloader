@@ -304,8 +304,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String PARAM_JAC_LOG = "JAC_DOLOG";
 
-    
-
     public static final String PARAM_SHOW_SPLASH = "SHOW_SPLASH";
 
     public static final String PARAM_SHOW_FENGSHUI = "SHOW_FENGSHUI";
@@ -330,7 +328,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public static final String PARAM_CUSTOM_BROWSER_PARAM = "PARAM_CUSTOM_ROWSER_PARAM";
 
     public static final String PARAM_NUM_PREMIUM_CONFIG_FIELDS = "PARAM_NUM_PREMIUM_CONFIG_FIELDS";
-    
+
     public static final String PARAM_SHOW_SPEEDMETER = "PARAM_SHOW_SPEEDMETER";
 
     /**
@@ -977,11 +975,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(btnClipBoard);
         toolBar.addSeparator();
         toolBar.add(createMenuButton(actionUpdate));
-        if(guiConfig.getBooleanProperty(SimpleGUI.PARAM_SHOW_SPEEDMETER, true)){
+        if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_SHOW_SPEEDMETER, true)) {
             speedmeter = new SpeedMeterPanel();
             toolBar.add(Box.createGlue());
-          toolBar.add(speedmeter);
-         }
+            toolBar.add(speedmeter);
+        }
         JPanel panel = new JPanel(new BorderLayout());
         int n = 2;
         toolBar.setBorder(new EmptyBorder(n, 0, n, 0));
@@ -1049,7 +1047,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     btnPause.setSelected(false);
                     btnStartStop.setIcon(new ImageIcon(JDUtilities.getImage(getStartStopDownloadImage())));
                     btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
-                    speedmeter.stop();
+                    if (speedmeter != null) speedmeter.stop();
                     break;
                 case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                     break;
@@ -1076,14 +1074,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     // only in this way the button state is correctly set
                     // controller.startDownloads() is called by button itself so
                     // it cannot handle this
-                    if(speedmeter!=null)speedmeter.start();
+                    if (speedmeter != null) speedmeter.start();
                     btnStartStop.setEnabled(true);
                     btnPause.setEnabled(true);
                     btnStartStop.setIcon(new ImageIcon(JDUtilities.getImage(getStartStopDownloadImage())));
                     btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
                     break;
                 case ControlEvent.CONTROL_DOWNLOAD_STOP:
-                    if(speedmeter!=null)speedmeter.stop();
+                    if (speedmeter != null) speedmeter.stop();
                     btnStartStop.setEnabled(true);
                     btnPause.setEnabled(true);
                     btnStartStop.setIcon(new ImageIcon(JDUtilities.getImage(getStartStopDownloadImage())));
@@ -1482,7 +1480,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menHosts.removeAll();
         menHosts.add(temp);
         menHosts.add(temp2);
-        
+
         boolean ispremium = premium.isSelected();
         menHosts.addSeparator();
         for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
