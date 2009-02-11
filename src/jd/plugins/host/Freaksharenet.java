@@ -22,8 +22,8 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.Request;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;

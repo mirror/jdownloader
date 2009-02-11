@@ -393,6 +393,15 @@ public class Main {
 
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "Lade Konfiguration"));
 
+        
+        
+        String old=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty("LOCALE", null);
+        if(old!=null){
+            JDUtilities.getSubConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, old);
+            JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).setProperty("LOCALE", null);
+            JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
+            JDUtilities.getSubConfig(JDLocale.CONFIG).save();
+        }
         if (init.loadConfiguration() == null) {
 
             JOptionPane.showMessageDialog(null, "JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");

@@ -14,13 +14,15 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.http;
+package jd.http.requests;
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import jd.http.URLConnectionAdapter;
 import jd.parser.Form;
 
 public class PostRequest extends Request {
@@ -39,32 +41,6 @@ public class PostRequest extends Request {
     }
 
     // public Request toHeadRequest() throws MalformedURLException {
-    //        
-    //  
-    // PostRequest ret = new PostRequest(this.getUrl()+"") {
-    //
-    // @Override
-    // public void preRequest(HTTPConnection httpConnection) throws IOException
-    // {
-    // httpConnection.setRequestMethod("HEAD");
-    //                
-    // }
-    // };
-    // ret.setConnectTimeout(this.getConnectTimeout());
-    // ret.getCookies().addAll(this.getCookies());
-    // ret.setFollowRedirects(this.isFollowRedirects());
-    // ret.getHeaders().putAll(this.getHeaders());
-    // ret.setProxy(this.getProxyip(), this.getProxyport());
-    // ret.postData=this.postData;
-    // ret.postDataString=this.postDataString;
-    // 
-    // ret.setReadTimeout(this.getReadTimeout());
-    //    
-    // ret.httpConnection=this.httpConnection;
-    //       
-    // return ret;
-    //        
-    // }
 
     public HashMap<String, String> getPostData() {
         return postData;
@@ -102,7 +78,13 @@ public class PostRequest extends Request {
             if (postDataString == null) parameter = parameter.trim();
             httpConnection.setRequestProperty("Content-Length", parameter.length() + "");
             httpConnection.connect();
-            httpConnection.post(parameter);
+
+            OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
+            if (parameter != null) {
+                wr.write(parameter);
+            }
+            wr.flush();
+            wr.close();
 
         } else {
             httpConnection.setRequestProperty("Content-Length", "0");

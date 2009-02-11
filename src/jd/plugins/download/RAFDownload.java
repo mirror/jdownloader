@@ -25,7 +25,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 
 import jd.config.Configuration;
-import jd.http.Request;
+import jd.http.requests.Request;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;

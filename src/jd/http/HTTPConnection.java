@@ -30,19 +30,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.http.requests.PostFormDataRequest;
+import jd.http.requests.PostRequest;
+import jd.http.requests.Request;
 import jd.parser.Regex;
 
 public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection implements URLConnectionAdapter {
 
     public static final int HTTP_NOT_IMPLEMENTED = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
 
-    protected String postData;
+
 
     protected HashMap<String, List<String>> requestProperties = null;
     protected long[] ranges;
     protected boolean connectionnEstabilished = false;
 
     protected JDProxy proxy = null;
+
+    private Request request;
 
     public boolean isConnected() {
         
@@ -110,10 +115,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
         }
     }
 
-    public String getPostData() {
-
-        return postData;
-    }
+ 
 
     public Map<String, List<String>> getRequestProperties() {
     
@@ -121,41 +123,41 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
 
     }
 
-    public void post(byte[] parameter) throws IOException {
-        BufferedOutputStream wr = new BufferedOutputStream(getOutputStream());
-        if (parameter != null) {
-            wr.write(parameter);
-        }
+//    public void post(byte[] parameter) throws IOException {
+//        BufferedOutputStream wr = new BufferedOutputStream(getOutputStream());
+//        if (parameter != null) {
+//            wr.write(parameter);
+//        }
+//
+//        postData = "binary";
+//        wr.flush();
+//        wr.close();
+//
+//    }
 
-        postData = "binary";
-        wr.flush();
-        wr.close();
+//    public void post(String parameter) throws IOException {
+//        OutputStreamWriter wr = new OutputStreamWriter(getOutputStream());
+//        if (parameter != null) {
+//            wr.write(parameter);
+//        }
+//
+//        postData = parameter;
+//        wr.flush();
+//        wr.close();
+//
+//    }
 
-    }
-
-    public void post(String parameter) throws IOException {
-        OutputStreamWriter wr = new OutputStreamWriter(getOutputStream());
-        if (parameter != null) {
-            wr.write(parameter);
-        }
-
-        postData = parameter;
-        wr.flush();
-        wr.close();
-
-    }
-
-    public void postGzip(String parameter) throws IOException {
-
-        OutputStreamWriter wr = new OutputStreamWriter(getOutputStream());
-        if (parameter != null) {
-            wr.write(parameter);
-        }
-        postData = parameter;
-        wr.flush();
-        wr.close();
-
-    }
+//    public void postGzip(String parameter) throws IOException {
+//
+//        OutputStreamWriter wr = new OutputStreamWriter(getOutputStream());
+//        if (parameter != null) {
+//            wr.write(parameter);
+//        }
+//        postData = parameter;
+//        wr.flush();
+//        wr.close();
+//
+//    }
 
     public void setRequestProperty(String key, String value) {
         LinkedList<String> l = new LinkedList<String>();
@@ -232,10 +234,18 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
         }
         sb.append(new char[] { '\r', '\n' });
 
-        if (this.postData != null) {
-            sb.append(this.postData);
-            sb.append(new char[] { '\r', '\n' });
+        if(this.getRequest()!=null){
+            if(getRequest() instanceof PostRequest){
+                sb.append(((PostRequest)getRequest()).getPostDataString());
+                sb.append(new char[] { '\r', '\n' });
+                
+            }else if(getRequest() instanceof PostFormDataRequest){
+                sb.append(((PostFormDataRequest)getRequest()).getPostDataString());
+                sb.append(new char[] { '\r', '\n' });
+            }
+            
         }
+      
         sb.append("----------------Response------------------\r\n");
 
         for (Iterator<Entry<String, List<String>>> it = getHeaderFields().entrySet().iterator(); it.hasNext();) {
@@ -257,6 +267,15 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
 
         return sb.toString();
 
+    }
+
+    public void setRequest(Request request) {
+       this.request=request;
+        
+    }
+
+    public Request getRequest() {
+        return request;
     }
     
     

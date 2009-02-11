@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.http;
+package jd.http.requests;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -33,6 +33,10 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import jd.config.Configuration;
+import jd.http.Cookie;
+import jd.http.Encoding;
+import jd.http.JDProxy;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
@@ -95,19 +99,22 @@ public abstract class Request {
 
     private URL url;
     private JDProxy proxy;
+    private URL orgURL;
+
     private static String http2JDP(String string) {
         if (string.startsWith("http")) { return ("jdp" + string.substring(4)); }
         return string;
     }
-    
+
     private static String jdp2http(String string) {
         if (string.startsWith("jdp")) { return ("http" + string.substring(3)); }
         return string;
     }
+
     public Request(String url) throws MalformedURLException {
 
         this.url = new URL(Encoding.urlEncode_light(http2JDP(url)));
-
+        this.orgURL = new URL(jdp2http(url));
         readTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
 
         connectTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
@@ -249,15 +256,6 @@ public abstract class Request {
 
     public void setCookies(ArrayList<Cookie> cookies) {
         this.cookies = cookies;
-    }
-
-    public String followRedirect() throws IOException {
-        if (getLocation() == null) { return null; }
-
-        url = new URL(getLocation());
-
-        return load();
-
     }
 
     public int getConnectTimeout() {
@@ -403,10 +401,11 @@ public abstract class Request {
     }
 
     public URL getUrl() {
+        return orgURL;
+    }
+    public URL getJDPUrl() {
         return url;
     }
-
-
     private boolean hasCookies() {
 
         return cookies != null && !cookies.isEmpty();
@@ -445,7 +444,7 @@ public abstract class Request {
         return new Regex(htmlCode, pat).matches();
     }
 
-    public void openConnection() throws IOException {
+    private void openConnection() throws IOException {
 
         // if (request.getHttpConnection().getResponseCode() == 401 &&
         // logins.containsKey(request.getUrl().getHost())) {
@@ -471,6 +470,7 @@ public abstract class Request {
             httpConnection = (URLConnectionAdapter) url.openConnection();
 
         }
+        httpConnection.setRequest(this);
         httpConnection.setInstanceFollowRedirects(followRedirects);
         requestTime = System.currentTimeMillis() - tima;
         httpConnection.setReadTimeout(readTimeout);
@@ -558,7 +558,7 @@ public abstract class Request {
             if (getLocation() != null) { return "Not HTML Code. Redirect to: " + getLocation(); }
             return "No htmlCode read";
         }
-        
+
         return htmlCode;
     }
 

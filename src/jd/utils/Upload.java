@@ -88,7 +88,7 @@ public class Upload {
             br.getPage("http://uploaded.to/home");
             form = br.getForm(0);
 
-            form.setFileToPost(file);
+            form.setFileToPost(file,null);
             form.action = br.getRegex("document..*?.action = \"(http://.*?.uploaded.to/up\\?upload_id=)\";").getMatch(0) + Math.round(10000 * Math.random()) + "0" + Math.round(10000 * Math.random());
             br.submitForm(form);
             br.getPage("http://uploaded.to/home");

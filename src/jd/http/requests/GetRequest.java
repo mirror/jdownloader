@@ -14,10 +14,12 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.http;
+package jd.http.requests;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+
+import jd.http.URLConnectionAdapter;
 
 public class GetRequest extends Request {
 

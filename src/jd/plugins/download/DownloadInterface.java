@@ -35,8 +35,12 @@ import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.http.Browser;
-import jd.http.Request;
+
 import jd.http.URLConnectionAdapter;
+
+import jd.http.requests.PostRequest;
+import jd.http.requests.Request;
+
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -217,7 +221,7 @@ abstract public class DownloadInterface {
                 br.getHeaders().put("Range", "bytes=" + start + "-" + end);
                 URLConnectionAdapter con;
                 if (connection.getDoOutput()) {
-                    con = br.openPostConnection(connection.getURL() + "", connection.getPostData());
+                    con = br.openPostConnection(connection.getURL() + "", ((PostRequest)connection.getRequest()).getPostDataString());
                 } else {
                     con = br.openGetConnection(connection.getURL() + "");
                 }

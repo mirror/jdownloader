@@ -303,7 +303,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String PARAM_JAC_LOG = "JAC_DOLOG";
 
-    public static final String PARAM_LOCALE = "LOCALE";
+    
 
     public static final String PARAM_SHOW_SPLASH = "SHOW_SPLASH";
 

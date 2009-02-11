@@ -8,6 +8,8 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
+import jd.http.requests.Request;
+
 public interface URLConnectionAdapter {
 
     Map getHeaderFields();
@@ -35,7 +37,7 @@ public interface URLConnectionAdapter {
 
     void connect() throws IOException;
 
-    void post(String parameter) throws IOException;
+
 
     OutputStream getOutputStream()throws IOException;
 
@@ -43,7 +45,7 @@ public interface URLConnectionAdapter {
 
     boolean getDoOutput();
 
-    String getPostData();
+
 
     boolean isOK();
 
@@ -62,6 +64,9 @@ public interface URLConnectionAdapter {
     String getRequestProperty(String string);
 
     boolean isContentDisposition();
+
+    void setRequest(Request request);
+    public Request getRequest();
 
     
 

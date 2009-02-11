@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.http.requests.PostFormDataRequest;
+import jd.http.requests.PostRequest;
 import jd.parser.Regex;
 
 /**
@@ -75,10 +77,7 @@ public class HTTPsConnection extends HTTPConnection {
         }
     }
 
-    public String getPostData() {
 
-        return postData;
-    }
 
     public Map<String, List<String>> getRequestProperties() {
 
@@ -86,46 +85,46 @@ public class HTTPsConnection extends HTTPConnection {
 
     }
 
-    public void post(byte[] parameter) throws IOException {
-        BufferedOutputStream wr = new BufferedOutputStream(delegate.getOutputStream());
-        if (parameter != null) {
-            wr.write(parameter);
-        }
-
-        postData = "binary";
-        wr.flush();
-        wr.close();
-
-    }
-
-    public void post(String parameter) throws IOException {
-        OutputStreamWriter wr = new OutputStreamWriter(delegate.getOutputStream());
-        if (parameter != null) {
-            wr.write(parameter);
-        }
-
-        postData = parameter;
-        wr.flush();
-        wr.close();
-
-    }
+//    public void post(byte[] parameter) throws IOException {
+//        BufferedOutputStream wr = new BufferedOutputStream(delegate.getOutputStream());
+//        if (parameter != null) {
+//            wr.write(parameter);
+//        }
+//
+//        postData = "binary";
+//        wr.flush();
+//        wr.close();
+//
+//    }
+//
+//    public void post(String parameter) throws IOException {
+//        OutputStreamWriter wr = new OutputStreamWriter(delegate.getOutputStream());
+//        if (parameter != null) {
+//            wr.write(parameter);
+//        }
+//
+//        postData = parameter;
+//        wr.flush();
+//        wr.close();
+//
+//    }
 
     public void setDoOutput(boolean b) {
 
         delegate.setDoOutput(b);
     }
-
-    public void postGzip(String parameter) throws IOException {
-
-        OutputStreamWriter wr = new OutputStreamWriter(delegate.getOutputStream());
-        if (parameter != null) {
-            wr.write(parameter);
-        }
-        postData = parameter;
-        wr.flush();
-        wr.close();
-
-    }
+//
+//    public void postGzip(String parameter) throws IOException {
+//
+//        OutputStreamWriter wr = new OutputStreamWriter(delegate.getOutputStream());
+//        if (parameter != null) {
+//            wr.write(parameter);
+//        }
+//        postData = parameter;
+//        wr.flush();
+//        wr.close();
+//
+//    }
 
     public void setRequestProperty(String key, String value) {
         LinkedList<String> l = new LinkedList<String>();
@@ -198,10 +197,18 @@ public class HTTPsConnection extends HTTPConnection {
         }
         sb.append(new char[] { '\r', '\n' });
 
-        if (this.postData != null) {
-            sb.append(this.postData);
-            sb.append(new char[] { '\r', '\n' });
+        if(this.getRequest()!=null){
+            if(getRequest() instanceof PostRequest){
+                sb.append(((PostRequest)getRequest()).getPostDataString());
+                sb.append(new char[] { '\r', '\n' });
+                
+            }else if(getRequest() instanceof PostFormDataRequest){
+                sb.append(((PostFormDataRequest)getRequest()).getPostDataString());
+                sb.append(new char[] { '\r', '\n' });
+            }
+            
         }
+      
         sb.append("----------------Response------------------\r\n");
 
         for (Iterator<Entry<String, List<String>>> it = delegate.getHeaderFields().entrySet().iterator(); it.hasNext();) {

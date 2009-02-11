@@ -27,7 +27,7 @@ import java.util.Vector;
 import jd.JDFileFilter;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
-import jd.http.PostRequest;
+import jd.http.requests.PostRequest;
 import jd.parser.Regex;
 
 public class JDLocale {
@@ -37,6 +37,10 @@ public class JDLocale {
     private static HashMap<Integer, String> defaultData = null;
 
     private static final String DEFAULTLANGUAGE = "english";
+
+    public static final String CONFIG = "LOCALE";
+
+    public static final String LOCALE_ID = "LOCALE";
 
     private static String LANGUAGES_DIR = "jd/languages/";
 
@@ -75,7 +79,7 @@ public class JDLocale {
 
     public static String getLocaleString(String key2, String def) {
         if (data == null || localeFile == null) {
-            JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE, JDLocale.isGerman() ? "german" : "english"));
+            JDLocale.setLocale(JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, JDLocale.isGerman() ? "german" : "english"));
         }
 
         int key = key2.toLowerCase().hashCode();

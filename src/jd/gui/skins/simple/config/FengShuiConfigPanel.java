@@ -546,7 +546,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         addSeparator(panel, JDLocale.L("gui.config.general.name", "Allgemein"), JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.configuration"), 32, 32), JDLocale.L("gui.fengshuiconfig.general.tooltip", "<html>You can set the Downloadpath and the language here"));
 
         languages = new JComboBox(JDLocale.getLocaleIDs().toArray(new String[] {}));
-        languages.setSelectedItem(guiConfig.getProperty(SimpleGUI.PARAM_LOCALE, Locale.getDefault()));
+        languages.setSelectedItem(JDUtilities.getSubConfig(JDLocale.CONFIG).getProperty(JDLocale.LOCALE_ID, Locale.getDefault()));
         addWindowListener(new WindowAdapter() {
             public void windowOpened(WindowEvent e) {
                 downloadDirectory.requestFocus();
@@ -699,8 +699,9 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
     public void save() {
         boolean saveit = false;
         boolean restart = false;
-        if (!guiConfig.getProperty(SimpleGUI.PARAM_LOCALE, Locale.getDefault()).equals(languages.getSelectedItem())) {
-            guiConfig.setProperty(SimpleGUI.PARAM_LOCALE, languages.getSelectedItem());
+        if (!JDUtilities.getSubConfig(JDLocale.CONFIG).getProperty(JDLocale.LOCALE_ID, Locale.getDefault()).equals(languages.getSelectedItem())) {
+            JDUtilities.getSubConfig(JDLocale.CONFIG).getProperty(JDLocale.LOCALE_ID,languages.getSelectedItem());
+            JDUtilities.getSubConfig(JDLocale.CONFIG).save();
             guiConfig.save();
             restart = JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.fengshuiconfig.languages.restartwarning", "you have to restart jDownloader to change the language, restart jDownloader now?"));
 

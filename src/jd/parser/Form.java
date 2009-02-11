@@ -115,7 +115,7 @@ public class Form {
                             form.method = METHOD_UNKNOWN;
                         }
                     } else {
-                        form.formProperties.put(pname, matcherfp.group(2));
+                        form.getFormProperties().put(pname, matcherfp.group(2));
                     }
                 }
                 patternfp = Pattern.compile(" ([^\\s]+)\\=([^\"'][^\\s>]*)", Pattern.CASE_INSENSITIVE);
@@ -136,7 +136,7 @@ public class Form {
                             form.method = METHOD_UNKNOWN;
                         }
                     } else {
-                        form.formProperties.put(pname, matcherfp.group(2));
+                        form.getFormProperties().put(pname, matcherfp.group(2));
                     }
                 }
                 // if (form.action == null) {
@@ -167,7 +167,7 @@ public class Form {
      * Die eigenschaften der Form z.B. id oder name (ohne method und action)
      * kann zur Identifikation verwendet werden
      */
-    public HashMap<String, String> formProperties = new HashMap<String, String>();
+    private HashMap<String, String> formProperties = new HashMap<String, String>();
 
     /**
      * Methode der Form POST = 0, GET = 1 ( PUT = 2 wird jedoch bei
@@ -296,7 +296,7 @@ public class Form {
 
         if (ret.getType() != null && ret.getType().equalsIgnoreCase("file")) {
             method = METHOD_FILEPOST;
-            setFiletoPostName("");
+         
 
         }
 
@@ -384,7 +384,7 @@ public class Form {
             ret.append(entry.getValue());
             ret.append('\n');
         }
-        for (Map.Entry<String, String> entry : formProperties.entrySet()) {
+        for (Map.Entry<String, String> entry : getFormProperties().entrySet()) {
             ret.append("formProperty: ");
             ret.append(entry.getKey());
             ret.append('=');
@@ -425,15 +425,15 @@ public class Form {
         this.vars = vars;
     }
 
-    private void setFiletoPostName(String filetoPostName) {
-        this.filetoPostName = filetoPostName;
-    }
+
 
     public String getFiletoPostName() {
         return filetoPostName;
     }
 
-    public void setFileToPost(File fileToPost) {
+    public void setFileToPost(File fileToPost,String filetoPostName) {
+     if(filetoPostName==null)filetoPostName=fileToPost.getName();
+     this.filetoPostName=filetoPostName;
         this.fileToPost = fileToPost;
     }
 
@@ -564,6 +564,14 @@ public class Form {
 
         }
         return ret;
+    }
+
+    public void setFormProperties(HashMap<String, String> formProperties) {
+        this.formProperties = formProperties;
+    }
+
+    public HashMap<String, String> getFormProperties() {
+        return formProperties;
     }
 
 }

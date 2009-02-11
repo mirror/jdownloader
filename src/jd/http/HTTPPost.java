@@ -36,6 +36,10 @@ import jd.utils.JDUtilities;
 /**
  * Diese Klasse unterstützt bei Http Post requests
  * 
+ * @return Use PostFormDataRequest instead.
+ * @deprecated replaced by <code>PostFormDataRequest.java</code>.
+ * @see PostFormDataRequest.java
+ * 
  * @author JD-Team
  */
 public class HTTPPost {

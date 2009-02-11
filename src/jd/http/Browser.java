@@ -33,6 +33,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import jd.http.requests.FormData;
+import jd.http.requests.GetRequest;
+import jd.http.requests.PostFormDataRequest;
+import jd.http.requests.PostRequest;
+import jd.http.requests.Request;
 import jd.parser.Form;
 import jd.parser.JavaScript;
 import jd.parser.Regex;
@@ -283,14 +288,14 @@ public class Browser {
 
     public Form getFormbyName(String name) {
         for (Form f : getForms()) {
-            if (f.formProperties.get("name") != null && f.formProperties.get("name").equals(name)) return f;
+            if (f.getFormProperties().get("name") != null && f.getFormProperties().get("name").equals(name)) return f;
         }
         return null;
     }
 
     public Form getFormbyID(String id) {
         for (Form f : getForms()) {
-            if (f.formProperties.get("id") != null && f.formProperties.get("id").equals(id)) return f;
+            if (f.getFormProperties().get("id") != null && f.getFormProperties().get("id").equals(id)) return f;
         }
         return null;
     }
@@ -357,7 +362,7 @@ public class Browser {
 
     private void connect(Request request) throws IOException {
         waitForPageAccess();
-        assignURLToBrowserInstance(request.getUrl(), this);
+        assignURLToBrowserInstance(request.getJDPUrl(), this);
         request.connect();
         assignURLToBrowserInstance(request.getHttpConnection().getURL(), null);
 
@@ -719,6 +724,36 @@ public class Browser {
 
     }
 
+    private Request createPostFormDataRequest(String url) throws IOException {
+        url = getURL(url);
+        boolean sendref = true;
+        if (currentURL == null) {
+            sendref = false;
+            currentURL = new URL(url);
+        }
+        if (snifferCheck()) {
+            // throw new IOException("Sniffer found");
+        }
+        PostFormDataRequest request = new PostFormDataRequest((url));
+        if (proxy != null) request.setProxy(proxy);
+
+        request.getHeaders().put("Accept-Language", acceptLanguage);
+
+        if (connectTimeout > 0) {
+            request.setConnectTimeout(connectTimeout);
+        }
+        if (readTimeout > 0) {
+            request.setReadTimeout(readTimeout);
+        }
+        forwardCookies(request);
+        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
+
+        if (headers != null) {
+            request.getHeaders().putAll(headers);
+        }
+        return request;
+    }
+
     public Request createPostRequest(String url, HashMap<String, String> post) throws IOException {
         url = getURL(url);
         boolean sendref = true;
@@ -958,65 +993,45 @@ public class Browser {
 
         case Form.METHOD_FILEPOST:
 
-            HTTPPost up = new HTTPPost((action), doRedirects);
-            if (proxy != null) up.setProxy(proxy);
-            up.doUpload();
-
-            up.getConnection().setRequestProperty("Accept", "*/*");
-            up.getConnection().setRequestProperty("Accept-Language", acceptLanguage);
-            up.getConnection().setRequestProperty("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.4) Gecko/2008111317 Ubuntu/8.04 (hardy) Firefox/3.0.4");
-            forwardCookies(up.getConnection());
-            up.getConnection().setRequestProperty("Referer", currentURL.toString());
-            if (headers != null) {
-                for (Map.Entry<String, String> entry : headers.entrySet()) {
-                    up.getConnection().setRequestProperty(entry.getKey(), entry.getValue());
-                }
+           
+            PostFormDataRequest request = (PostFormDataRequest)createPostFormDataRequest(action);
+            if(form.getFormProperties().containsKey("enctype")){
+                request.setEncodeType(form.getFormProperties().get("enctype"));
             }
-            up.connect();
+
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                if (entry.getValue().getValue() != null) {
-                    up.sendVariable(entry.getKey(), entry.getValue().getValue());
+                if(entry.getValue()==null)continue;
+                if(entry.getValue().getType()!=null&&entry.getValue().getType().equals("image")){
+                   
+                    
+                    request.addFormData(new FormData(entry.getValue().getKey()+".x",  entry.getValue().getIntegerProperty("x",(int)(Math.random()*100))+""));  
+                    request.addFormData(new FormData(entry.getValue().getKey()+".y",  entry.getValue().getIntegerProperty("x",(int)(Math.random()*100))+""));  
+                    
+                }else if(entry.getValue().getType()!=null&&entry.getValue().getType().equals("file")){
+                    request.addFormData(new FormData(entry.getValue().getKey(),form.getFiletoPostName(),form.getFileToPost()));  
+                    
+                    
+                }else  if (entry.getValue().getKey()!=null&&entry.getValue().getValue() != null) {
+                
+                    request.addFormData(new FormData(entry.getKey(), entry.getValue().getValue()));
+                  
                 }
-            }
-            up.setForm("filecontent");
-            up.sendFile(form.getFileToPost().toString(), form.getFiletoPostName());
-            up.close();
-            // Dummy request um das ganze kompatibel zu machen
-            Request request = new Request(up.getConnection()) {
-
-                @Override
-                public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
-
-                }
-
-                @Override
-                public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
-
-                }
-
-            };
-            if (proxy != null) request.setProxy(proxy);
-            if (request.getHeaders() != null && headers != null) {
-                request.getHeaders().putAll(headers);
-            }
-            if (request.getHeaders() != null) {
-                request.getHeaders().put("Accept-Language", acceptLanguage);
-            }
-
-            request.setFollowRedirects(doRedirects);
-            forwardCookies(request);
-            if (request.getHeaders() != null) {
-                request.getHeaders().put("Referer", currentURL.toString());
             }
             String ret = null;
+
+            connect(request);
+            if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
             checkContentLengthLimit(request);
             ret = request.read();
-            request.setHtmlCode(ret);
+
             updateCookies(request);
             this.request = request;
+            if (this.doRedirects && request.getLocation() != null) {
+                ret = this.getPage((String) null);
+            } else {
 
-            currentURL = new URL(action);
-
+                currentURL = request.getUrl();
+            }
             return ret;
 
         }
@@ -1061,8 +1076,11 @@ public class Browser {
      * @throws IOException
      */
     public String loadConnection(URLConnectionAdapter con) throws IOException {
-        checkContentLengthLimit(request);
-        if (con == null) return request.read();
+
+        if (con == null) {
+            checkContentLengthLimit(request);
+            return request.read();
+        }
         return Request.read(con);
 
     }

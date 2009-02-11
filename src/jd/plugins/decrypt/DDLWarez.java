@@ -22,7 +22,9 @@ import java.awt.image.IndexColorModel;
 import java.awt.image.PixelGrabber;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Vector;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
@@ -34,10 +36,11 @@ import jd.captcha.utils.GifDecoder;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Form;
+import jd.parser.Form.InputField;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 public class DDLWarez extends PluginForDecrypt {
     static class DDLWarez_Linkgrabber extends Thread {
@@ -57,6 +60,7 @@ public class DDLWarez extends PluginForDecrypt {
             _status = THREADFAIL;
             Worker_ID = id;
             this.br = br;
+
             this.progress = progress;
         }
 
@@ -126,6 +130,7 @@ public class DDLWarez extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setCookiesExclusive(true);
+        br.setDebug(true);
         br.setReadTimeout(5 * 60 * 1000);
         br.setConnectTimeout(5 * 60 * 1000);
         for (int retry = 1; retry <= 10; retry++) {
@@ -141,47 +146,19 @@ public class DDLWarez extends PluginForDecrypt {
                 }
 
                 Form form = br.getForm(1);
-                boolean docaptcha = false;
-                if (form != null && form.containsHTML("captchaO")) {
-                    docaptcha = true;
-                    File file;
-                    int i = 10;
-                    while (true) {
-                        i--;
-                        if (i <= 0) {
-                            logger.severe("Could not download Captcha");
-                            return null;
-                        }
-                        file = this.getLocalCaptchaFile(this);
-                        Browser.download(file, br.cloneBrowser().openGetConnection("http://" + br.getHost() + "/" + br.getRegex("<img src=\"(images/captcha/[^\"]*)\" style=\"border: 0px;\">").getMatch(0)));
-                        try {
-                            File f = convert(file);
-                            if (f == null || !f.exists()) continue;
-                            file = f;
-                            break;
-                        } catch (Exception e) {
-                            continue;
-                        }
+          
+                if (form != null && !form.action.equalsIgnoreCase("get_file.php")) {
+                   
+                    for (Iterator<Entry<String, InputField>> it = form.getVars().entrySet().iterator(); it.hasNext();) {
+                        InputField n = it.next().getValue();
+                        if (n.getType().equalsIgnoreCase("text") && n.getValue() == null) {
+                            String text = form.getHtmlCode().replaceAll("<.*>", "").trim();
+                            n.setValue(JDUtilities.getGUI().showUserInputDialog(text));
 
+                        }
                     }
-                    String captcha = getCaptchaCode(file, this, param);
-                    int erg = Integer.parseInt(captcha.substring(0, 1));
-                    if (captcha.charAt(1) == 'p')
-                        erg += Integer.parseInt(captcha.substring(2, 3));
-                    else if (captcha.charAt(1) == 'm')
-                        erg -= Integer.parseInt(captcha.substring(2, 3));
-                    else if (captcha.charAt(1) == 'x') erg *= Integer.parseInt(captcha.substring(2, 3));
-                    form.put("captchaO", "" + erg);
-                } else if (form.containsHTML("in das Textfeld")) {
-                    String text = form.getRegex("Schreibe \"(.*?)\" in").getMatch(0);
-                    if (text == null) return null;
-                    form.put("simple", text);
-                    docaptcha = true;
-                }
-                if (docaptcha == true) {
+
                     br.submitForm(form);
-                    if (br.containsHTML("Captcha-Fehler")) continue;
-                    if (br.containsHTML("in das Textfeld und klicke")) continue;
                 }
 
                 Form[] forms = br.getForms();
@@ -208,8 +185,6 @@ public class DDLWarez extends PluginForDecrypt {
                     }
                 }
                 return decryptedLinks;
-            } catch (DecrypterException e2) {
-                throw e2;
             } catch (Exception e) {
                 e.printStackTrace();
                 logger.finest("DDLWarez: PostRequest-Error, try again!");
