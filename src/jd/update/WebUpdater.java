@@ -153,6 +153,7 @@ public class WebUpdater implements Serializable {
                         Thread.sleep(250);
                     } catch (InterruptedException e) {
                     }
+                    log("Fehler beim laden von " + finalurl + "Retry " + i);
                     continue;
                 }
                 synchronized (switchtosecondary) {
@@ -177,13 +178,13 @@ public class WebUpdater implements Serializable {
                     }
                 }
             } catch (Exception e2) {
-                log(e2.toString());
                 log("Fehler beim laden von " + finalurl);
             }
             try {
                 Thread.sleep(250);
             } catch (InterruptedException e) {
             }
+            log("Fehler beim laden von " + finalurl + "Retry " + i);
         }
         synchronized (errors) {
             errors++;
