@@ -137,17 +137,7 @@ public class JDLowSpeed extends PluginOptional {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
         menu.add(m = new MenuItem(MenuItem.TOGGLE, getHost(), 0).setActionListener(this));
-        if (!subConfig.getBooleanProperty(PROPERTY_ENABLED, false)) {
-            // menu.add(m = new MenuItem(MenuItem.TOGGLE,
-            // JDLocale.L("addons.jdlowspeed.statusmessage.enabled",
-            // "Low Speederkennung einschalten"), 0).setActionListener(this));
-            m.setSelected(false);
-        } else {
-            // menu.add(m = new MenuItem(MenuItem.TOGGLE,
-            // JDLocale.L("addons.jdlowspeed.statusmessage.disabled",
-            // "Low Speederkennung ausschalten"), 1).setActionListener(this));
-            m.setSelected(true);
-        }
+        m.setSelected(subConfig.getBooleanProperty(PROPERTY_ENABLED, false));
         return menu;
     }
 

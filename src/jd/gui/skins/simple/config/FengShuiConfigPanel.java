@@ -227,8 +227,8 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             JDUtilities.getSubConfig("BATCHRECONNECT").setProperty(BatchReconnect.PARAM_RETRIES, 0);
             JDUtilities.getConfiguration().setProperty(ExternReconnect.PARAM_RETRIES, 0);
 
-            new Thread() {
-                @Override
+            new Thread(new Runnable() {
+
                 public void run() {
                     boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
@@ -246,7 +246,8 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
                     mld.getBtnOK().setEnabled(true);
                     mld.getBtnOK().setText(JDLocale.L("gui.warning.reconnect.close", "Fenster schließen"));
                 }
-            }.start();
+
+            }).start();
         } else if (e.getSource() == btnAutoConfig) {
             GetRouterInfo.autoConfig(password, username, ip, this);
         } else if (e.getSource() == btnSelectRouter) {
@@ -699,10 +700,10 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
     public void save() {
         boolean saveit = false;
         boolean restart = false;
-        
+
         if (!JDUtilities.getSubConfig(JDLocale.CONFIG).getProperty(JDLocale.LOCALE_ID, Locale.getDefault()).equals(languages.getSelectedItem())) {
-           
-            JDUtilities.getSubConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID,languages.getSelectedItem());           
+
+            JDUtilities.getSubConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, languages.getSelectedItem());
             JDUtilities.getSubConfig(JDLocale.CONFIG).save();
             guiConfig.save();
             restart = JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.fengshuiconfig.languages.restartwarning", "you have to restart jDownloader to change the language, restart jDownloader now?"));
