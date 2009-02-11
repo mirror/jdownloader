@@ -70,7 +70,6 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        br.setDebug(true);
         Form forms[] = br.getForms();
         String captchaurl = null;
         if (forms.length != 8) {
@@ -109,7 +108,7 @@ public class LetitBitNet extends PluginForHost {
         String url = br.getRegex("<div.*?id=\"links\".*?>\\s+<a\\s+href=\"(.*?)\"").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         this.sleep(2000, downloadLink);
-        dl = br.openDownload(downloadLink, url, true, 1);
+        dl = br.openDownload(downloadLink, url, false, 1);
         if (dl.getConnection().getResponseCode() == 404) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
