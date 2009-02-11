@@ -22,7 +22,8 @@ import java.net.URLEncoder;
 
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTTPPost;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
 import jd.nutils.JDHash;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -31,7 +32,7 @@ public class Upload {
     public static String toJDownloader(String str, String desc) {
         try {
             Browser br = new Browser();
-            String ret=br.postPage("http://service.jdownloader.org/tools/log.php", "upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
+            String ret = br.postPage("http://service.jdownloader.org/tools/log.php", "upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
             return "http://www.jdownloader.org/pastebin/" + ret;
         } catch (IOException e) {
             e.printStackTrace();
@@ -57,17 +58,15 @@ public class Upload {
             Browser br = new Browser();
 
             String[] data = br.getPage("http://rapidshare.com/cgi-bin/upload.cgi?intsysdata=1").split("\\,");
-            HTTPPost up = new HTTPPost("http://rs" + data[0].trim() + "cg.rapidshare.com/cgi-bin/upload.cgi", true);
-            up.setBoundary("----------070308143019350");
-            up.doUpload();
-            up.connect();
-            up.sendVariable("toolmode2", "1");
-            up.setForm("filecontent");
-            up.sendFile(file.getAbsolutePath(), file.getName());
-            up.sendVariable("freeaccountid", userid);
-            up.sendVariable("password", pass);
-            up.close();
-            String code = up.read();
+            PostFormDataRequest r = (PostFormDataRequest) br.createPostFormDataRequest("http://rs" + data[0].trim() + "cg.rapidshare.com/cgi-bin/upload.cgi");
+
+            r.addFormData(new FormData("toolmode2", "1"));
+            r.addFormData(new FormData("filecontent", file.getName(), file));
+            r.addFormData(new FormData("freeaccountid", userid));
+            r.addFormData(new FormData("password", pass));
+
+            r.connect();
+            String code = r.read();
             String[] lines = Regex.getLines(code);
             return lines[1];
         } catch (Exception e) {
@@ -88,7 +87,7 @@ public class Upload {
             br.getPage("http://uploaded.to/home");
             form = br.getForm(0);
 
-            form.setFileToPost(file,null);
+            form.setFileToPost(file, null);
             form.action = br.getRegex("document..*?.action = \"(http://.*?.uploaded.to/up\\?upload_id=)\";").getMatch(0) + Math.round(10000 * Math.random()) + "0" + Math.round(10000 * Math.random());
             br.submitForm(form);
             br.getPage("http://uploaded.to/home");

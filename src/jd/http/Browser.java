@@ -61,7 +61,6 @@ public class Browser {
 
         }
     }
-
     private static HashMap<String, HashMap<String, Cookie>> COOKIES = new HashMap<String, HashMap<String, Cookie>>();
     private HashMap<String, HashMap<String, Cookie>> cookies = new HashMap<String, HashMap<String, Cookie>>();
 
@@ -724,7 +723,7 @@ public class Browser {
 
     }
 
-    private Request createPostFormDataRequest(String url) throws IOException {
+    public Request createPostFormDataRequest(String url) throws IOException {
         url = getURL(url);
         boolean sendref = true;
         if (currentURL == null) {
@@ -993,28 +992,25 @@ public class Browser {
 
         case Form.METHOD_FILEPOST:
 
-           
-            PostFormDataRequest request = (PostFormDataRequest)createPostFormDataRequest(action);
-            if(form.getFormProperties().containsKey("enctype")){
+            PostFormDataRequest request = (PostFormDataRequest) createPostFormDataRequest(action);
+            if (form.getFormProperties().containsKey("enctype")) {
                 request.setEncodeType(form.getFormProperties().get("enctype"));
             }
 
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                if(entry.getValue()==null)continue;
-                if(entry.getValue().getType()!=null&&entry.getValue().getType().equals("image")){
-                   
-                    
-                    request.addFormData(new FormData(entry.getValue().getKey()+".x",  entry.getValue().getIntegerProperty("x",(int)(Math.random()*100))+""));  
-                    request.addFormData(new FormData(entry.getValue().getKey()+".y",  entry.getValue().getIntegerProperty("x",(int)(Math.random()*100))+""));  
-                    
-                }else if(entry.getValue().getType()!=null&&entry.getValue().getType().equals("file")){
-                    request.addFormData(new FormData(entry.getValue().getKey(),form.getFiletoPostName(),form.getFileToPost()));  
-                    
-                    
-                }else  if (entry.getValue().getKey()!=null&&entry.getValue().getValue() != null) {
-                
+                if (entry.getValue() == null) continue;
+                if (entry.getValue().getType() != null && entry.getValue().getType().equals("image")) {
+
+                    request.addFormData(new FormData(entry.getValue().getKey() + ".x", entry.getValue().getIntegerProperty("x", (int) (Math.random() * 100)) + ""));
+                    request.addFormData(new FormData(entry.getValue().getKey() + ".y", entry.getValue().getIntegerProperty("x", (int) (Math.random() * 100)) + ""));
+
+                } else if (entry.getValue().getType() != null && entry.getValue().getType().equals("file")) {
+                    request.addFormData(new FormData(entry.getValue().getKey(), form.getFiletoPostName(), form.getFileToPost()));
+
+                } else if (entry.getValue().getKey() != null && entry.getValue().getValue() != null) {
+
                     request.addFormData(new FormData(entry.getKey(), entry.getValue().getValue()));
-                  
+
                 }
             }
             String ret = null;

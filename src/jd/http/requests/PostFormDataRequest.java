@@ -71,8 +71,10 @@ public class PostFormDataRequest extends Request {
         OutputStreamWriter writer = new OutputStreamWriter(output);
         writer.write(this.boundary);
         writer.write("--\r\n");
-        writer.close();
+        writer.flush();
+        
         if (output != null) {
+            output.flush();
             output.close();
         }
 
@@ -95,9 +97,11 @@ public class PostFormDataRequest extends Request {
             writer.flush();
             outputByteWriter = new BufferedOutputStream(output);
             outputByteWriter.write(formData.getData(), 0, formData.getData().length);
-            outputByteWriter.flush();
-            outputByteWriter.close();
+        
             writer.write("\r\n");
+            writer.flush();
+            outputByteWriter.flush();
+   
             break;
         case FILE:
             writer.write("Content-Disposition: form-data; name=\"" + formData.getName() + "\"; filename=\"" + formData.getValue() + "\"");
@@ -112,13 +116,16 @@ public class PostFormDataRequest extends Request {
                 outputByteWriter.write(b, 0, n);
             }
             in.close();
-            outputByteWriter.flush();
-            outputByteWriter.close();
+            
+         
             writer.write("\r\n");
+            writer.flush();
+           
             break;
         }
 
         writer.flush();
+  
     }
 
     @Override
@@ -133,7 +140,7 @@ public class PostFormDataRequest extends Request {
         long rand = (long) (Math.random() * range) + 100000000000000l;
         boundary = "----------" + rand;
         
-        boundary="-----------------------------41184676334";
+       // boundary="-----------------------------41184676334";
 
     }
 
