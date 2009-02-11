@@ -978,10 +978,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(createMenuButton(actionUpdate));
         if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_SHOW_SPEEDMETER, true)) {
             speedmeter = new SpeedMeterPanel();
-          if(!UIManager.getLookAndFeel().getName().equals("Nimbus")){
-              toolBar.add(Box.createGlue());
-          }
-//            toolBar.add(Box.createGlue());
+            if (!UIManager.getLookAndFeel().getName().equals("Nimbus")) {
+                toolBar.add(Box.createGlue());
+            }
+            // toolBar.add(Box.createGlue());
             toolBar.add(speedmeter);
         }
         JPanel panel = new JPanel(new BorderLayout());
@@ -1051,9 +1051,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     btnPause.setSelected(false);
                     btnStartStop.setIcon(new ImageIcon(JDUtilities.getImage(getStartStopDownloadImage())));
                     btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
-
-                    if(speedmeter!=null)speedmeter.stop();
-
+                    if (speedmeter != null) speedmeter.stop();
                     break;
                 case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                     break;

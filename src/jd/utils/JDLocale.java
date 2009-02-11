@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Vector;
 
 import jd.JDFileFilter;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
 import jd.http.requests.PostRequest;
 import jd.parser.Regex;

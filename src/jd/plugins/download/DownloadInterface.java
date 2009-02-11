@@ -35,12 +35,9 @@ import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.http.Browser;
-
 import jd.http.URLConnectionAdapter;
-
 import jd.http.requests.PostRequest;
 import jd.http.requests.Request;
-
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;

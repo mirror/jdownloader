@@ -243,7 +243,7 @@ public class DownloadInfo extends JFrame implements ChangeListener {
         }
 
         if (downloadLink.getFilePackage() != null) {
-            addEntry("package", JDLocale.L("gui.linkinfo.package", "Packet"), downloadLink.getFilePackage().toString());
+            addEntry("package", JDLocale.L("gui.linkinfo.package", "Packet"), downloadLink.getFilePackage().getName());
         } else {
             removeEntry("package");
         }
