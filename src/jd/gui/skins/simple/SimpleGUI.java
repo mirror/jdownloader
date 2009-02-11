@@ -1594,7 +1594,18 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public boolean showConfirmDialog(String message) {
         // logger.info("ConfirmDialog");
-        return JOptionPane.showConfirmDialog(frame, message, "", JOptionPane.YES_NO_OPTION) == JOptionPane.OK_OPTION;
+        Object[] options = {JDLocale.L("gui.btn_yes","Yes"), JDLocale.L("gui.btn_no","No")};
+        int n = JOptionPane.showOptionDialog(frame,
+                message,
+                "",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,     //do not use a custom Icon
+                options,  //the titles of buttons
+                options[0]); //default button title
+        if (n==0) return true;
+        else return false;
+        // return JOptionPane.showConfirmDialog(frame, message, "", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, options, options[0]) == JOptionPane.OK_OPTION;
     }
 
     public boolean showCountdownConfirmDialog(String string, int sec) {
