@@ -1749,7 +1749,6 @@ public class JDController implements ControlListener, UIListener {
                 e.printStackTrace();
                 return;
             }
-            fp.sort("asc");
             if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(LinkGrabber.PROPERTY_POSITION, 1) == 0 && uiEvent.getSource() instanceof LinkGrabber) {
                 addPackageAt(fp, 0);
             } else {

@@ -53,7 +53,7 @@ public class Browser {
 
         public BrowserException(String string) {
             super(string);
-           
+
         }
     }
 
@@ -105,7 +105,6 @@ public class Browser {
     public void setWaittimeBetweenPageRequests(long value) {
         waittimeBetweenRequests = value;
     }
-
 
     private void waitForPageAccess() {
         if (latestReqTimeCtrlID == null) return;
@@ -256,9 +255,9 @@ public class Browser {
     };
 
     public Browser() {
-      
-//        JDProxy p = new JDProxy(JDProxy.Type.SOCKS, "localhost", 1080);
-//        this.setProxy(p);
+
+        // JDProxy p = new JDProxy(JDProxy.Type.SOCKS, "localhost", 1080);
+        // this.setProxy(p);
     }
 
     public String getAcceptLanguage() {
@@ -394,7 +393,7 @@ public class Browser {
     private void checkContentLengthLimit(Request request) throws BrowserException {
         if (request == null || request.getHttpConnection() == null || request.getHttpConnection().getHeaderField("Content-Length") == null) return;
         if (Long.parseLong(request.getHttpConnection().getHeaderField("Content-Length")) > limit) {
-            JDUtilities.getLogger().severe(request.getHttpConnection().toString());
+            JDUtilities.getLogger().severe(request.printHeaders());
             throw new BrowserException("Content-length too big");
         }
     }
