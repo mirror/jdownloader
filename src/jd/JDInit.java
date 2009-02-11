@@ -492,10 +492,13 @@ public class JDInit {
                         JDUtilities.getDatabaseConnector().shutdownDatabase();
                         logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.RUNTYPE_LOCAL_JARED }, home.getAbsolutePath(), 0));
                         System.exit(0);
+                    } catch (java.net.ConnectException e) {
+                        e.printStackTrace();
+                        JOptionPane.showMessageDialog(null, JDLocale.L("installer.refused", "Your connection got refused. It seems that any security software (e.g. firewalls) block JD. See http://jdownloader.org/knowledge/wiki/faq."));
                     } catch (Exception e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
-                        System.exit(0);
+                       // System.exit(0);
                     }
 
                 }
