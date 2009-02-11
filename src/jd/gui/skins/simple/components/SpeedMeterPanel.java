@@ -54,8 +54,8 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
     }
 
     public Dimension getPreferredSize() {
-     
-return new Dimension(300,55);
+        if (!UIManager.getLookAndFeel().getName().equals("Nimbus")) { return super.getPreferredSize(); }
+        return new Dimension(300, 45);
     }
 
     public void start() {
