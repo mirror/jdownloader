@@ -72,7 +72,9 @@ public class DDLWarez extends PluginForDecrypt {
                 String action = form.getAction(base);
 
                 if (action.contains("get_file")) {
-                    Browser clone = br.cloneBrowser();                    
+                    Browser clone = br.cloneBrowser();
+                    clone.setDebug(true);
+
                     for (int retry = 1; retry <= 10; retry++) {
                         try {
                             clone.submitForm(form);
