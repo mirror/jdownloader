@@ -38,6 +38,7 @@ import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Form.InputField;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
@@ -146,19 +147,25 @@ public class DDLWarez extends PluginForDecrypt {
                 }
 
                 Form form = br.getForm(1);
-          
+
                 if (form != null && !form.action.equalsIgnoreCase("get_file.php")) {
-                   
+
                     for (Iterator<Entry<String, InputField>> it = form.getVars().entrySet().iterator(); it.hasNext();) {
                         InputField n = it.next().getValue();
                         if (n.getType().equalsIgnoreCase("text") && n.getValue() == null) {
                             String text = form.getHtmlCode().replaceAll("<.*>", "").trim();
-                            n.setValue(JDUtilities.getGUI().showUserInputDialog(text));
+                            String input = JDUtilities.getGUI().showUserInputDialog(text);
+                            if (input == null) throw new DecrypterException(DecrypterException.CAPTCHA);
+                            n.setValue(input);
 
                         }
                     }
 
                     br.submitForm(form);
+                    form = br.getForm(1);
+                    if (form != null && !form.action.equalsIgnoreCase("get_file.php")) {
+                        continue;
+                    }
                 }
 
                 Form[] forms = br.getForms();
@@ -185,6 +192,8 @@ public class DDLWarez extends PluginForDecrypt {
                     }
                 }
                 return decryptedLinks;
+            } catch (DecrypterException e) {
+                throw e;
             } catch (Exception e) {
                 e.printStackTrace();
                 logger.finest("DDLWarez: PostRequest-Error, try again!");
