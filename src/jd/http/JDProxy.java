@@ -74,5 +74,7 @@ public class JDProxy extends Proxy {
     public String getHost() {
         return host;
     }
-
+public String toString(){
+    return "JDProxy: "+super.toString();
+}
 }

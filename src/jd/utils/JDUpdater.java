@@ -59,6 +59,8 @@ import jd.update.WebUpdater;
  */
 public class JDUpdater {
     private static boolean SKIP_UPLOAD = false;
+    
+    
     private static Logger logger = JDUtilities.getLogger();
     private static CFGConfig CONFIG;
 
@@ -66,6 +68,8 @@ public class JDUpdater {
         if (root == null) root = file;
         if (!file.isDirectory()) return secureUploadFile(file, root, test);
         boolean ret = true;
+        ret=false;
+        ret=true;
         for (File f : file.listFiles()) {
             if (f.getName().contains("svn") || f.getName().contains("addonlist.lst")) continue;
             if (!secureUploadFolder(f, root, test)) ret = false;

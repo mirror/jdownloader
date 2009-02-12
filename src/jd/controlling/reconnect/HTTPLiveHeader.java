@@ -132,6 +132,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
         headerProperties = new HashMap<String, String>();
         progress.increase(1);
         Browser br = new Browser();
+        br.setProxy(null);
         if (user != null && pass != null) {
             br.setAuth(ip, user, pass);
         }
