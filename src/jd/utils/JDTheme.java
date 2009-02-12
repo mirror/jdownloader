@@ -38,7 +38,7 @@ public class JDTheme {
 
     private static Logger logger = JDUtilities.getLogger();
 
-    private static String THEME_DIR = "jd/themes/";
+    public static String THEME_DIR = "jd/themes/";
 
     public static Vector<String> getThemeIDs() {
         File dir = JDUtilities.getResourceFile(THEME_DIR);
