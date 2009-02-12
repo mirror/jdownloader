@@ -7,7 +7,6 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Vector;
 
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
@@ -177,7 +176,7 @@ public class ThemeKeys extends JFrame {
         fc.setMultiSelectionEnabled(false);
         fc.setFileFilter(new JDFileFilter("Ordner der Java-Quelldateien", "", true));
 
-        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
+        if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
         return null;
     }
 
