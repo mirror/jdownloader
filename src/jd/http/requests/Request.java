@@ -263,9 +263,8 @@ public abstract class Request {
     }
 
     public long getContentLength() {
-
         if (httpConnection == null) { return -1; }
-        return httpConnection.getContentLength();
+        return httpConnection.getLongContentLength();
     }
 
     public ArrayList<Cookie> getCookies() {

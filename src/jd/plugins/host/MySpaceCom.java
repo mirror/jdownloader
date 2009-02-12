@@ -50,7 +50,7 @@ public class MySpaceCom extends PluginForHost {
             return false;
         }
       
-        downloadLink.setDownloadSize(urlConnection.getContentLength());
+        downloadLink.setDownloadSize(urlConnection.getLongContentLength());
         urlConnection.disconnect();
         return true;
     }

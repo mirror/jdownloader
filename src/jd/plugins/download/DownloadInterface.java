@@ -794,7 +794,7 @@ abstract public class DownloadInterface {
                         long gotSB = JDUtilities.filterLong(fixrange[0][0]);
                         long gotEB;
                         if (fixrange[0][1] == null) {
-                            gotEB = JDUtilities.filterLong(fixrange[0][0]) + connection.getContentLength() - 1;
+                            gotEB = JDUtilities.filterLong(fixrange[0][0]) + connection.getLongContentLength() - 1;
                         } else {
                             gotEB = JDUtilities.filterLong(fixrange[0][1]);
                         }
@@ -828,7 +828,7 @@ abstract public class DownloadInterface {
                             logger.finer("Resulting Range" + startByte + " - " + endByte);
                         }
                     } else {
-                        if (connection.getContentLength() == startByte) {
+                        if (connection.getLongContentLength() == startByte) {
                             // schon fertig
                             return;
                         }
@@ -868,14 +868,14 @@ abstract public class DownloadInterface {
                         logger.finer("Resulting Range" + startByte + " - " + endByte);
                     }
                 } else {
-                    endByte = connection.getContentLength() - 1;
+                    endByte = connection.getLongContentLength() - 1;
                     if (speedDebug) {
                         logger.finer("Endbyte set to " + endByte);
                     }
                 }
             }
             if (endByte <= 0) {
-                endByte = connection.getContentLength() - 1;
+                endByte = connection.getLongContentLength() - 1;
                 if (speedDebug) {
                     logger.finer("Endbyte set to " + endByte);
                 }
@@ -1200,9 +1200,9 @@ abstract public class DownloadInterface {
                 this.downloadLink.setDownloadSize(connection.getRange()[2]);
             }
         } else {
-            if (connection.getContentLength() > 0) {
+            if (connection.getLongContentLength() > 0) {
                 this.setFilesizeCheck(true);
-                this.downloadLink.setDownloadSize(connection.getContentLength());
+                this.downloadLink.setDownloadSize(connection.getLongContentLength());
             }
 
         }
@@ -1441,9 +1441,9 @@ abstract public class DownloadInterface {
         if (fileSize > 0) {
 
         return fileSize; }
-        if (connection != null && connection.getContentLength() > 0) {
+        if (connection != null && connection.getLongContentLength() > 0) {
 
-        return connection.getContentLength(); }
+        return connection.getLongContentLength(); }
 
         if (downloadLink.getDownloadSize() > 0) {
 

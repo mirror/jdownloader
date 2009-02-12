@@ -49,15 +49,13 @@ public class HTTPsConnection extends HTTPConnection {
 
     public long getLongContentLength() {
         if (delegate.getHeaderField("content-length") == null) { return -1; }
-
         return Long.parseLong(delegate.getHeaderField("content-length"));
 
     }
 
     public int getContentLength() {
-
+        if (delegate.getHeaderField("content-length") == null) { return -1; }
         return Integer.parseInt(delegate.getHeaderField("content-length"));
-
     }
 
     public String getContentType() {
@@ -75,54 +73,56 @@ public class HTTPsConnection extends HTTPConnection {
         }
     }
 
-
-
     public Map<String, List<String>> getRequestProperties() {
 
         return requestProperties;
 
     }
 
-//    public void post(byte[] parameter) throws IOException {
-//        BufferedOutputStream wr = new BufferedOutputStream(delegate.getOutputStream());
-//        if (parameter != null) {
-//            wr.write(parameter);
-//        }
-//
-//        postData = "binary";
-//        wr.flush();
-//        wr.close();
-//
-//    }
-//
-//    public void post(String parameter) throws IOException {
-//        OutputStreamWriter wr = new OutputStreamWriter(delegate.getOutputStream());
-//        if (parameter != null) {
-//            wr.write(parameter);
-//        }
-//
-//        postData = parameter;
-//        wr.flush();
-//        wr.close();
-//
-//    }
+    // public void post(byte[] parameter) throws IOException {
+    // BufferedOutputStream wr = new
+    // BufferedOutputStream(delegate.getOutputStream());
+    // if (parameter != null) {
+    // wr.write(parameter);
+    // }
+    //
+    // postData = "binary";
+    // wr.flush();
+    // wr.close();
+    //
+    // }
+    //
+    // public void post(String parameter) throws IOException {
+    // OutputStreamWriter wr = new
+    // OutputStreamWriter(delegate.getOutputStream());
+    // if (parameter != null) {
+    // wr.write(parameter);
+    // }
+    //
+    // postData = parameter;
+    // wr.flush();
+    // wr.close();
+    //
+    // }
 
     public void setDoOutput(boolean b) {
 
         delegate.setDoOutput(b);
     }
-//
-//    public void postGzip(String parameter) throws IOException {
-//
-//        OutputStreamWriter wr = new OutputStreamWriter(delegate.getOutputStream());
-//        if (parameter != null) {
-//            wr.write(parameter);
-//        }
-//        postData = parameter;
-//        wr.flush();
-//        wr.close();
-//
-//    }
+
+    //
+    // public void postGzip(String parameter) throws IOException {
+    //
+    // OutputStreamWriter wr = new
+    // OutputStreamWriter(delegate.getOutputStream());
+    // if (parameter != null) {
+    // wr.write(parameter);
+    // }
+    // postData = parameter;
+    // wr.flush();
+    // wr.close();
+    //
+    // }
 
     public void setRequestProperty(String key, String value) {
         LinkedList<String> l = new LinkedList<String>();
@@ -195,18 +195,18 @@ public class HTTPsConnection extends HTTPConnection {
         }
         sb.append(new char[] { '\r', '\n' });
 
-        if(this.getRequest()!=null){
-            if(getRequest() instanceof PostRequest){
-                sb.append(((PostRequest)getRequest()).getPostDataString());
+        if (this.getRequest() != null) {
+            if (getRequest() instanceof PostRequest) {
+                sb.append(((PostRequest) getRequest()).getPostDataString());
                 sb.append(new char[] { '\r', '\n' });
-                
-            }else if(getRequest() instanceof PostFormDataRequest){
-                sb.append(((PostFormDataRequest)getRequest()).getPostDataString());
+
+            } else if (getRequest() instanceof PostFormDataRequest) {
+                sb.append(((PostFormDataRequest) getRequest()).getPostDataString());
                 sb.append(new char[] { '\r', '\n' });
             }
-            
+
         }
-      
+
         sb.append("----------------Response------------------\r\n");
 
         for (Iterator<Entry<String, List<String>>> it = delegate.getHeaderFields().entrySet().iterator(); it.hasNext();) {

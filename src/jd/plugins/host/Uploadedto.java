@@ -189,7 +189,7 @@ public class Uploadedto extends PluginForHost {
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, this.getPluginConfig().getIntegerProperty("PREMIUMCHUNKS", 1));
 
         dl.setFileSizeVerified(true);
-        if (dl.getConnection().getContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
+        if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(5 * 60 * 1000l);
             return;
@@ -305,7 +305,7 @@ public class Uploadedto extends PluginForHost {
         }
         dl.fakeContentRangeHeader(false);
         dl.setFileSizeVerified(true);
-        if (dl.getConnection().getContentLength() == 0) {
+        if (dl.getConnection().getLongContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(10 * 60 * 1000l);
             return;

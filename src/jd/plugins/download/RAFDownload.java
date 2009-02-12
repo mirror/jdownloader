@@ -322,7 +322,7 @@ public class RAFDownload extends DownloadInterface {
             } else {
                 // Falls schon der 1. range angefordert wurde.... werden die
                 // restlichen chunks angepasst
-                partSize = (fileSize - connection.getContentLength()) / (getChunkNum() - 1);
+                partSize = (fileSize - connection.getLongContentLength()) / (getChunkNum() - 1);
             }
 
         }

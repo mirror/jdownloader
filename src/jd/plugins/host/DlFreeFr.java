@@ -30,7 +30,7 @@ public class DlFreeFr extends PluginForHost {
         URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
         if (con.isContentDisposition()) {
             downloadLink.setFinalFileName(Plugin.getFileNameFormHeader(con));
-            downloadLink.setDownloadSize(con.getContentLength());
+            downloadLink.setDownloadSize(con.getLongContentLength());
             con.disconnect();
             return true;
         } else {

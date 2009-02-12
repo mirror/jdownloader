@@ -82,7 +82,7 @@ public class Main {
                     URLConnectionAdapter httpConnection;
                     httpConnection = br.openGetConnection(path);
 
-                    if (httpConnection.getContentLength() == -1 || httpConnection.getContentLength() == 0) {
+                    if (httpConnection.getLongContentLength() == -1 || httpConnection.getLongContentLength() == 0) {
 
                     return "Could not download captcha image";
 

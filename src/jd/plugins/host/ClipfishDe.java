@@ -45,7 +45,7 @@ public class ClipfishDe extends PluginForHost {
         try {
             URLConnectionAdapter urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
             if (!urlConnection.isOK()) return false;
-            downloadLink.setDownloadSize(urlConnection.getContentLength());
+            downloadLink.setDownloadSize(urlConnection.getLongContentLength());
             return true;
         } catch (IOException e) {
             logger.severe(e.getMessage());
@@ -82,7 +82,7 @@ public class ClipfishDe extends PluginForHost {
         dl.setChunkNum(1);
         dl.setResume(false);
         urlConnection = dl.connect();
-        if (urlConnection.getContentLength() == 0) {
+        if (urlConnection.getLongContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }

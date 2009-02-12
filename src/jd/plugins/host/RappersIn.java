@@ -47,7 +47,7 @@ public class RappersIn extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         URLConnectionAdapter urlConnection = br.openGetConnection(getDownloadUrl(downloadLink));
         if (!urlConnection.isOK()) return false;
-        downloadLink.setDownloadSize(urlConnection.getContentLength());
+        downloadLink.setDownloadSize(urlConnection.getLongContentLength());
         return true;
     }
 
@@ -76,7 +76,7 @@ public class RappersIn extends PluginForHost {
         }
         URLConnectionAdapter urlConnection = br.openGetConnection(getDownloadUrl(downloadLink));
 
-        if (urlConnection.getContentLength() == 0) {
+        if (urlConnection.getLongContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }

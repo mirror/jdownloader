@@ -146,7 +146,7 @@ public class MySpaceCom extends PluginForDecrypt {
             String link = dUrls[i];
             DownloadLink dl_link = createDownloadlink("myspace://" + link);
             URLConnectionAdapter c = br.openGetConnection(link);
-            long lng = c.getContentLength();
+            long lng = c.getLongContentLength();
             c.disconnect();
             if (getPluginConfig().getBooleanProperty(ENABLE_SUBFOLDERS1)) {
                 if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false) == false) {
@@ -168,7 +168,7 @@ public class MySpaceCom extends PluginForDecrypt {
             link = link.replaceAll("std_", "full_");
 
             c = br.openGetConnection(link);
-            long lng2 = c.getContentLength();
+            long lng2 = c.getLongContentLength();
             c.disconnect();
             if (lng2 > lng) {
                 dl_link = createDownloadlink("myspace://" + link);

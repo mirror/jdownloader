@@ -58,7 +58,7 @@ public class SpiegelDe extends PluginForHost {
             urlConnection.disconnect();
             return false;
         }
-        downloadLink.setDownloadSize(urlConnection.getContentLength());
+        downloadLink.setDownloadSize(urlConnection.getLongContentLength());
         urlConnection.disconnect();
         return true;
     }
@@ -84,7 +84,7 @@ public class SpiegelDe extends PluginForHost {
         dl.setChunkNum(1);
         dl.setResume(false);
         URLConnectionAdapter urlConnection = dl.connect();
-        if (urlConnection.getContentLength() == 0) {
+        if (urlConnection.getLongContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }

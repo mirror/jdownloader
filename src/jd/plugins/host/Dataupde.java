@@ -86,7 +86,7 @@ public class Dataupde extends PluginForHost {
         dl.setResume(false);
         URLConnectionAdapter urlConnection = dl.connect(br);
         /* Datei herunterladen */
-        if (urlConnection.getContentLength() == 0) {
+        if (urlConnection.getLongContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
             return;

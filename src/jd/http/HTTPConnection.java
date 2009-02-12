@@ -37,8 +37,6 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
 
     public static final int HTTP_NOT_IMPLEMENTED = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
 
-
-
     protected HashMap<String, List<String>> requestProperties = null;
     protected long[] ranges;
     protected boolean connectionnEstabilished = false;
@@ -48,7 +46,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
     private Request request;
 
     public boolean isConnected() {
-        
+
         return connectionnEstabilished;
     }
 
@@ -64,7 +62,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
             Entry<String, List<String>> next = set.next();
             requestProperties.put(next.getKey(), next.getValue());
         }
-     
+
     }
 
     /**
@@ -84,15 +82,12 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
 
     public long getLongContentLength() {
         if (getHeaderField("content-length") == null) { return -1; }
-
         return Long.parseLong(getHeaderField("content-length"));
-
     }
 
     public int getContentLength() {
-
+        if (getHeaderField("content-length") == null) { return -1; }
         return Integer.parseInt(getHeaderField("content-length"));
-
     }
 
     public String getContentType() {
@@ -100,8 +95,6 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
         if (type == null) return "unknown";
         return type;
     }
-
-
 
     public InputStream getInputStream() throws IOException {
 
@@ -113,49 +106,47 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
         }
     }
 
- 
-
     public Map<String, List<String>> getRequestProperties() {
-    
+
         return requestProperties;
 
     }
 
-//    public void post(byte[] parameter) throws IOException {
-//        BufferedOutputStream wr = new BufferedOutputStream(getOutputStream());
-//        if (parameter != null) {
-//            wr.write(parameter);
-//        }
-//
-//        postData = "binary";
-//        wr.flush();
-//        wr.close();
-//
-//    }
+    // public void post(byte[] parameter) throws IOException {
+    // BufferedOutputStream wr = new BufferedOutputStream(getOutputStream());
+    // if (parameter != null) {
+    // wr.write(parameter);
+    // }
+    //
+    // postData = "binary";
+    // wr.flush();
+    // wr.close();
+    //
+    // }
 
-//    public void post(String parameter) throws IOException {
-//        OutputStreamWriter wr = new OutputStreamWriter(getOutputStream());
-//        if (parameter != null) {
-//            wr.write(parameter);
-//        }
-//
-//        postData = parameter;
-//        wr.flush();
-//        wr.close();
-//
-//    }
+    // public void post(String parameter) throws IOException {
+    // OutputStreamWriter wr = new OutputStreamWriter(getOutputStream());
+    // if (parameter != null) {
+    // wr.write(parameter);
+    // }
+    //
+    // postData = parameter;
+    // wr.flush();
+    // wr.close();
+    //
+    // }
 
-//    public void postGzip(String parameter) throws IOException {
-//
-//        OutputStreamWriter wr = new OutputStreamWriter(getOutputStream());
-//        if (parameter != null) {
-//            wr.write(parameter);
-//        }
-//        postData = parameter;
-//        wr.flush();
-//        wr.close();
-//
-//    }
+    // public void postGzip(String parameter) throws IOException {
+    //
+    // OutputStreamWriter wr = new OutputStreamWriter(getOutputStream());
+    // if (parameter != null) {
+    // wr.write(parameter);
+    // }
+    // postData = parameter;
+    // wr.flush();
+    // wr.close();
+    //
+    // }
 
     public void setRequestProperty(String key, String value) {
         LinkedList<String> l = new LinkedList<String>();
@@ -198,7 +189,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
     public void disconnect() {
         if (isConnected()) {
             super.disconnect();
-            this.connectionnEstabilished=false;
+            this.connectionnEstabilished = false;
         }
 
     }
@@ -207,13 +198,9 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
 
         StringBuilder sb = new StringBuilder();
         sb.append("-->" + this.getURL() + "\r\n");
-  
-   
- 
+
         sb.append("----------------Request------------------\r\n");
-        
-        
-        
+
         sb.append(getRequestMethod() + " " + getURL().getPath() + (getURL().getQuery() != null ? "?" + getURL().getQuery() : "") + " HTTP/1.1\r\n");
         sb.append("Host: " + getURL().getHost() + (":" + getURL().getPort()) + "\r\n");
         for (Iterator<Entry<String, List<String>>> it = this.getRequestProperties().entrySet().iterator(); it.hasNext();) {
@@ -232,18 +219,18 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
         }
         sb.append(new char[] { '\r', '\n' });
 
-        if(this.getRequest()!=null){
-            if(getRequest() instanceof PostRequest){
-                sb.append(((PostRequest)getRequest()).getPostDataString());
+        if (this.getRequest() != null) {
+            if (getRequest() instanceof PostRequest) {
+                sb.append(((PostRequest) getRequest()).getPostDataString());
                 sb.append(new char[] { '\r', '\n' });
-                
-            }else if(getRequest() instanceof PostFormDataRequest){
-                sb.append(((PostFormDataRequest)getRequest()).getPostDataString());
+
+            } else if (getRequest() instanceof PostFormDataRequest) {
+                sb.append(((PostFormDataRequest) getRequest()).getPostDataString());
                 sb.append(new char[] { '\r', '\n' });
             }
-            
+
         }
-      
+
         sb.append("----------------Response------------------\r\n");
 
         for (Iterator<Entry<String, List<String>>> it = getHeaderFields().entrySet().iterator(); it.hasNext();) {
@@ -268,16 +255,12 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
     }
 
     public void setRequest(Request request) {
-       this.request=request;
-        
+        this.request = request;
+
     }
 
     public Request getRequest() {
         return request;
     }
-    
-    
-    
-    
-    
+
 }

@@ -146,7 +146,7 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
             this.connection = con;
 
             long[] range = this.connection.getRange();
-            System.out.println("CL "+con.getContentLength()+"- "+(range[1]-range[0]));
+            System.out.println("CL "+con.getLongContentLength()+"- "+(range[1]-range[0]));
             if (range[0] != this.getChunkStart()) { throw new BrowserException(JDLocale.L("exceptions.browserexception.rangeerror", "Chunkload error"), BrowserException.TYPE_RANGE);
 
             }

@@ -101,7 +101,7 @@ public class Serienjunkies extends PluginForHost {
                         con = capbr.openGetConnection(captchaAdress);
 
                     }
-                    if (con.getContentLength() < 1000) {
+                    if (con.getLongContentLength() < 1000) {
                         logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
                         downloadLink.getLinkStatus().setStatusText("Reconnect required");
                         downloadLink.requestGuiUpdate();
