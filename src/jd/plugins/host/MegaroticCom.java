@@ -137,13 +137,8 @@ public class MegaroticCom extends PluginForHost {
         br.getPage(dlUrl);
         handlePw(downloadLink);
         if (br.getRedirectLocation() == null) {
-            String[] tmp = br.getRegex(SIMPLEPATTERN_GEN_DOWNLOADLINK).getRow(0);
-            if (tmp == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-            Character l = (char) Math.abs(Integer.parseInt(tmp[1].trim()));
-            String i = tmp[4] + (char) Math.sqrt(Integer.parseInt(tmp[5].trim()));
-            tmp = br.getRegex(SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK).getRow(0);
-            if (tmp == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-            dlUrl = Encoding.htmlDecode(tmp[3] + i + l + tmp[5]);
+            dlUrl = br.getRegex("getElementById\\(\"downloadhtml\"\\)\\.innerHTML.*?href=\"(.*?)\" style").getMatch(0);
+            if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         br.setFollowRedirects(true);
         dlUrl = dlUrl.replaceFirst("megarotic\\.com/", "megarotic\\.com:" + usePort() + "/");

@@ -74,10 +74,6 @@ public class HDWriter extends Thread {
         channel.position(position);
 
         System.out.println("Write " + position + "-" + (position + buffer.limit()) + " :  " + buffer.limit());
-if(92330246==(position + buffer.limit())){
-    
-int a=3;
-}
         channel.write(buffer);
         
         // benachrichtige gib chunkwarteplatz wieder frei

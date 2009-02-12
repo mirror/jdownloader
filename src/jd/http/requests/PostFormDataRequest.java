@@ -28,8 +28,6 @@ import java.util.ArrayList;
 
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Form;
-import jd.parser.Regex;
 
 /**
  * Extending the Request calss, this class is able to to HTML Formdata Posts.
@@ -161,8 +159,7 @@ File file = new File("G:\\pluginressourcen\\JDLowSpeed_2009-02-11_v3 (LIGHT).jdu
             r.connect();
             System.out.println(r.getHttpConnection());
             String code = r.read();
-            System.out.println(code);
-            String[] lines = Regex.getLines(code);
+            System.out.println(code);            
      
         } catch (Exception e) {
             e.printStackTrace();

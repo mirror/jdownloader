@@ -50,6 +50,10 @@ public class Email {
         this.senderName = name;
     }
 
+    public String getSenderName() {
+        return this.senderName;
+    }
+
     public void sendEmail(String email, String name, String subject, String message) throws MessagingException {
         Properties props = new Properties();
         props.put("mail.smtp.host", host);
