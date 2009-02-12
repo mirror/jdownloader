@@ -47,18 +47,19 @@ public class EinsKhDe extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        Form[] forms = br.getForms();
         if (Regex.matches(parameter, patternSupported_File)) {
             /* Einzelne Datei */
-
             String[] links = br.getRegex("<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getColumn(0);
             progress.setRange(links.length);
 
             for (String element : links) {
-                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(element)));
+                br.getPage(Encoding.htmlDecode(element));
+                String link = br.getRegex("<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getMatch(0);
+                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
                 progress.increase(1);
             }
         } else {
+            Form[] forms = br.getForms();
             /* ganzer Ordner */
             boolean valid = true;
             if (forms != null && forms.length > 0 && forms[0].getVars().containsKey("Password")) {
