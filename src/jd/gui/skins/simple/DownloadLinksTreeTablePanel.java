@@ -37,7 +37,7 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
     public DownloadLinksTreeTablePanel(SimpleGUI parent) {
         super(parent, new BorderLayout());
-        setVisible(false);        
+        setVisible(false);
         internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(this));
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
         scrollPane.setPreferredSize(new Dimension(800, 450));
@@ -72,14 +72,6 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
         }
         JDUtilities.getController().removeDownloadLinks(links);
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
-    }
-
-    public void collapseAll() {
-        internalTreeTable.collapseAll();
-    }
-
-    public void expandAll() {
-        internalTreeTable.expandAll();
     }
 
 }

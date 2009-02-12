@@ -30,11 +30,8 @@ import jd.http.Encoding;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 
-/**
- * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern
- * werte einzusetzen
- */
 public class JDTheme {
+
     private static HashMap<String, String> data = new HashMap<String, String>();
 
     private static HashMap<String, String> defaultData;
@@ -43,21 +40,9 @@ public class JDTheme {
 
     private static String THEME_DIR = "jd/themes/";
 
-    // private static File themeFile; ;
-
-    /**
-     * Gibt eine Farbe zum key zurück
-     * 
-     * @param key
-     * @return
-     */
-    public static Color C(String key, String def) {
-        return new Color(Integer.parseInt(JDTheme.V(key, def), 16));
-    }
-
     public static Vector<String> getThemeIDs() {
         File dir = JDUtilities.getResourceFile(THEME_DIR);
-        if (!dir.exists()) { return null; }
+        if (!dir.exists()) return null;
         File[] files = dir.listFiles(new JDFileFilter(null, ".thm", false));
         Vector<String> ret = new Vector<String>();
         for (File element : files) {
@@ -67,26 +52,33 @@ public class JDTheme {
     }
 
     public static String getThemeValue(String key, String def) {
-        if (data == null||defaultData==null) {
+        if (data == null || defaultData == null) {
             logger.severe("Use setTheme() first!");
             setTheme("default");
-            
         }
 
-        if (data.containsKey(key)) { return Encoding.UTF8Decode(data.get(key)); }
-//        logger.info("Key not found: " + key + " (" + def + ")");
+        if (data.containsKey(key)) return Encoding.UTF8Decode(data.get(key));
+        // logger.info("Key not found: " + key + " (" + def + ")");
 
         if (defaultData.containsKey(key)) {
             def = Encoding.UTF8Decode(defaultData.get(key));
-//            logger.finer("Use default Value: " + def);
+            // logger.finer("Use default Value: " + def);
         }
-        if (def == null) {
-            def = key;
-        }
+        if (def == null) def = key;
         data.put(key, def);
 
         return def;
 
+    }
+
+    /**
+     * Gibt eine Farbe zum key zurück
+     * 
+     * @param key
+     * @return
+     */
+    public static Color C(String key, String def) {
+        return new Color(Integer.parseInt(JDTheme.V(key, def), 16));
     }
 
     /**
@@ -133,19 +125,9 @@ public class JDTheme {
         return new ImageIcon(JDUtilities.getImage(JDTheme.V(key)).getScaledInstance(width, height, Image.SCALE_SMOOTH));
     }
 
-    /*
-     * private static void saveData() { Iterator<Entry<String, String>>
-     * iterator; if (data == null) return; iterator =
-     * data.entrySet().iterator(); // stellt die Wartezeiten zurück Entry<String,
-     * String> i; String str = ""; Vector<String> ret = new Vector<String>();
-     * while (iterator.hasNext()) { i = iterator.next(); ret.add(i.getKey() + " = " +
-     * i.getValue()); } Collections.sort(ret); for (int x = 0; x < ret.size();
-     * x++) str += ret.get(x) + System.getProperty("line.separator");
-     * JDUtilities.writeLocalFile(themeFile, str); }
-     */
     public static void setTheme(String themeID) {
         File file = JDUtilities.getResourceFile(THEME_DIR + themeID + ".thm");
-        // themeFile = file;
+
         if (!file.exists()) {
             logger.severe("Theme " + themeID + " not installed");
             return;
