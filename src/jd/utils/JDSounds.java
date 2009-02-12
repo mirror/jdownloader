@@ -25,8 +25,8 @@ import java.util.logging.Logger;
 
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.advanced.AdvancedPlayer;
-import jd.JDFileFilter;
 import jd.http.Encoding;
+import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 

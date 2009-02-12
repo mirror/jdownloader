@@ -33,7 +33,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 
-import jd.JDFileFilter;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.DistributeData;
@@ -42,6 +41,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
+import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginOptional;

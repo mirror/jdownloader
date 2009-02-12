@@ -59,7 +59,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.AbstractTableModel;
 
-import jd.JDFileFilter;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -71,6 +70,7 @@ import jd.gui.skins.simple.components.ChartAPI_Entity;
 import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
 import jd.parser.Regex;
@@ -145,7 +145,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
     public LangFileEditor(PluginWrapper wrapper) {
         super(wrapper);
-        subConfig = JDUtilities.getSubConfig("ADDONS_LANGFILEEDITOR");        
+        subConfig = JDUtilities.getSubConfig("ADDONS_LANGFILEEDITOR");
     }
 
     private void showGui() {

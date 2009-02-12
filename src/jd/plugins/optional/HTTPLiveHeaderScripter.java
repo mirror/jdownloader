@@ -57,7 +57,6 @@ import javax.swing.event.DocumentListener;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jd.JDFileFilter;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.reconnect.HTTPLiveHeader;
@@ -66,6 +65,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
+import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;

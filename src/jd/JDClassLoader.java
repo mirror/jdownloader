@@ -31,6 +31,7 @@ import java.util.jar.JarFile;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 
+import jd.nutils.io.JDFileFilter;
 import jd.utils.JDUtilities;
 
 /**

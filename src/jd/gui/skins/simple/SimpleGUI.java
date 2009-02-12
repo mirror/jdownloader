@@ -80,7 +80,6 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
 import jd.HostPluginWrapper;
-import jd.JDFileFilter;
 import jd.JDInit;
 import jd.OptionalPluginWrapper;
 import jd.config.ConfigContainer;
@@ -114,6 +113,7 @@ import jd.gui.skins.simple.config.ConfigPanelPluginForHost;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.gui.skins.simple.config.FengShuiConfigPanel;
+import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;

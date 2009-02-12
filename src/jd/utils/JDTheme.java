@@ -25,8 +25,8 @@ import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
 
-import jd.JDFileFilter;
 import jd.http.Encoding;
+import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 

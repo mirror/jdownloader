@@ -7,12 +7,15 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Vector;
 
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
+import jd.gui.skins.simple.components.JDFileChooser;
+import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDTheme;
@@ -40,14 +43,17 @@ public class ThemeKeys extends JFrame {
 
     private final int themeFile = 1;
     private final Vector<String> themes = JDTheme.getThemeIDs();
-    private final File themesDir = JDUtilities.getResourceFile(JDTheme.THEME_DIR + themes.get(themeFile) + ".thm");
 
     private Vector<KeyInfo> themeData = new Vector<KeyInfo>();
 
     private JXTable table;
 
     public ThemeKeys() {
-        initThemeData(new File(sourceDir), themesDir);
+        File folder = new File(sourceDir);
+        if (!folder.exists()) folder = selectFolder();
+        if (folder == null) System.exit(0);
+
+        initThemeData(folder, JDUtilities.getResourceFile(JDTheme.THEME_DIR + themes.get(themeFile) + ".thm"));
 
         initGUI();
     }
@@ -163,6 +169,16 @@ public class ThemeKeys extends JFrame {
         }
 
         return files;
+    }
+
+    private File selectFolder() {
+        JDFileChooser fc = new JDFileChooser();
+        fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
+        fc.setMultiSelectionEnabled(false);
+        fc.setFileFilter(new JDFileFilter("Ordner der Java-Quelldateien", "", true));
+
+        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
+        return null;
     }
 
     private class KeyInfo implements Comparable<KeyInfo> {

@@ -74,7 +74,6 @@ import javax.swing.JFrame;
 import jd.CPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.JDClassLoader;
-import jd.JDFileFilter;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Captcha;
@@ -88,6 +87,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.Executer;
+import jd.nutils.io.JDFileFilter;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -105,7 +105,7 @@ public class JDUtilities {
     /**
      * Parametername fÃ¼r den Konfigpath
      */
-    public static final String CONFIG_PATH  = "jDownloader.config";
+    public static final String CONFIG_PATH = "jDownloader.config";
 
     /**
      * Die Konfiguration
@@ -1178,26 +1178,23 @@ public class JDUtilities {
     }
 
     public synchronized static SubConfiguration getSubConfig(String name) {
-        if(SUBCONFIG_LOCK){            
+        if (SUBCONFIG_LOCK) {
 
             new Exception("Static Database init error!!").printStackTrace();
         }
-        SUBCONFIG_LOCK = true;  
+        SUBCONFIG_LOCK = true;
         try {
-            
-          
-            if (subConfigs.containsKey(name)) {
-               return subConfigs.get(name);
-            }
-         
+
+            if (subConfigs.containsKey(name)) { return subConfigs.get(name); }
+
             SubConfiguration cfg = new SubConfiguration(name);
-           
+
             subConfigs.put(name, cfg);
             cfg.save();
             return cfg;
-         
+
         } finally {
-           SUBCONFIG_LOCK = false;
+            SUBCONFIG_LOCK = false;
         }
 
     }
@@ -1368,12 +1365,11 @@ public class JDUtilities {
 
     public synchronized static DatabaseConnector getDatabaseConnector() {
 
-    
-            if (dbconnect == null) {
-                dbconnect = new DatabaseConnector();
-            }
-            return dbconnect;
-      
+        if (dbconnect == null) {
+            dbconnect = new DatabaseConnector();
+        }
+        return dbconnect;
+
     }
 
     /**

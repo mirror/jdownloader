@@ -54,7 +54,6 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
 
-import jd.JDFileFilter;
 import jd.config.MenuItem;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -67,6 +66,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.HTMLTooltip;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;

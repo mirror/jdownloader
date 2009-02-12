@@ -24,9 +24,9 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Vector;
 
-import jd.JDFileFilter;
 import jd.http.Encoding;
 import jd.http.requests.PostRequest;
+import jd.nutils.io.JDFileFilter;
 import jd.parser.Regex;
 
 public class JDLocale {
