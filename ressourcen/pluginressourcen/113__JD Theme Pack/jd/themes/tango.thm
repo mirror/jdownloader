@@ -1,0 +1,48 @@
+# Tango Theme by eXecuTe
+
+gui.images.add = tango/add
+gui.images.ceson = tango/ces-on
+gui.images.cesoff = tango/ces-off
+gui.images.clipboard = tango/clipboard
+gui.images.clipboardon = tango/clipboard-on
+gui.images.clipboardoff = tango/clipboard-off
+
+gui.images.config.home = tango/configuration
+gui.images.config.network_local = tango/network
+gui.images.config.gui = tango/gui
+gui.images.config.reconnect = tango/reconnect
+gui.images.config.unrar = tango/unpack
+gui.images.config.host = tango/host
+gui.images.config.decrypt = tango/decrypt
+gui.images.config.ocr = tango/captcha
+gui.images.config.infoFile = tango/log
+gui.images.config.eventmanager = tango/events
+gui.images.config.addons = tango/addons
+gui.images.config.container = tango/container
+gui.images.config.updater = tango/update
+gui.images.config.packagemanager = tango/packages
+gui.images.config.tip = tango/links
+
+gui.images.configuration = tango/configuration
+gui.images.delete = tango/remove
+gui.images.find = tango/search
+gui.images.load = tango/open
+gui.images.next = tango/start
+gui.images.reconnect = tango/reconnect
+gui.images.reconnect_bad = tango/reconnect-off
+gui.images.reconnect_ok = tango/reconnect-on
+gui.images.save = tango/save
+gui.images.stop = tango/stop
+gui.images.stop_after = tango/stop-after
+gui.images.stop_after_active = tango/stop-after
+gui.images.terminal = tango/log
+gui.images.update_manager = tango/update
+gui.images.help = tango/help
+gui.images.led_empty = tango/led-off
+gui.images.led_green = tango/led-on
+gui.images.top = tango/move-up
+gui.images.go_bottom = tango/move-bottom
+gui.images.go_top = tango/move-top
+gui.images.down = tango/move-down
+
+gui.images.jd_logo = jd_logo

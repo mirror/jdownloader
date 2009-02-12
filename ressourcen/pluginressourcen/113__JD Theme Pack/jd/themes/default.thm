@@ -1,48 +1,93 @@
-# Tango Theme by eXecuTe
+#Default Theme by Coalado
+gui.images.add = default/add
+gui.images.clipboard = default/clipboard
+gui.images.clipboardon = default/clipboardon
+gui.images.clipboardoff = default/clipboardoff
+gui.images.ceson = default/ceson
+gui.images.cesoff = default/cesoff
 
-gui.images.add = tango/add
-gui.images.ceson = tango/ces-on
-gui.images.cesoff = tango/ces-off
-gui.images.clipboard = tango/clipboard
-gui.images.clipboardon = tango/clipboard-on
-gui.images.clipboardoff = tango/clipboard-off
+gui.images.config.container = default/database
+gui.images.config.addons = default/tool
+gui.images.config.find = default/find
+gui.images.config.home = default/home
+gui.images.config.infoFile = default/attach
+gui.images.config.network_local = default/network_local
+gui.images.config.ocr = default/charset
+gui.images.config.unrar = default/package
+gui.images.config.packagemanager = default/run
+gui.images.config.eventmanager = default/chronometer
+gui.images.config.tip = default/help_hint
+gui.images.config.updater=default/update_manager
+gui.images.config.gui=default/style
+gui.images.config.reconnect=default/clear_time
+gui.images.config.host=default/host
+gui.images.config.decrypt=default/decrypted
 
-gui.images.config.home = tango/configuration
-gui.images.config.network_local = tango/network
-gui.images.config.gui = tango/gui
-gui.images.config.reconnect = tango/reconnect
-gui.images.config.unrar = tango/unpack
-gui.images.config.host = tango/host
-gui.images.config.decrypt = tango/decrypt
-gui.images.config.ocr = tango/captcha
-gui.images.config.infoFile = tango/log
-gui.images.config.eventmanager = tango/events
-gui.images.config.addons = tango/addons
-gui.images.config.container = tango/container
-gui.images.config.updater = tango/update
-gui.images.config.packagemanager = tango/packages
-gui.images.config.tip = tango/links
 
-gui.images.configuration = tango/configuration
-gui.images.delete = tango/remove
-gui.images.find = tango/search
-gui.images.load = tango/open
-gui.images.next = tango/start
-gui.images.reconnect = tango/reconnect
-gui.images.reconnect_bad = tango/reconnect-off
-gui.images.reconnect_ok = tango/reconnect-on
-gui.images.save = tango/save
-gui.images.stop = tango/stop
-gui.images.stop_after = tango/stop-after
-gui.images.stop_after_active = tango/stop-after
-gui.images.terminal = tango/log
-gui.images.update_manager = tango/update
-gui.images.help = tango/help
-gui.images.led_empty = tango/led-off
-gui.images.led_green = tango/led-on
-gui.images.top = tango/move-up
-gui.images.go_bottom = tango/move-bottom
-gui.images.go_top = tango/move-top
-gui.images.down = tango/move-down
 
+gui.images.configuration = default/configuration
+gui.images.delete = default/delete
+gui.images.down = default/down
+gui.images.exit = default/exit
+gui.images.find = default/find
+gui.images.go_bottom = default/go_bottom
+gui.images.go_top = default/go_top
 gui.images.jd_logo = jd_logo
+gui.images.led_empty = led_empty
+gui.images.led_green = led_green
+gui.images.load = default/load
+gui.images.next = default/next
+gui.images.reconnect = default/reconnect
+gui.images.reconnect_bad = default/reconnect_bad
+gui.images.reconnect_ok = default/reconnect_ok
+gui.images.save = default/save
+gui.images.stop = default/stop
+gui.images.stop_after = default/stop_after
+gui.images.stop_after_active = default/stop_after_active
+gui.images.terminal = default/terminal
+gui.images.top = default/top
+gui.images.update_manager = default/update_manager
+
+gui.images.help=default/help
+gui.images.package_opened = default/package_opened
+gui.images.package_closed = default/package_closed
+gui.images.link=default/link
+gui.images.selected=default/checked
+gui.images.unselected=default/unchecked
+gui.images.warning=default/dialog_warning
+
+
+gui.icons.copy=default/editcopy
+gui.icons.cut=default/editcut
+gui.icons.paste=default/editpaste
+gui.icons.select_all=default/edit_select_all
+gui.icons.delete=default/editdelete
+gui.color.downloadlist.font = 000000
+
+gui.color.downloadlist.row_a = EEEEEE
+gui.color.downloadlist.row_b = FFFFFF
+gui.color.downloadlist.row_selected = 7a98b9
+gui.color.downloadlist.row_selected_border = 7a98b9
+gui.color.downloadlist.row_package = AAAAAA
+gui.color.downloadlist.row_link_done = 7cd622
+gui.color.downloadlist.row_link_error = a40604
+gui.color.downloadlist.row_link_disabled = BBBBBB
+gui.color.downloadlist.grid = FFFFFF
+
+gui.color.downloadlist.package_progress = 94baff
+gui.color.downloadlist.progress_error = a40604
+gui.color.downloadlist.progress_done = 7cd622
+gui.color.downloadlist.progress_inactive = BBBBBB
+gui.color.downloadlist.progress_active = 94baff
+
+gui.color.downloadlist.package_progress_font_a = 000000
+gui.color.downloadlist.progress_error_font_a = 000000
+gui.color.downloadlist.progress_done_font_a = 000000
+gui.color.downloadlist.progress_inactive_font_a = 000000
+gui.color.downloadlist.progress_active_font_a = 000000
+
+gui.color.downloadlist.package_progress_font_b = 000000
+gui.color.downloadlist.progress_error_font_b = 000000
+gui.color.downloadlist.progress_done_font_b = 000000
+gui.color.downloadlist.progress_inactive_font_b = 000000
+gui.color.downloadlist.progress_active_font_b = 000000
