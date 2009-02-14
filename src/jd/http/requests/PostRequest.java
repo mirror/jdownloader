@@ -66,6 +66,7 @@ public class PostRequest extends Request {
                 }
             }
         }
+        if(buffer.length()==0)return "";
         return buffer.toString().substring(1);
     }
 
