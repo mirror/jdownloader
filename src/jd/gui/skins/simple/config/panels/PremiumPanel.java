@@ -41,6 +41,7 @@ import javax.swing.JTextField;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import jd.config.Configuration;
 import jd.gui.skins.simple.components.ChartAPI_Entity;
 import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -60,6 +61,8 @@ public class PremiumPanel extends JPanel {
 
     private static final Color ACTIVE = new Color(0x7cd622);
     private static final Color INACTIVE = new Color(0xa40604);
+    private static final Color DISABLED = new Color(0xaff0000);
+    private static boolean premiumActivated = true;
 
     private PluginForHost host;
     private int accountNum;
@@ -71,6 +74,7 @@ public class PremiumPanel extends JPanel {
         host = (PluginForHost) gce.getConfigEntry().getActionListener();
         accountNum = gce.getConfigEntry().getEnd();
         setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
+        premiumActivated = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
         createPanel();
     }
 
@@ -176,9 +180,14 @@ public class PremiumPanel extends JPanel {
         }
 
         public void createPanel(JPanel panel, int nr) {
-            panel.add(chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr)), "alignleft");
-            chkEnable.setForeground(INACTIVE);
-            chkEnable.setSelected(true);
+            if (premiumActivated) {
+                chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
+                chkEnable.setForeground(INACTIVE);
+            } else {
+                chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.globaldeactiv", "<html><b>Global deactivated</b></html>", nr));
+                chkEnable.setForeground(DISABLED);
+            }
+            panel.add(chkEnable, "alignleft");
             chkEnable.addChangeListener(this);
 
             panel.add(btnCheck = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")), "w pref:pref:pref, split 2");
@@ -204,7 +213,11 @@ public class PremiumPanel extends JPanel {
 
         public void stateChanged(ChangeEvent e) {
             boolean sel = chkEnable.isSelected();
-            chkEnable.setForeground((sel) ? ACTIVE : INACTIVE);
+            if (premiumActivated) {
+                chkEnable.setForeground((sel) ? ACTIVE : INACTIVE);
+            } else {
+                chkEnable.setForeground(DISABLED);
+            }
             txtPassword.setEnabled(sel);
             txtUsername.setEnabled(sel);
             txtStatus.setEnabled(sel);
