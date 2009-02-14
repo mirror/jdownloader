@@ -24,8 +24,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.regex.Pattern;
 
-import javax.imageio.ImageIO;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -36,8 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 public class Odsiebiecom extends PluginForHost {
-    private String captchaCode;
-    private File captchaFile;
+
     private String downloadurl;
 
     public Odsiebiecom(PluginWrapper wrapper) {
@@ -83,7 +80,7 @@ public class Odsiebiecom extends PluginForHost {
          * Zuerst schaun ob wir nen Button haben oder direkt das File vorhanden
          * ist
          */
-        captchaCode = null;
+
         String steplink = br.getRegex("<a class=\".*?\" href=\"/pobierz/(.*?)\">Pobierz plik</a>").getMatch(0);
         if (steplink == null) {
             /* Kein Button, also muss der Link irgendwo auf der Page sein */
@@ -108,24 +105,16 @@ public class Odsiebiecom extends PluginForHost {
                 downloadurl = br.getRedirectLocation();
                 br.getPage(downloadurl);
             }
-            Form capform = br.getFormbyProperty("name","wer");
+            Form capform = br.getFormbyProperty("name", "wer");
             if (capform != null) {
-                /* Captcha File holen */
-                BufferedImage image = getCSSCaptchaImage(capform.getHtmlCode());
-
-                captchaFile = getLocalCaptchaFile(this);
-                captchaFile.mkdirs();
-                ImageIO.write(image, "png", captchaFile);
-
-                /* CaptchaCode holen */
-                captchaCode = Plugin.getCaptchaCode(this, "CCSCaptchaOdsiebie", captchaFile, false, downloadLink);
-
-                capform.setVariable(0, captchaCode);
-                /* Überprüfen(Captcha,Password) */
-                downloadurl = "http://odsiebie.com/pobierz/" + steplink + "?captcha=" + captchaCode;
-                br.getPage(downloadurl);
-                if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("html?err")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+                String adr = capform.getRegex("<img src=\"(.*?)\">").getMatch(0);
+                File file = br.getDownloadTemp(adr);
+                String code = Plugin.getCaptchaCode(file, this, downloadLink);
+                capform.getInputFieldByName("captcha").setValue(code);
+                br.setFollowRedirects(true);
+                br.submitForm(capform);
             }
+            br.setFollowRedirects(false);
             /* DownloadLink suchen */
             steplink = br.getRegex("<a href=\"/download/(.*?)\"").getMatch(0);
             if (steplink == null) { throw new PluginException(LinkStatus.ERROR_RETRY); }
@@ -149,48 +138,6 @@ public class Odsiebiecom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Server Error");
         }
         dl.startDownload();
-    }
-
-    private BufferedImage getCSSCaptchaImage(String htmlCode) {
-        String[] letters = htmlCode.split("<div.*?class=");
-
-        int[][] grid = null;
-        Color[] cols = new Color[] { Color.BLUE.darker(), Color.GREEN.darker(), Color.MAGENTA.darker(), Color.DARK_GRAY, Color.RED.darker(), Color.RED, Color.RED };
-        String comp = null;
-        for (int i = 0; i < letters.length; i++) {
-            String[] lines = new Regex(letters[i], "<div.*?</div").getColumn(-1);
-            for (int y = 0; y < lines.length; y++) {
-                String[] pixel = new Regex(lines[y], "<span.*?</span").getColumn(-1);
-                if (grid == null) grid = new int[(letters.length - 1) * (pixel.length + 10)][lines.length];
-                int offset = (i - 1) * (pixel.length + 5);
-                for (int x = 0; x < pixel.length; x++) {
-                    if (comp == null) comp = pixel[x];
-                    grid[x + offset][y] = pixel[x].length() > 30 ? cols[i].getRGB() : 0xffffff;
-                }
-
-            }
-
-        }
-        int width = grid.length;
-        int height = grid[0].length;
-        int faktor = 4;
-        BufferedImage image = new BufferedImage(width * faktor, height * faktor, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g2 = image.createGraphics();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setStroke(new BasicStroke(8));
-        g2.setBackground(Color.WHITE);
-        g2.clearRect(0, 0, width, height);
-        g2.setColor(Color.BLACK);
-
-        for (int y = 0; y < height * faktor; y += faktor) {
-            for (int x = 0; x < width * faktor; x += faktor) {
-                int col = grid[x / faktor][y / faktor];
-                if (col == 0) col = 0xffffff;
-                g2.setColor(new Color(col));
-                g2.fillRect(x, y, faktor, faktor);
-            }
-        }
-        return image;
     }
 
     @Override

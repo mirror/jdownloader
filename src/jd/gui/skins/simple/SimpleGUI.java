@@ -965,7 +965,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(createMenuButton(actionUpdate));
         if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_SHOW_SPEEDMETER, true)) {
             speedmeter = new SpeedMeterPanel();
-            if (!UIManager.getLookAndFeel().getName().equals("Nimbus")) {
+            if (!UIManager.getLookAndFeel().getName().equals("Nimbus")&&!UIManager.getLookAndFeel().getName().equals("gtk")) {
                 toolBar.add(Box.createGlue());
             }
             // toolBar.add(Box.createGlue());

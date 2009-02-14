@@ -264,6 +264,7 @@ public class Browser {
     private boolean snifferDetection = false;
     private boolean cookiesExclusive = true;
     private JDProxy proxy;
+    private static int TEMP_INDEX = 0;
     private static final Authenticator AUTHENTICATOR = new Authenticator() {
         protected PasswordAuthentication getPasswordAuthentication() {
             Browser br = Browser.getAssignedBrowserInstance(this.getRequestingURL());
@@ -1394,6 +1395,20 @@ public class Browser {
         CookieHandler.setDefault(null);
         XTrustProvider.install();
 
+    }
+
+    /**
+     * Downloads a get connection to a temfile and returns this tempfile
+     * 
+     * @param adr
+     * @return
+     * @throws IOException
+     */
+    public File getDownloadTemp(String adr) throws IOException {
+        File file = JDUtilities.getResourceFile("tmp/" + System.currentTimeMillis() + "_" + (TEMP_INDEX++) + ".tmp");
+        file.deleteOnExit();
+        download(file, openRequestConnection(createGetRequest(adr)));
+        return file;
     }
 
 }
