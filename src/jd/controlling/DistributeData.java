@@ -30,7 +30,7 @@ import jd.http.Encoding;
 import jd.http.HTMLEntities;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
-import jd.parser.HTMLParser;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;

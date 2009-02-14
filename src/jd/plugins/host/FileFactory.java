@@ -26,8 +26,8 @@ import jd.config.Configuration;
 import jd.controlling.reconnect.Reconnecter;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -270,7 +270,7 @@ public class FileFactory extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage("http://filefactory.com");
 
-        Form login = br.getFormbyValue("Log in");
+        Form login = br.getFormBySubmitvalue("Log in");
         login.put("email", account.getUser());
         login.put("password", account.getPass());
         br.submitForm(login);

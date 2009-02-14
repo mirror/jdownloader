@@ -26,7 +26,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.ClickPositionDialog;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Form;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;

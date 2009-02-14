@@ -20,7 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Form;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -37,7 +37,7 @@ public class JokeAroundOrg extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         Form form = br.getForm(0);
-        form.action = br.getRegex("action=\"(.*?)\"").getMatch(0);
+        form.setAction(br.getRegex("action=\"(.*?)\"").getMatch(0));
         br.submitForm(form);
         decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
         return decryptedLinks;

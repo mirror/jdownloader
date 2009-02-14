@@ -27,9 +27,9 @@ import java.util.Locale;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.parser.Form;
-import jd.parser.HTMLParser;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -180,10 +180,10 @@ public class MegasharesCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private boolean checkPassword(DownloadLink link) throws IOException, PluginException, InterruptedException {
+    private boolean checkPassword(DownloadLink link) throws Exception {
 
         if (br.containsHTML("This link requires a password")) {
-            Form form = br.getFormbyValue("Validate Password");
+            Form form = br.getFormBySubmitvalue("Validate Password");
             String pass = link.getStringProperty("password");
             if (pass != null) {
                 form.put("passText", pass);

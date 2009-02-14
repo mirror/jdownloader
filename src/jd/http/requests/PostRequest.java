@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.http.URLConnectionAdapter;
-import jd.parser.Form;
+import jd.parser.html.Form;
 
 public class PostRequest extends Request {
     private HashMap<String, String> postData = new HashMap<String, String>();

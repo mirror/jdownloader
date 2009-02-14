@@ -263,4 +263,10 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
         return request;
     }
 
+    public String getCharset() {
+        int i;
+        return (getContentType() != null && (i = getContentType().toLowerCase().indexOf("charset=")) > 0) ? getContentType().substring(i + 8).trim() : null;
+
+    }
+
 }

@@ -24,7 +24,7 @@ import jd.PluginWrapper;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
-import jd.parser.Form;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -76,14 +76,14 @@ public class Cryptlinkws extends PluginForDecrypt {
                 } else {
                     /* Captcha vorhanden, Passwort vorhanden oder beides */
 
-                    if (forms[0].getVars().containsKey("folderpass")) {
+                    if (forms[0].hasInputFieldByName("folderpass")) {
                         /* Eingabefeld für Passwort vorhanden */
                         String password = getUserInput(null, param);
                         forms[0].put("folderpass", password);
 
                     }
 
-                    if (forms[0].getVars().containsKey("captchainput")) {
+                    if (forms[0].hasInputFieldByName("captchainput")) {
                         /* Eingabefeld für Captcha vorhanden */
 
                         File captchaFile = getLocalCaptchaFile(this);

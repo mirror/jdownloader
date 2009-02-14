@@ -34,18 +34,17 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import jd.config.CFGConfig;
 import jd.config.Configuration;
 import jd.http.requests.FormData;
 import jd.http.requests.GetRequest;
 import jd.http.requests.PostFormDataRequest;
 import jd.http.requests.PostRequest;
 import jd.http.requests.Request;
-import jd.parser.Form;
 import jd.parser.JavaScript;
 import jd.parser.Regex;
-import jd.parser.XPath;
-import jd.parser.Form.InputField;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
+import jd.parser.html.XPath;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.download.DownloadInterface;
@@ -326,23 +325,27 @@ public class Browser {
 
     }
 
-    public Form getFormbyValue(String name) {
+    /**
+     * Returns the first form with an Submitvalue of name
+     * 
+     * @param name
+     * @return
+     */
+    public Form getFormBySubmitvalue(String name) {
         for (Form f : getForms()) {
-            if (f.hasSubmitValue(name)) return f;
+            try {
+                f.setPreferredSubmit(name);
+                return f;
+            } catch (IllegalArgumentException e) {
+
+            }
         }
         return null;
     }
 
-    public Form getFormbyName(String name) {
+    public Form getFormbyProperty(String property, String name) {
         for (Form f : getForms()) {
-            if (f.getFormProperties().get("name") != null && f.getFormProperties().get("name").equals(name)) return f;
-        }
-        return null;
-    }
-
-    public Form getFormbyID(String id) {
-        for (Form f : getForms()) {
-            if (f.getFormProperties().get("id") != null && f.getFormProperties().get("id").equals(id)) return f;
+            if (f.getStringProperty(property) != null && f.getStringProperty(property).equalsIgnoreCase(name)) return f;
         }
         return null;
     }
@@ -465,78 +468,36 @@ public class Browser {
         return request;
     }
 
-    public URLConnectionAdapter openFormConnection(Form form) throws IOException {
-        if (form == null) return null;
-        String base = null;
-        if (request != null) base = request.getUrl().toString();
-        String action = form.getAction(base);
-        switch (form.method) {
+    public URLConnectionAdapter openFormConnection(Form form) throws Exception {
+        this.request = this.createFormRequest(form);
+        
+        connect(request);
+        if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
 
-        case Form.METHOD_GET:
-            StringBuilder stbuffer = new StringBuilder();
-            boolean first = true;
-            for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                if (entry.getKey() != null) {
-                    if (first) {
-                        first = false;
-                    } else {
-                        stbuffer.append("&");
-                    }
-                    stbuffer.append(entry.getKey());
-                    stbuffer.append("=");
-                    if (entry.getValue().getValue() != null) {
-                        stbuffer.append(entry.getValue().getValue());
-                    } else {
-                        stbuffer.append("");
-                    }
-                }
-            }
-            String varString = stbuffer.toString();
-            if (varString != null && !varString.matches("[\\s]*")) {
-                if (action.matches(".*\\?.+")) {
-                    action += "&";
-                } else if (action.matches("[^\\?]*")) {
-                    action += "?";
-                }
-                action += varString;
-            }
-            return openGetConnection(action);
+        updateCookies(request);
+      
+        if (this.doRedirects && request.getLocation() != null) {
+            this.openGetConnection(null);
+        } else {
 
-        case Form.METHOD_POST:
-
-            return this.openPostConnection(action, form.getVarsMap());
+            currentURL = request.getUrl();
         }
-        return null;
-
+     
+        return this.request.getHttpConnection();
     }
 
     public Request createFormRequest(Form form) throws Exception {
-        if (form == null) return null;
         String base = null;
+        if (snifferCheck()) {
+            // throw new IOException("Sniffer found");
+        }
         if (request != null) base = request.getUrl().toString();
         String action = form.getAction(base);
-        switch (form.method) {
+        switch (form.getMethod()) {
 
-        case Form.METHOD_GET:
-            StringBuilder stbuffer = new StringBuilder();
-            boolean first = true;
-            for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                if (entry.getKey() != null) {
-                    if (first) {
-                        first = false;
-                    } else {
-                        stbuffer.append("&");
-                    }
-                    stbuffer.append(entry.getKey());
-                    stbuffer.append("=");
-                    if (entry.getValue().getValue() != null) {
-                        stbuffer.append(entry.getValue().getValue());
-                    } else {
-                        stbuffer.append("");
-                    }
-                }
-            }
-            String varString = stbuffer.toString();
+        case GET:
+
+            String varString = form.getPropertyString();
             if (varString != null && !varString.matches("[\\s]*")) {
                 if (action.matches(".*\\?.+")) {
                     action += "&";
@@ -545,11 +506,41 @@ public class Browser {
                 }
                 action += varString;
             }
-            return createGetRequest(action);
+            return this.createGetRequest(action);
 
-        case Form.METHOD_POST:
+        case POST:
+            if (form.getInputFieldByType("file") == null) {
+               
+                return this.createPostRequest(action, form.getVarsMap());
+            } else {
 
-            return createPostRequest(action, form.getVarsMap());
+                PostFormDataRequest request = (PostFormDataRequest) createPostFormDataRequest(action);
+                if (form.getEncoding() != null) {
+                    request.setEncodeType(form.getEncoding());
+                }
+
+                for (int i = 0; i < form.getInputFields().size(); i++) {
+                    InputField entry = form.getInputFields().get(i);
+
+                    if (entry.getValue() == null) continue;
+                    if (entry.getType() != null && entry.getType().equalsIgnoreCase("image")) {
+
+                        request.addFormData(new FormData(entry.getKey() + ".x", entry.getIntegerProperty("x", (int) (Math.random() * 100)) + ""));
+                        request.addFormData(new FormData(entry.getKey() + ".y", entry.getIntegerProperty("y", (int) (Math.random() * 100)) + ""));
+
+                    } else if (entry.getType() != null && entry.getType().equalsIgnoreCase("file")) {
+                        request.addFormData(new FormData(entry.getKey(), entry.getFileToPost().getName(), entry.getFileToPost()));
+
+                    } else if (entry.getKey() != null && entry.getValue() != null) {
+
+                        request.addFormData(new FormData(entry.getKey(), entry.getValue()));
+
+                    }
+                }
+           
+                return request;
+            }
+
         }
         return null;
 
@@ -995,91 +986,12 @@ public class Browser {
 
     }
 
-    public String submitForm(Form form) throws IOException {
-        String base = null;
-        if (snifferCheck()) {
-            // throw new IOException("Sniffer found");
-        }
-        if (request != null) base = request.getUrl().toString();
-        String action = form.getAction(base);
-        switch (form.method) {
-
-        case Form.METHOD_GET:
-            StringBuilder stbuffer = new StringBuilder();
-            boolean first = true;
-            for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                if (entry.getKey() != null) {
-                    if (first) {
-                        first = false;
-                    } else {
-                        stbuffer.append("&");
-                    }
-                    stbuffer.append(entry.getKey());
-                    stbuffer.append("=");
-                    if (entry.getValue().getValue() != null) {
-                        stbuffer.append(entry.getValue().getValue());
-                    } else {
-                        stbuffer.append("");
-                    }
-                }
-            }
-            String varString = stbuffer.toString();
-            if (varString != null && !varString.matches("[\\s]*")) {
-                if (action.matches(".*\\?.+")) {
-                    action += "&";
-                } else if (action.matches("[^\\?]*")) {
-                    action += "?";
-                }
-                action += varString;
-            }
-            return this.getPage(action);
-
-        case Form.METHOD_POST:
-
-            return this.postPage(action, form.getVarsMap());
-
-        case Form.METHOD_FILEPOST:
-
-            PostFormDataRequest request = (PostFormDataRequest) createPostFormDataRequest(action);
-            if (form.getFormProperties().containsKey("enctype")) {
-                request.setEncodeType(form.getFormProperties().get("enctype"));
-            }
-
-            for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                if (entry.getValue() == null) continue;
-                if (entry.getValue().getType() != null && entry.getValue().getType().equals("image")) {
-
-                    request.addFormData(new FormData(entry.getValue().getKey() + ".x", entry.getValue().getIntegerProperty("x", (int) (Math.random() * 100)) + ""));
-                    request.addFormData(new FormData(entry.getValue().getKey() + ".y", entry.getValue().getIntegerProperty("x", (int) (Math.random() * 100)) + ""));
-
-                } else if (entry.getValue().getType() != null && entry.getValue().getType().equals("file")) {
-                    request.addFormData(new FormData(entry.getValue().getKey(), form.getFiletoPostName(), form.getFileToPost()));
-
-                } else if (entry.getValue().getKey() != null && entry.getValue().getValue() != null) {
-
-                    request.addFormData(new FormData(entry.getKey(), entry.getValue().getValue()));
-
-                }
-            }
-            String ret = null;
-
-            connect(request);
-            if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
-            checkContentLengthLimit(request);
-            ret = request.read();
-
-            updateCookies(request);
-            this.request = request;
-            if (this.doRedirects && request.getLocation() != null) {
-                ret = this.getPage((String) null);
-            } else {
-
-                currentURL = request.getUrl();
-            }
-            return ret;
-
-        }
-        return null;
+    public String submitForm(Form form) throws Exception {
+        
+      this.openFormConnection(form);  
+      
+      checkContentLengthLimit(request);
+      return request.read();
     }
 
     @Override
@@ -1251,7 +1163,7 @@ public class Browser {
 
     }
 
-    public URLConnectionAdapter openFormConnection(int i) throws IOException {
+    public URLConnectionAdapter openFormConnection(int i) throws Exception {
         return openFormConnection(getForm(i));
 
     }
@@ -1341,8 +1253,8 @@ public class Browser {
         return logins.get(domain);
     }
 
-    public String submitForm(String formname) throws IOException {
-        return this.submitForm(getFormbyValue(formname));
+    public String submitForm(String formname) throws Exception {
+        return this.submitForm(getFormBySubmitvalue(formname));
 
     }
 
@@ -1510,12 +1422,12 @@ public class Browser {
     }
 
     public void setProxy(JDProxy proxy) {
-        if (proxy == null){
+        if (proxy == null) {
             System.err.println("Browser:No proxy");
             this.proxy = null;
             return;
         }
-        System.err.println("Browser: "+proxy);
+        // System.err.println("Browser: "+proxy);
         this.setAuth(proxy.getHost() + ":" + proxy.getPort(), proxy.getUser(), proxy.getPass());
         this.proxy = proxy;
     }

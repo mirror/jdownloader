@@ -45,8 +45,8 @@ import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
-import jd.parser.HTMLParser;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.utils.JDUtilities;
 
 /**

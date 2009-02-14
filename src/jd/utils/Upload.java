@@ -25,8 +25,8 @@ import jd.http.Encoding;
 import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
 import jd.nutils.JDHash;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 
 public class Upload {
     public static String toJDownloader(String str, String desc) {
@@ -77,27 +77,27 @@ public class Upload {
 
     }
 
-    public static String toUploadedToPremium(File file, String username, String password) {
-        try {
-            Browser br = new Browser();
-            br.getPage("http://uploaded.to/login");
-            Form form = br.getForm(0);
-
-            form.put("email", username);
-            form.put("password", password);
-            br.submitForm(form);
-            br.getPage("http://uploaded.to/home");
-            form = br.getForm(0);
-
-            form.setFileToPost(file, null);
-            form.action = br.getRegex("document..*?.action = \"(http://.*?.uploaded.to/up\\?upload_id=)\";").getMatch(0) + Math.round(10000 * Math.random()) + "0" + Math.round(10000 * Math.random());
-            br.submitForm(form);
-            br.getPage("http://uploaded.to/home");
-            return br.getRegex("http://uploaded.to/\\?id=[A-Za-z0-9]+").getMatch(0);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "";
-
-    }
+//    public static String toUploadedToPremium(File file, String username, String password) {
+//        try {
+//            Browser br = new Browser();
+//            br.getPage("http://uploaded.to/login");
+//            Form form = br.getForm(0);
+//
+//            form.put("email", username);
+//            form.put("password", password);
+//            br.submitForm(form);
+//            br.getPage("http://uploaded.to/home");
+//            form = br.getForm(0);
+//
+//            form.setFileToPost(file, null);
+//            form.action = br.getRegex("document..*?.action = \"(http://.*?.uploaded.to/up\\?upload_id=)\";").getMatch(0) + Math.round(10000 * Math.random()) + "0" + Math.round(10000 * Math.random());
+//            br.submitForm(form);
+//            br.getPage("http://uploaded.to/home");
+//            return br.getRegex("http://uploaded.to/\\?id=[A-Za-z0-9]+").getMatch(0);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        return "";
+//
+//    }
 }

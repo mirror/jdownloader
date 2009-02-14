@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.parser.Form;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -72,9 +72,12 @@ public class Lixin extends PluginForDecrypt {
                         form.put("capt", captchaCode);
                         br.submitForm(form);
                     } else {
-                        if (form.hasSubmitValue("continue")) {
+                        try {
+                            form.setPreferredSubmit("continue");
+
                             br.submitForm(form);
-                        } else {
+                        } catch (Exception e) {
+
                             lix_continue = true;
                             break;
                         }

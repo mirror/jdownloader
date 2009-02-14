@@ -20,8 +20,8 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.requests.Request;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;

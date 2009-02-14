@@ -21,8 +21,8 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -73,18 +73,18 @@ public class FileBaseTo extends PluginForHost {
         Form caform = null;
         br.setFollowRedirects(true);
         int i = 5;
-        while ((caform = br.getFormbyValue("Ok!")) != null) {
+        while ((caform = br.getFormBySubmitvalue("Ok!")) != null) {
             if (i-- <= 0) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             File captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
             Browser.download(captchaFile, br.openGetConnection("http://filebase.to" + br.getRegex("<img src=\"(/captcha/CaptchaImage\\.php.*?)\" alt=\"\">").getMatch(0)));
             String capTxt = Plugin.getCaptchaCode(this, "datenklo.net", captchaFile, false, downloadLink);
             caform.put("uid", capTxt);
-            caform.action = url;
+            caform.setAction(url);
             br.submitForm(caform);
 
         }
 
-        Form dlForm = br.getFormbyName("waitform");
+        Form dlForm = br.getFormbyProperty("name","waitform");
         String value = br.getRegex("document\\.waitform\\.wait\\.value = \"(.*?)\";").getMatch(0);
 
         dlForm.put("wait", value);

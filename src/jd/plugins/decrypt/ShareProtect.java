@@ -21,8 +21,8 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -57,7 +57,7 @@ public class ShareProtect extends PluginForDecrypt {
         br.getRequest().setHtmlCode(htmlc.toString());
         Form[] forms = br.getForms();
         for (Form element : forms) {
-            decryptedLinks.add(createDownloadlink(element.action));
+            decryptedLinks.add(createDownloadlink(element.getAction()));
         }
 
         return decryptedLinks;

@@ -22,9 +22,7 @@ import java.awt.image.IndexColorModel;
 import java.awt.image.PixelGrabber;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Vector;
-import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
@@ -35,8 +33,8 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.GifDecoder;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.parser.Form;
-import jd.parser.Form.InputField;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
@@ -148,22 +146,22 @@ public class DDLWarez extends PluginForDecrypt {
 
                 Form form = br.getForm(1);
 
-                if (form != null && !form.action.equalsIgnoreCase("get_file.php")) {
+                if (form != null && !form.getAction().equalsIgnoreCase("get_file.php")) {
 
-                    for (Iterator<Entry<String, InputField>> it = form.getVars().entrySet().iterator(); it.hasNext();) {
-                        InputField n = it.next().getValue();
-                        if (n.getType().equalsIgnoreCase("text") && n.getValue() == null) {
-                            String text = form.getHtmlCode().replaceAll("<.*>", "").trim();
+                    for (InputField ipf : form.getInputFields()) {
+
+                        if (ipf.getType().equalsIgnoreCase("text") && ipf.getValue() == null) {
+                            String text = form.getHtmlCode().replaceAll("<.*?>", "").trim();
                             String input = JDUtilities.getGUI().showUserInputDialog(text);
                             if (input == null) throw new DecrypterException(DecrypterException.CAPTCHA);
-                            n.setValue(input);
+                            ipf.setValue(input);
 
                         }
                     }
 
                     br.submitForm(form);
                     form = br.getForm(1);
-                    if (form != null && !form.action.equalsIgnoreCase("get_file.php")) {
+                    if (form != null && !form.getAction().equalsIgnoreCase("get_file.php")) {
                         continue;
                     }
                 }

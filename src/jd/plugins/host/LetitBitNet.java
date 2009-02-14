@@ -23,8 +23,8 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -91,17 +91,17 @@ public class LetitBitNet extends PluginForHost {
             captchaurl = "http://letitbit.net/cap.php?jpg=" + id + ".jpg";
 
         }
-        Form down = br.getFormbyID("Premium");
+        Form down = br.getFormbyProperty("id","Premium");
         URLConnectionAdapter con = br.openGetConnection(captchaurl);
         File file = this.getLocalCaptchaFile(this);
         Browser.download(file, con);
-        down.method = Form.METHOD_POST;
+        down.setMethod(Form.MethodType.POST);
         down.put("frameset", "Download+file");
         String code = Plugin.getCaptchaCode(file, this, downloadLink);
         down.put("cap", code);
         down.put("fix", "1");
         br.getPage(downloadLink.getDownloadURL());
-        down.action = "http://letitbit.net/download3.php";
+        down.setAction("http://letitbit.net/download3.php");
         br.submitForm(down);
         if (!br.containsHTML("<frame")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.getPage(br.getRegex("<frame.*?src=\"(.*?)\"").getMatch(0));

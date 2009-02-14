@@ -7,7 +7,7 @@ import jd.http.Browser;
 import org.xml.sax.SAXException;
 
 public class JavaScriptTest {
-    public static String getRSCOMServer(String link) throws IOException, SAXException {
+    public static String getRSCOMServer(String link) throws Exception, SAXException {
         Browser b = new Browser();
         b.getPage(link);
         b.submitForm(b.getForm(0));
@@ -16,7 +16,7 @@ public class JavaScriptTest {
         return js.runJavaScript();
     }
 
-    private static String getZshare(String string) throws IOException, SAXException {
+    private static String getZshare(String string) throws Exception, SAXException {
         Browser b = new Browser();
         b.getPage(string);
         b.submitForm(b.getForm(0));

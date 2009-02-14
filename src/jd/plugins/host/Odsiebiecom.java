@@ -27,8 +27,8 @@ import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 
 import jd.PluginWrapper;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -108,7 +108,7 @@ public class Odsiebiecom extends PluginForHost {
                 downloadurl = br.getRedirectLocation();
                 br.getPage(downloadurl);
             }
-            Form capform = br.getFormbyName("wer");
+            Form capform = br.getFormbyProperty("name","wer");
             if (capform != null) {
                 /* Captcha File holen */
                 BufferedImage image = getCSSCaptchaImage(capform.getHtmlCode());

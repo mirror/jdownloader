@@ -21,8 +21,8 @@ import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -102,7 +102,7 @@ public class Upsharenet extends PluginForHost {
 
         form.put("captchacode", captchaCode);
         /* Passwort holen holen */
-        if (form.getVars().containsKey("downloadpw")) {
+        if (form.hasInputFieldByName("downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput(null, downloadLink);
             } else {

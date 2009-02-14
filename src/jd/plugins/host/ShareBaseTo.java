@@ -22,8 +22,8 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.nutils.JDHash;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -123,7 +123,7 @@ public class ShareBaseTo extends PluginForHost {
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
 
-        Form form = br.getFormbyValue("Please Activate Javascript");
+        Form form = br.getFormBySubmitvalue("Please Activate Javascript");
         String id = form.getVarsMap().get("asi");
         form.put(id, Encoding.urlEncode("Download Now !"));
         br.submitForm(form);

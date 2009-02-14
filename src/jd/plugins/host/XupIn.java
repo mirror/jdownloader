@@ -19,8 +19,8 @@ package jd.plugins.host;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -65,7 +65,7 @@ public class XupIn extends PluginForHost {
 
         Form download = br.getForm(0);
         String passCode = null;
-        if (download.getVars().containsKey("vpass")) {
+        if (download.hasInputFieldByName("vpass")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput(null, downloadLink);
             } else {

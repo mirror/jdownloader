@@ -402,9 +402,11 @@ public abstract class Request {
     public URL getUrl() {
         return orgURL;
     }
+
     public URL getJDPUrl() {
         return url;
     }
+
     private boolean hasCookies() {
 
         return cookies != null && !cookies.isEmpty();
@@ -511,7 +513,13 @@ public abstract class Request {
             rd = new BufferedReader(new InputStreamReader(new GZIPInputStream(con.getInputStream())));
 
         } else {
-            rd = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String cs = con.getCharset();
+            if (cs == null) {
+                rd = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            } else {
+                rd = new BufferedReader(new InputStreamReader(con.getInputStream(), cs));
+            }
+
         }
         String line;
         StringBuilder htmlCode = new StringBuilder();

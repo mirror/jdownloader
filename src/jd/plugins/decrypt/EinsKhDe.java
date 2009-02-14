@@ -22,8 +22,8 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
@@ -62,7 +62,7 @@ public class EinsKhDe extends PluginForDecrypt {
             Form[] forms = br.getForms();
             /* ganzer Ordner */
             boolean valid = true;
-            if (forms != null && forms.length > 0 && forms[0].getVars().containsKey("Password")) {
+            if (forms != null && forms.length > 0 && forms[0].hasInputFieldByName("Password")) {
                 valid = false;
                 /* Ordner ist Passwort geschützt */
                 for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {

@@ -21,8 +21,8 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -62,7 +62,7 @@ public class RemixShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        Form down = br.getFormbyName("downform");
+        Form down = br.getFormbyProperty("name","downform");
         br.setFollowRedirects(false);
         // this.sleep(12000, downloadLink); // uncomment when they find a better
         // way to force wait time

@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.parser.Form;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
@@ -47,7 +47,7 @@ public class UUCannaTo extends PluginForDecrypt {
             File captchaFile = this.getLocalCaptchaFile(this);
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://uu.canna.to/cpuser/" + captchaUrl));
             String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
-            Form captchaForm = br.getFormbyName("download_form");
+            Form captchaForm = br.getFormbyProperty("name","download_form");
             captchaForm.put("sicherheitscode", captchaCode);
             br.submitForm(captchaForm);
 

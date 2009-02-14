@@ -36,8 +36,8 @@ import jd.event.ControlEvent;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -184,8 +184,8 @@ public class Serienjunkies extends PluginForHost {
 
             ArrayList<String> actions = new ArrayList<String>();
             for (Form form : forms) {
-                if (form.action.contains("download.serienjunkies.org") && !form.action.contains("firstload") && !form.action.equals("http://mirror.serienjunkies.org")) {
-                    actions.add(form.action);
+                if (form.getAction().contains("download.serienjunkies.org") && !form.getAction().contains("firstload") && !form.getAction().equals("http://mirror.serienjunkies.org")) {
+                    actions.add(form.getAction());
                 }
             }
             final int inc = 100 / actions.size();

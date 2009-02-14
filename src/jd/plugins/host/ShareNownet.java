@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -77,7 +77,7 @@ public class ShareNownet extends PluginForHost {
         if (br.containsHTML("Sicherheitscode eingeben")) {
             /* Captcha File holen */
             captchaFile = getLocalCaptchaFile(this);
-            br.getDownload(captchaFile, "http://share-now.net/captcha.php?id=" + form.getVars().get("download").getValue());
+            br.getDownload(captchaFile, "http://share-now.net/captcha.php?id=" + form.getInputFieldByName("download").getValue());
             /* CaptchaCode holen */
             captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
             form.put("Submit", "Download+Now");

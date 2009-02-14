@@ -26,8 +26,8 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.Request;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -123,7 +123,7 @@ public class Netloadin extends PluginForHost {
         String captchaURL = br.getRegex("<img style=\".*?\" src=\"(.*?)\" alt=\"Sicherheitsbild\" \\/>").getMatch(0);
         Form[] forms = br.getForms();
         Form captchaPost = forms[0];
-        captchaPost.action = "index.php?id=10";
+        captchaPost.setAction("index.php?id=10");
         if (captchaURL == null) {
             if (br.containsHTML("download_load.tpl")) {
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
@@ -181,7 +181,7 @@ public class Netloadin extends PluginForHost {
         dl.startDownload();
     }
 
-    private void checkPassword(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
+    private void checkPassword(DownloadLink downloadLink) throws Exception {
         if (!br.containsHTML("download_password")) return;
         String pass = downloadLink.getStringProperty("pass", LINK_PASS);
 

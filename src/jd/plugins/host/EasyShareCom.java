@@ -11,8 +11,8 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Encoding;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -34,7 +34,7 @@ public class EasyShareCom extends PluginForHost {
         return "http://www.easy-share.com/tos.html";
     }
 
-    private void login(Account account) throws IOException, PluginException {
+    private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("http://www.easy-share.com/");
@@ -42,7 +42,7 @@ public class EasyShareCom extends PluginForHost {
         Form login = br.getForm(0);
         login.put("login", Encoding.urlEncode(account.getUser()));
         login.put("password", Encoding.urlEncode(account.getPass()));
-        login.action = "http://www.easy-share.com/accounts/login";
+        login.setAction("http://www.easy-share.com/accounts/login");
 
         br.submitForm(login);
 

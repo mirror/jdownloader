@@ -25,8 +25,8 @@ import jd.controlling.ProgressController;
 import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.Encoding;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -60,13 +60,13 @@ public class YouTubeCom extends PluginForDecrypt {
         return s;
     }
 
-    private void login(Account account) throws IOException {
+    private void login(Account account) throws Exception {
         if (account.isEnabled()) {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
             br.clearCookies("youtube.com");
             br.getPage("http://www.youtube.com/signup?next=/index");
-            Form login = br.getFormbyName("loginForm");
+            Form login = br.getFormbyProperty("name","loginForm");
             login.put("username", account.getUser());
             login.put("password", account.getPass());
             br.submitForm(login);
@@ -109,7 +109,7 @@ public class YouTubeCom extends PluginForDecrypt {
 
             br.getPage(parameter);
             Form f = br.getForms()[2];
-            if (f != null && f.action == null) {
+            if (f != null && f.getAction() == null) {
                 br.submitForm(f);
             } else {
                 if (br.getURL().contains("verify_age?")) { throw new DecrypterException(DecrypterException.ACCOUNT); }

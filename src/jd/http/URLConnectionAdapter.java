@@ -68,6 +68,8 @@ public interface URLConnectionAdapter {
     void setRequest(Request request);
     public Request getRequest();
 
+    public String getCharset();
+
     
 
 }

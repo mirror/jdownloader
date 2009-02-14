@@ -21,8 +21,8 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -41,8 +41,8 @@ public class RsHoerbuchin extends PluginForDecrypt {
         br.getPage(parameter);
         Form form = br.getForm(0);
         String dLink;
-        if (form.getVars().get("uri") != null) {
-            dLink = "http://rapidshare." + new Regex(parameter, "in/(\\w{2,3})-").getMatch(0) + Encoding.htmlDecode(form.getVars().get("uri").getValue());
+        if (form.hasInputFieldByName("uri")) {
+            dLink = "http://rapidshare." + new Regex(parameter, "in/(\\w{2,3})-").getMatch(0) + Encoding.htmlDecode(form.getInputFieldByName("uri").getValue());
         } else {
             dLink = form.getAction(null);
         }

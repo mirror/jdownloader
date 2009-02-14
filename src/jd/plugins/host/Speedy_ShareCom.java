@@ -21,8 +21,8 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.HTMLParser;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;

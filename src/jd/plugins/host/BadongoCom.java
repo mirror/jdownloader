@@ -23,8 +23,8 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -133,7 +133,7 @@ public class BadongoCom extends PluginForHost {
             captchaForm.remove(null);
             captchaForm.put("user_code", code);
             ajax.setFollowRedirects(true);
-            captchaForm.action = ajax.getRegex("(http\\:\\/\\/www\\.badongo\\.com\\/\\w{2}\\/cfile\\/\\d+)").getMatch(0);
+            captchaForm.setAction(ajax.getRegex("(http\\:\\/\\/www\\.badongo\\.com\\/\\w{2}\\/cfile\\/\\d+)").getMatch(0));
             ajax.submitForm(captchaForm);
             captchaForm = ajax.getForm(0);
             String url = null;
@@ -178,7 +178,7 @@ public class BadongoCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    public void login(Account account) throws IOException, PluginException {
+    public void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setCookie("http://www.badongo.com", "badongoL", "de");
         br.getPage("http://www.badongo.com");

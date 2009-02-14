@@ -21,8 +21,8 @@ import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -70,7 +70,7 @@ public class UploaderPl extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account) throws IOException, PluginException {
+    private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.clearCookies("uploader.pl");
         br.getPage("http://uploader.pl/en/login.php");

@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -113,7 +113,7 @@ public class LinkProtectIn extends PluginForDecrypt {
 
         if (lp_continue == true) {
             /* Links extrahieren */
-            String[] links = jd.parser.HTMLParser.getHttpLinks(br + "", "linkprotect.in");
+            String[] links = jd.parser.html.HTMLParser.getHttpLinks(br + "", "linkprotect.in");
             FilePackage fp = new FilePackage();
             matcher = patternName.matcher(br + "");
             if (matcher.find()) fp.setName(new Regex(br + "", patternName.pattern()).getMatch(0));

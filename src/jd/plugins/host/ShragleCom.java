@@ -23,8 +23,8 @@ import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -109,7 +109,7 @@ public class ShragleCom extends PluginForHost {
             br.setFollowRedirects(true);
             dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, -4);
         } else {
-            Form form = br.getFormbyName("download");
+            Form form = br.getFormbyProperty("name","download");
             br.setFollowRedirects(true);
             dl = br.openDownload(downloadLink, form, true, 0);
         }
@@ -153,7 +153,7 @@ public class ShragleCom extends PluginForHost {
         String wait = br.getRegex(Pattern.compile("Bitte warten Sie(.*?)Minuten", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l); }
         wait = br.getRegex("var downloadWait =(.*?);").getMatch(0);
-        Form form = br.getFormbyName("download");
+        Form form = br.getFormbyProperty("name","download");
         if (wait == null) wait = "10";
         sleep(Long.parseLong(wait.trim()) * 1000l, downloadLink);
         br.setFollowRedirects(true);

@@ -24,8 +24,8 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.Request;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -81,7 +81,7 @@ public class Freaksharenet extends PluginForHost {
             return;
         }
 
-        Form form = br.getFormbyValue(null);
+        Form form = br.getFormBySubmitvalue(null);
         form.put("wait", "Download");
 
         /* Datei herunterladen */
@@ -99,7 +99,7 @@ public class Freaksharenet extends PluginForHost {
 
         br.setFollowRedirects(true);
         br.getPage("http://freakshare.net/");
-        Form form = br.getFormbyValue("LOGIN");
+        Form form = br.getFormBySubmitvalue("LOGIN");
         form.put("fb_username", account.getUser());
         form.put("fb_password", account.getPass());
 
@@ -131,7 +131,7 @@ public class Freaksharenet extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-        Form form = br.getFormbyValue("LOGIN");
+        Form form = br.getFormBySubmitvalue("LOGIN");
         form.put("fb_username", account.getUser());
         form.put("fb_password", account.getPass());
 
@@ -147,7 +147,7 @@ public class Freaksharenet extends PluginForHost {
         if (urlConnection.getContentType().equals("text/html; charset=ISO-8859-1")) {
             logger.finer("Direct Download disabled");
             br.followConnection();
-            form = br.getFormbyValue("Direkt-Download");
+            form = br.getFormBySubmitvalue("Direkt-Download");
             urlConnection = br.openFormConnection(form);
 
             request = br.createRequest(form);

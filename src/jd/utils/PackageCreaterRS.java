@@ -75,7 +75,7 @@ public class PackageCreaterRS {
         String[][] matches = new Regex(list, "\\<package\\>.+?\\<\\/package\\>").getMatches();
         for (String p : packages) {
 
-//            if (JOptionPane.showConfirmDialog(frame, "Upload " + p) != JOptionPane.OK_OPTION) continue;
+          if (JOptionPane.showConfirmDialog(frame, "Upload " + p) != JOptionPane.OK_OPTION) continue;
             File pDir = new File(srcDir, p);
             File[] files = pDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name) {

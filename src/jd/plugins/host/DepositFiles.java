@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -69,7 +69,7 @@ public class DepositFiles extends PluginForHost {
 
         if (br.containsHTML(DOWNLOAD_NOTALLOWED)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
 
-        Form form = br.getFormbyValue("Kostenlosen download");
+        Form form = br.getFormBySubmitvalue("Kostenlosen download");
         if (form != null) {
             br.submitForm(form);
         }
@@ -79,7 +79,7 @@ public class DepositFiles extends PluginForHost {
 
         if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }
 
-        form = br.getFormbyValue("Die Datei downloaden");
+        form = br.getFormBySubmitvalue("Die Datei downloaden");
         sleep(60 * 1000l, downloadLink);
         if (form == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setDebug(true);
@@ -96,11 +96,11 @@ public class DepositFiles extends PluginForHost {
         dl.startDownload();
     }
 
-    public void login(Account account) throws IOException, PluginException {
+    public void login(Account account) throws Exception {
         br.setFollowRedirects(true);
         setLangtoGer();
         br.getPage("http://depositfiles.com/de/gold/payment.php");
-        Form login = br.getFormbyValue("Anmelden");
+        Form login = br.getFormBySubmitvalue("Anmelden");
         login.put("login", account.getUser());
         login.put("password", account.getPass());
         br.submitForm(login);

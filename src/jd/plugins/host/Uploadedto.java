@@ -23,8 +23,8 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -172,7 +172,7 @@ public class Uploadedto extends PluginForHost {
 
         if (br.getRedirectLocation() == null) {
             logger.info("InDirect Downloads active");
-            Form form = br.getFormbyValue("Download");
+            Form form = br.getFormBySubmitvalue("Download");
             URLConnectionAdapter con = br.openFormConnection(form);
             if (br.getRedirectLocation() == null) {
                 con.disconnect();
@@ -233,10 +233,10 @@ public class Uploadedto extends PluginForHost {
         return getVersion("$Revision$");
     }
 
-    public void checkPasswort(DownloadLink downloadLink) throws PluginException, InterruptedException, IOException {
+    public void checkPasswort(DownloadLink downloadLink) throws Exception {
         Form form = br.getForm(0);
         String passCode = null;
-        if (form != null && form.getVars().containsKey("file_key")) {
+        if (form != null && form.hasInputFieldByName("file_key")) {
             logger.info("pw protected link");
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput(null, downloadLink);
@@ -248,7 +248,7 @@ public class Uploadedto extends PluginForHost {
             br.setFollowRedirects(false);
             br.submitForm(form);
             form = br.getForm(0);
-            if (form != null && form.getVars().containsKey("file_key")) {
+            if (form != null && form.hasInputFieldByName("file_key")) {
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
@@ -292,7 +292,7 @@ public class Uploadedto extends PluginForHost {
 
         br.setFollowRedirects(false);
 
-        Form form = br.getFormbyName("download_form");
+        Form form = br.getFormbyProperty("name","download_form");
         if (form == null || br.containsHTML("Versuch es sp")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerProblem", 10 * 60 * 1000l);
         if (form != null) {
             form.put("download_submit", "Download");

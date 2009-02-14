@@ -21,8 +21,8 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -113,7 +113,7 @@ public class FileHostMecom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() == null) {
             Form form = br.getForm(0);
-            if (form.getVars().containsKey("password")) {
+            if (form.hasInputFieldByName("password")) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput(null, downloadLink);
                 } else {
@@ -163,13 +163,13 @@ public class FileHostMecom extends PluginForHost {
         getFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         Form form = br.getForm(0);
-        form.getVars().remove("method_premium");
+        form.remove("method_premium");
         br.submitForm(form);
 
         String captcha = getCaptcha();
         form = br.getForm(0);
         form.put("code", captcha);
-        if (form.getVars().containsKey("password")) {
+        if (form.hasInputFieldByName("password")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput(null, downloadLink);
             } else {

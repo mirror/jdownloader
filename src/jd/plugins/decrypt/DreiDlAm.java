@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
 import jd.PluginPattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
@@ -40,7 +40,7 @@ public class DreiDlAm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private void decryptFromDownload(String parameter) throws IOException, DecrypterException, InterruptedException {
+    private void decryptFromDownload(String parameter) throws Exception {
         parameter.replace("&quot;", "\"");
         br.getPage(parameter);
         // passwort auslesen
@@ -72,7 +72,7 @@ public class DreiDlAm extends PluginForDecrypt {
         return link;
     }
 
-    private ArrayList<String> decryptFromStart(String parameter) throws IOException, DecrypterException, InterruptedException {
+    private ArrayList<String> decryptFromStart(String parameter) throws Exception {
         ArrayList<String> linksReturn = new ArrayList<String>();
         if (parameter != null) br.getPage(parameter);
         if (br.containsHTML("/failed.html")) {
@@ -87,7 +87,7 @@ public class DreiDlAm extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws IOException, DecrypterException, InterruptedException {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setCookiesExclusive(true);

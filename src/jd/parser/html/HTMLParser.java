@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.parser;
+package jd.parser.html;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
+import jd.parser.Regex;
 
 public class HTMLParser {
 

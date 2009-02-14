@@ -21,7 +21,7 @@ import java.util.Vector;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.HTMLParser;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;

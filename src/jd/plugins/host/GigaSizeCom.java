@@ -20,8 +20,8 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -129,7 +129,7 @@ public class GigaSizeCom extends PluginForHost {
         Form forms[] = br.getForms();
         Form captchaForm = null;
         for (Form form : forms) {
-            if (form.action != null && form.action.contains("formdownload.php")) {
+            if (form.getAction() != null && form.getAction().contains("formdownload.php")) {
                 captchaForm = form;
                 break;
             }
@@ -138,7 +138,7 @@ public class GigaSizeCom extends PluginForHost {
         String captchaCode = getCaptchaCode("http://www.gigasize.com/randomImage.php", downloadLink);
         captchaForm.put("txtNumber", captchaCode);
         br.submitForm(captchaForm);
-        Form download = br.getFormbyID("formDownload");
+        Form download = br.getFormbyProperty("id","formDownload");
         dl = br.openDownload(downloadLink, download, true, 1);
         if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         dl.startDownload();

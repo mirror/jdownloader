@@ -27,8 +27,8 @@ import jd.config.ConfigEntry;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -111,7 +111,7 @@ public class Gwarezcc extends PluginForDecrypt {
             progress.setRange(forms.length);
             for (int ii = 0; ii < forms.length; ii++) {
                 /* Parts decrypten und adden */
-                if (forms[ii].action.trim().startsWith("redirect")) {
+                if (forms[ii].getAction().trim().startsWith("redirect")) {
 
                     br.submitForm(forms[ii]);
 

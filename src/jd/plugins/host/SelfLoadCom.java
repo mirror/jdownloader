@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.Form;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -47,7 +47,7 @@ public class SelfLoadCom extends PluginForHost {
         br.setFollowRedirects(true);
         Form form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_FATAL);
-        form.action = "/redirect.php"; // *FIXME: ohne / wird eine falsche url
+        form.setAction("/redirect.php"); // *FIXME: ohne / wird eine falsche url
         // in der Form.getAction berechnet!
         // hoster schuld oder Form fixen?
         dl = br.openDownload(downloadLink, form, false, 1);

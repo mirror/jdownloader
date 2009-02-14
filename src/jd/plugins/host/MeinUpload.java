@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -63,7 +63,7 @@ public class MeinUpload extends PluginForHost {
     @SuppressWarnings("unchecked")
     public void handleFree0(DownloadLink downloadLink) throws Exception {
         br.getPage(downloadLink.getDownloadURL());
-        Form form = br.getFormbyValue("Free Download");
+        Form form = br.getFormBySubmitvalue("Free Download");
 
         if (form != null) {
             form.remove("method_premium");
@@ -98,7 +98,7 @@ public class MeinUpload extends PluginForHost {
             for (Entry<Integer, Integer> entry : gr.entrySet()) {
                 code += entry.getValue();
             }
-            Form captcha = br.getFormbyName("F1");
+            Form captcha = br.getFormbyProperty("name","F1");
             captcha.put("code", code);
             captcha.put("down_script", "1");
             this.sleep((Integer.parseInt(br.getRegex("(\\d+)</span> Sekunden</span>").getMatch(0)) * 1000), downloadLink);
@@ -114,7 +114,7 @@ public class MeinUpload extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account) throws IOException, PluginException {
+    private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.clearCookies("mein-upload.com");
         br.getPage("http://www.mein-upload.com/");

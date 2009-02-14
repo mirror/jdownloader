@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
-import jd.parser.Form;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -123,12 +123,12 @@ public class Youtube extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    private void login(Account account) throws IOException {
+    private void login(Account account) throws Exception {
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage("http://www.youtube.com/signup?next=/index");
-        Form login = br.getFormbyName("loginForm");
+        Form login = br.getFormbyProperty("name","loginForm");
         login.put("username", account.getUser());
         login.put("password", account.getPass());
         br.submitForm(login);

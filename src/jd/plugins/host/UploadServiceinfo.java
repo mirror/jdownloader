@@ -22,8 +22,8 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.HTMLParser;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -69,7 +69,7 @@ public class UploadServiceinfo extends PluginForHost {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
         /* Link holen */
-        String url = br.getForms()[0].action;
+        String url = br.getForms()[0].getAction();
         HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(br.toString());
         String postdata = "key=" + Encoding.urlEncode(submitvalues.get("key"));
         postdata = postdata + "&mysubmit=Download";
