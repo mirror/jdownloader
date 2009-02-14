@@ -37,15 +37,14 @@ public class BluehostTo extends PluginForHost {
 
     public BluehostTo(PluginWrapper wrapper) {
         super(wrapper);
-        this.
-        enablePremium("http://bluehost.to/premium.php");
+        this.enablePremium("http://bluehost.to/premium.php");
     }
 
     private void correctUrl(DownloadLink downloadLink) {
         String url = downloadLink.getDownloadURL();
         url = url.replaceFirst("\\?dl=", "dl=");
         downloadLink.setUrlDownload(url);
-       
+
     }
 
     private void login(Account account) throws Exception {
@@ -94,7 +93,7 @@ public class BluehostTo extends PluginForHost {
         URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
         if (con.getContentType().contains("text")) {
             br.followConnection();
-            Form download = br.getFormbyProperty("name","download");
+            Form download = br.getFormbyProperty("name", "download");
             if (download == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             dl = br.openDownload(downloadLink, download, true, 0);
         } else {
@@ -121,14 +120,15 @@ public class BluehostTo extends PluginForHost {
         if (Integer.parseInt(dat[4]) > 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, Integer.parseInt(dat[4]) * 1000l);
 
         br.getPage(downloadLink.getDownloadURL());
-
+        String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"1\\; URL=(.*?)\" />").getMatch(0);
+        br.getPage(redirect);
         Form[] forms = br.getForms();
 
         // br.cloneBrowser().getPage("http://bluehost.to/style.css");
         // br.cloneBrowser().getPage(
         // "http://bluehost.to/css/autosuggest_inquisitor.css");
 
-        Form dlForm = forms[3];
+        Form dlForm = forms[1];
         br.clearCookies("bluehost.to");
         br.submitForm(dlForm);
         br.getPage(downloadLink.getDownloadURL());
