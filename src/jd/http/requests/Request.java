@@ -517,7 +517,21 @@ public abstract class Request {
             if (cs == null) {
                 rd = new BufferedReader(new InputStreamReader(con.getInputStream()));
             } else {
-                rd = new BufferedReader(new InputStreamReader(con.getInputStream(), cs));
+                try {
+                    rd = new BufferedReader(new InputStreamReader(con.getInputStream(), cs));
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.err.println(con);
+                    try {
+                        rd = new BufferedReader(new InputStreamReader(con.getInputStream(), cs.replace("-", "")));
+                    } catch (Exception e2) {
+                        e2.printStackTrace();
+                        System.err.println(con);
+                        rd = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    }
+                }
+
             }
 
         }
