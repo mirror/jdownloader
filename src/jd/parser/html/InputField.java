@@ -3,6 +3,7 @@ package jd.parser.html;
 import java.io.File;
 
 import jd.config.Property;
+import jd.http.Encoding;
 import jd.parser.Regex;
 
 public class InputField extends Property {
@@ -27,11 +28,11 @@ public class InputField extends Property {
             if (match[0].equalsIgnoreCase("type")) {
                 ret.setType(match[1]);
             } else if (match[0].equalsIgnoreCase("name")) {
-                ret.setKey((match[1]));
+                ret.setKey(Encoding.formEncoding(match[1]));
             } else if (match[0].equalsIgnoreCase("value")) {
-                ret.setValue((match[1]));
+                ret.setValue(Encoding.formEncoding(match[1]));
             } else {
-                ret.setProperty(match[0], match[1]);
+                ret.setProperty(Encoding.formEncoding(match[0]), Encoding.formEncoding(match[1]));
             }
         }
 
@@ -39,11 +40,11 @@ public class InputField extends Property {
             if (match[0].equalsIgnoreCase("type")) {
                 ret.setType(match[1]);
             } else if (match[0].equalsIgnoreCase("name")) {
-                ret.setKey((match[1]));
+                ret.setKey(Encoding.formEncoding(match[1]));
             } else if (match[0].equalsIgnoreCase("value")) {
-                ret.setValue((match[1]));
+                ret.setValue(Encoding.formEncoding(match[1]));
             } else {
-                ret.setProperty(match[0], match[1]);
+                ret.setProperty(Encoding.formEncoding(match[0]), Encoding.formEncoding(match[1]));
             }
         }
 

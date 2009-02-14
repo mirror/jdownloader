@@ -189,11 +189,11 @@ public class JDLocale {
         try {
             PostRequest r = new PostRequest("http://translate.google.com/translate_t?sl=" + from + "&tl=" + to);
 
-            r.setPostVariable("hl", "de");
-            r.setPostVariable("text", msg);
-            r.setPostVariable("sl", from);
-            r.setPostVariable("tl", to);
-            r.setPostVariable("ie", "UTF8");
+            r.addVariable("hl", "de");
+            r.addVariable("text", msg);
+            r.addVariable("sl", from);
+            r.addVariable("tl", to);
+            r.addVariable("ie", "UTF8");
 
             return Encoding.UTF8Decode(Encoding.htmlDecode(new Regex(r.load(), "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getMatch(0)));
         } catch (IOException e) {

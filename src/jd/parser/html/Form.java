@@ -21,10 +21,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.config.Property;
+import jd.http.requests.RequestVariable;
 import jd.parser.Regex;
 import jd.utils.EditDistance;
 
@@ -276,7 +278,7 @@ public class Form extends Property {
      */
     public InputField getInputField(String key) {
         for (InputField ipf : this.inputfields) {
-            if (ipf.getKey()!=null&&ipf.getKey().equalsIgnoreCase(key)) return ipf;
+            if (ipf.getKey() != null && ipf.getKey().equalsIgnoreCase(key)) return ipf;
         }
         return null;
     }
@@ -290,7 +292,7 @@ public class Form extends Property {
      */
     public void remove(String key) {
         for (InputField ipf : this.inputfields) {
-            if (ipf.getKey()!=null&&ipf.getKey().equalsIgnoreCase(key)) {
+            if (ipf.getKey() != null && ipf.getKey().equalsIgnoreCase(key)) {
                 inputfields.remove(ipf);
                 return;
 
@@ -383,7 +385,7 @@ public class Form extends Property {
     public ArrayList<InputField> getInputFieldsByType(String type) {
         ArrayList<InputField> ret = new ArrayList<InputField>();
         for (InputField ipf : this.inputfields) {
-            if (ipf.getType()!=null&&Regex.matches(ipf.getType(), type)) {
+            if (ipf.getType() != null && Regex.matches(ipf.getType(), type)) {
                 ret.add(ipf);
             }
         }
@@ -447,7 +449,7 @@ public class Form extends Property {
 
     public InputField getInputFieldByName(String name) {
         for (InputField ipf : this.inputfields) {
-            if (ipf.getKey()!=null&&ipf.getKey().equalsIgnoreCase(name)) return ipf;
+            if (ipf.getKey() != null && ipf.getKey().equalsIgnoreCase(name)) return ipf;
         }
         return null;
 
@@ -469,7 +471,7 @@ public class Form extends Property {
     public void setPreferredSubmit(String preferredSubmit) {
         this.preferredSubmit = null;
         for (InputField ipf : this.inputfields) {
-            if (ipf.getType()!=null&&ipf.getValue()!=null&&ipf.getType().equalsIgnoreCase("submit") && ipf.getValue().equalsIgnoreCase(preferredSubmit)) {
+            if (ipf.getType() != null && ipf.getValue() != null && ipf.getType().equalsIgnoreCase("submit") && ipf.getValue().equalsIgnoreCase(preferredSubmit)) {
                 this.preferredSubmit = ipf;
                 return;
             }
@@ -489,6 +491,24 @@ public class Form extends Property {
     public boolean hasInputFieldByName(String name) {
         // TODO Auto-generated method stub
         return this.getInputFieldByName(name) != null;
+    }
+/**
+ * Returns a list of requestvariables
+ * @return
+ */
+    public ArrayList<RequestVariable> getRequestVariables() {
+       ArrayList<RequestVariable> ret = new ArrayList<RequestVariable>();
+       for (InputField ipf : this.inputfields){
+           if(ipf.getType().equalsIgnoreCase("image")){
+               ret.add(new RequestVariable(ipf.getKey()+".x",new Random().nextInt(100)+"")); 
+               ret.add(new RequestVariable(ipf.getKey()+".y",new Random().nextInt(100)+"")); 
+           }else{
+               ret.add(new RequestVariable(ipf.getKey(),ipf.getValue()));
+           }
+           
+         
+       }
+        return ret;
     }
 
 }

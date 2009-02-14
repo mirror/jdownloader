@@ -28,9 +28,9 @@ import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
@@ -40,6 +40,7 @@ import jd.http.requests.GetRequest;
 import jd.http.requests.PostFormDataRequest;
 import jd.http.requests.PostRequest;
 import jd.http.requests.Request;
+import jd.http.requests.RequestVariable;
 import jd.parser.JavaScript;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -62,6 +63,16 @@ public class Browser {
             super(string);
 
         }
+    }
+
+    private static JDProxy GLOBAL_PROXY = null;
+
+    public static void setGlobalProxy(JDProxy p) {
+        GLOBAL_PROXY = p;
+    }
+
+    public static JDProxy getGlobalProxy() {
+        return GLOBAL_PROXY;
     }
 
     private static HashMap<String, HashMap<String, Cookie>> COOKIES = new HashMap<String, HashMap<String, Cookie>>();
@@ -367,46 +378,9 @@ public class Browser {
     }
 
     public String getPage(String string) throws IOException {
-        string = getURL(string);
-        boolean sendref = true;
-        if (currentURL == null) {
-            sendref = false;
-            currentURL = new URL(string);
-        }
 
-        if (snifferCheck()) {
-            // throw new SnifferException();
-        }
-        GetRequest request = new GetRequest((string));
-
-        if (proxy != null) request.setProxy(proxy);
-        request.getHeaders().put("Accept-Language", acceptLanguage);
-
-        // request.setFollowRedirects(doRedirects);
-        forwardCookies(request);
-        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
-        if (headers != null) {
-            request.getHeaders().putAll(headers);
-        }
-
-        connect(request);
-        if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
-        String ret = null;
-
-        checkContentLengthLimit(request);
-
-        ret = request.read();
-
-        updateCookies(request);
-        this.request = request;
-
-        if (this.doRedirects && request.getLocation() != null) {
-            ret = this.getPage((String) null);
-        } else {
-
-            currentURL = new URL(string);
-        }
-        return ret;
+        this.openRequestConnection(this.createGetRequest(string));
+        return this.loadConnection(null);
 
     }
 
@@ -445,6 +419,12 @@ public class Browser {
         return URL_LINK_MAP.get(url);
     }
 
+    /**
+     * Assures that the browser does not download any binary files in textmode
+     * 
+     * @param request
+     * @throws BrowserException
+     */
     private void checkContentLengthLimit(Request request) throws BrowserException {
         if (request == null || request.getHttpConnection() == null || request.getHttpConnection().getHeaderField("Content-Length") == null) return;
         if (Long.parseLong(request.getHttpConnection().getHeaderField("Content-Length")) > limit) {
@@ -453,39 +433,55 @@ public class Browser {
         }
     }
 
+    /**
+     * Returns the current readtimeout
+     * 
+     * @return
+     */
     public int getReadTimeout() {
         return readTimeout;
     }
 
+    /**
+     * If automatic redirectfollowing is disabled, you can get the redirect url
+     * if there is any.
+     * 
+     * @return
+     */
     public String getRedirectLocation() {
         if (request == null) { return null; }
         return request.getLocation();
 
     }
 
+    /**
+     * Gets the latest request
+     * 
+     * @return
+     */
     public Request getRequest() {
-
         return request;
     }
 
+    /**
+     * Opens a new connection based on a Form
+     * 
+     * @param form
+     * @return
+     * @throws Exception
+     */
     public URLConnectionAdapter openFormConnection(Form form) throws Exception {
-        this.request = this.createFormRequest(form);
-        
-        connect(request);
-        if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
 
-        updateCookies(request);
-      
-        if (this.doRedirects && request.getLocation() != null) {
-            this.openGetConnection(null);
-        } else {
-
-            currentURL = request.getUrl();
-        }
-     
-        return this.request.getHttpConnection();
+        return this.openRequestConnection(this.createFormRequest(form));
     }
 
+    /**
+     * Creates a new Request object based on a form
+     * 
+     * @param form
+     * @return
+     * @throws Exception
+     */
     public Request createFormRequest(Form form) throws Exception {
         String base = null;
         if (snifferCheck()) {
@@ -510,8 +506,8 @@ public class Browser {
 
         case POST:
             if (form.getInputFieldByType("file") == null) {
-               
-                return this.createPostRequest(action, form.getVarsMap());
+
+                return this.createPostRequest(action, form.getRequestVariables());
             } else {
 
                 PostFormDataRequest request = (PostFormDataRequest) createPostFormDataRequest(action);
@@ -537,7 +533,7 @@ public class Browser {
 
                     }
                 }
-           
+
                 return request;
             }
 
@@ -546,33 +542,23 @@ public class Browser {
 
     }
 
+    /**
+     * Opens a new get connection
+     * 
+     * @param string
+     * @return
+     * @throws IOException
+     */
     public URLConnectionAdapter openGetConnection(String string) throws IOException {
-        string = getURL(string);
-        boolean sendref = true;
-        if (currentURL == null) {
-            sendref = false;
-            currentURL = new URL(string);
-        }
-        if (snifferCheck()) {
-            // throw new IOException("Sniffer found");
-        }
-        GetRequest request = new GetRequest((string));
-        if (proxy != null) request.setProxy(proxy);
-        // doAuth(request);
-        if (connectTimeout > 0) {
-            request.setConnectTimeout(connectTimeout);
-        }
-        if (readTimeout > 0) {
-            request.setReadTimeout(readTimeout);
-        }
-        request.getHeaders().put("Accept-Language", acceptLanguage);
-        // request.setFollowRedirects(doRedirects);
-        forwardCookies(request);
-        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
-        if (headers != null) {
-            request.getHeaders().putAll(headers);
-        }
+        return openRequestConnection(this.createGetRequest(string));
 
+    }
+
+    /**
+     * Opens a connection based on the requets object
+     * 
+     */
+    public URLConnectionAdapter openRequestConnection(Request request) throws IOException {
         connect(request);
         if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
 
@@ -582,13 +568,16 @@ public class Browser {
             this.openGetConnection(null);
         } else {
 
-            currentURL = new URL(string);
+            currentURL = request.getUrl();
         }
         return this.request.getHttpConnection();
-
     }
 
-    public Request createGetRequest(String string) throws Exception {
+    /**
+     * Creates a new Getrequest
+     */
+
+    public Request createGetRequest(String string) throws IOException {
         string = getURL(string);
         boolean sendref = true;
         if (currentURL == null) {
@@ -599,7 +588,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         GetRequest request = new GetRequest((string));
-        if (proxy != null) request.setProxy(proxy);
+        if (selectProxy() != null) request.setProxy(selectProxy());
         // doAuth(request);
         if (connectTimeout > 0) {
             request.setConnectTimeout(connectTimeout);
@@ -612,7 +601,8 @@ public class Browser {
         forwardCookies(request);
         if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (headers != null) {
-            request.getHeaders().putAll(headers);
+            mergeHeaders(request);
+
         }
 
         // if (this.doRedirects && request.getLocation() != null) {
@@ -625,7 +615,25 @@ public class Browser {
         return request;
     }
 
-    public Request createGetRequestfromOldRequest(Request oldrequest) throws Exception {
+    private void mergeHeaders(Request request) {
+        for (Iterator<Entry<String, String>> it = this.headers.entrySet().iterator(); it.hasNext();) {
+            Entry<String, String> next = it.next();
+            if (next.getValue() == null) {
+                request.getHeaders().remove(next.getKey());
+            } else {
+                request.getHeaders().put(next.getKey(), next.getValue());
+            }
+        }
+
+    }
+
+    private JDProxy selectProxy() {
+        // TODO Auto-generated method stub
+        if (proxy != null) return proxy;
+        return GLOBAL_PROXY;
+    }
+
+    private Request createGetRequestfromOldRequest(Request oldrequest) throws IOException {
         String string = getURL(oldrequest.getLocation());
         boolean sendref = true;
         if (currentURL == null) {
@@ -636,7 +644,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         GetRequest request = new GetRequest((string));
-        if (proxy != null) request.setProxy(proxy);
+        if (selectProxy() != null) request.setProxy(selectProxy());
         request.setCookies(oldrequest.getCookies());
         // doAuth(request);
         if (connectTimeout > 0) {
@@ -650,7 +658,7 @@ public class Browser {
         forwardCookies(request);
         if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (headers != null) {
-            request.getHeaders().putAll(headers);
+            mergeHeaders(request);
         }
 
         // if (this.doRedirects && request.getLocation() != null) {
@@ -663,6 +671,9 @@ public class Browser {
         return request;
     }
 
+    /**
+     * TRies to get a fuill url out of string
+     */
     private String getURL(String string) {
         if (string == null) string = this.getRedirectLocation();
         if (string == null) return null;
@@ -684,50 +695,16 @@ public class Browser {
         return Encoding.urlEncode_light(string);
     }
 
-    private URLConnectionAdapter openPostConnection(String url, HashMap<String, String> post) throws IOException {
-        url = getURL(url);
-        boolean sendref = true;
-        if (currentURL == null) {
-            sendref = false;
-            currentURL = new URL(url);
-        }
-        if (snifferCheck()) {
-            // throw new IOException("Sniffer found");
-        }
-        PostRequest request = new PostRequest((url));
-        if (proxy != null) request.setProxy(proxy);
-        // doAuth(request);
-        request.getHeaders().put("Accept-Language", acceptLanguage);
-        // request.setFollowRedirects(doRedirects);
-        if (connectTimeout > 0) {
-            request.setConnectTimeout(connectTimeout);
-        }
-        if (readTimeout > 0) {
-            request.setReadTimeout(readTimeout);
-        }
-        forwardCookies(request);
-        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
-        if (post != null) {
-            request.getPostData().putAll(post);
-        }
-        if (headers != null) {
-            request.getHeaders().putAll(headers);
-        }
+    /**
+     * Opens a Post COnnection based on a variable hashmap
+     */
+    public URLConnectionAdapter openPostConnection(String url, HashMap<String, String> post) throws IOException {
 
-        connect(request);
-        if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
-        this.request = request;
-        if (this.doRedirects && request.getLocation() != null) {
-            this.openGetConnection(null);
-        } else {
-
-            currentURL = new URL(url);
-        }
-        return this.request.getHttpConnection();
+        return this.openRequestConnection(this.createPostRequest(url, post));
 
     }
 
-    public Request createPostRequestfromOldRequest(Request oldrequest, String postdata) throws IOException {
+    private Request createPostRequestfromOldRequest(Request oldrequest, String postdata) throws IOException {
         String url = getURL(oldrequest.getLocation());
         boolean sendref = true;
         if (currentURL == null) {
@@ -739,7 +716,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         PostRequest request = new PostRequest((url));
-        if (proxy != null) request.setProxy(proxy);
+        if (selectProxy() != null) request.setProxy(selectProxy());
         request.setCookies(oldrequest.getCookies());
         // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
@@ -753,10 +730,10 @@ public class Browser {
         forwardCookies(request);
         if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (post != null) {
-            request.getPostData().putAll(post);
+            request.addAll(post);
         }
         if (headers != null) {
-            request.getHeaders().putAll(headers);
+            mergeHeaders(request);
         }
         return request;
 
@@ -773,7 +750,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         PostFormDataRequest request = new PostFormDataRequest((url));
-        if (proxy != null) request.setProxy(proxy);
+        if (selectProxy() != null) request.setProxy(selectProxy());
 
         request.getHeaders().put("Accept-Language", acceptLanguage);
 
@@ -787,12 +764,23 @@ public class Browser {
         if (sendref) request.getHeaders().put("Referer", currentURL.toString());
 
         if (headers != null) {
-            request.getHeaders().putAll(headers);
+            mergeHeaders(request);
         }
         return request;
     }
 
+    /**
+     * Creates a new POstrequest based on a variable hashmap
+     */
     public Request createPostRequest(String url, HashMap<String, String> post) throws IOException {
+
+        return this.createPostRequest(url, PostRequest.variableMaptoArray(post));
+    }
+
+    /**
+     * Creates a new postrequest based an an requestVariable Arraylist
+     */
+    private Request createPostRequest(String url, ArrayList<RequestVariable> post) throws IOException {
         url = getURL(url);
         boolean sendref = true;
         if (currentURL == null) {
@@ -803,7 +791,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         PostRequest request = new PostRequest((url));
-        if (proxy != null) request.setProxy(proxy);
+        if (selectProxy() != null) request.setProxy(selectProxy());
         // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
@@ -816,125 +804,64 @@ public class Browser {
         forwardCookies(request);
         if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (post != null) {
-            request.getPostData().putAll(post);
+            request.addAll(post);
+
         }
         if (headers != null) {
-            request.getHeaders().putAll(headers);
+            mergeHeaders(request);
         }
         return request;
-
     }
 
+    /**
+     * Creates a postrequest based on a querystring
+     */
     public Request createPostRequest(String url, String post) throws MalformedURLException, IOException {
 
         return createPostRequest(url, Request.parseQuery(post));
     }
 
+    /**
+     * OPens a new POst connection based on a query string
+     */
     public URLConnectionAdapter openPostConnection(String url, String post) throws IOException {
 
         return openPostConnection(url, Request.parseQuery(post));
     }
 
+    /**
+     * loads a new page (post)
+     */
     public String postPage(String url, HashMap<String, String> post) throws IOException {
-        url = getURL(url);
-        boolean sendref = true;
-        if (currentURL == null) {
-            sendref = false;
-            currentURL = new URL(url);
-        }
-        if (snifferCheck()) {
-            // throw new IOException("Sniffer found");
-        }
-        PostRequest request = new PostRequest((url));
-        if (proxy != null) request.setProxy(proxy);
-        // doAuth(request);
-        request.getHeaders().put("Accept-Language", acceptLanguage);
-        // request.setFollowRedirects(doRedirects);
-        if (connectTimeout > 0) {
-            request.setConnectTimeout(connectTimeout);
-        }
-        if (readTimeout > 0) {
-            request.setReadTimeout(readTimeout);
-        }
-        forwardCookies(request);
-        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
-        if (post != null) request.getPostData().putAll(post);
-        if (headers != null) {
-            request.getHeaders().putAll(headers);
-        }
-
-        String ret = null;
-
-        connect(request);
-        if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
-        checkContentLengthLimit(request);
-        ret = request.read();
-
-        updateCookies(request);
-        this.request = request;
-        if (this.doRedirects && request.getLocation() != null) {
-            ret = this.getPage((String) null);
-        } else {
-
-            currentURL = new URL(url);
-        }
-        return ret;
+        openPostConnection(url, post);
+        return loadConnection(null);
 
     }
 
+    /**
+     * Returns a new Javscriptobject for the current loaded page
+     */
     public JavaScript getJavaScript() {
         return new JavaScript(this);
     }
 
+    /**
+     * loads a new page (POST)
+     */
     public String postPage(String url, String post) throws IOException {
 
         return postPage(url, Request.parseQuery(post));
     }
 
+    /**
+     * loads a new page (post) the postdata is given by the poststring. it wiull
+     * be send as it is
+     */
     public String postPageRaw(String url, String post) throws IOException {
-        url = getURL(url);
-        boolean sendref = true;
-        if (currentURL == null) {
-            sendref = false;
-            currentURL = new URL(url);
-        }
-        if (snifferCheck()) {
-            // throw new IOException("Sniffer found");
-        }
-        PostRequest request = new PostRequest((url));
-        if (proxy != null) request.setProxy(proxy);
-        // doAuth(request);
-        request.getHeaders().put("Accept-Language", acceptLanguage);
-        // request.setFollowRedirects(doRedirects);
-        if (connectTimeout > 0) {
-            request.setConnectTimeout(connectTimeout);
-        }
-        if (readTimeout > 0) {
-            request.setReadTimeout(readTimeout);
-        }
-        forwardCookies(request);
-        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
+        PostRequest request = (PostRequest) this.createPostRequest(url, new ArrayList<RequestVariable>());
         if (post != null) request.setPostDataString(post);
-        if (headers != null) {
-            request.getHeaders().putAll(headers);
-        }
-
-        String ret = null;
-
-        connect(request);
-        if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
-        checkContentLengthLimit(request);
-        ret = request.read();
-
-        updateCookies(request);
-        this.request = request;
-        if (this.doRedirects && request.getLocation() != null) {
-            ret = this.getPage((String) null);
-        } else {
-
-            currentURL = new URL(url);
-        }
-        return ret;
+        this.openRequestConnection(request);
+        return this.loadConnection(null);
     }
 
     public void setAcceptLanguage(String acceptLanguage) {
@@ -987,27 +914,17 @@ public class Browser {
     }
 
     public String submitForm(Form form) throws Exception {
-        
-      this.openFormConnection(form);  
-      
-      checkContentLengthLimit(request);
-      return request.read();
+
+        this.openFormConnection(form);
+
+        checkContentLengthLimit(request);
+        return request.read();
     }
 
     @Override
     public String toString() {
         if (request == null) { return "Browser. no request yet"; }
         return request.toString();
-    }
-
-    /**
-     * @return Use Browser.toString instead.
-     * @deprecated replaced by <code>Browser.toString</code>.
-     * @see #toString()
-     */
-    @Deprecated
-    public String GetHtmlCode() {
-        return this.toString();
     }
 
     public Regex getRegex(String string) {
@@ -1249,8 +1166,16 @@ public class Browser {
         if (domain.indexOf(":") <= 0) {
             domain += ":80";
         }
-        if (!logins.containsKey(domain)) return null;
-        return logins.get(domain);
+        String[] ret = logins.get(domain);
+        if (ret == null) {
+            // see proxy auth
+
+            if ((selectProxy().getHost() + ":" + selectProxy().getPort()).equalsIgnoreCase(domain)) {
+                ret = new String[] { selectProxy().getUser(), selectProxy().getPass() };
+            }
+        }
+
+        return ret;
     }
 
     public String submitForm(String formname) throws Exception {
@@ -1428,7 +1353,8 @@ public class Browser {
             return;
         }
         // System.err.println("Browser: "+proxy);
-        this.setAuth(proxy.getHost() + ":" + proxy.getPort(), proxy.getUser(), proxy.getPass());
+        // this.setAuth(proxy.getHost() + ":" + proxy.getPort(),
+        // proxy.getUser(), proxy.getPass());
         this.proxy = proxy;
     }
 

@@ -140,8 +140,8 @@ public class RapidShareDe extends PluginForHost {
 
         String path = new URI(downloadLink.getDownloadURL()).getPath();
         PostRequest r = new PostRequest("http://rapidshare.de");
-        r.setPostVariable("uri", Encoding.urlEncode(path));
-        r.setPostVariable("dl.start", "PREMIUM");
+        r.addVariable("uri", Encoding.urlEncode(path));
+        r.addVariable("dl.start", "PREMIUM");
         r.getCookies().add(new Cookie(getHost(), "user", user + "-" + formatPass));
 
         String page = r.load();

@@ -19,45 +19,48 @@ package jd.http.requests;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 
 public class PostRequest extends Request {
-    private HashMap<String, String> postData = new HashMap<String, String>();
+    private ArrayList<RequestVariable> postData;
     private String postDataString = null;
 
     public PostRequest(Form form) throws MalformedURLException {
         super(form.getAction(null));
 
-        postData = form.getVarsMap();
+        postData = new ArrayList<RequestVariable>();
     }
 
     public PostRequest(String url) throws MalformedURLException {
         super(url);
+        postData = new ArrayList<RequestVariable>();
 
     }
 
     // public Request toHeadRequest() throws MalformedURLException {
 
-    public HashMap<String, String> getPostData() {
-        return postData;
-    }
+
+    
 
     public String getPostDataString() {
         if (postData.isEmpty()) { return null; }
 
         StringBuilder buffer = new StringBuilder();
 
-        for (Map.Entry<String, String> entry : postData.entrySet()) {
-            if (entry.getKey() != null) {
+        for( RequestVariable rv:postData){
+            if (rv.getKey() != null) {
                 buffer.append("&");
-                buffer.append(entry.getKey());
+                buffer.append(rv.getKey());
                 buffer.append("=");
-                if (entry.getValue() != null) {
-                    buffer.append(entry.getValue());
+                if (rv.getValue() != null) {
+                    buffer.append(rv.getValue());
                 } else {
                     buffer.append("");
                 }
@@ -97,13 +100,29 @@ public class PostRequest extends Request {
 
     }
 
-    public void setPostVariable(String key, String value) {
-        postData.put(key, value);
+    public void addVariable(String key, String value) {
+        postData.add(new RequestVariable(key,value));
 
     }
 
-    public void setPostVariableString(String vars) throws MalformedURLException {
-        postData.putAll(Request.parseQuery(vars));
+public static ArrayList<RequestVariable> variableMaptoArray(HashMap<String, String> post){
+    ArrayList<RequestVariable> ret = new ArrayList<RequestVariable>();
+    Entry<String, String> next=null;
+    for(Iterator<Entry<String, String>> it = post.entrySet().iterator();it.hasNext();){
+        next=it.next();
+        ret.add(new RequestVariable(next.getKey(),next.getValue()));
+    }
+    return ret;
+}
+
+    public void addAll(HashMap<String, String> post) {
+     
+        
+    }
+
+    public void addAll(ArrayList<RequestVariable> post) {
+      this.postData.addAll(post);
+        
     }
 
 }

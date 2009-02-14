@@ -198,9 +198,9 @@ public class Rapidshare extends PluginForHost {
                 }
                 if (!isRSCom) return ret;
                 PostRequest r = new PostRequest("https://ssl.rapidshare.com/cgi-bin/checkfiles.cgi");
-                r.setPostVariable("urls", post);
+                r.addVariable("urls", post);
                 post = null;
-                r.setPostVariable("toolmode", "1");
+                r.addVariable("toolmode", "1");
                 String page = r.load();
                 r = null;
                 String[] lines = Regex.getLines(page);

@@ -71,6 +71,15 @@ public class JDProxy extends Proxy {
 
     }
 
+    public JDProxy(String host, int port, String user, String pass) {
+        super(JDProxy.Type.HTTP, new InetSocketAddress(host, port));
+        this.port=port;
+        this.user=user;
+        this.pass=pass;
+        this.host=host;
+        
+    }
+
     public String getHost() {
         return host;
     }
