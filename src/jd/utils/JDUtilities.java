@@ -503,7 +503,7 @@ public class JDUtilities {
         link.requestGuiUpdate();
         return code;
     }
-
+ 
     public static String getUserInput(String message, DownloadLink link) throws InterruptedException {
         link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
         link.requestGuiUpdate();
