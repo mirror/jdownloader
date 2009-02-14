@@ -492,22 +492,23 @@ public class Form extends Property {
         // TODO Auto-generated method stub
         return this.getInputFieldByName(name) != null;
     }
-/**
- * Returns a list of requestvariables
- * @return
- */
+
+    /**
+     * Returns a list of requestvariables
+     * 
+     * @return
+     */
     public ArrayList<RequestVariable> getRequestVariables() {
-       ArrayList<RequestVariable> ret = new ArrayList<RequestVariable>();
-       for (InputField ipf : this.inputfields){
-           if(ipf.getType().equalsIgnoreCase("image")){
-               ret.add(new RequestVariable(ipf.getKey()+".x",new Random().nextInt(100)+"")); 
-               ret.add(new RequestVariable(ipf.getKey()+".y",new Random().nextInt(100)+"")); 
-           }else{
-               ret.add(new RequestVariable(ipf.getKey(),ipf.getValue()));
-           }
-           
-         
-       }
+        ArrayList<RequestVariable> ret = new ArrayList<RequestVariable>();
+        for (InputField ipf : this.inputfields) {
+            if (ipf.getType() != null && ipf.getType().equalsIgnoreCase("image")) {
+                ret.add(new RequestVariable(ipf.getKey() + ".x", new Random().nextInt(100) + ""));
+                ret.add(new RequestVariable(ipf.getKey() + ".y", new Random().nextInt(100) + ""));
+            } else {
+                ret.add(new RequestVariable(ipf.getKey(), ipf.getValue()));
+            }
+
+        }
         return ret;
     }
 

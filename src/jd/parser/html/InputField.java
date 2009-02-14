@@ -11,7 +11,7 @@ public class InputField extends Property {
     private static final long serialVersionUID = 7859094911920903660L;
     private String key = null;
     private String value = null;
-    private String type;
+    private String type = null;
 
     public InputField(String key, String value) {
         this.key = key;
@@ -48,7 +48,6 @@ public class InputField extends Property {
             }
         }
 
-       
         // if (ret.getType() != null && ret.getType().equalsIgnoreCase("file"))
         // {
         // // method = METHOD_FILEPOST;
@@ -59,8 +58,8 @@ public class InputField extends Property {
     }
 
     public String toString() {
-     
-        return "Field: "+this.key + "(" + this.type + ")" + " = " + this.value + " [" + super.toString() + "]";
+
+        return "Field: " + this.key + "(" + this.type + ")" + " = " + this.value + " [" + super.toString() + "]";
     }
 
     public void setFileToPost(File file) {
