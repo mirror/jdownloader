@@ -184,7 +184,7 @@ public class PremiumPanel extends JPanel {
                 chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
                 chkEnable.setForeground(INACTIVE);
             } else {
-                chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.globaldeactiv", "<html><b>Global deactivated</b></html>", nr));
+                chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>", nr));
                 chkEnable.setForeground(DISABLED);
             }
             panel.add(chkEnable, "alignleft");
