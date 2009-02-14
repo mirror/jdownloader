@@ -436,6 +436,10 @@ gui.menu.action.about.accel = CTRL+F1
 gui.menu.action.about.desc = About JDownloader
 gui.menu.action.about.mnem = A
 gui.menu.action.about.name = About JDownloader
+gui.menu.action.backup.desc = Create a linklist Backup
+gui.menu.action.backup.name =Backup
+gui.menu.action.backup.mnem =B
+gui.menu.action.backup.accel =CTRL+B
 gui.menu.action.add.accel = CTRL+V
 gui.menu.action.add.desc = Adds one or more download links
 gui.menu.action.add.mnem = H
@@ -1177,3 +1181,6 @@ train.choose.folder = Select a folder
 train.chooser.title = jDownloader :: TrainAll
 train.method = Select a Captchamethod
 wrapper.webupdate.updatefile = Update plugin %s
+jdownloader.localnewsurl =http://jdownloader.org/news?lng=en
+gui.plugins.decrypt.askclicknload= The decrypter %s seems to be outdated, but supports Click'n'Load. Open the website now?
+gui.droptarget.grabbed= Grabbed:

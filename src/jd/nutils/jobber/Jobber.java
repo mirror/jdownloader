@@ -263,6 +263,7 @@ public class Jobber {
                 try {
                     ra.go();
                 } catch (Exception e) {
+                    e.printStackTrace();
                     fireJobException(ra, e);
                 }
                 synchronized (jobsFinished) {

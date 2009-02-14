@@ -27,6 +27,7 @@ import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
+import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
@@ -49,6 +50,8 @@ public abstract class PluginForDecrypt extends Plugin {
 
     private static HashMap<Class<? extends PluginForDecrypt>, Long> LAST_STARTED_TIME = new HashMap<Class<? extends PluginForDecrypt>, Long>();
     private Long WAIT_BETWEEN_STARTS = 0L;
+
+    private static int OPEN_CLICK_N_LOAD = 0;
 
     public synchronized long getLastTimeStarted() {
         if (!LAST_STARTED_TIME.containsKey(this.getClass())) { return 0; }
@@ -151,19 +154,21 @@ public abstract class PluginForDecrypt extends Plugin {
             tmpLinks = new ArrayList<DownloadLink>();
             progress.setStatusText(this.getHost() + ": " + e.getErrorMessage());
             progress.setColor(Color.RED);
+            tryClickNLoad(cryptedLink);
             progress.finalize(15000l);
         } catch (InterruptedException e2) {
             tmpLinks = new ArrayList<DownloadLink>();
         } catch (Exception e) {
             progress.finalize();
-            logger.severe("Decrypter out of date: " + this);
-            logger.severe("Decrypter out of date: " + getVersion());
             e.printStackTrace();
         }
         if (tmpLinks == null) {
             logger.severe("Decrypter out of date: " + this);
             logger.severe("Decrypter out of date: " + getVersion());
             progress.setStatusText("Decrypter out of date: " + this.getHost());
+
+            tryClickNLoad(cryptedLink);
+
             progress.setColor(Color.RED);
             progress.finalize(15000l);
             return new ArrayList<DownloadLink>();
@@ -176,6 +181,38 @@ public abstract class PluginForDecrypt extends Plugin {
 
         progress.finalize();
         return tmpLinks;
+    }
+
+    private void tryClickNLoad(CryptedLink cryptedLink)  {
+   
+        if (this.isClickNLoadEnabled() && OPEN_CLICK_N_LOAD >= 0 && OPEN_CLICK_N_LOAD <= 25) {
+            try {
+                JDUtilities.acquireUserIO_Semaphore();
+            } catch (InterruptedException e1) {
+               return;
+            }
+            if(OPEN_CLICK_N_LOAD<0)return;
+            boolean open = JDUtilities.getGUI().showConfirmDialog(JDLocale.LF("gui.plugins.decrypt.askclicknload", "The decrypter %s seems to be outdated, but supports Click'n'Load. Open the website now?", this.getHost()));
+            if (open) {
+                try {
+                    JLinkButton.openURL("http://jdownloader.org/clicknload-redirect/"+Encoding.urlEncode(cryptedLink.getCryptedUrl().replace("http://", "")));
+                    OPEN_CLICK_N_LOAD++;
+                } catch (Exception e) {
+                    open = false;
+                }
+            }
+            if (!open) {
+                OPEN_CLICK_N_LOAD = -1;
+
+            }
+            JDUtilities.releaseUserIO_Semaphore();
+        }
+        
+    }
+
+    protected boolean isClickNLoadEnabled() {
+        // TODO Auto-generated method stub
+        return false;
     }
 
     public ArrayList<DownloadLink> decryptLinks(CryptedLink[] cryptedLinks) {

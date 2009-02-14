@@ -343,11 +343,9 @@ public class Netloadin extends PluginForHost {
             String id = Netloadin.getID(downloadLink.getDownloadURL());
             String page = br.getPage("http://netload.in/share/fileinfos2.php?bz=1&file_id=" + id);
             for (int i = 0; i < 3 && page == null; i++) {
-                try {
+          
                     Thread.sleep(150);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        
                 page = br.getPage("http://netload.in/share/fileinfos2.php?bz=1&file_id=" + id);
             }
 

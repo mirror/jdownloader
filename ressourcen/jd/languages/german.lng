@@ -432,6 +432,10 @@ gui.menu.action.about.accel = CTRL+F1
 gui.menu.action.about.desc = Über JDownloader
 gui.menu.action.about.mnem = A
 gui.menu.action.about.name = Über JDownloader
+gui.menu.action.backup.desc = Linklisten Backup erstellen
+gui.menu.action.backup.name =Backup
+gui.menu.action.backup.mnem =B
+gui.menu.action.backup.accel =CTRL+B
 gui.menu.action.add.accel = CTRL+V
 gui.menu.action.add.desc = Einen oder mehrere Downloadlinks hinzufügen
 gui.menu.action.add.mnem = H
@@ -1155,3 +1159,6 @@ train.choose.folder = Wählen sie einen Ordner aus
 train.chooser.title = jDownloader - Train All
 train.method = Wählen Sie eine Methode aus:
 wrapper.webupdate.updatefile = Plugin %s aktualisieren
+jdownloader.localnewsurl =http://jdownloader.org/news?lng=de
+gui.plugins.decrypt.askclicknload= Das Decryptplugin für "%s" ist veraltet, aber unterstützt Click'N'Load.\r\nSoll die Click'n'Load Seite jetzt geöffnet werden?
+gui.droptarget.grabbed= Grabbed:

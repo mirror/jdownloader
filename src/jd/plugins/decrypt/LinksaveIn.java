@@ -16,15 +16,14 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 public class LinksaveIn extends PluginForDecrypt {
 
@@ -34,25 +33,15 @@ public class LinksaveIn extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
 
-        br.getPage(parameter);
-        if (br.containsHTML("<title>LinkSave.in - Error 404</title>")) {
-            logger.info("LinkSave.in Folder not found!");
-            return decryptedLinks;
-        }
-        parameter = parameter + ".dlc";
 
-        File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+        throw new DecrypterException("Out of date. Try Click'n'Load");
 
-        br.getHeaders().put("Referer", "jdownloader.org");
-        br.getDownload(container, parameter);
+       
+    }
 
-        decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-        container.delete();
-
-        return decryptedLinks;
+    protected boolean isClickNLoadEnabled() {
+        return true;
     }
 
     @Override
