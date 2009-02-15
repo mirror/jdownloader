@@ -46,7 +46,6 @@ public class JDIO {
      * Das aktuelle Verzeichnis (Laden/Speichern)
      */
     private static File currentDirectory;
-
     /**
      * Schreibt content in eine Lokale textdatei
      * 
@@ -55,8 +54,18 @@ public class JDIO {
      * @return true/False je nach Erfolg des Schreibvorgangs
      */
     public static boolean writeLocalFile(File file, String content) {
+        return writeLocalFile(file, content,false);
+    }
+    /**
+     * Schreibt content in eine Lokale textdatei
+     * 
+     * @param file
+     * @param content
+     * @return true/False je nach Erfolg des Schreibvorgangs
+     */
+    public static boolean writeLocalFile(File file, String content,boolean append) {
         try {
-            if (file.isFile()) {
+            if (!append && file.isFile()) {
                 if (!file.delete()) {
                     System.err.println("Konnte Datei nicht löschen " + file);
                     return false;
@@ -65,8 +74,9 @@ public class JDIO {
             if (file.getParent() != null && !file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
             }
+            if (!append || !file.isFile())
             file.createNewFile();
-            BufferedWriter f = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
+            BufferedWriter f = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append), "UTF8"));
 
             f.write(content);
             f.close();
