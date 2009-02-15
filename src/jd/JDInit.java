@@ -257,6 +257,8 @@ public class JDInit {
                 file.renameTo(old);
             }
             file.delete();
+        } else {
+            file.mkdirs();
         }
         JDIO.saveObject(null, ret, file, "links.linkbackup", "linkbackup", false);
     }
