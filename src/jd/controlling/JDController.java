@@ -1009,9 +1009,8 @@ public class JDController implements ControlListener, UIListener {
     public boolean initDownloadLinks() {
         try {
             packages = loadDownloadLinks();
-
         } catch (Exception e) {
-            e.printStackTrace();
+            JDUtilities.getLogger().severe("" + e.getStackTrace());
             packages = null;
         }
         if (packages == null) {
@@ -1019,14 +1018,21 @@ public class JDController implements ControlListener, UIListener {
             this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
             File file = JDUtilities.getResourceFile("backup/links.linkbackup");
             if (file.exists()) {
-                JDUtilities.getLogger().severe("Try to restore from backup file");
+                JDUtilities.getLogger().severe("Strange: No Linklist,Try to restore from backup file");
+                this.loadContainerFile(file);
+            }
+            return false;
+        } else if (packages.size() == 0) {
+            this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
+            File file = JDUtilities.getResourceFile("backup/links.linkbackup");
+            if (file.exists() && file.lastModified() >= System.currentTimeMillis() - 10 * 60 * 1000l) {
+                JDUtilities.getLogger().severe("Strange: Empty Linklist,Try to restore from backup file");
                 this.loadContainerFile(file);
             }
             return false;
         }
 
         for (FilePackage filePackage : packages) {
-
             for (DownloadLink downloadLink : filePackage.getDownloadLinks()) {
                 downloadLink.setProperty(PROPERTY_SELECTED, false);
             }

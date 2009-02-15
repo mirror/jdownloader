@@ -194,13 +194,13 @@ public class Main {
             //
             // } else if (args[i].equals("--new-instance") ||
             // args[i].equals("-n")) {
-            
-            if (args[i].equals("-prot") ) {
-                
-                logger.info(args[i] + " "+args[i+1]);
+
+            if (args[i].equals("-prot")) {
+
+                logger.info(args[i] + " " + args[i + 1]);
                 i++;
-                
-            }else  if (args[i].equals("--new-instance") || args[i].equals("-n")) {
+
+            } else if (args[i].equals("--new-instance") || args[i].equals("-n")) {
 
                 if (!enoughtMemory) {
                     JDUtilities.restartJD(args);
@@ -316,8 +316,8 @@ public class Main {
                             Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
                             main.go();
                             for (String p : processArgs) {
-                                logger.severe("Param: "+p);
-                             }
+                                logger.severe("Param: " + p);
+                            }
                             // post start parameters //
                             try {
                                 server.processParameters(processArgs);
@@ -339,10 +339,9 @@ public class Main {
 
                     Main main = new Main();
                     main.go();
-                    
-                    
+
                     for (String p : args) {
-                       logger.severe("Param: "+p);
+                        logger.severe("Param: " + p);
                     }
 
                 }
@@ -393,10 +392,8 @@ public class Main {
 
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "Lade Konfiguration"));
 
-        
-        
-        String old=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty("LOCALE", null);
-        if(old!=null){
+        String old = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty("LOCALE", null);
+        if (old != null) {
             JDUtilities.getSubConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, old);
             JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).setProperty("LOCALE", null);
             JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
@@ -409,8 +406,8 @@ public class Main {
         if (debug) {
             JDUtilities.getLogger().setLevel(Level.ALL);
         }
-//        JDInit.setupProxy();
-//        JDInit.setupSocks();        
+        JDInit.setupProxy();
+        JDInit.setupSocks();
         CFGConfig.getConfig("WEBUPDATE").save();
         init.removeFiles();
 
@@ -486,9 +483,9 @@ public class Main {
         }
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
- 
-            JDFileReg.registerFileExts();
-     
+
+        JDFileReg.registerFileExts();
+
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
