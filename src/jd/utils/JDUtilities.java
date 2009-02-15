@@ -784,7 +784,7 @@ public class JDUtilities {
         if (br == null) {
             br = new Browser();
             br.setProxy(JDProxy.NO_PROXY);
-
+ 
             br.setConnectTimeout(5000);
             br.setReadTimeout(5000);
         }
