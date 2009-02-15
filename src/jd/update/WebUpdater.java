@@ -114,6 +114,7 @@ public class WebUpdater implements Serializable {
         String finalurl = fileurl;
         boolean useprefixes = false;
         boolean primaryfirst = true;
+        boolean ret = false;
         synchronized (switchtosecondary) {
             if (switchtosecondary > 10) primaryfirst = false;
         }
@@ -133,7 +134,7 @@ public class WebUpdater implements Serializable {
                     useprefixes = true;
                 }
                 /* von absolut oder primary laden */
-                downloadBinaryIntern(filepath, finalurl);
+                ret = downloadBinaryIntern(filepath, finalurl);
 
                 /* hashcheck 1 */
                 if (Hash != null) {
@@ -149,6 +150,7 @@ public class WebUpdater implements Serializable {
                 }
                 /* falls von absolut geladen wurde, dann hier stop */
                 if (!useprefixes) {
+                    if (ret) return true;
                     try {
                         Thread.sleep(250);
                     } catch (InterruptedException e) {
@@ -165,7 +167,7 @@ public class WebUpdater implements Serializable {
                 } else {
                     finalurl = this.getsecondaryUpdatePrefix() + fileurl;
                 }
-                downloadBinaryIntern(filepath, finalurl);
+                ret = downloadBinaryIntern(filepath, finalurl);
                 if (Hash != null) {
                     localhash = getLocalHash(new File(filepath));
                     if (localhash != null && localhash.equalsIgnoreCase(Hash)) {
