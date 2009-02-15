@@ -1015,19 +1015,19 @@ public class JDController implements ControlListener, UIListener {
         }
         if (packages == null) {
             packages = new Vector<FilePackage>();
-            this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
             File file = JDUtilities.getResourceFile("backup/links.linkbackup");
             if (file.exists()) {
                 JDUtilities.getLogger().severe("Strange: No Linklist,Try to restore from backup file");
                 this.loadContainerFile(file);
+                this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
             }
             return false;
         } else if (packages.size() == 0) {
-            this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
             File file = JDUtilities.getResourceFile("backup/links.linkbackup");
             if (file.exists() && file.lastModified() >= System.currentTimeMillis() - 10 * 60 * 1000l) {
                 JDUtilities.getLogger().severe("Strange: Empty Linklist,Try to restore from backup file");
                 this.loadContainerFile(file);
+                this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
             }
             return false;
         }
