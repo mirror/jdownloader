@@ -35,12 +35,9 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.Property;
-import jd.controlling.ClipboardHandler;
 import jd.controlling.DistributeData;
 import jd.event.ControlListener;
 import jd.event.UIEvent;
-import jd.gui.skins.simple.JDAction;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
 import jd.nutils.httpserver.Handler;
 import jd.nutils.httpserver.HttpServer;
@@ -64,7 +61,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         public void handle(Request request, Response response) {
             response.setReturnType("text/html");
             response.setReturnStatus(Response.OK);
-            SimpleGUI simplegui = SimpleGUI.CURRENTGUI;
 
             // ---------------------------------------
             // Help
@@ -98,9 +94,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 commandvec.add("/get/isreconnect");
                 infovector.add("Get If Reconnect");
-
-                commandvec.add("/get/isclipboard");
-                infovector.add("Get whether clipboard is enabled");
 
                 commandvec.add("/get/downloads/currentcount");
                 infovector.add("Get amount of current downloads");
@@ -159,28 +152,13 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 commandvec.add("/action/save/container/%X%");
                 infovector.add("Save DLC-Container with all Links to %X%<br /> " + "Sample see /action/add/container/%X%");
 
-                commandvec.add("/action/set/clipboard/(true|false)");
-                infovector.add("Set ClipBoard Control enabled or not");
-
                 commandvec.add("/action/set/reconnectenabled/(true|false)");
                 infovector.add("Set Reconnect enabled or not");
 
                 commandvec.add("/action/set/premiumenabled/(true|false)");
                 infovector.add("Set Use Premium enabled or not");
-
-                commandvec.add("/action/open/add");
-                infovector.add("Open Add Links Dialog");
-
-                commandvec.add("/action/open/config");
-                infovector.add("Open Config Dialog");
-
-                commandvec.add("/action/open/log");
-                infovector.add("Open Log Dialog");
-
-                commandvec.add("/action/open/containerdialog");
-                infovector.add("Open OpenContainer Dialog");
-
-                response.addContent("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\"http://www.w3.org/TR/html4/strict.dtd\"><html><head><title>JDRemoteControl Help</title><style type=\"text/css\">a {    font-size: 14px;    text-decoration: none;    background: none;    color: #599ad6;}a:hover {    text-decoration: underline;    color:#333333;}body {    color: #333333;    background:#f0f0f0;    font-family: Verdana, Arial, Helvetica, sans-serif;    font-size: 14px;    vertical-align: top;  }</style></head><body><p><br /><b>JDRemoteControl " + getVersion() + "<br /><br />Usage:</b><br />&nbsp;<br />1)Replace %X% with your value<br />Sample: /action/save/container/C:\\backup.dlc <br />2)Replace (true|false) with true or false<br />Sample: /action/set/clipboard/true<br /><table border=\"0\" cellspacing=\"5\">");
+                
+                response.addContent("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\"http://www.w3.org/TR/html4/strict.dtd\"><html><head><title>JDRemoteControl Help</title><style type=\"text/css\">a {    font-size: 14px;    text-decoration: none;    background: none;    color: #599ad6;}a:hover {    text-decoration: underline;    color:#333333;}body {    color: #333333;    background:#f0f0f0;    font-family: Verdana, Arial, Helvetica, sans-serif;    font-size: 14px;    vertical-align: top;  }</style></head><body><p><br /><b>JDRemoteControl " + getVersion() + "<br /><br />Usage:</b><br />&nbsp;<br />1)Replace %X% with your value<br />Sample: /action/save/container/C:\\backup.dlc <br />2)Replace (true|false) with true or false<br /><table border=\"0\" cellspacing=\"5\">");
                 for (int commandcount = 0; commandcount < commandvec.size(); commandcount++) {
                     response.addContent("<tr><td valign=\"top\"><a href=\"http://127.0.0.1:" + getPluginConfig().getIntegerProperty("PORT", 10025) + commandvec.get(commandcount) + "\">" + commandvec.get(commandcount) + "</a></td><td valign=\"top\">" + infovector.get(commandcount) + "</td></tr>");
                 }
@@ -435,10 +413,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             else if (request.getRequestUrl().equals("/get/isreconnect")) {
                 response.addContent(!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
             }
-            // Get IsClipBoard
-            else if (request.getRequestUrl().equals("/get/isclipboard")) {
-                response.addContent(ClipboardHandler.getClipboard().isEnabled());
-            }
 
             // ---------------------------------------
             // Control
@@ -499,10 +473,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             else if (request.getRequestUrl().equals("/action/restart")) {
                 response.addContent("Restarting...");
 
-                class JDClose implements Runnable { /*
-                                                     * zeitverzögertes beenden -
-                                                     * thx jiaz
-                                                     */
+                class JDClose implements Runnable {
                     JDClose() {
                         new Thread(this).start();
                     }
@@ -526,10 +497,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 response.addContent("Shutting down...");
 
-                class JDClose implements Runnable { /*
-                                                     * zeitverzögertes beenden -
-                                                     * thx jiaz
-                                                     */
+                class JDClose implements Runnable {
                     JDClose() {
                         new Thread(this).start();
                     }
@@ -566,33 +534,22 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 response.addContent("newmax=" + newsimdl);
             }
 
-            // OpenDialog Add-Links
-            else if (request.getRequestUrl().equals("/action/open/add")) {
-                simplegui.actionPerformed(new ActionEvent(this, JDAction.ITEMS_ADD, null));
-                response.addContent("Add-Links Dialog opened");
-            }
-
-            // OpenDialog Config
-            else if (request.getRequestUrl().equals("/action/open/config")) {
-                simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
-                response.addContent("Config Dialog opened");
-            }
-
-            // OpenDialog Log
-            else if (request.getRequestUrl().equals("/action/open/log")) {
-                simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_LOG, null));
-                response.addContent("Log Dialog opened");
-            }
-
-            // OpenDialog Container
-            else if (request.getRequestUrl().equals("/action/open/containerdialog")) {
-                simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_LOAD_DLC, null));
-                response.addContent("Container Dialog opened");
-            }
-
             // Add Link(s)
             else if (request.getRequestUrl().matches("(?is).*/action/add/links/grabber[01]{1}/start[01]{1}/[\\s\\S]+")) {
-                String link = new Regex(request.getRequestUrl(), "[\\s\\S]*?/action/add/links/grabber[01]{1}/start[01]{1}/([\\s\\S]+)").getMatch(0);
+                String link = new Regex(request.getRequestUrl(), "[\\s\\S]*?/action/add/links/grabber[01]{1}/start[01]{1}/(.*)").getMatch(0);
+                if(request.getParameters().size() > 0) {
+                	link += "?";
+                	Iterator<String> it = request.getParameters().keySet().iterator();
+            		while(it.hasNext()) {
+            			String help = it.next();
+            			link += help;
+            			if(!request.getParameter(help).equals("")) {
+            				link += "=" + request.getParameter(help);
+            			}
+            			if(it.hasNext())
+            				link += "&";
+            		}
+                }
                 // response.addContent(link);
                 Integer showgrab = Integer.parseInt(new Regex(request.getRequestUrl(), "[\\s\\S]*?/action/add/links/grabber([01]{1})/start[01]{1}/[\\s\\S]+").getMatch(0));
                 Boolean hidegrabber = false;
@@ -606,7 +563,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     startdl = true;
                 }
                 // response.addContent(startdl.toString());
-                link = Encoding.htmlDecode(link);
+                //link = Encoding.htmlDecode(link);
                 // wegen leerzeichen etc, die ja in urls verändert werden...
 
                 DistributeData distributeData = new DistributeData(link, hidegrabber, startdl);
@@ -631,18 +588,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 // wegen leerzeichen etc, die ja in urls verändert werden...
                 JDUtilities.getController().saveDLC(new File(dlcfilestr));
                 response.addContent("Container saved. (" + dlcfilestr + ")");
-            }
-
-            // Set ClipBoard
-            else if (request.getRequestUrl().matches("(?is).*/action/set/clipboard/.*")) {
-                boolean newclip = Boolean.parseBoolean(new Regex(request.getRequestUrl(), "[\\s\\S]*/action/set/clipboard/(.*)").getMatch(0));
-                logger.fine("RemoteControl - Set ClipBoard: " + newclip);
-                if (ClipboardHandler.getClipboard().isEnabled() ^ newclip) {
-                    simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
-                    response.addContent("clip=" + newclip + " (CHANGED=true)");
-                } else {
-                    response.addContent("clip=" + newclip + " (CHANGED=false)");
-                }
             }
 
             // Set ReconnectEnabled
@@ -691,12 +636,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     private HttpServer server;
 
-    @SuppressWarnings("deprecation")
     public void actionPerformed(ActionEvent e) {
         if (server == null) { return; }
         try {
             if (server.isStarted()) {
-                server.stop();
+                server.sstop();
                 JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDLocale.L("plugins.optional.remotecontrol.stopped", "stopped."));
             } else {
                 server = new HttpServer(getPluginConfig().getIntegerProperty("PORT", 10025), new Serverhandler());

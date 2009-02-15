@@ -19,38 +19,56 @@ package jd.nutils.httpserver;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 public class HttpServer extends Thread {
     private ServerSocket ssocket;
     private Socket csocket;
     private Handler handler;
     private boolean running = true;
+    private Thread run;
+    private int port;
 
-    public HttpServer(int port, Handler handler) {
-        try {
-            ssocket = new ServerSocket(port);
-            this.handler = handler;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public HttpServer(int port, Handler handler) throws IOException {
+        this.handler = handler;
+		this.port = port;
     }
 
-    @SuppressWarnings("deprecation")
-    public void serverstop() {
+    public void sstop() throws IOException {
         running = false;
-        suspend();
+        run = null;
+    }
+    
+	public void start() {
+    	running = true;
+    	try {
+			ssocket = new ServerSocket(port);
+			ssocket.setSoTimeout(1000);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    	run = new Thread(this);
+        run.start();
     }
 
     public void run() {
-        while (running) {
+    	Thread thisThread = Thread.currentThread();
+        while (run == thisThread && running) {
             if(ssocket==null)return;
             try {
                 csocket = ssocket.accept();
                 new RequestHandler(csocket, handler).run();
+            } catch (SocketTimeoutException e) {
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+        
+        try {
+			ssocket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
     }
 
     public boolean isStarted() {
