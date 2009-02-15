@@ -406,6 +406,7 @@ public class Rapidshare extends PluginForHost {
             }
             downloadLink.setProperty("REQUEST_TIME", (System.currentTimeMillis() - startTime));
             dl.startDownload();
+
             downloadLink.setProperty("DOWNLOAD_TIME", (System.currentTimeMillis() - startTime));
             int dif = (int) ((System.currentTimeMillis() - startTime) / 1000);
             if (dif > 0) downloadLink.setProperty("DOWNLOAD_SPEED", (downloadLink.getDownloadSize() / dif) / 1024);
@@ -436,15 +437,17 @@ public class Rapidshare extends PluginForHost {
                     }
                 }.start();
             }
-        } catch (Exception e) {
-            selectedServer = null;
-            throw e;
+        } finally {
+            if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                selectedServer = null;
+            }
+
         }
 
     }
 
     public String getSessionInfo() {
-        if (selectedServer != null) { return wrapper.getHost() + " (" + selectedServer + ")"; }
+        if (selectedServer != null) { return " @" + selectedServer + ""; }
         return "";
     }
 
@@ -627,10 +630,13 @@ public class Rapidshare extends PluginForHost {
                     }
                 }.start();
             }
-        } catch (Exception e) {
-            selectedServer = null;
-            throw e;
+        } finally {
+            if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                selectedServer = null;
+            }
+
         }
+
     }
 
     private String findError(String string) {
