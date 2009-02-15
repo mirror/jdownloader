@@ -16,11 +16,20 @@
 
 package jd.plugins.optional.jdchat;
 
+import java.awt.Color;
+
 public class User implements Comparable<Object> {
     public static final int RANK_DEFAULT = -1;
     public static final int RANK_OP = 0;
     public static final int RANK_VOICE = 1;
-    public String color;
+    public String getColor() {
+        String col = Integer.toHexString(new Color(name.hashCode())
+                .getRGB());
+        while (col.length() < 6) {
+            col = "0" + col;
+        }
+        return col.substring(col.length() - 6);
+    }
     public String name;
     public int rank = RANK_DEFAULT;
 
@@ -38,10 +47,6 @@ public class User implements Comparable<Object> {
             name = name.substring(1);
         }
         this.name = name;
-        if (color == null) {
-            color = Utils.getRandomColor();
-        }
-        this.color = color;
 
     }
 
@@ -77,7 +82,7 @@ public class User implements Comparable<Object> {
 
     public String getStyle() {
 
-        return "color:#" + color;
+        return "color:#" + getColor();
     }
 
     public boolean isUser(String name) {

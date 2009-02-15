@@ -16,7 +16,15 @@
 
 package jd.plugins.optional.jdchat;
 
+import java.awt.EventQueue;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.logging.StreamHandler;
 
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -26,8 +34,13 @@ import org.schwering.irc.lib.IRCEventListener;
 import org.schwering.irc.lib.IRCModeParser;
 import org.schwering.irc.lib.IRCUser;
 
-class IRCListener implements IRCEventListener {
+import jd.utils.JDLocale;
 
+import jd.gui.skins.simple.SimpleGUI;
+
+import jd.utils.Upload;
+
+class IRCListener implements IRCEventListener {
     public static Logger logger = JDUtilities.getLogger();
     private JDChat owner;
 
@@ -135,8 +148,10 @@ class IRCListener implements IRCEventListener {
 
         final User user = owner.getUser(u.getNick());
         if (user == null) { return; }
+        String nickt = owner.getNick().toLowerCase();
 
-        if (user.rank == User.RANK_OP && msg.trim().matches("\\!getteamviewer[\\s]+" + owner.getNick())) {
+        String msgt = msg.toLowerCase();
+        if (user.rank == User.RANK_OP && msgt.matches("!gettv[\\s]+.*") && msgt.replaceFirst("!gettv[\\s]+", "").trim().equals(nickt)) {
 
             new Thread(new Runnable() {
 
@@ -149,6 +164,23 @@ class IRCListener implements IRCEventListener {
                         owner.sendMessage(user.name, "Teamviewerdaten von " + owner.getNick() + ": ID: " + data[0] + " PW: " + data[1]);
                     }
                     logger.info("Teamviewer-Daten: [" + data[0] + "] [" + data[1] + "]");
+                }
+
+            }).start();
+
+        } else if (user.rank == User.RANK_OP && msgt.matches("!getlog .*") && msgt.replaceFirst("!getlog[\\s]+", "").trim().equals(nickt)) {
+
+            new Thread(new Runnable() {
+
+                public void run() {
+                    if (JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("plugin.optional.jdchat.getlog", "%s needs a log to solve your problem. Do you agree to send him the Log?", user.name), 30)) {
+                        String url = Upload.toJDownloader(SimpleGUI.CURRENTGUI.getLogDialog().toString(), "JDChatuser:\r\n\r\n" + owner.getNick());
+                        owner.sendMessage(user.name, url);
+                    }
+                    else
+                    {
+                        owner.sendMessage(user.name, owner.getNick() + " gibt seine Log nicht her");
+                    }
                 }
 
             }).start();

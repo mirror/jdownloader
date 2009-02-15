@@ -1410,7 +1410,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         sb.append("<ul>");
         for (User name : NAMES) {
             sb.append("<li>");
-            sb.append("<span style='color:#" + name.color + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
+            sb.append("<span style='color:#" + name.getColor() + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
             sb.append(name.getRank() + name.getNickLink("query"));
             sb.append("</span></li>");
         }

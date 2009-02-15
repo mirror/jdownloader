@@ -223,15 +223,21 @@ public class LogDialog extends JFrame implements ActionListener {
             if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) {
                 File ret = fc.getSelectedFile();
                 if (ret != null) {
-                    String content = logField.getSelectedText();
-                    if (content == null || content.length() == 0) {
-                        content = logField.getText();
-                    }
+                    String content = toString();
                     JDIO.writeLocalFile(ret, content);
                     JDUtilities.getLogger().info("Log saved to file: " + ret.getAbsolutePath());
                 }
             }
         }
+    }
+    
+    @Override
+    public String toString() {
+        String content = logField.getSelectedText();
+        if (content == null || content.length() == 0) {
+            content = logField.getText();
+        }
+        return content;
     }
 
 }

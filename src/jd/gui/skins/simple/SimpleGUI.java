@@ -605,6 +605,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private LogDialog logDialog;
 
+    public LogDialog getLogDialog() {
+        return logDialog;
+    }
+
+    public void setLogDialog(LogDialog logDialog) {
+        this.logDialog = logDialog;
+    }
+
     private Logger logger = JDUtilities.getLogger();
 
     /**
