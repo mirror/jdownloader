@@ -92,7 +92,7 @@ public class Replacer {
             return dLink.isAvailable() ? "YES" : "NO";
         }
 
-        if (key.equalsIgnoreCase("SYSTEM.IP")) return JDUtilities.getIPAddress();
+        if (key.equalsIgnoreCase("SYSTEM.IP")) return JDUtilities.getIPAddress(null);
 
         if (key.equalsIgnoreCase("SYSTEM.DATE")) {
             Calendar c = Calendar.getInstance();

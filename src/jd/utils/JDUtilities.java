@@ -86,6 +86,7 @@ import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.JDProxy;
 import jd.nutils.Executer;
 import jd.nutils.io.JDFileFilter;
 import jd.parser.Regex;
@@ -503,7 +504,7 @@ public class JDUtilities {
         link.requestGuiUpdate();
         return code;
     }
- 
+
     public static String getUserInput(String message, DownloadLink link) throws InterruptedException {
         link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
         link.requestGuiUpdate();
@@ -774,12 +775,19 @@ public class JDUtilities {
     /**
      * PrÃ¼ft anhand der Globalen IP Check einstellungen die IP
      * 
+     * @param br
+     *            TODO
+     * 
      * @return ip oder /offline
      */
-    public static String getIPAddress() {
-        Browser br = new Browser();
-        br.setConnectTimeout(5000);
-        br.setReadTimeout(5000);
+    public static String getIPAddress(Browser br) {
+        if (br == null) {
+            br = new Browser();
+            br.setProxy(JDProxy.NO_PROXY);
+
+            br.setConnectTimeout(5000);
+            br.setReadTimeout(5000);
+        }
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             logger.finer("IP Check is disabled. return current Milliseconds");
             return System.currentTimeMillis() + "";

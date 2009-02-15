@@ -578,7 +578,7 @@ public class Rapidshare extends PluginForHost {
             waitTicketTime(downloadLink, pendingTime);
 
             String postTarget = getDownloadTarget(downloadLink, ticketCode);
-            System.out.println(postTarget);
+           
             // Falls Serverauswahl fehlerhaft war
             if (linkStatus.isFailed()) return;
 
@@ -1015,6 +1015,7 @@ public class Rapidshare extends PluginForHost {
      */
     private void setConfigElements() {
 
+      
         Vector<String> m1 = new Vector<String>();
         Vector<String> m2 = new Vector<String>();
         Vector<String> m3 = new Vector<String>();
@@ -1032,9 +1033,18 @@ public class Rapidshare extends PluginForHost {
         m3.add(JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer", "Bevorzugte Server")));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[] {}), "#1").setDefaultValue("Level(3)"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[] {}), "#2").setDefaultValue("TeliaSonera"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER3, m3.toArray(new String[] {}), "#3").setDefaultValue("TeliaSonera"));
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_PRESELECTED, JDLocale.L("plugins.hoster.rapidshare.com.preSelection", "Vorauswahl übernehmen")).setDefaultValue(true);
+        config.addEntry(cond);
+        
+        ConfigEntry ce;
+        config.addEntry(ce=new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[] {}), "#1").setDefaultValue("Level(3)"));
+        ce.setEnabledCondidtion(cond, "=", false);
+        config.addEntry(ce=new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[] {}), "#2").setDefaultValue("TeliaSonera"));
+        ce.setEnabledCondidtion(cond, "=", false);
+        config.addEntry(ce=new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER3, m3.toArray(new String[] {}), "#3").setDefaultValue("TeliaSonera"));
+        ce.setEnabledCondidtion(cond, "=", false);
+        config.addEntry(ce=new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDLocale.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")).setDefaultValue(false));
+        ce.setEnabledCondidtion(cond, "=", false);
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -1065,8 +1075,7 @@ public class Rapidshare extends PluginForHost {
 
         }, JDLocale.L("plugins.host.rapidshare.speedtest", "SpeedTest")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDLocale.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_PRESELECTED, JDLocale.L("plugins.hoster.rapidshare.com.preSelection", "Vorauswahl übernehmen")).setDefaultValue(true));
+       
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDLocale.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
     }

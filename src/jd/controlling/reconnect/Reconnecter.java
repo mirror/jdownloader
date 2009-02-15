@@ -42,7 +42,7 @@ public class Reconnecter {
     private static boolean checkExternalIPChange() {
         lastIPUpdate = System.currentTimeMillis();
         String tmp = CURRENT_IP;
-        CURRENT_IP = JDUtilities.getIPAddress();
+        CURRENT_IP = JDUtilities.getIPAddress(null);
         if (CURRENT_IP != null && tmp.length() > 0 && !tmp.equals(CURRENT_IP)) {
             logger.info("Detected external IP Change.");
             return true;
@@ -128,7 +128,7 @@ public class Reconnecter {
         }
         IS_RECONNECTING = false;
         lastIPUpdate = System.currentTimeMillis();
-        CURRENT_IP = JDUtilities.getIPAddress();
+        CURRENT_IP = JDUtilities.getIPAddress(null);
         RECONNECT_REQUESTS = 0;
         return ipChangeSuccess;
     }

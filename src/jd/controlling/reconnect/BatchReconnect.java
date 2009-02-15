@@ -56,7 +56,7 @@ public class BatchReconnect extends ReconnectMethod {
         int waitForIp = conf.getIntegerProperty(PARAM_WAITFORIPCHANGE, 10);
 
         logger.info("Starting " + JDLocale.L("interaction.batchreconnect.toString", "Batch reconnect durchführen") + " #" + retries);
-        String preIp = JDUtilities.getIPAddress();
+        String preIp = JDUtilities.getIPAddress(null);
 
         progress.increase(1);
         progress.setStatusText(JDLocale.L("interaction.batchreconnect.progress.2_oldIP", "BatchReconnect Old IP:") + preIp);
@@ -68,7 +68,7 @@ public class BatchReconnect extends ReconnectMethod {
         } catch (InterruptedException e) {
         }
 
-        String afterIP = JDUtilities.getIPAddress();
+        String afterIP = JDUtilities.getIPAddress(null);
 
         if (!JDUtilities.validateIP(afterIP)) {
             logger.warning("IP " + afterIP + " was filtered by mask: " + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
@@ -85,7 +85,7 @@ public class BatchReconnect extends ReconnectMethod {
                 Thread.sleep(5 * 1000);
             } catch (InterruptedException e) {
             }
-            afterIP = JDUtilities.getIPAddress();
+            afterIP = JDUtilities.getIPAddress(null);
             progress.setStatusText(JDLocale.LF("interaction.batchreconnect.progress.3_ipcheck", "BatchReconnect New IP: %s / %s", afterIP, preIp));
             logger.finer("Ip Check: " + afterIP);
         }

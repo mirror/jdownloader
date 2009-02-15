@@ -42,6 +42,7 @@ import javax.swing.border.EmptyBorder;
 import jd.config.Configuration;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -143,7 +144,8 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnStart && JDRR.running == false) {
             if (routerip.getText() != null && !routerip.getText().matches("\\s*")) JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText().trim());
-            ip_before = JDUtilities.getIPAddress();
+           
+            ip_before = JDUtilities.getIPAddress(null);
             JDRR.startServer(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null));
 
             try {
@@ -200,7 +202,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
                             Thread.sleep(check_intervall);
                         } catch (Exception e) {
                         }
-                        ip_after = JDUtilities.getIPAddress();
+                        ip_after = JDUtilities.getIPAddress(null);
                         if (ip_after.contains("offline") && reconnect_timer == 0) {
                             reconnect_timer = System.currentTimeMillis();
                         }
@@ -262,7 +264,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
         public void closePopup() {
             JDRR.stopServer();
             btnStop.setEnabled(false);
-            ip_after = JDUtilities.getIPAddress();
+            ip_after = JDUtilities.getIPAddress(null);
             if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
                 if (reconnect_timer == 0) {
                     /*

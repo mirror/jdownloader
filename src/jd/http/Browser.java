@@ -275,51 +275,7 @@ public class Browser {
 
     public Browser() {
 
-        // JDProxy p = new JDProxy(JDProxy.Type.SOCKS, "localhost", 1080);
-        // this.setProxy(p);
-        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
-            // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
-            // für evtl authentifizierung:
-            //http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
-            // -proxy-authentication/
-            // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich
-            // wäre
-            String host = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, "");
-            int port = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080);
-            String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
-            String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
-
-            JDProxy pr = new JDProxy(Proxy.Type.HTTP, host, port);
-
-            if (user != null && user.trim().length() > 0) {
-                pr.setUser(user);
-            }
-            if (pass != null && pass.trim().length() > 0) {
-                pr.setPass(pass);
-            }
-            this.setProxy(pr);
-
-        }
-        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
-            // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
-
-            String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
-            String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS, "");
-            String host = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, "");
-            int port = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080);
-
-            JDProxy pr = new JDProxy(Proxy.Type.SOCKS, host, port);
-
-            if (user != null && user.trim().length() > 0) {
-                pr.setUser(user);
-            }
-            if (pass != null && pass.trim().length() > 0) {
-                pr.setPass(pass);
-            }
-            this.setProxy(pr);
-        }
+        
 
     }
 
@@ -630,7 +586,12 @@ public class Browser {
 
     private JDProxy selectProxy() {
         // TODO Auto-generated method stub
-        if (proxy != null) return proxy;
+        if (proxy != null) {
+            if(proxy==JDProxy.NO_PROXY){
+                return null;
+            }
+            return proxy;
+        }
         return GLOBAL_PROXY;
     }
 
@@ -1394,7 +1355,51 @@ public class Browser {
         Authenticator.setDefault(AUTHENTICATOR);
         CookieHandler.setDefault(null);
         XTrustProvider.install();
+     // JDProxy p = new JDProxy(JDProxy.Type.SOCKS, "localhost", 1080);
+        // this.setProxy(p);
+        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
+            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
+            // für evtl authentifizierung:
+            //http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
+            // -proxy-authentication/
+            // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich
+            // wäre
+            String host = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, "");
+            int port = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080);
+            String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
+            String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
 
+            JDProxy pr = new JDProxy(Proxy.Type.HTTP, host, port);
+
+            if (user != null && user.trim().length() > 0) {
+                pr.setUser(user);
+            }
+            if (pass != null && pass.trim().length() > 0) {
+                pr.setPass(pass);
+            }
+            Browser.setGlobalProxy(pr);
+
+        }
+        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
+            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
+
+            String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
+            String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS, "");
+            String host = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, "");
+            int port = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080);
+
+            JDProxy pr = new JDProxy(Proxy.Type.SOCKS, host, port);
+
+            if (user != null && user.trim().length() > 0) {
+                pr.setUser(user);
+            }
+            if (pass != null && pass.trim().length() > 0) {
+                pr.setPass(pass);
+            }
+            Browser.setGlobalProxy(pr);
+        }
     }
 
     /**

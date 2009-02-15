@@ -60,7 +60,7 @@ public class ExternReconnect extends ReconnectMethod {
         int waitForIp = JDUtilities.getConfiguration().getIntegerProperty(PARAM_WAITFORIPCHANGE, 10);
 
         logger.info("Starting " + JDLocale.L("interaction.externreconnect.name", "Extern Reconnect") + " #" + retries);
-        String preIp = JDUtilities.getIPAddress();
+        String preIp = JDUtilities.getIPAddress(null);
 
         progress.increase(1);
         progress.setStatusText(JDLocale.L("interaction.externreconnect.progress.2_oldIP", "ExternReconnect Old IP:") + preIp);
@@ -72,7 +72,7 @@ public class ExternReconnect extends ReconnectMethod {
         } catch (InterruptedException e) {
         }
 
-        String afterIP = JDUtilities.getIPAddress();
+        String afterIP = JDUtilities.getIPAddress(null);
         if (!JDUtilities.validateIP(afterIP)) {
             logger.warning("IP " + afterIP + " was filtered by mask: " + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
             JDUtilities.getGUI().displayMiniWarning(String.format(JDLocale.L("interaction.reconnect.ipfiltered.warning.short", "Die IP %s wurde als nicht erlaubt identifiziert"), afterIP), null, 20);
@@ -88,7 +88,7 @@ public class ExternReconnect extends ReconnectMethod {
                 Thread.sleep(5 * 1000);
             } catch (InterruptedException e) {
             }
-            afterIP = JDUtilities.getIPAddress();
+            afterIP = JDUtilities.getIPAddress(null);
             progress.setStatusText(JDLocale.LF("interaction.externreconnect.progress.3_ipcheck", "ExternReconnect New IP: %s / %s", afterIP, preIp));
             logger.finer("Ip Check: " + afterIP);
         }

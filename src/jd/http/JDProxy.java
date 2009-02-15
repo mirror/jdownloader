@@ -44,6 +44,8 @@ public class JDProxy extends Proxy {
     private String pass = null;
     private int port = 80;
     private String host;
+    private boolean direct = false;
+    public static JDProxy NO_PROXY = new JDProxy();
 
     public int getPort() {
         return port;
@@ -58,7 +60,7 @@ public class JDProxy extends Proxy {
 
     public JDProxy(java.net.Proxy.Type type, String host, int port) {
         super(type, new InetSocketAddress(host, port));
-       
+
         this.port = port;
         this.host = host;
 
@@ -73,17 +75,30 @@ public class JDProxy extends Proxy {
 
     public JDProxy(String host, int port, String user, String pass) {
         super(JDProxy.Type.HTTP, new InetSocketAddress(host, port));
-        this.port=port;
-        this.user=user;
-        this.pass=pass;
-        this.host=host;
+        this.port = port;
+        this.user = user;
+        this.pass = pass;
+        this.host = host;
+
+    }
+
+    private JDProxy() {
+        super(JDProxy.Type.HTTP, new InetSocketAddress(80));
+        // TODO Auto-generated constructor stub
         
+        this.direct = true;
+    }
+
+    public Type type() {
+        if (direct) return Type.DIRECT;
+        return super.type();
     }
 
     public String getHost() {
         return host;
     }
-public String toString(){
-    return "JDProxy: "+super.toString();
-}
+
+    public String toString() {
+        return "JDProxy: " + super.toString();
+    }
 }

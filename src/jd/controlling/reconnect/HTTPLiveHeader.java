@@ -19,6 +19,7 @@ package jd.controlling.reconnect;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.Proxy;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +36,7 @@ import jd.config.Configuration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.JDProxy;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -111,7 +113,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
             progress.finalize();
             return parseError("No LiveHeader Script found");
         }
-        String preIp = JDUtilities.getIPAddress();
+        String preIp = JDUtilities.getIPAddress(null);
 
         logger.finer("IP before: " + preIp);
         progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.2_ip", "(IP)HTTPLiveHeader :") + preIp);
@@ -132,7 +134,8 @@ public class HTTPLiveHeader extends ReconnectMethod {
         headerProperties = new HashMap<String, String>();
         progress.increase(1);
         Browser br = new Browser();
-        br.setProxy(null);
+  
+        br.setProxy(JDProxy.NO_PROXY);
         if (user != null && pass != null) {
             br.setAuth(ip, user, pass);
         }
@@ -328,7 +331,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
         } catch (InterruptedException e) {
         }
 
-        String afterIP = JDUtilities.getIPAddress();
+        String afterIP = JDUtilities.getIPAddress(null);
         if (!JDUtilities.validateIP(afterIP)) {
             logger.warning("IP " + afterIP + " was filtered by mask: " + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
             JDUtilities.getGUI().displayMiniWarning(String.format(JDLocale.L("interaction.reconnect.ipfiltered.warning.short", "Die IP %s wurde als nicht erlaubt identifiziert"), afterIP), null, 20);
@@ -347,7 +350,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
                 Thread.sleep(5 * 1000);
             } catch (InterruptedException e) {
             }
-            afterIP = JDUtilities.getIPAddress();
+            afterIP = JDUtilities.getIPAddress(null);
             try {
                 pattern = JDLocale.L("interaction.liveHeader.progress.5_ipcheck", "(IPCHECK)HTTPLiveHeader %s / %s");
                 progress.setStatusText(String.format(pattern, preIp, afterIP));
@@ -367,7 +370,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
                     Thread.sleep(20 * 1000);
                 } catch (InterruptedException e) {
                 }
-                afterIP = JDUtilities.getIPAddress();
+                afterIP = JDUtilities.getIPAddress(null);
                 try {
                     pattern = JDLocale.L("interaction.liveHeader.progress.5_ipcheck_emergency", "(IPCHECK EMERGENCY)HTTPLiveHeader %s / %s");
                     progress.setStatusText(String.format(pattern, preIp, afterIP));

@@ -193,7 +193,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
             // Get IP
             else if (request.getRequestUrl().equals("/get/ip")) {
-                response.addContent(JDUtilities.getIPAddress());
+                response.addContent(JDUtilities.getIPAddress(null));
             }
 
             // Get Config
