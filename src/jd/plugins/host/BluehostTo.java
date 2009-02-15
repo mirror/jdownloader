@@ -114,10 +114,10 @@ public class BluehostTo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         getFileInformation(downloadLink);
-        String page = br.getPage("http://bluehost.to/fileinfo/urls=" + downloadLink.getDownloadURL());
-        String[] dat = page.split("\\, ");
-
-        if (Integer.parseInt(dat[4]) > 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, Integer.parseInt(dat[4]) * 1000l);
+        // Those 3 lines below didn't work properly last time:
+        // String page = br.getPage("http://bluehost.to/fileinfo/urls=" + downloadLink.getDownloadURL());
+        // String[] dat = page.split("\\, ");
+        // if (Integer.parseInt(dat[4]) > 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, Integer.parseInt(dat[4]) * 1000l);
 
         br.getPage(downloadLink.getDownloadURL());
         String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"1\\; URL=(.*?)\" />").getMatch(0);
