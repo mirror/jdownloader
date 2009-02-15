@@ -352,6 +352,13 @@ public class Main {
         }.start();
         WebUpdater updater = new WebUpdater();
         updater.setOSFilter(OSFilter);
+
+        if (!new File(WebUpdater.getJDDirectory(), "/backup/").exists()) {
+            new File(WebUpdater.getJDDirectory(), "/backup/").mkdirs();
+            JOptionPane.showMessageDialog(frame, "JDownloader could not create a backup. Please make sure that\r\n " + new File(WebUpdater.getJDDirectory(), "/backup/").getAbsolutePath() + " exists and is writable before starting the update");
+            Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
+            System.exit(0);
+        }
         updater.ignorePlugins(!SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_DISABLE", false));
         if (AllPlugins) updater.ignorePlugins(false);
         String warnHash = updater.getLocalHash(new File(WebUpdater.getJDDirectory(), "updatewarnings.html"));
