@@ -190,7 +190,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             case COL_FILE:
                 return downloadLink.getName().replaceAll("\\.jdu", "");
             case COL_HOSTER:
-                return downloadLink.getPlugin().getHost();
+                return downloadLink.getPlugin().getHost()+downloadLink.getPlugin().getSessionInfo();
             case COL_STATUS:
                 return downloadLink.getLinkStatus().getStatusString();
             case COL_PROGRESS:

@@ -663,5 +663,13 @@ public abstract class PluginForHost extends Plugin {
         // TODO Auto-generated method stub
 
     }
+/**
+ * returns hosterspecific infos. for example the downloadserver
+ * @return
+ */
+    public String getSessionInfo() {
+        // TODO Auto-generated method stub
+        return "";
+    }
 
 }
