@@ -258,7 +258,7 @@ public class WebUpdater implements Serializable {
             output.close();
             input.close();
 
-            log("Download ok...rename " + file.getName() + "to " + new File(org).getName());
+            log("Download ok...rename " + file.getName() + " to " + new File(org).getName());
             if (new File(org).exists() && new File(org).isFile()) {
                 if (!new File(org).delete()) {
                     log("Could not delete file " + org);
