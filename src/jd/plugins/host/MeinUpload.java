@@ -63,7 +63,7 @@ public class MeinUpload extends PluginForHost {
     @SuppressWarnings("unchecked")
     public void handleFree0(DownloadLink downloadLink) throws Exception {
         br.getPage(downloadLink.getDownloadURL());
-        Form form = br.getFormBySubmitvalue("Free Download");
+        Form form = br.getFormBySubmitvalue("Free+Download");
 
         if (form != null) {
             form.remove("method_premium");

@@ -5,9 +5,6 @@ import java.text.SimpleDateFormat;
 
 import jd.http.Browser;
 import jd.http.JDProxy;
-import jd.parser.Form;
-import jd.parser.HTMLParser;
-import jd.parser.Regex;
 import jd.plugins.Plugin;
 import jd.update.JDUpdateUtils;
 
@@ -58,10 +55,10 @@ public class header {
             br.setAuth("service.jdownloader.org", "", "");
            
             br.getPage("https://ssl.rapidshare.com/premiumzone.html");
-            Form forms = br.getForms()[0];
+            jd.parser.html.Form forms = br.getForms()[0];
             forms.put("login", "");
             forms.put("password", "");
-            br.submitForm(forms);
+            //br.submitForm(forms);
 
             System.out.println(br + "");
 
@@ -165,10 +162,7 @@ public class header {
         // System.out.println((k = Encoding.urlEncode_light(k)));
         // System.out.println((k = Encoding.urlEncode_light(k)));
         // System.out.println(Encoding.urlDecode(k, false));
-        if (false) {
-            System.out.println(new Regex("http://ftp.fernuni-hagen.de/ftp-dir/pub/mirrors/www.openoffice.org/localized/de/3.0.0/OOo_3.0.0_Win32Intel_install_de.exe", "httpviajd://[\\w\\.:-]*/.*?\\.(3gp|7z|aif|aiff|aifc|au|avi|bin|bz2|ccf|cue|divx|dlc|doc|docx|dot|exe|flv|gif|gz|iso|java|jpg|jpeg|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|png|pdf|ppt|pptx|pps|ppz|pot|qt|rar|rsdf|rtf|snd|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip)").getMatch(-1));
-            System.out.println(HTMLParser.getHttpLinkList("httpviajd://ftp.fernuni-hagen.de/ftp-dir/pub/mirrors/www.openoffice.org/localized/de/3.0.0/OOo_3.0.0_Win32Intel_install_de.exe"));
-        }
+
         //        
         // System.out.println(Encoding.urlEncode(
         // "http://srv2.shragle.com/dl/free/UjdV0050/Der KÃ¶nig der LÃ¶wen.part1.rar?v=1"

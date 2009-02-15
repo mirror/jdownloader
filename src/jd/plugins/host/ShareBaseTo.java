@@ -123,7 +123,7 @@ public class ShareBaseTo extends PluginForHost {
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
 
-        Form form = br.getFormBySubmitvalue("Please Activate Javascript");
+        Form form = br.getFormBySubmitvalue("Please+Activate+Javascript");
         String id = form.getVarsMap().get("asi");
         form.put(id, Encoding.urlEncode("Download Now !"));
         br.submitForm(form);

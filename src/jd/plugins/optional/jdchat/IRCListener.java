@@ -16,29 +16,18 @@
 
 package jd.plugins.optional.jdchat;
 
-import java.awt.EventQueue;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import java.util.logging.StreamHandler;
 
+import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.Upload;
 
 import org.schwering.irc.lib.IRCConstants;
 import org.schwering.irc.lib.IRCEventListener;
 import org.schwering.irc.lib.IRCModeParser;
 import org.schwering.irc.lib.IRCUser;
-
-import jd.utils.JDLocale;
-
-import jd.gui.skins.simple.SimpleGUI;
-
-import jd.utils.Upload;
 
 class IRCListener implements IRCEventListener {
     public static Logger logger = JDUtilities.getLogger();

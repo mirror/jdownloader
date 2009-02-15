@@ -42,7 +42,6 @@ import javax.swing.border.EmptyBorder;
 import jd.config.Configuration;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;

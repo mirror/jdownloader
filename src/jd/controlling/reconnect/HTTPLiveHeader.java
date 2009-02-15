@@ -19,7 +19,6 @@ package jd.controlling.reconnect;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.Proxy;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;

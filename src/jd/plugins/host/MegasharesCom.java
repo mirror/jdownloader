@@ -183,7 +183,7 @@ public class MegasharesCom extends PluginForHost {
     private boolean checkPassword(DownloadLink link) throws Exception {
 
         if (br.containsHTML("This link requires a password")) {
-            Form form = br.getFormBySubmitvalue("Validate Password");
+            Form form = br.getFormBySubmitvalue("Validate+Password");
             String pass = link.getStringProperty("password");
             if (pass != null) {
                 form.put("passText", pass);

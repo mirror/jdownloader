@@ -69,7 +69,7 @@ public class DepositFiles extends PluginForHost {
 
         if (br.containsHTML(DOWNLOAD_NOTALLOWED)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
 
-        Form form = br.getFormBySubmitvalue("Kostenlosen download");
+        Form form = br.getFormBySubmitvalue("Kostenlosen+download");
         if (form != null) {
             br.submitForm(form);
         }
@@ -79,7 +79,7 @@ public class DepositFiles extends PluginForHost {
 
         if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }
 
-        form = br.getFormBySubmitvalue("Die Datei downloaden");
+        form = br.getFormBySubmitvalue("Die+Datei+downloaden");
         sleep(60 * 1000l, downloadLink);
         if (form == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setDebug(true);

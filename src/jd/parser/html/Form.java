@@ -32,6 +32,13 @@ import jd.utils.EditDistance;
 
 public class Form extends Property {
 
+
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 5837247484638868257L;
+
     public enum MethodType {
         GET, POST, PUT, UNKNOWN
     }

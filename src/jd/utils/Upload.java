@@ -26,7 +26,6 @@ import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
 import jd.nutils.JDHash;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 
 public class Upload {
     public static String toJDownloader(String str, String desc) {
