@@ -37,7 +37,7 @@ public class Wiireloaded extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        int submitvalue = getPluginConfig().getIntegerProperty("WIIReloaded_SubmitValue", 5);        
+        int submitvalue = getPluginConfig().getIntegerProperty("WIIReloaded_SubmitValue", 5);
         String parameter = param.toString();
         Vector<String> link_passwds = new Vector<String>();
         link_passwds.add("wii-reloaded.info");
@@ -68,7 +68,7 @@ public class Wiireloaded extends PluginForDecrypt {
             } else {
                 String capTxt = Plugin.getCaptchaCode(captchaFile, this, param);
                 Form post = br.getForm(0);
-                post.setVariable(1, capTxt);
+                post.put("sicherheitscode", capTxt);
                 try {
                     Thread.sleep(500);
                 } catch (Exception e) {
@@ -97,7 +97,7 @@ public class Wiireloaded extends PluginForDecrypt {
                     }
                 } else {
                     Form form = brc.getForm(0);
-                    form.setVariable(0, submitvalue + "");
+                    form.put("insertvalue", submitvalue + "");
                     brc.submitForm(form);
                     if (brc.getRedirectLocation() == null) {
                         /* neuer submit value suchen */
@@ -108,7 +108,7 @@ public class Wiireloaded extends PluginForDecrypt {
                                 Thread.sleep(100);
                             } catch (Exception e) {
                             }
-                            form.setVariable(0, i + "");
+                            form.put("insertvalue", i + "");
                             brc.submitForm(form);
                             if (brc.getRedirectLocation() != null) {
                                 found = true;

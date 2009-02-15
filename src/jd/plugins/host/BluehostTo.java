@@ -44,16 +44,16 @@ public class BluehostTo extends PluginForHost {
         String url = downloadLink.getDownloadURL();
         url = url.replaceFirst("\\?dl=", "dl=");
         downloadLink.setUrlDownload(url);
-
     }
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        br.setCookie("http://bluehost.to", "bluehost_lang", "DE");
         br.getPage("http://bluehost.to/index.php");
         Form login = br.getForm(0);
-        login.setVariable(0, account.getUser());
-        login.setVariable(1, account.getPass());
+        login.put("loginname", account.getUser());
+        login.put("loginpass", account.getPass());
         br.submitForm(login);
         if (br.getRedirectLocation() != null) {
             br.getPage(br.getRedirectLocation());
@@ -71,8 +71,7 @@ public class BluehostTo extends PluginForHost {
         }
         String trafficLeft = br.getXPathElement("/html/body/div/div/ul[2]/div/div").trim();
         XPath path = new XPath(br.toString(), "/html/body/div/div/ul[2]/div[4]/center");
-        double traffic = Double.parseDouble(trafficLeft) * 1000 * 1024 * 1024;
-        ai.setTrafficLeft((long) traffic);
+        ai.setTrafficLeft(Long.parseLong(trafficLeft.replaceAll("\\.", "")) * 1024 * 1024);
         ArrayList<String> matches = path.getMatches();
         try {
             ai.setPremiumPoints(JDUtilities.filterInt(matches.get(0)));
@@ -86,7 +85,6 @@ public class BluehostTo extends PluginForHost {
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         this.setBrowserExclusive();
-        br.forceDebug(true);
         getFileInformation(downloadLink);
         login(account);
         br.setFollowRedirects(true);
@@ -153,6 +151,8 @@ public class BluehostTo extends PluginForHost {
                 sb.append(urls[i].getDownloadURL());
                 sb.append(',');
             }
+            this.setBrowserExclusive();
+            br.setCookie("http://bluehost.to", "bluehost_lang", "DE");
             br.getPage(sb + "");
 
             String[] lines = Regex.getLines(br + "");
@@ -185,7 +185,9 @@ public class BluehostTo extends PluginForHost {
         // String page;
         // dateiname, dateihash, dateisize, dateidownloads, zeit bis
         // happyhour
-        //           
+        //
+        this.setBrowserExclusive();
+        br.setCookie("http://bluehost.to", "bluehost_lang", "DE");
         String page = br.getPage("http://bluehost.to/fileinfo/urls=" + downloadLink.getDownloadURL());
 
         String[] dat = page.split("\\, ");

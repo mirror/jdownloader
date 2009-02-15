@@ -32,8 +32,6 @@ import jd.utils.EditDistance;
 
 public class Form extends Property {
 
-
-
     /**
      * 
      */
@@ -305,20 +303,6 @@ public class Form extends Property {
 
             }
         }
-    }
-
-    /**
-     * Setzt die i-te Variable
-     * 
-     * @param i
-     * @param value
-     * @return
-     */
-    public String setVariable(int i, String value) {
-        inputfields.get(i).setValue(value);
-
-        return inputfields.get(i).getKey();
-
     }
 
     /**
