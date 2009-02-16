@@ -360,7 +360,7 @@ public class Main {
             
             Main.log(log, "Not found: "+( new File(WebUpdater.getJDDirectory(), "/backup/").getAbsolutePath())+"\r\n");
             JOptionPane.showMessageDialog(frame, "JDownloader could not create a backup. Please make sure that\r\n " + new File(WebUpdater.getJDDirectory(), "/backup/").getAbsolutePath() + " exists and is writable before starting the update");
-            Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
+            Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" ,"-rfb"}, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
             System.exit(0);
             return;
         }
@@ -381,7 +381,7 @@ public class Main {
             }
             
             if (JOptionPane.showConfirmDialog(frame, msg, "There is no backup of your current Downloadqueue", JOptionPane.WARNING_MESSAGE) != JOptionPane.OK_OPTION) {
-                Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
+                Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" ,"-rfb"}, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
                 System.exit(0);
                 return;
             }
@@ -407,7 +407,7 @@ public class Main {
                 Main.log(log, "Local: " + new File("").getAbsolutePath());
                 Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + WebUpdater.getJDDirectory().getAbsolutePath());
 
-                Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
+                Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" ,"-rfb"}, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
 
                 logWindow.setText(log.toString());
                 Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());
@@ -513,7 +513,7 @@ public class Main {
         Main.log(log, "Local: " + WebUpdater.getJDDirectory().getAbsolutePath());
 
         Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + WebUpdater.getJDDirectory().getAbsolutePath());
-        Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
+        Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" ,"-rfb"}, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
 
         logWindow.setText(log.toString());
         Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());
