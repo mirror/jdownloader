@@ -93,6 +93,7 @@ public class DreiDlAm extends PluginForDecrypt {
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         br.clearCookies("3dl.am");
+        br.getPage("http://3dl.am");
         link = param;
         if (new Regex(parameter, PluginPattern.decrypterPattern_DreiDlAm_2).matches()) {
             ArrayList<String> links = decryptFromStart(parameter);
