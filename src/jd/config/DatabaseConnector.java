@@ -29,6 +29,8 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import javax.swing.JOptionPane;
+
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
@@ -67,6 +69,9 @@ public class DatabaseConnector implements Serializable {
                 logger.severe("Database broken! Creating fresh Database");
                 if (!new File(configpath + "database.script").delete()) {
                     logger.severe("Could not delete broken Database");
+                    JOptionPane.showMessageDialog(null, "Could not delete broken database. Please remove the JD_HOME/config directory and restart JD");
+                    System.exit(1);
+                    
                 }
             }
 

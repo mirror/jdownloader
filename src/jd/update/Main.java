@@ -355,64 +355,67 @@ public class Main {
         WebUpdater updater = new WebUpdater();
         updater.setOSFilter(OSFilter);
         Main.log(log, "Current Date:" + new Date() + "\r\n");
-        if (!new File(WebUpdater.getJDDirectory(), "/backup/").exists()) {
-            new File(WebUpdater.getJDDirectory(), "/backup/").mkdirs();
+        if (new File(WebUpdater.getJDDirectory(), "updateLog.txt").exists()) {
+            if (!new File(WebUpdater.getJDDirectory(), "/backup/").exists()) {
+                new File(WebUpdater.getJDDirectory(), "/backup/").mkdirs();
 
-            Main.log(log, "Not found: " + (new File(WebUpdater.getJDDirectory(), "/backup/").getAbsolutePath()) + "\r\n");
-            JOptionPane.showMessageDialog(frame, "JDownloader could not create a backup. Please make sure that\r\n " + new File(WebUpdater.getJDDirectory(), "/backup/").getAbsolutePath() + " exists and is writable before starting the update");
-            Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
-            System.exit(0);
-            return;
-        }
-
-        File lastBackup = new File(WebUpdater.getJDDirectory(), "/backup/links.linkbackup");
-
-        Main.log(log, "Backup found. date:" + new Date(lastBackup.lastModified()) + "\r\n");
-        if (!lastBackup.exists() || (System.currentTimeMillis() - lastBackup.lastModified()) > 5 * 60 * 1000) {
-
-            new File(WebUpdater.getJDDirectory(), "/backup/").mkdirs();
-            String msg = "";
-
-            if (!lastBackup.exists()) {
-
-                msg = "Do you want to continue without a backup? Your queue may get lost.\r\nLatest backup found: NONE!\r\nNote: You can ignore this message if this is a fresh JD-Installation and your linklist is empty anyway";
-            } else {
-                msg = "Do you want to continue without a backup? Your queue may get lost.\r\nLatest backup found: " + new Date(lastBackup.lastModified()) + "\r\nin " + lastBackup.getAbsolutePath();
-            }
-
-            if (JOptionPane.showConfirmDialog(frame, msg, "There is no backup of your current Downloadqueue", JOptionPane.WARNING_MESSAGE) != JOptionPane.OK_OPTION) {
+                Main.log(log, "Not found: " + (new File(WebUpdater.getJDDirectory(), "/backup/").getAbsolutePath()) + "\r\n");
+                JOptionPane.showMessageDialog(frame, "JDownloader could not create a backup. Please make sure that\r\n " + new File(WebUpdater.getJDDirectory(), "/backup/").getAbsolutePath() + " exists and is writable before starting the update");
                 Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
                 System.exit(0);
                 return;
             }
 
-        }
+            File lastBackup = new File(WebUpdater.getJDDirectory(), "/backup/links.linkbackup");
 
+            Main.log(log, "Backup found. date:" + new Date(lastBackup.lastModified()) + "\r\n");
+            if (!lastBackup.exists() || (System.currentTimeMillis() - lastBackup.lastModified()) > 5 * 60 * 1000) {
+
+                new File(WebUpdater.getJDDirectory(), "/backup/").mkdirs();
+                String msg = "";
+
+                if (!lastBackup.exists()) {
+
+                    msg = "Do you want to continue without a backup? Your queue may get lost.\r\nLatest backup found: NONE!\r\nNote: You can ignore this message if this is a fresh JD-Installation and your linklist is empty anyway";
+                } else {
+                    msg = "Do you want to continue without a backup? Your queue may get lost.\r\nLatest backup found: " + new Date(lastBackup.lastModified()) + "\r\nin " + lastBackup.getAbsolutePath();
+                }
+
+                if (JOptionPane.showConfirmDialog(frame, msg, "There is no backup of your current Downloadqueue", JOptionPane.WARNING_MESSAGE) != JOptionPane.OK_OPTION) {
+                    Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
+                    System.exit(0);
+                    return;
+                }
+
+            }
+        }
         updater.ignorePlugins(!SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_DISABLE", false));
         if (AllPlugins) updater.ignorePlugins(false);
-        String warnHash = updater.getLocalHash(new File(WebUpdater.getJDDirectory(), "updatewarnings.html"));
+        if (new File(WebUpdater.getJDDirectory(), "updateLog.txt").exists()) {
+            String warnHash = updater.getLocalHash(new File(WebUpdater.getJDDirectory(), "updatewarnings.html"));
 
-        updater.downloadBinary(new File(WebUpdater.getJDDirectory(), "updatewarnings.html").getAbsolutePath(), "http://service.jdownloader.org/messages/updatewarning.html", null);
-        String hash2 = updater.getLocalHash(new File("updatewarnings.html"));
-        if (hash2 != null && !hash2.equals(warnHash)) {
-            String str;
-            if (JOptionPane.showConfirmDialog(frame, str = utils.getLocalFile(new File("updatewarnings.html")), "UPDATE WARNINGS", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.NO_OPTION) {
-                Main.log(log, "Abort due to warnings " + str);
+            updater.downloadBinary(new File(WebUpdater.getJDDirectory(), "updatewarnings.html").getAbsolutePath(), "http://service.jdownloader.org/messages/updatewarning.html", null);
+            String hash2 = updater.getLocalHash(new File("updatewarnings.html"));
+            if (hash2 != null && !hash2.equals(warnHash)) {
+                String str;
+                if (JOptionPane.showConfirmDialog(frame, str = utils.getLocalFile(new File("updatewarnings.html")), "UPDATE WARNINGS", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.NO_OPTION) {
+                    Main.log(log, "Abort due to warnings " + str);
 
-                new File(WebUpdater.getJDDirectory(), "updatewarnings.html").delete();
-                new File(WebUpdater.getJDDirectory(), "updatewarnings.html").deleteOnExit();
-                if (new File(WebUpdater.getJDDirectory(), "webcheck.tmp").exists()) {
-                    new File(WebUpdater.getJDDirectory(), "webcheck.tmp").delete();
+                    new File(WebUpdater.getJDDirectory(), "updatewarnings.html").delete();
+                    new File(WebUpdater.getJDDirectory(), "updatewarnings.html").deleteOnExit();
+                    if (new File(WebUpdater.getJDDirectory(), "webcheck.tmp").exists()) {
+                        new File(WebUpdater.getJDDirectory(), "webcheck.tmp").delete();
+                    }
+                    Main.log(log, "Local: " + new File("").getAbsolutePath());
+                    Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + WebUpdater.getJDDirectory().getAbsolutePath());
+
+                    Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
+
+                    logWindow.setText(log.toString());
+                    Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());
+                    System.exit(0);
+                    return;
                 }
-                Main.log(log, "Local: " + new File("").getAbsolutePath());
-                Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + WebUpdater.getJDDirectory().getAbsolutePath());
-
-                Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
-
-                logWindow.setText(log.toString());
-                Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());
-                System.exit(0);
-                return;
             }
         }
         updater.setLogger(log);

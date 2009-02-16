@@ -1120,6 +1120,8 @@ public class JDController implements ControlListener, UIListener {
      *            Die Containerdatei
      */
     public void loadContainerFile(final File file, final boolean hideGrabber, final boolean startDownload) {
+        
+        System.out.println("load container");
         new Thread() {
             @SuppressWarnings("unchecked")
             public void run() {
