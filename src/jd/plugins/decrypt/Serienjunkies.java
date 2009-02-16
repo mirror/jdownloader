@@ -147,11 +147,6 @@ public class Serienjunkies extends PluginForDecrypt {
         return false;
     }
 
-    public boolean collectCaptchas() {
-
-        return false;
-    }
-
     private DownloadLink createdl(String parameter, String[] info) {
         int size = 100;
         String name = null, linkName = null, title = null;
@@ -206,8 +201,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         threads[i].wait();
                     }
                 }
-                if(threads[i].result!=null)
-                decryptedLinks.addAll(threads[i].result);
+                if (threads[i].result != null) decryptedLinks.addAll(threads[i].result);
             }
         }
         return decryptedLinks;
@@ -648,7 +642,6 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     public boolean useUserinputIfCaptchaUnknown() {
-
         return false;
     }
 
@@ -657,10 +650,11 @@ public class Serienjunkies extends PluginForDecrypt {
         private DownloadLink downloadLink;
         public ArrayList<DownloadLink> result = null;
         private ProgressController progress;
+
         public SerienjunkiesThread(jd.plugins.host.Serienjunkies pl, DownloadLink downloadLink, ProgressController progress) {
             this.pl = pl;
             this.downloadLink = downloadLink;
-            this.progress=progress;
+            this.progress = progress;
         }
 
         @Override

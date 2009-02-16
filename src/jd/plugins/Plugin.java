@@ -18,15 +18,11 @@ package jd.plugins;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.Random;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -167,52 +163,6 @@ public abstract class Plugin implements ActionListener {
         return dest;
     }
 
-    /**
-     * Gibt einen Cookie mit Hilfe der cookies.txt von Mozilla bzw. FireFox aus
-     * 
-     * @param link
-     * @param cookiefile
-     * @return
-     */
-    public static String parseMozillaCookie(URL link, File cookiefile) {
-        if (cookiefile.isFile()) {
-            try {
-                Pattern cookiePattern = Pattern.compile(".*?[\\s]+(TRUE|FALSE)[\\s]+/(.*?)[\\s]+(TRUE|FALSE)[\\s]+[0-9]{10}[\\s]+(.*?)[\\s]+(.*)", Pattern.CASE_INSENSITIVE);
-                HashMap<String, String> inp = new HashMap<String, String>();
-                String thisLine;
-                FileInputStream fin = new FileInputStream(cookiefile);
-                BufferedReader myInput = new BufferedReader(new InputStreamReader(fin));
-                String hostname = link.getHost().toLowerCase();
-                String hostname2 = hostname + ".*";
-                if (hostname.matches(".*?\\..*?\\..*?")) {
-                    hostname = hostname.replaceFirst(".*?\\.", ".");
-                }
-                hostname = "\\.?" + hostname + ".*";
-                String path = link.getPath();
-                while ((thisLine = myInput.readLine()) != null) {
-                    if (thisLine.toLowerCase().matches(hostname) || thisLine.toLowerCase().matches(hostname2)) {
-                        Matcher matcher = cookiePattern.matcher(thisLine);
-                        if (matcher.find()) {
-                            String path2 = matcher.group(2);
-                            if (!path2.matches("[\\s]*")) {
-                                path2 = "/?" + path2 + ".*";
-                                if (path.matches(path2)) {
-                                    inp.put(matcher.group(4), matcher.group(5));
-                                }
-                            } else {
-                                inp.put(matcher.group(4), matcher.group(5));
-                            }
-                        }
-                    }
-                }
-                return HTMLParser.joinMap(inp, "=", "; ");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
-    }
-
     private int captchaDetectionID = -1;
 
     /**
@@ -268,10 +218,6 @@ public abstract class Plugin implements ActionListener {
         br = new Browser();
         System.gc();
         System.runFinalization();
-    }
-
-    public boolean collectCaptchas() {
-        return true;
     }
 
     /**

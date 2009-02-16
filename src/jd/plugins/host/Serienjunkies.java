@@ -52,18 +52,12 @@ public class Serienjunkies extends PluginForHost {
     private Pattern patternCaptcha = null;
     private String subdomain = "download.";
     private DownloadLink downloadLink;
-    private static Vector<String> passwords = new Vector<String>();
+    private static final String[] passwords = new String[] { "serienjunkies.dl.am", "serienjunkies.org" };
     private static int active = 0;
     private ProgressController progress;
 
     public Serienjunkies(PluginWrapper wrapper) {
         super(wrapper);
-        passwords.add("serienjunkies.dl.am");
-        passwords.add("serienjunkies.org");
-    }
-
-    public boolean collectCaptchas() {
-        return false;
     }
 
     // Für Links die bei denen die Parts angezeigt werden
@@ -514,9 +508,7 @@ public class Serienjunkies extends PluginForHost {
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        handle0(downloadLink);
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-        return;
     }
 
     public ArrayList<DownloadLink> getAvailableDownloads(DownloadLink downloadLink, int activeCaptchas, ProgressController progress) throws Exception {
@@ -613,23 +605,6 @@ public class Serienjunkies extends PluginForHost {
             downloadLink2.addSourcePluginPasswords(passwords);
         }
         return finaldls;
-    }
-
-    public void handle0(DownloadLink downloadLink) throws Exception {
-        /*
-         * ArrayList<DownloadLink> fr = getAvailableDownloads(downloadLink,
-         * true); if (fr != null) { FilePackage fp = new FilePackage();
-         * fp.setDownloadDirectory
-         * (downloadLink.getFilePackage().getDownloadDirectory());
-         * fp.setExtractAfterDownload
-         * (downloadLink.getFilePackage().isExtractAfterDownload());
-         * fp.setProperties(downloadLink.getFilePackage().getProperties());
-         * fp.setPassword(downloadLink.getFilePackage().getPassword());
-         * fp.setName(downloadLink.getName()); for (DownloadLink downloadLink2 :
-         * fr) { fp.add(downloadLink2); }
-         * JDUtilities.getController().removeDownloadLink(downloadLink);
-         * JDUtilities.getController().addPackage(fp); } active = false;
-         */
     }
 
     public int getMaxSimultanFreeDownloadNum() {
