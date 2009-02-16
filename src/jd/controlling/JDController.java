@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import jd.CPluginWrapper;
+import jd.Main;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
@@ -1022,7 +1023,7 @@ public class JDController implements ControlListener, UIListener {
                 this.loadContainerFile(file);
             }
             return false;
-        } else if (packages.size() == 0) {
+        } else if (packages.size() == 0 && Main.returnedfromUpdate()) {
             this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
             File file = JDUtilities.getResourceFile("backup/links.linkbackup");
             if (file.exists() && file.lastModified() >= System.currentTimeMillis() - 10 * 60 * 1000l) {

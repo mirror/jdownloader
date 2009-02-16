@@ -66,6 +66,7 @@ import jd.utils.WebUpdate;
 public class Main {
 
     private static boolean debug = false;
+    private static boolean rfb = false;
     private static Logger logger = JDUtilities.getLogger();
     private static SplashScreen splashScreen;
 
@@ -137,6 +138,10 @@ public class Main {
 
     }
 
+    public static boolean returnedfromUpdate() {
+        return rfb;
+    }
+
     public static void main(String args[]) {
         System.setProperty("file.encoding", "UTF-8");
         // Mac specific //
@@ -153,8 +158,9 @@ public class Main {
         for (String p : args) {
             if (p.equalsIgnoreCase("-debug")) {
                 debug = true;
-
-                break;
+            }
+            if (p.equalsIgnoreCase("-rfb")) {
+                rfb = true;
             }
         }
 
@@ -440,7 +446,7 @@ public class Main {
             }
         }
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.webupdate", "Check Updates"));
-        new WebUpdate().doWebupdate(false);        
+        new WebUpdate().doWebupdate(false);
 
         Main.setSplashStatus(splashScreen, 15, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
         init.initPlugins();

@@ -215,8 +215,6 @@ public class JDInit {
         JDIO.saveObject(null, ret, file, "links.linkbackup", "linkbackup", false);
     }
 
-    
-
     void init() {
         Browser.init();
     }
@@ -351,7 +349,6 @@ public class JDInit {
 
     public void loadDownloadQueue() {
         JDUtilities.getController().initDownloadLinks();
-
     }
 
     /**
