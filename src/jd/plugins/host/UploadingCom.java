@@ -46,6 +46,7 @@ public class UploadingCom extends PluginForHost {
         getFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.getPage("http://www.uploading.com/lang/?lang=en");
+        if (br.containsHTML("YOU REACHED YOUR COUNTRY DAY LIMIT")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "YOU REACHED YOUR COUNTRY DAY LIMIT", 60 * 60 * 1000l);
         Form form = br.getForm(2);
         try {
             Thread.sleep(2000);
