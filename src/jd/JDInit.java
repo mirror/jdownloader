@@ -16,13 +16,9 @@
 
 package jd;
 
-import java.awt.Color;
-import java.awt.HeadlessException;
 import java.awt.Toolkit;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -34,13 +30,10 @@ import javax.swing.JOptionPane;
 import jd.config.CFGConfig;
 import jd.config.Configuration;
 import jd.controlling.JDController;
-import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
-import jd.controlling.interaction.PackageManager;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.JDLookAndFeelManager;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.OSDetector;
@@ -48,8 +41,6 @@ import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.BackupLink;
 import jd.plugins.DownloadLink;
-import jd.update.PackageData;
-import jd.update.WebUpdater;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
@@ -224,134 +215,7 @@ public class JDInit {
         JDIO.saveObject(null, ret, file, "links.linkbackup", "linkbackup", false);
     }
 
-    public void doWebupdate(final boolean guiCall) {
-        CFGConfig cfg = CFGConfig.getConfig("WEBUPDATE");
-        cfg.setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false));
-        cfg.setProperty("PLAF", JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty("PLAF"));
-        cfg.save();
-
-        logger.finer("Init Webupdater");
-        // if (!guiCall) {
-        // if ((System.currentTimeMillis() - LASTREQUEST) < (30 * 60 * 1000l)) {
-        // logger.finer("30 min sperre");
-        // return;
-        // }
-        // } else {
-        // if ((System.currentTimeMillis() - LASTREQUEST) < (1 * 30 * 1000l)) {
-        // logger.finer("30 sekunden sperre");
-        // return;
-        // }
-        // }
-        final ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
-
-        // LASTREQUEST = System.currentTimeMillis();
-        final WebUpdater updater = new WebUpdater();
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
-            updater.ignorePlugins(false);
-        }
-        logger.finer("Get available files");
-        // logger.info(files + "");
-        final Vector<Vector<String>> files;
-        try {
-            files = updater.getAvailableFiles();
-            if (updater.sum.length > 100) {
-                JDUtilities.getSubConfig("GUI").setProperty(new String(new byte[] { 112, 97, 99, 107, 97, 103, 101 }), updater.sum);
-            }
-        } catch (Exception e) {
-            progress.setColor(Color.RED);
-            progress.setStatusText("Update failed");
-            progress.finalize(15000l);
-            return;
-        }
-        new Thread() {
-
-            public void run() {
-                PackageManager pm = new PackageManager();
-                ArrayList<PackageData> packages = pm.getDownloadedPackages();
-
-                updater.filterAvailableUpdates(files, JDUtilities.getJDHomeDirectoryFromEnvironment());
-
-                if (files != null) {
-                    JDUtilities.getController().setWaitingUpdates(files);
-                }
-
-                if (!guiCall && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
-                    logger.severe("Webupdater disabled");
-                    progress.finalize();
-                    return;
-                }
-
-                if (files == null && packages.size() == 0) {
-                    logger.severe("Webupdater offline");
-                    progress.finalize();
-                    return;
-                }
-
-                int org;
-                progress.setRange(org = files.size());
-                logger.finer("Files found: " + files);
-
-                logger.finer("init progressbar");
-                progress.setStatusText(JDLocale.L("init.webupdate.progress.1_title", "Update Check"));
-                if (files.size() > 0 || packages.size() > 0) {
-
-                    progress.setStatus(org - (files.size() + packages.size()));
-                    logger.finer("Files to update: " + files);
-                    logger.finer("JDUs to update: " + packages.size());
-
-                    if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
-                        CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI == null ? null : SimpleGUI.CURRENTGUI.getFrame(), JDLocale.LF("init.webupdate.auto.countdowndialog", "Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
-                        if (ccd.result) {
-
-                            try {
-                                Browser.download(JDUtilities.getResourceFile("webupdater.jar"), "http://service.jdownloader.org/update/webupdater.jar");
-                            } catch (IOException e) {
-                                progress.setStatusText(JDLocale.L("init.webupdate.error.could_not_load_webupdater", "Could not load Webupdater"));
-                                progress.setColor(Color.RED);
-                                progress.finalize(10000l);
-                                return;
-                            }
-                            createQueueBackup();
-                            JDIO.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
-                            logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
-                            if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
-                            System.exit(0);
-                        }
-                    } else {
-
-                        try {
-
-                            CountdownConfirmDialog ccd = new CountdownConfirmDialog(JDUtilities.getGUI() != null ? ((SimpleGUI) JDUtilities.getGUI()).getFrame() : null, JDLocale.L("system.dialogs.update", "Updates available"), JDLocale.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size() + "", packages.size() + ""), 20, false, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
-
-                            if (ccd.result) {
-                                try {
-                                    Browser.download(JDUtilities.getResourceFile("webupdater.jar"), "http://service.jdownloader.org/update/webupdater.jar");
-                                } catch (IOException e) {
-                                    progress.setStatusText(JDLocale.L("init.webupdate.error.could_not_load_webupdater", "Could not load Webupdater"));
-                                    progress.setColor(Color.RED);
-                                    progress.finalize(10000l);
-                                    return;
-                                }
-                                createQueueBackup();
-                                JDIO.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
-                                logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
-                                if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
-                                System.exit(0);
-                            }
-                        } catch (HeadlessException e) {
-
-                            e.printStackTrace();
-                        }
-
-                    }
-
-                }
-
-                progress.finalize();
-            }
-
-        }.start();
-    }
+    
 
     void init() {
         Browser.init();

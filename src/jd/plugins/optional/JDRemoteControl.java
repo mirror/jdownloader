@@ -28,7 +28,6 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
 
-import jd.JDInit;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -50,6 +49,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.WebUpdate;
 
 public class JDRemoteControl extends PluginOptional implements ControlListener {
     public JDRemoteControl(PluginWrapper wrapper) {
@@ -451,7 +451,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
                 }
 
-                new JDInit().doWebupdate(true);
+                new WebUpdate().doWebupdate(true);
 
                 response.addContent("Do Webupdate...");
             }

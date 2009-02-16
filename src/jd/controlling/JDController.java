@@ -28,7 +28,6 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import jd.CPluginWrapper;
-import jd.JDInit;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
@@ -52,6 +51,7 @@ import jd.plugins.PluginsC;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.WebUpdate;
 
 /**
  * Im Controller wird das ganze App gesteuert. Evebnts werden deligiert.
@@ -1792,7 +1792,7 @@ public class JDController implements ControlListener, UIListener {
 
             break;
         case UIEvent.UI_INTERACT_UPDATE:
-            new JDInit().doWebupdate(true);
+            new WebUpdate().doWebupdate(true);
             break;
         }
     }

@@ -295,9 +295,9 @@ public class JDUpdateUtils {
     public static boolean backupDataBase() {
         String[] filenames = new String[] { "JDU.cfg", "WEBUPDATE.cfg", "database.properties", "database.script" };
         byte[] buf = new byte[8192];
-        File file = new File(WebUpdater.getJDDirectory(), "config/database.zip");
+        File file = new File(WebUpdater.getJDDirectory(), "backup/database.zip");
         if (file.exists()) {
-            File old = new File(WebUpdater.getJDDirectory(), "config/database_" + file.lastModified() + ".zip");
+            File old = new File(WebUpdater.getJDDirectory(), "backup/database_" + file.lastModified() + ".zip");
             file.getParentFile().mkdirs();
             if (file.exists()) {
                 file.renameTo(old);

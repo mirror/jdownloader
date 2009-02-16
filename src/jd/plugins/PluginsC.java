@@ -24,7 +24,6 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import jd.HostPluginWrapper;
-import jd.JDInit;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.DistributeData;
@@ -35,6 +34,7 @@ import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.WebUpdate;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können
@@ -316,7 +316,7 @@ public abstract class PluginsC extends Plugin {
                 progress.setColor(Color.RED);
                 progress.setStatusText(JDLocale.LF("plugins.container.exit.error", "Container error: %s", containerStatus.getStatusText()));
                 progress.finalize(5000);
-                new JDInit().doWebupdate(false);
+                new WebUpdate().doWebupdate(false);
             } else {
                 progress.finalize();
             }

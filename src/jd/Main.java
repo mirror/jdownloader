@@ -57,6 +57,7 @@ import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.MacOSController;
+import jd.utils.WebUpdate;
 
 /**
  * @author astaldo/JD-Team
@@ -431,7 +432,7 @@ public class Main {
             try {
                 File log = JDUtilities.getResourceFile("logs/" + (debug ? "debug" : "") + "log_" + System.currentTimeMillis() + ".log");
                 if (!log.getParentFile().exists()) {
-                    log.getParentFile().mkdir();
+                    log.getParentFile().mkdirs();
                 }
                 controller.setLogFileWriter(new BufferedWriter(new FileWriter(log)));
             } catch (IOException e) {
@@ -439,7 +440,7 @@ public class Main {
             }
         }
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.webupdate", "Check Updates"));
-        init.doWebupdate(false);
+        new WebUpdate().doWebupdate(false);        
 
         Main.setSplashStatus(splashScreen, 15, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
         init.initPlugins();

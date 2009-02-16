@@ -24,7 +24,6 @@ import java.util.Vector;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import jd.JDInit;
 import jd.OptionalPluginWrapper;
 import jd.config.CFGConfig;
 import jd.controlling.DistributeData;
@@ -37,6 +36,7 @@ import jd.update.JDUpdateUtils;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.WebUpdate;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -284,7 +284,7 @@ public class PackageManager extends Interaction implements Serializable {
                                 String message = JDLocale.LF("modules.packagemanager.downloadednewpackage.title2", "<p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>", list.toString());
                                 boolean ret = JDUtilities.getGUI().showCountdownConfirmDialog(message, 15);
                                 if (ret) {
-                                    new JDInit().doWebupdate(true);
+                                    new WebUpdate().doWebupdate(true);
                                 }
                             }
 
