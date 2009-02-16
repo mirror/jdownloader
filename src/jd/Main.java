@@ -66,7 +66,7 @@ import jd.utils.WebUpdate;
 public class Main {
 
     private static boolean debug = false;
-    private static boolean rfb = false;
+    private static boolean rfu = false;
     private static Logger logger = JDUtilities.getLogger();
     private static SplashScreen splashScreen;
 
@@ -139,7 +139,7 @@ public class Main {
     }
 
     public static boolean returnedfromUpdate() {
-        return rfb;
+        return rfu;
     }
 
     public static void main(String args[]) {
@@ -160,7 +160,7 @@ public class Main {
                 debug = true;
             }
             if (p.equalsIgnoreCase("-rfb")) {
-                rfb = true;
+                rfu = true;
             }
         }
 
