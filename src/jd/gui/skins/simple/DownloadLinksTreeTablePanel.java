@@ -45,16 +45,7 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
     @Override
     public synchronized void fireTableChanged(int id, Object param) {
-        if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED) {
-        }
         internalTreeTable.fireTableChanged(id, param);
-        if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED && !isVisible()) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     public void moveSelectedItems(int id) {
