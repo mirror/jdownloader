@@ -227,6 +227,7 @@ public class JDUpdateUtils {
     }
 
     private static ByteBuffer download(String fileurl, int limit) throws IOException {
+        fileurl += (fileurl.contains("?") ? "&" : "?") + System.currentTimeMillis();
         URL url = new URL(fileurl);
         HttpURLConnection httpConnection = (HttpURLConnection) url.openConnection();
         if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_PROXY", false)) {
