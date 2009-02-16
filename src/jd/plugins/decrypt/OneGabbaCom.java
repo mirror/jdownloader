@@ -21,11 +21,11 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class OneGabbaCom extends PluginForDecrypt {
+
     public OneGabbaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -36,18 +36,19 @@ public class OneGabbaCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCookiesExclusive(true);
         br.getPage(parameter);
-        
-        String links[][] = br.getRegex("<pre>(.*?)</pre>").getMatches();
-        if(links.length > 0) {
-	        for(int i=0; i< links.length; i++) decryptedLinks.add(createDownloadlink(links[i][0]));
-        } else {
-        	throw new DecrypterException("Keine Links gefunden");
+
+        String links[] = br.getRegex("<pre>(.*?)</pre>").getColumn(0);
+        progress.setRange(links.length);
+        for (String element : links) {
+            decryptedLinks.add(createDownloadlink(element));
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4565 $");
+        return getVersion("$Revision$");
     }
 }
