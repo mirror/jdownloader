@@ -27,6 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 
 public class HTTPAllgemein extends PluginForHost {
 
@@ -136,13 +137,13 @@ public class HTTPAllgemein extends PluginForHost {
         dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), resume, chunks);
 
         if (!dl.startDownload()) {
-            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().contains("rangeheader")) {
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDLocale.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:"))) {
                 if (downloadLink.getBooleanProperty("nochunk", false) == false) {
                     downloadLink.setProperty("nochunk", new Boolean(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
-            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().contains("chunkload")) {
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDLocale.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
                 if (downloadLink.getBooleanProperty("nochunkload", false) == false) {
                     downloadLink.setChunksProgress(null);
                     downloadLink.setProperty("nochunkload", new Boolean(true));

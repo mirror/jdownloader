@@ -274,6 +274,12 @@ public class Netloadin extends PluginForHost {
         getFileInformation(downloadLink);
         login(account);
         isExpired(account);
+        boolean resume = true;
+        int chunks = 0;
+        if (downloadLink.getBooleanProperty("nochunk", false) == true) {
+            resume = false;
+            chunks = 1;
+        }
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
         br.setFollowRedirects(false);
         br.setDebug(true);
@@ -290,26 +296,25 @@ public class Netloadin extends PluginForHost {
 
             con = br.createRequest(url);
 
-            dl = RAFDownload.download(downloadLink, con, true, 0);
+            dl = RAFDownload.download(downloadLink, con, resume, chunks);
             // dl.headFake(null);
             dl.setFirstChunkRangeless(true);
             URLConnectionAdapter connection = dl.connect(br);
             for (int i = 0; i < 10 && (!connection.isOK()); i++) {
                 try {
                     con = br.createRequest(url);
-                    dl = RAFDownload.download(downloadLink, con, true, 0);
+                    dl = RAFDownload.download(downloadLink, con, resume, chunks);
                     connection = dl.connect(br);
                 } catch (Exception e) {
                     try {
                         Thread.sleep(150);
                     } catch (InterruptedException e2) {
-                        e2.printStackTrace();
                     }
                 }
             }
         } else {
             con = br.createGetRequest(null);
-            dl = RAFDownload.download(downloadLink, con, true, 0);
+            dl = RAFDownload.download(downloadLink, con, resume, chunks);
             // dl.headFake(null);
             dl.setFirstChunkRangeless(true);
             dl.connect(br);
@@ -320,7 +325,19 @@ public class Netloadin extends PluginForHost {
             checkPassword(downloadLink);
             checkErrors();
         }
-        dl.startDownload();
+        if (!dl.startDownload()) {
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDLocale.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:"))) {
+                logger.severe("Workaround for Netload Server-Problem! Setting Resume to false and Chunks to 1!");
+                downloadLink.setProperty("nochunk", true);
+                downloadLink.setChunksProgress(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
+    }
+
+    @Override
+    public void reset_downloadlink(DownloadLink link) {
+        link.setProperty("nochunk", false);
     }
 
     private void checkErrors() throws PluginException {
@@ -343,9 +360,9 @@ public class Netloadin extends PluginForHost {
             String id = Netloadin.getID(downloadLink.getDownloadURL());
             String page = br.getPage("http://netload.in/share/fileinfos2.php?bz=1&file_id=" + id);
             for (int i = 0; i < 3 && page == null; i++) {
-          
-                    Thread.sleep(150);
-        
+
+                Thread.sleep(150);
+
                 page = br.getPage("http://netload.in/share/fileinfos2.php?bz=1&file_id=" + id);
             }
 
