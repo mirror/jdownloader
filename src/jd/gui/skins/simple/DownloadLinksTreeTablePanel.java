@@ -37,7 +37,6 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
     public DownloadLinksTreeTablePanel(SimpleGUI parent) {
         super(parent, new BorderLayout());
-        setVisible(false);
         internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(this));
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
         scrollPane.setPreferredSize(new Dimension(800, 450));
@@ -47,7 +46,6 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
     @Override
     public synchronized void fireTableChanged(int id, Object param) {
         if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED) {
-            setVisible(false);
         }
         internalTreeTable.fireTableChanged(id, param);
         if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED && !isVisible()) {
@@ -56,7 +54,6 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            setVisible(true);
         }
     }
 
