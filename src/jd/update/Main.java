@@ -195,6 +195,7 @@ public class Main {
 
             if (files != null) {
                 updater.filterAvailableUpdates(files);
+                JDUpdateUtils.backupDataBase();
                 updater.updateFiles(files);
             }
             Main.trace("End Webupdate with " + updater.getErrors() + " Errors");
@@ -434,6 +435,7 @@ public class Main {
         if (files != null) {
             updater.filterAvailableUpdates(files);
             progresslist.setValue(100);
+            JDUpdateUtils.backupDataBase();
             updater.updateFiles(files);
         }
 

@@ -213,13 +213,13 @@ public class JDInit {
         if (file.exists()) {
             File old = JDUtilities.getResourceFile("backup/links_" + file.lastModified() + ".linkbackup");
 
-            file.mkdirs();
+            file.getParentFile().mkdirs();
             if (file.exists()) {
                 file.renameTo(old);
             }
             file.delete();
         } else {
-            file.mkdirs();
+            file.getParentFile().mkdirs();
         }
         JDIO.saveObject(null, ret, file, "links.linkbackup", "linkbackup", false);
     }

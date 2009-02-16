@@ -1,6 +1,9 @@
 package jd.update;
 
 import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -10,6 +13,7 @@ import java.security.MessageDigest;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 public class JDUpdateUtils {
 
@@ -285,6 +289,43 @@ public class JDUpdateUtils {
 
     public static String[] splitLines(String source) {
         return source.split("\r\n|\r|\n");
+    }
+
+    public static boolean backupDataBase() {
+        String[] filenames = new String[] { "JDU.cfg", "WEBUPDATE.cfg", "database.properties", "database.script" };
+        byte[] buf = new byte[8192];
+        File file = new File(WebUpdater.getJDDirectory(), "config/database.zip");
+        if (file.exists()) {
+            File old = new File(WebUpdater.getJDDirectory(), "config/database_" + file.lastModified() + ".zip");
+            file.getParentFile().mkdirs();
+            if (file.exists()) {
+                file.renameTo(old);
+            }
+            file.delete();
+        } else {
+            file.getParentFile().mkdirs();
+        }
+        try {
+            String outFilename = file.getAbsolutePath();
+            ZipOutputStream out = new ZipOutputStream(new FileOutputStream(outFilename));
+
+            for (int i = 0; i < filenames.length; i++) {
+                File filein = new File(WebUpdater.getJDDirectory(), "config/" + filenames[i]);
+                if (!filein.exists()) continue;
+                FileInputStream in = new FileInputStream(filein.getAbsoluteFile());
+                out.putNextEntry(new ZipEntry(filenames[i]));
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+                out.closeEntry();
+                in.close();
+            }
+            out.close();
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
 }
