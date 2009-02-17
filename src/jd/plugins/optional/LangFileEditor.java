@@ -936,11 +936,13 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private Vector<File> getSourceFiles(File directory) {
         Vector<File> files = new Vector<File>();
 
-        for (File file : directory.listFiles()) {
-            if (file.isDirectory()) {
-                files.addAll(getSourceFiles(file));
-            } else if (file.getName().matches(".*\\.java$")) {
-                files.add(file);
+        if (directory != null) {
+            for (File file : directory.listFiles()) {
+                if (file.isDirectory()) {
+                    files.addAll(getSourceFiles(file));
+                } else if (file.getName().matches(".*\\.java$")) {
+                    files.add(file);
+                }
             }
         }
 
