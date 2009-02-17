@@ -25,6 +25,9 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -41,6 +44,12 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 
 public class JDEventQueue extends EventQueue {
+    public JDEventQueue() {
+        super();
+        // comment out in production code
+        // JDUtilities.getLogger().fine("Enter " + JDEventQueue.class.getSimpleName());eventQueueInteruptionTest();
+    }
+    
     abstract class MenuAbstractAction extends AbstractAction {
         /**
          * 
@@ -76,6 +85,14 @@ public class JDEventQueue extends EventQueue {
         if (!(c instanceof JTextComponent)) { return; }
         if (MenuSelectionManager.defaultManager().getSelectedPath().length > 0) { return; }
         final JTextComponent t = (JTextComponent) c;
+        
+        if (t.getSelectedText() == null) {
+            t.requestFocusInWindow();
+            int length = t.getText().length();
+            t.select(0, length);
+//          t.setCaretPosition(length);
+        }
+        
         JPopupMenu menu = new JPopupMenu();
         menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.cut", "Ausschneiden"), JDTheme.II("gui.icons.cut", 16, 16), JDLocale.L("gui.textcomponent.context.cut.acc", "ctrl X")) {
             /**
@@ -170,5 +187,57 @@ public class JDEventQueue extends EventQueue {
 
         Point pt = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), t);
         menu.show(t, pt.x, pt.y);
+    }
+
+    /**
+     * Since we are using our own EventQueue, lengthy tasks could lead to
+     * interruptions which may freeze the GUI or crash the program. This
+     * function tests how severe the impact is when executed in the current
+     * thread or a seperate thread.
+     * 
+     * Do not execute this function in production code. This is only a test.
+     */
+    static void eventQueueInteruptionTest() {
+        Runnable runnable = new Runnable() {
+            public void run() {
+//                 long task, like calculating something.
+                int sum = 0;
+                byte[] test = new byte[]{104,116,116,112,58,47,47,119,119,119,46,121,111,117,116,117,98,101,46,99,111,109,47,119,97,116,99,104,63,118,61,79,68,68,82,74,82,87,104,69,100,81,38,102,101,97,116,117,114,101,61,104,100};
+                for (byte b : test) {
+                    sum += b;
+                }
+                String result = new String(sum + ""); result = new String(test);
+                // JDUtilities.getLogger().fine(result);
+                
+                // task of unpredictable length, like downloading a file
+                unpredictableLengthTask(result);
+            }
+            
+        };
+        
+        // run in current thread
+        // runnable.run();
+        
+        // run in new thread
+        new Thread(runnable).start();
+    }
+    
+    static void unpredictableLengthTask(String urlString) {
+        // JDUtilities.getLogger().info("Start Event Queue Interruption Test"); 
+        try {
+            // Create a URL for the desired page
+            URL url = new URL(urlString);
+        
+            // Read all the text returned by the server
+            BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
+            StringBuilder sb = new StringBuilder();
+            String str;
+            while ((str = in.readLine()) != null) {
+                // str is one line of text; readLine() strips the newline character(s)
+                sb.append(str);
+            }
+            in.close();
+            // JDUtilities.getLogger().warning(sb.toString());
+        } catch (Exception e) {System.err.println("Error");}
     }
 }
