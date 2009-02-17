@@ -37,9 +37,9 @@ public abstract class ReconnectMethod {
 
         progress.setStatusText(JDLocale.L("reconnect.progress.1_retries", "Reconnect #") + retries);
 
-        int waittime = configuration.getIntegerProperty(PARAM_IPCHECKWAITTIME, 0);
-        int maxretries = configuration.getIntegerProperty(PARAM_RETRIES, 0);
-        int waitForIp = configuration.getIntegerProperty(PARAM_WAITFORIPCHANGE, 10);
+        int waittime = JDUtilities.getConfiguration().getIntegerProperty(PARAM_IPCHECKWAITTIME, 0);
+        int maxretries = JDUtilities.getConfiguration().getIntegerProperty(PARAM_RETRIES, 0);
+        int waitForIp = JDUtilities.getConfiguration().getIntegerProperty(PARAM_WAITFORIPCHANGE, 10);
 
         logger.info("Starting " + this.toString() + " #" + retries);
         String preIp = JDUtilities.getIPAddress(null);
