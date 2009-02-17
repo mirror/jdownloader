@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 import jd.JDInit;
 import jd.config.Configuration;
 import jd.controlling.reconnect.HTTPLiveHeader;
+import jd.controlling.reconnect.ReconnectMethod;
 import jd.http.Browser;
 import jd.nutils.Threader;
 import jd.nutils.jobber.JDRunnable;
@@ -38,7 +39,7 @@ public class RouterInfoCollector {
     public final static String PROPERTY_SHOW_ROUTERINFO_DIALOG = "PROPERTY_SHOW_ROUTERINFO_DIALOG";
     public final static String RECONNECTTYPE_LIVE_HEADER = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
     public final static String RECONNECTTYPE_CLR = JDLocale.L("modules.reconnect.types.clr", "CLR Script");
-    protected static String reconnectType = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
+    protected static String reconnectType = JDUtilities.getConfiguration().getStringProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
     protected static String reconnectMethode = null;
     protected static String reconnectMethodeClr = null;
     public final static int RInfo_UPNP = 1 << 1;

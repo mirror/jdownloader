@@ -18,123 +18,48 @@ package jd.controlling.reconnect;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class BatchReconnect extends ReconnectMethod {
 
-    private static final String PARAM_IPCHECKWAITTIME = "EXTERN_RECONNECT_IPCHECKWAITTIME";
-
-    public static final String PARAM_RETRIES = "EXTERN_RECONNECT_RETRIES";
-
-    private static final String PARAM_WAITFORIPCHANGE = "EXTERN_RECONNECT_WAITFORIPCHANGE";
-
     private static final String PROPERTY_DO_OUTPUT = "PROPERTY_DO_OUTPUT";
 
-    public static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN";
+    private static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN";
 
     private static final String PROPERTY_RECONNECT_EXECUTE_FOLDER = "RECONNECT_EXECUTE_FOLDER";
 
-    public static final String PROPERTY_TERMINAL = "TERMINAL";
+    private static final String PROPERTY_TERMINAL = "TERMINAL";
 
-    private int retries = 0;
-
-    @Override
-    public boolean doReconnect() {
-        retries++;
-        ProgressController progress = new ProgressController(JDLocale.L("interaction.batchreconnect.progress.0_title", "Batch Reconnect"), 10);
-
-        progress.setStatusText(JDLocale.L("interaction.batchreconnect.progress.1_retries", "BatchReconnect #") + retries);
-
-        SubConfiguration conf = JDUtilities.getSubConfig("BATCHRECONNECT");
-        int waittime = conf.getIntegerProperty(PARAM_IPCHECKWAITTIME, 0);
-        int maxretries = conf.getIntegerProperty(PARAM_RETRIES, 0);
-        int waitForIp = conf.getIntegerProperty(PARAM_WAITFORIPCHANGE, 10);
-
-        logger.info("Starting " + JDLocale.L("interaction.batchreconnect.toString", "Batch reconnect durchführen") + " #" + retries);
-        String preIp = JDUtilities.getIPAddress(null);
-
-        progress.increase(1);
-        progress.setStatusText(JDLocale.L("interaction.batchreconnect.progress.2_oldIP", "BatchReconnect Old IP:") + preIp);
-        logger.finer("IP before: " + preIp);
-        runCommands();
-        logger.finer("Wait " + waittime + " seconds ...");
-        try {
-            Thread.sleep(waittime * 1000);
-        } catch (InterruptedException e) {
-        }
-
-        String afterIP = JDUtilities.getIPAddress(null);
-
-        if (!JDUtilities.validateIP(afterIP)) {
-            logger.warning("IP " + afterIP + " was filtered by mask: " + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
-            JDUtilities.getGUI().displayMiniWarning(String.format(JDLocale.L("interaction.reconnect.ipfiltered.warning.short", "Die IP %s wurde als nicht erlaubt identifiziert"), afterIP), null, 20);
-            afterIP = "offline";
-        }
-        logger.finer("Ip after: " + afterIP);
-        progress.setStatusText(JDLocale.LF("interaction.batchreconnect.progress.3_ipcheck", "BatchReconnect New IP: %s / %s", afterIP, preIp));
-        long endTime = System.currentTimeMillis() + waitForIp * 1000;
-        logger.info("Wait " + waitForIp + " sek for new ip");
-
-        while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP.equals("offline"))) {
-            try {
-                Thread.sleep(5 * 1000);
-            } catch (InterruptedException e) {
-            }
-            afterIP = JDUtilities.getIPAddress(null);
-            progress.setStatusText(JDLocale.LF("interaction.batchreconnect.progress.3_ipcheck", "BatchReconnect New IP: %s / %s", afterIP, preIp));
-            logger.finer("Ip Check: " + afterIP);
-        }
-        if (!afterIP.equals(preIp) && !afterIP.equals("offline")) {
-            progress.finalize();
-            return true;
-        }
-
-        if (maxretries == -1 || retries <= maxretries) {
-            progress.finalize();
-            return doReconnect();
-        }
-        progress.finalize();
-        return false;
+    public BatchReconnect() {
+        configuration = JDUtilities.getSubConfig("BATCHRECONNECT");
     }
 
     @Override
     public void initConfig() {
-        SubConfiguration conf = JDUtilities.getSubConfig("BATCHRECONNECT");
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, conf, PROPERTY_TERMINAL, JDLocale.L("interaction.batchreconnect.terminal", "Interpreter")));
-        if (System.getProperty("os.name").indexOf("Linux") >= 0) {
-            cfg.setDefaultValue("/bin/bash");
-        } else if (System.getProperty("os.name").indexOf("Windows") >= 0) {
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, PROPERTY_TERMINAL, JDLocale.L("interaction.batchreconnect.terminal", "Interpreter")));
+        if (OSDetector.isWindows()) {
             cfg.setDefaultValue("cmd /c");
         } else {
             cfg.setDefaultValue("/bin/bash");
         }
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, conf, "BATCH_TEXT", JDLocale.L("interaction.batchreconnect.batch", "Batch Script")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, "BATCH_TEXT", JDLocale.L("interaction.batchreconnect.batch", "Batch Script")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, conf, PROPERTY_RECONNECT_EXECUTE_FOLDER, JDLocale.L("interaction.batchreconnect.executeIn", "Ausführen in (Ordner der Anwendung)")));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PARAM_IPCHECKWAITTIME, JDLocale.L("interaction.batchreconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), 0, 600).setDefaultValue(5));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PARAM_RETRIES, JDLocale.L("interaction.batchreconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PARAM_WAITFORIPCHANGE, JDLocale.L("interaction.batchreconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, PROPERTY_RECONNECT_EXECUTE_FOLDER, JDLocale.L("interaction.batchreconnect.executeIn", "Ausführen in (Ordner der Anwendung)")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PROPERTY_IP_WAIT_FOR_RETURN, JDLocale.L("interaction.batchreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek]"), 0, 600).setDefaultValue(0));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, conf, PROPERTY_DO_OUTPUT, JDLocale.L("interaction.batchreconnect.doOutput", "Rückgaben im Log anzeigen")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, PROPERTY_IP_WAIT_FOR_RETURN, JDLocale.L("interaction.batchreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek]"), 0, 600).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, PROPERTY_DO_OUTPUT, JDLocale.L("interaction.batchreconnect.doOutput", "Rückgaben im Log anzeigen")).setDefaultValue(false));
     }
 
     @Override
-    public void resetMethod() {
-        retries = 0;
-    }
-
-    private void runCommands() {
-        SubConfiguration conf = JDUtilities.getSubConfig("BATCHRECONNECT");
-        int waitForReturn = conf.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
-        String executeIn = conf.getStringProperty(PROPERTY_RECONNECT_EXECUTE_FOLDER);
-        String command = conf.getStringProperty(PROPERTY_TERMINAL);
+    protected boolean runCommands(ProgressController progress) {
+        int waitForReturn = configuration.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
+        String executeIn = configuration.getStringProperty(PROPERTY_RECONNECT_EXECUTE_FOLDER);
+        String command = configuration.getStringProperty(PROPERTY_TERMINAL);
 
         String[] cmds = command.split("\\ ");
         command = cmds[0];
@@ -145,7 +70,7 @@ public class BatchReconnect extends ReconnectMethod {
 
         }
 
-        String batch = conf.getStringProperty("BATCH_TEXT", "");
+        String batch = configuration.getStringProperty("BATCH_TEXT", "");
 
         String[] lines = Regex.getLines(batch);
         logger.info("Batch Verarbeitung aktiviert. Als Befehl muss der Interpreter eingetragen sein (windows: cmd.exe linux z.b. bash mac: teminal ?) Aktueller interpreter: " + command);
@@ -153,6 +78,8 @@ public class BatchReconnect extends ReconnectMethod {
             cmds[cmds.length - 1] = element;
             logger.finer("Execute Batchline: " + JDUtilities.runCommand(command, cmds, executeIn, waitForReturn));
         }
+
+        return true;
     }
 
     @Override

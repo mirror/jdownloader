@@ -79,8 +79,6 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_HTTPSEND_IP = "HTTPSEND_IP";
 
-    public static final String PARAM_HTTPSEND_IPCHECKWAITTIME = "HTTPSEND_IPCHECKWAITTIME";
-
     public static final String PARAM_HTTPSEND_PASS = "HTTPSEND_PASS";
 
     public static final String PARAM_HTTPSEND_ROUTERNAME = "PARAM_HTTPSEND_ROUTERNAME";
@@ -89,19 +87,13 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_HTTPSEND_REQUESTS_CLR = "HTTPSEND_REQUESTS_CLR";
 
-    public static final String PARAM_HTTPSEND_RETRIES = "HTTPSEND_RETRIES";
-
     public static final String PARAM_HTTPSEND_USER = "HTTPSEND_USER";
-
-    public static final String PARAM_HTTPSEND_WAITFORIPCHANGE = "HTTPSEND_WAITFORIPCHANGE";
 
     public static final String PARAM_INTERACTIONS = "INTERACTIONS";
 
     public static final String PARAM_JAC_METHODS = "JAC_METHODS";
 
     public static final String PARAM_LOGGER_LEVEL = "LOGGER_LEVEL";
-
-    public static final String PARAM_RECONNECT_TYPE = "RECONNECT_TYPE";
 
     public static final String PARAM_RELOADCONTAINER = "RELOADCONTAINER";
 
@@ -110,13 +102,13 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_UNRAR_INSTANCE = "UNRAR_INSTANCE";
 
     public static final String PARAM_UPDATE_HASH = "UPDATE_HASH";
-    
+
     public static final String PARAM_UPDATE_VERSION = "UPDATE_VERSION";
 
     public static final String PARAM_USE_GLOBAL_PREMIUM = "USE_PREMIUM";
 
     public static final String PARAM_USE_PACKETNAME_AS_SUBFOLDER = "USE_PACKETNAME_AS_SUBFOLDER";
-    
+
     public static final String PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD = "CREATE_SUBFOLDER_BEFORE_DOWNLOAD";
 
     public static final String PARAM_WEBUPDATE_AUTO_RESTART = "WEBUPDATE_AUTO_RESTART";

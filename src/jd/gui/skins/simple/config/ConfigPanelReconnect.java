@@ -29,10 +29,13 @@ import javax.swing.JLabel;
 import javax.swing.JSeparator;
 import javax.swing.ScrollPaneConstants;
 
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.reconnect.BatchReconnect;
 import jd.controlling.reconnect.ExternReconnect;
 import jd.controlling.reconnect.HTTPLiveHeader;
+import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -49,6 +52,8 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
     private JButton btn;
 
     private Configuration configuration;
+
+    private ConfigEntriesPanel cep;
 
     private ConfigEntriesPanel er;
 
@@ -67,7 +72,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == box) {
-            configuration.setProperty(Configuration.PARAM_RECONNECT_TYPE, box.getSelectedIndex());
+            configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, box.getSelectedIndex());
             setReconnectType();
         } else if (e.getSource() == btn) {
             save();
@@ -80,9 +85,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
             JDUtilities.getController().addControlListener(this);
 
             logger.info("Start Reconnect");
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, 0);
-            JDUtilities.getSubConfig("BATCHRECONNECT").setProperty(BatchReconnect.PARAM_RETRIES, 0);
-            JDUtilities.getConfiguration().setProperty(ExternReconnect.PARAM_RETRIES, 0);
+            JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, 0);
 
             new Thread() {
                 @Override
@@ -124,16 +127,23 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
     @Override
     public void initPanel() {
         box = new JComboBox(new String[] { JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), JDLocale.L("modules.reconnect.types.extern", "Extern"), JDLocale.L("modules.reconnect.types.batch", "Batch"), JDLocale.L("modules.reconnect.types.clr", "CLR Script") });
-        box.setSelectedIndex(configuration.getIntegerProperty(Configuration.PARAM_RECONNECT_TYPE, 0));
+        box.setSelectedIndex(configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, 0));
         box.addActionListener(this);
 
         btn = new JButton(JDLocale.L("modules.reconnect.testreconnect", "Test Reconnect"));
         btn.addActionListener(this);
 
-        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("modules.reconnect.pleaseSelect", "Bitte Methode auswählen:")), 0, 0, 1, 1, 0, 0, new Insets(0, 7, 5, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-        JDUtilities.addToGridBag(panel, box, 1, 0, 1, 1, 0, 0, new Insets(0, 7, 5, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-        JDUtilities.addToGridBag(panel, btn, 2, 0, 1, 1, 0, 0, new Insets(0, 10, 5, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-        JDUtilities.addToGridBag(panel, new JSeparator(), 0, 1, 5, 1, 1, 1, new Insets(0, 7, 3, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        ConfigContainer config = new ConfigContainer(this);
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_IPCHECKWAITTIME, JDLocale.L("reconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), 0, 600).setDefaultValue(5));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDLocale.L("reconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDLocale.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
+        cep = new ConfigEntriesPanel(config);
+
+        JDUtilities.addToGridBag(panel, cep, 0, 0, 5, 1, 0, 0, new Insets(0, 0, 5, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("modules.reconnect.pleaseSelect", "Bitte Methode auswählen:")), 0, 1, 1, 1, 0, 0, new Insets(0, 7, 5, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(panel, box, 1, 1, 1, 1, 0, 0, new Insets(0, 7, 5, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(panel, btn, 2, 1, 1, 1, 0, 0, new Insets(0, 10, 5, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(panel, new JSeparator(), 0, 2, 5, 1, 1, 1, new Insets(0, 7, 3, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
 
         add(panel, BorderLayout.NORTH);
 
@@ -148,6 +158,8 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
     @Override
     public void save() {
         saveConfigEntries();
+        cep.save();
+        cep.saveConfigEntries();
         if (lh != null) {
             lh.save();
             lh.saveConfigEntries();
@@ -163,30 +175,33 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
     }
 
     private void setReconnectType() {
-
-        if (lh != null) panel.remove(lh);
-        if (er != null) panel.remove(er);
-        if (lhclr != null) panel.remove(lhclr);
-        lh = null;
-        er = null;
-        lhclr = null;
+        if (lh != null) {
+            panel.remove(lh);
+            lh = null;
+        } else if (er != null) {
+            panel.remove(er);
+            er = null;
+        } else if (lhclr != null) {
+            panel.remove(lhclr);
+            lhclr = null;
+        }
 
         switch (box.getSelectedIndex()) {
         case 0:
             lh = new SubPanelLiveHeaderReconnect(configuration, new HTTPLiveHeader());
-            JDUtilities.addToGridBag(panel, lh, 0, 2, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+            JDUtilities.addToGridBag(panel, lh, 0, 3, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
             break;
         case 1:
             er = new ConfigEntriesPanel(new ExternReconnect().getConfig());
-            JDUtilities.addToGridBag(panel, er, 0, 2, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+            JDUtilities.addToGridBag(panel, er, 0, 3, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
             break;
         case 2:
             er = new ConfigEntriesPanel(new BatchReconnect().getConfig());
-            JDUtilities.addToGridBag(panel, er, 0, 2, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+            JDUtilities.addToGridBag(panel, er, 0, 3, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
             break;
         case 3:
             lhclr = new SubPanelCLRReconnect(configuration);
-            JDUtilities.addToGridBag(panel, lhclr, 0, 2, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+            JDUtilities.addToGridBag(panel, lhclr, 0, 3, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
             break;
         }
 

@@ -58,38 +58,18 @@ import sun.misc.BASE64Encoder;
  */
 public class HTTPLiveHeader extends ReconnectMethod {
 
-    public static Document parseXmlString(String xmlString, boolean validating) throws SAXException, IOException, ParserConfigurationException {
-        // Create a builder factory
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setValidating(validating);
-
-        InputSource inSource = new InputSource(new StringReader(xmlString));
-
-        // Create the builder and parse the file
-        Document doc = factory.newDocumentBuilder().parse(inSource);
-
-        return doc;
-    }
-
-    public static String[] splitLines(String source) {
-        return source.split("\r\n|\r|\n");
-    }
-
     private HashMap<String, String> headerProperties;
-
-    private int retries = 0;
 
     private HashMap<String, String> variables;
 
-    @Override
-    public boolean doReconnect() {
-        int okCounter = 0;
-        // Hole die Config parameter. Über die Parameterkeys wird in der
-        // initConfig auch der ConfigContainer für die Gui vorbereitet
-        Configuration configuration = JDUtilities.getConfiguration();
-        String script;
+    public HTTPLiveHeader() {
+        configuration = JDUtilities.getConfiguration();
+    }
 
-        if (configuration.getIntegerProperty(Configuration.PARAM_RECONNECT_TYPE, 0) == 3) {
+    @Override
+    protected boolean runCommands(ProgressController progress) {
+        String script;
+        if (configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, 0) == 3) {
             /* konvertiert CLR zu Liveheader */
             String[] ret = CLRLoader.createLiveHeader(configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR));
             if (ret != null) {
@@ -103,19 +83,13 @@ public class HTTPLiveHeader extends ReconnectMethod {
         String user = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_USER);
         String pass = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_PASS);
         String ip = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_IP);
-        retries++;
-        logger.info("Starting  #" + retries);
-        ProgressController progress = new ProgressController(JDLocale.L("interaction.liveHeader.progress.0_title", "HTTPLiveHeader Reconnect"), 10);
-        progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.1_retry", "HTTPLiveHeader #") + retries);
 
         if (script == null || script.length() == 0) {
             progress.finalize();
-            return parseError("No LiveHeader Script found");
+            logger.severe("No LiveHeader Script found");
+            return false;
         }
-        String preIp = JDUtilities.getIPAddress(null);
 
-        logger.finer("IP before: " + preIp);
-        progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.2_ip", "(IP)HTTPLiveHeader :") + preIp);
         // script = script.replaceAll("\\<", "&lt;");
         // script = script.replaceAll("\\>", "&gt;");
         script = script.replaceAll("\\[\\[\\[", "<");
@@ -131,9 +105,9 @@ public class HTTPLiveHeader extends ReconnectMethod {
         variables.put("basicauth", new BASE64Encoder().encode((user + ":" + pass).getBytes()));
         variables.put("routerip", ip);
         headerProperties = new HashMap<String, String>();
-        progress.increase(1);
+
         Browser br = new Browser();
-  
+
         br.setProxy(JDProxy.NO_PROXY);
         if (user != null && pass != null) {
             br.setAuth(ip, user, pass);
@@ -143,7 +117,8 @@ public class HTTPLiveHeader extends ReconnectMethod {
             Node root = xmlScript.getChildNodes().item(0);
             if (root == null || !root.getNodeName().equalsIgnoreCase("HSRC")) {
                 progress.finalize();
-                return parseError("Root Node must be [[[HSRC]]]*[/HSRC]");
+                logger.severe("Root Node must be [[[HSRC]]]*[/HSRC]");
+                return false;
             }
 
             NodeList steps = root.getChildNodes();
@@ -152,15 +127,13 @@ public class HTTPLiveHeader extends ReconnectMethod {
                 progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.3_step", "(STEP)HTTPLiveHeader :") + step);
                 progress.increase(1);
                 Node current = steps.item(step);
-                // short type = current.getNodeType();
 
-                if (current.getNodeType() == 3) {
-                    // logger.finer("Skipped: " + current.getNodeName());
-                    continue;
-                }
+                if (current.getNodeType() == 3) continue;
+
                 if (!current.getNodeName().equalsIgnoreCase("STEP")) {
                     progress.finalize();
-                    return parseError("Root Node should only contain [[[STEP]]]*[[[/STEP]]] ChildTag: " + current.getNodeName());
+                    logger.severe("Root Node should only contain [[[STEP]]]*[[[/STEP]]] ChildTag: " + current.getNodeName());
+                    return false;
                 }
                 NodeList toDos = current.getChildNodes();
                 for (int toDoStep = 0; toDoStep < toDos.getLength(); toDoStep++) {
@@ -239,7 +212,8 @@ public class HTTPLiveHeader extends ReconnectMethod {
                         boolean ishttps = false;
                         if (toDo.getChildNodes().getLength() != 1) {
                             progress.finalize();
-                            return parseError("A REQUEST Tag is not allowed to have childTags.");
+                            logger.severe("A REQUEST Tag is not allowed to have childTags.");
+                            return false;
                         }
                         NamedNodeMap attributes = toDo.getAttributes();
                         if (attributes.getNamedItem("https") != null) {
@@ -252,24 +226,14 @@ public class HTTPLiveHeader extends ReconnectMethod {
                             retbr = null;
                         }
                         try {
-                            /*
-                             * ne kleine pause, damit der router nicht ddos
-                             * denkt
-                             */
+                            /* DDoS Schutz */
                             Thread.sleep(150);
                         } catch (Exception e) {
                         }
                         if (retbr == null || !retbr.getHttpConnection().isOK()) {
-                            okCounter--;
                             logger.severe("Request error!");
-                            // if(okCounter<0){
-                            // logger.severe("Too many RequestErrors. abort!");
-                            // progress.finalize();
-                            // return false;
-                            // }
                         } else {
                             br = retbr;
-                            okCounter++;
                         }
 
                     }
@@ -277,13 +241,15 @@ public class HTTPLiveHeader extends ReconnectMethod {
                         logger.finer("get Response");
                         if (toDo.getChildNodes().getLength() != 1) {
                             progress.finalize();
-                            return parseError("A RESPONSE Tag is not allowed to have childTags.");
+                            logger.severe("A RESPONSE Tag is not allowed to have childTags.");
+                            return false;
                         }
 
                         NamedNodeMap attributes = toDo.getAttributes();
                         if (attributes.getNamedItem("keys") == null) {
                             progress.finalize();
-                            return parseError("A RESPONSE Node needs a Keys Attribute: " + toDo);
+                            logger.severe("A RESPONSE Node needs a Keys Attribute: " + toDo);
+                            return false;
                         }
 
                         String[] keys = attributes.getNamedItem("keys").getNodeValue().split("\\;");
@@ -291,109 +257,36 @@ public class HTTPLiveHeader extends ReconnectMethod {
 
                     }
                     if (toDo.getNodeName().equalsIgnoreCase("WAIT")) {
-
                         NamedNodeMap attributes = toDo.getAttributes();
                         Node item = attributes.getNamedItem("seconds");
                         logger.finer("Wait " + item.getNodeValue() + " seconds");
-                        if (item == null) { return parseError("A Wait Step needs a Waittimeattribute: e.g.: <WAIT seconds=\"15\"/>"); }
+                        if (item == null) {
+                            logger.severe("A Wait Step needs a Waittimeattribute: e.g.: <WAIT seconds=\"15\"/>");
+                            return false;
+                        }
                         int seconds = JDUtilities.filterInt(item.getNodeValue());
                         Thread.sleep(seconds * 1000);
-
                     }
                 }
-
             }
 
         } catch (SAXException e) {
             progress.finalize();
-            return parseError(e.getMessage());
+            logger.severe(e.getMessage());
+            return false;
         } catch (ParserConfigurationException e) {
-
             e.printStackTrace();
             progress.finalize();
-            return parseError(e.getMessage());
+            logger.severe(e.getMessage());
+            return false;
         } catch (Exception e) {
-
             e.printStackTrace();
             progress.finalize();
-            return parseError(e.getCause() + " : " + e.getMessage());
+            logger.severe(e.getCause() + " : " + e.getMessage());
+            return false;
         }
 
-        int waittime = configuration.getIntegerProperty(Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, 0);
-        int maxretries = configuration.getIntegerProperty(Configuration.PARAM_HTTPSEND_RETRIES, 0);
-        int waitForIp = configuration.getIntegerProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 10);
-        logger.finer("Wait " + waittime + " seconds ...");
-        progress.increase(1);
-        progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.5_wait", "(WAIT)HTTPLiveHeader "));
-        try {
-            Thread.sleep(waittime * 1000);
-        } catch (InterruptedException e) {
-        }
-
-        String afterIP = JDUtilities.getIPAddress(null);
-        if (!JDUtilities.validateIP(afterIP)) {
-            logger.warning("IP " + afterIP + " was filtered by mask: " + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
-            JDUtilities.getGUI().displayMiniWarning(String.format(JDLocale.L("interaction.reconnect.ipfiltered.warning.short", "Die IP %s wurde als nicht erlaubt identifiziert"), afterIP), null, 20);
-            afterIP = "offline";
-        }
-
-        progress.increase(1);
-        String pattern;
-
-        pattern = JDLocale.L("interaction.liveHeader.progress.5_ipcheck", "(IPCHECK)HTTPLiveHeader %s / %s");
-        progress.setStatusText(String.format(pattern, preIp, afterIP));
-
-        long endTime = System.currentTimeMillis() + waitForIp * 1000;
-        while (System.currentTimeMillis() <= endTime && (afterIP.equalsIgnoreCase("offline") || afterIP == null || afterIP.equals(preIp))) {
-            try {
-                Thread.sleep(5 * 1000);
-            } catch (InterruptedException e) {
-            }
-            afterIP = JDUtilities.getIPAddress(null);
-            try {
-                pattern = JDLocale.L("interaction.liveHeader.progress.5_ipcheck", "(IPCHECK)HTTPLiveHeader %s / %s");
-                progress.setStatusText(String.format(pattern, preIp, afterIP));
-            } catch (Exception e) {
-                // TODO: handle exception
-            }
-
-            logger.finer("Ip Check: " + afterIP);
-        }
-
-        logger.finer("Ip after: " + afterIP);
-        if (afterIP.equals("offline") && !afterIP.equals(preIp)) {
-            logger.warning("JD could disconnect your router, but could not connect afterwards. Try to rise the option 'Wait until first IP Check'");
-            endTime = System.currentTimeMillis() + 120 * 1000;
-            while (System.currentTimeMillis() <= endTime && (afterIP.equalsIgnoreCase("offline") || afterIP == null || afterIP.equals(preIp))) {
-                try {
-                    Thread.sleep(20 * 1000);
-                } catch (InterruptedException e) {
-                }
-                afterIP = JDUtilities.getIPAddress(null);
-                try {
-                    pattern = JDLocale.L("interaction.liveHeader.progress.5_ipcheck_emergency", "(IPCHECK EMERGENCY)HTTPLiveHeader %s / %s");
-                    progress.setStatusText(String.format(pattern, preIp, afterIP));
-                } catch (Exception e) {
-                    // TODO: handle exception
-                }
-
-                logger.finer("Ip Check: " + afterIP);
-            }
-
-        }
-
-        if (!afterIP.equals(preIp) && !afterIP.equalsIgnoreCase("offline")) {
-            progress.finalize();
-            logger.info("Rec succ: " + afterIP);
-            return true;
-        }
-        if (maxretries == -1 || retries <= maxretries) {
-            progress.finalize();
-            return doReconnect();
-        }
-        progress.finalize();
-        logger.info("Rec fail: " + afterIP);
-        return false;
+        return true;
     }
 
     private Browser doRequest(String request, Browser br, boolean ishttps) {
@@ -545,6 +438,23 @@ public class HTTPLiveHeader extends ReconnectMethod {
         return ret;
     }
 
+    private static Document parseXmlString(String xmlString, boolean validating) throws SAXException, IOException, ParserConfigurationException {
+        // Create a builder factory
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setValidating(validating);
+
+        InputSource inSource = new InputSource(new StringReader(xmlString));
+
+        // Create the builder and parse the file
+        Document doc = factory.newDocumentBuilder().parse(inSource);
+
+        return doc;
+    }
+
+    private static String[] splitLines(String source) {
+        return source.split("\r\n|\r|\n");
+    }
+
     private String getModifiedVariable(String key) {
 
         if (key.indexOf(":::") == -1 && headerProperties.containsKey(key)) { return headerProperties.get(key); }
@@ -553,7 +463,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
         if (headerProperties.containsKey(key.substring(key.lastIndexOf(":::") + 3))) {
             ret = headerProperties.get(key.substring(key.lastIndexOf(":::") + 3));
         }
-        if (ret == null) { return ""; }
+        if (ret == null) return "";
         int id;
         String fnc;
         while ((id = key.indexOf(":::")) >= 0) {
@@ -600,16 +510,6 @@ public class HTTPLiveHeader extends ReconnectMethod {
 
     @Override
     public void initConfig() {
-    }
-
-    private boolean parseError(String string) {
-        logger.severe(string);
-        return false;
-    }
-
-    @Override
-    public void resetMethod() {
-        retries = 0;
     }
 
     @Override

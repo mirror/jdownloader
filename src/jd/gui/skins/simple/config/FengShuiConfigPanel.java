@@ -69,9 +69,8 @@ import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
-import jd.controlling.reconnect.BatchReconnect;
-import jd.controlling.reconnect.ExternReconnect;
 import jd.controlling.reconnect.HTTPLiveHeader;
+import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.Progressor;
@@ -223,9 +222,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             mld.getProgress().setValue(2);
 
             JDUtilities.getLogger().info("Start Reconnect");
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, 0);
-            JDUtilities.getSubConfig("BATCHRECONNECT").setProperty(BatchReconnect.PARAM_RETRIES, 0);
-            JDUtilities.getConfiguration().setProperty(ExternReconnect.PARAM_RETRIES, 0);
+            JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, 0);
 
             new Thread(new Runnable() {
 
@@ -651,7 +648,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
 
             public void run() {
                 String lh = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
-                if (config.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, lh).equals(lh)) {
+                if (config.getStringProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, lh).equals(lh)) {
                     boolean reachable = false;
                     try {
                         reachable = InetAddress.getByName(routerIp).isReachable(1500);
@@ -726,12 +723,12 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             saveit = true;
         }
         if (Reconnectmethode != null && !Reconnectmethode.equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null))) {
-            config.setProperty(Configuration.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_LIVE_HEADER);
+            config.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_LIVE_HEADER);
             config.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, Reconnectmethode);
             saveit = true;
         }
         if (ReconnectmethodeClr != null && !ReconnectmethodeClr.equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, null))) {
-            config.setProperty(Configuration.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_CLR);
+            config.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_CLR);
             config.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, Reconnectmethode);
             saveit = true;
         }

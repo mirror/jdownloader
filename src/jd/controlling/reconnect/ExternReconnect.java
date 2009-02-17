@@ -20,7 +20,6 @@ import java.io.File;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Configuration;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.utils.JDLocale;
@@ -34,105 +33,38 @@ import jd.utils.JDUtilities;
  */
 public class ExternReconnect extends ReconnectMethod {
 
-    private static final String PARAM_IPCHECKWAITTIME = "EXTERN_RECONNECT_IPCHECKWAITTIME";
+    private static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN";
 
-    public static final String PARAM_RETRIES = "EXTERN_RECONNECT_RETRIES";
-
-    private static final String PARAM_WAITFORIPCHANGE = "EXTERN_RECONNECT_WAITFORIPCHANGE";
-
-    public static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN";
-
-    public static final String PROPERTY_RECONNECT_COMMAND = "InteractionExternReconnect_Command";
+    private static final String PROPERTY_RECONNECT_COMMAND = "InteractionExternReconnect_Command";
 
     private static final String PROPERTY_RECONNECT_PARAMETER = "EXTERN_RECONNECT__PARAMETER";
 
-    private int retries = 0;
-
-    @Override
-    public boolean doReconnect() {
-        retries++;
-        ProgressController progress = new ProgressController(JDLocale.L("interaction.externreconnect.progress.0_title", "ExternReconnect"), 10);
-
-        progress.setStatusText(JDLocale.L("interaction.externreconnect.progress.1_retries", "ExternReconnect #") + retries);
-
-        int waittime = JDUtilities.getConfiguration().getIntegerProperty(PARAM_IPCHECKWAITTIME, 0);
-        int maxretries = JDUtilities.getConfiguration().getIntegerProperty(PARAM_RETRIES, 0);
-        int waitForIp = JDUtilities.getConfiguration().getIntegerProperty(PARAM_WAITFORIPCHANGE, 10);
-
-        logger.info("Starting " + JDLocale.L("interaction.externreconnect.name", "Extern Reconnect") + " #" + retries);
-        String preIp = JDUtilities.getIPAddress(null);
-
-        progress.increase(1);
-        progress.setStatusText(JDLocale.L("interaction.externreconnect.progress.2_oldIP", "ExternReconnect Old IP:") + preIp);
-        logger.finer("IP before: " + preIp);
-        runCommands();
-        logger.finer("Wait " + waittime + " seconds ...");
-        try {
-            Thread.sleep(waittime * 1000);
-        } catch (InterruptedException e) {
-        }
-
-        String afterIP = JDUtilities.getIPAddress(null);
-        if (!JDUtilities.validateIP(afterIP)) {
-            logger.warning("IP " + afterIP + " was filtered by mask: " + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
-            JDUtilities.getGUI().displayMiniWarning(String.format(JDLocale.L("interaction.reconnect.ipfiltered.warning.short", "Die IP %s wurde als nicht erlaubt identifiziert"), afterIP), null, 20);
-            afterIP = "offline";
-        }
-        logger.finer("Ip after: " + afterIP);
-        progress.setStatusText(JDLocale.LF("interaction.externreconnect.progress.3_ipcheck", "ExternReconnect New IP: %s / %s", afterIP, preIp));
-        long endTime = System.currentTimeMillis() + waitForIp * 1000;
-        logger.info("Wait " + waitForIp + " sek for new ip");
-
-        while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP.equals("offline"))) {
-            try {
-                Thread.sleep(5 * 1000);
-            } catch (InterruptedException e) {
-            }
-            afterIP = JDUtilities.getIPAddress(null);
-            progress.setStatusText(JDLocale.LF("interaction.externreconnect.progress.3_ipcheck", "ExternReconnect New IP: %s / %s", afterIP, preIp));
-            logger.finer("Ip Check: " + afterIP);
-        }
-        if (!afterIP.equals(preIp) && !afterIP.equals("offline")) {
-            progress.finalize();
-            return true;
-        }
-
-        if (maxretries == -1 || retries <= maxretries) {
-            progress.finalize();
-            return doReconnect();
-        }
-        progress.finalize();
-        return false;
+    public ExternReconnect() {
+        configuration = JDUtilities.getConfiguration();
     }
 
     @Override
     public void initConfig() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_COMMAND, JDLocale.L("interaction.externreconnect.command", "Befehl (absolute Pfade verwenden)")));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_PARAMETER, JDLocale.L("interaction.externreconnect.parameter", "Parameter (1 Parameter/Zeile)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, PROPERTY_RECONNECT_COMMAND, JDLocale.L("interaction.externreconnect.command", "Befehl (absolute Pfade verwenden)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, PROPERTY_RECONNECT_PARAMETER, JDLocale.L("interaction.externreconnect.parameter", "Parameter (1 Parameter/Zeile)")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_IPCHECKWAITTIME, JDLocale.L("interaction.externreconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), 0, 600).setDefaultValue(5));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_RETRIES, JDLocale.L("interaction.externreconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_WAITFORIPCHANGE, JDLocale.L("interaction.externreconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
-
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PROPERTY_IP_WAIT_FOR_RETURN, JDLocale.L("interaction.externreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek]"), 0, 600).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, PROPERTY_IP_WAIT_FOR_RETURN, JDLocale.L("interaction.externreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek]"), 0, 600).setDefaultValue(0));
     }
 
     @Override
-    public void resetMethod() {
-        retries = 0;
-    }
-
-    private void runCommands() {
-        int waitForReturn = JDUtilities.getConfiguration().getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
-        String command = JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_COMMAND);
+    protected boolean runCommands(ProgressController progress) {
+        int waitForReturn = configuration.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
+        String command = configuration.getStringProperty(PROPERTY_RECONNECT_COMMAND);
 
         File f = new File(command);
         String t = f.getAbsolutePath();
         String executeIn = t.substring(0, t.indexOf(f.getName()) - 1);
 
-        String parameter = JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_PARAMETER);
+        String parameter = configuration.getStringProperty(PROPERTY_RECONNECT_PARAMETER);
 
         logger.finer("Execute Returns: " + JDUtilities.runCommand(command, Regex.getLines(parameter), executeIn, waitForReturn));
+
+        return true;
     }
 
     @Override

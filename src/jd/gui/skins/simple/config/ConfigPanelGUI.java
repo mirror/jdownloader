@@ -84,7 +84,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setDefaultValue(JDLookAndFeelManager.getPlaf());
 
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_SHOW_SPEEDMETER, JDLocale.L("gui.config.gui.show_speed_graph", "Display speedmeter graph")));
-        
+
         ce.setDefaultValue(true);
         // Links Tab
         ConfigContainer links = new ConfigContainer(this, JDLocale.L("gui.config.gui.container.tab", "Downloadlinks"));

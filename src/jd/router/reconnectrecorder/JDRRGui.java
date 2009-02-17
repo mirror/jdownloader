@@ -40,6 +40,7 @@ import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 
 import jd.config.Configuration;
+import jd.controlling.reconnect.ReconnectMethod;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.parser.Regex;
@@ -128,13 +129,13 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
             configuration.setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText().trim());
             configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, methode);
             configuration.setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, "Reconnect Recorder Methode");
-            configuration.setProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
+            configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
             if (reconnect_duration <= 2000) {
                 reconnect_duration = 2000;
                 /* minimum von 2 seks */
             }
-            configuration.setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, ((reconnect_duration / 1000) * 2) + 10);
-            configuration.setProperty(Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, ((reconnect_duration / 1000) / 2) + 2);
+            configuration.setProperty(ReconnectMethod.PARAM_WAITFORIPCHANGE, ((reconnect_duration / 1000) * 2) + 10);
+            configuration.setProperty(ReconnectMethod.PARAM_IPCHECKWAITTIME, ((reconnect_duration / 1000) / 2) + 2);
             configuration.save();
             saved = true;
         }
@@ -143,7 +144,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnStart && JDRR.running == false) {
             if (routerip.getText() != null && !routerip.getText().matches("\\s*")) JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText().trim());
-           
+
             ip_before = JDUtilities.getIPAddress(null);
             JDRR.startServer(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null));
 

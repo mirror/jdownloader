@@ -82,7 +82,7 @@ public class Reconnecter {
             }
 
             Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, controller);
-            int type = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_RECONNECT_TYPE, 0);
+            int type = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, 0);
             IS_RECONNECTING = true;
             logger.info("DO RECONNECT NOW");
             boolean interrupt = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);

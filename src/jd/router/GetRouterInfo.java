@@ -43,6 +43,7 @@ import java.util.regex.Pattern;
 import javax.swing.JTextField;
 
 import jd.config.Configuration;
+import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.skins.simple.ProgressDialog;
 import jd.gui.skins.simple.Progressor;
@@ -444,10 +445,10 @@ public class GetRouterInfo {
     }
 
     private RInfo checkrouters(HashMap<RInfo, Integer> routers) {
-        int retries = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_RETRIES, 5);
-        int wipchange = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 20);
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, 0);
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 10);
+        int retries = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RETRIES, 5);
+        int wipchange = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_WAITFORIPCHANGE, 20);
+        JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, 0);
+        JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_WAITFORIPCHANGE, 10);
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_USER, username);
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_PASS, password);
         int size = routers.size();
@@ -455,10 +456,10 @@ public class GetRouterInfo {
         for (Entry<RInfo, Integer> info2 : routers.entrySet()) {
             if (cancel) return null;
             if (info2.getKey().getReconnectMethode() != null) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_LIVE_HEADER);
+                JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_LIVE_HEADER);
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, info2.getKey().getReconnectMethode());
             } else if (info2.getKey().getReconnectMethodeClr() != null) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_CLR);
+                JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_CLR);
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, info2.getKey().getReconnectMethodeClr());
             } else
                 continue;
@@ -467,8 +468,8 @@ public class GetRouterInfo {
 
             JDUtilities.getConfiguration().save();
             if (Reconnecter.waitForNewIP(1)) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, retries);
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, wipchange);
+                JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, retries);
+                JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_WAITFORIPCHANGE, wipchange);
                 JDUtilities.getConfiguration().save();
                 setProgress(100);
                 return info2.getKey();
