@@ -130,9 +130,7 @@ public class Rapidshare extends PluginForHost {
         return "http://rapidshare.com/files/" + fileid + "/" + filename;
     }
 
-    private Object selectedServer;
-
-    // private static int I = 0;
+    private String selectedServer;
 
     public Rapidshare(PluginWrapper wrapper) {
         super(wrapper);
@@ -163,6 +161,7 @@ public class Rapidshare extends PluginForHost {
 
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 100;
     }
@@ -171,6 +170,7 @@ public class Rapidshare extends PluginForHost {
      * Bietet der hoster eine Möglichkeit mehrere links gleichzeitig zu prüfen,
      * kann das über diese Funktion gemacht werden.
      */
+    @Override
     public boolean[] checkLinks(DownloadLink[] urls) {
         try {
             if (urls == null) { return null; }
@@ -431,9 +431,9 @@ public class Rapidshare extends PluginForHost {
                 }
                 final String passToThread = msg;
                 new Thread() {
+                    @Override
                     public void run() {
                         TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI.getFrame(), "Speedtest result", "Your speedtest results", passToThread);
-
                     }
                 }.start();
             }
@@ -441,23 +441,17 @@ public class Rapidshare extends PluginForHost {
             if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 selectedServer = null;
             }
-
         }
 
     }
 
+    @Override
     public String getSessionInfo() {
-        if (selectedServer != null) { return " @" + selectedServer + ""; }
+        if (selectedServer != null) return " @ " + selectedServer;
         return "";
     }
 
-    /**
-     * premiumdownload Methode
-     * 
-     * @param step
-     * @param downloadLink
-     * @return
-     */
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         try {
             if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
@@ -671,6 +665,7 @@ public class Rapidshare extends PluginForHost {
         return error2;
     }
 
+    @Override
     public String getAGBLink() {
         return "http://rapidshare.com/faq.html";
     }
@@ -766,6 +761,7 @@ public class Rapidshare extends PluginForHost {
         return postTarget;
     }
 
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) return false;
 
@@ -826,6 +822,7 @@ public class Rapidshare extends PluginForHost {
         return postTarget;
     }
 
+    @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -834,11 +831,12 @@ public class Rapidshare extends PluginForHost {
         logger.severe("Unknown error(" + id + "). please add this htmlcode to your bugreport:\r\n" + req);
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
-        /* TODO: Wert nachprüfen */
         return 1;
     }
 
+    @Override
     public void reset() {
     }
 
@@ -846,7 +844,6 @@ public class Rapidshare extends PluginForHost {
      * Erzeugt den Configcontainer für die Gui
      */
     private void setConfigElements() {
-
         Vector<String> m1 = new Vector<String>();
         Vector<String> m2 = new Vector<String>();
         Vector<String> m3 = new Vector<String>();
@@ -869,13 +866,13 @@ public class Rapidshare extends PluginForHost {
 
         ConfigEntry ce;
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[] {}), "#1").setDefaultValue("Level(3)"));
-        ce.setEnabledCondidtion(cond, "=", false);
+        ce.setEnabledCondidtion(cond, "==", false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[] {}), "#2").setDefaultValue("TeliaSonera"));
-        ce.setEnabledCondidtion(cond, "=", false);
+        ce.setEnabledCondidtion(cond, "==", false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER3, m3.toArray(new String[] {}), "#3").setDefaultValue("TeliaSonera"));
-        ce.setEnabledCondidtion(cond, "=", false);
+        ce.setEnabledCondidtion(cond, "==", false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDLocale.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")).setDefaultValue(false));
-        ce.setEnabledCondidtion(cond, "=", false);
+        ce.setEnabledCondidtion(cond, "==", false);
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -930,6 +927,7 @@ public class Rapidshare extends PluginForHost {
         }
     }
 
+    @Override
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         br = login(account, false);
