@@ -521,6 +521,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         } else if (e.getSource() == mnuAdd) {
 
             String result = JOptionPane.showInputDialog(frame, JDLocale.L("plugins.optional.langfileeditor.addKey.message", "Type in the name of the key:"), JDLocale.L("plugins.optional.langfileeditor.addKey.title", "Add new key"), JOptionPane.INFORMATION_MESSAGE);
+            if (result == null) return;
             data.add(new KeyInfo(result.toLowerCase(), null, null));
             tableModel.fireTableDataChanged();
             updateKeyChart();
