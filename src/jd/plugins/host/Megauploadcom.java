@@ -101,7 +101,7 @@ public class Megauploadcom extends PluginForHost {
         return Request.parseQuery(link.getDownloadURL()).get("d");
     }
 
-    public synchronized void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
         getFileInformation(link);
         login(account);
         if (!this.isPremium()) {
