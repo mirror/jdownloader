@@ -125,7 +125,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private JMenu mnuFile, mnuSVN, mnuKey, mnuEntries;
     private JMenuItem mnuNew, mnuReload, mnuSave, mnuSaveAs, mnuClose;
     private JMenuItem mnuSVNSettings, mnuSVNCheckOutNow;;
-    private JMenuItem mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuTranslate, mnuTranslateMissing;
+    private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuPickDoneColor, mnuPickMissingColor, mnuPickOldColor, mnuShowDupes;
     private JCheckBoxMenuItem mnuColorizeDone, mnuColorizeMissing, mnuColorizeOld;
     private JPopupMenu mnuContextPopup;
@@ -247,7 +247,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         initLocaleData();
     }
 
-    private void setInfoLabels() {
+    private void updateKeyChart() {
         int numMissing = 0, numOld = 0;
 
         for (KeyInfo entry : data) {
@@ -309,6 +309,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         mnuKey = new JMenu(JDLocale.L("plugins.optional.langfileeditor.key", "Key"));
         mnuKey.setEnabled(false);
 
+        mnuKey.add(mnuAdd = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.addKey", "Add Key")));
         mnuKey.add(mnuDelete = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.deleteKeys", "Delete Key(s)")));
         mnuKey.add(mnuClear = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.clearValues", "Clear Value(s)")));
         mnuKey.addSeparator();
@@ -318,6 +319,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         mnuKey.add(mnuTranslate = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.translate", "Translate with Google")));
         mnuKey.add(mnuTranslateMissing = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.translate.missing", "Translate Missing Entries with Google")));
 
+        mnuAdd.addActionListener(this);
         mnuDelete.addActionListener(this);
         mnuClear.addActionListener(this);
         mnuAdopt.addActionListener(this);
@@ -515,6 +517,13 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 if (!languageFile.getAbsolutePath().endsWith(".lng")) languageFile = new File(languageFile.getAbsolutePath() + ".lng");
                 saveLanguageFile(languageFile);
             }
+
+        } else if (e.getSource() == mnuAdd) {
+
+            String result = JOptionPane.showInputDialog(frame, JDLocale.L("plugins.optional.langfileeditor.addKey.message", "Type in the name of the key:"), JDLocale.L("plugins.optional.langfileeditor.addKey.title", "Add new key"), JOptionPane.INFORMATION_MESSAGE);
+            data.add(new KeyInfo(result.toLowerCase(), null, null));
+            tableModel.fireTableDataChanged();
+            updateKeyChart();
 
         } else if (e.getSource() == mnuDelete || e.getSource() == mnuContextDelete) {
 
@@ -758,7 +767,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         int newRow = Math.min(rows[len] - len, tableModel.getRowCount() - 1);
         table.getSelectionModel().setSelectionInterval(newRow, newRow);
 
-        setInfoLabels();
+        updateKeyChart();
         changed(true);
     }
 
@@ -885,7 +894,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         changed = false;
         if (languageFile != null) frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor") + " [" + languageFile.getAbsolutePath() + "]");
 
-        setInfoLabels();
+        updateKeyChart();
         mnuEntries.setEnabled(true);
         mnuKey.setEnabled(true);
         mnuReload.setEnabled(true);
@@ -1119,7 +1128,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             if (col == 2) {
                 data.get(row).setLanguage((String) value);
                 this.fireTableRowsUpdated(row, row);
-                setInfoLabels();
+                updateKeyChart();
                 changed(true);
             }
         }
