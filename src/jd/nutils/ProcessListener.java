@@ -16,8 +16,7 @@
 
 package jd.nutils;
 
-
-abstract public class ProcessListener {
+public interface ProcessListener {
 
     /**
      * 
@@ -30,8 +29,8 @@ abstract public class ProcessListener {
      *            Der complette BUffer (exec.getInputStringBuilder()|
      *            exec.getErrorStringBuilder())
      */
-    abstract public void onProcess(Executer exec, String latestLine, DynByteBuffer totalBuffer);
+    public void onProcess(Executer exec, String latestLine, DynByteBuffer totalBuffer);
 
-    abstract public void onBufferChanged(Executer exec, DynByteBuffer totalBuffer, int latestReadNum);
+    public void onBufferChanged(Executer exec, DynByteBuffer totalBuffer, int latestReadNum);
 
 }

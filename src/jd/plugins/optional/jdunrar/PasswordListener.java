@@ -23,7 +23,7 @@ import jd.nutils.Executer;
 import jd.nutils.ProcessListener;
 import jd.parser.Regex;
 
-public class PasswordListener extends ProcessListener {
+public class PasswordListener implements ProcessListener {
 
     private String password;
 
@@ -33,7 +33,6 @@ public class PasswordListener extends ProcessListener {
         this.password = pass;
     }
 
-    @Override
     public void onBufferChanged(Executer exec, DynByteBuffer buffer, int latestNum) {
         String lastLine;
         try {
@@ -54,7 +53,6 @@ public class PasswordListener extends ProcessListener {
 
     }
 
-    @Override
     public void onProcess(Executer exec, String latestLine, DynByteBuffer sb) {
         this.lastLinePosition = sb.position();
     }

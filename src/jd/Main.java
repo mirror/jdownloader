@@ -164,7 +164,7 @@ public class Main {
             }
         }
 
-        if (!new CheckJava().check()) {
+        if (!CheckJava.check()) {
             System.out.println("Wrong Java Version! JDownloader needs at least Java 1.5 or higher!");
             System.exit(0);
         }

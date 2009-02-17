@@ -463,12 +463,9 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
                 exec.addProcessListener(new ProcessListener() {
 
-                    @Override
                     public void onBufferChanged(Executer exec, DynByteBuffer totalBuffer, int latestReadNum) {
-
                     }
 
-                    @Override
                     public void onProcess(Executer exec, String latestLine, DynByteBuffer totalBuffer) {
                         if ((new Regex(latestLine, "^\\s*?(OK)").getMatch(0)) != null) {
                             exec.interrupt();
@@ -517,7 +514,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
                 exec.addProcessListener(new ProcessListener() {
 
-                    @Override
                     public void onBufferChanged(Executer exec, DynByteBuffer buffer, int latestNum) {
                         if (buffer.position() >= 50) {
                             exec.interrupt();
@@ -525,7 +521,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                         }
                     }
 
-                    @Override
                     public void onProcess(Executer exec, String latestLine, DynByteBuffer sb) {
                     }
 
@@ -854,10 +849,9 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         this.password = pass;
     }
 
-    public class ExtractListener extends ProcessListener {
+    public class ExtractListener implements ProcessListener {
         private int lastLinePosition = 0;
 
-        @Override
         public void onBufferChanged(Executer exec, DynByteBuffer buffer, int latestReadNum) {
             String lastLine;
             try {
@@ -871,7 +865,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             }
         }
 
-        @Override
         public void onProcess(Executer exec, String latestLine, DynByteBuffer totalBuffer) {
             this.lastLinePosition = totalBuffer.position();
             String match = null;

@@ -55,6 +55,7 @@ public class Main_EDT_Debug {
      * time it until it finally finishes. This is useful in determining what
      * code is causing your Java application's GUI to be unresponsive.
      */
+    @SuppressWarnings("unused")
     private static void DebugThreadHangs() {
         EDT_ThreadHangMonitor.initMonitoring();
 

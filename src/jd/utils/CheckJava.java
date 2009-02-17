@@ -21,7 +21,7 @@ import jd.parser.Regex;
 
 public class CheckJava {
 
-    public boolean check() {
+    public static boolean check() {
         String runtimeName = System.getProperty("java.runtime.name");
         String runtimeVersion = System.getProperty("java.runtime.version");
         if (runtimeName == null || runtimeVersion == null) return false;
