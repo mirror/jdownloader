@@ -17,19 +17,22 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.requests.Request;
 import jd.nutils.JDHash;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Megauploadcom extends PluginForHost {
@@ -37,6 +40,12 @@ public class Megauploadcom extends PluginForHost {
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
 
     private String user;
+
+    private String dlID;
+
+    private HashMap<String, String> UserInfo = new HashMap<String, String>();
+
+    private static int simultanpremium = 1;
 
     public Megauploadcom(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,16 +64,30 @@ public class Megauploadcom extends PluginForHost {
         }
     }
 
+    public boolean isPremium() {
+        if (UserInfo.containsKey("p")) { return true; }
+        return false;
+    }
+
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
-
-        br.postPage("http://megaupload.com/mgr_login.php", "u=" + account.getUser() + "&b=0&p=" + JDHash.getMD5(account.getPass()));
-        logger.finer(br+"");
-        HashMap<String, String> query = Request.parseQuery(br + "");
-        this.user = query.get("s");
-        String validUntil = query.get("p");
-        Date d = new Date(Long.parseLong(validUntil.trim()) * 1000l);
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        if (!UserInfo.containsKey("s")) {
+            ai.setValid(false);
+            return ai;
+        }
+        if (!UserInfo.containsKey("p")) {
+            ai.setValid(true);
+            ai.setStatus("Free Membership");
+            return ai;
+        }
+        Date d = new Date(Long.parseLong(UserInfo.get("p")) * 1000l);
         if (d.compareTo(new Date()) >= 0) {
             ai.setValid(true);
         } else {
@@ -74,23 +97,33 @@ public class Megauploadcom extends PluginForHost {
         return ai;
     }
 
-    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        br.forceDebug(true);
-        LinkStatus linkStatus = parameter.getLinkStatus();
-        DownloadLink downloadLink = (DownloadLink) parameter;
-        String link = downloadLink.getDownloadURL().replaceAll("/de", "");
-        String id = Request.parseQuery(link).get("d");
+    public String getDownloadID(DownloadLink link) throws MalformedURLException {
+        return Request.parseQuery(link.getDownloadURL()).get("d");
+    }
 
-        AccountInfo ai = this.getAccountInformation(account);
-        if (!ai.isValid()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+    public synchronized void handlePremium(DownloadLink link, Account account) throws Exception {
+        getFileInformation(link);
+        login(account);
+        if (!this.isPremium()) {
+            simultanpremium = 1;
+            handleFree0(link);
+            return;
+        } else {
+            if (simultanpremium + 1 > 20) {
+                simultanpremium = 20;
+            } else {
+                simultanpremium++;
+            }
+        }
         br.setFollowRedirects(false);
-
-        getRedirect("http://megaupload.com/mgr_dl.php?d=" + id + "&u=" + user, downloadLink);
-        logger.finer(br+"");
-        if (br.getRedirectLocation() == null || br.getRedirectLocation().contains(id)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l); }
-        dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
+        getRedirect("http://megaupload.com/mgr_dl.php?d=" + dlID + "&u=" + user, link);
+        if (br.getRedirectLocation() == null || br.getRedirectLocation().contains(dlID)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l); }
+        String url = br.getRedirectLocation();
+        url = url.replaceFirst("megaupload\\.com/", "megaupload\\.com:" + usePort() + "/");
+        br.setFollowRedirects(true);
+        br.setDebug(true);
+        dl = br.openDownload(link, url, true, 0);
         if (!dl.getConnection().isOK()) {
-
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
 
@@ -105,60 +138,58 @@ public class Megauploadcom extends PluginForHost {
         // dann versucht wird ihn free zu resumen, schlägt das fehl, weil jd die
         // mehrfachchunks aus premium nicht resumen kann.
         // In diesem Fall wird der link resetted.
-        if (linkStatus.hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED) && linkStatus.getErrorMessage().contains("Limit Exceeded")) {
-            downloadLink.setChunksProgress(null);
-            linkStatus.setStatus(LinkStatus.ERROR_RETRY);
+        if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED) && link.getLinkStatus().getErrorMessage().contains("Limit Exceeded")) {
+            link.setChunksProgress(null);
+            link.getLinkStatus().setStatus(LinkStatus.ERROR_RETRY);
         }
     }
 
-    /**
-     * checks password and gets the final redirect url
-     * 
-     * @param string
-     * @throws PluginException
-     * @throws InterruptedException
-     */
     private void getRedirect(String url, DownloadLink downloadLink) throws PluginException, InterruptedException {
         try {
             br.getPage(url);
         } catch (IOException e) {
-            int pi = 0;
-            String pass = this.getPluginConfig().getStringProperty("PASSWORD");
-            while (true) {
-                e.printStackTrace();
-                try {
-                    this.br.getPage(url + "&p=" + pass);
-                    this.getPluginConfig().setProperty("PASSWORD", pass);
-                    this.getPluginConfig().save();
-                    break;
-                } catch (IOException e2) {
-                    pass = JDUtilities.getUserInput(JDLocale.LF("plugins.host.megaupload.getpassword", "Get Password for %s", downloadLink.getName()));
-                    if (pass == null) { throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.megaupload.pw_wring", "Password wrong")); }
+            try {
+                String passCode;
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput(null, downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
                 }
-                pi++;
-                if (pi > 3) {
-                    if (pass == null) { throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.megaupload.pw_wring", "Password wrong")); }
-                }
+                br.getPage(url + "&p=" + passCode);
+                getPluginConfig().setProperty("pass", passCode);
+                getPluginConfig().save();
+                return;
+            } catch (IOException e2) {
+                getPluginConfig().setProperty("pass", null);
+                getPluginConfig().save();
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-
     }
 
     public String getAGBLink() {
         return "http://megaupload.com/terms/";
     }
 
+    public void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.postPage("http://megaupload.com/mgr_login.php", "u=" + account.getUser() + "&b=0&p=" + JDHash.getMD5(account.getPass()));
+        if (br.toString().equalsIgnoreCase("e")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+        UserInfo = Request.parseQuery(br + "");
+        user = UserInfo.get("s");
+    }
+
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        String link = downloadLink.getDownloadURL().replaceAll("/de", "");
-        String id = Request.parseQuery(link).get("d");
-        br.postPage("http://megaupload.com/mgr_linkcheck.php", "id0=" + id);
-logger.finer(br+"");
+        dlID = getDownloadID(downloadLink);
+        user = null;
+        br.postPage("http://megaupload.com/mgr_linkcheck.php", "id0=" + dlID);
         HashMap<String, String> query = Request.parseQuery(br + "");
-        if (!query.get("id0").equals("0")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!query.containsKey("id0") || !query.get("id0").equals("0") || query.get("n") == null || query.get("s") == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(query.get("n"));
-
         downloadLink.setDownloadSize(Long.parseLong(query.get("s")));
+        downloadLink.setDupecheckAllowed(true);
         return true;
     }
 
@@ -166,37 +197,21 @@ logger.finer(br+"");
         return getVersion("$Revision$");
     }
 
-    public void handleFree(DownloadLink parameter) throws Exception {
-        br.forceDebug(true);
-        getFileInformation(parameter);
-
-        LinkStatus linkStatus = parameter.getLinkStatus();
-        DownloadLink downloadLink = (DownloadLink) parameter;
-        String link = downloadLink.getDownloadURL().replaceAll("/de", "");
-        String id = Request.parseQuery(link).get("d");
-
+    public void handleFree0(DownloadLink link) throws Exception {
         br.setFollowRedirects(false);
-        getRedirect("http://megaupload.com/mgr_dl.php?d=" + id, downloadLink);
-        logger.finer(br+"");
-        if (br.getRedirectLocation() == null || br.getRedirectLocation().contains(id)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l); }
-        dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 1);
+        if (user != null) {
+            getRedirect("http://megaupload.com/mgr_dl.php?d=" + dlID + "&u=" + user, link);
+        } else {
+            br.getPage("/mgr_dl.php?d=" + dlID);
+        }
+        if (br.getRedirectLocation() == null || br.getRedirectLocation().contains(dlID)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l); }
+        String url = br.getRedirectLocation();
+        url = url.replaceFirst("megaupload\\.com/", "megaupload\\.com:" + usePort() + "/");
+        br.setFollowRedirects(true);
+        dl = br.openDownload(link, url, true, 1);
         if (!dl.getConnection().isOK()) {
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            if (dl.getConnection().getHeaderField("Retry-After") != null) {
-                dl.getConnection().disconnect();
-                br.getPage("http://megaupload.com/premium/de/?");
-                String wait = br.getRegex("Warten Sie bitte (.*?)Minuten").getMatch(0);
-                if (wait != null) {
-                    linkStatus.setValue(Integer.parseInt(wait.trim()) * 60 * 1000l);
-                } else {
-                    linkStatus.setValue(120 * 60 * 1000);
-                }
-                return;
-            } else {
-                dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-            }
-
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
         }
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
@@ -208,11 +223,15 @@ logger.finer(br+"");
         // dann versucht wird ihn free zu resumen, schlägt das fehl, weil jd die
         // mehrfachchunks aus premium nicht resumen kann.
         // In diesem Fall wird der link resetted.
-        if (linkStatus.hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED) && linkStatus.getErrorMessage().contains("Limit Exceeded")) {
-            downloadLink.setChunksProgress(null);
-            linkStatus.setStatus(LinkStatus.ERROR_RETRY);
+        if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED) && link.getLinkStatus().getErrorMessage().contains("Limit Exceeded")) {
+            link.setChunksProgress(null);
+            link.getLinkStatus().setStatus(LinkStatus.ERROR_RETRY);
         }
+    }
 
+    public void handleFree(DownloadLink parameter) throws Exception {
+        getFileInformation(parameter);
+        handleFree0(parameter);
     }
 
     public int getMaxSimultanFreeDownloadNum() {
@@ -220,20 +239,17 @@ logger.finer(br+"");
     }
 
     public void reset() {
-
     }
 
-    // public int getMaxSimultanPremiumDownloadNum() {
-    // return simultanpremium;
-    // }
+    public int getMaxSimultanPremiumDownloadNum() {
+        return simultanpremium;
+    }
 
     public void resetPluginGlobals() {
     }
 
     private void setConfigElements() {
-        // String[] ports = new String[] { "80", "800", "1723" };
-        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX,
-        // JDUtilities.getConfiguration(), MU_PARAM_PORT, ports,
-        // "Use this Port:").setDefaultValue("80"));
+        String[] ports = new String[] { "80", "800", "1723" };
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), MU_PARAM_PORT, ports, "Use this Port:").setDefaultValue("80"));
     }
 }
