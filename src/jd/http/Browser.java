@@ -275,8 +275,6 @@ public class Browser {
 
     public Browser() {
 
-        
-
     }
 
     public String getAcceptLanguage() {
@@ -587,9 +585,7 @@ public class Browser {
     private JDProxy selectProxy() {
         // TODO Auto-generated method stub
         if (proxy != null) {
-            if(proxy==JDProxy.NO_PROXY){
-                return null;
-            }
+            if (proxy == JDProxy.NO_PROXY) { return null; }
             return proxy;
         }
         return GLOBAL_PROXY;
@@ -1131,9 +1127,10 @@ public class Browser {
         String[] ret = logins.get(domain);
         if (ret == null) {
             // see proxy auth
-
-            if ((selectProxy().getHost() + ":" + selectProxy().getPort()).equalsIgnoreCase(domain)) {
-                ret = new String[] { selectProxy().getUser(), selectProxy().getPass() };
+            if (selectProxy() != null) {
+                if ((selectProxy().getHost() + ":" + selectProxy().getPort()).equalsIgnoreCase(domain)) {
+                    ret = new String[] { selectProxy().getUser(), selectProxy().getPass() };
+                }
             }
         }
 
@@ -1355,7 +1352,7 @@ public class Browser {
         Authenticator.setDefault(AUTHENTICATOR);
         CookieHandler.setDefault(null);
         XTrustProvider.install();
-     // JDProxy p = new JDProxy(JDProxy.Type.SOCKS, "localhost", 1080);
+        // JDProxy p = new JDProxy(JDProxy.Type.SOCKS, "localhost", 1080);
         // this.setProxy(p);
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
             //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
