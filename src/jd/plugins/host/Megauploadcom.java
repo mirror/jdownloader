@@ -55,6 +55,8 @@ public class Megauploadcom extends PluginForHost {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
 
+    private static final String PASSWORD = null;
+
     private String captchaPost;
 
     private String captchaURL;
@@ -104,17 +106,18 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-
+        br.forceDebug(true);
         LinkStatus linkStatus = parameter.getLinkStatus();
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
         String id = Request.parseQuery(link).get("d");
-        br.forceDebug(true);
+
         AccountInfo ai = this.getAccountInformation(account);
         if (!ai.isValid()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
         br.setFollowRedirects(false);
-        br.getPage("http://megaupload.com/mgr_dl.php?d=" + id + "&u=" + user);
 
+        getRedirect("http://megaupload.com/mgr_dl.php?d=" + id + "&u=" + user,downloadLink);
+       
         if (br.getRedirectLocation() == null || br.getRedirectLocation().contains(id)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l); }
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
         if (!dl.getConnection().isOK()) {
@@ -137,6 +140,38 @@ public class Megauploadcom extends PluginForHost {
             downloadLink.setChunksProgress(null);
             linkStatus.setStatus(LinkStatus.ERROR_RETRY);
         }
+    }
+/**
+ * checks password and gets the final redirect url
+ * @param string
+ * @throws PluginException 
+ * @throws InterruptedException 
+ */
+    private void getRedirect(String url,DownloadLink downloadLink) throws PluginException, InterruptedException {
+        try {
+            br.getPage(url);
+        } catch (IOException e) {
+            int pi = 0;
+            String pass = this.getPluginConfig().getStringProperty("PASSWORD");
+            while (true) {
+                e.printStackTrace();
+                try {
+                    this.br.getPage(url + "&p=" + pass);
+                    this.getPluginConfig().setProperty("PASSWORD", pass);
+                    this.getPluginConfig().save();
+                    break;
+                } catch (IOException e2) {
+                    pass = JDUtilities.getUserInput(JDLocale.LF("plugins.host.megaupload.getpassword", "Get Password for %s", downloadLink.getName()));
+                    if (pass == null) { throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.megaupload.pw_wring", "Password wrong")); }
+                }
+                pi++;
+                if (pi > 3) {
+                    if (pass == null) { throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.megaupload.pw_wring", "Password wrong")); }
+                }
+            }
+        }
+
+        
     }
 
     public String getAGBLink() {
@@ -200,13 +235,14 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink parameter) throws Exception {
+        br.forceDebug(true);
         LinkStatus linkStatus = parameter.getLinkStatus();
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
         String id = Request.parseQuery(link).get("d");
-        br.forceDebug(true);
+
         br.setFollowRedirects(false);
-        br.getPage("/mgr_dl.php?d=" + id);
+        getRedirect("http://megaupload.com/mgr_dl.php?d=" + id ,downloadLink);
 
         if (br.getRedirectLocation() == null || br.getRedirectLocation().contains(id)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l); }
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 1);
