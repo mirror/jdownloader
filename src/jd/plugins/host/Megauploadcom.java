@@ -60,7 +60,7 @@ public class Megauploadcom extends PluginForHost {
         this.setBrowserExclusive();
 
         br.postPage("http://megaupload.com/mgr_login.php", "u=" + account.getUser() + "&b=0&p=" + JDHash.getMD5(account.getPass()));
-
+        logger.finer(br+"");
         HashMap<String, String> query = Request.parseQuery(br + "");
         this.user = query.get("s");
         String validUntil = query.get("p");
@@ -86,7 +86,7 @@ public class Megauploadcom extends PluginForHost {
         br.setFollowRedirects(false);
 
         getRedirect("http://megaupload.com/mgr_dl.php?d=" + id + "&u=" + user, downloadLink);
-
+        logger.finer(br+"");
         if (br.getRedirectLocation() == null || br.getRedirectLocation().contains(id)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l); }
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
         if (!dl.getConnection().isOK()) {
@@ -153,7 +153,7 @@ public class Megauploadcom extends PluginForHost {
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
         String id = Request.parseQuery(link).get("d");
         br.postPage("http://megaupload.com/mgr_linkcheck.php", "id0=" + id);
-
+logger.finer(br+"");
         HashMap<String, String> query = Request.parseQuery(br + "");
         if (!query.get("id0").equals("0")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(query.get("n"));
@@ -177,7 +177,7 @@ public class Megauploadcom extends PluginForHost {
 
         br.setFollowRedirects(false);
         getRedirect("http://megaupload.com/mgr_dl.php?d=" + id, downloadLink);
-
+        logger.finer(br+"");
         if (br.getRedirectLocation() == null || br.getRedirectLocation().contains(id)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l); }
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 1);
         if (!dl.getConnection().isOK()) {
