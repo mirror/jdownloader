@@ -523,7 +523,14 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
             String[] result = TwoTextFieldDialog.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.addKey.title", "Add new key"), JDLocale.L("plugins.optional.langfileeditor.addKey.message1", "Type in the name of the key:"), JDLocale.L("plugins.optional.langfileeditor.addKey.message2", "Type in the translated message of the key:"), "", "");
             if (result[0].equals("")) return;
-            data.add(new KeyInfo(result[0].toLowerCase(), null, result[1].toLowerCase()));
+            result[0] = result[0].toLowerCase();
+            for (KeyInfo ki : data) {
+                if (ki.getKey().equals(result[0])) {
+                    JOptionPane.showMessageDialog(frame, JDLocale.LF("plugins.optional.langfileeditor.addKey.error.message", "The key '%s' is already in use!", result[0]), JDLocale.L("plugins.optional.langfileeditor.addKey.error.title", "Duplicated key"), JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            }
+            data.add(new KeyInfo(result[0].toLowerCase(), null, result[1]));
             tableModel.fireTableDataChanged();
             updateKeyChart();
 
