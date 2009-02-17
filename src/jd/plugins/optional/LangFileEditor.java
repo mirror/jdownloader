@@ -70,6 +70,7 @@ import jd.gui.skins.simple.components.ChartAPI_Entity;
 import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
@@ -520,9 +521,9 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         } else if (e.getSource() == mnuAdd) {
 
-            String result = JOptionPane.showInputDialog(frame, JDLocale.L("plugins.optional.langfileeditor.addKey.message", "Type in the name of the key:"), JDLocale.L("plugins.optional.langfileeditor.addKey.title", "Add new key"), JOptionPane.INFORMATION_MESSAGE);
-            if (result == null) return;
-            data.add(new KeyInfo(result.toLowerCase(), null, null));
+            String[] result = TwoTextFieldDialog.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.addKey.title", "Add new key"), JDLocale.L("plugins.optional.langfileeditor.addKey.message1", "Type in the name of the key:"), JDLocale.L("plugins.optional.langfileeditor.addKey.message2", "Type in the translated message of the key:"), "", "");
+            if (result[0].equals("")) return;
+            data.add(new KeyInfo(result[0].toLowerCase(), null, result[1].toLowerCase()));
             tableModel.fireTableDataChanged();
             updateKeyChart();
 
