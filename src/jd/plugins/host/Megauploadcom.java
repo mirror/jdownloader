@@ -92,7 +92,8 @@ public class Megauploadcom extends PluginForHost {
 
         HashMap<String, String> query = Request.parseQuery(br + "");
         this.user = query.get("s");
-        Date d = new Date(Long.parseLong(query.get("p")) * 1000l);
+        String validUntil = query.get("p");
+        Date d = new Date(Long.parseLong(validUntil.trim()) * 1000l);
         if (d.compareTo(new Date()) >= 0) {
             ai.setValid(true);
         } else {
@@ -112,7 +113,7 @@ public class Megauploadcom extends PluginForHost {
         AccountInfo ai = this.getAccountInformation(account);
         if (!ai.isValid()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
         br.setFollowRedirects(false);
-        br.getPage("/mgr_dl.php?d=" + id + "&u=" + user);
+        br.getPage("http://megaupload.com/mgr_dl.php?d=" + id + "&u=" + user);
 
         if (br.getRedirectLocation() == null || br.getRedirectLocation().contains(id)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l); }
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
