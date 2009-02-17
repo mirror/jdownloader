@@ -69,7 +69,7 @@ public class Megauploadcom extends PluginForHost {
 
     public Megauploadcom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.megaupload.com/premium/en/");
+        this.enablePremium("http://megaupload.com/premium/en/");
         setConfigElements();
     }
 
@@ -88,7 +88,7 @@ public class Megauploadcom extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
 
-        br.postPage("http://www.megaupload.com/mgr_login.php", "u=" + account.getUser() + "&b=0&p=" + JDHash.getMD5(account.getPass()));
+        br.postPage("http://megaupload.com/mgr_login.php", "u=" + account.getUser() + "&b=0&p=" + JDHash.getMD5(account.getPass()));
 
         HashMap<String, String> query = Request.parseQuery(br + "");
         this.user = query.get("s");
@@ -140,7 +140,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public String getAGBLink() {
-        return "http://www.megaupload.com/terms/";
+        return "http://megaupload.com/terms/";
     }
 
     public boolean isPremium() {
@@ -160,7 +160,7 @@ public class Megauploadcom extends PluginForHost {
         this.setBrowserExclusive();
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
         String id = Request.parseQuery(link).get("d");
-        br.postPage("http://www.megaupload.com/mgr_linkcheck.php", "id0=" + id);
+        br.postPage("http://megaupload.com/mgr_linkcheck.php", "id0=" + id);
 
         HashMap<String, String> query = Request.parseQuery(br + "");
         if (!query.get("id0").equals("0")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -214,7 +214,7 @@ public class Megauploadcom extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             if (dl.getConnection().getHeaderField("Retry-After") != null) {
                 dl.getConnection().disconnect();
-                br.getPage("http://www.megaupload.com/premium/de/?");
+                br.getPage("http://megaupload.com/premium/de/?");
                 String wait = br.getRegex("Warten Sie bitte (.*?)Minuten").getMatch(0);
                 if (wait != null) {
                     linkStatus.setValue(Integer.parseInt(wait.trim()) * 60 * 1000l);
