@@ -86,7 +86,7 @@ public class JDAboutDialog extends JDialog {
         		{ " Greeny", " greeny@jdownloader.org", " LangFileEditor, Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" }, 
         		{ " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." }, 
         		{ " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins,Support,Bugfixing,JDownloader core" }, 
-        		{ " Scr4ve", " ---", " hoster, decrypter, addons, ..." },
+        		{ " scr4ve", " scr4ve@jdownloader.org", " Security Stuff, Addons, Decrypter-Plugins, Support and Bugfixing" },
         		{ " Sheadox", " sheadox@jdownloader.org", " Hoster plugins, Decrypt plugins, Support" }, 
         		{ " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" }, 
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
