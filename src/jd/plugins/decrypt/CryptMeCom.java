@@ -56,14 +56,13 @@ public class CryptMeCom extends PluginForDecrypt {
         // Angebotene Containerformate herausfinden
         String[][] containers = br.getRegex("<a href='(http://crypt-me.com/dl\\.php\\?file=.*?(\\..*?))' target='_blank'>").getMatches();
 
-        for (String[] container : containers) {
+       for (String[] container : containers) {
             File containerFile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + container[1]);
             Browser.download(containerFile, container[0]);
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(containerFile));
             containerFile.delete();
             if (decryptedLinks.size() != 0) return decryptedLinks;
         }
-
         String folderId = new Regex(parameter, "folder/([a-zA-Z0-9]+)\\.html").getMatch(0);
         int folderSize = br.getRegex("<a onclick=\"return newpopup\\(('.*?', '.*?')\\);\" ").count();
         for (int i = 1; i <= folderSize; i++) {
@@ -71,7 +70,6 @@ public class CryptMeCom extends PluginForDecrypt {
             String encodedLink = br.getRegex("<iframe src=\"http://anonym.to/\\?(.*?)\"").getMatch(0);
             decryptedLinks.add(createDownloadlink(encodedLink));
         }
-
         return decryptedLinks;
     }
 

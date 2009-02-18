@@ -284,6 +284,7 @@ public class Uploadedto extends PluginForHost {
         }
         if (error != null) {
             String message = JDLocale.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
+           logger.severe("Fatal error 1");
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(message);
             return;
@@ -300,7 +301,11 @@ public class Uploadedto extends PluginForHost {
             dl = br.openDownload(downloadLink, form, false, 1);
         } else {
             String dlLink = br.getRedirectLocation();
-            if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+            if (dlLink == null) {
+                
+                logger.severe("Fatal error 1\r\n"+br);
+                throw new PluginException(LinkStatus.ERROR_FATAL);
+            }
             dl = br.openDownload(downloadLink, dlLink, false, 1);
         }
         dl.fakeContentRangeHeader(false);

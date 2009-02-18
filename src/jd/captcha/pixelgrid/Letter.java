@@ -71,6 +71,10 @@ public class Letter extends PixelGrid {
         super(0, 0);
     }
 
+    public Letter(int averageWidth, int height) {
+        super(averageWidth, height);
+    }
+
     /**
      * Versucht den Buchstaben automatisch auszurichten. Als kriterium dient das
      * minimale Breite/Höhe Verhältniss Es wird zuerst die optimale DRehrichtung

@@ -44,7 +44,7 @@ import jd.update.WebUpdater;
  * Diese klasse sollte in einem working directory ausgeführt werden das leer
  * ist. z.B. d:/jd_update Nach dem Start wird die aktuelle JD version vom
  * bluehost server geladen. anschließend fragt der Updater nach einem ordner in
- * dem sich die neuen files befinden. Die neuen files werden hochgeladen und auf
+ * dem sich die neuen fil#es befinden. Die neuen files werden hochgeladen und auf
  * crc Fehler beim Upload geprüft. Anschließend wird eine neue hashliste
  * erstellt und auf unseren server geladen. Die DLC hashes werden ebenfalls
  * aktualisiert.

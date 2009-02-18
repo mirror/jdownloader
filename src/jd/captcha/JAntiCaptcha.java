@@ -1497,6 +1497,7 @@ if(!f.exists()){
         File[] images = getImages(path.getAbsolutePath());
         for (File element : images) {
             image = UTILITIES.loadImage(element);
+            System.out.println(element.getAbsolutePath());
             int width = image.getWidth(null);
             int height = image.getHeight(null);
             if (width <= 0 || height <= 0) {
@@ -1548,7 +1549,7 @@ if(!f.exists()){
             } else {
 
                 if (JAntiCaptcha.isLoggerActive()) {
-                    logger.severe("Bildformat von ImportDB nicht unterstützt");
+                    logger.severe("Bildformat von ImportDB nicht unterstützt:"+element);
                 }
             }
 
