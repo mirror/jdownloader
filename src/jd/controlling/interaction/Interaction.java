@@ -39,9 +39,7 @@ public abstract class Interaction extends Property implements Serializable {
     public static InteractionTrigger INTERACTION_ALL_DOWNLOADS_FINISHED;
     public static InteractionTrigger INTERACTION_DOWNLOAD_FAILED;
     public static InteractionTrigger INTERACTION_LINKLIST_STRUCTURE_CHANGED;
-    // public static InteractionTrigger INTERACTION_DOWNLOAD_BOT_DETECTED;
     public static InteractionTrigger INTERACTION_APPSTART;
-    // public static InteractionTrigger INTERACTION_AFTER_UNRAR;
     public static InteractionTrigger INTERACTION_DOWNLOAD_PACKAGE_FINISHED;
     public static InteractionTrigger INTERACTION_BEFORE_RECONNECT;
     public static InteractionTrigger INTERACTION_AFTER_RECONNECT;
@@ -72,16 +70,7 @@ public abstract class Interaction extends Property implements Serializable {
         INTERACTION_ALL_DOWNLOADS_FINISHED = new InteractionTrigger(2, JDLocale.L("interaction.trigger.all_downloads_finished", "Alle Downloads beendet"), JDLocale.L("interaction.trigger.all_downloads_finished.desc", "Wird aufgerufen sobald alle Downloads beendet oder abgebrochen wurden"));
         INTERACTION_DOWNLOAD_FAILED = new InteractionTrigger(3, JDLocale.L("interaction.trigger.single_download_failed", "Download fehlgeschlagen"), JDLocale.L("interaction.trigger.single_download_failed.desc", "Wird aufgerufen wenn ein Download wegen Fehlern abgebrochen wurde"));
         INTERACTION_LINKLIST_STRUCTURE_CHANGED = new InteractionTrigger(4, JDLocale.L("interaction.trigger.linklist_structure_changed", "Linklisten Struktur geändert"), JDLocale.L("interaction.trigger.linklist_structure_changed.desc", "Wird aufgerufen wenn sich die Struktur der Linkliste geändert hat (Links eingefügt, Links fertig, ...)"));
-        // INTERACTION_DOWNLOAD_BOT_DETECTED = new InteractionTrigger(5,
-        // JDLocale.L("interaction.trigger.bot_detected", "Bot erkannt"),
-        // JDLocale.L("interaction.trigger.bot_detected.desc",
-        // "jDownloader wurde als Bot erkannt"));
         INTERACTION_APPSTART = new InteractionTrigger(7, JDLocale.L("interaction.trigger.app_start", "Programmstart"), JDLocale.L("interaction.trigger.app_start.desc", "Direkt nach dem Initialisieren von jDownloader"));
-        // INTERACTION_AFTER_UNRAR = new InteractionTrigger(9,
-        // JDLocale.L("interaction.trigger.after_extract",
-        // "Nach dem Entpacken"),
-        // JDLocale.L("interaction.trigger.after_extract.desc",
-        // "Wird aufgerufen wenn die Unrar-Aktion beendet wurde."));
         INTERACTION_DOWNLOAD_PACKAGE_FINISHED = new InteractionTrigger(12, JDLocale.L("interaction.trigger.package_finished", "Paket fertig"), JDLocale.L("interaction.trigger.package_finished.desc", "Wird aufgerufen wenn ein Paket fertig geladen wurde"));
         INTERACTION_BEFORE_RECONNECT = new InteractionTrigger(13, JDLocale.L("interaction.trigger.before_reconnect", "Vor dem Reconnect"), JDLocale.L("interaction.trigger.before_reconnect.desc", "Vor dem eigentlichen Reconnect"));
         INTERACTION_AFTER_RECONNECT = new InteractionTrigger(14, JDLocale.L("interaction.trigger.after_reconnect", "Nach dem Reconnect"), JDLocale.L("interaction.trigger.after_reconnect.desc", "Nach dem eigentlichen Reconnect"));
@@ -144,7 +133,7 @@ public abstract class Interaction extends Property implements Serializable {
                 }
             }
         }
-        if (trigger.equals(Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED) && areInteractionsInProgress() && JDUtilities.getController().getFinishedLinks().size() > 0) {
+        if (trigger.getID() == Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED.getID() && areInteractionsInProgress() && JDUtilities.getController().getFinishedLinks().size() > 0) {
             Interaction.handleInteraction(Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS, null);
         }
     }
