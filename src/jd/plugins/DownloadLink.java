@@ -360,7 +360,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Die Datei zum Abspeichern
      */
     public String getFileOutput() {
-        return JDIO.validatePath(getFileOutput0());
+        return getFileOutput0();
     }
 
     public String getFileOutput0() {

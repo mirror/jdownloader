@@ -88,22 +88,9 @@ public class JDIO {
         }
     }
 
-    public static String validatePath(String fileOutput0) {
-        if (OSDetector.isWindows()) {
-            String hd = "";
-            if (new File(fileOutput0).isAbsolute()) {
-                hd = fileOutput0.substring(0, 3);
-                fileOutput0 = fileOutput0.substring(3);
-            }
-            fileOutput0 = hd + fileOutput0.replaceAll("([/|<|>|\\\\||\"|:|\\*|\\?|\\x00])+", "_");
-        }
-
-        return fileOutput0;
-    }
-
     public static String validateFileandPathName(String name) {
         if (name == null) { return null; }
-        return name.replaceAll("([<|>|\\||\"|:|\\*|\\?|/|\\x00])+", "_");
+        return name.replaceAll("([/|<|>|\\||\"|:|\\*|\\?|/|\\x00])+", "_");
     }
 
     /**
