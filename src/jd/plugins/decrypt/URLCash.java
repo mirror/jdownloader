@@ -37,12 +37,10 @@ public class URLCash extends PluginForDecrypt {
 
         br.getPage(parameter);
         String link = br.getRegex("<META HTTP-EQUIV=\"Refresh\" .*? URL=(.*?)\">").getMatch(0);
-        if (link == null) {
-            link = br.getRegex("<iframe name='redirectframe' id='redirectframe'.*?src='(.*?)'.*?></iframe>").getMatch(0);
-            if (link == null) { return null; }
-        }
+        if (link == null) link = br.getRegex("onClick=\"top\\.location='(.*?)'\">").getMatch(0);
+        if (link == null) link = br.getRegex("<iframe name='redirectframe' id='redirectframe'.*?src='(.*?)'.*?></iframe>").getMatch(0);
+        if (link == null) return null;
         decryptedLinks.add(createDownloadlink(link));
-
         return decryptedLinks;
     }
 
