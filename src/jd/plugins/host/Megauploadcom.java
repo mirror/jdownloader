@@ -256,6 +256,7 @@ public class Megauploadcom extends PluginForHost {
             if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 1) {
                 if (code == null || code.contains("-") || code.trim().length() != 4) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 1000l); }
             }
+            if (code == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             form.put("captcha", code);
             br.submitForm(form);
             form = br.getForm(0);
@@ -283,7 +284,7 @@ public class Megauploadcom extends PluginForHost {
             if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 2) {
                 handleFree1(link, account);
             } else {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
             }
             return;
         }
