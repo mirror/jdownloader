@@ -38,7 +38,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
 import jd.nutils.JDHash;
-import jd.nutils.OSDetector;
 
 public class JDIO {
 
@@ -90,7 +89,7 @@ public class JDIO {
 
     public static String validateFileandPathName(String name) {
         if (name == null) { return null; }
-        return name.replaceAll("([\\\\||<|>|\\|\"|:|\\*|\\?|/|\\x00])+", "_");
+        return name.replaceAll("([\\\\|<|>|\\||\"|:|\\*|\\?|/|\\x00])+", "_");
     }
 
     /**
