@@ -88,7 +88,6 @@ public class Serienjunkies extends PluginForDecrypt {
     private String dynamicCaptcha = "(?s)<FORM ACTION=\".*?\" METHOD=\"post\".*?<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"(.*?)\">.*?<IMG SRC=\"([^\"]*)\"";
     private Pattern patternCaptcha = null;
     private String subdomain = "download.";
-    private static final String[] passwordsAr = new String[] { "serienjunkies.dl.am", "serienjunkies.org" };
     private static int active = 0;
     private ProgressController progress;
     private JCheckBox checkScat;
@@ -207,7 +206,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
                     if (con.getLongContentLength() < 1000) {
                         logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
-                        progress.setProgressText("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
+                        progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.decryptlimit", "SJ Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)"));
                         new Thread(new Runnable() {
                             public void run() {
                                 for (int i = 0; i < 100; i++) {
@@ -223,7 +222,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
                             progress.setColor(Color.red);
                             progress.setStatus(0);
-                            progress.setProgressText("Error: SerienJunkies Downloadlimit");
+                            progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.downloadlimit", "Error: SerienJunkies Downloadlimit"));
                             for (int i = 0; i < 100; i++) {
                                 try {
                                     Thread.sleep(100);
@@ -279,7 +278,7 @@ public class Serienjunkies extends PluginForDecrypt {
             Form[] forms = br3.getForms();
             Vector<Thread> threads = new Vector<Thread>();
             final Browser[] br2 = new Browser[] { br3.cloneBrowser(), br3.cloneBrowser(), br3.cloneBrowser(), br3.cloneBrowser() };
-            progress.setProgressText("getLinks");
+            progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.getLinks", "get links"));
             progress.setStatus(0);
 
             ArrayList<String> actions = new ArrayList<String>();
@@ -497,7 +496,7 @@ public class Serienjunkies extends PluginForDecrypt {
             }
             if (br3.containsHTML("Download-Limit")) {
                 logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
-                progress.setProgressText("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
+                progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.decryptlimit", "SJ Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)"));
                 new Thread(new Runnable() {
                     public void run() {
                         for (int i = 0; i < 100; i++) {
@@ -522,7 +521,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 } else {
                     progress.setColor(Color.red);
                     progress.setStatus(0);
-                    progress.setProgressText("Error: SerienJunkies Downloadlimit");
+                    progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.downloadlimit", "Error: SerienJunkies Downloadlimit"));
                     for (int i = 0; i < 100; i++) {
                         try {
                             Thread.sleep(100);
@@ -1058,7 +1057,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private void setConfigElements() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), "SJ_MIRRORMANAGEMENT", mirrorManagement, JDLocale.LF("plugins.decrypt.serienjunkies.mirrorManagement", "mirror management")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), "SJ_MIRRORMANAGEMENT", mirrorManagement, JDLocale.L("plugins.decrypt.serienjunkies.mirrorManagement", "mirror management")));
         cfg.setDefaultValue(true);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster selection")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -1119,7 +1118,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     if (finaldls.size() > 0) {
                         try {
                             DownloadLink[] linksar = finaldls.toArray(new DownloadLink[finaldls.size()]);
-                            progress.setProgressText("check links");
+                            progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.checkLinks", "check links"));
                             progress.setStatus(0);
                             int inc = 100 / linksar.length;
                             linksar[0].getPlugin().checkLinks(linksar);
@@ -1152,7 +1151,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                     if (finaldls.size() > 0) {
                                         try {
                                             DownloadLink[] linksar = finaldls.toArray(new DownloadLink[finaldls.size()]);
-                                            progress.setProgressText("check mirror");
+                                            progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.checkMirror", "check mirror"));
                                             progress.setStatus(0);
                                             int inc = 100 / linksar.length;
                                             linksar[0].getPlugin().checkLinks(linksar);
@@ -1180,7 +1179,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
                         }
                         for (DownloadLink downloadLink2 : finaldls) {
-                            downloadLink2.addSourcePluginPasswords(passwordsAr);
+                            downloadLink2.addSourcePluginPasswords(passwords);
                         }
 
                     }
