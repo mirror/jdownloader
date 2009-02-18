@@ -27,14 +27,13 @@ import jd.plugins.PluginForDecrypt;
 
 public class CounterstrikeDe extends PluginForDecrypt {
 
-    private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
     public CounterstrikeDe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         // Get fileid
         String fileid = new Regex(param.toString(), "http://[\\w\\.]*?4players\\.de/\\S*/download/([0-9]+)/([01]/)?index\\.html?").getMatch(0);
@@ -52,6 +51,6 @@ public class CounterstrikeDe extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4227 $");
+        return getVersion("$Revision$");
     }
 }
