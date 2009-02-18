@@ -336,7 +336,7 @@ public class JDController implements ControlListener, UIListener {
             String downloadDir = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
 
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
-                File file = new File(new File(downloadDir), packages.get(i));
+                File file = new File(new File(downloadDir), fp.getName());
                 if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, false)) {
                     if (!file.exists()) file.mkdirs();
                 }
@@ -1120,7 +1120,7 @@ public class JDController implements ControlListener, UIListener {
      *            Die Containerdatei
      */
     public void loadContainerFile(final File file, final boolean hideGrabber, final boolean startDownload) {
-        
+
         System.out.println("load container");
         new Thread() {
             @SuppressWarnings("unchecked")

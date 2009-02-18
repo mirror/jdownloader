@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.Vector;
 
 import jd.config.Property;
+import jd.nutils.io.JDIO;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -398,7 +399,7 @@ public class FilePackage extends Property implements Serializable {
         if (name == null || name.length() == 0) {
             this.name = JDUtilities.removeEndingPoints(getDefaultFilePackage().name);
         } else
-            this.name = JDUtilities.removeEndingPoints(name);
+            this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
     }
 
     public void setPassword(String password) {
