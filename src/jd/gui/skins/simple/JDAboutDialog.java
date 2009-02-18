@@ -75,8 +75,20 @@ public class JDAboutDialog extends JDialog {
         // space. This improves the way the entries look in the table
         // (without fiddleing with the tablecellrenderer)
 
-        String[][] devs = new String[][] { { " coalado", " support@jdownloader.org", " JDownloader core, ocr, gui, reconnect, container, website, project administration" }, { " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." }, { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins,Support,Bugfixing,JDownloader core" }, { " Greeny", " greeny@jdownloader.org", " LangFileEditor, Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" }, { " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" }, { " DwD", " dwd@jdownloader.org", " hoster, ocr, decrypter, extractor, reconnect" }, { " Botzi", " botzi@jdownloader.org", " Hoster / Decrypter / Addons, Bugfixing, Database backend, No Support" }, { " Scr4ve", " ---", " hoster, decrypter, addons, ..." },
-                { " eXecuTe", " jd.execute@gmail.com", " command line support, language editor, newsfeed addon, tango theme, some plugins" }, { " gocsp", " gocsp@jdownloader.org", " Mac Developer" }, { " Sheadox", " sheadox@jdownloader.org", " Hoster plugins, Decrypt plugins, Support" }, { " djuzi", " djuzi@jdownloader.org", " Hoster/Decrypter plugins, Bug fixes, Localizing, PL Translation" },
+        String[][] devs = new String[][] { 
+        		{ " Botzi", " botzi@jdownloader.org", " Hoster / Decrypter / Addons, Bugfixing, Database backend, No Support" }, 
+        		{ " coalado", " support@jdownloader.org", " JDownloader core, ocr, gui, reconnect, container, website, project administration" }, 
+        		{ " djuzi", " djuzi@jdownloader.org", " Hoster/Decrypter plugins, Bug fixes, Localizing, PL Translation" },
+        		{ " DwD", " dwd@jdownloader.org", " hoster, ocr, decrypter, extractor, reconnect" }, 
+        		{ " eXecuTe", " jd.execute@gmail.com", " command line support, language editor, newsfeed addon, tango theme, some plugins" }, 
+        		{ " gocsp", " gocsp@jdownloader.org", " Mac Developer" },
+        		{ " gluewurm", " ---", " Developing innovative ideas, Bugfixing, Technical-Feasibility-Advisor" },
+        		{ " Greeny", " greeny@jdownloader.org", " LangFileEditor, Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" }, 
+        		{ " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." }, 
+        		{ " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins,Support,Bugfixing,JDownloader core" }, 
+        		{ " Scr4ve", " ---", " hoster, decrypter, addons, ..." },
+        		{ " Sheadox", " sheadox@jdownloader.org", " Hoster plugins, Decrypt plugins, Support" }, 
+        		{ " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" }, 
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
         // yourself..."},
         };
