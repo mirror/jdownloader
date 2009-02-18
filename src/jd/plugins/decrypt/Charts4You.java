@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -48,7 +49,7 @@ public class Charts4You extends PluginForDecrypt {
 
         File file = this.getLocalCaptchaFile(this);
         String name = br.getRegex("Details zum Download von (.*?) \\- Charts4you").getMatch(0);
-
+        String pass = br.getRegex(Pattern.compile("Passwort.*?</td>.*?<input type=\"text\" value=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         Form form = br.getForm(2);
         Browser.download(file, br.cloneBrowser().openGetConnection("captcha/imagecreate.php"));
         JDUtilities.acquireUserIO_Semaphore();
@@ -66,6 +67,7 @@ public class Charts4You extends PluginForDecrypt {
         fp.setName(name);
         for (int i = 0; i < links.length; i++) {
             DownloadLink link = this.createDownloadlink(links[i]);
+            if (pass != null) link.addSourcePluginPassword(pass);
             link.setFilePackage(fp);
             decryptedLinks.add(link);
         }
