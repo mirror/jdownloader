@@ -46,6 +46,7 @@ public class JDIO {
      * Das aktuelle Verzeichnis (Laden/Speichern)
      */
     private static File currentDirectory;
+
     /**
      * Schreibt content in eine Lokale textdatei
      * 
@@ -54,8 +55,9 @@ public class JDIO {
      * @return true/False je nach Erfolg des Schreibvorgangs
      */
     public static boolean writeLocalFile(File file, String content) {
-        return writeLocalFile(file, content,false);
+        return writeLocalFile(file, content, false);
     }
+
     /**
      * Schreibt content in eine Lokale textdatei
      * 
@@ -63,7 +65,7 @@ public class JDIO {
      * @param content
      * @return true/False je nach Erfolg des Schreibvorgangs
      */
-    public static boolean writeLocalFile(File file, String content,boolean append) {
+    public static boolean writeLocalFile(File file, String content, boolean append) {
         try {
             if (!append && file.isFile()) {
                 if (!file.delete()) {
@@ -74,8 +76,7 @@ public class JDIO {
             if (file.getParent() != null && !file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
             }
-            if (!append || !file.isFile())
-            file.createNewFile();
+            if (!append || !file.isFile()) file.createNewFile();
             BufferedWriter f = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append), "UTF8"));
 
             f.write(content);
@@ -94,7 +95,7 @@ public class JDIO {
                 hd = fileOutput0.substring(0, 3);
                 fileOutput0 = fileOutput0.substring(3);
             }
-            fileOutput0 = hd + fileOutput0.replaceAll("([<|>|\\||\"|:|\\*|\\?|\\x00])+", "_");
+            fileOutput0 = hd + fileOutput0.replaceAll("([/|<|>|\\\\||\"|:|\\*|\\?|\\x00])+", "_");
         }
 
         return fileOutput0;
