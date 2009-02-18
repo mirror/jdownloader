@@ -97,10 +97,6 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
     }
 
     @Override
-    public void resetInteraction() {
-    }
-
-    @Override
     public String toString() {
         return JDLocale.L("interaction.simpleExecute.name", "Programm/Script ausführen");
     }

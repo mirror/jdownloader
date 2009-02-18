@@ -245,54 +245,53 @@ public class PackageManager extends Interaction implements Serializable {
 
             if (pd.equals(d)) {
                 logger.finer("Update found in list");
-                {
-                    dat = pd;
-                    found = true;
 
-                    dat.setProperty("LOCALPATH", downloadLink.getFileOutput());
-                    dat.setDownloaded(true);
+                dat = pd;
+                found = true;
 
-                    CFGConfig.getConfig("JDU").save();
+                dat.setProperty("LOCALPATH", downloadLink.getFileOutput());
+                dat.setDownloaded(true);
 
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            JDUtilities.getController().removeDownloadLink(downloadLink);
-                            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-                            boolean ch = false;
-                            all: for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                                for (DownloadLink dLink : fp.getDownloadLinks()) {
-                                    if (dLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
-                                        ch = true;
-                                        break all;
-                                    }
-                                }
-                            }
-                            if (!ch) {
-                                StringBuilder list = new StringBuilder();
-                                for (PackageData pa : getDownloadedPackages()) {
-                                    list.append(pa.getStringProperty("name"));
-                                    list.append(new char[] { ' ', 'v', '.' });
-                                    list.append(pa.getStringProperty("version"));
-                                    list.append(new char[] { '<', 'b', 'r', '/', '>' });
-                                }
-                                String message = JDLocale.LF("modules.packagemanager.downloadednewpackage.title2", "<p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>", list.toString());
-                                boolean ret = JDUtilities.getGUI().showCountdownConfirmDialog(message, 15);
-                                if (ret) {
-                                    new WebUpdate().doWebupdate(true);
-                                }
-                            }
+                CFGConfig.getConfig("JDU").save();
 
+                new Thread() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
-                    }.start();
+                        JDUtilities.getController().removeDownloadLink(downloadLink);
+                        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
+                        boolean ch = false;
+                        all: for (FilePackage fp : JDUtilities.getController().getPackages()) {
+                            for (DownloadLink dLink : fp.getDownloadLinks()) {
+                                if (dLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
+                                    ch = true;
+                                    break all;
+                                }
+                            }
+                        }
+                        if (!ch) {
+                            StringBuilder list = new StringBuilder();
+                            for (PackageData pa : getDownloadedPackages()) {
+                                list.append(pa.getStringProperty("name"));
+                                list.append(new char[] { ' ', 'v', '.' });
+                                list.append(pa.getStringProperty("version"));
+                                list.append(new char[] { '<', 'b', 'r', '/', '>' });
+                            }
+                            String message = JDLocale.LF("modules.packagemanager.downloadednewpackage.title2", "<p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>", list.toString());
+                            boolean ret = JDUtilities.getGUI().showCountdownConfirmDialog(message, 15);
+                            if (ret) {
+                                new WebUpdate().doWebupdate(true);
+                            }
+                        }
 
-                    break;
-                }
+                    }
+                }.start();
+
+                break;
 
             }
         }
@@ -300,10 +299,6 @@ public class PackageManager extends Interaction implements Serializable {
             logger.severe("Update Package " + d + " not found in packagelist");
         }
 
-    }
-
-    @Override
-    public void resetInteraction() {
     }
 
     @Override

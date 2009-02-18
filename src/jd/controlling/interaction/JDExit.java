@@ -52,10 +52,6 @@ public class JDExit extends Interaction implements Serializable {
     }
 
     @Override
-    public void resetInteraction() {
-    }
-
-    @Override
     public String toString() {
         return JDLocale.L("interaction.jdexit.name", "JD Beenden");
     }

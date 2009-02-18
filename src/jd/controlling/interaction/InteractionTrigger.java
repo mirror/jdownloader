@@ -41,11 +41,7 @@ public class InteractionTrigger implements Serializable {
      * @return
      */
     public static InteractionTrigger[] getAllTrigger() {
-        InteractionTrigger[] ret = new InteractionTrigger[events.size()];
-        for (int i = 0; i < events.size(); i++) {
-            ret[i] = events.elementAt(i);
-        }
-        return ret;
+        return events.toArray(new InteractionTrigger[events.size()]);
     }
 
     /**
@@ -62,10 +58,10 @@ public class InteractionTrigger implements Serializable {
     private String name;
 
     /**
-     * Erstellt einen neuen Trigger. ACHTUNG. Beim instanzieren werden die
-     * TRigger gleich in einen vector geschrieben und dadurch NIE! vom
-     * GarbageCollector erfasst. Man sollte also im Normalen programmablauf
-     * keine neuen Trigger mehr Instanzieren
+     * Erstellt einen neuen Trigger. ACHTUNG: Beim Instanzieren werden die
+     * Trigger gleich in einen Vector geschrieben und dadurch NIE! vom
+     * GarbageCollector erfasst. Man sollte also im normalen Programmablauf
+     * keine neuen Trigger mehr Instanzieren.
      * 
      * @param id
      * @param name
@@ -93,7 +89,7 @@ public class InteractionTrigger implements Serializable {
     }
 
     /**
-     * Gibt die Triggerbeschreibung zurück
+     * Gibt die Triggerbeschreibung zurück.
      * 
      * @return
      */

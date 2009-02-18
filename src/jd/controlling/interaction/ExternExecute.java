@@ -27,16 +27,11 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Replacer;
 
-/**
- * Diese Klasse führt einen Reconnect durch
- * 
- * @author astaldo
- */
 public class ExternExecute extends Interaction implements Serializable, ActionListener {
 
     private static final long serialVersionUID = 4793649294489149258L;
 
-    private static final String PROPERTY_COMMAND = "InteractionExternExecute_" + "Command";
+    private static final String PROPERTY_COMMAND = "InteractionExternExecute_Command";
     private static final String PROPERTY_DISABLED = "PROPERTY_DISABLED";
     private static final String PROPERTY_EXECUTE_FOLDER = "PROPERTY_EXECUTE_FOLDER";
     private static final String PROPERTY_PARAMETER = "PROPERTY_PARAMETER";
@@ -87,10 +82,6 @@ public class ExternExecute extends Interaction implements Serializable, ActionLi
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, this, PROPERTY_EXECUTE_FOLDER, JDLocale.L("interaction.externExecute.executeIn", "Ausführen in (Ordner der Anwendung)")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PROPERTY_WAIT_FOR_RETURN, JDLocale.L("interaction.externExecute.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek](-1 für unendlich)"), -1, 1800).setDefaultValue(0));
-    }
-
-    @Override
-    public void resetInteraction() {
     }
 
     @Override

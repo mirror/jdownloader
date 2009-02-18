@@ -1048,7 +1048,7 @@ public class JDController implements ControlListener, UIListener {
      * Initialisiert alle Interactions. <br>
      * Kann weg, oder? Ist bei allen Interactions eine leere Methode ..
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings( { "unchecked", "deprecation" })
     private void initInteractions() {
         Vector<Interaction> interactions = (Vector<Interaction>) JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
 

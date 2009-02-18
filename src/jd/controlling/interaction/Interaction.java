@@ -23,7 +23,6 @@ import java.util.logging.Logger;
 import jd.config.ConfigContainer;
 import jd.config.Configuration;
 import jd.config.Property;
-import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -40,9 +39,9 @@ public abstract class Interaction extends Property implements Serializable {
     public static InteractionTrigger INTERACTION_ALL_DOWNLOADS_FINISHED;
     public static InteractionTrigger INTERACTION_DOWNLOAD_FAILED;
     public static InteractionTrigger INTERACTION_LINKLIST_STRUCTURE_CHANGED;
-    public static InteractionTrigger INTERACTION_DOWNLOAD_BOT_DETECTED;
+    // public static InteractionTrigger INTERACTION_DOWNLOAD_BOT_DETECTED;
     public static InteractionTrigger INTERACTION_APPSTART;
-    public static InteractionTrigger INTERACTION_AFTER_UNRAR;
+    // public static InteractionTrigger INTERACTION_AFTER_UNRAR;
     public static InteractionTrigger INTERACTION_DOWNLOAD_PACKAGE_FINISHED;
     public static InteractionTrigger INTERACTION_BEFORE_RECONNECT;
     public static InteractionTrigger INTERACTION_AFTER_RECONNECT;
@@ -50,26 +49,6 @@ public abstract class Interaction extends Property implements Serializable {
     public static InteractionTrigger INTERACTION_CONTAINER_DOWNLOAD;
     public static InteractionTrigger INTERACTION_BEFORE_DOWNLOAD;
     public static InteractionTrigger INTERACTION_EXIT;
-
-    /**
-     * Zeigt an dass diese Interaction noch nie aufgerufen wurde
-     */
-    public transient final static int INTERACTION_CALL_NEVERCALLED = 0;
-
-    /**
-     * Zeigt an dass die Interaction erfolgreioch beendet wurde
-     */
-    public transient final static int INTERACTION_CALL_SUCCESS = 1;
-
-    /**
-     * Zeigt an dass die Interaction mit Fehlern beendet wurde
-     */
-    public transient final static int INTERACTION_CALL_ERROR = 2;
-
-    /**
-     * Zeigt dass die Interaction gerade läuft
-     */
-    public transient final static int INTERACTION_CALL_RUNNING = 3;
 
     private static Integer interactionsRunning = 0;
 
@@ -93,9 +72,16 @@ public abstract class Interaction extends Property implements Serializable {
         INTERACTION_ALL_DOWNLOADS_FINISHED = new InteractionTrigger(2, JDLocale.L("interaction.trigger.all_downloads_finished", "Alle Downloads beendet"), JDLocale.L("interaction.trigger.all_downloads_finished.desc", "Wird aufgerufen sobald alle Downloads beendet oder abgebrochen wurden"));
         INTERACTION_DOWNLOAD_FAILED = new InteractionTrigger(3, JDLocale.L("interaction.trigger.single_download_failed", "Download fehlgeschlagen"), JDLocale.L("interaction.trigger.single_download_failed.desc", "Wird aufgerufen wenn ein Download wegen Fehlern abgebrochen wurde"));
         INTERACTION_LINKLIST_STRUCTURE_CHANGED = new InteractionTrigger(4, JDLocale.L("interaction.trigger.linklist_structure_changed", "Linklisten Struktur geändert"), JDLocale.L("interaction.trigger.linklist_structure_changed.desc", "Wird aufgerufen wenn sich die Struktur der Linkliste geändert hat (Links eingefügt, Links fertig, ...)"));
-        INTERACTION_DOWNLOAD_BOT_DETECTED = new InteractionTrigger(5, JDLocale.L("interaction.trigger.bot_detected", "Bot erkannt"), JDLocale.L("interaction.trigger.bot_detected.desc", "jDownloader wurde als Bot erkannt"));
+        // INTERACTION_DOWNLOAD_BOT_DETECTED = new InteractionTrigger(5,
+        // JDLocale.L("interaction.trigger.bot_detected", "Bot erkannt"),
+        // JDLocale.L("interaction.trigger.bot_detected.desc",
+        // "jDownloader wurde als Bot erkannt"));
         INTERACTION_APPSTART = new InteractionTrigger(7, JDLocale.L("interaction.trigger.app_start", "Programmstart"), JDLocale.L("interaction.trigger.app_start.desc", "Direkt nach dem Initialisieren von jDownloader"));
-        INTERACTION_AFTER_UNRAR = new InteractionTrigger(9, JDLocale.L("interaction.trigger.after_extract", "Nach dem Entpacken"), JDLocale.L("interaction.trigger.after_extract.desc", "Wird aufgerufen wenn die Unrar-Aktion beendet wurde."));
+        // INTERACTION_AFTER_UNRAR = new InteractionTrigger(9,
+        // JDLocale.L("interaction.trigger.after_extract",
+        // "Nach dem Entpacken"),
+        // JDLocale.L("interaction.trigger.after_extract.desc",
+        // "Wird aufgerufen wenn die Unrar-Aktion beendet wurde."));
         INTERACTION_DOWNLOAD_PACKAGE_FINISHED = new InteractionTrigger(12, JDLocale.L("interaction.trigger.package_finished", "Paket fertig"), JDLocale.L("interaction.trigger.package_finished.desc", "Wird aufgerufen wenn ein Paket fertig geladen wurde"));
         INTERACTION_BEFORE_RECONNECT = new InteractionTrigger(13, JDLocale.L("interaction.trigger.before_reconnect", "Vor dem Reconnect"), JDLocale.L("interaction.trigger.before_reconnect.desc", "Vor dem eigentlichen Reconnect"));
         INTERACTION_AFTER_RECONNECT = new InteractionTrigger(14, JDLocale.L("interaction.trigger.after_reconnect", "Nach dem Reconnect"), JDLocale.L("interaction.trigger.after_reconnect.desc", "Nach dem eigentlichen Reconnect"));
@@ -136,60 +122,39 @@ public abstract class Interaction extends Property implements Serializable {
     /**
      * Führt die Interactions aus
      * 
-     * @param interactionevent
+     * @param trigger
      *            Trigger der Interaction
      * @param param
      *            Parameter
-     * 
-     * @return wahr, wenn die Interaction abgearbeitet werden konnte, ansonsten
-     *         falsch
      */
     @SuppressWarnings("unchecked")
-    public static boolean handleInteraction(InteractionTrigger interactionevent, Object param) {
-        boolean ret = true;
-        logger.finer("Interaction start: Trigger: " + interactionevent.getName());
-        JDUtilities.getController().fireControlEvent(new ControlEvent(interactionevent, ControlEvent.CONTROL_INTERACTION_CALL, param));
+    public static void handleInteraction(InteractionTrigger trigger, Object param) {
+        logger.finer("Interaction start: Trigger: " + trigger.getName());
+        JDUtilities.getController().fireControlEvent(new ControlEvent(trigger, ControlEvent.CONTROL_INTERACTION_CALL, param));
         Vector<Interaction> interactions = (Vector<Interaction>) JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
-        int interacts = 0;
-        for (int i = 0; i < interactions.size(); i++) {
-            Interaction interaction = interactions.get(i);
-            if (interaction == null || interaction.getTrigger() == null || interactionevent == null) {
-                continue;
-            }
+        for (Interaction interaction : interactions) {
+            if (interaction == null || interaction.getTrigger() == null) continue;
 
-            if (interaction.getTrigger().getID() == interactionevent.getID()) {
-
-                interacts++;
-
+            if (interaction.getTrigger().getID() == trigger.getID()) {
                 logger.finer("Aktion start: " + interaction.getInteractionName() + "(" + param + ")");
                 if (!interaction.interact(param)) {
-                    ret = false;
                     logger.severe("interaction failed: " + interaction);
-
                 } else {
                     logger.info("interaction successfull: " + interaction);
                 }
-
             }
         }
-        if (interactionevent.equals(INTERACTION_ALL_DOWNLOADS_FINISHED) && areInteractionsInProgress() && JDUtilities.getController().getFinishedLinks().size() > 0) {
+        if (trigger.equals(Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED) && areInteractionsInProgress() && JDUtilities.getController().getFinishedLinks().size() > 0) {
             Interaction.handleInteraction(Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS, null);
         }
-        if (interacts == 0) return false;
-        return ret;
     }
 
     protected transient ConfigContainer config;
 
-    /**
-     * Code der abgerufe werden kann um details über den Ablauf der Interaction
-     * zu kriegen
-     */
+    @Deprecated
     protected transient int lastCallCode = 0;
 
-    /**
-     * Thread der für die Interaction verwendet werden kann
-     */
+    @Deprecated
     protected transient Thread thread = null;
 
     /**
@@ -199,7 +164,6 @@ public abstract class Interaction extends Property implements Serializable {
 
     public Interaction() {
         config = null;
-
         setTrigger(Interaction.INTERACTION_NO_EVENT);
     }
 
@@ -215,22 +179,11 @@ public abstract class Interaction extends Property implements Serializable {
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
     }
 
-    /**
-     * Gibt den callcode zurück. Dieser gibt Aufschlussdarüber wie die
-     * Interaction abgelaufen ist
-     * 
-     * @return callcode
-     */
-    public int getCallCode() {
-        return lastCallCode;
-    }
-
-    public ConfigContainer getConfig() {
+    public final ConfigContainer getConfig() {
         if (config == null) {
             config = new ConfigContainer(this);
             initConfig();
         }
-
         return config;
     }
 
@@ -241,7 +194,7 @@ public abstract class Interaction extends Property implements Serializable {
      * 
      * @return Interaction ID
      */
-    public InteractionTrigger getTrigger() {
+    public final InteractionTrigger getTrigger() {
         return trigger;
     }
 
@@ -250,12 +203,8 @@ public abstract class Interaction extends Property implements Serializable {
      * 
      * @return Name des Triggers
      */
-    public String getTriggerName() {
-        return getTrigger().toString();
-    }
-
-    public boolean getWaitForTermination() {
-        return true;
+    public final String getTriggerName() {
+        return trigger.toString();
     }
 
     /**
@@ -268,6 +217,7 @@ public abstract class Interaction extends Property implements Serializable {
     /**
      * Initialisiert die Interaction beim JD start
      */
+    @Deprecated
     public void initInteraction() {
         // Kann eigentlich entfernt werden, oder?
     }
@@ -279,85 +229,22 @@ public abstract class Interaction extends Property implements Serializable {
      * @param arg
      * @return
      */
-    public boolean interact(Object arg) {
+    public final boolean interact(Object arg) {
         synchronized (interactionsRunning) {
             interactionsRunning++;
         }
-        logger.finer("Interactions(start) running: " + interactionsRunning + " - " + this);
-        fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, arg);
-        resetInteraction();
-        setCallCode(Interaction.INTERACTION_CALL_RUNNING);
-        boolean success = doInteraction(arg);
-        if (!isAlive()) {
-            fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, arg);
-            synchronized (interactionsRunning) {
-                interactionsRunning--;
-            }
-            logger.info("Interaction finished: " + interactionsRunning + " - " + this);
+        logger.finer("Interaction start: " + interactionsRunning + " - " + this);
 
-        } else if (!getWaitForTermination()) {
-            synchronized (interactionsRunning) {
-                interactionsRunning--;
-            }
-            logger.info("Interaction finished: " + interactionsRunning + " - " + this);
+        fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, arg);
+        boolean success = doInteraction(arg);
+        fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, arg);
+
+        synchronized (interactionsRunning) {
+            interactionsRunning--;
         }
+        logger.info("Interaction finished: " + interactionsRunning + " - " + this);
 
         return success;
-    }
-
-    /**
-     * Gibt an ob der Thread aktiv ist
-     * 
-     * @return
-     */
-    public boolean isAlive() {
-        if (thread == null) { return false; }
-        return thread.isAlive();
-    }
-
-    /**
-     * Setzt eine INteraction in den Ausgangszustand zurück. z.B. Counter
-     * zurückstellen etc.
-     */
-    public abstract void resetInteraction();
-
-    /**
-     * Thread Funktion. Diese Funktion wird aufgerufen wenn Interaction.start()
-     * aufgerufen wird. Dabei wird ein neuer thread erstellt
-     */
-    public void run() {
-        // Kann eigentlich entfernt werden, oder?
-    }
-
-    /**
-     * Wird vom neuen Thread aufgerufen, setzt die ThreadVariable
-     */
-    private void runThreadAction() {
-        run();
-        fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, null);
-        if (getWaitForTermination()) {
-            synchronized (interactionsRunning) {
-                interactionsRunning--;
-            }
-            logger.finer("Interaction finaly finished: " + interactionsRunning + " - " + this);
-        }
-        if (areInteractionsInProgress() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING && JDUtilities.getController().getFinishedLinks().size() > 0) {
-            Interaction.handleInteraction(Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS, null);
-        }
-
-    }
-
-    /**
-     * Setzt den callCode
-     * 
-     * @param callCode
-     */
-    public void setCallCode(int callCode) {
-        lastCallCode = callCode;
-    }
-
-    public void setConfig(ConfigContainer config) {
-        this.config = config;
     }
 
     /**
@@ -366,23 +253,8 @@ public abstract class Interaction extends Property implements Serializable {
      * @param trigger
      *            Der Trigger
      */
-    public void setTrigger(InteractionTrigger trigger) {
+    public final void setTrigger(InteractionTrigger trigger) {
         this.trigger = trigger;
-    }
-
-    /**
-     * Erstellt einen neuen Thread und führt den zugehörigen Code aus (run()
-     */
-    protected void start() {
-        thread = new Thread() {
-
-            @Override
-            public void run() {
-                Interaction.this.runThreadAction();
-            }
-
-        };
-        thread.start();
     }
 
     @Override

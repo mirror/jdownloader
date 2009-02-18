@@ -24,6 +24,7 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -46,6 +47,7 @@ public class ResetLink extends Interaction implements Serializable {
                 link.getLinkStatus().setStatus(LinkStatus.TODO);
                 link.getLinkStatus().setStatusText("");
                 link.reset();
+                ((PluginForHost) link.getPlugin()).resetPluginGlobals();
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, link));
             } else {
                 logger.severe("Kein letzter Downloadlink gefunden");
@@ -64,10 +66,6 @@ public class ResetLink extends Interaction implements Serializable {
     @Override
     public void initConfig() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this, PARAM_LAST_OR_ALL, new String[] { JDLocale.L("interaction.resetLink.options.all", "all Links"), JDLocale.L("interaction.resetLink.options.lastLink", "only last Link") }, JDLocale.L("interaction.resetLink.whichLink", "Welcher Link soll zurückgesetzt werden?")).setDefaultValue(1));
-    }
-
-    @Override
-    public void resetInteraction() {
     }
 
     @Override
