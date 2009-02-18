@@ -46,6 +46,8 @@ public class Megauploadcom extends PluginForHost {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
 
+    private static final String CAPTCHA_MODE = "CAPTCHAMODE";
+
     private String user;
 
     private String dlID;
@@ -245,7 +247,15 @@ public class Megauploadcom extends PluginForHost {
             File file = this.getLocalCaptchaFile(this);
             URLConnectionAdapter con = br.cloneBrowser().openGetConnection(captcha);
             Browser.download(file, con);
-            String code = Plugin.getCaptchaCode(file, this, link);
+            String code = null;
+            try {
+                code = Plugin.getCaptchaCode(file, this, link);
+            } catch (PluginException ee) {
+
+            }
+            if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 1) {
+                if (code == null || code.contains("-") || code.trim().length() != 4) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l); }
+            }
             form.put("captcha", code);
             br.submitForm(form);
             form = br.getForm(0);
@@ -270,7 +280,11 @@ public class Megauploadcom extends PluginForHost {
             getRedirect("http://megaupload.com/mgr_dl.php?d=" + dlID, link);
         }
         if (br.getRedirectLocation() == null || br.getRedirectLocation().contains(dlID)) {
-            handleFree1(link, account);
+            if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 2) {
+                handleFree1(link, account);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+            }
             return;
         }
         String url = br.getRedirectLocation();
@@ -299,6 +313,10 @@ public class Megauploadcom extends PluginForHost {
 
     private void setConfigElements() {
         String[] ports = new String[] { "80", "800", "1723" };
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), MU_PARAM_PORT, ports, "Use this Port:").setDefaultValue("80"));
+
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), MU_PARAM_PORT, ports, JDLocale.L("plugins.host.megaupload.ports", "Use this port:")).setDefaultValue("80"));
+        String[] captchmodes = new String[] { JDLocale.L("plugins.host.megaupload.captchamode_auto", "auto"), JDLocale.L("plugins.host.megaupload.captchamode_no_reconnect", "avoid reconnects"), JDLocale.L("plugins.host.megaupload.captchamode_no_captcha", "avoid captchas") };
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), CAPTCHA_MODE, captchmodes, JDLocale.L("plugins.host.megaupload.captchamode.title", "Captcha mode:")).setDefaultValue(JDLocale.L("plugins.host.megaupload.captchamode_auto", "auto")));
+
     }
 }
