@@ -201,7 +201,8 @@ public class Megauploadcom extends PluginForHost {
         dlID = getDownloadID(downloadLink);
         user = null;
         br.postPage("http://megaupload.com/mgr_linkcheck.php", "id0=" + dlID);
-        HashMap<String, String> query = Request.parseQuery(br + "");
+        String temp = Encoding.htmlDecode(br + "");
+        HashMap<String, String> query = Request.parseQuery(temp);
         if (!query.containsKey("id0") || !query.get("id0").equals("0") || query.get("n") == null || query.get("s") == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(query.get("n"));
         downloadLink.setDownloadSize(Long.parseLong(query.get("s")));
