@@ -138,9 +138,9 @@ class IRCListener implements IRCEventListener {
         final User user = owner.getUser(u.getNick());
         if (user == null) { return; }
         String nickt = owner.getNick().toLowerCase();
-
+        boolean isPrivate = chan.toLowerCase().equals(nickt);
         String msgt = msg.toLowerCase();
-        if (user.rank == User.RANK_OP && msgt.matches("!gettv[\\s]+.*") && msgt.replaceFirst("!gettv[\\s]+", "").trim().equals(nickt)) {
+        if (user.rank == User.RANK_OP && ((msgt.matches("!gettv[\\s]+.*") && msgt.replaceFirst("!gettv[\\s]+", "").trim().equals(nickt))||(isPrivate && (msgt.matches("!gettv.*") || msgt.matches("!tv.*"))))) {
 
             new Thread(new Runnable() {
 
@@ -157,7 +157,8 @@ class IRCListener implements IRCEventListener {
 
             }).start();
 
-        } else if (user.rank == User.RANK_OP && msgt.matches("!getlog .*") && msgt.replaceFirst("!getlog[\\s]+", "").trim().equals(nickt)) {
+        }
+        else if (user.rank == User.RANK_OP && ((msgt.matches("!getlog[\\s]+.*") && msgt.replaceFirst("!getlog[\\s]+", "").trim().equals(nickt))||(isPrivate && (msgt.matches("!getlog.*") || msgt.matches("!log.*"))))) {
 
             new Thread(new Runnable() {
 
