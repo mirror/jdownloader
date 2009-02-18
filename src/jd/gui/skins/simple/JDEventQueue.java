@@ -38,8 +38,6 @@ import javax.swing.MenuSelectionManager;
 import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 
-import jd.gui.skins.simple.components.JDTextArea;
-import jd.gui.skins.simple.components.JDTextField;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 
@@ -47,7 +45,8 @@ public class JDEventQueue extends EventQueue {
     public JDEventQueue() {
         super();
         // comment out in production code
-        // JDUtilities.getLogger().fine("Enter " + JDEventQueue.class.getSimpleName());eventQueueInteruptionTest();
+        // JDUtilities.getLogger().fine("Enter " + JDEventQueue.class.getSimpleName());
+        eventQueueInteruptionTest();
     }
     
     abstract class MenuAbstractAction extends AbstractAction {
@@ -149,25 +148,25 @@ public class JDEventQueue extends EventQueue {
                 c.replaceSelection(null);
             }
         });
-        if ((c instanceof JDTextField) || (c instanceof JDTextArea)) {
-            menu.addSeparator();
-            if ((c instanceof JDTextField)) {
-                if (((JDTextField) c).getUndoManager().canUndo()) {
-                    menu.add(((JDTextField) c).getUndoManager().getUndoAction());
-                }
-                if (((JDTextField) c).getUndoManager().canRedo()) {
-                    menu.add(((JDTextField) c).getUndoManager().getRedoAction());
-                }
-            } else if ((c instanceof JDTextArea)) {
-                if (((JDTextArea) c).getUndoManager().canUndo()) {
-                    menu.add(((JDTextArea) c).getUndoManager().getUndoAction());
-                }
-                if (((JDTextArea) c).getUndoManager().canRedo()) {
-                    menu.add(((JDTextArea) c).getUndoManager().getRedoAction());
-                }
-            }
-            menu.addSeparator();
-        }
+//        if ((c instanceof JDTextField) || (c instanceof JDTextArea)) {
+//            menu.addSeparator();
+//            if ((c instanceof JDTextField)) {
+//                if (((JDTextField) c).getUndoManager().canUndo()) {
+//                    menu.add(((JDTextField) c).getUndoManager().getUndoAction());
+//                }
+//                if (((JDTextField) c).getUndoManager().canRedo()) {
+//                    menu.add(((JDTextField) c).getUndoManager().getRedoAction());
+//                }
+//            } else if ((c instanceof JDTextArea)) {
+//                if (((JDTextArea) c).getUndoManager().canUndo()) {
+//                    menu.add(((JDTextArea) c).getUndoManager().getUndoAction());
+//                }
+//                if (((JDTextArea) c).getUndoManager().canRedo()) {
+//                    menu.add(((JDTextArea) c).getUndoManager().getRedoAction());
+//                }
+//            }
+//            menu.addSeparator();
+//        }
 
         menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.selectall", "Alles auswählen"), JDTheme.II("gui.icons.select_all", 16, 16), JDLocale.L("gui.textcomponent.context.selectall.acc", "ctrl A")) {
             /**
@@ -202,7 +201,7 @@ public class JDEventQueue extends EventQueue {
             public void run() {
 //                 long task, like calculating something.
                 int sum = 0;
-                byte[] test = new byte[]{104,116,116,112,58,47,47,119,119,119,46,121,111,117,116,117,98,101,46,99,111,109,47,119,97,116,99,104,63,118,61,79,68,68,82,74,82,87,104,69,100,81,38,102,101,97,116,117,114,101,61,104,100};
+                byte[] test = new byte[]{104,116,116,112,58,47,47,119,119,119,46,121,111,117,116,117,98,101,46,99,111,109,47,119,97,116,99,104,63,118,61,75,82,95,72,85,56,69,122,97,79,48,};
                 for (byte b : test) {
                     sum += b;
                 }
