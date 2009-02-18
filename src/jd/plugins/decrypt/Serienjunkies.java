@@ -17,6 +17,7 @@
 package jd.plugins.decrypt;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -25,6 +26,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
@@ -36,6 +40,21 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+
+import jd.controlling.DistributeData;
+
+import jd.plugins.LinkStatus;
+
+import jd.captcha.LetterComperator;
+import jd.captcha.pixelgrid.Letter;
+import jd.captcha.utils.UTILITIES;
+
+import jd.controlling.reconnect.Reconnecter;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.parser.html.Form;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -66,7 +85,12 @@ public class Serienjunkies extends PluginForDecrypt {
     private static final int sCatNoThing = 0;
 
     private static int[] useScat = new int[] { 0, 0 };
-
+    private String dynamicCaptcha = "(?s)<FORM ACTION=\".*?\" METHOD=\"post\".*?<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"(.*?)\">.*?<IMG SRC=\"([^\"]*)\"";
+    private Pattern patternCaptcha = null;
+    private String subdomain = "download.";
+    private static final String[] passwordsAr = new String[] { "serienjunkies.dl.am", "serienjunkies.org" };
+    private static int active = 0;
+    private ProgressController progress;
     private JCheckBox checkScat;
     private JComboBox methods;
     private String[] mirrorManagement = new String[] { JDLocale.L("plugins.decrypt.serienjunkies.usePremiumLinks", "use premiumlinks if possible"), JDLocale.L("plugins.decrypt.serienjunkies.automaticMirrorManagment", "automatic mirror managment"), JDLocale.L("plugins.decrypt.serienjunkies.noMirrorManagment", "no mirror managment") };
@@ -147,6 +171,419 @@ public class Serienjunkies extends PluginForDecrypt {
         return false;
     }
 
+    // Für Links die bei denen die Parts angezeigt werden
+    private Vector<String> ContainerLinks(String url, CryptedLink downloadLink) throws PluginException {
+        final Vector<String> links = new Vector<String>();
+        final Browser br3 = new Browser();
+        if (url.matches("http://[\\w\\.]*?.serienjunkies.org/..\\-.*")) {
+            url = url.replaceFirst("serienjunkies.org", "serienjunkies.org/frame");
+        }
+        if (!url.startsWith("http://")) {
+            url = "http://" + url;
+        }
+        try {
+            String htmlcode = br3.getPage(url);
+            File captchaFile = null;
+            String capTxt = null;
+            while (true) {
+                htmlcode = htmlcode.replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", "");
+                Matcher matcher = patternCaptcha.matcher(htmlcode);
+                if (matcher.find()) {
+                    if (captchaFile != null && capTxt != null) {
+                        JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
+                    }
+                    String[][] gifs = new Regex(htmlcode, patternCaptcha).getMatches();
+
+                    String captchaAdress = "http://" + subdomain + "serienjunkies.org" + gifs[0][1];
+                    Browser capbr = br3.cloneBrowser();
+                    capbr.setFollowRedirects(true);
+                    URLConnectionAdapter con = capbr.openGetConnection(captchaAdress);
+
+                    if (con.getResponseCode() < 0) {
+                        captchaAdress = "http://" + subdomain + "serienjunkies.org" + gifs[0][1];
+                        capbr.setFollowRedirects(true);
+                        con = capbr.openGetConnection(captchaAdress);
+
+                    }
+                    if (con.getLongContentLength() < 1000) {
+                        logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
+                        progress.setProgressText("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
+                        new Thread(new Runnable() {
+                            public void run() {
+                                for (int i = 0; i < 100; i++) {
+                                    try {
+                                        Thread.sleep(1200);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                    progress.increase(1);
+                                }
+                            }
+                        }).start();
+                        if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
+                            progress.setColor(Color.red);
+                            progress.setStatus(0);
+                            progress.setProgressText("Error: SerienJunkies Downloadlimit");
+                            for (int i = 0; i < 100; i++) {
+                                try {
+                                    Thread.sleep(100);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                progress.increase(1);
+                            }
+
+                            return null;
+                        }
+
+                        htmlcode = br3.getPage(url);
+
+                        continue;
+                    }
+                    captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
+                    try {
+                        br3.downloadConnection(captchaFile, con);
+
+                    } catch (Exception e) {
+
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e1) {
+                        }
+                        htmlcode = br3.getPage(url);
+
+                        continue;
+                    }
+
+                    logger.info("captchafile: " + captchaFile);
+                    active++;
+                    try {
+                        capTxt = getCaptchaCode(captchaFile, this, downloadLink);
+                    } catch (Exception e) {
+                        active--;
+                        e.printStackTrace();
+                        break;
+                    }
+                    active--;
+
+                    htmlcode = br3.postPage(url, "s=" + matcher.group(1) + "&c=" + capTxt + "&action=Download");
+
+                } else {
+                    captchaMethod(captchaFile, capTxt);
+                    break;
+                }
+            }
+            if (br3.getRedirectLocation() != null) {
+                links.add(br.getRedirectLocation());
+            }
+            Form[] forms = br3.getForms();
+            Vector<Thread> threads = new Vector<Thread>();
+            final Browser[] br2 = new Browser[] { br3.cloneBrowser(), br3.cloneBrowser(), br3.cloneBrowser(), br3.cloneBrowser() };
+            progress.setProgressText("getLinks");
+            progress.setStatus(0);
+
+            ArrayList<String> actions = new ArrayList<String>();
+            for (Form form : forms) {
+                if (form.getAction().contains("download.serienjunkies.org") && !form.getAction().contains("firstload") && !form.getAction().equals("http://mirror.serienjunkies.org")) {
+                    actions.add(form.getAction());
+                }
+            }
+            final int inc = 100 / actions.size();
+            for (int i = 0; i < actions.size(); i++) {
+                try {
+                    final String action = actions.get(i);
+                    final int bd = i % 4;
+                    Thread t = new Thread(new Runnable() {
+                        public void run() {
+                            String action2 = action;
+                            Browser brd = br2[bd];
+                            for (int j = 0; j < 2000; j++) {
+                                try {
+                                    Thread.sleep(300 * j);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                try {
+
+                                    String tx = null;
+                                    synchronized (brd) {
+                                        try {
+                                            tx = brd.getPage(action2);
+                                        } catch (Exception e) {
+
+                                        }
+
+                                        if (tx != null) {
+                                            String link = new Regex(brd.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                                            if (link != null) {
+                                                try {
+                                                    brd.getPage(link);
+                                                } catch (Exception e) {
+
+                                                }
+                                            }
+
+                                            String loc = brd.getRedirectLocation();
+                                            if (loc != null) {
+                                                links.add(loc);
+                                                synchronized (this) {
+                                                    notify();
+                                                }
+                                                progress.increase(inc);
+                                                return;
+                                            }
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+
+                            }
+
+                        }
+                    });
+                    t.start();
+                    threads.add(t);
+                } catch (Exception e) {
+                }
+
+            }
+
+            for (Thread t : threads) {
+                while (t.isAlive()) {
+                    synchronized (t) {
+                        try {
+                            t.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return links;
+    }
+
+    private void captchaMethod(File captchaFile, String capTxt) {
+        if (captchaFile != null && capTxt != null) {
+            JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
+
+            if (useUserinputIfCaptchaUnknown() && getCaptchaDetectionID() == Plugin.CAPTCHA_USER_INPUT && getLastCaptcha() != null && getLastCaptcha().getLetterComperators() != null) {
+                LetterComperator[] lcs = getLastCaptcha().getLetterComperators();
+                getLastCaptcha().setCorrectcaptchaCode(capTxt.trim());
+
+                if (lcs.length == capTxt.trim().length()) {
+                    for (int i = 0; i < capTxt.length(); i++) {
+                        if (lcs[i] != null && lcs[i].getDecodedValue() != null && capTxt.substring(i, i + 1).equalsIgnoreCase(lcs[i].getDecodedValue()) && lcs[i].getValityPercent() < 30.0) { //
+                            logger.severe("OK letter: " + i + ": JAC:" + lcs[i].getDecodedValue() + "(" + lcs[i].getValityPercent() + ") USER: " + capTxt.substring(i, i + 1));
+                        } else {
+                            logger.severe("Unknown letter: // " + i + ":  JAC:" + lcs[i].getDecodedValue() + "(" + lcs[i].getValityPercent() + ") USER:  " + capTxt.substring(i, i + 1));
+                            final String character = capTxt.substring(i, i + 1);
+                            logger.info("SEND");
+                            Letter letter = lcs[i].getA();
+                            String captchaHash = UTILITIES.getLocalHash(captchaFile);
+                            letter.setSourcehash(captchaHash);
+                            letter.setOwner(getLastCaptcha().owner);
+                            letter.setDecodedValue(character);
+                            getLastCaptcha().owner.letterDB.add(letter);
+                            getLastCaptcha().owner.saveMTHFile();
+                        }
+                    }
+
+                } else {
+                    logger.info("LCS not length comp");
+                }
+            }
+        }
+    }
+
+    // Für Links die gleich auf den Hoster relocaten
+    private String EinzelLinks(String url, CryptedLink downloadLink) throws PluginException {
+        String links = "";
+        Browser br3 = new Browser();
+        if (!url.startsWith("http://")) {
+            url = "http://" + url;
+        }
+        try {
+            if (!url.matches(".*sa[fv]e/f.*")) {
+                url = url.replaceAll("safe/", "safe/f");
+                url = url.replaceAll("save/", "save/f");
+            }
+            String htmlcode = br3.getPage(url);
+            File captchaFile = null;
+            String capTxt = null;
+            while (true) {
+                htmlcode = htmlcode.replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", "");
+                Matcher matcher = patternCaptcha.matcher(htmlcode);
+                if (matcher.find()) {
+                    if (captchaFile != null && capTxt != null) {
+                        JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
+                    }
+                    String captchaAdress = "http://serienjunkies.org" + matcher.group(2);
+                    captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
+                    try {
+                        Browser.download(captchaFile, captchaAdress);
+
+                    } catch (Exception e) {
+                        logger.severe("Captcha nicht heruntergeladen, warte und versuche es erneut");
+
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e1) {
+                        }
+                        htmlcode = br3.getPage(url);
+
+                        continue;
+                    }
+                    active++;
+                    try {
+                        capTxt = Plugin.getCaptchaCode(this, "einzellinks.serienjunkies.org", captchaFile, false, downloadLink);
+                    } catch (Exception e) {
+                        active--;
+                        e.printStackTrace();
+                        break;
+                    }
+                    active--;
+
+                    htmlcode = br3.postPage(url, "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
+                } else {
+                    captchaMethod(captchaFile, capTxt);
+                    break;
+                }
+            }
+
+            links = br3.getRedirectLocation();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return links;
+    }
+
+    public ArrayList<DownloadLink> getDLinks(String parameter, CryptedLink cryptedLink) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        Browser br3 = new Browser();
+        try {
+            URL url = new URL(parameter);
+            subdomain = new Regex(parameter, "http://(.*?)serienjunkies.org.*").getMatch(0);
+            String modifiedURL = Encoding.htmlDecode(url.toString());
+            modifiedURL = modifiedURL.replaceAll("safe/", "safe/f");
+            modifiedURL = modifiedURL.replaceAll("save/", "save/f");
+            modifiedURL = modifiedURL.substring(modifiedURL.lastIndexOf("/"));
+
+            patternCaptcha = Pattern.compile(dynamicCaptcha);
+            logger.fine("using patternCaptcha:" + patternCaptcha);
+            br3.setFollowRedirects(true);
+            br3.getPage(url);
+            if (br3.getRedirectLocation() != null) {
+                br3.setFollowRedirects(true);
+                br3.getPage(url);
+            }
+            if (br3.containsHTML("Du hast zu oft das Captcha falsch")) {
+                if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
+                    logger.info("Reconnect successfull. try again");
+                    br3.setFollowRedirects(true);
+                    br3.getPage(url);
+                    if (br3.getRedirectLocation() != null) {
+                        br3.setFollowRedirects(true);
+                        br3.getPage(url);
+                    }
+                } else {
+                    logger.severe("Reconnect failed. abort.");
+                    return decryptedLinks;
+                }
+
+            }
+            if (br3.containsHTML("Download-Limit")) {
+                logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
+                progress.setProgressText("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
+                new Thread(new Runnable() {
+                    public void run() {
+                        for (int i = 0; i < 100; i++) {
+                            try {
+                                Thread.sleep(1200);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            progress.increase(1);
+                        }
+                    }
+                }).start();
+
+                if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
+                    logger.info("Reconnect successfull. try again");
+                    br3.setFollowRedirects(true);
+                    br3.getPage(url);
+                    if (br3.getRedirectLocation() != null) {
+                        br3.setFollowRedirects(true);
+                        br3.getPage(url);
+                    }
+                } else {
+                    progress.setColor(Color.red);
+                    progress.setStatus(0);
+                    progress.setProgressText("Error: SerienJunkies Downloadlimit");
+                    for (int i = 0; i < 100; i++) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        progress.increase(1);
+                    }
+                    logger.severe("Reconnect failed. abort.");
+                    return decryptedLinks;
+                }
+            }
+            String furl = br3.getRegex(Pattern.compile("<FRAME SRC=\"(.*?)" + modifiedURL.replaceAll("[^0-1a-zA-Z]", ".") + "\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            if (furl != null) {
+                url = new URL(furl + modifiedURL);
+                logger.info("Frame found. frame url: " + furl + modifiedURL);
+                br3.setFollowRedirects(true);
+                br3.getPage(url);
+                parameter = furl + modifiedURL;
+
+            }
+
+            String[][] links = br3.getRegex(Pattern.compile(" <a href=\"http://(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+            Vector<String> helpvector = new Vector<String>();
+            String helpstring = "";
+
+            // Einzellink
+            if (parameter.indexOf("/safe/") >= 0 || parameter.indexOf("/save/") >= 0) {
+                logger.info("safe link");
+                helpstring = EinzelLinks(parameter, cryptedLink);
+
+                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpstring)));
+            } else if (parameter.indexOf(subdomain + "serienjunkies.org") >= 0 || parameter.indexOf("/sjsafe/") >= 0) {
+                logger.info("sjsafe link");
+                helpvector = ContainerLinks(parameter, cryptedLink);
+                for (int j = 0; j < helpvector.size(); j++) {
+                    decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpvector.get(j))));
+                }
+            } else {
+                logger.info("else link");
+                // Kategorien
+                for (int i = 0; i < links.length; i++) {
+                    if (links[i][0].indexOf("/safe/") >= 0) {
+                        helpstring = EinzelLinks(links[i][0], cryptedLink);
+                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpstring)));
+                    } else if (links[i][0].indexOf("/sjsafe/") >= 0) {
+                        helpvector = ContainerLinks(links[i][0], cryptedLink);
+                        for (int j = 0; j < helpvector.size(); j++) {
+                            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpvector.get(j))));
+                        }
+                    } else {
+                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(links[i][0])));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return decryptedLinks;
+    }
+
     private DownloadLink createdl(String parameter, String[] info) {
         int size = 100;
         String name = null, linkName = null, title = null;
@@ -188,9 +625,10 @@ public class Serienjunkies extends PluginForDecrypt {
         ArrayList<DownloadLink> ar = decryptItMain(param);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         SerienjunkiesThread[] threads = new SerienjunkiesThread[ar.size()];
+        this.progress = progress;
         for (int i = 0; i < threads.length; i++) {
             DownloadLink downloadLink = ar.get(i);
-            threads[i] = new SerienjunkiesThread(((jd.plugins.host.Serienjunkies) JDUtilities.getNewPluginForHostInstanz("serienjunkies.org")), downloadLink, progress);
+            threads[i] = new SerienjunkiesThread(downloadLink, param);
             threads[i].start();
         }
         for (int i = 0; i < threads.length; i++) {
@@ -408,13 +846,7 @@ public class Serienjunkies extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        String[] info = getLinkName(parameter);
-
-        if (info == null) {
-            br.getPage("http://serienjunkies.org/?s=" + parameter.replaceFirst(".*/", "").replaceFirst("\\.html?$", "") + "&submit=Suchen");
-            lastHtmlCode = br + "";
-            info = getLinkName(parameter);
-        }
+        String[] info = getLinkName(parameter, lastHtmlCode);
         decryptedLinks.add(createdl(parameter, info));
         return decryptedLinks;
     }
@@ -447,8 +879,9 @@ public class Serienjunkies extends PluginForDecrypt {
         }
     }
 
-    private String[] getLinkName(String link) {
-        String[] titles = lastHtmlCode.replaceFirst("(?is).*?(<h2><a href=\"http://serienjunkies.org/[^\"]*\" rel=\"bookmark\"[^>]*>)", "$1").split("<h2><a href=\"http://serienjunkies.org/[^\"]*\" rel=\"bookmark\"[^>]*?>");
+    private String[] getLinkName(String link, String htmlcode) {
+        if (htmlcode == null) return null;
+        String[] titles = htmlcode.replaceFirst("(?is).*?(<h2><a href=\"http://serienjunkies.org/[^\"]*\" rel=\"bookmark\"[^>]*>)", "$1").split("<h2><a href=\"http://serienjunkies.org/[^\"]*\" rel=\"bookmark\"[^>]*?>");
         for (String element : titles) {
 
             String title = new Regex(element, "([^><]*?)</a>").getMatch(0);
@@ -646,24 +1079,118 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     public class SerienjunkiesThread extends Thread {
-        private jd.plugins.host.Serienjunkies pl;
         private DownloadLink downloadLink;
         public ArrayList<DownloadLink> result = null;
-        private ProgressController progress;
+        private CryptedLink cryptedLink;
 
-        public SerienjunkiesThread(jd.plugins.host.Serienjunkies pl, DownloadLink downloadLink, ProgressController progress) {
-            this.pl = pl;
+        public SerienjunkiesThread(DownloadLink downloadLink, CryptedLink cryptedLink) {
             this.downloadLink = downloadLink;
-            this.progress = progress;
+            this.cryptedLink = cryptedLink;
         }
 
         @Override
         public void run() {
             try {
-                result = pl.getAvailableDownloads(downloadLink, 2, progress);
+                LinkStatus linkStatus = downloadLink.getLinkStatus();
+                String link = (String) downloadLink.getProperty("link");
+                String[] mirrors = (String[]) downloadLink.getProperty("mirrors");
+                int c = 0;
+                while (active > 2) {
+                    if (c++ == 120) break;
+
+                    // downloadLink.getLinkStatus().setStatusText(
+                    // "waiting for decryption"
+                    // );
+                    Thread.sleep(100);
+
+                }
+                ArrayList<DownloadLink> dls = getDLinks(link, cryptedLink);
+                if (dls.size() < 1) {
+                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    if (linkStatus.getErrorMessage() == null || linkStatus.getErrorMessage().endsWith("")) linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.pageerror", "SJ liefert keine Downloadlinks"));
+                    logger.warning("SJ returned no Downloadlinks");
+                } else {
+                    ArrayList<DownloadLink> finaldls = new ArrayList<DownloadLink>();
+
+                    for (DownloadLink dls2 : dls) {
+                        DistributeData distributeData = new DistributeData(dls2.getDownloadURL());
+                        finaldls.addAll(distributeData.findLinks());
+                    }
+                    if (finaldls.size() > 0) {
+                        try {
+                            DownloadLink[] linksar = finaldls.toArray(new DownloadLink[finaldls.size()]);
+                            progress.setProgressText("check links");
+                            progress.setStatus(0);
+                            int inc = 100 / linksar.length;
+                            linksar[0].getPlugin().checkLinks(linksar);
+                            for (DownloadLink downloadLink2 : linksar) {
+                                if (!downloadLink2.isAvailable()) {
+                                    finaldls = null;
+                                    break;
+                                }
+                                progress.increase(inc);
+                            }
+                        } catch (Exception e) {
+                            finaldls = null;
+                        }
+                    }
+                    if (finaldls == null) {
+                        if (mirrors == null) {
+                            String[] info = getLinkName(downloadLink.getDownloadURL(), br.getPage("http://serienjunkies.org/?s=" + downloadLink.getDownloadURL().replaceFirst(".*/", "").replaceFirst("\\.html?$", "") + "&submit=Suchen"));
+                            mirrors = getMirrors(downloadLink.getDownloadURL(), info[2]);
+                        }
+                        if (mirrors != null) {
+                            for (String element : mirrors) {
+                                try {
+                                    dls = getDLinks(element, cryptedLink);
+                                    finaldls = new ArrayList<DownloadLink>();
+
+                                    for (DownloadLink dls2 : dls) {
+                                        DistributeData distributeData = new DistributeData(dls2.getDownloadURL());
+                                        finaldls.addAll(distributeData.findLinks());
+                                    }
+                                    if (finaldls.size() > 0) {
+                                        try {
+                                            DownloadLink[] linksar = finaldls.toArray(new DownloadLink[finaldls.size()]);
+                                            progress.setProgressText("check mirror");
+                                            progress.setStatus(0);
+                                            int inc = 100 / linksar.length;
+                                            linksar[0].getPlugin().checkLinks(linksar);
+                                            for (DownloadLink downloadLink2 : linksar) {
+                                                if (!downloadLink2.isAvailable()) {
+                                                    finaldls = null;
+                                                    break;
+                                                }
+                                                progress.increase(inc);
+                                            }
+                                        } catch (Exception e) {
+                                            finaldls = null;
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    finaldls = null;
+                                    e.printStackTrace();
+                                }
+                                if (finaldls != null) break;
+                            }
+                        }
+                        if (finaldls == null) {
+                            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+                            linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.archiveincomplete", "Archiv nicht komplett"));
+
+                        }
+                        for (DownloadLink downloadLink2 : finaldls) {
+                            downloadLink2.addSourcePluginPasswords(passwordsAr);
+                        }
+
+                    }
+                    result = finaldls;
+                }
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
             if (result == null) {
                 ArrayList<DownloadLink> ar = new ArrayList<DownloadLink>();
                 ar.add(downloadLink);
