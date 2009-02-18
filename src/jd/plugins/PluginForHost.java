@@ -68,6 +68,8 @@ public abstract class PluginForHost extends Plugin {
 
     private boolean enablePremium = false;
 
+    private boolean AccountwithoutUsername = false;
+
     private String premiumurl = null;
 
     public boolean[] checkLinks(DownloadLink[] urls) {
@@ -134,6 +136,14 @@ public abstract class PluginForHost extends Plugin {
         return null;
     }
 
+    public boolean getAccountwithoutUsername() {
+        return AccountwithoutUsername;
+    }
+
+    public void setAccountwithoutUsername(boolean b) {
+        AccountwithoutUsername = b;
+    }
+
     @Override
     public ArrayList<MenuItem> createMenuitems() {
 
@@ -150,9 +160,13 @@ public abstract class PluginForHost extends Plugin {
         int c = 0;
         for (Account a : accounts) {
             c++;
-            if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
-
-            account = new MenuItem(MenuItem.CONTAINER, i++ + ". " + a.getUser(), 0);
+            if (getAccountwithoutUsername()) {
+                if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
+                account = new MenuItem(MenuItem.CONTAINER, i++ + ". " + "Account " + (i - 1), 0);
+            } else {
+                if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
+                account = new MenuItem(MenuItem.CONTAINER, i++ + ". " + a.getUser(), 0);
+            }
 
             m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.enable_premium", "Aktivieren"), 100 + c - 1);
             m.setSelected(a.isEnabled());
@@ -663,10 +677,12 @@ public abstract class PluginForHost extends Plugin {
         // TODO Auto-generated method stub
 
     }
-/**
- * returns hosterspecific infos. for example the downloadserver
- * @return
- */
+
+    /**
+     * returns hosterspecific infos. for example the downloadserver
+     * 
+     * @return
+     */
     public String getSessionInfo() {
         // TODO Auto-generated method stub
         return "";

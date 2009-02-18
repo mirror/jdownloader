@@ -22,9 +22,11 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -36,6 +38,8 @@ public class LetitBitNet extends PluginForHost {
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
+        this.setAccountwithoutUsername(true);
+        enablePremium("http://letitbit.net/");
     }
 
     @Override
@@ -67,31 +71,40 @@ public class LetitBitNet extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        getFileInformation(downloadLink);
+        Form form = br.getForm(3);
+        form.put("pass", Encoding.urlEncode(account.getPass()));
+        br.submitForm(form);
+        String url = br.getRegex("middle.*?href='(.*?letit.*?download.*?)'").getMatch(0);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        dl = br.openDownload(downloadLink, url, true, 0);
+        dl.startDownload();
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         Form forms[] = br.getForms();
         String captchaurl = null;
         if (forms.length != 8) {
-            //first trying to bypass block using webproxy:
+            // first trying to bypass block using webproxy:
             br.setFollowRedirects(true);
-            String randomain = String.valueOf((int)(Math.random()*9+1));
-            br.getPage("http://www.gur"+randomain+".info/index.php");
-            br.postPage("http://www.gur"+randomain+".info/index.php", "q="+downloadLink.getDownloadURL()+"&hl[include_form]=0&hl[remove_scripts]=0&hl[accept_cookies]=1&hl[show_images]=1&hl[show_referer]=0&hl[strip_meta]=0&hl[strip_title]=0&hl[session_cookies]=0") ;  
+            String randomain = String.valueOf((int) (Math.random() * 9 + 1));
+            br.getPage("http://www.gur" + randomain + ".info/index.php");
+            br.postPage("http://www.gur" + randomain + ".info/index.php", "q=" + downloadLink.getDownloadURL() + "&hl[include_form]=0&hl[remove_scripts]=0&hl[accept_cookies]=1&hl[show_images]=1&hl[show_referer]=0&hl[strip_meta]=0&hl[strip_title]=0&hl[session_cookies]=0");
             forms = br.getForms();
             captchaurl = br.getRegex(Pattern.compile("<div.*?class=\"cont.*?<img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-            
-            //formaction =  forms[3].action;          
-            if (captchaurl==null) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.letitbitnet.errors.countryblock","Letitbit forbidden downloading this file in your country"));
 
+            // formaction = forms[3].action;
+            if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.letitbitnet.errors.countryblock", "Letitbit forbidden downloading this file in your country"));
 
-        }
-        else {
+        } else {
             String id = forms[3].getVarsMap().get("uid");
             captchaurl = "http://letitbit.net/cap.php?jpg=" + id + ".jpg";
 
         }
-        Form down = br.getFormbyProperty("id","Premium");
+        Form down = br.getFormbyProperty("id", "Premium");
         URLConnectionAdapter con = br.openGetConnection(captchaurl);
         File file = this.getLocalCaptchaFile(this);
         Browser.download(file, con);
@@ -106,6 +119,7 @@ public class LetitBitNet extends PluginForHost {
         if (!br.containsHTML("<frame")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.getPage(br.getRegex("<frame.*?src=\"(.*?)\"").getMatch(0));
         String url = br.getRegex("<div.*?id=\"links\".*?>\\s+<a\\s+href=\"(.*?)\"").getMatch(0);
+        if (url == null) url = br.getRegex("DownloadClick\\(\\).*?href=\"(.*?letit.*?)\">").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         this.sleep(2000, downloadLink);
         dl = br.openDownload(downloadLink, url, false, 1);
@@ -117,7 +131,7 @@ public class LetitBitNet extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return 1;
     }
 
     @Override
