@@ -955,6 +955,28 @@ public class Captcha extends PixelGrid {
         seperatedLetters = ret;
         return ret;
     }
+    public Letter[] getLetters0(int letterNum, int[] gaps) {
+
+        if (seperatedLetters != null) { return seperatedLetters; }
+
+        Letter[] ret = new Letter[letterNum];
+        lastletterX = 0;
+        this.gaps = new boolean[getWidth() + 1];
+        for (int letterId = 0; letterId < letterNum; letterId++) {
+            ret[letterId] = getNextLetter(letterId, gaps);
+
+            if (ret[letterId] != null) {
+
+                owner.getJas().executeLetterPrepareCommands(ret[letterId]);
+
+                ret[letterId] = ret[letterId].getSimplified(owner.getJas().getDouble("simplifyFaktor"));
+
+            }
+
+        }
+        seperatedLetters = ret;
+        return ret;
+    }
 
     public Letter[] getLetters0(int letterNum) {
 

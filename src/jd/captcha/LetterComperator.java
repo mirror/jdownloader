@@ -486,7 +486,7 @@ public class LetterComperator {
      * @return -2(fehler)/ 0 gemeinsammer schwarzer Pixel /1 Pixel B aber nicht
      *         a / 2 pixel A aber nicht B/ -1 beide weiß
      */
-    private int getPixelType(int x, int y, int xx, int yy, int left, int top) {
+    public int getPixelType(int x, int y, int xx, int yy, int left, int top) {
 
         int va = a.getPixelValue(x + left, y + top);
         bc = coordinatesFromAToB(x + left, y + top, xx, yy, bc);
@@ -582,7 +582,7 @@ public class LetterComperator {
      * @param pixelType
      * @return anzahl der Nachbarn
      */
-    private int hasNeighbour(int x, int y, int xx, int yy, int left, int top, int pixelType) {
+    public int hasNeighbour(int x, int y, int xx, int yy, int left, int top, int pixelType) {
 
         int ret = 0;
         int faktor = 1;
