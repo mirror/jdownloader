@@ -89,12 +89,12 @@ public class SendspaceCom extends PluginForHost {
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, linkurl, true, 1);
         URLConnectionAdapter con = dl.getConnection();
-        if (con.getURL().toExternalForm().contains("?e=")) {
+        if (con.getURL().toExternalForm().contains("?e=") || con.getContentType().contains("html")) {
             con.disconnect();
             br.getPage(con.getURL().toExternalForm());
             String error = br.getRegex("<div class=\"errorbox-bad\".*?>(.*?)</div>").getMatch(0);
             if (error == null) error = br.getRegex("<div class=\"errorbox-bad\".*?>.*?>(.*?)</>").getMatch(0);
-            if (error == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (error == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown ServerError", 5 * 60 * 1000l);
             if (error.contains("You may now download the file")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 30 * 1000l); }
             if (error.contains("full capacity")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sorry, the free service is at full capacity", 5 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
