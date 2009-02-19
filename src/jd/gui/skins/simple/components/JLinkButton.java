@@ -316,12 +316,11 @@ public class JLinkButton extends JButton {
             public void actionPerformed(ActionEvent e) {
                 try {
                     JLinkButton.openURL(getLinkURL());
-
                 } catch (Exception e1) {
-                    // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
             }
+
         });
 
         addActionListener(defaultAction);
@@ -348,14 +347,12 @@ public class JLinkButton extends JButton {
                 try {
                     url = new URL(text);
                 } catch (MalformedURLException e1) {
-
                     e1.printStackTrace();
                 }
             } else if (text.matches("www\\..*?\\..*")) {
                 try {
                     url = new URL("http://" + text);
                 } catch (MalformedURLException e1) {
-
                     e1.printStackTrace();
                 }
             }
@@ -374,12 +371,11 @@ public class JLinkButton extends JButton {
             public void actionPerformed(ActionEvent e) {
                 try {
                     JLinkButton.openURL(getLinkURL());
-
                 } catch (Exception e1) {
-                    // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
             }
+
         });
 
         addActionListener(defaultAction);
@@ -445,10 +441,8 @@ public class JLinkButton extends JButton {
             public void hyperlinkUpdate(HyperlinkEvent e) {
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                     try {
-                        openURL(e.getURL());
-
+                        JLinkButton.openURL(e.getURL());
                     } catch (Exception e1) {
-                        // TODO Auto-generated catch block
                         e1.printStackTrace();
                     }
                 }

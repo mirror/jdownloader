@@ -20,10 +20,9 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
 import java.io.IOException;
+import java.util.Vector;
 
-import javax.swing.AbstractAction;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -38,31 +37,11 @@ import jd.http.Browser;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 
-import org.jdesktop.swingx.JXHyperlink;
 import org.jdesktop.swingx.JXTitledSeparator;
 
 public class JDAboutDialog extends JDialog {
 
     private static final long serialVersionUID = -2008578821095704294L;
-
-    private final static class LinkAction extends AbstractAction {
-
-        private static final long serialVersionUID = 1L;
-        private String url;
-
-        private LinkAction(String label, String url) {
-            super(label);
-            this.url = url;
-        }
-
-        public void actionPerformed(ActionEvent e) {
-            try {
-                JLinkButton.openURL(url);
-            } catch (Exception e1) {
-                e1.printStackTrace();
-            }
-        }
-    }
 
     public static void showDialog() {
         new JDAboutDialog().setVisible(true);
@@ -71,37 +50,36 @@ public class JDAboutDialog extends JDialog {
     public JDAboutDialog() {
         int n = 10;
 
-        // See how I added myself above. Every string starts with a single white
-        // space. This improves the way the entries look in the table
-        // (without fiddleing with the tablecellrenderer)
+        /*
+         * See how I added myself above. Every string starts with a single white
+         * space. This improves the way the entries look in the table (without
+         * fiddleing with the tablecellrenderer)
+         */
 
-        String[][] devs = new String[][] { 
-        		{ " Botzi", " botzi@jdownloader.org", " Hoster / Decrypter / Addons, Bugfixing, Database backend, No Support" }, 
-        		{ " coalado", " support@jdownloader.org", " JDownloader core, ocr, gui, reconnect, container, website, project administration" }, 
-        		{ " djuzi", " djuzi@jdownloader.org", " Hoster/Decrypter plugins, Bug fixes, Localizing, PL Translation" },
-        		{ " DwD", " dwd@jdownloader.org", " hoster, ocr, decrypter, extractor, reconnect" }, 
-        		{ " eXecuTe", " jd.execute@gmail.com", " command line support, language editor, newsfeed addon, tango theme, some plugins" }, 
-        		{ " gocsp", " gocsp@jdownloader.org", " Mac Developer" },
-        		{ " gluewurm", " ---", " Developing innovative ideas, Bugfixing, Technical-Feasibility-Advisor" },
-        		{ " Greeny", " greeny@jdownloader.org", " LangFileEditor, Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" }, 
-        		{ " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." }, 
-        		{ " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins,Support,Bugfixing,JDownloader core" }, 
-        		{ " scr4ve", " scr4ve@jdownloader.org", " Security Stuff, Addons, Decrypter-Plugins, Support and Bugfixing" },
-        		{ " Sheadox", " sheadox@jdownloader.org", " Hoster plugins, Decrypt plugins, Support" }, 
-        		{ " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" }, 
-        // {" uncomment and add your nick"," xxx@yyy.com"," describe
-        // yourself..."},
-        };
+        Vector<String[]> devs = new Vector<String[]>();
+        devs.add(new String[] { " Botzi", " botzi@jdownloader.org", " Hoster / Decrypter / Addons, Bugfixing, Database backend, No Support" });
+        devs.add(new String[] { " coalado", " support@jdownloader.org", " JDownloader core, ocr, gui, reconnect, container, website, project administration" });
+        devs.add(new String[] { " djuzi", " djuzi@jdownloader.org", " Hoster/Decrypter plugins, Bug fixes, Localizing, PL Translation" });
+        devs.add(new String[] { " DwD", " dwd@jdownloader.org", " hoster, ocr, decrypter, extractor, reconnect" });
+        devs.add(new String[] { " eXecuTe", " jd.execute@gmail.com", " command line support, language editor, newsfeed addon, tango theme, some plugins" });
+        devs.add(new String[] { " gocsp", " gocsp@jdownloader.org", " Mac Developer" });
+        devs.add(new String[] { " gluewurm", " ---", " Developing innovative ideas, Bugfixing, Technical-Feasibility-Advisor" });
+        devs.add(new String[] { " Greeny", " greeny@jdownloader.org", " LangFileEditor, Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" });
+        devs.add(new String[] { " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." });
+        devs.add(new String[] { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins,Support,Bugfixing,JDownloader core" });
+        devs.add(new String[] { " scr4ve", " scr4ve@jdownloader.org", " Security Stuff, Addons, Decrypter-Plugins, Support and Bugfixing" });
+        devs.add(new String[] { " Sheadox", " sheadox@jdownloader.org", " Hoster plugins, Decrypt plugins, Support" });
+        devs.add(new String[] { " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" });
 
-        JTable table = new JTable(devs, new String[] { JDLocale.L("gui.dialog.about.member", "Member"), JDLocale.L("gui.dialog.about.email", "Email"), JDLocale.L("gui.dialog.about.section", "Section") });
+        JTable table = new JTable(devs.toArray(new String[devs.size()][]), new String[] { JDLocale.L("gui.dialog.about.member", "Member"), JDLocale.L("gui.dialog.about.email", "Email"), JDLocale.L("gui.dialog.about.section", "Section") });
         table.setEnabled(false);
         setWidth(table.getColumnModel().getColumn(0), 80);
         setWidth(table.getColumnModel().getColumn(1), 160);
 
         JPanel links = new JPanel(new FlowLayout(FlowLayout.CENTER, n, 0));
-        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.homepage", "Homepage"), JDLocale.L("gui.dialog.about.homeurl", "http://www.jdownloader.org/home?lng=en"))));
-        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.forum", "Support board"), JDLocale.L("gui.dialog.about.forumurl", "http://www.the-lounge.org/viewforum.php?f=340"))));
-        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.chat", "Chat"), JDLocale.L("gui.dialog.about.chaturl", "http://www.jdownloader.org/support?lng=en"))));
+        links.add(new JLinkButton(JDLocale.L("gui.dialog.about.homepage", "Homepage"), JDLocale.L("gui.dialog.about.homeurl", "http://www.jdownloader.org/home?lng=en")));
+        links.add(new JLinkButton(JDLocale.L("gui.dialog.about.forum", "Support board"), JDLocale.L("gui.dialog.about.forumurl", "http://www.the-lounge.org/viewforum.php?f=340")));
+        links.add(new JLinkButton(JDLocale.L("gui.dialog.about.chat", "Chat"), JDLocale.L("gui.dialog.about.chaturl", "http://www.jdownloader.org/support?lng=en")));
 
         JXTitledSeparator titledSeparator = new JXTitledSeparator(JDLocale.L("gui.dialog.about.jddevteam", "JDownloader Developer Team"));
         titledSeparator.setForeground(Color.BLUE);
@@ -110,14 +88,14 @@ public class JDAboutDialog extends JDialog {
         s.add(titledSeparator, BorderLayout.NORTH);
         s.add(new JScrollPane(table), BorderLayout.CENTER);
         s.add(links, BorderLayout.SOUTH);
-        s.setPreferredSize(new Dimension(800, 279));
+        s.setPreferredSize(new Dimension(800, 300));
 
         final JTextPane textPane = new JTextPane();
         textPane.setContentType("text/html");
         textPane.setEditable(false);
         textPane.setPreferredSize(new Dimension(800, 400));
 
-        JPanel p = new JPanel(new BorderLayout(30, 30));
+        JPanel p = new JPanel(new BorderLayout(2 * n, 2 * n));
         p.setBorder(new EmptyBorder(n, n, n, n));
         p.add(new JScrollPane(textPane), BorderLayout.CENTER);
         p.add(s, BorderLayout.SOUTH);
@@ -125,7 +103,6 @@ public class JDAboutDialog extends JDialog {
 
         setResizable(false);
         setIconImage(JDTheme.I("gui.images.jd_logo"));
-        // setAlwaysOnTop(true);
         setModal(true);
         setTitle(JDLocale.L("gui.dialog.about.title", "About JDownloader"));
         setContentPane(p);
