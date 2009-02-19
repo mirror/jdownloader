@@ -571,7 +571,6 @@ public class JDInit {
         new HostPluginWrapper("filehostme.com", "FileHostMecom", "http://[\\w\\.]*?filehostme\\.com/[a-zA-Z0-9]+\\.html", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("archiv.to", "ArchivTo", "http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*");
         new HostPluginWrapper("axifile.com", "AxiFileCom", "http://[\\w\\.]*?axifile\\.com/\\?\\d+");
-        new HostPluginWrapper("cocoshare.cc", "Cocosharecc", "http://[\\w\\.]*?cocoshare\\.cc/\\d+/(.*)");
         new HostPluginWrapper("cshare.de", "SwoopshareCom", "http://[\\w\\.]*?cshare.de/file/.*");
         new HostPluginWrapper("clipfish.de", "ClipfishDe", "http://[\\w\\.]*?pg\\d+\\.clipfish\\.de/media/.+?\\.flv");
         new HostPluginWrapper("data.hu", "DataHu", "http://[\\w\\.]*?data.hu/get/.+/.+");
