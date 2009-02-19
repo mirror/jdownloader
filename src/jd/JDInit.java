@@ -541,6 +541,7 @@ public class JDInit {
         new DecryptPluginWrapper("zero10.us", "Zero10Us", "http://[\\w\\.]*?zero10\\.us/\\d+");
         new DecryptPluginWrapper("h-link.us", "Zero10Us", "http://[\\w\\.]*?h-link\\.us/\\d+");
         new DecryptPluginWrapper("jdloader", "JDLoader", "(jdlist://.+)|((dlc|rsdf|ccf)://.*/.+)", PluginWrapper.LOAD_ON_INIT);
+        new DecryptPluginWrapper("jamendo.com", "JamendoCom", "http://[\\w\\.]*?jamendo\\.com/.*?(album/\\d+|artist/.+)");
 
     }
 
@@ -653,6 +654,7 @@ public class JDInit {
         new HostPluginWrapper("filesend.net", "FileSendNet", "http://[\\w\\.]*?filesend\\.net/download\\.php\\?f=[a-z0-9]+");
         new HostPluginWrapper("filelocity.com", "FilelocityCom", "http://[\\w\\.]*?filelocity\\.com/\\?act=download&file=[a-z0-9]+");
         new HostPluginWrapper("uploadbox.com", "UploadBoxCom", "http://[\\w\\.]*?uploadbox\\.com/.*?files/[0-9a-zA-Z]+");
+        new HostPluginWrapper("jamendo.com", "JamendoCom", "http://[\\w\\.]*?jamendo\\.com/.*?track/\\d+");
     }
 
     public void loadPluginOptional() {
