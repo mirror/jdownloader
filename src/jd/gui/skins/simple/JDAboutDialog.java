@@ -110,7 +110,7 @@ public class JDAboutDialog extends JDialog {
         s.add(titledSeparator, BorderLayout.NORTH);
         s.add(new JScrollPane(table), BorderLayout.CENTER);
         s.add(links, BorderLayout.SOUTH);
-        s.setPreferredSize(new Dimension(800, 274));
+        s.setPreferredSize(new Dimension(800, 279));
 
         final JTextPane textPane = new JTextPane();
         textPane.setContentType("text/html");
