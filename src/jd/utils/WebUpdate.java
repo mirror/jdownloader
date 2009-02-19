@@ -160,8 +160,9 @@ public class WebUpdate implements ControlListener {
     }
 
     public void controlEvent(ControlEvent event) {
-        JDInitialized = true;
+      
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
+            JDInitialized = true;
             JDUtilities.getController().removeControlListener(this);
         }
     }
