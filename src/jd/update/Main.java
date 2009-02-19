@@ -147,7 +147,11 @@ public class Main {
         boolean AllPlugins = false;
         boolean clone = false;
         String clonePrefix = null;
-
+        File cfg;
+        if ((cfg = new File(WebUpdater.getJDDirectory(), "jdownloader.config")).exists()) {
+            new File(WebUpdater.getJDDirectory(), "backup/").mkdirs();
+            cfg.renameTo(new File(WebUpdater.getJDDirectory(), "backup/jdownloader.config.outdated"));
+        }
         for (String p : args) {
             if (p.trim().equalsIgnoreCase("-noosfilter")) {
                 OSFilter = false;
