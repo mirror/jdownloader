@@ -30,7 +30,6 @@ import java.rmi.RemoteException;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TreeSet;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -418,18 +417,6 @@ public class Main {
         CFGConfig.getConfig("WEBUPDATE").save();
         init.removeFiles();
 
-        /*
-         * Übergangsfix. Die Interactions wurden in eine subconfig verlegt.
-         * Dieser Teil kopiert bestehende Events in die neue Configfile
-         */
-
-        if (JDUtilities.getConfiguration().getInteractions().size() > 0 && JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS, null) == null) {
-
-            JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).setProperty(Configuration.PARAM_INTERACTIONS, JDUtilities.getConfiguration().getInteractions());
-            JDUtilities.getConfiguration().setInteractions(new Vector<Interaction>());
-            JDUtilities.getConfiguration().save();
-
-        }
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.initcontroller", "Starte Controller"));
 
         final JDController controller = init.initController();
