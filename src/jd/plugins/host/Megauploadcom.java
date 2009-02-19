@@ -222,6 +222,7 @@ public class Megauploadcom extends PluginForHost {
             br.postPage("http://megaupload.com/?c=login", "login=1&redir=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         }
         br.getPage("http://megaupload.com/?d=" + dlID);
+        if (br.containsHTML("trying to download is larger than")) throw new PluginException(LinkStatus.ERROR_FATAL, "File is over 1GB and needs Premium Account");
         Form form = br.getForm(0);
         if (form.containsHTML("logout")) form = br.getForm(1);
         if (form.containsHTML("filepassword")) {
