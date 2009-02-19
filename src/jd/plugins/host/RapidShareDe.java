@@ -46,12 +46,6 @@ public class RapidShareDe extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
-            return;
-        }
-
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         br.setCookiesExclusive(true);
@@ -121,12 +115,6 @@ public class RapidShareDe extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
-            return;
-        }
-
         String user = account.getUser();
         String pass = account.getPass();
         br.setCookiesExclusive(true);
@@ -183,7 +171,6 @@ public class RapidShareDe extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return false;
         try {
             br.setCookiesExclusive(true);
             br.clearCookies(getHost());

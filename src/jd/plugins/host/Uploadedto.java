@@ -112,10 +112,6 @@ public class Uploadedto extends PluginForHost {
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
-            return;
-        }
         getFileInformation(downloadLink);
         br.setDebug(true);
         br.setCookie("http://uploaded.to/", "lang", "de");
@@ -202,8 +198,6 @@ public class Uploadedto extends PluginForHost {
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return false;
-
         this.setBrowserExclusive();
         correctURL(downloadLink);
 
@@ -258,12 +252,6 @@ public class Uploadedto extends PluginForHost {
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
-            return;
-        }
-
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(downloadLink);
         br.setCookie("http://uploaded.to/", "lang", "de");
@@ -284,7 +272,7 @@ public class Uploadedto extends PluginForHost {
         }
         if (error != null) {
             String message = JDLocale.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
-           logger.severe("Fatal error 1");
+            logger.severe("Fatal error 1");
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(message);
             return;
@@ -293,7 +281,7 @@ public class Uploadedto extends PluginForHost {
 
         br.setFollowRedirects(false);
 
-        Form form = br.getFormbyProperty("name","download_form");
+        Form form = br.getFormbyProperty("name", "download_form");
         if (form == null || br.containsHTML("Versuch es sp")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerProblem", 10 * 60 * 1000l);
         if (form != null) {
             form.put("download_submit", "Download");
@@ -302,8 +290,8 @@ public class Uploadedto extends PluginForHost {
         } else {
             String dlLink = br.getRedirectLocation();
             if (dlLink == null) {
-                
-                logger.severe("Fatal error 1\r\n"+br);
+
+                logger.severe("Fatal error 1\r\n" + br);
                 throw new PluginException(LinkStatus.ERROR_FATAL);
             }
             dl = br.openDownload(downloadLink, dlLink, false, 1);

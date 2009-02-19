@@ -180,25 +180,17 @@ public class Rapidshare extends PluginForHost {
             while (true) {
                 String post = "";
                 int i = 0;
-                boolean isRSCom = false;
                 for (i = c; i < urls.length; i++) {
-                    if (urls[i].getDownloadURL().matches("sjdp://rapidshare\\.com.*")) {
-                        sjlinks.add(i);
-                        ret[i] = false;
-                    } else {
-                        isRSCom = true;
-                        if (!canHandle(urls[i].getDownloadURL())) { return null; }
+                    // TODO: Was passiert hier? ^^
+                    if (!canHandle(urls[i].getDownloadURL())) return null;
 
-                        urls[i].setUrlDownload(getCorrectedURL(urls[i].getDownloadURL()));
+                    urls[i].setUrlDownload(getCorrectedURL(urls[i].getDownloadURL()));
 
-                        if ((post + urls[i].getDownloadURL() + "%0a").length() > 10000) {
-                            break;
-                        }
-                        post += urls[i].getDownloadURL() + "%0a";
+                    if ((post + urls[i].getDownloadURL() + "%0a").length() > 10000) {
+                        break;
                     }
-
+                    post += urls[i].getDownloadURL() + "%0a";
                 }
-                if (!isRSCom) return ret;
                 PostRequest r = new PostRequest("https://ssl.rapidshare.com/cgi-bin/checkfiles.cgi");
                 r.addVariable("urls", post);
                 post = null;
@@ -261,11 +253,6 @@ public class Rapidshare extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         try {
-
-            if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-                ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
-                return;
-            }
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
                 if (Sniffy.hasSniffer()) throw new SnifferException();
             }
@@ -454,10 +441,6 @@ public class Rapidshare extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         try {
-            if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-                ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
-                return;
-            }
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
                 if (Sniffy.hasSniffer()) throw new SnifferException();
             }
@@ -763,8 +746,6 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return false;
-
         if (System.currentTimeMillis() - LAST_FILE_CHECK < 250) {
             try {
                 Thread.sleep(System.currentTimeMillis() - LAST_FILE_CHECK);

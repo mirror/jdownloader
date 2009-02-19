@@ -89,11 +89,6 @@ public class FileFactory extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink parameter) throws Exception {
-        if (parameter.getDownloadURL().matches("sjdp://.*")) {
-            ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(parameter);
-            return;
-        }
-
         br.setFollowRedirects(true);
         br.setDebug(true);
         br.getPage(parameter.getDownloadURL());
@@ -249,12 +244,6 @@ public class FileFactory extends PluginForHost {
     // by eXecuTe
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
-
-            return;
-        }
         String user = account.getUser();
         String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -313,7 +302,6 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return false;
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
         br.setFollowRedirects(true);
@@ -357,7 +345,6 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return super.getFileInformationString(downloadLink);
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 

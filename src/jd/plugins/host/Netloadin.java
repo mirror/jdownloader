@@ -61,8 +61,7 @@ public class Netloadin extends PluginForHost {
         String id = new Regex(link, "\\/datei([a-zA-Z0-9]+)").getMatch(0);
         if (id == null) id = new Regex(link, "file_id=([a-zA-Z0-9]+)").getMatch(0);
         if (id == null) id = new Regex(link, "netload\\.in\\/([a-zA-Z0-9]+)\\/.+").getMatch(0);
-        
-       
+
         return id;
     }
 
@@ -76,7 +75,7 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-    
+
         br.setDebug(true);
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -267,7 +266,7 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-       
+
         getFileInformation(downloadLink);
         login(account);
         isExpired(account);
@@ -349,7 +348,7 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException {
-   
+
         try {
             this.setBrowserExclusive();
             br.setConnectTimeout(15000);
@@ -397,7 +396,6 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return "";
         return downloadLink.getName() + " (" + fileStatusText + ")";
     }
 
