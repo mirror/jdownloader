@@ -191,7 +191,7 @@ public class Megauploadcom extends PluginForHost {
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.postPage("http://megaupload.com/mgr_login.php", "u=" + account.getUser() + "&b=0&p=" + JDHash.getMD5(account.getPass()));
-        if (br.toString().equalsIgnoreCase("e")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+        if (br.getRegex("^e$").matches()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
         UserInfo = Request.parseQuery(br + "");
         user = UserInfo.get("s");
     }
