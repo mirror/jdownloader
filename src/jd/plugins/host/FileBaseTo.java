@@ -21,8 +21,8 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -42,17 +42,14 @@ public class FileBaseTo extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        br.setCookiesExclusive(true);
+        //br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
         downloadLink.setName(Plugin.extractFileNameFromURL(url).replaceAll("&dl=1", ""));
-        if (br.containsHTML("Angeforderte Datei herunterladen")) {
-            br.getPage(url + "&dl=1");
-        }
-
-        if (br.containsHTML("Vielleicht wurde der Eintrag")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String size = br.getRegex("<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getMatch(0);
+        br.setDebug(true);
+        if (br.containsHTML("eider\\s+nicht\\s+gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String size = br.getRegex("Dateigr[^:]*:</td>\\s+<td[^>]*>(.*?)</td>").getMatch(0);
         downloadLink.setDownloadSize(Regex.getSize(size));
         return true;
 
@@ -65,30 +62,31 @@ public class FileBaseTo extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
         getFileInformation(downloadLink);
-
-        String url = downloadLink.getDownloadURL() + "&dl=1";
-        br.getPage(url);
-        Form caform = null;
-        br.setFollowRedirects(true);
-        int i = 5;
-        while ((caform = br.getFormBySubmitvalue("Ok!")) != null) {
-            if (i-- <= 0) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            File captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
-            Browser.download(captchaFile, br.openGetConnection("http://filebase.to" + br.getRegex("<img src=\"(/captcha/CaptchaImage\\.php.*?)\" alt=\"\">").getMatch(0)));
-            String capTxt = Plugin.getCaptchaCode(this, "datenklo.net", captchaFile, false, downloadLink);
-            caform.put("uid", capTxt);
-            caform.setAction(url);
-            br.submitForm(caform);
-
-        }
-
-        Form dlForm = br.getFormbyProperty("name","waitform");
-        String value = br.getRegex("document\\.waitform\\.wait\\.value = \"(.*?)\";").getMatch(0);
-
-        dlForm.put("wait", value);
-        br.openDownload(downloadLink, dlForm, true, 1).startDownload();
+        br.setDebug(true);
+        String formact = downloadLink.getDownloadURL();
+        if (!br.containsHTML("<input\\s+name=\"wait\""))
+        {
+            //first we're trying to use constant captcha value
+            br.getPage(formact);
+            br.postPage(formact, "uid=np7z&cid="+Encoding.urlEncode("/q6g9xI6ljZMeXVUPE4KkxuYkHImkuiAqq90ekr3DtI=")+"&submit=+++Best%E4tigung+++&session_code=");
+            if (br.containsHTML("Code wurde falsch")) {
+                //if not works try captcha method
+                br.getPage(formact);
+                File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
+                String CaptchaFileURL = br.getRegex("src=\"(/captcha/CaptchaImage\\.php.*?)\"").getMatch(0);
+                String filecid = br.getRegex("cid\"\\s+value=\"(.*?)\"").getMatch(0);
+                Browser.download(captchaFile, br.openGetConnection("http://filebase.to" + CaptchaFileURL ));
+                String capTxt = Plugin.getCaptchaCode(this, "uploaded.to", captchaFile, false, downloadLink);
+                br.getPage(formact);
+                br.postPage(formact, "uid="+capTxt+"&cid="+Encoding.urlEncode(filecid)+"&submit=+++Best%E4tigung+++&session_code=");
+                //if captcha error 
+                if (br.containsHTML("Code wurde falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            }
+        //going download
+        String dlAction = br.getRegex("</center><center><form\\s+action=\"(.*?)\"").getMatch(0);
+        br.openDownload(downloadLink, dlAction, "wait="+Encoding.urlEncode("Download - "+downloadLink.getName())).startDownload();
 
     }
 
