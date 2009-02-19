@@ -21,6 +21,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Vector;
 
 import javax.swing.JDialog;
@@ -70,6 +72,14 @@ public class JDAboutDialog extends JDialog {
         devs.add(new String[] { " scr4ve", " scr4ve@jdownloader.org", " Security Stuff, Addons, Decrypter-Plugins, Support and Bugfixing" });
         devs.add(new String[] { " Sheadox", " sheadox@jdownloader.org", " Hoster plugins, Decrypt plugins, Support" });
         devs.add(new String[] { " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" });
+
+        Collections.sort(devs, new Comparator<String[]>() {
+
+            public int compare(String[] o1, String[] o2) {
+                return o1[0].compareToIgnoreCase(o2[0]);
+            }
+
+        });
 
         JTable table = new JTable(devs.toArray(new String[devs.size()][]), new String[] { JDLocale.L("gui.dialog.about.member", "Member"), JDLocale.L("gui.dialog.about.email", "Email"), JDLocale.L("gui.dialog.about.section", "Section") });
         table.setEnabled(false);
