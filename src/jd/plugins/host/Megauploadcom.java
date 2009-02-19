@@ -74,7 +74,10 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public boolean isPremium() {
-        if (UserInfo.containsKey("p")) { return true; }
+        if (UserInfo.containsKey("p")) {
+            Date d = new Date(Long.parseLong(UserInfo.get("p")) * 1000l);
+            if (d.compareTo(new Date()) >= 0) return true;
+        }
         return false;
     }
 
@@ -99,10 +102,11 @@ public class Megauploadcom extends PluginForHost {
         Date d = new Date(Long.parseLong(UserInfo.get("p")) * 1000l);
         if (d.compareTo(new Date()) >= 0) {
             ai.setValid(true);
+            ai.setValidUntil(d.getTime());
         } else {
-            ai.setValid(false);
+            ai.setValid(true);
+            ai.setStatus("Free Membership");
         }
-        ai.setValidUntil(d.getTime());
         return ai;
     }
 
