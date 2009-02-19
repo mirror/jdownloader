@@ -110,12 +110,22 @@ public class LetitBitNet extends PluginForHost {
         Browser.download(file, con);
         down.setMethod(Form.MethodType.POST);
         down.put("frameset", "Download+file");
-        String code = Plugin.getCaptchaCode(file, this, downloadLink);
-        down.put("cap", code);
+        String id2 = forms[3].getVarsMap().get("uid2");
+        // first trying to bypass captcha
+        down.put("cap", "2f2411");
+        down.put("uid2", "c0862b659695");
         down.put("fix", "1");
         br.getPage(downloadLink.getDownloadURL());
         down.setAction("http://letitbit.net/download3.php");
         br.submitForm(down);
+        //if we cannot bypass, ask user for entering captcha code
+        if (!br.containsHTML("<frame")) {
+            String code = Plugin.getCaptchaCode(file, this, downloadLink);
+            down.put("cap", code);
+            down.put("uid2", id2);
+            down.setAction("http://letitbit.net/download3.php");
+            br.submitForm(down);
+        }
         if (!br.containsHTML("<frame")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.getPage(br.getRegex("<frame.*?src=\"(.*?)\"").getMatch(0));
         String url = br.getRegex("<div.*?id=\"links\".*?>\\s+<a\\s+href=\"(.*?)\"").getMatch(0);
