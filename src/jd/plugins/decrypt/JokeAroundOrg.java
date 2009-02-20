@@ -36,9 +36,13 @@ public class JokeAroundOrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        String wait = br.getRegex(";sec=(\\d+);var").getMatch(0);
+        if (wait != null) {
+            this.sleep(Integer.parseInt(wait) * 1000l, param);
+        }
         String forward = br.getRegex("document.location='(/!.*?-.*?/)';").getMatch(0);
         if (forward != null) {
-            decryptedLinks.add(createDownloadlink("http://http://joke-around.org" + forward));
+            decryptedLinks.add(createDownloadlink("http://joke-around.org" + forward));
             return decryptedLinks;
         }
         Form form = br.getForm(0);
