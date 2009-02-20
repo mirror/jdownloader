@@ -39,7 +39,6 @@ public class RouterInfoCollector {
     public final static String PROPERTY_SHOW_ROUTERINFO_DIALOG = "PROPERTY_SHOW_ROUTERINFO_DIALOG";
     public final static String RECONNECTTYPE_LIVE_HEADER = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
     public final static String RECONNECTTYPE_CLR = JDLocale.L("modules.reconnect.types.clr", "CLR Script");
-    protected static String reconnectType = JDUtilities.getConfiguration().getStringProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
     protected static String reconnectMethode = null;
     protected static String reconnectMethodeClr = null;
     public final static int RInfo_UPNP = 1 << 1;
@@ -53,16 +52,12 @@ public class RouterInfoCollector {
 
     public static boolean isLiveheader() {
         reconnectMethode = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null);
-        return (reconnectType.equals(RECONNECTTYPE_LIVE_HEADER) && reconnectMethode != null);
+        return ((JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) == ReconnectMethod.LIVEHEADER) && reconnectMethode != null);
     }
 
     public static boolean isClr() {
         reconnectMethodeClr = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, null);
-        return (reconnectType.equals(RECONNECTTYPE_CLR) && reconnectMethodeClr != null);
-    }
-
-    public static boolean isValidReconnect() {
-        return (isLiveheader() || isClr());
+        return ((JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) == ReconnectMethod.CLR) && reconnectMethodeClr != null);
     }
 
     public static InetAddress getRouterIP() {

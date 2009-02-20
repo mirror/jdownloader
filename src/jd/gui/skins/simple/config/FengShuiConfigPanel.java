@@ -647,8 +647,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         new Thread(new Runnable() {
 
             public void run() {
-                String lh = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
-                if (config.getStringProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, lh).equals(lh)) {
+                if (config.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) == ReconnectMethod.LIVEHEADER) {
                     boolean reachable = false;
                     try {
                         reachable = InetAddress.getByName(routerIp).isReachable(1500);
@@ -723,12 +722,12 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             saveit = true;
         }
         if (Reconnectmethode != null && !Reconnectmethode.equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null))) {
-            config.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_LIVE_HEADER);
+            config.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER);
             config.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, Reconnectmethode);
             saveit = true;
         }
         if (ReconnectmethodeClr != null && !ReconnectmethodeClr.equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, null))) {
-            config.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_CLR);
+            config.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.CLR);
             config.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, Reconnectmethode);
             saveit = true;
         }

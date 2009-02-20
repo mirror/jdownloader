@@ -548,7 +548,6 @@ public abstract class PluginForHost extends Plugin {
 
     public void resetPluginGlobals() {
         br = new Browser();
-
     }
 
     public void setAGBChecked(boolean value) {

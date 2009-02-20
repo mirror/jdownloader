@@ -129,7 +129,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
             configuration.setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText().trim());
             configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, methode);
             configuration.setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, "Reconnect Recorder Methode");
-            configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
+            configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER);
             if (reconnect_duration <= 2000) {
                 reconnect_duration = 2000;
                 /* minimum von 2 seks */

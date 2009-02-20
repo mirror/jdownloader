@@ -82,7 +82,7 @@ public class Reconnecter {
             }
 
             Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, controller);
-            int type = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, 0);
+            int type = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER);
             IS_RECONNECTING = true;
             logger.info("DO RECONNECT NOW");
             boolean interrupt = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);
@@ -100,10 +100,10 @@ public class Reconnecter {
                 }
             }
             switch (type) {
-            case 1:
+            case ReconnectMethod.EXTERN:
                 ipChangeSuccess = new ExternReconnect().doReconnect();
                 break;
-            case 2:
+            case ReconnectMethod.BATCH:
                 ipChangeSuccess = new BatchReconnect().doReconnect();
                 break;
             default:

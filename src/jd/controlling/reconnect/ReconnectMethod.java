@@ -17,6 +17,12 @@ public abstract class ReconnectMethod {
 
     public static final String PARAM_RECONNECT_TYPE = "RECONNECT_TYPE";
 
+    public static final int LIVEHEADER = 0;
+    public static final int BATCH = 1;
+    public static final int EXTERN = 2;
+    public static final int CLR = 3;
+    /* Integer Property: 0=LiveHeader, 1=Extern, 2=Batch,3=CLR */
+
     public static final String PARAM_IPCHECKWAITTIME = "RECONNECT_IPCHECKWAITTIME";
 
     public static final String PARAM_RETRIES = "RECONNECT_RETRIES";

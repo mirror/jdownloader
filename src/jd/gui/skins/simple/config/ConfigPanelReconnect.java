@@ -126,8 +126,9 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
 
     @Override
     public void initPanel() {
+        /* 0=LiveHeader, 1=Extern, 2=Batch,3=CLR */
         box = new JComboBox(new String[] { JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), JDLocale.L("modules.reconnect.types.extern", "Extern"), JDLocale.L("modules.reconnect.types.batch", "Batch"), JDLocale.L("modules.reconnect.types.clr", "CLR Script") });
-        box.setSelectedIndex(configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, 0));
+        box.setSelectedIndex(configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER));
         box.addActionListener(this);
 
         btn = new JButton(JDLocale.L("modules.reconnect.testreconnect", "Test Reconnect"));

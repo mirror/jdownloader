@@ -69,7 +69,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
     @Override
     protected boolean runCommands(ProgressController progress) {
         String script;
-        if (configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, 0) == 3) {
+        if (configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) == ReconnectMethod.CLR) {
             /* konvertiert CLR zu Liveheader */
             String[] ret = CLRLoader.createLiveHeader(configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR));
             if (ret != null) {
