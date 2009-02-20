@@ -782,9 +782,9 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
         String def = "JD-[" + loc + "]_" + ("" + System.currentTimeMillis()).substring(6);
         nick = JDUtilities.getSubConfig("JDCHAT").getStringProperty(NICK);
-        if (nick == null) {
+        if (nick == null || nick.equalsIgnoreCase("")) {
             nick = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.optional.jdchat.enternick", "Your wished nickname?"));
-            if (nick != null) {
+            if ((nick != null) && (!nick.equalsIgnoreCase(""))  ) {
                 nick += "[" + loc + "]";
             }
             JDUtilities.getSubConfig("JDCHAT").setProperty(NICK, nick.trim());
