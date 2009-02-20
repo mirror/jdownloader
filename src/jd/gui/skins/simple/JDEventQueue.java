@@ -46,7 +46,7 @@ public class JDEventQueue extends EventQueue {
         super();
         // comment out in production code
         // JDUtilities.getLogger().fine("Enter " + JDEventQueue.class.getSimpleName());
-        eventQueueInteruptionTest();
+        // eventQueueInteruptionTest();
     }
     
     abstract class MenuAbstractAction extends AbstractAction {
