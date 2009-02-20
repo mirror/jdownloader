@@ -42,7 +42,7 @@ public class FileBaseTo extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        //br.setCookiesExclusive(true);
+        // br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
@@ -65,29 +65,32 @@ public class FileBaseTo extends PluginForHost {
         getFileInformation(downloadLink);
         br.setDebug(true);
         String formact = downloadLink.getDownloadURL();
-        if (!br.containsHTML("<input\\s+name=\"wait\""))
-        {
-            //first we're trying to use constant captcha value
+        if (!br.containsHTML("<input\\s+name=\"wait\"")) {
+            // first we're trying to use constant captcha value
             br.getPage(formact);
-            br.postPage(formact, "uid=np7z&cid="+Encoding.urlEncode("/q6g9xI6ljZMeXVUPE4KkxuYkHImkuiAqq90ekr3DtI=")+"&submit=+++Best%E4tigung+++&session_code=");
+            br.postPage(formact, "uid=np7z&cid=" + Encoding.urlEncode("/q6g9xI6ljZMeXVUPE4KkxuYkHImkuiAqq90ekr3DtI=") + "&submit=+++Best%E4tigung+++&session_code=");
             if (br.containsHTML("Code wurde falsch")) {
-                //if not works try captcha method
+                // if not works try captcha method
                 br.getPage(formact);
                 File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
                 String CaptchaFileURL = br.getRegex("src=\"(/captcha/CaptchaImage\\.php.*?)\"").getMatch(0);
                 String filecid = br.getRegex("cid\"\\s+value=\"(.*?)\"").getMatch(0);
-                Browser.download(captchaFile, br.openGetConnection("http://filebase.to" + CaptchaFileURL ));
+                Browser.download(captchaFile, br.openGetConnection("http://filebase.to" + CaptchaFileURL));
                 String capTxt = Plugin.getCaptchaCode(this, "uploaded.to", captchaFile, false, downloadLink);
                 br.getPage(formact);
-                br.postPage(formact, "uid="+capTxt+"&cid="+Encoding.urlEncode(filecid)+"&submit=+++Best%E4tigung+++&session_code=");
-                //if captcha error 
+                br.postPage(formact, "uid=" + capTxt + "&cid=" + Encoding.urlEncode(filecid) + "&submit=+++Best%E4tigung+++&session_code=");
+                // if captcha error
                 if (br.containsHTML("Code wurde falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            }
-        //going download
+        }
+        // going download
         String dlAction = br.getRegex("</center><center><form\\s+action=\"(.*?)\"").getMatch(0);
-        br.openDownload(downloadLink, dlAction, "wait="+Encoding.urlEncode("Download - "+downloadLink.getName())).startDownload();
-
+        if (dlAction != null) {
+            br.openDownload(downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName())).startDownload();
+        } else {
+            dlAction = br.getRegex("<param name=\"src\" value=\"(.*?ticket.*?)\" />").getMatch(0);
+            br.openDownload(downloadLink, dlAction).startDownload();
+        }
     }
 
     public int getMaxSimultanFreeDownloadNum() {
