@@ -25,9 +25,6 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.URL;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -38,6 +35,9 @@ import javax.swing.MenuSelectionManager;
 import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 
+import jd.gui.skins.simple.components.JDTextArea;
+import jd.gui.skins.simple.components.JDTextField;
+import jd.http.Browser;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 
@@ -46,7 +46,7 @@ public class JDEventQueue extends EventQueue {
         super();
         // comment out in production code
         // JDUtilities.getLogger().fine("Enter " + JDEventQueue.class.getSimpleName());
-        // eventQueueInteruptionTest();
+        eventQueueInteruptionTest();
     }
     
     abstract class MenuAbstractAction extends AbstractAction {
@@ -148,25 +148,25 @@ public class JDEventQueue extends EventQueue {
                 c.replaceSelection(null);
             }
         });
-//        if ((c instanceof JDTextField) || (c instanceof JDTextArea)) {
-//            menu.addSeparator();
-//            if ((c instanceof JDTextField)) {
-//                if (((JDTextField) c).getUndoManager().canUndo()) {
-//                    menu.add(((JDTextField) c).getUndoManager().getUndoAction());
-//                }
-//                if (((JDTextField) c).getUndoManager().canRedo()) {
-//                    menu.add(((JDTextField) c).getUndoManager().getRedoAction());
-//                }
-//            } else if ((c instanceof JDTextArea)) {
-//                if (((JDTextArea) c).getUndoManager().canUndo()) {
-//                    menu.add(((JDTextArea) c).getUndoManager().getUndoAction());
-//                }
-//                if (((JDTextArea) c).getUndoManager().canRedo()) {
-//                    menu.add(((JDTextArea) c).getUndoManager().getRedoAction());
-//                }
-//            }
-//            menu.addSeparator();
-//        }
+        if ((c instanceof JDTextField) || (c instanceof JDTextArea)) {
+            menu.addSeparator();
+            if ((c instanceof JDTextField)) {
+                if (((JDTextField) c).getUndoManager().canUndo()) {
+                    menu.add(((JDTextField) c).getUndoManager().getUndoAction());
+                }
+                if (((JDTextField) c).getUndoManager().canRedo()) {
+                    menu.add(((JDTextField) c).getUndoManager().getRedoAction());
+                }
+            } else if ((c instanceof JDTextArea)) {
+                if (((JDTextArea) c).getUndoManager().canUndo()) {
+                    menu.add(((JDTextArea) c).getUndoManager().getUndoAction());
+                }
+                if (((JDTextArea) c).getUndoManager().canRedo()) {
+                    menu.add(((JDTextArea) c).getUndoManager().getRedoAction());
+                }
+            }
+            menu.addSeparator();
+        }
 
         menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.selectall", "Alles auswählen"), JDTheme.II("gui.icons.select_all", 16, 16), JDLocale.L("gui.textcomponent.context.selectall.acc", "ctrl A")) {
             /**
@@ -221,22 +221,14 @@ public class JDEventQueue extends EventQueue {
         new Thread(runnable).start();
     }
     
-    static void unpredictableLengthTask(String urlString) {
+    static void unpredictableLengthTask(String url) {
         // JDUtilities.getLogger().info("Start Event Queue Interruption Test"); 
         try {
-            // Create a URL for the desired page
-            URL url = new URL(urlString);
-        
-            // Read all the text returned by the server
-            BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
-            StringBuilder sb = new StringBuilder();
-            String str;
-            while ((str = in.readLine()) != null) {
-                // str is one line of text; readLine() strips the newline character(s)
-                sb.append(str);
+            for (int i = 0; i < 10; i++) {
+                Browser browser = new Browser();
+                browser.setCurrentURL(url);
+                browser.getPage(url);
             }
-            in.close();
-            // JDUtilities.getLogger().warning(sb.toString());
         } catch (Exception e) {System.err.println("Error");}
     }
 }
