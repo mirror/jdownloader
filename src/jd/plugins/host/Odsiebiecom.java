@@ -37,7 +37,7 @@ public class Odsiebiecom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://share-online.biz/rules.php";
+        return "http://odsiebie.com/tresc/faq.html";
     }
 
     @Override
