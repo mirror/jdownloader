@@ -117,7 +117,7 @@ public class Moosharenet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        
+
         Form form = br.getForm(2);
         if (form == null) {
             if (br.containsHTML("Sie haben Ihr Downloadlimit für den Moment erreicht!")) {
@@ -145,7 +145,12 @@ public class Moosharenet extends PluginForHost {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
         if (br.containsHTML("Sie haben Ihr Downloadlimit für den Moment erreicht!")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
-        sleep(15000, downloadLink);
+        String wait = br.getRegex("var time = (.*?);").getMatch(0);
+        if (wait != null) {
+            wait = wait.replaceAll("\\.", "");
+            sleep(Integer.parseInt(wait) * 100l, downloadLink);
+        } else
+            sleep(15000, downloadLink);
         File captchaFile = this.getLocalCaptchaFile(this);
         try {
             String captchaurl = br.getRegex("<img src=\"(http://mooshare.net/html/images/captcha.php.*?)\" alt=\"captcha\"").getMatch(0);
@@ -164,6 +169,7 @@ public class Moosharenet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }
         br.setFollowRedirects(true);
+        br.setDebug(true);
         dl = br.openDownload(downloadLink, dlLink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
