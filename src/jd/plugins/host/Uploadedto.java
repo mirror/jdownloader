@@ -69,8 +69,7 @@ public class Uploadedto extends PluginForHost {
         return 800;
     }
 
-    public AccountInfo getAccountInformation(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo(this, account);
+    private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAcceptLanguage("en, en-gb;q=0.8");
@@ -79,16 +78,26 @@ public class Uploadedto extends PluginForHost {
         Form login = br.getForm(0);
         login.put("email", Encoding.urlEncode(account.getUser()));
         login.put("password", Encoding.urlEncode(account.getPass()));
-
         br.submitForm(login);
-        if (br.containsHTML("Login failed!")) {
-            ai.setValid(false);
-            ai.setStatus("User ID or password wrong");
-            return ai;
+        if (br.getCookie("http://uploaded.to", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.containsHTML("Login failed!")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+    }
 
-        }
+    private boolean isPremium() {
         String accounttype = br.getMatch("Accounttype:</span> <span class=.*?>(.*?)</span>");
-        if (accounttype != null && accounttype.equalsIgnoreCase("free")) {
+        if (accounttype != null && accounttype.equalsIgnoreCase("free")) { return false; }
+        return true;
+    }
+
+    public AccountInfo getAccountInformation(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        if (!isPremium()) {
             String balance = br.getMatch("Your bank balance is:</span> <span class=.*?>(.*?)</span>");
             String points = br.getMatch("Your point account is:</span>.*?<span class=.*?>(\\d*?)</span>");
             ai.setAccountBalance((int) (Double.parseDouble(balance) * 100));
@@ -100,49 +109,24 @@ public class Uploadedto extends PluginForHost {
             String points = br.getMatch("Your point account is:</span>.*?<span class=.*?>(\\d*?)</span>");
             String traffic = br.getMatch("Traffic left: </span><span class=.*?>(.*?)</span> ");
             String expire = br.getMatch("Valid until: </span> <span class=.*?>(.*?)</span>");
-
             ai.setValidUntil(Regex.getMilliSeconds(expire, "dd-MM-yyyy hh:mm", null));
             ai.setAccountBalance((int) (Double.parseDouble(balance) * 100));
             ai.setTrafficLeft(Regex.getSize(traffic));
             ai.setPremiumPoints(Integer.parseInt(points));
         }
-
         return ai;
     }
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(downloadLink);
-        br.setDebug(true);
-        br.setCookie("http://uploaded.to/", "lang", "de");
-
-        String user = account.getUser();
-
-        logger.info("login");
-        br.setFollowRedirects(true);
-        br.getPage("http://uploaded.to/login");
-
-        Form login = br.getForm(0);
-        login.put("email", Encoding.urlEncode(account.getUser()));
-        login.put("password", Encoding.urlEncode(account.getPass()));
-
-        br.submitForm(login);
-        if (br.containsHTML("Login failed!")) {
-            linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
-            linkStatus.setErrorMessage("Login Error: " + user);
-            linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-            return;
-
-        }
-        String accounttype = br.getMatch("Accounttyp:</span> <span class=.*?>(.*?)</span>");
-
-        if (accounttype != null && accounttype.equalsIgnoreCase("free")) {
+        login(account);
+        if (!isPremium()) {
             logger.severe("Entered a Free-account");
             linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
-            linkStatus.setErrorMessage("Account " + user + " is a freeaccount");
+            linkStatus.setErrorMessage("Account is a freeaccount");
             linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
             return;
-
         }
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
