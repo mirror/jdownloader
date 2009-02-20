@@ -74,6 +74,7 @@ public class GetExplorer {
     }
 
     public boolean openExplorer(File path) {
+        if (path == null) return false;
         getExplorerCommand();
         while (!path.isDirectory())
             path = path.getParentFile();
@@ -84,11 +85,11 @@ public class GetExplorer {
             String[] finalParams = new String[paramsArray.length];
 
             for (int i = 0; i < paramsArray.length; i++) {
-                
+
                 finalParams[i] = paramsArray[i].replace("%%path%%", spath);
-                
+
             }
-         
+
             JDUtilities.runCommand((String) explorer[1], finalParams, null, 0);
 
             return true;
