@@ -33,8 +33,7 @@ import jd.utils.JDLocale;
 
 public class UploaderPl extends PluginForHost {
 
-    private static final String AGB_LINK = "http://uploader.pl/rules.php";
-    private int simultanpremium = 50;
+    private int simultanpremium = 1;
 
     public UploaderPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,7 +58,6 @@ public class UploaderPl extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -74,33 +72,13 @@ public class UploaderPl extends PluginForHost {
         this.setBrowserExclusive();
         br.clearCookies("uploader.pl");
         br.getPage("http://uploader.pl/en/login.php");
-        String cookie1 = br.getCookie("http://uploader.pl/", "yab_uid");
-        String cookie2 = br.getCookie("http://uploader.pl/", "yab_passhash");
-        String cookie3 = br.getCookie("http://uploader.pl/", "yab_logined");
-        String cookie4 = br.getCookie("http://uploader.pl/", "yab_sess_id");
-        String cookie5 = br.getCookie("http://uploader.pl/", "PHPSESSID");
-        String cookie6 = br.getCookie("http://uploader.pl/", "yab_last_click");
-        br.setCookie("http://uploader.pl/", "yab_uid", cookie1);
-        br.setCookie("http://uploader.pl/", "yab_passhash", cookie2);
-        br.setCookie("http://uploader.pl/", "yab_logined", cookie3);
-        br.setCookie("http://uploader.pl/", "yab_sess_id", cookie4);
-        br.setCookie("http://uploader.pl/", "PHPSESSID", cookie5);
-        br.setCookie("http://uploader.pl/", "yab_last_click", cookie6);
         Form login = br.getForm(0);
         login.put("user", Encoding.urlEncode(account.getUser()));
         login.put("pass", Encoding.urlEncode(account.getPass()));
         login.put("autologin", "0");
         br.submitForm(login);
-        cookie1 = br.getCookie("http://uploader.pl/", "yab_uid");
-        cookie2 = br.getCookie("http://uploader.pl/", "yab_passhash");
-        cookie3 = br.getCookie("http://uploader.pl/", "yab_logined");
-        br.setCookie("http://uploader.pl/", "yab_uid", cookie1);
-        br.setCookie("http://uploader.pl/", "yab_passhash", cookie2);
-        br.setCookie("http://uploader.pl/", "yab_logined", cookie3);
-        br.setCookie("http://uploader.pl/", "yab_sess_id", cookie4);
-        br.setCookie("http://uploader.pl/", "PHPSESSID", cookie5);
-        br.setCookie("http://uploader.pl/", "yab_last_click", cookie6);
-        if (cookie1.equalsIgnoreCase("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        String cookie1 = br.getCookie("http://uploader.pl/", "yab_uid");
+        if (cookie1 == null || cookie1.equalsIgnoreCase("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
     private boolean isPremium() throws IOException {
@@ -145,12 +123,12 @@ public class UploaderPl extends PluginForHost {
         getFileInformation(downloadLink);
         login(account);
         if (!this.isPremium()) {
-            simultanpremium = 20;
+            simultanpremium = 10;
             handleFree0(downloadLink);
             return;
         } else {
-            if (simultanpremium + 1 > 50) {
-                simultanpremium = 50;
+            if (simultanpremium + 1 > 20) {
+                simultanpremium = 20;
             } else {
                 simultanpremium++;
             }
@@ -166,12 +144,12 @@ public class UploaderPl extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return AGB_LINK;
+        return "http://uploader.pl/rules.php";
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        // this.setBrowserExclusive();
+        this.setBrowserExclusive();
         br.getPage("http://uploader.pl/en");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("has already been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
