@@ -25,6 +25,8 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -35,9 +37,8 @@ import javax.swing.MenuSelectionManager;
 import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 
-import jd.gui.skins.simple.components.JDTextArea;
-import jd.gui.skins.simple.components.JDTextField;
 import jd.http.Browser;
+import jd.http.Cookie;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 
@@ -148,25 +149,25 @@ public class JDEventQueue extends EventQueue {
                 c.replaceSelection(null);
             }
         });
-        if ((c instanceof JDTextField) || (c instanceof JDTextArea)) {
-            menu.addSeparator();
-            if ((c instanceof JDTextField)) {
-                if (((JDTextField) c).getUndoManager().canUndo()) {
-                    menu.add(((JDTextField) c).getUndoManager().getUndoAction());
-                }
-                if (((JDTextField) c).getUndoManager().canRedo()) {
-                    menu.add(((JDTextField) c).getUndoManager().getRedoAction());
-                }
-            } else if ((c instanceof JDTextArea)) {
-                if (((JDTextArea) c).getUndoManager().canUndo()) {
-                    menu.add(((JDTextArea) c).getUndoManager().getUndoAction());
-                }
-                if (((JDTextArea) c).getUndoManager().canRedo()) {
-                    menu.add(((JDTextArea) c).getUndoManager().getRedoAction());
-                }
-            }
-            menu.addSeparator();
-        }
+//        if ((c instanceof JDTextField) || (c instanceof JDTextArea)) {
+//            menu.addSeparator();
+//            if ((c instanceof JDTextField)) {
+//                if (((JDTextField) c).getUndoManager().canUndo()) {
+//                    menu.add(((JDTextField) c).getUndoManager().getUndoAction());
+//                }
+//                if (((JDTextField) c).getUndoManager().canRedo()) {
+//                    menu.add(((JDTextField) c).getUndoManager().getRedoAction());
+//                }
+//            } else if ((c instanceof JDTextArea)) {
+//                if (((JDTextArea) c).getUndoManager().canUndo()) {
+//                    menu.add(((JDTextArea) c).getUndoManager().getUndoAction());
+//                }
+//                if (((JDTextArea) c).getUndoManager().canRedo()) {
+//                    menu.add(((JDTextArea) c).getUndoManager().getRedoAction());
+//                }
+//            }
+//            menu.addSeparator();
+//        }
 
         menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.selectall", "Alles auswählen"), JDTheme.II("gui.icons.select_all", 16, 16), JDLocale.L("gui.textcomponent.context.selectall.acc", "ctrl A")) {
             /**
@@ -218,7 +219,9 @@ public class JDEventQueue extends EventQueue {
         // runnable.run();
         
         // run in new thread
-        new Thread(runnable).start();
+        Thread thread = new Thread(runnable);
+        thread.setPriority(Thread.MIN_PRIORITY);
+        thread.start();
     }
     
     static void unpredictableLengthTask(String url) {
@@ -228,7 +231,18 @@ public class JDEventQueue extends EventQueue {
                 Browser browser = new Browser();
                 browser.setCurrentURL(url);
                 browser.getPage(url);
+                HashMap<String, HashMap<String, Cookie>> cookies = browser.getCookies();
+                // printCookies(cookies);
             }
         } catch (Exception e) {System.err.println("Error");}
+    }
+    
+    private static void printCookies(HashMap<String, HashMap<String, Cookie>> hashMap) {
+        StringBuilder sb = new StringBuilder();
+        for (Entry<String, HashMap<String, Cookie>> cookie : hashMap.entrySet()) {
+            sb.append(cookie.getKey() + " -> " + cookie.getValue());
+            sb.append("\n");
+        }
+        System.out.println(sb.toString());
     }
 }
