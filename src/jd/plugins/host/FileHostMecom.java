@@ -17,6 +17,7 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -81,7 +82,7 @@ public class FileHostMecom extends PluginForHost {
         String points = br.getRegex(Pattern.compile("<TR><TD>You have collected:</TD><TD><b>(.*?)premium points</b>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (points != null) ai.setPremiumPoints(points);
         String expire = br.getRegex(Pattern.compile("<TR><TD>Premium-Account expire:</TD><TD><b>(.*?)</b>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMM yyyy", null));
+        ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMMM yyyy", Locale.ENGLISH));
         ai.setTrafficLeft(-1);
         ai.setValid(true);
         return ai;
