@@ -617,6 +617,20 @@ public abstract class PluginForHost extends Plugin {
         downloadLink.getLinkStatus().setStatusText(null);
     }
 
+    public void sleep(long i, DownloadLink downloadLink, String message) throws PluginException {
+        try {
+            while (i > 0 && downloadLink.getDownloadLinkController() != null && !downloadLink.getDownloadLinkController().isAborted()) {
+                i -= 1000;
+                downloadLink.getLinkStatus().setStatusText(message + String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), JDUtilities.formatSeconds(i / 1000)));
+                downloadLink.requestGuiUpdate();
+                Thread.sleep(1000);
+            }
+        } catch (InterruptedException e) {
+            throw new PluginException(LinkStatus.TODO);
+        }
+        downloadLink.getLinkStatus().setStatusText(null);
+    }
+
     /**
      * wird vom controlling (watchdog) beim stoppen aufgerufen. Damit werdend ie
      * hostercontrollvariablen zurückgesetzt.

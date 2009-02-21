@@ -16,6 +16,7 @@ import jd.utils.JDLocale;
 public class JamendoCom extends PluginForDecrypt {
 
     private static String ENABLE_SUBFOLDERS = "ENABLE_SUBFOLDERS";
+    private static String PREFER_WHOLEALBUM = "PREFER_WHOLEALBUM";
 
     public JamendoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,8 +50,12 @@ public class JamendoCom extends PluginForDecrypt {
             String ArtistID = new Regex(parameter.toString(), "artist/(.+)").getMatch(0);
             br.getPage("http://www.jamendo.com/en/artist/" + ArtistID);
             String Albums[] = br.getRegex("<a href=\"/en/album/(\\d+)\"").getColumn(0);
+            DownloadLink link;
             for (String Album : Albums) {
-                DownloadLink link = createDownloadlink("http://www.jamendo.com/en/album/" + Album);
+                if (getPluginConfig().getBooleanProperty(PREFER_WHOLEALBUM, true)) {
+                    link = createDownloadlink("http://www.jamendo.com/en/download/album/" + Album);
+                } else
+                    link = createDownloadlink("http://www.jamendo.com/en/album/" + Album);
                 decryptedLinks.add(link);
             }
         }
@@ -64,6 +69,7 @@ public class JamendoCom extends PluginForDecrypt {
 
     private void setConfigElements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_SUBFOLDERS, JDLocale.L("plugins.decrypt.jamendo", "Create a subfolder for each album")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_WHOLEALBUM, JDLocale.L("plugins.decrypt.jamendoalbum", "Prefer whole Album as Zip")).setDefaultValue(true));
     }
 
 }
