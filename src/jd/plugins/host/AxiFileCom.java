@@ -48,11 +48,17 @@ public class AxiFileCom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         br.setCookiesExclusive(true);
         br.getPage(downloadLink.getDownloadURL());
+        String filesize = null;
+        try {
+            filesize = br.getRegex(Pattern.compile("You have request \".*?\" file \\((.*?)\\)<SCRIPT", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
 
-        String filesize = br.getRegex(Pattern.compile("You have request \".*?\" file \\((.*?)\\)<SCRIPT", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        String filename = br.getRegex("You have request \"(.*?)\".*?<SCRIPT").getMatch(0);
-        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("You have request \"(.*?)\"").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
+        if(filesize!=null)
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
         return true;
     }
@@ -72,7 +78,7 @@ public class AxiFileCom extends PluginForHost {
         br.setCookie("http://" + br.getHost(), "flv", "y");
         URLConnectionAdapter con = br.openGetConnection("http://www.axifile.com/flash/baner.swf");
         BufferedInputStream is = new BufferedInputStream(con.getInputStream());
-
+        
         int i;
         char[] lastone = new char[11];
         ArrayList<Character> pool = new ArrayList<Character>();
@@ -97,7 +103,6 @@ public class AxiFileCom extends PluginForHost {
         }
         is.close();
         String code = new String(mycode);
-
         if (link == null || code == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         dl = br.openDownload(downloadLink, link.replaceFirst(".*?axifile.com/.*?/", "http://dl.axifile.com/" + code + "/"), false, 3);
         /*
