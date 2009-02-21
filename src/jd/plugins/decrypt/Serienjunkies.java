@@ -686,17 +686,19 @@ public class Serienjunkies extends PluginForDecrypt {
                 String[] links = HTMLParser.getHttpLinks(bet[1], br.getRequest().getUrl().toString());
                 if (getPluginConfig().getStringProperty("SJ_MIRRORMANAGEMENT", mirrorManagement[0]).equals(mirrorManagement[2])) {
                     for (String element : links) {
-                        DownloadLink dl_link = createDownloadlink(element);
-                        dl_link.addSourcePluginPasswords(passwords);
-                        decryptedLinks.add(dl_link);
+                        String[] info = getLinkName(element, lastHtmlCode);
+                        decryptedLinks.add(createdl(element, info));
                     }
                 } else {
                     boolean got = false;
                     for (String element : links) {
-                        DownloadLink dl_link = createDownloadlink(element);
+                        String[] info = getLinkName(element, lastHtmlCode);
+                        DownloadLink dl_link = createdl(element, info);
+
                         if (JDUtilities.getPluginForHost(getHostname(element)).getMaxSimultanDownloadNum(dl_link) > 1) {
-                            dl_link.addSourcePluginPasswords(passwords);
+
                             decryptedLinks.add(dl_link);
+
                             got = true;
                             break;
                         }
@@ -704,8 +706,8 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
                     if (!got) {
                         for (String element : links) {
-                            DownloadLink dl_link = createDownloadlink(element);
-                            dl_link.addSourcePluginPasswords(passwords);
+                            String[] info = getLinkName(element, lastHtmlCode);
+                            DownloadLink dl_link = createdl(element, info);
                             decryptedLinks.add(dl_link);
                             break;
 
