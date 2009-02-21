@@ -47,7 +47,7 @@ public class JDEventQueue extends EventQueue {
         super();
         // comment out in production code
         // JDUtilities.getLogger().fine("Enter " + JDEventQueue.class.getSimpleName());
-        // eventQueueInteruptionTest();
+        eventQueueInteruptionTest();
     }
     
     abstract class MenuAbstractAction extends AbstractAction {
@@ -227,7 +227,7 @@ public class JDEventQueue extends EventQueue {
     static void unpredictableLengthTask(String url) {
         // JDUtilities.getLogger().info("Start Event Queue Interruption Test"); 
         try {
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 1; i++) {
                 Browser browser = new Browser();
                 browser.setCurrentURL(url);
                 browser.getPage(url);
