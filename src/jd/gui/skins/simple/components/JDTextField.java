@@ -24,7 +24,6 @@ public class JDTextField extends JTextField implements FocusListener {
     private boolean autoselect = false;
 
     private static final long serialVersionUID = -4013847546677327448L;
-//    JUndoManager um = new JUndoManager(this);
 
     public JDTextField(String text) {
         super(text);
@@ -40,10 +39,6 @@ public class JDTextField extends JTextField implements FocusListener {
         autoselect = b;
     }
 
-//    public JUndoManager getUndoManager() {
-//        return um;
-//    }
-
     public void focusLost(FocusEvent fe) {
     }
 
@@ -55,10 +50,6 @@ public class JDTextField extends JTextField implements FocusListener {
             }
         }
     }
-
-
-
-
 
     /**
         Adds Undo/Redo capabilities to the passed in JTextArea, it also
@@ -79,6 +70,11 @@ public class JDTextField extends JTextField implements FocusListener {
 
         //action for the undo command
         AbstractAction undo_action = new AbstractAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = -1151050746658519934L;
+
             public void actionPerformed(ActionEvent evt) {
                 try {
                     if (undo.canUndo()) {
@@ -91,6 +87,11 @@ public class JDTextField extends JTextField implements FocusListener {
         };
         //action for the redo command
         AbstractAction redo_action = new AbstractAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 7373087464871959970L;
+
             public void actionPerformed(ActionEvent evt) {
                 try {
                     if (undo.canRedo()) {

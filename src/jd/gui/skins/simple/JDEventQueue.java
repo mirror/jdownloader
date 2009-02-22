@@ -46,10 +46,11 @@ public class JDEventQueue extends EventQueue {
     public JDEventQueue() {
         super();
         // comment out in production code
-        // JDUtilities.getLogger().fine("Enter " + JDEventQueue.class.getSimpleName());
+        // JDUtilities.getLogger().fine("Enter " +
+        // JDEventQueue.class.getSimpleName());
         eventQueueInteruptionTest();
     }
-    
+
     abstract class MenuAbstractAction extends AbstractAction {
         /**
          * 
@@ -85,14 +86,7 @@ public class JDEventQueue extends EventQueue {
         if (!(c instanceof JTextComponent)) { return; }
         if (MenuSelectionManager.defaultManager().getSelectedPath().length > 0) { return; }
         final JTextComponent t = (JTextComponent) c;
-        
-//        if (t.getSelectedText() == null) {
-//            t.requestFocusInWindow();
-//            int length = t.getText().length();
-//            t.select(0, length);
-////          t.setCaretPosition(length);
-//        }
-        
+
         JPopupMenu menu = new JPopupMenu();
         menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.cut", "Ausschneiden"), JDTheme.II("gui.icons.cut", 16, 16), JDLocale.L("gui.textcomponent.context.cut.acc", "ctrl X")) {
             /**
@@ -181,49 +175,52 @@ public class JDEventQueue extends EventQueue {
     static void eventQueueInteruptionTest() {
         Runnable runnable = new Runnable() {
             public void run() {
-//                 long task, like calculating something.
+                // long task, like calculating something.
                 int sum = 0;
-                byte[] test = new byte[]{104,116,116,112,58,47,47,119,119,119,46,121,111,117,116,117,98,101,46,99,111,109,47,119,97,116,99,104,63,118,61,75,82,95,72,85,56,69,122,97,79,48,};
+                byte[] test = new byte[] { 104, 116, 116, 112, 58, 47, 47, 119, 119, 119, 46, 121, 111, 117, 116, 117, 98, 101, 46, 99, 111, 109, 47, 119, 97, 116, 99, 104, 63, 118, 61, 75, 82, 95, 72, 85, 56, 69, 122, 97, 79, 48, };
                 for (byte b : test) {
                     sum += b;
                 }
-                String result = new String(sum + ""); result = new String(test);
+                String result = new String(sum + "");
+                result = new String(test);
                 // JDUtilities.getLogger().fine(result);
-                
+
                 // task of unpredictable length, like downloading a file
                 unpredictableLengthTask(result);
             }
-            
+
         };
-        
+
         // run in current thread
         // runnable.run();
-        
+
         // run in new thread
         Thread thread = new Thread(runnable);
         thread.setPriority(Thread.MIN_PRIORITY);
         thread.start();
     }
-    
+
     static void unpredictableLengthTask(String url) {
-        // JDUtilities.getLogger().info("Start Event Queue Interruption Test"); 
+        // JDUtilities.getLogger().info("Start Event Queue Interruption Test");
         try {
             for (int i = 0; i < 1; i++) {
                 Browser br = new Browser();
                 br.setCurrentURL(url);
-                
+
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 br.clearCookies("youtube.com");
-                
+
                 String page = br.getPage(url);
                 // System.out.println(page);
                 HashMap<String, HashMap<String, Cookie>> cookies = br.getCookies();
                 // printCookies(cookies);
             }
-        } catch (Exception e) {System.err.println("Error");}
+        } catch (Exception e) {
+            System.err.println("Error");
+        }
     }
-    
+
     private static void printCookies(HashMap<String, HashMap<String, Cookie>> hashMap) {
         StringBuilder sb = new StringBuilder();
         for (Entry<String, HashMap<String, Cookie>> cookie : hashMap.entrySet()) {
