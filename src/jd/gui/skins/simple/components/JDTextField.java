@@ -24,7 +24,7 @@ public class JDTextField extends JTextField implements FocusListener {
     private boolean autoselect = false;
 
     private static final long serialVersionUID = -4013847546677327448L;
-    JUndoManager um = new JUndoManager(this);
+//    JUndoManager um = new JUndoManager(this);
 
     public JDTextField(String text) {
         super(text);
@@ -40,9 +40,9 @@ public class JDTextField extends JTextField implements FocusListener {
         autoselect = b;
     }
 
-    public JUndoManager getUndoManager() {
-        return um;
-    }
+//    public JUndoManager getUndoManager() {
+//        return um;
+//    }
 
     public void focusLost(FocusEvent fe) {
     }
@@ -65,7 +65,7 @@ public class JDTextField extends JTextField implements FocusListener {
         binds the JTextArea with the Ctrl-z and Ctrl-y key strockes.
      * @param undo 
      */
-    public static void addUndoRedo(JTextComponent area) {
+    static void addUndoRedo(JTextComponent area) {
 
         final UndoManager undo = new UndoManager();
         Document doc = area.getDocument();

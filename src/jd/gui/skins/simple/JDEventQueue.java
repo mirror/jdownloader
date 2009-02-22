@@ -86,12 +86,12 @@ public class JDEventQueue extends EventQueue {
         if (MenuSelectionManager.defaultManager().getSelectedPath().length > 0) { return; }
         final JTextComponent t = (JTextComponent) c;
         
-        if (t.getSelectedText() == null) {
-            t.requestFocusInWindow();
-            int length = t.getText().length();
-            t.select(0, length);
-//          t.setCaretPosition(length);
-        }
+//        if (t.getSelectedText() == null) {
+//            t.requestFocusInWindow();
+//            int length = t.getText().length();
+//            t.select(0, length);
+////          t.setCaretPosition(length);
+//        }
         
         JPopupMenu menu = new JPopupMenu();
         menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.cut", "Ausschneiden"), JDTheme.II("gui.icons.cut", 16, 16), JDLocale.L("gui.textcomponent.context.cut.acc", "ctrl X")) {

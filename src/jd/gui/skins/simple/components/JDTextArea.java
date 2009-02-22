@@ -12,30 +12,34 @@ public class JDTextArea extends JTextArea implements FocusListener {
     private boolean autoselect = false;
 
     private static final long serialVersionUID = -4013847546677327448L;
-    JUndoManager um = new JUndoManager(this);
+//    JUndoManager um = new JUndoManager(this);
 
     public JDTextArea(String text) {
         super(text);
-        addFocusListener(this);
+        addFocusAndUndo();
     }
 
     public JDTextArea(int a, int b) {
         super(a, b);
+        addFocusAndUndo();
+    }
+
+    private void addFocusAndUndo() {
         addFocusListener(this);
+        JDTextField.addUndoRedo(this);
     }
 
     public JDTextArea() {
-        super();
-        addFocusListener(this);
+        this(null);
     }
 
     public void setAutoSelect(boolean b) {
         autoselect = b;
     }
 
-    public JUndoManager getUndoManager() {
-        return um;
-    }
+//    public JUndoManager getUndoManager() {
+//        return um;
+//    }
 
     public void focusLost(FocusEvent fe) {
     }
