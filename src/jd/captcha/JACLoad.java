@@ -21,10 +21,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import jd.http.Browser;
-
 import jd.captcha.utils.UTILITIES;
-import jd.utils.JDUtilities;
+import jd.http.Browser;
 
 /**
  * JAC Tester
@@ -48,20 +46,23 @@ public class JACLoad {
         // "jd", "captcha", "methods"});
         String hoster = "SerienJunkies.dl.am";
 
-//        loadSerienJunkies(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/jd/captcha/methods" + "/" + hoster + "/captchas/"), 6000);
+        // loadSerienJunkies(new
+        // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()
+        // + "/jd/captcha/methods" + "/" + hoster + "/captchas/"), 6000);
         loadMegaUpload();
     }
+
     private void loadMegaUpload() {
         final String dir = "/home/dwd/.jd_home/captchas/megaupload.com/";
-        
+
         for (int i = 0; i < 200; i++) {
             new Thread(new Runnable() {
                 public void run() {
-                    Browser br  = new Browser();
+                    Browser br = new Browser();
                     try {
                         br.getPage("http://megaupload.com/?d=02KOI7N0");
                         String cap = br.getRegex("<img src=\"([^\"]*gencap.php[^\"]*)\"").getMatch(0);
-                        br.getDownload(new File(dir+cap.replaceFirst(".*?gencap.php.", "")+".gif"), cap);
+                        br.getDownload(new File(dir + cap.replaceFirst(".*?gencap.php.", "") + ".gif"), cap);
                     } catch (IOException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
@@ -70,6 +71,7 @@ public class JACLoad {
             }).start();
         }
     }
+
     private void loadSerienJunkies(File file, int i) {
         UTILITIES.useCookies = true;
         // long stamp= UTILITIES.getTimer();

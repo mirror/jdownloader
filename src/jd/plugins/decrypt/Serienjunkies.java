@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dialog;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -36,40 +37,15 @@ import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import jd.controlling.DistributeData;
-import jd.plugins.LinkStatus;
-import jd.captcha.LetterComperator;
-import jd.captcha.pixelgrid.Letter;
-import jd.captcha.utils.UTILITIES;
-import jd.controlling.reconnect.Reconnecter;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.parser.html.Form;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.controlling.ProgressController;
-import jd.gui.skins.simple.SimpleGUI;
-import jd.http.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.HTMLParser;
-import jd.plugins.CryptedLink;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
-import java.awt.FlowLayout;
-import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
@@ -78,7 +54,33 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
+
+import jd.PluginWrapper;
+import jd.captcha.LetterComperator;
+import jd.captcha.pixelgrid.Letter;
+import jd.captcha.utils.UTILITIES;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.controlling.DistributeData;
+import jd.controlling.ProgressController;
+import jd.controlling.reconnect.Reconnecter;
+import jd.gui.skins.simple.SimpleGUI;
+import jd.http.Browser;
+import jd.http.Encoding;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
+import jd.plugins.CryptedLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 
 public class Serienjunkies extends PluginForDecrypt {
     // private static final String host = "Serienjunkies.org";
@@ -593,8 +595,7 @@ public class Serienjunkies extends PluginForDecrypt {
             } else if (parameter.indexOf(subdomain + "serienjunkies.org") >= 0 || parameter.indexOf("/sjsafe/") >= 0) {
                 logger.info("sjsafe link");
                 helpvector = ContainerLinks(parameter, cryptedLink);
-                if(helpvector==null)
-                    return null;
+                if (helpvector == null) return null;
                 for (int j = 0; j < helpvector.size(); j++) {
                     decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpvector.get(j))));
                 }
@@ -607,8 +608,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpstring)));
                     } else if (links[i][0].indexOf("/sjsafe/") >= 0) {
                         helpvector = ContainerLinks(links[i][0], cryptedLink);
-                        if(helpvector==null)
-                            return null;
+                        if (helpvector == null) return null;
                         for (int j = 0; j < helpvector.size(); j++) {
                             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpvector.get(j))));
                         }
@@ -1145,41 +1145,40 @@ public class Serienjunkies extends PluginForDecrypt {
 
                 }
                 ArrayList<DownloadLink> dls = getDLinks(link, cryptedLink);
-                if (dls!=null && dls.size() < 1) {
+                if (dls != null && dls.size() < 1) {
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                     if (linkStatus.getErrorMessage() == null || linkStatus.getErrorMessage().endsWith("")) linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.pageerror", "SJ liefert keine Downloadlinks"));
                     logger.warning("SJ returned no Downloadlinks");
                 } else {
                     ArrayList<DownloadLink> finaldls = null;
-                    if(dls!=null)
-                    {
-                    finaldls = new ArrayList<DownloadLink>();
-                    for (DownloadLink dls2 : dls) {
-                        DistributeData distributeData = new DistributeData(dls2.getDownloadURL());
-                        finaldls.addAll(distributeData.findLinks());
-                    }
-                    if (finaldls.size() > 0) {
-                        try {
-                            DownloadLink[] linksar = finaldls.toArray(new DownloadLink[finaldls.size()]);
-                            progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.checkLinks", "check links"));
-                            progress.setStatus(0);
-                            int inc = 100 / linksar.length;
-                            linksar[0].getPlugin().checkLinks(linksar);
-                            for (DownloadLink downloadLink2 : linksar) {
-                                if (!downloadLink2.isAvailable()) {
-                                    finaldls = null;
-                                    break;
-                                }
-                                progress.increase(inc);
-                            }
-                        } catch (Exception e) {
-                            finaldls = null;
+                    if (dls != null) {
+                        finaldls = new ArrayList<DownloadLink>();
+                        for (DownloadLink dls2 : dls) {
+                            DistributeData distributeData = new DistributeData(dls2.getDownloadURL());
+                            finaldls.addAll(distributeData.findLinks());
                         }
-                    }
+                        if (finaldls.size() > 0) {
+                            try {
+                                DownloadLink[] linksar = finaldls.toArray(new DownloadLink[finaldls.size()]);
+                                progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.checkLinks", "check links"));
+                                progress.setStatus(0);
+                                int inc = 100 / linksar.length;
+                                linksar[0].getPlugin().checkLinks(linksar);
+                                for (DownloadLink downloadLink2 : linksar) {
+                                    if (!downloadLink2.isAvailable()) {
+                                        finaldls = null;
+                                        break;
+                                    }
+                                    progress.increase(inc);
+                                }
+                            } catch (Exception e) {
+                                finaldls = null;
+                            }
+                        }
                     }
                     if (finaldls == null) {
                         if (mirrors == null) {
-                            Browser br2k= new Browser();
+                            Browser br2k = new Browser();
                             br2k.getPage("http://serienjunkies.org/?s=" + cryptedLink.getCryptedUrl().replaceFirst(".*/", "").replaceFirst("\\.html?$", ""));
                             String[] info = getLinkName(cryptedLink.getCryptedUrl(), br2k.toString());
                             logger.warning("use Mirror");
@@ -1258,7 +1257,7 @@ class SJTable extends JDialog {
     private boolean interrupted = false;
     protected SJTM m_data;
     private JButton insertButton;
-    
+
     protected JLabel m_title;
     public ArrayList<DownloadLink> dls;
 
@@ -1276,28 +1275,29 @@ class SJTable extends JDialog {
         m_table = new JTable();
         m_table.setAutoCreateColumnsFromModel(false);
         m_table.setModel(m_data);
-        
+
         m_table.addMouseListener(new MouseListener() {
-        	public void mouseClicked(MouseEvent e){
-        		interrupted = true;
-        	}
+            public void mouseClicked(MouseEvent e) {
+                interrupted = true;
+            }
 
-			public void mouseEntered(MouseEvent e) {
-				interrupted = true;
-			}
+            public void mouseEntered(MouseEvent e) {
+                interrupted = true;
+            }
 
-			public void mouseExited(MouseEvent e) {
-				interrupted = true;
-			}
+            public void mouseExited(MouseEvent e) {
+                interrupted = true;
+            }
 
-			public void mousePressed(MouseEvent e) {
-				interrupted = true;
-			}
+            public void mousePressed(MouseEvent e) {
+                interrupted = true;
+            }
 
-			public void mouseReleased(MouseEvent e) {
-				interrupted = true;
-			} });
-        
+            public void mouseReleased(MouseEvent e) {
+                interrupted = true;
+            }
+        });
+
         for (int k = 0; k < SJTM.m_columns.length; k++) {
             DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
             renderer.setHorizontalAlignment(SJTM.m_columns[k].m_alignment);
@@ -1345,7 +1345,7 @@ class SJTable extends JDialog {
         });
         del.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-            	interrupted = true;
+                interrupted = true;
                 int[] rows = m_table.getSelectedRows();
                 ArrayList<DownloadLink> delDls = new ArrayList<DownloadLink>();
                 for (int j : rows) {
@@ -1367,7 +1367,7 @@ class SJTable extends JDialog {
         });
         panel.add(insertButton);
         getContentPane().add(panel, BorderLayout.SOUTH);
-        
+
         countdownThread = new Thread() {
 
             @Override
@@ -1383,14 +1383,13 @@ class SJTable extends JDialog {
                 int c = countdown;
 
                 while (--c >= 0) {
-                	if(interrupted == true) {
-                		insertButton.setText(JDLocale.L("gui.component.textarea.context.paste", "Einfügen"));
-                		return ;
-                	}
+                    if (interrupted == true) {
+                        insertButton.setText(JDLocale.L("gui.component.textarea.context.paste", "Einfügen"));
+                        return;
+                    }
                     if (countdownThread == null) { return; }
-                    
-                	insertButton.setText(JDUtilities.formatSeconds(c) + ">>" + JDLocale.L("gui.component.textarea.context.paste", "Einfügen"));
-                    
+
+                    insertButton.setText(JDUtilities.formatSeconds(c) + ">>" + JDLocale.L("gui.component.textarea.context.paste", "Einfügen"));
 
                     try {
                         Thread.sleep(1000);

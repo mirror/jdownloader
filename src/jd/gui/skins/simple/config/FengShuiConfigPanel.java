@@ -83,7 +83,6 @@ import jd.http.Encoding;
 import jd.plugins.PluginForHost;
 import jd.router.GetRouterInfo;
 import jd.router.RInfo;
-import jd.router.RouterInfoCollector;
 import jd.router.reconnectrecorder.JDRRGui;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
