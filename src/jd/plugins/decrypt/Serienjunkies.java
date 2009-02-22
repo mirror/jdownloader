@@ -242,7 +242,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                 progress.increase(1);
                             }
 
-                            return null;
+                            return new Vector<String>();
                         }
 
                         htmlcode = br3.getPage(url);
@@ -274,7 +274,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         progress.setColor(Color.red);
                         progress.setStatus(0);
                         progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.captcha", "Error: Captcha"));
-                        return null;
+                        return new Vector<String>();
                     }
                     active--;
 
@@ -289,7 +289,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 links.add(br.getRedirectLocation());
             }
             Form[] forms = br3.getForms();
-            Vector<Thread> threads = new Vector<Thread>();
+            final Vector<Thread> threads = new Vector<Thread>();
             final Browser[] br2 = new Browser[] { br3.cloneBrowser(), br3.cloneBrowser(), br3.cloneBrowser(), br3.cloneBrowser() };
             progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.getLinks", "get links"));
             progress.setStatus(0);
@@ -309,11 +309,12 @@ public class Serienjunkies extends PluginForDecrypt {
                         public void run() {
                             String action2 = action;
                             Browser brd = br2[bd];
+                            int errors = 0;
                             for (int j = 0; j < 2000; j++) {
                                 try {
                                     Thread.sleep(300 * j);
                                 } catch (InterruptedException e) {
-                                    e.printStackTrace();
+                                    return;
                                 }
                                 try {
 
@@ -322,9 +323,26 @@ public class Serienjunkies extends PluginForDecrypt {
                                         try {
                                             tx = brd.getPage(action2);
                                         } catch (Exception e) {
+                                            if (errors == 3) {
+                                                links.removeAllElements();
+                                                for (Thread thread : threads) {
+                                                    try {
+                                                        thread.notify();
+                                                        thread.interrupt();
 
+                                                    } catch (Exception e2) {
+                                                        // TODO: handle
+                                                        // exception
+                                                    }
+
+                                                }
+                                                threads.removeAllElements();
+                                                links.removeAllElements();
+                                                return;
+                                            }
+                                            errors++;
+                                            continue;
                                         }
-
                                         if (tx != null) {
                                             String link = new Regex(brd.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                                             if (link != null) {
@@ -360,18 +378,23 @@ public class Serienjunkies extends PluginForDecrypt {
                 }
 
             }
-
-            for (Thread t : threads) {
-                while (t.isAlive()) {
-                    synchronized (t) {
-                        try {
-                            t.wait();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+            try {
+                for (Thread t : threads) {
+                    while (t.isAlive()) {
+                        synchronized (t) {
+                            try {
+                                t.wait();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 }
+            } catch (Exception e) {
+                progress.finalize();
+                return null;
             }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -570,6 +593,8 @@ public class Serienjunkies extends PluginForDecrypt {
             } else if (parameter.indexOf(subdomain + "serienjunkies.org") >= 0 || parameter.indexOf("/sjsafe/") >= 0) {
                 logger.info("sjsafe link");
                 helpvector = ContainerLinks(parameter, cryptedLink);
+                if(helpvector==null)
+                    return null;
                 for (int j = 0; j < helpvector.size(); j++) {
                     decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpvector.get(j))));
                 }
@@ -582,6 +607,8 @@ public class Serienjunkies extends PluginForDecrypt {
                         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpstring)));
                     } else if (links[i][0].indexOf("/sjsafe/") >= 0) {
                         helpvector = ContainerLinks(links[i][0], cryptedLink);
+                        if(helpvector==null)
+                            return null;
                         for (int j = 0; j < helpvector.size(); j++) {
                             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpvector.get(j))));
                         }
@@ -1118,13 +1145,15 @@ public class Serienjunkies extends PluginForDecrypt {
 
                 }
                 ArrayList<DownloadLink> dls = getDLinks(link, cryptedLink);
-                if (dls.size() < 1) {
+                if (dls!=null && dls.size() < 1) {
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                     if (linkStatus.getErrorMessage() == null || linkStatus.getErrorMessage().endsWith("")) linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.pageerror", "SJ liefert keine Downloadlinks"));
                     logger.warning("SJ returned no Downloadlinks");
                 } else {
-                    ArrayList<DownloadLink> finaldls = new ArrayList<DownloadLink>();
-
+                    ArrayList<DownloadLink> finaldls = null;
+                    if(dls!=null)
+                    {
+                    finaldls = new ArrayList<DownloadLink>();
                     for (DownloadLink dls2 : dls) {
                         DistributeData distributeData = new DistributeData(dls2.getDownloadURL());
                         finaldls.addAll(distributeData.findLinks());
@@ -1147,10 +1176,14 @@ public class Serienjunkies extends PluginForDecrypt {
                             finaldls = null;
                         }
                     }
+                    }
                     if (finaldls == null) {
                         if (mirrors == null) {
-                            String[] info = getLinkName(downloadLink.getDownloadURL(), br.getPage("http://serienjunkies.org/?s=" + downloadLink.getDownloadURL().replaceFirst(".*/", "").replaceFirst("\\.html?$", "") + "&submit=Suchen"));
-                            mirrors = getMirrors(downloadLink.getDownloadURL(), info[2]);
+                            Browser br2k= new Browser();
+                            br2k.getPage("http://serienjunkies.org/?s=" + cryptedLink.getCryptedUrl().replaceFirst(".*/", "").replaceFirst("\\.html?$", ""));
+                            String[] info = getLinkName(cryptedLink.getCryptedUrl(), br2k.toString());
+                            logger.warning("use Mirror");
+                            mirrors = getMirrors(cryptedLink.getCryptedUrl(), info[2]);
                         }
                         if (mirrors != null) {
                             for (String element : mirrors) {
@@ -1249,22 +1282,18 @@ class SJTable extends JDialog {
         		interrupted = true;
         	}
 
-			@Override
 			public void mouseEntered(MouseEvent e) {
 				interrupted = true;
 			}
 
-			@Override
 			public void mouseExited(MouseEvent e) {
 				interrupted = true;
 			}
 
-			@Override
 			public void mousePressed(MouseEvent e) {
 				interrupted = true;
 			}
 
-			@Override
 			public void mouseReleased(MouseEvent e) {
 				interrupted = true;
 			} });
