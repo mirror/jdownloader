@@ -34,28 +34,22 @@ import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-
 import jd.controlling.DistributeData;
-
 import jd.plugins.LinkStatus;
-
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.UTILITIES;
-
 import jd.controlling.reconnect.Reconnecter;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -70,6 +64,20 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import javax.swing.ImageIcon;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.SwingConstants;
+import javax.swing.event.TableModelEvent;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableColumn;
+import jd.utils.JDTheme;
 
 public class Serienjunkies extends PluginForDecrypt {
     // private static final String host = "Serienjunkies.org";
@@ -118,8 +126,8 @@ public class Serienjunkies extends PluginForDecrypt {
         boolean cat = false;
         if (data == null) return false;
         data = data.replaceAll("http://vote.serienjunkies.org/?", "");
-        if (data.contains("serienjunkies.org") && (data.contains("/?cat=") || data.contains("/?p="))) {
-            cat = getSerienJunkiesCat(data.contains("/?p=")) != sCatNoThing;
+        if (data.contains("serienjunkies.org") && (data.contains("/?cat="))) {
+            cat = getSerienJunkiesCat() != sCatNoThing;
         }
         boolean rscom = (Boolean) getPluginConfig().getProperty("USE_RAPIDSHARE_V2", true);
         boolean rsde = (Boolean) getPluginConfig().getProperty("USE_RAPIDSHAREDE_V2", true);
@@ -145,9 +153,10 @@ public class Serienjunkies extends PluginForDecrypt {
             if (filefactory) {
                 hosterStr += isNext() + "ff[\\_\\-]";
             }
+            hosterStr += isNext() + "p\\=[\\d]+";
             if (cat) {
                 hosterStr += isNext() + "cat\\=[\\d]+";
-                hosterStr += isNext() + "p\\=[\\d]+";
+
             }
 
             hosterStr += ")";
@@ -261,7 +270,10 @@ public class Serienjunkies extends PluginForDecrypt {
                     } catch (Exception e) {
                         active--;
                         e.printStackTrace();
-                        break;
+                        progress.setColor(Color.red);
+                        progress.setStatus(0);
+                        progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.captcha", "Error: Captcha"));
+                        return  null;
                     }
                     active--;
 
@@ -604,7 +616,7 @@ public class Serienjunkies extends PluginForDecrypt {
             linkName = parameter.replaceFirst(".*/..[\\_\\-]", "").replaceFirst("\\.html?", "");
         }
         String hostname = getHostname(parameter);
-        DownloadLink dlink = new DownloadLink(null, name, getHost(), "sjdp://" + hostname + "/" + linkName, false);
+        DownloadLink dlink = new DownloadLink(null, name, hostname, "http://SerienJunkiesError.org/" + linkName, false);
         dlink.setName(linkName);
         dlink.setProperty("link", parameter);
         dlink.setProperty("mirrors", mirrors);
@@ -622,6 +634,10 @@ public class Serienjunkies extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> ar = decryptItMain(param);
+        if (ar.size() > 1) {
+            SJTable sjt = new SJTable(SimpleGUI.CURRENTGUI.getFrame(), ar);
+            ar = sjt.dls;
+        }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         SerienjunkiesThread[] threads = new SerienjunkiesThread[ar.size()];
         this.progress = progress;
@@ -653,67 +669,70 @@ public class Serienjunkies extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (parameter.matches(".*\\?(cat|p)\\=[\\d]+.*")) {
             boolean isP = parameter.contains("/?p=");
-            int catst = getSerienJunkiesCat(isP);
+            int catst = sCatGrabb;
+            if(!isP)
+                catst = getSerienJunkiesCat();
             scatChecked = false;
             int cat = Integer.parseInt(parameter.replaceFirst(".*\\?(cat|p)\\=", "").replaceFirst("[^\\d].*", ""));
             if (sCatNewestDownload == catst) {
                 br.getPage("http://serienjunkies.org/");
 
-                Pattern pattern = Pattern.compile("<a href=\"http://serienjunkies.org/\\?cat\\=([\\d]+)\">(.*?)</a><br", Pattern.CASE_INSENSITIVE);
+                Pattern pattern = Pattern.compile("<a href=\"http://serienjunkies.org/\\?cat\\="+cat+"\">(.*?)</a><br", Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(br + "");
-                String name = null;
+                ArrayList<String> names = new ArrayList<String>();
                 while (matcher.find()) {
-                    if (Integer.parseInt(matcher.group(1)) == cat) {
-                        name = matcher.group(2).toLowerCase();
-                        break;
-                    }
+                        names.add(matcher.group(1).toLowerCase());
                 }
-                if (name == null) { return decryptedLinks; }
+                if (names.size()==0) { return decryptedLinks; }
                 br.getPage(parameter);
-                name += " ";
-                String[] bet = null;
-                while (bet == null) {
-                    name = name.substring(0, name.length() - 1);
-                    if (name.length() == 0) { return decryptedLinks; }
-                    try {
-                        bet = br.getRegex("<p><strong>(" + name + ".*?)</strong>(.*?)</p>").getMatches()[0];
-                    } catch (Exception e) {
-                        // TODO: handle exception
-                    }
-
-                }
                 lastHtmlCode = br + "";
-                String[] links = HTMLParser.getHttpLinks(bet[1], br.getRequest().getUrl().toString());
-                if (getPluginConfig().getStringProperty("SJ_MIRRORMANAGEMENT", mirrorManagement[0]).equals(mirrorManagement[2])) {
-                    for (String element : links) {
-                        String[] info = getLinkName(element, lastHtmlCode);
-                        decryptedLinks.add(createdl(element, info));
-                    }
-                } else {
-                    boolean got = false;
-                    for (String element : links) {
-                        String[] info = getLinkName(element, lastHtmlCode);
-                        DownloadLink dl_link = createdl(element, info);
-
-                        if (JDUtilities.getPluginForHost(getHostname(element)).getMaxSimultanDownloadNum(dl_link) > 1) {
-
-                            decryptedLinks.add(dl_link);
-
-                            got = true;
-                            break;
+                for (String name : names) {
+                    name += " ";
+                    String[] bet = null;
+                    while (bet == null) {
+                        name = name.substring(0, name.length() - 1);
+                        if (name.length() == 0) { return decryptedLinks; }
+                        try {
+                            bet = br.getRegex("<p><strong>(" + name + ".*?)</strong>(.*?)</p>").getMatches()[0];
+                        } catch (Exception e) {
+                            // TODO: handle exception
                         }
 
                     }
-                    if (!got) {
+
+                    String[] links = HTMLParser.getHttpLinks(bet[1], br.getRequest().getUrl().toString());
+                    if (getPluginConfig().getStringProperty("SJ_MIRRORMANAGEMENT", mirrorManagement[0]).equals(mirrorManagement[2])) {
+                        for (String element : links) {
+                            String[] info = getLinkName(element, lastHtmlCode);
+                            decryptedLinks.add(createdl(element, info));
+                        }
+                    } else {
+                        boolean got = false;
                         for (String element : links) {
                             String[] info = getLinkName(element, lastHtmlCode);
                             DownloadLink dl_link = createdl(element, info);
-                            decryptedLinks.add(dl_link);
-                            break;
 
+                            if (JDUtilities.getPluginForHost(getHostname(element)).getMaxSimultanDownloadNum(dl_link) > 1) {
+
+                                decryptedLinks.add(dl_link);
+
+                                got = true;
+                                break;
+                            }
+
+                        }
+                        if (!got) {
+                            for (String element : links) {
+                                String[] info = getLinkName(element, lastHtmlCode);
+                                DownloadLink dl_link = createdl(element, info);
+                                decryptedLinks.add(dl_link);
+                                break;
+
+                            }
                         }
                     }
                 }
+
             } else if (catst == sCatGrabb) {
                 String htmlcode = "";
                 if (isP) {
@@ -938,9 +957,9 @@ public class Serienjunkies extends PluginForDecrypt {
         return ret.toArray(new String[ret.size()]);
     }
 
-    private int getSerienJunkiesCat(boolean isP) {
+    private int getSerienJunkiesCat() {
 
-        sCatDialog(isP);
+        sCatDialog();
         return useScat[0];
 
     }
@@ -959,7 +978,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
     }
 
-    private void sCatDialog(final boolean isP) {
+    private void sCatDialog() {
         if (scatChecked || useScat[1] == saveScat) { return; }
         new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
 
@@ -973,7 +992,6 @@ public class Serienjunkies extends PluginForDecrypt {
                 setModal(true);
                 setTitle(JDLocale.L("plugins.SerienJunkies.CatDialog.title", "SerienJunkies ::CAT::"));
                 setAlwaysOnTop(true);
-                setLocation(20, 20);
                 JPanel panel = new JPanel(new GridBagLayout());
                 final class meth {
                     public String name;
@@ -1022,17 +1040,10 @@ public class Serienjunkies extends PluginForDecrypt {
 
                     }
                 });
-                meth[] meths = null;
-                if (isP) {
-                    meths = new meth[2];
-                    meths[0] = new meth("Staffel nicht hinzufügen", sCatNoThing);
-                    meths[1] = new meth("Alle Serien in dieser Staffel hinzufügen", sCatGrabb);
-                } else {
-                    meths = new meth[3];
-                    meths[0] = new meth("Kategorie nicht hinzufügen", sCatNoThing);
-                    meths[1] = new meth("Alle Serien in dieser Kategorie hinzufügen", sCatGrabb);
-                    meths[2] = new meth("Den neusten Download dieser Kategorie hinzufügen", sCatNewestDownload);
-                }
+                meth[] meths = new meth[3];
+                meths[0] = new meth("Kategorie nicht hinzufügen", sCatNoThing);
+                meths[1] = new meth("Alle Serien in dieser Kategorie hinzufügen", sCatGrabb);
+                meths[2] = new meth("Den neusten Download dieser Kategorie hinzufügen", sCatNewestDownload);
                 methods = new JComboBox(meths);
                 checkScat = new JCheckBox("Einstellungen für diese Sitzung beibehalten?", true);
                 Insets insets = new Insets(0, 0, 0, 0);
@@ -1051,6 +1062,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
                 add(panel, BorderLayout.CENTER);
                 pack();
+                setLocation(JDUtilities.getCenterOfComponent(null, this));
                 setVisible(true);
             }
 
@@ -1202,5 +1214,144 @@ public class Serienjunkies extends PluginForDecrypt {
             }
 
         }
+    }
+}
+
+@SuppressWarnings("serial")
+class SJTable extends JDialog {
+    protected JTable m_table;
+
+    protected SJTM m_data;
+
+    protected JLabel m_title;
+    public ArrayList<DownloadLink> dls;
+
+    public SJTable(JFrame owner, ArrayList<DownloadLink> DownloadLinks) {
+        super(owner);
+        this.setTitle("SerienJunkies Linkverwaltung");
+        setSize(600, 300);
+        this.setLocation(JDUtilities.getCenterOfComponent(null, this));
+        this.dls = DownloadLinks;
+        m_data = new SJTM(dls);
+        setModal(true);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        m_title = new JLabel("Unerwünschte Links einfach löschen", new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.config.infoFile"))), SwingConstants.LEFT);
+        m_title.setFont(new Font("TimesRoman", Font.BOLD, 24));
+        m_title.setForeground(Color.black);
+        getContentPane().add(m_title, BorderLayout.NORTH);
+
+        m_table = new JTable();
+        m_table.setAutoCreateColumnsFromModel(false);
+        m_table.setModel(m_data);
+
+        for (int k = 0; k < SJTM.m_columns.length; k++) {
+            DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
+            renderer.setHorizontalAlignment(SJTM.m_columns[k].m_alignment);
+            TableColumn column = new TableColumn(k, SJTM.m_columns[k].m_width, renderer, null);
+            m_table.addColumn(column);
+        }
+        JTableHeader header = m_table.getTableHeader();
+        header.setUpdateTableInRealTime(false);
+        JScrollPane ps = new JScrollPane();
+        ps.getViewport().add(m_table);
+        getContentPane().add(ps, BorderLayout.CENTER);
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout());
+        JButton del = new JButton("Löschen");
+        del.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int[] rows = m_table.getSelectedRows();
+                ArrayList<DownloadLink> delDls = new ArrayList<DownloadLink>();
+                for (int j : rows) {
+                    delDls.add(dls.get(j));
+                }
+                dls.removeAll(delDls);
+                m_table.tableChanged(new TableModelEvent(m_table.getModel()));
+
+            }
+        });
+        panel.add(del);
+        JButton insertButton = new JButton("Übernehmen");
+        insertButton.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+
+            }
+        });
+        panel.add(insertButton);
+        getContentPane().add(panel, BorderLayout.SOUTH);
+        setVisible(true);
+    }
+
+    public static void main(String argv[]) {
+        ArrayList<DownloadLink> dls = new ArrayList<DownloadLink>();
+        DownloadLink dl = new DownloadLink(null, "test", "RapidShare", null, false);
+        dl.setDownloadSize(20000);
+        dls.add(dl);
+        for (int i = 0; i < 10; i++) {
+            dl = new DownloadLink(null, "test" + i, "NetLoad", null, false);
+            dl.setDownloadSize(20000);
+            dls.add(dl);
+        }
+        new SJTable(new JFrame(), dls);
+    }
+}
+
+class ColumnData {
+    public String m_title;
+
+    public int m_width;
+
+    public int m_alignment;
+
+    public ColumnData(String title, int width, int alignment) {
+        m_title = title;
+        m_width = width;
+        m_alignment = alignment;
+    }
+}
+
+@SuppressWarnings("serial")
+class SJTM extends AbstractTableModel {
+    static final public ColumnData m_columns[] = { new ColumnData("Name", 200, JLabel.LEFT), new ColumnData("Hoster", 160, JLabel.LEFT), new ColumnData("Größe", 100, JLabel.RIGHT) };
+
+    ArrayList<DownloadLink> dls;
+
+    public SJTM(ArrayList<DownloadLink> dls) {
+        this.dls = dls;
+    }
+
+    public int getRowCount() {
+        return dls == null ? 0 : dls.size();
+    }
+
+    public int getColumnCount() {
+        return m_columns.length;
+    }
+
+    public String getColumnName(int column) {
+        return m_columns[column].m_title;
+    }
+
+    public boolean isCellEditable(int nRow, int nCol) {
+        return false;
+    }
+
+    public Object getValueAt(int nRow, int nCol) {
+        switch (nCol) {
+        case 0:
+            return dls.get(nRow).getName();
+        case 1:
+            return dls.get(nRow).getHost();
+        case 2: {
+            long size = dls.get(nRow).getDownloadSize();
+            if (size > 1048576)
+                return size / 1048576 + " mb";
+            else
+                return size / 1024 + " kb";
+        }
+        }
+        return "";
     }
 }
