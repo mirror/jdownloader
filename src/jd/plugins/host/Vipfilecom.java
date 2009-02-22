@@ -22,6 +22,8 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -31,6 +33,8 @@ public class Vipfilecom extends PluginForHost {
 
     public Vipfilecom(PluginWrapper wrapper) {
         super(wrapper);
+        this.setAccountwithoutUsername(true);
+        enablePremium("http://vip-file.com/tmpl/premium_en.php");
     }
 
     @Override
@@ -84,6 +88,17 @@ public class Vipfilecom extends PluginForHost {
             br.setFollowRedirects(true);
         }
         br.openDownload(downloadLink, link, true, 0).startDownload();
+    }
+
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        getFileInformation(downloadLink);
+        Form form = br.getForm(1);
+        form.put("pass", Encoding.urlEncode(account.getPass()));
+        br.submitForm(form);
+        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(.*?vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        dl = br.openDownload(downloadLink, url, true, 0);
+        dl.startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
