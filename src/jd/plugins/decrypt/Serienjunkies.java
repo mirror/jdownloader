@@ -24,6 +24,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
@@ -1218,9 +1220,12 @@ public class Serienjunkies extends PluginForDecrypt {
 @SuppressWarnings("serial")
 class SJTable extends JDialog {
     protected JTable m_table;
-
+    private Thread countdownThread;
+    private int countdown = 60;
+    private boolean interrupted = false;
     protected SJTM m_data;
-
+    private JButton insertButton;
+    
     protected JLabel m_title;
     public ArrayList<DownloadLink> dls;
 
@@ -1238,7 +1243,32 @@ class SJTable extends JDialog {
         m_table = new JTable();
         m_table.setAutoCreateColumnsFromModel(false);
         m_table.setModel(m_data);
+        
+        m_table.addMouseListener(new MouseListener() {
+        	public void mouseClicked(MouseEvent e){
+        		interrupted = true;
+        	}
 
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				interrupted = true;
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				interrupted = true;
+			}
+
+			@Override
+			public void mousePressed(MouseEvent e) {
+				interrupted = true;
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				interrupted = true;
+			} });
+        
         for (int k = 0; k < SJTM.m_columns.length; k++) {
             DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
             renderer.setHorizontalAlignment(SJTM.m_columns[k].m_alignment);
@@ -1286,6 +1316,7 @@ class SJTable extends JDialog {
         });
         del.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+            	interrupted = true;
                 int[] rows = m_table.getSelectedRows();
                 ArrayList<DownloadLink> delDls = new ArrayList<DownloadLink>();
                 for (int j : rows) {
@@ -1297,7 +1328,7 @@ class SJTable extends JDialog {
             }
         });
         panel.add(del);
-        JButton insertButton = new JButton(JDLocale.L("gui.component.textarea.context.paste", "Einfügen"));
+        insertButton = new JButton(JDLocale.L("gui.component.textarea.context.paste", "Einfügen"));
         insertButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -1307,6 +1338,46 @@ class SJTable extends JDialog {
         });
         panel.add(insertButton);
         getContentPane().add(panel, BorderLayout.SOUTH);
+        
+        countdownThread = new Thread() {
+
+            @Override
+            public void run() {
+
+                while (!isVisible() && isDisplayable()) {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                int c = countdown;
+
+                while (--c >= 0) {
+                	if(interrupted == true) {
+                		insertButton.setText(JDLocale.L("gui.component.textarea.context.paste", "Einfügen"));
+                		return ;
+                	}
+                    if (countdownThread == null) { return; }
+                    
+                	insertButton.setText(JDUtilities.formatSeconds(c) + ">>" + JDLocale.L("gui.component.textarea.context.paste", "Einfügen"));
+                    
+
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                    }
+                    if (!isVisible()) {
+
+                    return; }
+
+                }
+                dispose();
+
+            }
+
+        };
+        countdownThread.start();
         setVisible(true);
     }
 }
