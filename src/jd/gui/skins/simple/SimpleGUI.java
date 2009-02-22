@@ -678,8 +678,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         initActions();
         initMenuBar();
-        buildUI();
         localize();
+        buildUI();
+     
 
         frame.setName("MAINFRAME");
         Dimension dim = SimpleGUI.getLastDimension(frame, null);
@@ -1577,7 +1578,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         UIManager.put("FileChooser.win32.newFolder", JDLocale.L("gui.filechooser.win32.newFolder","New folder"));
         UIManager.put("FileChooser.win32.newFolder.subsequent", JDLocale.L("gui.filechooser.win32.newFolder.subsequent","New folder {0}"));
         UIManager.put("FileChooser.pathLabelText", JDLocale.L("gui.filechooser.pathLabelText","Path"));
-        UIManager.put("FileChooser.refreshMenuText", JDLocale.L("gui.filechooser.refreshMenuText","@Refresh"));
+
+        UIManager.put("JXTable.column.packSelected", JDLocale.L("gui.treetable.packSelected","Pack selected column"));
+        UIManager.put("JXTable.column.packAll", JDLocale.L("gui.treetable.packAll","Pack all columns"));
+        UIManager.put("JXTable.column.horizontalScroll", JDLocale.L("gui.treetable.horizontalScroll","Horizontal scroll"));
 
     }
 
