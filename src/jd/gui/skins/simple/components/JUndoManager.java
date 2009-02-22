@@ -1,266 +1,97 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.gui.skins.simple.components;
 
+import java.awt.Event;
 import java.awt.event.ActionEvent;
-import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
-import javax.swing.text.AbstractDocument;
 import javax.swing.text.JTextComponent;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
-import javax.swing.undo.CompoundEdit;
 import javax.swing.undo.UndoManager;
-import javax.swing.undo.UndoableEdit;
 
-public class JUndoManager extends UndoManager implements UndoableEditListener, DocumentListener {
-    /* http://tips4java.wordpress.com/2008/10/27/compound-undo-manager/ */
+public class JUndoManager {
 
-    private static final long serialVersionUID = 4262915312589571391L;
-    private UndoManager undoManager;
-    private CompoundEdit compoundEdit;
-    private JTextComponent textComponent;
-    private UndoAction undoAction;
-    private RedoAction redoAction;
-
-    // These fields are used to help determine whether the edit is an
-    // incremental edit. The offset and length should increase by 1 for
-    // each character added or decrease by 1 for each character removed.
-
-    private int lastOffset;
-    private int lastLength;
-
-    public JUndoManager(JTextComponent textComponent) {
-        this.textComponent = textComponent;
-        undoManager = this;
-        undoAction = new UndoAction();
-        redoAction = new RedoAction();
-        textComponent.getDocument().addUndoableEditListener(this);
-    }
-
-    /*
-     * Add a DocumentLister before the undo is done so we can position the Caret
-     * correctly as each edit is undone.
+    /**
+     * Adds Undo/Redo capabilities to the passed in JTextComponent, it also
+     * binds the JTextComponent with the Ctrl-z and Ctrl-y key strokes.
+     * 
+     * @param area
      */
-    public void undo() {
-        textComponent.getDocument().addDocumentListener(this);
-        super.undo();
-        textComponent.getDocument().removeDocumentListener(this);
-    }
+    public static void addUndoRedo(JTextComponent area) {
 
-    /*
-     * Add a DocumentLister before the redo is done so we can position the Caret
-     * correctly as each edit is redone.
-     */
-    public void redo() {
-        textComponent.getDocument().addDocumentListener(this);
-        super.redo();
-        textComponent.getDocument().removeDocumentListener(this);
-    }
+        final UndoManager undo = new UndoManager();
 
-    /*
-     * Whenever an UndoableEdit happens the edit will either be absorbed by the
-     * current compound edit or a new compound edit will be started
-     */
-    public void undoableEditHappened(UndoableEditEvent e) {
-        // Start a new compound edit
-
-        if (compoundEdit == null) {
-            compoundEdit = startCompoundEdit(e.getEdit());
-            return;
-        }
-
-        // Check for an attribute change
-
-        AbstractDocument.DefaultDocumentEvent event = (AbstractDocument.DefaultDocumentEvent) e.getEdit();
-
-        if (event.getType().equals(DocumentEvent.EventType.CHANGE)) {
-            compoundEdit.addEdit(e.getEdit());
-            return;
-        }
-
-        // Check for an incremental edit or backspace.
-        // The Change in Caret position and Document length should both be
-        // either 1 or -1.
-
-        int offsetChange = textComponent.getCaretPosition() - lastOffset;
-        int lengthChange = textComponent.getDocument().getLength() - lastLength;
-
-        if (offsetChange == lengthChange && Math.abs(offsetChange) == 1) {
-            compoundEdit.addEdit(e.getEdit());
-            lastOffset = textComponent.getCaretPosition();
-            lastLength = textComponent.getDocument().getLength();
-            return;
-        }
-
-        // Not incremental edit, end previous edit and start a new one
-
-        compoundEdit.end();
-        compoundEdit = startCompoundEdit(e.getEdit());
-    }
-
-    /*
-     * Each CompoundEdit will store a group of related incremental edits (ie.
-     * each character typed or backspaced is an incremental edit)
-     */
-    private CompoundEdit startCompoundEdit(UndoableEdit anEdit) {
-        // Track Caret and Document information of this compound edit
-
-        lastOffset = textComponent.getCaretPosition();
-        lastLength = textComponent.getDocument().getLength();
-
-        // The compound edit is used to store incremental edits
-
-        compoundEdit = new MyCompoundEdit();
-        compoundEdit.addEdit(anEdit);
-
-        // The compound edit is added to the UndoManager. All incremental
-        // edits stored in the compound edit will be undone/redone at once
-
-        addEdit(compoundEdit);
-
-        undoAction.updateUndoState();
-        redoAction.updateRedoState();
-
-        return compoundEdit;
-    }
-
-    /*
-     * The Action to Undo changes to the Document. The state of the Action is
-     * managed by the CompoundUndoManager
-     */
-    public Action getUndoAction() {
-        return undoAction;
-    }
-
-    /*
-     * The Action to Redo changes to the Document. The state of the Action is
-     * managed by the CompoundUndoManager
-     */
-    public Action getRedoAction() {
-        return redoAction;
-    }
-
-    //
-    // Implement DocumentListener
-    //
-    /*
-     * Updates to the Document as a result of Undo/Redo will cause the Caret to
-     * be repositioned
-     */
-    public void insertUpdate(final DocumentEvent e) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                int offset = e.getOffset() + e.getLength();
-                offset = Math.min(offset, textComponent.getDocument().getLength());
-                textComponent.setCaretPosition(offset);
+        // Listen for undo and redo events
+        area.getDocument().addUndoableEditListener(new UndoableEditListener() {
+            public void undoableEditHappened(UndoableEditEvent evt) {
+                undo.addEdit(evt.getEdit());
             }
         });
-    }
 
-    public void removeUpdate(DocumentEvent e) {
-        textComponent.setCaretPosition(e.getOffset());
-    }
+        // action for the undo command
+        AbstractAction undo_action = new AbstractAction() {
 
-    public void changedUpdate(DocumentEvent e) {
-    }
+            private static final long serialVersionUID = -1151050746658519934L;
 
-    class MyCompoundEdit extends CompoundEdit {
-        /**
-             * 
-             */
-        private static final long serialVersionUID = -7698794151349905028L;
-
-        public boolean isInProgress() {
-            // in order for the canUndo() and canRedo() methods to work
-            // assume that the compound edit is never in progress
-
-            return false;
-        }
-
-        public void undo() throws CannotUndoException {
-            // End the edit so future edits don't get absorbed by this edit
-
-            if (compoundEdit != null) compoundEdit.end();
-
-            super.undo();
-
-            // Always start a new compound edit after an undo
-
-            compoundEdit = null;
-        }
-    }
-
-    /*
-     * Perform the Undo and update the state of the undo/redo Actions
-     */
-    class UndoAction extends AbstractAction {
-        /**
-             * 
-             */
-        private static final long serialVersionUID = 6331407660157979779L;
-
-        public UndoAction() {
-            putValue(Action.NAME, "Undo");
-            putValue(Action.SHORT_DESCRIPTION, getValue(Action.NAME));
-            putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_U));
-            putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke("control Z"));
-            setEnabled(false);
-        }
-
-        public void actionPerformed(ActionEvent e) {
-            try {
-                undoManager.undo();
-                textComponent.requestFocusInWindow();
-            } catch (CannotUndoException ex) {
+            public void actionPerformed(ActionEvent evt) {
+                try {
+                    if (undo.canUndo()) {
+                        undo.undo();
+                    }
+                } catch (CannotUndoException e) {
+                    e.printStackTrace();
+                }
             }
 
-            updateUndoState();
-            redoAction.updateRedoState();
-        }
+        };
 
-        private void updateUndoState() {
-            setEnabled(undoManager.canUndo());
-        }
-    }
+        // action for the redo command
+        AbstractAction redo_action = new AbstractAction() {
 
-    /*
-     * Perform the Redo and update the state of the undo/redo Actions
-     */
-    class RedoAction extends AbstractAction {
-        /**
-             * 
-             */
-        private static final long serialVersionUID = -6056185015759289891L;
+            private static final long serialVersionUID = 7373087464871959970L;
 
-        public RedoAction() {
-            putValue(Action.NAME, "Redo");
-            putValue(Action.SHORT_DESCRIPTION, getValue(Action.NAME));
-            putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_R));
-            putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK));
-            setEnabled(false);
-        }
-
-        public void actionPerformed(ActionEvent e) {
-            try {
-                undoManager.redo();
-                textComponent.requestFocusInWindow();
-            } catch (CannotRedoException ex) {
+            public void actionPerformed(ActionEvent evt) {
+                try {
+                    if (undo.canRedo()) {
+                        undo.redo();
+                    }
+                } catch (CannotRedoException e) {
+                    e.printStackTrace();
+                }
             }
 
-            updateRedoState();
-            undoAction.updateUndoState();
-        }
+        };
 
-        protected void updateRedoState() {
-            setEnabled(undoManager.canRedo());
-        }
+        // Create an undo action and add it to the text component
+        area.getActionMap().put("Undo", undo_action);
+
+        // Bind the undo action to ctl-Z
+        area.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, Event.CTRL_MASK), "Undo");
+
+        // Create a redo action and add it to the text component
+        area.getActionMap().put("Redo", redo_action);
+
+        // Bind the redo action to ctl-Y
+        area.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_Y, Event.CTRL_MASK), "Redo");
     }
 }
