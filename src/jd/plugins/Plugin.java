@@ -43,6 +43,7 @@ import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -128,13 +129,7 @@ public abstract class Plugin implements ActionListener {
 
     public static String getUserInput(String message, DownloadLink link) throws PluginException, InterruptedException {
         String password = JDUtilities.getUserInput(message, link);
-        if (password == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        return password;
-    }
-
-    public static String getUserInput(String message, String defaultmessage, DownloadLink link) throws PluginException, InterruptedException {
-        String password = JDUtilities.getUserInput(message, defaultmessage, link);
-        if (password == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (password == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
         return password;
     }
 

@@ -948,7 +948,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             wrapper.getDownloadLink().requestGuiUpdate();
 
             if (this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
-                String pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.LF("plugins.optional.jdunrar.askForPassword", "Password for %s?", wrapper.getDownloadLink().getName()));
+                String pass = JDUtilities.getGUI().getInputFromUser(JDLocale.LF("plugins.optional.jdunrar.askForPassword", "Password for %s?", wrapper.getDownloadLink().getName()), null);
                 if (pass == null) {
                     ls.addStatus(LinkStatus.ERROR_POST_PROCESS);
                     ls.setStatusText(JDLocale.L("plugins.optional.jdunrar.status.extractfailedpass", "Extract failed (password)"));
@@ -1176,7 +1176,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             pc.setStatusText(wrapper.getFile().getName() + ": " + JDLocale.L("plugins.optional.jdunrar.status.extractfailedpass", "Extract failed (password)"));
 
             if (this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
-                String pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.LF("plugins.optional.jdunrar.askForPassword", "Password for %s?", wrapper.getDownloadLink().getName()));
+                String pass = JDUtilities.getGUI().getInputFromUser(JDLocale.LF("plugins.optional.jdunrar.askForPassword", "Password for %s?", wrapper.getDownloadLink().getName()), null);
                 if (pass == null) {
                     this.onFinished(wrapper);
                     break;

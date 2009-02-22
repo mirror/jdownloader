@@ -18,11 +18,15 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -37,6 +41,8 @@ public class ShareNownet extends PluginForHost {
 
     public ShareNownet(PluginWrapper wrapper) {
         super(wrapper);
+        // this.enablePremium("http://share-now.net/?site=premium"); noch net
+        // fertig
     }
 
     @Override
@@ -89,6 +95,54 @@ public class ShareNownet extends PluginForHost {
         if (dl.getConnection().isContentDisposition() && dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FATAL, "Server Error");
         /* Datei herunterladen */
         dl.startDownload();
+    }
+
+    private void login(Account account) throws IOException, PluginException {
+        setBrowserExclusive();
+        br.getPage("http://share-now.net/?lang=de");
+        br.postPage("http://share-now.net/?lang=de", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&loginuser=1");
+        if (br.getCookie("http://share-now.net", "user") == null) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+        if (br.getCookie("http://share-now.net", "pass") == null) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
+    private void isExpired(Account account) throws IOException, PluginException {
+        br.getPage("http://netload.in/index.php?id=2");
+        String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0).trim();
+        if (validUntil != null && new Regex(validUntil.trim(), "kein").matches()) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
+    public AccountInfo getAccountInformation(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        try {
+            isExpired(account);
+        } catch (PluginException e) {
+            ai.setExpired(true);
+            return ai;
+        }
+        String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0).trim();
+        String days = new Regex(validUntil, "([\\d]+) ?Tage").getMatch(0);
+        String hours = new Regex(validUntil, "([\\d]+) ?Stunde").getMatch(0);
+        long res = 0;
+        if (days != null) res += Long.parseLong(days.trim()) * 24 * 60 * 60 * 1000;
+        if (hours != null) res += Long.parseLong(hours.trim()) * 60 * 60 * 1000;
+        res += new Date().getTime();
+        ai.setValidUntil(res);
+        return ai;
     }
 
     public int getMaxSimultanFreeDownloadNum() {

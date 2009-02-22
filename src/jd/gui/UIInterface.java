@@ -208,6 +208,15 @@ public interface UIInterface extends ControlListener {
     public String showUserInputDialog(String string, String def);
 
     /**
+     * Dieser InputDialog hat einen Timeout
+     * 
+     * @param message
+     * @param def
+     * @return
+     */
+    public String getInputFromUser(String message, String def);
+
+    /**
      * Zeigt die AccountInformationen an
      * 
      * @param pluginForHost

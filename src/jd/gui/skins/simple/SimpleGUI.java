@@ -334,6 +334,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String PARAM_DCLICKPACKAGE = "PARAM_DCLICKPACKAGE";
 
+    public static final String PARAM_INPUTTIMEOUT = "PARAM_INPUTTIMEOUT";
+
     public static final String SELECTED_CONFIG_TAB = "SELECTED_CONFIG_TAB";
 
     /**
@@ -680,7 +682,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         initMenuBar();
         localize();
         buildUI();
-     
 
         frame.setName("MAINFRAME");
         Dimension dim = SimpleGUI.getLastDimension(frame, null);
@@ -780,7 +781,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         case JDAction.APP_SAVE_DLC:
             JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
             fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
-            fc.setDialogTitle(JDLocale.L("gui.filechooser.savelistasdlc","Save list in DLC file"));
+            fc.setDialogTitle(JDLocale.L("gui.filechooser.savelistasdlc", "Save list in DLC file"));
             fc.showSaveDialog(frame);
             File ret = fc.getSelectedFile();
             if (ret == null) { return; }
@@ -794,7 +795,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case JDAction.APP_LOAD_DLC:
             fc = new JDFileChooser("_LOADSAVEDLC");
-            fc.setDialogTitle(JDLocale.L("gui.filechooser.loaddlc","Load DLC file"));
+            fc.setDialogTitle(JDLocale.L("gui.filechooser.loaddlc", "Load DLC file"));
             fc.setFileFilter(new JDFileFilter(null, ".dlc|.rsdf|.ccf|.linkbackup", true));
             if (fc.showOpenDialog(frame) == JDFileChooser.APPROVE_OPTION) {
                 ret = fc.getSelectedFile();
@@ -820,7 +821,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case JDAction.APP_BACKUP:
             JDInit.createQueueBackup();
-            JOptionPane.showMessageDialog(null, JDLocale.L("gui.messagewindow.backupcreated","Link list backup created successfuly."),JDLocale.L("gui.messagewindow.information","Information"),JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, JDLocale.L("gui.messagewindow.backupcreated", "Link list backup created successfuly."), JDLocale.L("gui.messagewindow.information", "Information"), JOptionPane.INFORMATION_MESSAGE);
             break;
         case JDAction.APP_RECONNECT:
             new Thread() {
@@ -1219,6 +1220,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return captchaDialog.getCaptchaText();
     }
 
+    public String getInputFromUser(final String message, final String def) {
+        InputDialog inputDialog = new InputDialog(frame, message, def);
+        return inputDialog.getInputText();
+    }
+
     private String getClipBoardImage() {
         if (ClipboardHandler.getClipboard().isEnabled()) {
             return JDTheme.V("gui.images.clipboardon");
@@ -1547,41 +1553,41 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void setDropTargetText(String text) {
         dragNDrop.setText(text);
     }
-    
-    public void localize() {
-        UIManager.put("FileChooser.upFolderToolTipText", JDLocale.L("gui.filechooser.upFolderToolTipText","Up one level"));
-        UIManager.put("FileChooser.filesOfTypeLabelText", JDLocale.L("gui.filechooser.filesOfTypeLabelText","Files of type:"));
-        UIManager.put("FileChooser.lookInLabelText", JDLocale.L("gui.filechooser.lookInLabelText","Look in:"));
-        UIManager.put("FileChooser.saveInLabelText", JDLocale.L("gui.filechooser.saveInLabelText","Save in:"));
-        UIManager.put("FileChooser.fileNameLabelText", JDLocale.L("gui.filechooser.fileNameLabelText","File name:"));
-        UIManager.put("FileChooser.homeFolderToolTipText", JDLocale.L("gui.filechooser.homeFolderToolTipText","Home folder"));
-        UIManager.put("FileChooser.newFolderToolTipText", JDLocale.L("gui.filechooser.newFolderToolTipText","Make a new folder"));
-        UIManager.put("FileChooser.listViewButtonToolTipText", JDLocale.L("gui.filechooser.listViewButtonToolTipText","List view"));
-        UIManager.put("FileChooser.detailsViewButtonToolTipText", JDLocale.L("gui.filechooser.detailsViewButtonToolTipText","Details"));
-        UIManager.put("FileChooser.saveButtonText", JDLocale.L("gui.filechooser.saveButtonText","Save"));
-        UIManager.put("FileChooser.openButtonText", JDLocale.L("gui.filechooser.openButtonText","Open"));
-        UIManager.put("FileChooser.cancelButtonText", JDLocale.L("gui.filechooser.cancelButtonText","Cancel"));
-        UIManager.put("FileChooser.updateButtonText", JDLocale.L("gui.filechooser.updateButtonText","Update"));
-        UIManager.put("FileChooser.helpButtonText", JDLocale.L("gui.filechooser.helpButtonText","Help"));
-        UIManager.put("FileChooser.deleteButtonText", JDLocale.L("gui.filechooser.deleteButtonText","Delete"));
-        UIManager.put("FileChooser.saveButtonToolTipText", JDLocale.L("gui.filechooser.saveButtonToolTipText","Save"));
-        UIManager.put("FileChooser.openButtonToolTipText", JDLocale.L("gui.filechooser.openButtonToolTipText","Open"));
-        UIManager.put("FileChooser.cancelButtonToolTipText", JDLocale.L("gui.filechooser.cancelButtonToolTipText","Cancel"));
-        UIManager.put("FileChooser.updateButtonToolTipText", JDLocale.L("gui.filechooser.updateButtonToolTipText","Update"));
-        UIManager.put("FileChooser.helpButtonToolTipText", JDLocale.L("gui.filechooser.helpButtonToolTipText","Help"));
-        UIManager.put("FileChooser.deleteButtonToolTipText", JDLocale.L("gui.filechooser.deleteButtonToolTipText","Delete"));
-        UIManager.put("FileChooser.openDialogTitleText", JDLocale.L("gui.filechooser.openWindowTitleText","Open"));
-        UIManager.put("FileChooser.saveDialogTitleText", JDLocale.L("gui.filechooser.saveWindowTitleText","Save"));
-        UIManager.put("FileChooser.acceptAllFileFilterText", JDLocale.L("gui.filechooser.acceptAllFileFilterText","All files"));
-        UIManager.put("FileChooser.other.newFolder", JDLocale.L("gui.filechooser.other.newFoldert","New folder"));
-        UIManager.put("FileChooser.other.newFolder.subsequent", JDLocale.L("gui.filechooser.other.newFolder.subsequent","New folder {0}"));
-        UIManager.put("FileChooser.win32.newFolder", JDLocale.L("gui.filechooser.win32.newFolder","New folder"));
-        UIManager.put("FileChooser.win32.newFolder.subsequent", JDLocale.L("gui.filechooser.win32.newFolder.subsequent","New folder {0}"));
-        UIManager.put("FileChooser.pathLabelText", JDLocale.L("gui.filechooser.pathLabelText","Path"));
 
-        UIManager.put("JXTable.column.packSelected", JDLocale.L("gui.treetable.packSelected","Pack selected column"));
-        UIManager.put("JXTable.column.packAll", JDLocale.L("gui.treetable.packAll","Pack all columns"));
-        UIManager.put("JXTable.column.horizontalScroll", JDLocale.L("gui.treetable.horizontalScroll","Horizontal scroll"));
+    public void localize() {
+        UIManager.put("FileChooser.upFolderToolTipText", JDLocale.L("gui.filechooser.upFolderToolTipText", "Up one level"));
+        UIManager.put("FileChooser.filesOfTypeLabelText", JDLocale.L("gui.filechooser.filesOfTypeLabelText", "Files of type:"));
+        UIManager.put("FileChooser.lookInLabelText", JDLocale.L("gui.filechooser.lookInLabelText", "Look in:"));
+        UIManager.put("FileChooser.saveInLabelText", JDLocale.L("gui.filechooser.saveInLabelText", "Save in:"));
+        UIManager.put("FileChooser.fileNameLabelText", JDLocale.L("gui.filechooser.fileNameLabelText", "File name:"));
+        UIManager.put("FileChooser.homeFolderToolTipText", JDLocale.L("gui.filechooser.homeFolderToolTipText", "Home folder"));
+        UIManager.put("FileChooser.newFolderToolTipText", JDLocale.L("gui.filechooser.newFolderToolTipText", "Make a new folder"));
+        UIManager.put("FileChooser.listViewButtonToolTipText", JDLocale.L("gui.filechooser.listViewButtonToolTipText", "List view"));
+        UIManager.put("FileChooser.detailsViewButtonToolTipText", JDLocale.L("gui.filechooser.detailsViewButtonToolTipText", "Details"));
+        UIManager.put("FileChooser.saveButtonText", JDLocale.L("gui.filechooser.saveButtonText", "Save"));
+        UIManager.put("FileChooser.openButtonText", JDLocale.L("gui.filechooser.openButtonText", "Open"));
+        UIManager.put("FileChooser.cancelButtonText", JDLocale.L("gui.filechooser.cancelButtonText", "Cancel"));
+        UIManager.put("FileChooser.updateButtonText", JDLocale.L("gui.filechooser.updateButtonText", "Update"));
+        UIManager.put("FileChooser.helpButtonText", JDLocale.L("gui.filechooser.helpButtonText", "Help"));
+        UIManager.put("FileChooser.deleteButtonText", JDLocale.L("gui.filechooser.deleteButtonText", "Delete"));
+        UIManager.put("FileChooser.saveButtonToolTipText", JDLocale.L("gui.filechooser.saveButtonToolTipText", "Save"));
+        UIManager.put("FileChooser.openButtonToolTipText", JDLocale.L("gui.filechooser.openButtonToolTipText", "Open"));
+        UIManager.put("FileChooser.cancelButtonToolTipText", JDLocale.L("gui.filechooser.cancelButtonToolTipText", "Cancel"));
+        UIManager.put("FileChooser.updateButtonToolTipText", JDLocale.L("gui.filechooser.updateButtonToolTipText", "Update"));
+        UIManager.put("FileChooser.helpButtonToolTipText", JDLocale.L("gui.filechooser.helpButtonToolTipText", "Help"));
+        UIManager.put("FileChooser.deleteButtonToolTipText", JDLocale.L("gui.filechooser.deleteButtonToolTipText", "Delete"));
+        UIManager.put("FileChooser.openDialogTitleText", JDLocale.L("gui.filechooser.openWindowTitleText", "Open"));
+        UIManager.put("FileChooser.saveDialogTitleText", JDLocale.L("gui.filechooser.saveWindowTitleText", "Save"));
+        UIManager.put("FileChooser.acceptAllFileFilterText", JDLocale.L("gui.filechooser.acceptAllFileFilterText", "All files"));
+        UIManager.put("FileChooser.other.newFolder", JDLocale.L("gui.filechooser.other.newFoldert", "New folder"));
+        UIManager.put("FileChooser.other.newFolder.subsequent", JDLocale.L("gui.filechooser.other.newFolder.subsequent", "New folder {0}"));
+        UIManager.put("FileChooser.win32.newFolder", JDLocale.L("gui.filechooser.win32.newFolder", "New folder"));
+        UIManager.put("FileChooser.win32.newFolder.subsequent", JDLocale.L("gui.filechooser.win32.newFolder.subsequent", "New folder {0}"));
+        UIManager.put("FileChooser.pathLabelText", JDLocale.L("gui.filechooser.pathLabelText", "Path"));
+
+        UIManager.put("JXTable.column.packSelected", JDLocale.L("gui.treetable.packSelected", "Pack selected column"));
+        UIManager.put("JXTable.column.packAll", JDLocale.L("gui.treetable.packAll", "Pack all columns"));
+        UIManager.put("JXTable.column.horizontalScroll", JDLocale.L("gui.treetable.horizontalScroll", "Horizontal scroll"));
 
     }
 

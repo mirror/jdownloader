@@ -149,25 +149,6 @@ public class JDEventQueue extends EventQueue {
                 c.replaceSelection(null);
             }
         });
-//        if ((c instanceof JDTextField) || (c instanceof JDTextArea)) {
-//            menu.addSeparator();
-//            if ((c instanceof JDTextField)) {
-//                if (((JDTextField) c).getUndoManager().canUndo()) {
-//                    menu.add(((JDTextField) c).getUndoManager().getUndoAction());
-//                }
-//                if (((JDTextField) c).getUndoManager().canRedo()) {
-//                    menu.add(((JDTextField) c).getUndoManager().getRedoAction());
-//                }
-//            } else if ((c instanceof JDTextArea)) {
-//                if (((JDTextArea) c).getUndoManager().canUndo()) {
-//                    menu.add(((JDTextArea) c).getUndoManager().getUndoAction());
-//                }
-//                if (((JDTextArea) c).getUndoManager().canRedo()) {
-//                    menu.add(((JDTextArea) c).getUndoManager().getRedoAction());
-//                }
-//            }
-//            menu.addSeparator();
-//        }
 
         menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.selectall", "Alles auswählen"), JDTheme.II("gui.icons.select_all", 16, 16), JDLocale.L("gui.textcomponent.context.selectall.acc", "ctrl A")) {
             /**

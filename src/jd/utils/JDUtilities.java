@@ -540,7 +540,7 @@ public class JDUtilities {
     public static String getUserInput(String message) throws InterruptedException {
         acquireUserIO_Semaphore();
         if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
-        String password = JDUtilities.getGUI().showUserInputDialog(message);
+        String password = JDUtilities.getGUI().getInputFromUser(message, null);
         releaseUserIO_Semaphore();
         return password;
     }
@@ -549,7 +549,7 @@ public class JDUtilities {
         acquireUserIO_Semaphore();
         if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
         if (defaultmessage == null) defaultmessage = "";
-        String password = JDUtilities.getGUI().showUserInputDialog(message, defaultmessage);
+        String password = JDUtilities.getGUI().getInputFromUser(message, defaultmessage);
         releaseUserIO_Semaphore();
         return password;
     }
@@ -784,7 +784,7 @@ public class JDUtilities {
         if (br == null) {
             br = new Browser();
             br.setProxy(JDProxy.NO_PROXY);
- 
+
             br.setConnectTimeout(5000);
             br.setReadTimeout(5000);
         }

@@ -27,9 +27,10 @@ import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 public class RapidsafeDe extends PluginForDecrypt {
 
@@ -61,8 +62,8 @@ public class RapidsafeDe extends PluginForDecrypt {
                     if (i > 0) pass = null;
                     String[] pwDat = pw.getRow(0);
                     String post = pwDat[0] + pwDat[1];
-                    if (pass == null) pass = JDUtilities.getGUI().showUserInputDialog("Password?");
-                    if (pass == null) return decryptedLinks;
+
+                    if (pass == null) pass = Plugin.getUserInput("Password?", param);                    
 
                     br.postPage(parameter, post + pass.trim());
 
@@ -191,7 +192,8 @@ public class RapidsafeDe extends PluginForDecrypt {
                 progress.increase(1);
                 decryptedLinks.add(createDownloadlink(new Regex(content, "action=\"(.*?)\" id").getMatch(0)));
             }
-
+        } catch (DecrypterException e2) {
+            throw e2;
         } catch (IOException e) {
             e.printStackTrace();
             return null;

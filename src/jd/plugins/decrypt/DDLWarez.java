@@ -38,8 +38,8 @@ import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 public class DDLWarez extends PluginForDecrypt {
     static class DDLWarez_Linkgrabber extends Thread {
@@ -152,8 +152,7 @@ public class DDLWarez extends PluginForDecrypt {
 
                         if (ipf.getType().equalsIgnoreCase("text") && ipf.getValue() == null) {
                             String text = form.getHtmlCode().replaceAll("<.*?>", "").trim();
-                            String input = JDUtilities.getGUI().showUserInputDialog(text);
-                            if (input == null) throw new DecrypterException(DecrypterException.CAPTCHA);
+                            String input = Plugin.getUserInput(text, param);
                             ipf.setValue(input);
 
                         }

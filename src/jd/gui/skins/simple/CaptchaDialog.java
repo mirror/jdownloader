@@ -141,7 +141,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
                 @Override
                 public void run() {
 
-                    String code=null;
+                    String code = null;
                     try {
                         code = JDUtilities.getCaptcha(plugin, host, file, true);
                     } catch (InterruptedException e1) {
@@ -205,7 +205,11 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
                 }
 
             };
-            countdownThread.start();
+            if (JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20) != 0) {
+                countdownThread.start();
+            } else {
+                setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Bitte eingeben!"));
+            }
 
         }
 
