@@ -273,7 +273,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         progress.setColor(Color.red);
                         progress.setStatus(0);
                         progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.captcha", "Error: Captcha"));
-                        return  null;
+                        return null;
                     }
                     active--;
 
@@ -670,20 +670,19 @@ public class Serienjunkies extends PluginForDecrypt {
         if (parameter.matches(".*\\?(cat|p)\\=[\\d]+.*")) {
             boolean isP = parameter.contains("/?p=");
             int catst = sCatGrabb;
-            if(!isP)
-                catst = getSerienJunkiesCat();
+            if (!isP) catst = getSerienJunkiesCat();
             scatChecked = false;
             int cat = Integer.parseInt(parameter.replaceFirst(".*\\?(cat|p)\\=", "").replaceFirst("[^\\d].*", ""));
             if (sCatNewestDownload == catst) {
                 br.getPage("http://serienjunkies.org/");
 
-                Pattern pattern = Pattern.compile("<a href=\"http://serienjunkies.org/\\?cat\\="+cat+"\">(.*?)</a><br", Pattern.CASE_INSENSITIVE);
+                Pattern pattern = Pattern.compile("<a href=\"http://serienjunkies.org/\\?cat\\=" + cat + "\">(.*?)</a><br", Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(br + "");
                 ArrayList<String> names = new ArrayList<String>();
                 while (matcher.find()) {
-                        names.add(matcher.group(1).toLowerCase());
+                    names.add(matcher.group(1).toLowerCase());
                 }
-                if (names.size()==0) { return decryptedLinks; }
+                if (names.size() == 0) { return decryptedLinks; }
                 br.getPage(parameter);
                 lastHtmlCode = br + "";
                 for (String name : names) {
@@ -1228,16 +1227,13 @@ class SJTable extends JDialog {
 
     public SJTable(JFrame owner, ArrayList<DownloadLink> DownloadLinks) {
         super(owner);
-        this.setTitle("SerienJunkies Linkverwaltung");
+        this.setTitle(JDLocale.L("plugin.serienjunkies.manager.title", "SerienJunkies Linkverwaltung"));
         setSize(600, 300);
         this.setLocation(JDUtilities.getCenterOfComponent(null, this));
         this.dls = DownloadLinks;
         m_data = new SJTM(dls);
         setModal(true);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        m_title = new JLabel("Unerwünschte Links einfach löschen", new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.config.infoFile"))), SwingConstants.LEFT);
-        m_title.setFont(new Font("TimesRoman", Font.BOLD, 24));
-        m_title.setForeground(Color.black);
+        m_title = new JLabel(JDLocale.L("plugin.serienjunkies.manager.dllinks", "Unerwünschte Links einfach löschen"), new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.config.infoFile"))), SwingConstants.LEFT);
         getContentPane().add(m_title, BorderLayout.NORTH);
 
         m_table = new JTable();
@@ -1257,7 +1253,38 @@ class SJTable extends JDialog {
         getContentPane().add(ps, BorderLayout.CENTER);
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout());
-        JButton del = new JButton("Löschen");
+        JButton del = new JButton(JDLocale.L("gui.component.textarea.context.delete", "Löschen"));
+        addWindowListener(new WindowListener() {
+
+            public void windowActivated(WindowEvent e) {
+            }
+
+            public void windowClosed(WindowEvent e) {
+
+                dispose();
+
+            }
+
+            public void windowClosing(WindowEvent e) {
+                dls = new ArrayList<DownloadLink>();
+
+            }
+
+            public void windowDeactivated(WindowEvent e) {
+
+            }
+
+            public void windowDeiconified(WindowEvent e) {
+
+            }
+
+            public void windowIconified(WindowEvent e) {
+            }
+
+            public void windowOpened(WindowEvent e) {
+
+            }
+        });
         del.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 int[] rows = m_table.getSelectedRows();
@@ -1271,7 +1298,7 @@ class SJTable extends JDialog {
             }
         });
         panel.add(del);
-        JButton insertButton = new JButton("Übernehmen");
+        JButton insertButton = new JButton(JDLocale.L("gui.component.textarea.context.paste", "Einfügen"));
         insertButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -1282,19 +1309,6 @@ class SJTable extends JDialog {
         panel.add(insertButton);
         getContentPane().add(panel, BorderLayout.SOUTH);
         setVisible(true);
-    }
-
-    public static void main(String argv[]) {
-        ArrayList<DownloadLink> dls = new ArrayList<DownloadLink>();
-        DownloadLink dl = new DownloadLink(null, "test", "RapidShare", null, false);
-        dl.setDownloadSize(20000);
-        dls.add(dl);
-        for (int i = 0; i < 10; i++) {
-            dl = new DownloadLink(null, "test" + i, "NetLoad", null, false);
-            dl.setDownloadSize(20000);
-            dls.add(dl);
-        }
-        new SJTable(new JFrame(), dls);
     }
 }
 
@@ -1314,7 +1328,7 @@ class ColumnData {
 
 @SuppressWarnings("serial")
 class SJTM extends AbstractTableModel {
-    static final public ColumnData m_columns[] = { new ColumnData("Name", 200, JLabel.LEFT), new ColumnData("Hoster", 160, JLabel.LEFT), new ColumnData("Größe", 100, JLabel.RIGHT) };
+    static final public ColumnData m_columns[] = { new ColumnData(JDLocale.L("gui.packageinfo.name", "Name"), 200, JLabel.LEFT), new ColumnData(JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), 160, JLabel.LEFT), new ColumnData(JDLocale.L("gui.linkgrabber.packagetab.table.column.size", "Größe"), 100, JLabel.RIGHT) };
 
     ArrayList<DownloadLink> dls;
 
