@@ -819,7 +819,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case JDAction.APP_BACKUP:
             JDInit.createQueueBackup();
-            JOptionPane.showMessageDialog(null, "Linklist-Backup created!");
+            JOptionPane.showMessageDialog(null, JDLocale.L("gui.messagewindow.backupcreated","Link list backup created successfuly."),JDLocale.L("gui.messagewindow.information","Information"),JOptionPane.INFORMATION_MESSAGE);
             break;
         case JDAction.APP_RECONNECT:
             new Thread() {
