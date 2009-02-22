@@ -228,10 +228,16 @@ public class JDEventQueue extends EventQueue {
         // JDUtilities.getLogger().info("Start Event Queue Interruption Test"); 
         try {
             for (int i = 0; i < 1; i++) {
-                Browser browser = new Browser();
-                browser.setCurrentURL(url);
-                browser.getPage(url);
-                HashMap<String, HashMap<String, Cookie>> cookies = browser.getCookies();
+                Browser br = new Browser();
+                br.setCurrentURL(url);
+                
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                br.clearCookies("youtube.com");
+                
+                String page = br.getPage(url);
+                // System.out.println(page);
+                HashMap<String, HashMap<String, Cookie>> cookies = br.getCookies();
                 // printCookies(cookies);
             }
         } catch (Exception e) {System.err.println("Error");}
