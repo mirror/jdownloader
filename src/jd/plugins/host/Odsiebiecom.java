@@ -17,7 +17,6 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.html.Form;
@@ -45,17 +44,18 @@ public class Odsiebiecom extends PluginForHost {
         try {
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() == null) {
-                String filename = br.getRegex(Pattern.compile("<dt>Nazwa pliku:</dt>.*?<dd>(.*?)</dd>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+                String filename = br.getRegex("<dt>Nazwa pliku:</dt>.*?<dd>(.*?)</dd>").getMatch(0);
                 String filesize;
-                if ((filesize = br.getRegex(Pattern.compile("<dt>Rozmiar pliku:</dt>.*?<dd>(.*?)MB</dd>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0)) != null) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize) * 1024 * 1024));
-                } else if ((filesize = br.getRegex(Pattern.compile("<dt>Rozmiar pliku:</dt>.*?<dd>(.*?)KB</dd>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0)) != null) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize) * 1024));
+                if ((filesize = br.getRegex("<dt>Rozmiar pliku:</dt>.*?<dd>(.*?)MB</dd>").getMatch(0)) != null) {
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.replaceAll(",", "")) * 1024 * 1024));
+                } else if ((filesize = br.getRegex("<dt>Rozmiar pliku:</dt>.*?<dd>(.*?)KB</dd>").getMatch(0)) != null) {
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.replaceAll(",", "")) * 1024));
                 }
                 downloadLink.setName(filename);
                 return true;
             }
         } catch (Exception e) {
+            e.printStackTrace();
         }
         downloadLink.setAvailable(false);
         return false;
