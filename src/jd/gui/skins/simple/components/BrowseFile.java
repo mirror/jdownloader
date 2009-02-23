@@ -31,8 +31,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class BrowseFile extends JPanel implements ActionListener {
- 
-    
+
     private static final long serialVersionUID = 1L;
 
     private String approveButtonText = "OK";
@@ -70,8 +69,10 @@ public class BrowseFile extends JPanel implements ActionListener {
             dispatchEvent(event);
         } else if (e.getSource() == btnBrowse) {
             newPath = getPath();
-            setCurrentPath(newPath);
-            dispatchEvent(event);
+            if (newPath != null) {
+                setCurrentPath(newPath);
+                dispatchEvent(event);
+            }
         }
 
     }
@@ -128,9 +129,12 @@ public class BrowseFile extends JPanel implements ActionListener {
         fc.setApproveButtonText(approveButtonText);
         fc.setFileSelectionMode(fileSelectionMode);
         fc.setCurrentDirectory(getDirectoryFromTxtInput());
-        fc.showOpenDialog(this);
-        File ret = fc.getSelectedFile();
-        return ret;
+        if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) {
+            File ret = fc.getSelectedFile();
+            return ret;
+        }
+        return null;
+
     }
 
     public String getText() {
@@ -145,13 +149,6 @@ public class BrowseFile extends JPanel implements ActionListener {
         txtInput.addActionListener(this);
         btnBrowse = new JButton(JDLocale.L("gui.btn_select", "Browse"));
         btnBrowse.addActionListener(this);
-
-        // JDUtilities.addToGridBag(this, txtInput, 0, 0, 1, 1, 1, 0, new
-        // Insets(0, 0, 0, 0), GridBagConstraints.HORIZONTAL,
-        // GridBagConstraints.WEST);
-        // JDUtilities.addToGridBag(this, btnBrowse, 1, 0, 1, 1, 0, 0, new
-        // Insets(0, 0, 0, 0), GridBagConstraints.NONE,
-        // GridBagConstraints.EAST);
 
         add(txtInput, BorderLayout.CENTER);
         add(btnBrowse, BorderLayout.EAST);
