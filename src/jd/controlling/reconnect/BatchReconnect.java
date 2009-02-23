@@ -18,6 +18,7 @@ package jd.controlling.reconnect;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
@@ -26,6 +27,8 @@ import jd.utils.JDUtilities;
 
 public class BatchReconnect extends ReconnectMethod {
 
+    private SubConfiguration configuration;
+
     private static final String PROPERTY_DO_OUTPUT = "PROPERTY_DO_OUTPUT";
 
     private static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN";
@@ -33,6 +36,8 @@ public class BatchReconnect extends ReconnectMethod {
     private static final String PROPERTY_RECONNECT_EXECUTE_FOLDER = "RECONNECT_EXECUTE_FOLDER";
 
     private static final String PROPERTY_TERMINAL = "TERMINAL";
+
+    private static final String PROPERTY_BATCHTEXT = "BATCH_TEXT";
 
     public BatchReconnect() {
         configuration = JDUtilities.getSubConfig("BATCHRECONNECT");
@@ -47,7 +52,7 @@ public class BatchReconnect extends ReconnectMethod {
         } else {
             cfg.setDefaultValue("/bin/bash");
         }
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, "BATCH_TEXT", JDLocale.L("interaction.batchreconnect.batch", "Batch Script")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, PROPERTY_BATCHTEXT, JDLocale.L("interaction.batchreconnect.batch", "Batch Script")));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, PROPERTY_RECONNECT_EXECUTE_FOLDER, JDLocale.L("interaction.batchreconnect.executeIn", "Ausführen in (Ordner der Anwendung)")));
 
@@ -63,14 +68,11 @@ public class BatchReconnect extends ReconnectMethod {
 
         String[] cmds = command.split("\\ ");
         command = cmds[0];
-        for (int i = 0; i < cmds.length; i++) {
-            if (i < cmds.length - 1) {
-                cmds[i] = cmds[i + 1];
-            }
-
+        for (int i = 0; i < cmds.length - 1; i++) {
+            cmds[i] = cmds[i + 1];
         }
 
-        String batch = configuration.getStringProperty("BATCH_TEXT", "");
+        String batch = configuration.getStringProperty(PROPERTY_BATCHTEXT, "");
 
         String[] lines = Regex.getLines(batch);
         logger.info("Batch Verarbeitung aktiviert. Als Befehl muss der Interpreter eingetragen sein (windows: cmd.exe linux z.b. bash mac: teminal ?) Aktueller interpreter: " + command);

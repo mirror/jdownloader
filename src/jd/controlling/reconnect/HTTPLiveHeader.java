@@ -58,6 +58,8 @@ import sun.misc.BASE64Encoder;
  */
 public class HTTPLiveHeader extends ReconnectMethod {
 
+    private Configuration configuration;
+
     private HashMap<String, String> headerProperties;
 
     private HashMap<String, String> variables;

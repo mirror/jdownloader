@@ -4,7 +4,6 @@ import java.util.logging.Logger;
 
 import jd.config.ConfigContainer;
 import jd.config.Configuration;
-import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -13,15 +12,13 @@ public abstract class ReconnectMethod {
 
     protected static Logger logger = JDUtilities.getLogger();
 
-    protected Property configuration;
-
     public static final String PARAM_RECONNECT_TYPE = "RECONNECT_TYPE";
 
     public static final int LIVEHEADER = 0;
     public static final int BATCH = 1;
     public static final int EXTERN = 2;
     public static final int CLR = 3;
-    /* Integer Property: 0=LiveHeader, 1=Extern, 2=Batch,3=CLR */
+    /* Integer Property: 0=LiveHeader, 1=Extern, 2=Batch, 3=CLR */
 
     public static final String PARAM_IPCHECKWAITTIME = "RECONNECT_IPCHECKWAITTIME";
 
@@ -29,12 +26,11 @@ public abstract class ReconnectMethod {
 
     public static final String PARAM_WAITFORIPCHANGE = "RECONNECT_WAITFORIPCHANGE";
 
-    protected transient ConfigContainer config;
+    protected ConfigContainer config = null;
 
-    protected int retries = 0;
+    private int retries = 0;
 
-    public ReconnectMethod() {
-        config = null;
+    protected ReconnectMethod() {
     }
 
     public final boolean doReconnect() {

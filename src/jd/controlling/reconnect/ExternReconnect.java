@@ -20,6 +20,7 @@ import java.io.File;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Configuration;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.utils.JDLocale;
@@ -32,6 +33,8 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  */
 public class ExternReconnect extends ReconnectMethod {
+
+    private Configuration configuration;
 
     private static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN";
 
