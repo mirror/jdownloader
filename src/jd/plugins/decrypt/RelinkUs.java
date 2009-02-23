@@ -45,20 +45,12 @@ public class RelinkUs extends PluginForDecrypt {
         String container_link = new Regex(page, Pattern.compile("<a target=\"blank\" href=('|\")(.*?)('|\")><img src=('|\").*?" + containerFormat + "\\.(gif|jpg)", Pattern.CASE_INSENSITIVE)).getMatch(1);
         if (container_link != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
-            // URL container_url = new URL("http://relink.us/" +
-            // Encoding.htmlDecode(container_link));
-            // HTTPConnection container_con = new
-            // HTTPConnection(container_url.openConnection());
-            // container_con.setRequestProperty("Referer", cryptedLink);
             Browser browser = br.cloneBrowser();
-            // sollte eigentlich nicht nötig sein
             browser.getHeaders().put("Referer", cryptedLink);
             browser.getDownload(container, "http://relink.us/" + Encoding.htmlDecode(container_link));
-
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
             container.delete();
             return true;
-
         }
         return false;
     }
@@ -70,7 +62,8 @@ public class RelinkUs extends PluginForDecrypt {
         }
         progress.addToMax(links.length);
         for (String link : links) {
-            String dl_link = new Regex(br.postPage(link, "submit=Open"), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"[\n\r]*?(.*?)\"", Pattern.CASE_INSENSITIVE).getMatch(0);
+            br.postPage(link, "submit=Open");
+            String dl_link = br.getRegex(Pattern.compile("iframe name=\".*?\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"[\n\r]*?(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(dl_link)));
             progress.increase(1);
         }
