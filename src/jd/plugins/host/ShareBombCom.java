@@ -44,7 +44,7 @@ public class ShareBombCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setLatestReqTimeCtrlID(this.getHost());
         br.setReqTimeCtrlExclusive(false);
-        br.setWaittimeBetweenPageRequests(500l);        
+        br.setWaittimeBetweenPageRequests(500l);
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
         String downloadSize = null;
@@ -54,10 +54,10 @@ public class ShareBombCom extends PluginForHost {
             } catch (Exception e) {
                 continue;
             }
-            downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("Name:</strong> (.*?)<", Pattern.CASE_INSENSITIVE)).getMatch(0));
-            downloadSize = br.getRegex(Pattern.compile("Size:</strong> (.*?)<", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            downloadName = Encoding.htmlDecode(br.getRegex("<strong>(.*?)</strong>\\s*<ul id=\"dlinfo\">").getMatch(0));
+            downloadSize = br.getRegex("Size:</strong> (.*?)<").getMatch(0);
             if (!(downloadName == null || downloadSize == null)) {
-                if (downloadName.length() == 0) downloadName = br.getRegex("<title>sharebomb.com.*?Download(.*?)</title>").getMatch(0);
+                if (downloadName.length() == 0) downloadName = br.getRegex("<title>sharebomb.com - (.*?)</title>").getMatch(0);
                 downloadLink.setName(downloadName.trim());
                 downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
                 return true;
@@ -91,7 +91,7 @@ public class ShareBombCom extends PluginForHost {
             this.sleep(10 * 1000l, downloadLink);
         }
         /* Datei herunterladen */
-        br.setFollowRedirects(true);        
+        br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, linkurl, false, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
