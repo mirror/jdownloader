@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypt;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -24,6 +25,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 public class LinksaveIn extends PluginForDecrypt {
 
@@ -34,10 +36,19 @@ public class LinksaveIn extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
 
+        br.getPage(param.getCryptedUrl());
 
-        throw new DecrypterException("Out of date. Try Click'n'Load");
+        String[] container = br.getRegex("link\\'\\)\\.href\\=\\'(.*?)\\'\\;").getColumn(0);
+        if (container != null && container.length > 0) {
 
-       
+            File file;
+            br.downloadConnection(file = JDUtilities.getResourceFile("tmp/linksave/" + container[0].replace(".cnl", ".dlc").replace("dlc://", "http://")), br.openGetConnection(container[0]));
+
+            JDUtilities.getController().loadContainerFile(file);
+        } else {
+            throw new DecrypterException("Out of date. Try Click'n'Load");
+        }
+        return new  ArrayList<DownloadLink>();
     }
 
     protected boolean isClickNLoadEnabled() {
