@@ -192,6 +192,7 @@ public class Rapidshare extends PluginForHost {
       for( DownloadLink u:urls){
           u.setDownloadSize(Long.parseLong(matches[i][2]));
           u.setFinalFileName(matches[i][1]);
+          u.setDupecheckAllowed(true); 
           u.setMD5Hash(matches[i][6]);
           if(matches[i][4].equals("0")){
               u.setAvailable(false);
