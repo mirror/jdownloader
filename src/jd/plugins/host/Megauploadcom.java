@@ -269,12 +269,12 @@ public class Megauploadcom extends PluginForHost {
             if (form != null && form.containsHTML("logout")) form = br.getForm(1);
             if (form != null && form.containsHTML("captchacode")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        String Waittime = br.getRegex(Pattern.compile("<script.*?java.*?>.*?count=(\\d+);", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (Waittime == null) {
-            sleep(45 * 1000l, link);
-        } else {
-            sleep(Integer.parseInt(Waittime.trim()) * 1000l, link);
-        }
+//        String Waittime = br.getRegex(Pattern.compile("<script.*?java.*?>.*?count=(\\d+);", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+//        if (Waittime == null) {
+//            sleep(45 * 1000l, link);
+//        } else {
+//            sleep(Integer.parseInt(Waittime.trim()) * 1000l, link);
+//        }
         String url = br.getRegex("id=\"downloadlink\"><a href=\"(.*?)\"").getMatch(0);
         doDownload(link, url, true, 1);
     }
