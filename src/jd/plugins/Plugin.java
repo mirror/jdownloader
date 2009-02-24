@@ -79,27 +79,7 @@ public abstract class Plugin implements ActionListener {
         Vector<String> passwords = HTMLParser.findPasswords(data);
         return JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
     }
-    /**
-     * 
-     * @param captchaAddress
-     * @param downloadLink
-     * @return
-     * @throws IOException
-     * @throws PluginException
-     * @throws InterruptedException
-     */
-    public String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
-        File captchaFile = this.getLocalCaptchaFile(this);
-        try {
-            Browser.download(captchaFile, br.openGetConnection(captchaAddress));
-        } catch (Exception e) {
-            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
-        return captchaCode;
-
-    }
+ 
     /**
      * verwendet die erste Acaptcha Interaction um den captcha auszuwerten
      * 

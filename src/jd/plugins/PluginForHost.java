@@ -48,7 +48,27 @@ public abstract class PluginForHost extends Plugin {
         super(wrapper);
 
     }
+    /**
+     * 
+     * @param captchaAddress
+     * @param downloadLink
+     * @return
+     * @throws IOException
+     * @throws PluginException
+     * @throws InterruptedException
+     */
+    public String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
+        File captchaFile = this.getLocalCaptchaFile(this);
+        try {
+            Browser.download(captchaFile, br.openGetConnection(captchaAddress));
+        } catch (Exception e) {
+            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+        return captchaCode;
 
+    }
     private static final String AGB_CHECKED = "AGB_CHECKED";
     private static final String CONFIGNAME = "pluginsForHost";
     private static int currentConnections = 0;

@@ -17,6 +17,8 @@
 package jd.plugins;
 
 import java.awt.Color;
+import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -28,6 +30,7 @@ import jd.config.MenuItem;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
