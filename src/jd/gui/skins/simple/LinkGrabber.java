@@ -41,6 +41,8 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -49,7 +51,6 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
@@ -61,7 +62,6 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
@@ -777,8 +777,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private SimpleGUI parentFrame;
 
-    private JProgressBar progress;
-
     private JButton sortPackages;
 
     private JTabbedPane tabbedPane;
@@ -821,8 +819,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         if (e.getSource() == this.gathertimer) {
             gathertimer.stop();
             gathertimer.removeActionListener(this);
-            gathertimer=null;
-            
+            gathertimer = null;
+
             if (waitingLinkList.size() > 0) {
                 startLinkGatherer();
             }
@@ -1055,7 +1053,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             if (isDupe(element)) continue;
             totalLinkList.add(element);
             addToWaitingList(element);
-           
+
             attachLinkToPackage(element);
         }
         reprintTabbedPane();
@@ -1065,8 +1063,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             gathertimer = null;
 
         }
-        gathertimer = new Timer(5000, this);
-        gathertimer.setInitialDelay(5000);
+        gathertimer = new Timer(2000, this);
+        gathertimer.setInitialDelay(2000);
         gathertimer.setRepeats(false);
         gathertimer.start();
 
@@ -1143,8 +1141,16 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     bestIndex = i;
                 }
             }
+
+            String g = null;
+            try {
+                g = new URL(link.getDownloadURL()).getQuery();
+            } catch (MalformedURLException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
             // logger.info("Best sym: "+bestSim);
-            if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 99)) {
+            if ((bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 99) && !(!link.isAvailabilityChecked() && g != null)) || bestSim <= 0) {
 
                 addLinkToTab(link, tabList.size());
                 tabList.get(tabList.size() - 1).setPackageName(packageName);
@@ -1514,11 +1520,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         insertAtPosition.setSelectedIndex(guiConfig.getIntegerProperty(PROPERTY_POSITION, 1));
         insertAtPosition.addActionListener(this);
 
-        progress = new JProgressBar();
-        progress.setBorder(BorderFactory.createEtchedBorder());
-        progress.setString(JDLocale.L("gui.linkgrabber.bar.title", "Infosammler"));
-        progress.setStringPainted(true);
-
         tabbedPane = new JTabbedPane();
         tabbedPane.addChangeListener(this);
         tabbedPane.addMouseListener(this);
@@ -1559,7 +1560,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         panel.add(inner, BorderLayout.CENTER);
         inner.add(tabbedPane, BorderLayout.CENTER);
-        inner.add(progress, BorderLayout.SOUTH);
+
         panel.add(south, BorderLayout.SOUTH);
 
         getRootPane().setDefaultButton(acceptAll);
@@ -1708,27 +1709,42 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 while (links.size() > 0 && gathererrunning == true) {
                     DownloadLink link = links.remove(0);
                     if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) {
-//                        addingLinkList.add(link);
-//                        try {
-//                            Thread.sleep(5);
-//                        } catch (InterruptedException e) {
-//                        }
+                        // addingLinkList.add(link);
+                        // try {
+                        // Thread.sleep(5);
+                        // } catch (InterruptedException e) {
+                        // }
                     } else {
                         if (!link.isAvailabilityChecked()) {
                             Vector<DownloadLink> dlinks = new Vector<DownloadLink>();
                             dlinks.add(link);
                             dlinks.addAll(links);
+                            for (int i = 0; i < dlinks.size(); i++) {
+                                dlinks.get(i).getLinkStatus().setStatusText(JDLocale.L("gui.linkgrabber.checkstatus", "Onlinecheck running..."));
+                            }
                             if (dlinks.size() > 1) {
                                 boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(dlinks.toArray(new DownloadLink[] {}));
                                 if (ret != null) {
                                     for (int i = 0; i < dlinks.size(); i++) {
                                         dlinks.get(i).setAvailable(ret[i]);
+                                        if (dlinks.get(i).getLinkStatus().getStatusText().equals(JDLocale.L("gui.linkgrabber.checkstatus", "Onlinecheck running..."))) {
+                                            dlinks.get(i).getLinkStatus().setStatusText(null);
+                                        }
+
+                                    }
+                                } else {
+                                    for (int i = 0; i < dlinks.size(); i++) {
+                                        dlinks.get(i).getLinkStatus().setStatusText(null);
                                     }
                                 }
                             }
                         }
+                        link.getLinkStatus().setStatusText(JDLocale.L("gui.linkgrabber.checkstatus", "Onlinecheck running..."));
                         link.isAvailable();
-//                        addingLinkList.add(link);
+                        if (link.getLinkStatus().getStatusText().equals(JDLocale.L("gui.linkgrabber.checkstatus", "Onlinecheck running..."))) {
+                            link.getLinkStatus().setStatusText(null);
+                        }
+                        // addingLinkList.add(link);
                     }
                     reprintTabbedPane();
                 }
@@ -1738,45 +1754,30 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 run();
             }
         }
-       /* class AThread extends Thread {
-            public AThread() {
-            }
+        /*
+         * class AThread extends Thread { public AThread() { }
+         * 
+         * public void run() { while (gathererrunning == true) { while
+         * (addingLinkList.size() > 0 && gathererrunning == true) { DownloadLink
+         * link = addingLinkList.remove(0); checkAlreadyinList(link);
+         * attachLinkToPackage(link); progress.setValue(progress.getValue() +
+         * 1); } try { Thread.sleep(500); } catch (InterruptedException e) {
+         * break; } }
+         * 
+         * 
+         * while (addingLinkList.size() > 0) { DownloadLink link =
+         * addingLinkList.remove(0); checkAlreadyinList(link);
+         * attachLinkToPackage(link); progress.setValue(progress.getValue() +
+         * 1); } reprintTabbedPane(); } }
+         */
 
-            public void run() {
-                while (gathererrunning == true) {
-                    while (addingLinkList.size() > 0 && gathererrunning == true) {
-                        DownloadLink link = addingLinkList.remove(0);
-                        checkAlreadyinList(link);
-                        attachLinkToPackage(link);
-                        progress.setValue(progress.getValue() + 1);
-                    }
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        break;
-                    }
-                }
-
-            
-                while (addingLinkList.size() > 0) {
-                    DownloadLink link = addingLinkList.remove(0);
-                    checkAlreadyinList(link);
-                    attachLinkToPackage(link);
-                    progress.setValue(progress.getValue() + 1);
-                }
-                reprintTabbedPane();
-            }
-        }
-*/
-        progress.setMaximum(0);
-        progress.setString(null);
         if (gatherer != null && gatherer.isAlive()) { return; }
         gatherer = new Thread() {
 
             public synchronized void run() {
                 gathererrunning = true;
-//                AThread athread = new AThread();
-//                athread.start();
+                // AThread athread = new AThread();
+                // athread.start();
                 decryptJobbers = new Jobber(4);
                 int maxperjob = 100;
                 while (waitingLinkList.size() > 0 && gathererrunning == true) {
@@ -1792,7 +1793,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     while (links.size() > 0) {
                         links2.add(links.remove(0));
                         if (links2.size() > maxperjob) {
-                            progress.setMaximum(progress.getMaximum() + links2.size());
+
                             DThread dthread = new DThread(links2);
                             decryptJobbers.add(dthread);
                             links2 = new Vector<DownloadLink>();
@@ -1804,7 +1805,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                         /* zufall dran, damit die hoster durchgewechselt werden */
                         waitingLinkList.put(it + System.currentTimeMillis(), links);
                     } else {
-                        progress.setMaximum(progress.getMaximum() + links.size());
+
                         DThread dthread = new DThread(links);
                         decryptJobbers.add(dthread);
                     }
@@ -1820,7 +1821,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                         break;
                     }
                 }
-                progress.setString(JDLocale.L("gui.linkgrabber.bar.title", "Infosammler"));
+
                 decryptJobbers.stop();
                 gathererrunning = false;
             }
