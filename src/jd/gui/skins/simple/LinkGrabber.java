@@ -1146,8 +1146,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             try {
                 g = new URL(link.getDownloadURL()).getQuery();
             } catch (MalformedURLException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+             
             }
             // logger.info("Best sym: "+bestSim);
             if ((bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 99) && !(!link.isAvailabilityChecked() && g != null)) || bestSim <= 0) {
