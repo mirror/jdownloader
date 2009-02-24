@@ -119,18 +119,7 @@ public abstract class PluginForHost extends Plugin {
 
     }
 
-    public String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
-        File captchaFile = this.getLocalCaptchaFile(this);
-        try {
-            Browser.download(captchaFile, br.openGetConnection(captchaAddress));
-        } catch (Exception e) {
-            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
-        return captchaCode;
-
-    }
+ 
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
         return null;
