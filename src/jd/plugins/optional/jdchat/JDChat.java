@@ -67,7 +67,7 @@ import org.schwering.irc.lib.IRCUser;
 
 public class JDChat extends PluginOptional implements ControlListener {
     protected static final long AWAY_TIMEOUT = 15 * 60 * 1000;
-    private static final String CHANNEL = "#jDownloader";;
+    private static String CHANNEL = "#jDownloader";;
     private static final Pattern CMD_ACTION = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);;
     private static final Pattern CMD_CONNECT = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);;
     private static final Pattern CMD_DISCONNECT = Pattern.compile("(disconnect|trennen)", Pattern.CASE_INSENSITIVE);
@@ -80,6 +80,8 @@ public class JDChat extends PluginOptional implements ControlListener {
     private static final Pattern CMD_TOPIC = Pattern.compile("(topic|title)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_TRANSLATE = Pattern.compile("(translate)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_VERSION = Pattern.compile("(version|jdversion)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CMD_CHANNEL = Pattern.compile("(chan|channel)", Pattern.CASE_INSENSITIVE);
+    
     protected static final ArrayList<String> COMMANDS = new ArrayList<String>();
     private static final String HOST = "PARAM_" + "HOST";
 
@@ -129,6 +131,13 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     public JDChat(PluginWrapper wrapper) {
         super(wrapper);
+        String id = JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, JDLocale.isGerman() ? "german" : "english");
+
+        if (id.contains("spanish")) {
+            CHANNEL += "[es]";
+        }
+
+        CHANNEL = this.getPluginConfig().getStringProperty("CHANNEL", CHANNEL);
         COMMANDS.add("/msg ");
         COMMANDS.add("/topic ");
         COMMANDS.add("/op ");
@@ -137,6 +146,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         COMMANDS.add("/nick ");
         COMMANDS.add("/mode ");
         COMMANDS.add("/join");
+        COMMANDS.add("/channel ");
         COMMANDS.add("/translate ");
         initConfigEntries();
         COMMANDS.add("/translate artoda ");
@@ -784,7 +794,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         nick = JDUtilities.getSubConfig("JDCHAT").getStringProperty(NICK);
         if (nick == null || nick.equalsIgnoreCase("")) {
             nick = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.optional.jdchat.enternick", "Your wished nickname?"));
-            if ((nick != null) && (!nick.equalsIgnoreCase(""))  ) {
+            if ((nick != null) && (!nick.equalsIgnoreCase(""))) {
                 nick += "[" + loc + "]";
             }
             JDUtilities.getSubConfig("JDCHAT").setProperty(NICK, nick.trim());
@@ -839,10 +849,22 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         ConfigContainer lngse = new ConfigContainer(this, JDLocale.L("plugins.optional.jdchat.locale", "Language settings"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lngse));
+        
+        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, "CHANNEL", new String[] { "#jdownloader", "#jdownloader[ES]" }, JDLocale.L("plugins.optional.jdchat.channel", "Select Channel")));
+        String id = JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, JDLocale.isGerman() ? "german" : "english");
+        String def = "";
+        if (id.contains("spanish")) {
+            def += "[ES]";
+        }
+
+        cfg.setDefaultValue("#jdownloader" + def);
+
+        
         lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLAT, JDLocale.L("plugins.optional.jdchat.doautotranslate", "Translate Chat")));
+
         cfg.setDefaultValue(false);
         ConfigEntry conditionEntry = cfg;
-
+    
         map = new HashMap<String, String>();
         map.put("ar", JDLocale.L("locale.lngs.arabic", "Arabic"));
         map.put("bg", JDLocale.L("locale.lngs.bulgarian", "Bulgarian"));
@@ -1268,6 +1290,27 @@ public class JDChat extends PluginOptional implements ControlListener {
                     end = rest.length();
                 }
                 lastCommand = "/mode ";
+                conn.doMode(CHANNEL, rest.trim());
+            } else if (Regex.matches(cmd, CMD_CHANNEL)) {
+               String nch=null;
+                if(rest.trim().equalsIgnoreCase("ES")){
+                    nch="#jdownloader[es]";
+                }else{
+                    nch="#jdownloader"; 
+                }
+                if(nch.equalsIgnoreCase(CHANNEL)){
+                    addToText(null, STYLE_NOTICE, "You are already in channel: "+rest);
+                    return;
+                    
+                }
+                CHANNEL=nch;
+                this.getPluginConfig().setProperty("CHANNEL", CHANNEL);
+                this.getPluginConfig().save();
+                this.onExit();
+                addToText(null, STYLE_NOTICE, "Change Channel to: "+rest);
+                this.initIRC();
+               
+                lastCommand = "/channel ";
                 conn.doMode(CHANNEL, rest.trim());
             } else if (Regex.matches(cmd, CMD_TRANSLATE)) {
                 end = rest.indexOf(" ");
