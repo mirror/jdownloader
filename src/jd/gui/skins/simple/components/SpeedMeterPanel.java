@@ -20,7 +20,6 @@ import javax.swing.UIManager;
 import javax.swing.plaf.FontUIResource;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
@@ -42,9 +41,9 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
     public SpeedMeterPanel() {
         // Set background color for the applet's panel.
         this.i = 0;
-       
-        this.window=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
-        
+
+        this.window = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
+
         this.setOpaque(false);
         this.setBorder(BorderFactory.createEtchedBorder());
         this.cache = new int[CAPACITY];
@@ -60,7 +59,7 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
     }
 
     public Dimension getPreferredSize() {
-        if (!UIManager.getLookAndFeel().getName().equals("Nimbus")&&!UIManager.getLookAndFeel().getName().equals("gtk")) { return super.getPreferredSize(); }
+        if (!UIManager.getLookAndFeel().getName().equals("Nimbus") && !UIManager.getLookAndFeel().getName().equals("gtk")) { return super.getPreferredSize(); }
         return new Dimension(300, 45);
     }
 
@@ -72,9 +71,9 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
                 while (!this.isInterrupted()) {
 
                     update();
-                   
+
                     try {
-                        Thread.sleep((window*1000)/CAPACITY);
+                        Thread.sleep((window * 1000) / CAPACITY);
                         cache[i] = JDUtilities.getController().getSpeedMeter();
                         i++;
                         i = i % cache.length;
@@ -185,7 +184,7 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
                 update();
             }
             if (event.getParameter().equals(SimpleGUI.PARAM_SHOW_SPEEDMETER_WINDOWSIZE)) {
-                window=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
+                window = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
             }
         }
 

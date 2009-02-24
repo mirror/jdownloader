@@ -99,7 +99,7 @@ public class JDLocale {
         return def;
     }
 
-    private static boolean isGerman() {
+    public static boolean isGerman() {
         String country = System.getProperty("user.country");
         return country != null && country.equalsIgnoreCase("DE");
     }

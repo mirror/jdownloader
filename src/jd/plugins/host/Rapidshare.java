@@ -38,7 +38,6 @@ import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
 import jd.http.requests.Request;
 import jd.nutils.JDHash;
 import jd.parser.Regex;
@@ -123,9 +122,9 @@ public class Rapidshare extends PluginForHost {
         }
         String fileid = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/([\\d]{3,9})/?.*").getMatch(0);
         String filename = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?(.*)").getMatch(0);
-        Regex regex = new Regex(filename,"(.*\\..*)\\.htm?");
-        if(regex.matches()){
-            filename=regex.getMatch(0);
+        Regex regex = new Regex(filename, "(.*\\..*)\\.htm?");
+        if (regex.matches()) {
+            filename = regex.getMatch(0);
         }
         return "http://rapidshare.com/files/" + fileid + "/" + filename;
     }
@@ -175,34 +174,33 @@ public class Rapidshare extends PluginForHost {
         try {
             if (urls == null) { return null; }
             boolean[] ret = new boolean[urls.length];
-           
-            
-           StringBuilder idlist= new StringBuilder();
-           StringBuilder namelist= new StringBuilder();
-           
-           for( DownloadLink u:urls){
-               correctURL(u);
-               idlist.append(","+getID(u.getDownloadURL()));
-               namelist.append(","+getName(u.getDownloadURL()));
-           }
-          br.getPage("http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files="+idlist.toString().substring(1)+"&filenames="+namelist.toString().substring(1)+"&incmd5=1");
-        
-      String[][] matches = br.getRegex("([^\n^\r^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^\n^\r]+)").getMatches();
-      int i=0;
-      for( DownloadLink u:urls){
-          u.setDownloadSize(Long.parseLong(matches[i][2]));
-          u.setFinalFileName(matches[i][1]);
-          u.setDupecheckAllowed(true);
-          u.setMD5Hash(matches[i][6]);
-          if(matches[i][4].equals("0")){
-              u.setAvailable(false);
-          }else{
-              u.setAvailable(true);
-          }
-          ret[i]=u.isAvailable();
-          i++;
-      }
-        return ret;
+
+            StringBuilder idlist = new StringBuilder();
+            StringBuilder namelist = new StringBuilder();
+
+            for (DownloadLink u : urls) {
+                correctURL(u);
+                idlist.append("," + getID(u.getDownloadURL()));
+                namelist.append("," + getName(u.getDownloadURL()));
+            }
+            br.getPage("http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1");
+
+            String[][] matches = br.getRegex("([^\n^\r^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^\n^\r]+)").getMatches();
+            int i = 0;
+            for (DownloadLink u : urls) {
+                u.setDownloadSize(Long.parseLong(matches[i][2]));
+                u.setFinalFileName(matches[i][1]);
+                u.setDupecheckAllowed(true);
+                u.setMD5Hash(matches[i][6]);
+                if (matches[i][4].equals("0")) {
+                    u.setAvailable(false);
+                } else {
+                    u.setAvailable(true);
+                }
+                ret[i] = u.isAvailable();
+                i++;
+            }
+            return ret;
         } catch (Exception e) {
             System.gc();
             e.printStackTrace();
@@ -212,13 +210,11 @@ public class Rapidshare extends PluginForHost {
     }
 
     private String getName(String downloadURL) {
-        // TODO Auto-generated method stub
-        return new Regex(downloadURL,"files/\\d+/(.*)").getMatch(0);
+        return new Regex(downloadURL, "files/\\d+/(.*)").getMatch(0);
     }
 
     private String getID(String downloadURL) {
-        // TODO Auto-generated method stub
-        return new Regex(downloadURL,"files/(\\d+)/").getMatch(0);
+        return new Regex(downloadURL, "files/(\\d+)/").getMatch(0);
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -727,11 +723,10 @@ public class Rapidshare extends PluginForHost {
             }
         }
         Rapidshare.correctURL(downloadLink);
-        
-        LAST_FILE_CHECK = System.currentTimeMillis();
-        return checkLinks(new DownloadLink[]{downloadLink})[0];
 
-    
+        LAST_FILE_CHECK = System.currentTimeMillis();
+        return checkLinks(new DownloadLink[] { downloadLink })[0];
+
     }
 
     private String getServerName(String id) {
@@ -876,12 +871,12 @@ public class Rapidshare extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
         String api = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + account.getUser() + "&password=" + account.getPass() + "&type=prem";
         br.getPage(api);
-       String error=br.getRegex("ERROR:(.*)").getMatch(0);
-       if(error!=null){
-           ai.setStatus(JDLocale.LF("plugins.host.rapidshare.apierror", "Rapidshare reports that %s",error.trim()));
-           ai.setValid(false);
-           return ai;
-       }
+        String error = br.getRegex("ERROR:(.*)").getMatch(0);
+        if (error != null) {
+            ai.setStatus(JDLocale.LF("plugins.host.rapidshare.apierror", "Rapidshare reports that %s", error.trim()));
+            ai.setValid(false);
+            return ai;
+        }
         String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
         HashMap<String, String> data = getMap(matches);
 

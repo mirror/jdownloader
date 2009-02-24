@@ -42,6 +42,7 @@ public class Installer {
 
     public Installer() {
         ConfigContainer configContainer;
+        ConfigEntry ce;
 
         configContainer = new ConfigContainer(this, "Language");
         configContainer.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getSubConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")).setDefaultValue(Locale.getDefault()));
@@ -54,10 +55,12 @@ public class Installer {
         JDLocale.setLocale(JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, "english"));
 
         configContainer = new ConfigContainer(this, "Download");
-        if (!OSDetector.isMac())
-            configContainer.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath()));
-        else 
-            configContainer.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(new File(System.getProperty("user.home") + "/Downloads")));
+        configContainer.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")));
+        if (!OSDetector.isMac()) {
+            ce.setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
+        } else {
+            ce.setDefaultValue(new File(System.getProperty("user.home") + "/Downloads"));
+        }
         SimpleGUI.showConfigDialog(null, configContainer, true);
         if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) == null) {
             JDUtilities.getLogger().severe("downloaddir not set");

@@ -17,8 +17,6 @@
 package jd.plugins;
 
 import java.awt.Color;
-import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -30,7 +28,6 @@ import jd.config.MenuItem;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
@@ -186,19 +183,19 @@ public abstract class PluginForDecrypt extends Plugin {
         return tmpLinks;
     }
 
-    private void tryClickNLoad(CryptedLink cryptedLink)  {
-   
+    private void tryClickNLoad(CryptedLink cryptedLink) {
+
         if (this.isClickNLoadEnabled() && OPEN_CLICK_N_LOAD >= 0 && OPEN_CLICK_N_LOAD <= 25) {
             try {
                 JDUtilities.acquireUserIO_Semaphore();
             } catch (InterruptedException e1) {
-               return;
+                return;
             }
-            if(OPEN_CLICK_N_LOAD<0)return;
+            if (OPEN_CLICK_N_LOAD < 0) return;
             boolean open = JDUtilities.getGUI().showConfirmDialog(JDLocale.LF("gui.plugins.decrypt.askclicknload", "The decrypter %s seems to be outdated, but supports Click'n'Load. Open the website now?", this.getHost()));
             if (open) {
                 try {
-                    JLinkButton.openURL("http://jdownloader.org/clicknload-redirect/"+Encoding.urlEncode(cryptedLink.getCryptedUrl().replace("http://", "")));
+                    JLinkButton.openURL("http://jdownloader.org/clicknload-redirect/" + Encoding.urlEncode(cryptedLink.getCryptedUrl().replace("http://", "")));
                     OPEN_CLICK_N_LOAD++;
                 } catch (Exception e) {
                     open = false;
@@ -210,7 +207,7 @@ public abstract class PluginForDecrypt extends Plugin {
             }
             JDUtilities.releaseUserIO_Semaphore();
         }
-        
+
     }
 
     protected boolean isClickNLoadEnabled() {

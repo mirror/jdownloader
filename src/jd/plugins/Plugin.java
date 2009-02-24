@@ -19,7 +19,6 @@ package jd.plugins;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -79,7 +78,7 @@ public abstract class Plugin implements ActionListener {
         Vector<String> passwords = HTMLParser.findPasswords(data);
         return JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
     }
- 
+
     /**
      * verwendet die erste Acaptcha Interaction um den captcha auszuwerten
      * 

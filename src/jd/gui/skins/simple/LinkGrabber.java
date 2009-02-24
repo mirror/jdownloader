@@ -787,7 +787,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private HashMap<String, Vector<DownloadLink>> waitingLinkList;
 
-    private Vector<DownloadLink> addingLinkList;
+    // private Vector<DownloadLink> addingLinkList;
 
     private Timer gathertimer;
 
@@ -805,7 +805,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         parentFrame = parent;
         tabList = new Vector<PackageTab>();
         waitingLinkList = new HashMap<String, Vector<DownloadLink>>();
-        addingLinkList = new Vector<DownloadLink>();
+        // addingLinkList = new Vector<DownloadLink>();
         initGUI();
 
         addLinks(linkList);
@@ -1146,7 +1146,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             try {
                 g = new URL(link.getDownloadURL()).getQuery();
             } catch (MalformedURLException e) {
-             
+
             }
             // logger.info("Best sym: "+bestSim);
             if ((bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 99) && !(!link.isAvailabilityChecked() && g != null)) || bestSim <= 0) {
@@ -1540,8 +1540,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         panel.setBorder(new EmptyBorder(n, n, n, n));
         setContentPane(panel);
 
-        JPanel inner = new JPanel(new BorderLayout(n, n));
-
         JPanel south = new JPanel(new BorderLayout(n, n));
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, n, 0));
 
@@ -1557,9 +1555,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         bpanel.add(accept);
         south.add(bpanel, BorderLayout.CENTER);
 
-        panel.add(inner, BorderLayout.CENTER);
-        inner.add(tabbedPane, BorderLayout.CENTER);
-
+        panel.add(tabbedPane, BorderLayout.CENTER);
         panel.add(south, BorderLayout.SOUTH);
 
         getRootPane().setDefaultButton(acceptAll);
@@ -1567,8 +1563,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         setPreferredSize(new Dimension(640, 480));
         setLocationRelativeTo(null);
         pack();
-
-        // setVisible(true);
     }
 
     private boolean isDupe(DownloadLink link) {

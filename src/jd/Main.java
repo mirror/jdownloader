@@ -41,7 +41,6 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.CFGConfig;
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
@@ -461,7 +460,7 @@ public class Main {
 
         logger.info("Revision: " + JDUtilities.getJDTitle());
         logger.info("Runtype: " + JDUtilities.getRunType());
- 
+
         try {
             splashScreen.finish();
         } catch (Exception e) {

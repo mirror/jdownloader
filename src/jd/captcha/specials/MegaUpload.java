@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
-import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 
@@ -35,27 +34,27 @@ public class MegaUpload {
         captcha.clean();
         ArrayList<Letter> ret = new ArrayList<Letter>();
         for (int i = 0; i < 4; i++) {
-            int averageWidth = Math.min(captcha.getWidth(),(int) (captcha.getWidth() / (4 - i))+8);
+            int averageWidth = Math.min(captcha.getWidth(), (int) (captcha.getWidth() / (4 - i)) + 8);
             Letter first = new Letter(averageWidth, captcha.getHeight());
             first.setOwner(captcha.owner);
             for (int x = 0; x < averageWidth; x++) {
                 for (int y = 0; y < captcha.getHeight(); y++) {
-                    try{
-                    first.grid[x][y] = captcha.grid[x][y];
-                    }catch(Exception e){
-                        
+                    try {
+                        first.grid[x][y] = captcha.grid[x][y];
+                    } catch (Exception e) {
+
                     }
                 }
             }
 
             LetterComperator r = captcha.owner.getLetter(first);
-      
-//            BasicWindow.showImage(r.getB().getImage(3));
+
+            // BasicWindow.showImage(r.getB().getImage(3));
             ret.add(first);
             if (i < 3) {
                 System.out.println(r.getDecodedValue() + "");
                 captcha.crop(r.getIntersection().getWidth(), 0, 0, 0);
-             
+
             }
         }
         if (ret.size() < 4) return null;
