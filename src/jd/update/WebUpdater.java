@@ -424,9 +424,9 @@ public class WebUpdater implements Serializable {
 
         }
         this.sum = new byte[sum.size()];
-        int i = 0;
-        for (byte b : sum) {
-            this.sum[i++] = b;
+        int ii = 0;
+        for (int i=sum.size()-1;i>=0;i--) {
+            this.sum[ii++] = sum.get(i);
         }
 
         WebUpdater.PLUGIN_LIST = plugins;

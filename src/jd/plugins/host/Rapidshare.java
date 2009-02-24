@@ -20,13 +20,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
@@ -127,6 +123,10 @@ public class Rapidshare extends PluginForHost {
         }
         String fileid = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/([\\d]{3,9})/?.*").getMatch(0);
         String filename = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?(.*)").getMatch(0);
+        Regex regex = new Regex(filename,"(.*\\..*)\\.htm?");
+        if(regex.matches()){
+            filename=regex.getMatch(0);
+        }
         return "http://rapidshare.com/files/" + fileid + "/" + filename;
     }
 
@@ -175,80 +175,49 @@ public class Rapidshare extends PluginForHost {
         try {
             if (urls == null) { return null; }
             boolean[] ret = new boolean[urls.length];
-            int c = 0;
-            ArrayList<Integer> sjlinks = new ArrayList<Integer>();
-            while (true) {
-                String post = "";
-                int i = 0;
-                for (i = c; i < urls.length; i++) {
-                    // TODO: Was passiert hier? ^^
-                    if (!canHandle(urls[i].getDownloadURL())) return null;
-
-                    urls[i].setUrlDownload(getCorrectedURL(urls[i].getDownloadURL()));
-
-                    if ((post + urls[i].getDownloadURL() + "%0a").length() > 10000) {
-                        break;
-                    }
-                    post += urls[i].getDownloadURL() + "%0a";
-                }
-                PostRequest r = new PostRequest("https://ssl.rapidshare.com/cgi-bin/checkfiles.cgi");
-                r.addVariable("urls", post);
-                post = null;
-                r.addVariable("toolmode", "1");
-                String page = r.load();
-                r = null;
-                String[] lines = Regex.getLines(page);
-                page = null;
-                if (lines.length != i - c) {
-                    lines = null;
-                    System.gc();
-                    return null;
-                }
-
-                for (String line : lines) {
-
-                    String[] erg = line.split(",");
-                    /*
-                     * 1: Normal online -1: date nicht gefunden 3: Drect
-                     * download
-                     */
-                    while (sjlinks.contains(c)) {
-                        c++;
-                    }
-                    ret[c] = true;
-                    if (erg.length < 6 || !erg[2].equals("1") && !erg[2].equals("3")) {
-                        ret[c] = false;
-                    } else {
-                        urls[c].setDownloadSize(Integer.parseInt(erg[4]));
-                        urls[c].setFinalFileName(erg[5].trim());
-                        urls[c].setDupecheckAllowed(true);
-                        if (urls[c].getDownloadSize() > 8192) {
-                            /* Rapidshare html endung workaround */
-                            /*
-                             * man kann jeden scheiss an die korrekte url hängen
-                             * und die api gibt das dann als filename zurück,
-                             * doofe api
-                             */
-                            urls[c].setFinalFileName(erg[5].trim().replaceAll(".html", "").replaceAll(".htm", ""));
-                        }
-                    }
-                    c++;
-
-                }
-                if (c >= urls.length) {
-                    lines = null;
-                    System.gc();
-                    return ret;
-                }
-                Thread.sleep(400);
-            }
-
+           
+            
+           StringBuilder idlist= new StringBuilder();
+           StringBuilder namelist= new StringBuilder();
+           
+           for( DownloadLink u:urls){
+               correctURL(u);
+               idlist.append(","+getID(u.getDownloadURL()));
+               namelist.append(","+getName(u.getDownloadURL()));
+           }
+          br.getPage("http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files="+idlist.toString().substring(1)+"&filenames="+namelist.toString().substring(1)+"&incmd5=1");
+        
+      String[][] matches = br.getRegex("([^\n^\r^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^\n^\r]+)").getMatches();
+      int i=0;
+      for( DownloadLink u:urls){
+          u.setDownloadSize(Long.parseLong(matches[i][2]));
+          u.setFinalFileName(matches[i][1]);
+          u.setMD5Hash(matches[i][6]);
+          if(matches[i][4].equals("0")){
+              u.setAvailable(false);
+          }else{
+              u.setAvailable(true);
+          }
+          ret[i]=u.isAvailable();
+          i++;
+      }
+        return ret;
         } catch (Exception e) {
             System.gc();
             e.printStackTrace();
             return null;
         }
 
+    }
+
+    private String getName(String downloadURL) {
+        // TODO Auto-generated method stub
+        return new Regex(downloadURL,"files/\\d+/(.*)").getMatch(0);
+    }
+
+    private String getID(String downloadURL) {
+        // TODO Auto-generated method stub
+        return new Regex(downloadURL,"files/(\\d+)/").getMatch(0);
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -757,27 +726,11 @@ public class Rapidshare extends PluginForHost {
             }
         }
         Rapidshare.correctURL(downloadLink);
+        
         LAST_FILE_CHECK = System.currentTimeMillis();
+        return checkLinks(new DownloadLink[]{downloadLink})[0];
 
-        String[] erg = br.getPage("https://ssl.rapidshare.com/cgi-bin/checkfiles.cgi?urls=" + downloadLink.getDownloadURL() + "&toolmode=1").trim().split(",");
-        /*
-         * 1: Normal online -1: date nicht gefunden 3: Drect download
-         */
-        if (erg.length < 6 || !erg[2].equals("1") && !erg[2].equals("3")) { return false; }
-
-        downloadLink.setFinalFileName(erg[5]);
-        downloadLink.setDownloadSize(Integer.parseInt(erg[4]));
-        downloadLink.setDupecheckAllowed(true);
-        if (downloadLink.getDownloadSize() > 8192) {
-            /* Rapidshare html endung workaround */
-            /*
-             * man kann jeden scheiss an die korrekte url hängen und die api
-             * gibt das dann als filename zurück, doofe api
-             */
-            downloadLink.setFinalFileName(erg[5].trim().replaceAll(".html", "").replaceAll(".htm", ""));
-        }
-
-        return true;
+    
     }
 
     private String getServerName(String id) {
@@ -914,61 +867,46 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public AccountInfo getAccountInformation(Account account) throws Exception {
+        // 5 minute cache
+        if (account.getProperty("accountinfo") != null) {
+            AccountInfo ai = (AccountInfo) account.getProperty("accountinfo");
+            if ((System.currentTimeMillis() - ai.getCreateTime()) < 5 * 60 * 1000) { return ai; }
+        }
         AccountInfo ai = new AccountInfo(this, account);
-        br = login(account, false);
-        if (account.getStringProperty("premcookie", null) == null || account.getUser().equals("") || account.getPass().equals("") || br.getRegex("(wurde nicht gefunden|Your Premium Account has not been found)").matches() || br.getRegex("but the password is incorrect").matches() || br.getRegex("Fraud detected, Account").matches()) {
+        String api = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + account.getUser() + "&password=" + account.getPass() + "&type=prem";
+        br.getPage(api);
+       String error=br.getRegex("ERROR:(.*)").getMatch(0);
+       if(error!=null){
+           ai.setStatus(JDLocale.LF("plugins.host.rapidshare.apierror", "Rapidshare reports that %s",error.trim()));
+           ai.setValid(false);
+           return ai;
+       }
+        String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
+        HashMap<String, String> data = getMap(matches);
 
-            String error = findError("" + br);
-            if (error != null) {
-                if (error.contains("Fraud")) {
-                    ai.setStatus(JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."));
-                } else {
-                    ai.setStatus(this.dynTranslate(error));
-                }
-            }
-            ai.setValid(false);
-            account.setProperty("premcookie", null);
-            return ai;
-        }
+        ai.setTrafficLeft((Long.parseLong(data.get("premkbleft")) / 1000) * 1024l * 1024l);
+        ai.setTrafficMax(12 * 1024 * 1024 * 1024l);
+        ai.setFilesNum(Integer.parseInt(data.get("curfiles")));
+        ai.setPremiumPoints(Integer.parseInt(data.get("points")));
+        ai.setNewPremiumPoints(Integer.parseInt(data.get("prempoints")));
+        ai.setUsedSpace(Integer.parseInt(data.get("curspace")));
+        ai.setTrafficShareLeft((Integer.parseInt(data.get("bodkb")) / 1000) * 1024l * 1024l);
 
-        String validUntil = br.getRegex("<td>(Expiration date|G\\&uuml\\;ltig bis)\\:</td><td style=.*?><b>(.*?)</b></td>").getMatch(1).trim();
+        ai.setValidUntil(Long.parseLong(data.get("validuntil")) * 1000);
 
-        String trafficLeft = br.getRegex("<td>(Traffic left:|Traffic &uuml;brig:)</td><td align=right><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\(([\\d]*?)\\/1000\\)\\)\\)\\;<\\/script> MB<\\/b><\\/td>").getMatch(1);
-        String files = br.getRegex("<td>(Files:|Dateien:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();
-        String rapidPoints = br.getRegex("<td>RapidPoints:</td><td.*?><b>(.*?)</b></td>").getMatch(0).trim();
-        String newRapidPoints = br.getRegex(">RapidPoints PU</a>:</td><td.*?><b>(.*?)</b></td>").getMatch(0).trim();
-        String usedSpace = br.getRegex("<td>(Used storage:|Belegter Speicher:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();
-        String trafficShareLeft = br.getRegex("<td>(TrafficShare left:|TrafficShare &uuml;brig:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();
-        ai.setTrafficLeft(Regex.getSize(trafficLeft + " Mb") / 1000);
-        ai.setTrafficMax(10 * 1024 * 1024 * 1024l);
-        ai.setFilesNum(Integer.parseInt(files));
-        ai.setPremiumPoints(Integer.parseInt(rapidPoints));
-        ai.setNewPremiumPoints(Integer.parseInt(newRapidPoints));
-        ai.setUsedSpace(Regex.getSize(usedSpace));
-        ai.setTrafficShareLeft(Regex.getSize(trafficShareLeft));
-        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd. MMM yyyy", Locale.UK);
-
-        try {
-            Date date = dateFormat.parse(validUntil);
-            ai.setValidUntil(date.getTime());
-        } catch (ParseException e) {
-            try {
-                dateFormat = new SimpleDateFormat("EEE, dd. MMM yyyy");
-                Date date = dateFormat.parse(validUntil);
-                ai.setValidUntil(date.getTime());
-                e.printStackTrace();
-            } catch (ParseException e2) {
-                return null;
-            }
-
-        }
-
-        if (br.containsHTML("expired") && br.containsHTML("if (1)")) {
+        if (ai.getValidUntil() < System.currentTimeMillis()) {
             ai.setExpired(true);
-            account.setProperty("premcookie", null);
         }
 
+        account.setProperty("accountinfo", ai);
         return ai;
+    }
+
+    private HashMap<String, String> getMap(String[][] matches) {
+        HashMap<String, String> map = new HashMap<String, String>();
+        for (String[] m : matches)
+            map.put(m[0].trim(), m[1].trim());
+        return map;
     }
 
     /**

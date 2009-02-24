@@ -68,6 +68,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
@@ -790,6 +791,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private Vector<DownloadLink> addingLinkList;
 
+    private Timer gathertimer;
+
     /**
      * @param parent
      *            GUI
@@ -815,6 +818,18 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == this.gathertimer) {
+            gathertimer.stop();
+            gathertimer.removeActionListener(this);
+            gathertimer=null;
+            
+            if (waitingLinkList.size() > 0) {
+                startLinkGatherer();
+            }
+
+            return;
+        }
+
         if (e.getSource() == mStartAfterAdding) {
             guiConfig.setProperty(PROPERTY_STARTAFTERADDING, mStartAfterAdding.isSelected());
             guiConfig.save();
@@ -1040,10 +1055,21 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             if (isDupe(element)) continue;
             totalLinkList.add(element);
             addToWaitingList(element);
+           
+            attachLinkToPackage(element);
         }
-        if (waitingLinkList.size() > 0) {
-            startLinkGatherer();
+        reprintTabbedPane();
+        if (gathertimer != null) {
+            gathertimer.stop();
+            gathertimer.removeActionListener(this);
+            gathertimer = null;
+
         }
+        gathertimer = new Timer(5000, this);
+        gathertimer.setInitialDelay(5000);
+        gathertimer.setRepeats(false);
+        gathertimer.start();
+
     }
 
     public synchronized void addToWaitingList(DownloadLink element) {
@@ -1682,11 +1708,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 while (links.size() > 0 && gathererrunning == true) {
                     DownloadLink link = links.remove(0);
                     if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) {
-                        addingLinkList.add(link);
-                        try {
-                            Thread.sleep(5);
-                        } catch (InterruptedException e) {
-                        }
+//                        addingLinkList.add(link);
+//                        try {
+//                            Thread.sleep(5);
+//                        } catch (InterruptedException e) {
+//                        }
                     } else {
                         if (!link.isAvailabilityChecked()) {
                             Vector<DownloadLink> dlinks = new Vector<DownloadLink>();
@@ -1702,8 +1728,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                             }
                         }
                         link.isAvailable();
-                        addingLinkList.add(link);
+//                        addingLinkList.add(link);
                     }
+                    reprintTabbedPane();
                 }
             }
 
@@ -1711,7 +1738,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 run();
             }
         }
-        class AThread extends Thread {
+       /* class AThread extends Thread {
             public AThread() {
             }
 
@@ -1730,7 +1757,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     }
                 }
 
-                /* restlichen adden */
+            
                 while (addingLinkList.size() > 0) {
                     DownloadLink link = addingLinkList.remove(0);
                     checkAlreadyinList(link);
@@ -1740,7 +1767,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 reprintTabbedPane();
             }
         }
-
+*/
         progress.setMaximum(0);
         progress.setString(null);
         if (gatherer != null && gatherer.isAlive()) { return; }
@@ -1748,15 +1775,15 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             public synchronized void run() {
                 gathererrunning = true;
-                AThread athread = new AThread();
-                athread.start();
+//                AThread athread = new AThread();
+//                athread.start();
                 decryptJobbers = new Jobber(4);
-                int maxperjob = 20;
+                int maxperjob = 100;
                 while (waitingLinkList.size() > 0 && gathererrunning == true) {
                     if (waitingLinkList.size() == 1) {
-                        maxperjob = 4;
+                        maxperjob = 100;
                     } else {
-                        maxperjob = 20;
+                        maxperjob = 100;
                     }
                     Set<String> ks = waitingLinkList.keySet();
                     String it = ks.iterator().next();

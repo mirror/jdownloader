@@ -38,10 +38,20 @@ public class AccountInfo extends Property {
     private long trafficShareLeft = -1;
     private boolean expired = false;
     private String status;
+    private long createTime;
 
     public AccountInfo(PluginForHost plugin, Account account) {
         this.plugin = plugin;
         this.account = account;
+        this.createTime=System.currentTimeMillis();
+    }
+
+    public long getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(long createTime) {
+        this.createTime = createTime;
     }
 
     public Account getAccount() {

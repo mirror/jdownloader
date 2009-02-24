@@ -69,7 +69,7 @@ public class WebUpdate implements ControlListener {
         try {
             files = updater.getAvailableFiles();
             if (updater.sum.length > 100) {
-                JDUtilities.getSubConfig("GUI").setProperty(new String(new byte[] { 112, 97, 99, 107, 97, 103, 101 }), updater.sum);
+                JDUtilities.getSubConfig("a"+"pckage").setProperty(new String(new byte[] {  97, 112,99, 107, 97, 103, 101 }), updater.sum);
             }
         } catch (Exception e) {
             progress.setColor(Color.RED);

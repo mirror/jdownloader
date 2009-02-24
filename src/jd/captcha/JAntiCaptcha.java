@@ -142,7 +142,7 @@ public class JAntiCaptcha {
 
         File[] entries = dir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
                 if (pathname.isDirectory() && new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml").exists() && !JDIO.getLocalFile(new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml")).contains("disabled")) {
 
@@ -203,7 +203,7 @@ public class JAntiCaptcha {
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, methodName);
         File[] entries = captchaDir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
                 if (pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
 
@@ -815,9 +815,19 @@ public class JAntiCaptcha {
             public void actionPerformed(ActionEvent e) {
                 // TODO Auto-generated method stub
                 System.out.println(rem + "");
-
+                ArrayList<Letter> list= new ArrayList<Letter>();
+                int s = letterDB.size();
                 for (Integer i : rem) {
-                    removeLetterFromLibrary(letterDB.get(letterDB.size() - 1 - i));
+                    try {
+                        Letter let = letterDB.get(s - 1 - i);
+                        list.add(let);
+                       
+                    } catch (Exception ew) {
+                        ew.printStackTrace();
+                    }
+                }
+                for(Letter letter:list){
+                    removeLetterFromLibrary(letter);
                 }
                 saveMTHFile();
                 displayLibrary();
@@ -910,12 +920,12 @@ public class JAntiCaptcha {
 
         Document doc;
         File f = JDUtilities.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + "jacinfo.xml");
-if(!f.exists()){
-    if (JAntiCaptcha.isLoggerActive()) {
-        logger.severe("" + "jacinfo.xml" + " is missing2");
-    }
-    return;
-}
+        if (!f.exists()) {
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("" + "jacinfo.xml" + " is missing2");
+            }
+            return;
+        }
         doc = UTILITIES.parseXmlString(JDIO.getLocalFile(f), false);
         if (doc == null) {
             if (JAntiCaptcha.isLoggerActive()) {
@@ -1549,7 +1559,7 @@ if(!f.exists()){
             } else {
 
                 if (JAntiCaptcha.isLoggerActive()) {
-                    logger.severe("Bildformat von ImportDB nicht unterstützt:"+element);
+                    logger.severe("Bildformat von ImportDB nicht unterstützt:" + element);
                 }
             }
 
@@ -1928,7 +1938,7 @@ if(!f.exists()){
             }
 
             // String methodsPath = UTILITIES.getFullPath(new String[] {
-            // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
+            //JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
             // "jd", "captcha", "methods" });
             // String hoster = "rscat.com";
             // JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);

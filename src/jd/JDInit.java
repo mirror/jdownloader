@@ -258,13 +258,13 @@ public class JDInit {
 
         if (obj == null) {
             System.out.println("Fresh install?");
-            File file = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
-            if (file.exists()) {
-                logger.info("Wrapping jdownloader.config");
-                obj = JDIO.loadObject(null, file, Configuration.saveAsXML);
-                System.out.println(obj.getClass().getName());
-                JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", obj);
-            }
+//            File file = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
+//            if (file.exists()) {
+//                logger.info("Wrapping jdownloader.config");
+//                obj = JDIO.loadObject(null, file, Configuration.saveAsXML);
+//                System.out.println(obj.getClass().getName());
+//                JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", obj);
+//            }
         }
 
         if (obj != null && ((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null) {

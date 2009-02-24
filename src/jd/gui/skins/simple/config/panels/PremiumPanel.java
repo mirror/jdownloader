@@ -154,6 +154,7 @@ public class PremiumPanel extends JPanel {
         private JTextField txtStatus;
         private JButton btnCheck;
         private JButton btnDelete;
+        private Account account;
 
         public AccountPanel(JPanel panel, int nr) {
             createPanel(panel, nr);
@@ -161,6 +162,7 @@ public class PremiumPanel extends JPanel {
 
         public void setAccount(Account account) {
             boolean sel = account.isEnabled();
+            this.account=account;
             txtUsername.setText(account.getUser());
             txtPassword.setText(account.getPass());
             txtStatus.setText(account.getStatus());
@@ -174,9 +176,16 @@ public class PremiumPanel extends JPanel {
         }
 
         public Account getAccount() {
-            Account a = new Account(txtUsername.getText(), new String(txtPassword.getPassword()));
-            a.setEnabled(chkEnable.isSelected());
-            return a;
+            String pass=new String(txtPassword.getPassword());
+ if(account==null)return null;
+            if(!account.getUser().equals(txtUsername.getText())||!account.getPass().equals(pass)){
+                account.setUser(txtUsername.getText());
+                account.setPass(pass);
+                account.setProperty("accountinfo", null);
+            }          
+          
+            account.setEnabled(chkEnable.isSelected());
+            return account;
         }
 
         public void createPanel(JPanel panel, int nr) {

@@ -43,7 +43,7 @@ public class JACTest {
 
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
 
-        // jac.setShowDebugGui(true);
+//         jac.setShowDebugGui(true);
         // LetterComperator.CREATEINTERSECTIONLETTER = true;
         //
         // jac.exportDB();
@@ -61,7 +61,7 @@ public class JACTest {
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment
         // ().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+
         // "securedin1730080724541.jpg"),4);
-        File f = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster).listFiles()[1];
+        File f = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster).listFiles()[0];
         System.out.println(f + "");
         jac.showPreparedCaptcha(f);
 

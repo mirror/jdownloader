@@ -58,12 +58,10 @@ public class Upload {
             br.setDebug(true);
             String[] data = br.getPage("http://rapidshare.com/cgi-bin/upload.cgi?intsysdata=1").split("\\,");
             PostFormDataRequest r = (PostFormDataRequest) br.createPostFormDataRequest("http://rs" + data[0].trim() + "cg.rapidshare.com/cgi-bin/upload.cgi");
-
             r.addFormData(new FormData("toolmode2", "1"));
             r.addFormData(new FormData("filecontent", file.getName(), file));
             r.addFormData(new FormData("freeaccountid", userid));
             r.addFormData(new FormData("password", pass));
-
             r.connect();
             String code = r.read();
             System.out.println(code);
