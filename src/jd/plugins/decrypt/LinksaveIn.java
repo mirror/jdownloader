@@ -21,9 +21,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
@@ -37,18 +41,45 @@ public class LinksaveIn extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
 
         br.getPage(param.getCryptedUrl());
+        br.forceDebug(true);
+        Form form = br.getFormbyProperty("name", "form");
+        while (form != null) {
+            String url = form.getRegex("<img id=\"captcha\" src=\"\\.\\/(.*?)\" ").getMatch(0);
+            File captchaFile = this.getLocalCaptchaFile(this);
+            Browser.download(captchaFile, br.cloneBrowser().openGetConnection(url));
 
+            String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
+            if (captchaCode == null) return null;
+            form.put("code", captchaCode);
+            br.submitForm(form);
+            if (br.containsHTML("Captcha-code ist falsch")) {
+                br.getPage(param.getCryptedUrl());
+                form = br.getFormbyProperty("name", "form");
+            } else {
+                break;
+            }
+        }
         String[] container = br.getRegex("link\\'\\)\\.href\\=\\'(.*?)\\'\\;").getColumn(0);
         if (container != null && container.length > 0) {
-
-            File file;
-            br.downloadConnection(file = JDUtilities.getResourceFile("tmp/linksave/" + container[0].replace(".cnl", ".dlc").replace("dlc://", "http://")), br.openGetConnection(container[0]));
-
-            JDUtilities.getController().loadContainerFile(file);
+            File file = null;
+            for (String c : container) {
+                URLConnectionAdapter con = br.openGetConnection("http://linksave.in/" + c);
+                if (con.getResponseCode() == 200) {
+                    br.downloadConnection(file = JDUtilities.getResourceFile("tmp/linksave/" + c.replace(".cnl", ".dlc").replace("dlc://", "http://")), con);
+                    break;
+                } else {
+                    con.disconnect();
+                }
+            }
+            if (file != null && file.exists() && file.length() > 100) {
+                JDUtilities.getController().loadContainerFile(file);
+            } else {
+                throw new DecrypterException("Out of date. Try Click'n'Load");
+            }
         } else {
             throw new DecrypterException("Out of date. Try Click'n'Load");
         }
-        return new  ArrayList<DownloadLink>();
+        return new ArrayList<DownloadLink>();
     }
 
     protected boolean isClickNLoadEnabled() {
