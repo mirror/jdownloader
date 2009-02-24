@@ -492,6 +492,7 @@ public class Form extends Property {
     public ArrayList<RequestVariable> getRequestVariables() {
         ArrayList<RequestVariable> ret = new ArrayList<RequestVariable>();
         for (InputField ipf : this.inputfields) {
+            if(ipf.getValue()==null)continue;
             if (ipf.getType() != null && ipf.getType().equalsIgnoreCase("image")) {
                 ret.add(new RequestVariable(ipf.getKey() + ".x", new Random().nextInt(100) + ""));
                 ret.add(new RequestVariable(ipf.getKey() + ".y", new Random().nextInt(100) + ""));

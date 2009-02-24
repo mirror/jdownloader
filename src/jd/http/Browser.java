@@ -632,7 +632,7 @@ public class Browser {
     /**
      * TRies to get a fuill url out of string
      */
-    private String getURL(String string) {
+    public String getURL(String string) {
         if (string == null) string = this.getRedirectLocation();
         if (string == null) return null;
         try {

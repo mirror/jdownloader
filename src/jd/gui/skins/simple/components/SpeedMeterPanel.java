@@ -20,8 +20,10 @@ import javax.swing.UIManager;
 import javax.swing.plaf.FontUIResource;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDUtilities;
 
 public class SpeedMeterPanel extends JPanel implements ControlListener, ActionListener {
@@ -33,12 +35,16 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
     private int i;
     private int[] cache;
     private Thread th;
+    private int window;
 
     private static final int CAPACITY = 40;
 
     public SpeedMeterPanel() {
         // Set background color for the applet's panel.
         this.i = 0;
+       
+        this.window=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
+        
         this.setOpaque(false);
         this.setBorder(BorderFactory.createEtchedBorder());
         this.cache = new int[CAPACITY];
@@ -66,9 +72,9 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
                 while (!this.isInterrupted()) {
 
                     update();
-
+                   
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep((window*1000)/CAPACITY);
                         cache[i] = JDUtilities.getController().getSpeedMeter();
                         i++;
                         i = i % cache.length;
@@ -177,6 +183,9 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
         if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
             if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
                 update();
+            }
+            if (event.getParameter().equals(SimpleGUI.PARAM_SHOW_SPEEDMETER_WINDOWSIZE)) {
+                window=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
             }
         }
 

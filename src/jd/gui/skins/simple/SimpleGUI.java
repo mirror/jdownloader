@@ -353,6 +353,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String PARAM_SHOW_SPEEDMETER = "PARAM_SHOW_SPEEDMETER";
 
+    public static final String PARAM_SHOW_SPEEDMETER_WINDOWSIZE = "PARAM_SHOW_SPEEDMETER_WINDOWSIZE";
+
     /**
      * factory method for menu items
      * 
