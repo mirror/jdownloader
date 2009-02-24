@@ -48,7 +48,7 @@ public class JDEventQueue extends EventQueue {
         // comment out in production code
         // JDUtilities.getLogger().fine("Enter " +
         // JDEventQueue.class.getSimpleName());
-        eventQueueInteruptionTest();
+        // eventQueueInteruptionTest();
     }
 
     abstract class MenuAbstractAction extends AbstractAction {
@@ -206,7 +206,7 @@ public class JDEventQueue extends EventQueue {
             for (int i = 0; i < 1; i++) {
                 Browser br = new Browser();
                 br.setCurrentURL(url);
-
+                
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 br.clearCookies("youtube.com");
