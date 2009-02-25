@@ -1419,7 +1419,7 @@ public class JDUtilities {
         }
         return new String[] { password };
     }
-
+ 
     public static String passwordArrayToString(String[] passwords) {
         LinkedList<String> pws = new LinkedList<String>();
         for (int i = 0; i < passwords.length; i++) {
