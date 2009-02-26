@@ -21,12 +21,10 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.config.MenuItem;
-import jd.event.ControlListener;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
-public class Schedule extends PluginOptional implements ControlListener {
+public class Schedule extends PluginOptional {
     public Schedule(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -35,10 +33,9 @@ public class Schedule extends PluginOptional implements ControlListener {
         return 2;
     }
 
-    private ScheduleControl sControl = new ScheduleControl();
-
     @Override
     public void actionPerformed(ActionEvent e) {
+        ScheduleControl sControl = new ScheduleControl();
         sControl.getStatus().start();
         sControl.getStatus().setInitialDelay(1000);
         sControl.setVisible(true);
@@ -74,7 +71,6 @@ public class Schedule extends PluginOptional implements ControlListener {
     @Override
     public boolean initAddon() {
         logger.info("Schedule OK");
-        JDUtilities.getController().addControlListener(this);
         return true;
     }
 
