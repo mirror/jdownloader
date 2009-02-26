@@ -44,8 +44,8 @@ public class Zippysharecom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<title>Zippyshare.com - File does not exist</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<strong>Name: </strong>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        String filesize = br.getRegex(Pattern.compile("<strong>Size: </strong>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<strong>Name: </strong>(.*?)</font><br", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String filesize = br.getRegex(Pattern.compile("<strong>Size: </strong>(.*?)</font><br", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
@@ -60,7 +60,7 @@ public class Zippysharecom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("downloadlink = unescape\\(\\'(.*?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("downloadlink2 = unescape\\('(.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, linkurl);
