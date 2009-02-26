@@ -34,12 +34,17 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
+import jd.config.SubConfiguration;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 
 public class ScheduleControl extends JDialog implements ActionListener {
 
     private static final long serialVersionUID = 1L;
+
+    private static final String PROPERTY_SCHEDULES = "PROPERTY_SCHEDULES";
+
+    private SubConfiguration config;
 
     private JPanel panel;
     private JPanel aPanel;
@@ -50,12 +55,17 @@ public class ScheduleControl extends JDialog implements ActionListener {
     private JButton remove;
 
     private JButton show;
-    private Timer status = new Timer(1, this);
+    private Timer status = new Timer(15 * 1000, this);
 
     private Vector<String> listData = new Vector<String>();
-    private Vector<ScheduleFrame> schedules = new Vector<ScheduleFrame>();
+    private Vector<ScheduleFrame> schedules;
 
-    public ScheduleControl() {
+    @SuppressWarnings("unchecked")
+    public ScheduleControl(SubConfiguration config) {
+        this.config = config;
+        schedules = (Vector<ScheduleFrame>) this.config.getProperty(PROPERTY_SCHEDULES, new Vector<ScheduleFrame>());
+        reloadList();
+
         initGUI();
     }
 
@@ -65,10 +75,11 @@ public class ScheduleControl extends JDialog implements ActionListener {
             public void windowClosing(WindowEvent e) {
                 setVisible(false);
                 status.stop();
+                config.setProperty(PROPERTY_SCHEDULES, schedules);
             }
         });
 
-        setTitle("Scheduler by Tudels");
+        setTitle(JDLocale.L("addons.schedule.name", "Schedule"));
         setModal(true);
         setIconImage(JDTheme.I("gui.images.jd_logo"));
         setSize(450, 300);
@@ -76,7 +87,6 @@ public class ScheduleControl extends JDialog implements ActionListener {
         setLocation(300, 300);
 
         Dimension size = new Dimension(150, 20);
-        listData.add(JDLocale.L("addons.schedule.menu.create", "Create"));
         list = new JComboBox(listData);
         list.addActionListener(this);
         list.setMinimumSize(size);
@@ -94,11 +104,14 @@ public class ScheduleControl extends JDialog implements ActionListener {
         remove.setEnabled(false);
         remove.addActionListener(this);
 
-        menu = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        JPanel buttons = new JPanel(new GridLayout(1, 3, 5, 5));
+        buttons.add(show);
+        buttons.add(add);
+        buttons.add(remove);
+
+        menu = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
         menu.add(list);
-        menu.add(show);
-        menu.add(add);
-        menu.add(remove);
+        menu.add(buttons);
 
         aPanel = new JPanel(new BorderLayout(0, 0));
 
@@ -110,18 +123,21 @@ public class ScheduleControl extends JDialog implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-
         if (e.getSource() == add) {
             schedules.add(new ScheduleFrame(JDLocale.L("addons.schedule.menu.schedule", "Schedule") + " " + (schedules.size() + 1)));
             reloadList();
             list.setSelectedIndex(schedules.size() - 1);
+            SwingUtilities.updateComponentTreeUI(this);
         } else if (e.getSource() == remove) {
+            if (schedules.size() == 0) return;
             schedules.remove(list.getSelectedIndex());
             reloadList();
-            list.setSelectedIndex(schedules.size() - 1);
+            list.setSelectedIndex(Math.max(0, schedules.size() - 1));
             setCenterPanel(null);
             renameLabels();
+            SwingUtilities.updateComponentTreeUI(this);
         } else if (e.getSource() == show) {
+            if (schedules.size() == 0) return;
             if (show.getText().equals(JDLocale.L("addons.schedule.menu.edit", "Edit"))) {
                 show.setText(JDLocale.L("addons.schedule.menu.close", "Close"));
                 setCenterPanel(schedules.get(list.getSelectedIndex()));
@@ -133,20 +149,21 @@ public class ScheduleControl extends JDialog implements ActionListener {
                 status.start();
                 changeControls(true);
             }
+            SwingUtilities.updateComponentTreeUI(this);
         } else if (e.getSource() == status) {
             int size = schedules.size();
 
-            JPanel infoPanel = new JPanel(new GridLayout(size, 1));
+            JPanel infoPanel = new JPanel(new GridLayout(size, 1, 10, 10));
             for (int i = 0; i < size; ++i) {
                 ScheduleFrame s = schedules.get(i);
                 infoPanel.add(new JLabel(JDLocale.L("addons.schedule.menu.schedule", "Schedule") + " " + (i + 1) + " " + JDLocale.L("addons.schedule.menu.status", "Status") + ": " + s.getStatusLabel().getText()));
             }
             setCenterPanel(infoPanel);
+            SwingUtilities.updateComponentTreeUI(this);
         } else if (e.getSource() == list) {
-            remove.setEnabled(schedules.size() > 0);
             show.setEnabled(schedules.size() > 0);
+            remove.setEnabled(schedules.size() > 0);
         }
-        SwingUtilities.updateComponentTreeUI(this);
     }
 
     private void changeControls(boolean b) {
@@ -163,17 +180,14 @@ public class ScheduleControl extends JDialog implements ActionListener {
             listData.add(JDLocale.L("addons.schedule.menu.create", "Create"));
         } else {
             for (int i = 1; i <= size; ++i) {
-                listData.add(" " + JDLocale.L("addons.schedule.menu.schedule", "Schedule") + " " + i);
+                listData.add(JDLocale.L("addons.schedule.menu.schedule", "Schedule") + " " + i);
             }
         }
-
-        list.invalidate();
     }
 
     private void renameLabels() {
         for (int i = 0; i < schedules.size(); ++i) {
-            ScheduleFrame s = schedules.get(i);
-            s.getLabel().setText(listData.get(i));
+            schedules.get(i).getLabel().setText(listData.get(i));
         }
     }
 

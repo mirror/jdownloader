@@ -38,7 +38,7 @@ import jd.utils.JDUtilities;
 
 public class ScheduleFrame extends JPanel implements ActionListener {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 3069680111186861393L;
 
     private final String dateFormat = "HH:mm:ss | dd.MM.yy";
 

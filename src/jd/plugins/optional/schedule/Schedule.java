@@ -35,7 +35,7 @@ public class Schedule extends PluginOptional {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        ScheduleControl sControl = new ScheduleControl();
+        ScheduleControl sControl = new ScheduleControl(getPluginConfig());
         sControl.getStatus().start();
         sControl.getStatus().setInitialDelay(1000);
         sControl.setVisible(true);
