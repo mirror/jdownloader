@@ -35,12 +35,12 @@ public class Schedule extends PluginOptional implements ControlListener {
         return 2;
     }
 
-    ScheduleControl sControl = new ScheduleControl();
+    private ScheduleControl sControl = new ScheduleControl();
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        sControl.status.start();
-        sControl.status.setInitialDelay(1000);
+        sControl.getStatus().start();
+        sControl.getStatus().setInitialDelay(1000);
         sControl.setVisible(true);
     }
 
@@ -73,16 +73,13 @@ public class Schedule extends PluginOptional implements ControlListener {
 
     @Override
     public boolean initAddon() {
-
         logger.info("Schedule OK");
         JDUtilities.getController().addControlListener(this);
         return true;
-
     }
 
     @Override
     public void onExit() {
-
     }
 
 }

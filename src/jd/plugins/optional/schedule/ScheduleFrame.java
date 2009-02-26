@@ -39,40 +39,63 @@ import jd.utils.JDUtilities;
 public class ScheduleFrame extends JPanel implements ActionListener {
 
     private static final long serialVersionUID = 1L;
-    Timer c = new Timer(1000, this);
-    SpinnerDateModel date_model = new SpinnerDateModel();
-    String dateFormat = "HH:mm:ss | dd.MM.yy";
-    JLabel label;
-    JSpinner maxdls = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 10, 1));
-    JSpinner maxspeed = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED), 0, 50000, 50));
-    JCheckBox premium = new JCheckBox();
 
-    JCheckBox reconnect = new JCheckBox();
-    JSpinner repeat = new JSpinner(new SpinnerNumberModel(0, 0, 24, 1));
-    JButton start = new JButton(JDLocale.L("addons.schedule.menu.start", "Start"));
+    private final String dateFormat = "HH:mm:ss | dd.MM.yy";
 
-    JLabel status = new JLabel(JDLocale.L("addons.schedule.menu.running", " Not Running!"));
-    JCheckBox stop_start = new JCheckBox();
-    // Objekte werden erzeugt
-    Timer t = new Timer(10000, this);
-    JSpinner time = new JSpinner(date_model);
-
-    boolean visible = false;
+    private Timer c;
+    private SpinnerDateModel date_model;
+    private JLabel label;
+    private JSpinner maxdls;
+    private JSpinner maxspeed;
+    private JCheckBox premium;
+    private JCheckBox reconnect;
+    private JSpinner repeat;
+    private JButton start;
+    private JLabel status;
+    private JCheckBox stop_start;
+    private Timer t;
+    private JSpinner time;
 
     // Konstruktor des Fensters und Aussehen
     public ScheduleFrame(String title) {
+        initGUI(title);
+    }
 
+    private void initGUI(String title) {
+        c = new Timer(1000, this);
+
+        t = new Timer(10000, this);
+
+        date_model = new SpinnerDateModel();
+
+        start = new JButton(JDLocale.L("addons.schedule.menu.start", "Start"));
         start.setBorderPainted(false);
         start.setFocusPainted(false);
+
+        maxdls = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 10, 1));
         maxdls.setBorder(BorderFactory.createEmptyBorder());
+
+        maxspeed = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED), 0, 50000, 50));
         maxspeed.setBorder(BorderFactory.createEmptyBorder());
+
+        time = new JSpinner(date_model);
         time.setToolTipText("Select your time. Format: HH:mm:ss | dd.MM.yy");
         time.setEditor(new JSpinner.DateEditor(time, dateFormat));
         time.setBorder(BorderFactory.createEmptyBorder());
+
+        repeat = new JSpinner(new SpinnerNumberModel(0, 0, 24, 1));
         repeat.setBorder(BorderFactory.createEmptyBorder());
         repeat.setToolTipText("Enter h | 0 = disable");
+
+        premium = new JCheckBox();
         premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM));
+
+        reconnect = new JCheckBox();
         reconnect.setSelected(!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT));
+
+        status = new JLabel(JDLocale.L("addons.schedule.menu.running", " Not Running!"));
+
+        stop_start = new JCheckBox();
 
         setLayout(new GridLayout(9, 2));
 
@@ -82,7 +105,7 @@ public class ScheduleFrame extends JPanel implements ActionListener {
         this.add(new JLabel(JDLocale.L("addons.schedule.menu.maxspeed", " max. DownloadSpeed")));
         this.add(maxspeed);
 
-        this.add(new JLabel("Premium"));
+        this.add(new JLabel(JDLocale.L("addons.schedule.menu.premium", "Premium")));
         this.add(premium);
 
         this.add(new JLabel(JDLocale.L("addons.schedule.menu.reconnect", " Reconnect ?")));
@@ -107,27 +130,28 @@ public class ScheduleFrame extends JPanel implements ActionListener {
         t.setRepeats(false);
     }
 
-    // ActionPerformed e
     public void actionPerformed(ActionEvent e) {
-        int var = (int) parsetime();
+        int var = parseTime();
 
-        if (var > 0 && e.getSource() == start) {
-            if (t.isRunning() == false || c.isRunning() == false) {
-                start.setText(JDLocale.L("addons.schedule.menu.stop", "Stop"));
-                t.setInitialDelay(var);
-                t.start();
-                c.start();
-                status.setText("Started!");
-                time.setEnabled(false);
+        if (e.getSource() == start) {
+            if (var > 0) {
+                if (t.isRunning() == false || c.isRunning() == false) {
+                    start.setText(JDLocale.L("addons.schedule.menu.stop", "Stop"));
+                    t.setInitialDelay(var);
+                    t.start();
+                    c.start();
+                    status.setText(JDLocale.L("addons.schedule.menu.started", "Started!"));
+                    time.setEnabled(false);
+                } else {
+                    start.setText(JDLocale.L("addons.schedule.menu.start", "Start"));
+                    t.stop();
+                    c.stop();
+                    status.setText(JDLocale.L("gui.btn_cancel", " Aborted!"));
+                    time.setEnabled(true);
+                }
             } else {
-                start.setText(JDLocale.L("addons.schedule.menu.start", "Start"));
-                t.stop();
-                c.stop();
-                status.setText(JDLocale.L("gui.btn_cancel", " Aborted!"));
-                time.setEnabled(true);
+                status.setText(JDLocale.L("addons.schedule.menu.p_time", " Select positive time!"));
             }
-        } else {
-            status.setText(JDLocale.L("addons.schedule.menu.p_time", " Select positive time!"));
         }
 
         if (e.getSource() == t) {
@@ -148,7 +172,7 @@ public class ScheduleFrame extends JPanel implements ActionListener {
                 var2 = var2 + r * 3600000;
                 new_time.setTime(var2);
                 date_model.setValue(new_time);
-                var = (int) parsetime();
+                var = parseTime();
                 t.setInitialDelay(var);
                 t.start();
             } else {
@@ -157,8 +181,7 @@ public class ScheduleFrame extends JPanel implements ActionListener {
                 status.setText(JDLocale.L("addons.schedule.menu.finished", " Finished!"));
                 time.setEnabled(true);
             }
-        }
-        if (e.getSource() == c) {
+        } else if (e.getSource() == c) {
             String remainString = JDUtilities.formatSeconds(var / 1000);
             String remain = JDLocale.L("addons.schedule.menu.remain", "Remaining:") + " " + remainString;
             status.setText(remain);
@@ -167,10 +190,18 @@ public class ScheduleFrame extends JPanel implements ActionListener {
     }
 
     // Berechnen der TimerZeit
-    public double parsetime() {
-        Calendar cal = Calendar.getInstance();
-        Date start_time = cal.getTime();
-        Date end_time = date_model.getDate();
-        return end_time.getTime() - start_time.getTime();
+    private int parseTime() {
+        long startTime = Calendar.getInstance().getTime().getTime();
+        long endTime = date_model.getDate().getTime();
+        return (int) (endTime - startTime);
     }
+
+    public JLabel getLabel() {
+        return label;
+    }
+
+    public JLabel getStatusLabel() {
+        return status;
+    }
+
 }
