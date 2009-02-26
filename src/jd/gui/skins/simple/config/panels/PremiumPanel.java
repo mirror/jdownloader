@@ -101,6 +101,7 @@ public class PremiumPanel extends JPanel {
         ArrayList<Account> accounts = (ArrayList<Account>) list;
         for (int i = 0; i < accountNum; i++) {
             if (i >= accounts.size()) break;
+            if(accounts.get(i)!=null)
             accs[i].setAccount(accounts.get(i));
         }
         createDataset();
@@ -162,7 +163,7 @@ public class PremiumPanel extends JPanel {
 
         public void setAccount(Account account) {
             boolean sel = account.isEnabled();
-            this.account=account;
+            this.account = account;
             txtUsername.setText(account.getUser());
             txtPassword.setText(account.getPass());
             txtStatus.setText(account.getStatus());
@@ -176,14 +177,14 @@ public class PremiumPanel extends JPanel {
         }
 
         public Account getAccount() {
-            String pass=new String(txtPassword.getPassword());
- if(account==null)return null;
-            if(!account.getUser().equals(txtUsername.getText())||!account.getPass().equals(pass)){
+            String pass = new String(txtPassword.getPassword());
+            if (account == null) return null;
+            if (!account.getUser().equals(txtUsername.getText()) || !account.getPass().equals(pass)) {
                 account.setUser(txtUsername.getText());
                 account.setPass(pass);
                 account.setProperty("accountinfo", null);
-            }          
-          
+            }
+
             account.setEnabled(chkEnable.isSelected());
             return account;
         }
@@ -216,8 +217,9 @@ public class PremiumPanel extends JPanel {
             panel.add(lblPassword = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
             panel.add(txtPassword = new JDPasswordField(), "span, gapbottom 10:10:push");
             txtPassword.addFocusListener(this);
-
+            this.account = new Account(txtUsername.getText(), new String(txtPassword.getPassword()));
             chkEnable.setSelected(false);
+            account.setEnabled(chkEnable.isSelected());
         }
 
         public void stateChanged(ChangeEvent e) {

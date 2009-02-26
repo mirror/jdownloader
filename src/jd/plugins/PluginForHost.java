@@ -168,6 +168,7 @@ public abstract class PluginForHost extends Plugin {
         int i = 1;
         int c = 0;
         for (Account a : accounts) {
+            if(a==null)continue;
             try {
             c++;
             if (getAccountwithoutUsername()) {
