@@ -55,7 +55,7 @@ import jd.update.WebUpdater;
  * logins.
  * 
  * @author coalado
- * 
+ *    
  */
 public class JDUpdater {
     private static boolean SKIP_UPLOAD = false;
@@ -136,10 +136,12 @@ public class JDUpdater {
         fc.setApproveButtonText("Select as woringdir");
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fc.setSelectedFile((File) CONFIG.getProperty("LASTSELECTEDDIR1", new File(new File(wd).getParentFile(), "jd_update_dif")));
+        Thread.sleep(3000);
         if (fc.showOpenDialog(null) != JFileChooser.APPROVE_OPTION) {
             logger.severe("ABBRUCH");
             return;
         }
+        Thread.sleep(3000);
         SKIP_UPLOAD = (JOptionPane.showConfirmDialog(null, "Skip upload?") == JOptionPane.OK_OPTION);
         workingdir = fc.getSelectedFile();
         if (workingdir == null) {
@@ -163,6 +165,7 @@ public class JDUpdater {
         fc.setApproveButtonText("Select as update dir");
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fc.setSelectedFile((File) CONFIG.getProperty("LASTSELECTEDDIR2", new File(new File(wd).getParentFile(), "jd_update_dif")));
+        Thread.sleep(3000);
         if (fc.showOpenDialog(null) != JFileChooser.APPROVE_OPTION) {
             logger.severe("ABBRUCH");
             return;
@@ -210,7 +213,7 @@ public class JDUpdater {
             }
             if (!webupdaterfiles.containsKey(f.getAbsolutePath())) {
                 if (!f.isDirectory()) {
-
+                    Thread.sleep(3000);
                     int answer = JOptionPane.showConfirmDialog(null, "Datei " + f.getAbsolutePath() + " ist im Workingdir, aber nicht in der Updatelist. entfernen?");
                     if (answer == JOptionPane.CANCEL_OPTION) break;
                     if (answer == JOptionPane.OK_OPTION) {
@@ -239,6 +242,7 @@ public class JDUpdater {
             fc.setApproveButtonText("Select file to DELETE");
             fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
             fc.setSelectedFile(this.workingdir);
+            Thread.sleep(3000);
             if (fc.showOpenDialog(null) != JFileChooser.APPROVE_OPTION) {
                 break;
             }
@@ -248,6 +252,7 @@ public class JDUpdater {
             }
 
             for (File f : filesToRemove) {
+                Thread.sleep(3000);
                 if (JOptionPane.showConfirmDialog(null, "Datei " + f.getAbsolutePath() + " wirklich entfernen?") == JOptionPane.OK_OPTION) {
                     if (!JDUtilities.removeDirectoryOrFile(f)) {
                         logger.severe("Datei " + f + " konnte nicht entfernt werden. ABBRUCH");
@@ -297,6 +302,7 @@ public class JDUpdater {
         if (SKIP_UPLOAD) return true;
         ftp = new SimpleFTP();
         try {
+            Thread.sleep(3000);
             ftp.connect("78.143.20.68", 1200, "jd", JOptionPane.showInputDialog("Bluehost Updateserver Passwort"));
             ftp.bin();
             ftp.cwd("/update/jd");

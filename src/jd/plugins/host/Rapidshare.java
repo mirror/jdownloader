@@ -416,13 +416,19 @@ public class Rapidshare extends PluginForHost {
             long startTime = System.currentTimeMillis();
             Rapidshare.correctURL(downloadLink);
             br = login(account, true);
+        
             br.setFollowRedirects(false);
             br.setAcceptLanguage(ACCEPT_LANGUAGE);
             br.getPage(downloadLink.getDownloadURL());
+          
             String directurl = br.getRedirectLocation();
+           
             if (directurl == null) {
                 logger.finest("InDirect-Download: Server-Selection available!");
-                if (account.getStringProperty("premcookie", null) == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+                if (account.getStringProperty("premcookie", null) == null) {
+                    logger.info("LOGIN ERROR");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+                }
                 if ((error = findError(br.toString())) != null) {
                     logger.warning(error);
                     if (Regex.matches(error, Pattern.compile("(Ihr Cookie wurde nicht erkannt)"))) {
@@ -433,19 +439,26 @@ public class Rapidshare extends PluginForHost {
                     if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                     if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }
                     if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-                    if (Regex.matches(error, Pattern.compile("(Betrugserkennung)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+                    if (Regex.matches(error, Pattern.compile("(Betrugserkennung)"))) { 
+                        logger.finest("1\r\n"+br);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
                     if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) {
+                        logger.finest("2\r\n"+br);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                     } else if (Regex.matches(error, Pattern.compile("(You have exceeded the download limit|Sie haben heute das Limit überschritten)"))) {
+                        logger.finest("3\r\n"+br);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.limitexeeded", "You have exceeded the download limit."), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     } else if (Regex.matches(error, Pattern.compile("Passwort ist falsch"))) {
+                        logger.finest("4\r\n"+br);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                     } else if (Regex.matches(error, Pattern.compile("IP"))) {
+                        logger.finest("5\r\n"+br);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     } else if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l);
                     } else if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
                         account.setProperty("premcookie", null);
+                        logger.finest("6\r\n"+br);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.accountnotfound", "Your Premium Account has not been found."), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         account.setProperty("premcookie", null);
@@ -844,6 +857,7 @@ public class Rapidshare extends PluginForHost {
     public Browser login(Account account, boolean usesavedcookie) throws IOException, PluginException {
         synchronized (loginlock) {
             Browser br = new Browser();
+       
             br.setCookiesExclusive(true);
             br.clearCookies(this.getHost());
             String cookie = account.getStringProperty("premcookie", null);
@@ -856,7 +870,9 @@ public class Rapidshare extends PluginForHost {
             br.setAcceptLanguage("en, en-gb;q=0.8");
             br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             cookie = br.getCookie("http://rapidshare.com", "user");
+        
             account.setProperty("premcookie", cookie);
+          
             return br;
         }
     }
@@ -885,7 +901,7 @@ public class Rapidshare extends PluginForHost {
         ai.setFilesNum(Integer.parseInt(data.get("curfiles")));
         ai.setPremiumPoints(Integer.parseInt(data.get("points")));
         ai.setNewPremiumPoints(Integer.parseInt(data.get("prempoints")));
-        ai.setUsedSpace(Integer.parseInt(data.get("curspace")));
+        ai.setUsedSpace(Long.parseLong(data.get("curspace")));
         ai.setTrafficShareLeft((Integer.parseInt(data.get("bodkb")) / 1000) * 1024l * 1024l);
 
         ai.setValidUntil(Long.parseLong(data.get("validuntil")) * 1000);

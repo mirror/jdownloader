@@ -487,7 +487,7 @@ public abstract class PluginForHost extends Plugin {
                         account.setStatus(downloadLink.getLinkStatus().getLongErrorMessage());
 
                         getPluginConfig().save();
-                        logger.severe("Premium Account " + account.getUser() + ": expired");
+                        logger.severe("Premium Account " + account.getUser() + ": expired:"+downloadLink.getLinkStatus().getLongErrorMessage());
                     } else {
 
                         account.setEnabled(false);

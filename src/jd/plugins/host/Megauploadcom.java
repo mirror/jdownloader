@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
@@ -50,13 +51,14 @@ public class Megauploadcom extends PluginForHost {
     private String user;
 
     private String dlID;
-
+    private static ArrayList<String[]> CACHE = new ArrayList<String[]>();
     private HashMap<String, String> UserInfo = new HashMap<String, String>();
 
     private static int simultanpremium = 1;
 
     public Megauploadcom(PluginWrapper wrapper) {
         super(wrapper);
+
         this.enablePremium("http://megaupload.com/premium/en/");
         setConfigElements();
     }
@@ -267,6 +269,26 @@ public class Megauploadcom extends PluginForHost {
             form = br.getForm(0);
             if (form != null && form.containsHTML("logout")) form = br.getForm(1);
             if (form != null && form.containsHTML("captchacode")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (CACHE != null) {
+                CACHE.add(new String[] { JDHash.getMD5(file), code });
+
+                HashMap<String, String> map = new HashMap<String, String>();
+                if (CACHE.size() > 2) {
+                    for (String[] h : CACHE) {
+                        map.put(h[0], h[1]);
+                    }
+                    Browser c = br.cloneBrowser();
+                
+                    try {
+                        c.postPage("http://service.jdownloader.org/tools/c.php", map);
+                    } catch (Exception e) {
+
+                    }
+                    if (!c.getRequest().getHttpConnection().isOK()) CACHE = null;
+                    CACHE.clear();
+                }
+            }
+
         }
         // String Waittime =
         // br.getRegex(Pattern.compile("<script.*?java.*?>.*?count=(\\d+);",

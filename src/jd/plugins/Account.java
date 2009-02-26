@@ -31,6 +31,7 @@ public class Account extends Property {
     public Account(String user, String pass) {
         this.user = user;
         this.pass = pass;
+     
         if (this.user != null) this.user = this.user.trim();
         if (this.pass != null) this.pass = this.pass.trim();
     }

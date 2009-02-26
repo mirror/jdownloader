@@ -24,7 +24,7 @@ import jd.parser.Regex;
 public class AccountInfo extends Property {
 
     private static final long serialVersionUID = 1825140346023286206L;
-    private PluginForHost plugin;
+    private transient PluginForHost plugin;
     private Account account;
     private boolean valid = true;
     private long validUntil = -1;
