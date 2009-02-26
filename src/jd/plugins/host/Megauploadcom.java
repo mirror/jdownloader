@@ -40,6 +40,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.update.UnZip;
+import jd.update.WebUpdater;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -310,14 +312,26 @@ public class Megauploadcom extends PluginForHost {
     }
 
     private String getCode(File file) {
-        String hash = JDHash.getMD5(file);
+        try {
+            String hash = JDHash.getMD5(file);
+            File db=null;
+            if(!(db=JDUtilities.getResourceFile("jd/captcha/methods/megaupload.com/c.db")).exists()){
+            UnZip u = new UnZip(JDUtilities.getResourceFile("jd/captcha/methods/megaupload.com/c.zip"), JDUtilities.getResourceFile("jd/captcha/methods/megaupload.com/"));
+            File[] efiles;
 
-        String list = JDIO.getLocalFile(JDUtilities.getResourceFile("jd/captcha/methods/megaupload.com/c.db"));
+            efiles = u.extract();
+            efiles[0].deleteOnExit();
+            db=efiles[0];
+            }
+            String list = JDIO.getLocalFile(db);
 
-        int id = list.indexOf(hash);
-        if (id < 0) return null;
-        String code = list.substring(id + 33, id + 33 + 4);
-        return code;
+            int id = list.indexOf(hash);
+            if (id < 0) return null;
+            String code = list.substring(id + 33, id + 33 + 4);
+            return code;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public void handleFree0(DownloadLink link, Account account) throws Exception {
