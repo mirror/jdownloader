@@ -168,25 +168,33 @@ public abstract class PluginForHost extends Plugin {
         int i = 1;
         int c = 0;
         for (Account a : accounts) {
+            try {
             c++;
             if (getAccountwithoutUsername()) {
                 if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
                 account = new MenuItem(MenuItem.CONTAINER, i++ + ". " + "Account " + (i - 1), 0);
             } else {
-                if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
-                account = new MenuItem(MenuItem.CONTAINER, i++ + ". " + a.getUser(), 0);
+
+                    if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
+                    account = new MenuItem(MenuItem.CONTAINER, i++ + ". " + a.getUser(), 0);
+                    m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.enable_premium", "Aktivieren"), 100 + c - 1);
+                    m.setSelected(a.isEnabled());
+                    m.setActionListener(this);
+                    account.addMenuItem(m);
+
+                    m = new MenuItem(JDLocale.L("plugins.menu.premiumInfo", "Accountinformationen abrufen"), 200 + c - 1);
+                    m.setActionListener(this);
+                    account.addMenuItem(m);
+                    premium.addMenuItem(account);
+
+
             }
 
-            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.enable_premium", "Aktivieren"), 100 + c - 1);
-            m.setSelected(a.isEnabled());
-            m.setActionListener(this);
-            account.addMenuItem(m);
 
-            m = new MenuItem(JDLocale.L("plugins.menu.premiumInfo", "Accountinformationen abrufen"), 200 + c - 1);
-            m.setActionListener(this);
-            account.addMenuItem(m);
 
-            premium.addMenuItem(account);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         if (premium.getSize() != 0) {
             menuList.add(premium);
