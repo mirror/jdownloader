@@ -212,6 +212,7 @@ public class PremiumPanel extends JPanel {
 
             panel.add(lblUsername = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
             panel.add(txtUsername = new JTextField(""));
+            
             txtUsername.addFocusListener(this);
 
             panel.add(lblPassword = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
@@ -219,6 +220,12 @@ public class PremiumPanel extends JPanel {
             txtPassword.addFocusListener(this);
             this.account = new Account(txtUsername.getText(), new String(txtPassword.getPassword()));
             chkEnable.setSelected(false);
+            txtPassword.setEnabled(false);
+            txtUsername.setEnabled(false);
+            txtStatus.setEnabled(false);
+            btnCheck.setEnabled(false);
+            lblPassword.setEnabled(false);
+            lblUsername.setEnabled(false);
             account.setEnabled(chkEnable.isSelected());
         }
 
@@ -265,7 +272,7 @@ public class PremiumPanel extends JPanel {
             freeTrafficChart.clear();
             int accCounter = 0;
             for (Account acc : getAccounts()) {
-                if (acc.getUser().length() > 0 && acc.getPass().length() > 0) {
+                if (acc!=null && acc.getUser().length() > 0 && acc.getPass().length() > 0) {
                     try {
                         accCounter++;
                         AccountInfo ai = host.getAccountInformation(acc);
