@@ -94,15 +94,15 @@ public class ScheduleControl extends JDialog implements ActionListener {
         list.setMaximumSize(size);
 
         show = new JButton(JDLocale.L("addons.schedule.menu.edit", "Edit"));
-        show.setEnabled(false);
         show.addActionListener(this);
+        show.setEnabled(schedules.size() > 0);
 
         add = new JButton(JDLocale.L("addons.schedule.menu.add", "Add"));
         add.addActionListener(this);
 
         remove = new JButton(JDLocale.L("addons.schedule.menu.remove", "Remove"));
-        remove.setEnabled(false);
         remove.addActionListener(this);
+        remove.setEnabled(schedules.size() > 0);
 
         JPanel buttons = new JPanel(new GridLayout(1, 3, 5, 5));
         buttons.add(show);
@@ -129,7 +129,6 @@ public class ScheduleControl extends JDialog implements ActionListener {
             list.setSelectedIndex(schedules.size() - 1);
             SwingUtilities.updateComponentTreeUI(this);
         } else if (e.getSource() == remove) {
-            if (schedules.size() == 0) return;
             schedules.remove(list.getSelectedIndex());
             reloadList();
             list.setSelectedIndex(Math.max(0, schedules.size() - 1));
@@ -137,7 +136,6 @@ public class ScheduleControl extends JDialog implements ActionListener {
             renameLabels();
             SwingUtilities.updateComponentTreeUI(this);
         } else if (e.getSource() == show) {
-            if (schedules.size() == 0) return;
             if (show.getText().equals(JDLocale.L("addons.schedule.menu.edit", "Edit"))) {
                 show.setText(JDLocale.L("addons.schedule.menu.close", "Close"));
                 setCenterPanel(schedules.get(list.getSelectedIndex()));
