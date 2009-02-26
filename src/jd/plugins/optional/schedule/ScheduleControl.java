@@ -73,8 +73,7 @@ public class ScheduleControl extends JDialog implements ActionListener {
 
         list.add(JDLocale.L("addons.schedule.menu.create", "Create"));
 
-        menu.setLayout(new FlowLayout());
-        menu.add(new JLabel("          "));
+        menu.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
         menu.add(list);
         menu.add(show);
         menu.add(add);
@@ -106,7 +105,7 @@ public class ScheduleControl extends JDialog implements ActionListener {
             }
         } else if (e.getSource() == show) {
             try {
-                if (visible == false) {
+                if (!visible) {
                     status.stop();
                     panel.removeAll();
                     visible = true;
