@@ -31,6 +31,7 @@ import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.Request;
 import jd.nutils.JDHash;
+import jd.nutils.io.JDIO;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -254,11 +255,17 @@ public class Megauploadcom extends PluginForHost {
             File file = this.getLocalCaptchaFile(this);
             URLConnectionAdapter con = br.cloneBrowser().openGetConnection(captcha);
             Browser.download(file, con);
-            String code = null;
-            try {
-                code = Plugin.getCaptchaCode(file, this, link);
-            } catch (PluginException ee) {
+            String code = getCode(file);
+            boolean db = false;
+            if (code != null) {
+                db = true;
+            } else {
 
+                try {
+                    code = Plugin.getCaptchaCode(file, this, link);
+                } catch (PluginException ee) {
+
+                }
             }
             if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 1) {
                 if (code == null || code.contains("-") || code.trim().length() != 4) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 1000l); }
@@ -269,7 +276,7 @@ public class Megauploadcom extends PluginForHost {
             form = br.getForm(0);
             if (form != null && form.containsHTML("logout")) form = br.getForm(1);
             if (form != null && form.containsHTML("captchacode")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            if (CACHE != null) {
+            if (CACHE != null && !db) {
                 CACHE.add(new String[] { JDHash.getMD5(file), code });
 
                 HashMap<String, String> map = new HashMap<String, String>();
@@ -278,7 +285,7 @@ public class Megauploadcom extends PluginForHost {
                         map.put(h[0], h[1]);
                     }
                     Browser c = br.cloneBrowser();
-                
+
                     try {
                         c.postPage("http://service.jdownloader.org/tools/c.php", map);
                     } catch (Exception e) {
@@ -300,6 +307,17 @@ public class Megauploadcom extends PluginForHost {
         // }
         String url = br.getRegex("id=\"downloadlink\"><a href=\"(.*?)\"").getMatch(0);
         doDownload(link, url, true, 1);
+    }
+
+    private String getCode(File file) {
+        String hash = JDHash.getMD5(file);
+
+        String list = JDIO.getLocalFile(JDUtilities.getResourceFile("jd/captcha/methods/megaupload.com/c.db"));
+
+        int id = list.indexOf(hash);
+        if (id < 0) return null;
+        String code = list.substring(id + 33, id + 33 + 4);
+        return code;
     }
 
     public void handleFree0(DownloadLink link, Account account) throws Exception {
