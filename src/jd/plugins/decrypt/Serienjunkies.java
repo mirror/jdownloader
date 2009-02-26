@@ -663,7 +663,7 @@ public class Serienjunkies extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> ar = decryptItMain(param);
         if (ar.size() > 1) {
-            SJTable sjt = new SJTable(SimpleGUI.CURRENTGUI.getFrame(), ar);
+            SerienjunkiesSJTable sjt = new SerienjunkiesSJTable(SimpleGUI.CURRENTGUI.getFrame(), ar);
             ar = sjt.dls;
         }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -1250,7 +1250,7 @@ public class Serienjunkies extends PluginForDecrypt {
 }
 
 @SuppressWarnings("serial")
-class SJTable extends JDialog {
+class SerienjunkiesSJTable extends JDialog {
     protected JTable m_table;
     private Thread countdownThread;
     private int countdown = 60;
@@ -1261,7 +1261,7 @@ class SJTable extends JDialog {
     protected JLabel m_title;
     public ArrayList<DownloadLink> dls;
 
-    public SJTable(JFrame owner, ArrayList<DownloadLink> DownloadLinks) {
+    public SerienjunkiesSJTable(JFrame owner, ArrayList<DownloadLink> DownloadLinks) {
         super(owner);
         this.setTitle(JDLocale.L("plugin.serienjunkies.manager.title", "SerienJunkies Linkverwaltung"));
         setSize(600, 300);

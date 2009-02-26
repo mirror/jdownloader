@@ -195,7 +195,15 @@ public abstract class PluginForDecrypt extends Plugin {
             boolean open = JDUtilities.getGUI().showConfirmDialog(JDLocale.LF("gui.plugins.decrypt.askclicknload", "The decrypter %s seems to be outdated, but supports Click'n'Load. Open the website now?", this.getHost()));
             if (open) {
                 try {
-                    JLinkButton.openURL("http://jdownloader.org/clicknload-redirect/" + Encoding.urlEncode(cryptedLink.getCryptedUrl().replace("http://", "")));
+
+                    JLinkButton.openURL(cryptedLink.getCryptedUrl());
+                    // JLinkButton.openURL(
+                    // "http://jdownloader.org/clicknload-redirect/"
+                    // +Encoding.urlEncode
+                    // (cryptedLink.getCryptedUrl().replace("http://", "")));
+
+//                    JLinkButton.openURL("http://jdownloader.org/clicknload-redirect/" + Encoding.urlEncode(cryptedLink.getCryptedUrl().replace("http://", "")));
+
                     OPEN_CLICK_N_LOAD++;
                 } catch (Exception e) {
                     open = false;
