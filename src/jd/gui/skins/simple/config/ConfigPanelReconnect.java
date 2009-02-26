@@ -72,7 +72,8 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == box) {
-            configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, box.getSelectedIndex());
+            int selected = box.getSelectedIndex();
+            configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE,selected );
             setReconnectType();
         } else if (e.getSource() == btn) {
             save();
