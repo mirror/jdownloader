@@ -42,10 +42,10 @@ public class RelinkUs extends PluginForDecrypt {
     }
 
     private boolean add_relinkus_container(String page, String cryptedLink, String containerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {
-        String container_link = new Regex(page, Pattern.compile("<a target=\"blank\" href=('|\")(.*?)('|\")><img src=('|\").*?" + containerFormat + "\\.(gif|jpg)", Pattern.CASE_INSENSITIVE)).getMatch(1);
+        String container_link = new Regex(page, "(download\\.php\\?id=677d9c9bd0\\&amp\\;"+containerFormat+"=1)").getMatch(0);
         if (container_link != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
-            Browser browser = br.cloneBrowser();
+            Browser browser = br.cloneBrowser();           
             browser.getHeaders().put("Referer", cryptedLink);
             browser.getDownload(container, "http://relink.us/" + Encoding.htmlDecode(container_link));
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
@@ -55,17 +55,24 @@ public class RelinkUs extends PluginForDecrypt {
         return false;
     }
 
-    private void add_relinkus_links(String page, ArrayList<DownloadLink> decryptedLinks) throws IOException {
-        String links[] = new Regex(page, Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE)).getColumn(0);
-        if (links.length == 0) {
-            links = new Regex(page, Pattern.compile("action=\"(.*?)\" method=\"post\" target=\"\\_blank\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
-        }
-        progress.addToMax(links.length);
-        for (String link : links) {
-            br.postPage(link, "submit=Open");
-            String dl_link = br.getRegex(Pattern.compile("iframe name=\".*?\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"[\n\r]*?(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+    private void add_relinkus_links(ArrayList<DownloadLink> decryptedLinks) throws IOException {
+//        String links[] = new Regex(page, Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE)).getColumn(0);
+//        if (links.length == 0) {
+//            links = new Regex(page, Pattern.compile("action=\"(.*?)\" method=\"post\" target=\"\\_blank\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+//        }
+        Form[] forms = br.getForms();
+        progress.addToMax(forms.length);
+        for (Form link : forms) {
+            try {
+                br.submitForm(link);
+        
+            String dl_link = br.getRegex(Pattern.compile("iframe .*? src=\"[\n\r]*?(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(dl_link)));
             progress.increase(1);
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
     }
 
@@ -91,11 +98,13 @@ public class RelinkUs extends PluginForDecrypt {
         }
         if (okay == false) throw new DecrypterException(DecrypterException.CAPTCHA);
         progress.setRange(0);
-        add_relinkus_links(page, decryptedLinks);
+        add_relinkus_links( decryptedLinks);
         String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
         for (String link : more_links) {
-            add_relinkus_links(br.getPage("http://relink.us/" + link), decryptedLinks);
+            br.getPage("http://relink.us/" + link);
+            add_relinkus_links(decryptedLinks);
         }
+   
         if (decryptedLinks.size() == 0) {
             if (!add_relinkus_container(page, parameter, "dlc", decryptedLinks)) {
                 if (!add_relinkus_container(page, parameter, "ccf", decryptedLinks)) {
