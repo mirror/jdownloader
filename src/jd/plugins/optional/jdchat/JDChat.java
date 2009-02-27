@@ -1097,6 +1097,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     private void initIRC() {
+        NAMES.clear();
         for (int i = 0; i < 20; i++) {
             SubConfiguration conf = JDUtilities.getSubConfig("JDCHAT");
             String host = conf.getStringProperty(HOST, "irc.freenode.net");
@@ -1148,6 +1149,8 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public void onExit() {
+      NAMES.clear();
+      this.updateNamesPanel();
         if (conn != null) conn.close();
     }
 

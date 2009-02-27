@@ -43,7 +43,7 @@ public class RelinkUs extends PluginForDecrypt {
 
     private boolean add_relinkus_container(String page, String cryptedLink, String containerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {
         String container_link = new Regex(page, "(download\\.php\\?id=[a-zA-z0-9]+\\&amp\\;"+containerFormat+"=1)").getMatch(0);
-        if (container_link != null) {
+        if (container_link != null) { 
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
             Browser browser = br.cloneBrowser();           
             browser.getHeaders().put("Referer", cryptedLink);
