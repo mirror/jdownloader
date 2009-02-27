@@ -17,12 +17,16 @@
 package jd.nutils.svn;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
 
 import jd.utils.JDUtilities;
 
 import org.tmatesoft.svn.core.SVNErrorCode;
 import org.tmatesoft.svn.core.SVNErrorMessage;
 import org.tmatesoft.svn.core.SVNException;
+import org.tmatesoft.svn.core.SVNLogEntry;
 import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
@@ -105,5 +109,40 @@ public class Subversion {
 
     private long latestRevision() throws SVNException {
         return repository.getLatestRevision();
+    }
+
+    @SuppressWarnings("unchecked")
+    public  ArrayList<SVNLogEntry> getChangeset(int start, int end) throws SVNException {
+       Collection log = repository.log(new String[] { "" }, null, start, end, true, true);
+
+        ArrayList<SVNLogEntry> list = new ArrayList<SVNLogEntry>();
+        list.addAll(log);
+        return list;
+        // for (Iterator<SVNLogEntry> entries = logEntries.iterator();
+        // entries.hasNext();) {
+        // SVNLogEntry logEntry = (SVNLogEntry) entries.next();
+        // System.out.println("---------------------------------------------");
+        // System.out.println("revision: " + logEntry.getRevision());
+        // System.out.println("author: " + logEntry.getAuthor());
+        // System.out.println("date: " + logEntry.getDate());
+        // System.out.println("log message: " + logEntry.getMessage());
+        //
+        // if (logEntry.getChangedPaths().size() > 0) {
+        // System.out.println();
+        // System.out.println("changed paths:");
+        // Set changedPathsSet = logEntry.getChangedPaths().keySet();
+        //
+        // for (Iterator changedPaths = changedPathsSet.iterator();
+        // changedPaths.hasNext();) {
+        // SVNLogEntryPath entryPath = (SVNLogEntryPath)
+        // logEntry.getChangedPaths().get(changedPaths.next());
+        // System.out.println(" " + entryPath.getType() + " " +
+        // entryPath.getPath() + ((entryPath.getCopyPath() != null) ? " (from "
+        // + entryPath.getCopyPath() + " revision " +
+        // entryPath.getCopyRevision() + ")" : ""));
+        // }
+        // }
+        // }
+
     }
 }
