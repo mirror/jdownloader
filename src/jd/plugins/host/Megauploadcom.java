@@ -282,7 +282,7 @@ public class Megauploadcom extends PluginForHost {
                 CACHE.add(new String[] { JDHash.getMD5(file), code });
 
                 HashMap<String, String> map = new HashMap<String, String>();
-                if (CACHE.size() > 2) {
+                if (CACHE.size() > 5) {
                     for (String[] h : CACHE) {
                         map.put(h[0], h[1]);
                     }

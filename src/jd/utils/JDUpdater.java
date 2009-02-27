@@ -316,7 +316,7 @@ public class JDUpdater {
         }
         return false;
     }
-
+   
     private void scanDir(File scan) {
         scan.list(new FilenameFilter() {
             public boolean accept(File scan, String name) {
