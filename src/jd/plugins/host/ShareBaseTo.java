@@ -51,10 +51,11 @@ public class ShareBaseTo extends PluginForHost {
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("sharebase\\.de", "sharebase\\.to"));
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Der Download existiert nicht")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String[] infos = br.getRegex("<span class=\"font1\">(.*?) </span>\\((.*?)\\)</td>").getRow(0);
-        if (infos == null || infos.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(infos[0].trim());
-        downloadLink.setDownloadSize(Regex.getSize(infos[1].trim()));
+        String downloadName = br.getRegex("<title>(.*) @ ShareBase\\.to</title><meta").getMatch(0);
+        String downloadSize = br.getRegex("</span>\\((.*?)\\)</td>").getMatch(0);
+        if (downloadName == null || downloadSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(downloadName.trim());
+        downloadLink.setDownloadSize(Regex.getSize(downloadSize.trim()));
         return true;
     }
 
