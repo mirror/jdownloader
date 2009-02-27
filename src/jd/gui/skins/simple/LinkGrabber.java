@@ -1734,7 +1734,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                         }
                         link.getLinkStatus().setStatusText(JDLocale.L("gui.linkgrabber.checkstatus", "Onlinecheck running..."));
                         link.isAvailable();
-                        if (link.getLinkStatus().getStatusText().equals(JDLocale.L("gui.linkgrabber.checkstatus", "Onlinecheck running..."))) {
+                        if (link.getLinkStatus().getStatusText()!=null&&link.getLinkStatus().getStatusText().equals(JDLocale.L("gui.linkgrabber.checkstatus", "Onlinecheck running..."))) {
                             link.getLinkStatus().setStatusText(null);
                         }
                         // addingLinkList.add(link);
