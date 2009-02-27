@@ -174,6 +174,13 @@ public class Netloadin extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
+        if (br.containsHTML("download_unknown_server_data")) {
+            logger.info("File is not uploaded completly");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,60*2000l);
+           
+            
+        }
+    
         String finalURL = br.getRegex(NEW_HOST_URL).getMatch(0);
         sleep(20000, downloadLink);
         dl = RAFDownload.download(downloadLink, br.createRequest(finalURL));
