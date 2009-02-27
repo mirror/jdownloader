@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JavaScript;
 
 public class Zippysharecom extends PluginForHost {
 
@@ -61,7 +62,9 @@ public class Zippysharecom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
       
         getFileInformation(downloadLink);
-        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("unescape\\('(.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
+     
+     
+        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("(http%3A%2F%2F.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, linkurl);
