@@ -1410,14 +1410,14 @@ class SerienjunkiesSJTable extends JDialog {
     }
 }
 
-class ColumnData {
+class SerienjunkiesColumnData {
     public String m_title;
 
     public int m_width;
 
     public int m_alignment;
 
-    public ColumnData(String title, int width, int alignment) {
+    public SerienjunkiesColumnData(String title, int width, int alignment) {
         m_title = title;
         m_width = width;
         m_alignment = alignment;
@@ -1426,7 +1426,7 @@ class ColumnData {
 
 @SuppressWarnings("serial")
 class SerienjunkiesTM extends AbstractTableModel {
-    static final public ColumnData m_columns[] = { new ColumnData(JDLocale.L("gui.packageinfo.name", "Name"), 200, JLabel.LEFT), new ColumnData(JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), 160, JLabel.LEFT), new ColumnData(JDLocale.L("gui.linkgrabber.packagetab.table.column.size", "Größe"), 100, JLabel.RIGHT) };
+    static final public SerienjunkiesColumnData m_columns[] = { new SerienjunkiesColumnData(JDLocale.L("gui.packageinfo.name", "Name"), 200, JLabel.LEFT), new SerienjunkiesColumnData(JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), 160, JLabel.LEFT), new SerienjunkiesColumnData(JDLocale.L("gui.linkgrabber.packagetab.table.column.size", "Größe"), 100, JLabel.RIGHT) };
 
     ArrayList<DownloadLink> dls;
 
