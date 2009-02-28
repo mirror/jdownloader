@@ -1255,7 +1255,7 @@ class SerienjunkiesSJTable extends JDialog {
     private Thread countdownThread;
     private int countdown = 60;
     private boolean interrupted = false;
-    protected SJTM m_data;
+    protected SerienjunkiesTM m_data;
     private JButton insertButton;
 
     protected JLabel m_title;
@@ -1267,7 +1267,7 @@ class SerienjunkiesSJTable extends JDialog {
         setSize(600, 300);
         this.setLocation(JDUtilities.getCenterOfComponent(null, this));
         this.dls = DownloadLinks;
-        m_data = new SJTM(dls);
+        m_data = new SerienjunkiesTM(dls);
         setModal(true);
         m_title = new JLabel(JDLocale.L("plugin.serienjunkies.manager.dllinks", "Unerwünschte Links einfach löschen"), new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.config.infoFile"))), SwingConstants.LEFT);
         getContentPane().add(m_title, BorderLayout.NORTH);
@@ -1298,10 +1298,10 @@ class SerienjunkiesSJTable extends JDialog {
             }
         });
 
-        for (int k = 0; k < SJTM.m_columns.length; k++) {
+        for (int k = 0; k < SerienjunkiesTM.m_columns.length; k++) {
             DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
-            renderer.setHorizontalAlignment(SJTM.m_columns[k].m_alignment);
-            TableColumn column = new TableColumn(k, SJTM.m_columns[k].m_width, renderer, null);
+            renderer.setHorizontalAlignment(SerienjunkiesTM.m_columns[k].m_alignment);
+            TableColumn column = new TableColumn(k, SerienjunkiesTM.m_columns[k].m_width, renderer, null);
             m_table.addColumn(column);
         }
         JTableHeader header = m_table.getTableHeader();
@@ -1425,12 +1425,12 @@ class ColumnData {
 }
 
 @SuppressWarnings("serial")
-class SJTM extends AbstractTableModel {
+class SerienjunkiesTM extends AbstractTableModel {
     static final public ColumnData m_columns[] = { new ColumnData(JDLocale.L("gui.packageinfo.name", "Name"), 200, JLabel.LEFT), new ColumnData(JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), 160, JLabel.LEFT), new ColumnData(JDLocale.L("gui.linkgrabber.packagetab.table.column.size", "Größe"), 100, JLabel.RIGHT) };
 
     ArrayList<DownloadLink> dls;
 
-    public SJTM(ArrayList<DownloadLink> dls) {
+    public SerienjunkiesTM(ArrayList<DownloadLink> dls) {
         this.dls = dls;
     }
 
