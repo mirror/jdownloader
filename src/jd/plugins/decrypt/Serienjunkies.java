@@ -109,6 +109,43 @@ public class Serienjunkies extends PluginForDecrypt {
     private boolean scatChecked = false;
 
     private static Vector<String> passwords = new Vector<String>();
+    private static boolean rc = false;
+
+    private static URLConnectionAdapter openGetConnection(Browser capbr, String captchaAdress) throws IOException {
+        while (rc) {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                return null;
+            }
+        }
+        return capbr.openGetConnection(captchaAdress);
+
+    }
+
+    private static String getPage(Browser br3, Object url) throws IOException {
+        while (rc) {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                return null;
+            }
+        }
+        return br3.getPage(url + "");
+
+    }
+
+    private static String postPage(Browser br3, String url, String string) throws IOException {
+        while (rc) {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                return null;
+            }
+        }
+        return br3.postPage(url, string);
+
+    }
 
     public Serienjunkies(PluginWrapper wrapper) {
         super(wrapper);
@@ -185,7 +222,7 @@ public class Serienjunkies extends PluginForDecrypt {
     // Für Links die bei denen die Parts angezeigt werden
     private Vector<String> ContainerLinks(String url, CryptedLink downloadLink) throws PluginException {
         final Vector<String> links = new Vector<String>();
-        final Browser br3 = new Browser();
+        final Browser br3 = getBrowser();
         if (url.matches("http://[\\w\\.]*?.serienjunkies.org/..\\-.*")) {
             url = url.replaceFirst("serienjunkies.org", "serienjunkies.org/frame");
         }
@@ -193,7 +230,7 @@ public class Serienjunkies extends PluginForDecrypt {
             url = "http://" + url;
         }
         try {
-            String htmlcode = br3.getPage(url);
+            String htmlcode = getPage(br3, url);
             File captchaFile = null;
             String capTxt = null;
             while (true) {
@@ -208,15 +245,17 @@ public class Serienjunkies extends PluginForDecrypt {
                     String captchaAdress = "http://" + subdomain + "serienjunkies.org" + gifs[0][1];
                     Browser capbr = br3.cloneBrowser();
                     capbr.setFollowRedirects(true);
-                    URLConnectionAdapter con = capbr.openGetConnection(captchaAdress);
+                    URLConnectionAdapter con = openGetConnection(capbr, captchaAdress);
 
                     if (con.getResponseCode() < 0) {
                         captchaAdress = "http://" + subdomain + "serienjunkies.org" + gifs[0][1];
                         capbr.setFollowRedirects(true);
-                        con = capbr.openGetConnection(captchaAdress);
+                        con.disconnect();
+                        con = openGetConnection(capbr, captchaAdress);
 
                     }
                     if (con.getLongContentLength() < 1000) {
+                        con.disconnect();
                         logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
                         progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.decryptlimit", "SJ Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)"));
                         new Thread(new Runnable() {
@@ -231,7 +270,9 @@ public class Serienjunkies extends PluginForDecrypt {
                                 }
                             }
                         }).start();
-                        if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
+                        rc = true;
+                        if (!Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
+                            rc = false;
                             progress.setColor(Color.red);
                             progress.setStatus(0);
                             progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.downloadlimit", "Error: SerienJunkies Downloadlimit"));
@@ -246,8 +287,8 @@ public class Serienjunkies extends PluginForDecrypt {
 
                             return new Vector<String>();
                         }
-
-                        htmlcode = br3.getPage(url);
+                        rc = false;
+                        htmlcode = getPage(br3, url);
 
                         continue;
                     }
@@ -261,7 +302,7 @@ public class Serienjunkies extends PluginForDecrypt {
                             Thread.sleep(1000);
                         } catch (InterruptedException e1) {
                         }
-                        htmlcode = br3.getPage(url);
+                        htmlcode = getPage(br3, url);
 
                         continue;
                     }
@@ -280,7 +321,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
                     active--;
 
-                    htmlcode = br3.postPage(url, "s=" + matcher.group(1) + "&c=" + capTxt + "&action=Download");
+                    htmlcode = postPage(br3, url, "s=" + matcher.group(1) + "&c=" + capTxt + "&action=Download");
 
                 } else {
                     captchaMethod(captchaFile, capTxt);
@@ -323,7 +364,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                     String tx = null;
                                     synchronized (brd) {
                                         try {
-                                            tx = brd.getPage(action2);
+                                            tx = getPage(brd, action2);
                                         } catch (Exception e) {
                                             if (errors == 3) {
                                                 links.removeAllElements();
@@ -349,7 +390,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                             String link = new Regex(brd.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                                             if (link != null) {
                                                 try {
-                                                    brd.getPage(link);
+                                                    getPage(brd, link);
                                                 } catch (Exception e) {
 
                                                 }
@@ -439,7 +480,7 @@ public class Serienjunkies extends PluginForDecrypt {
     // Für Links die gleich auf den Hoster relocaten
     private String EinzelLinks(String url, CryptedLink downloadLink) throws PluginException {
         String links = "";
-        Browser br3 = new Browser();
+        Browser br3 = getBrowser();
         if (!url.startsWith("http://")) {
             url = "http://" + url;
         }
@@ -448,7 +489,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 url = url.replaceAll("safe/", "safe/f");
                 url = url.replaceAll("save/", "save/f");
             }
-            String htmlcode = br3.getPage(url);
+            String htmlcode = getPage(br3, url);
             File captchaFile = null;
             String capTxt = null;
             while (true) {
@@ -470,7 +511,7 @@ public class Serienjunkies extends PluginForDecrypt {
                             Thread.sleep(1000);
                         } catch (InterruptedException e1) {
                         }
-                        htmlcode = br3.getPage(url);
+                        htmlcode = getPage(br3, url);
 
                         continue;
                     }
@@ -484,7 +525,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
                     active--;
 
-                    htmlcode = br3.postPage(url, "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
+                    htmlcode = postPage(br3, url, "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
                 } else {
                     captchaMethod(captchaFile, capTxt);
                     break;
@@ -500,7 +541,8 @@ public class Serienjunkies extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> getDLinks(String parameter, CryptedLink cryptedLink) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        Browser br3 = new Browser();
+        Browser br3 = getBrowser();
+
         try {
             URL url = new URL(parameter);
             subdomain = new Regex(parameter, "http://(.*?)serienjunkies.org.*").getMatch(0);
@@ -512,21 +554,24 @@ public class Serienjunkies extends PluginForDecrypt {
             patternCaptcha = Pattern.compile(dynamicCaptcha);
             logger.fine("using patternCaptcha:" + patternCaptcha);
             br3.setFollowRedirects(true);
-            br3.getPage(url);
+            getPage(br3, url);
             if (br3.getRedirectLocation() != null) {
                 br3.setFollowRedirects(true);
-                br3.getPage(url);
+                getPage(br3, url);
             }
             if (br3.containsHTML("Du hast zu oft das Captcha falsch")) {
+                rc=true;
                 if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
+                    rc=false;
                     logger.info("Reconnect successfull. try again");
                     br3.setFollowRedirects(true);
-                    br3.getPage(url);
+                    getPage(br3, url);
                     if (br3.getRedirectLocation() != null) {
                         br3.setFollowRedirects(true);
-                        br3.getPage(url);
+                        getPage(br3, url);
                     }
                 } else {
+                    rc=false;
                     logger.severe("Reconnect failed. abort.");
                     return decryptedLinks;
                 }
@@ -547,16 +592,18 @@ public class Serienjunkies extends PluginForDecrypt {
                         }
                     }
                 }).start();
-
+rc=true;
                 if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
+                    rc=false;
                     logger.info("Reconnect successfull. try again");
                     br3.setFollowRedirects(true);
-                    br3.getPage(url);
+                    getPage(br3, url);
                     if (br3.getRedirectLocation() != null) {
                         br3.setFollowRedirects(true);
-                        br3.getPage(url);
+                        getPage(br3, url);
                     }
                 } else {
+                    rc=false;
                     progress.setColor(Color.red);
                     progress.setStatus(0);
                     progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.downloadlimit", "Error: SerienJunkies Downloadlimit"));
@@ -577,7 +624,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 url = new URL(furl + modifiedURL);
                 logger.info("Frame found. frame url: " + furl + modifiedURL);
                 br3.setFollowRedirects(true);
-                br3.getPage(url);
+                getPage(br3, url + "");
                 parameter = furl + modifiedURL;
 
             }
@@ -623,6 +670,12 @@ public class Serienjunkies extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private Browser getBrowser() {
+        Browser br = new Browser();
+      
+        return br;
+    }
+
     private DownloadLink createdl(String parameter, String[] info) {
         int size = 100;
         String name = null, linkName = null, title = null;
@@ -661,6 +714,9 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
+        Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
+        br = getBrowser();
         ArrayList<DownloadLink> ar = decryptItMain(param);
         if (ar.size() > 1) {
             SerienjunkiesSJTable sjt = new SerienjunkiesSJTable(SimpleGUI.CURRENTGUI.getFrame(), ar);
@@ -692,7 +748,7 @@ public class Serienjunkies extends PluginForDecrypt {
         String parameter = param.toString().trim();
         br.setCookiesExclusive(true);
         br.clearCookies("serienjunkies.org");
-        br.getPage("http://serienjunkies.org/enter/");
+        getPage(br, "http://serienjunkies.org/enter/");
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (parameter.matches(".*\\?(cat|p)\\=[\\d]+.*")) {
@@ -702,7 +758,7 @@ public class Serienjunkies extends PluginForDecrypt {
             scatChecked = false;
             int cat = Integer.parseInt(parameter.replaceFirst(".*\\?(cat|p)\\=", "").replaceFirst("[^\\d].*", ""));
             if (sCatNewestDownload == catst) {
-                br.getPage("http://serienjunkies.org/");
+                getPage(br, "http://serienjunkies.org/");
 
                 Pattern pattern = Pattern.compile("<a href=\"http://serienjunkies.org/\\?cat\\=" + cat + "\">(.*?)</a><br", Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(br + "");
@@ -711,7 +767,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     names.add(matcher.group(1).toLowerCase());
                 }
                 if (names.size() == 0) { return decryptedLinks; }
-                br.getPage(parameter);
+                getPage(br, parameter);
                 lastHtmlCode = br + "";
                 for (String name : names) {
                     name += " ";
@@ -763,15 +819,15 @@ public class Serienjunkies extends PluginForDecrypt {
             } else if (catst == sCatGrabb) {
                 String htmlcode = "";
                 if (isP) {
-                    br.getPage(parameter);
+                    getPage(br, parameter);
                     htmlcode = br + "";
                 } else {
-                    br.getPage("http://serienjunkies.org/?cat=" + cat);
+                    getPage(br, "http://serienjunkies.org/?cat=" + cat);
                     htmlcode = br + "";
                     try {
                         int pages = Integer.parseInt(br.getRegex("<p align=\"center\">  Pages \\(([\\d]+)\\):").getMatch(0));
                         for (int i = 2; i < pages + 1; i++) {
-                            htmlcode += "\n" + br.getPage("http://serienjunkies.org/?cat=" + cat + "&paged=" + i);
+                            htmlcode += "\n" + getPage(br, "http://serienjunkies.org/?cat=" + cat + "&paged=" + i);
                         }
                     } catch (Exception e) {
                         // TODO: handle exception
@@ -1178,8 +1234,8 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
                     if (finaldls == null) {
                         if (mirrors == null) {
-                            Browser br2k = new Browser();
-                            br2k.getPage("http://serienjunkies.org/?s=" + cryptedLink.getCryptedUrl().replaceFirst(".*/", "").replaceFirst("\\.html?$", ""));
+                            Browser br2k = getBrowser();
+                            getPage(br2k, "http://serienjunkies.org/?s=" + cryptedLink.getCryptedUrl().replaceFirst(".*/", "").replaceFirst("\\.html?$", ""));
                             String[] info = getLinkName(cryptedLink.getCryptedUrl(), br2k.toString());
                             logger.warning("use Mirror");
                             mirrors = getMirrors(cryptedLink.getCryptedUrl(), info[2]);
@@ -1223,9 +1279,10 @@ public class Serienjunkies extends PluginForDecrypt {
                             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                             linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.archiveincomplete", "Archiv nicht komplett"));
 
-                        }
-                        for (DownloadLink downloadLink2 : finaldls) {
-                            downloadLink2.addSourcePluginPasswords(passwords);
+                        } else {
+                            for (DownloadLink downloadLink2 : finaldls) {
+                                downloadLink2.addSourcePluginPasswords(passwords);
+                            }
                         }
 
                     }
