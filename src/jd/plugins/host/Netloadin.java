@@ -176,11 +176,15 @@ public class Netloadin extends PluginForHost {
         }
         if (br.containsHTML("download_unknown_server_data")) {
             logger.info("File is not uploaded completly");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,60*2000l);
-           
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,60*2000l);           
             
         }
-    
+        if (br.containsHTML("unknown_file_data")) {
+            logger.info("unknown_file_data");
+            throw new PluginException(LinkStatus.ERROR_FATAL,"Damaged file");           
+            
+        }
+        
         String finalURL = br.getRegex(NEW_HOST_URL).getMatch(0);
         sleep(20000, downloadLink);
         dl = RAFDownload.download(downloadLink, br.createRequest(finalURL));
@@ -368,8 +372,8 @@ public class Netloadin extends PluginForHost {
 
                 page = br.getPage("http://netload.in/share/fileinfos2.php?bz=1&file_id=" + id);
             }
-
-            if (page == null || Regex.matches(page, "unknown file_data")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            
+            if (page == null || Regex.matches(page, "unknown file_data")||Regex.matches(page, "unknown_file_data")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
             String[] entries = br.getRegex("(.*?);(.*?);(.*?);(.*?);(.*)").getRow(0);
 
