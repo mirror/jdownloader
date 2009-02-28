@@ -35,7 +35,7 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
     /**
      * Beschreibung vom FileFilter
      */
-    private String description = JDLocale.L("gui.filechooser.containerfiles","Container files");
+    private String description;
 
     /**
      * Zu akzeptierende Dateiendung (mit Punkt)
