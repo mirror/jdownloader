@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -33,8 +34,9 @@ public class ImageFap extends PluginForHost {
     public ImageFap(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(500l);
-        br.setLatestReqTimeCtrlID(this.getHost());
-        br.setWaittimeBetweenPageRequests(200l);
+  
+        
+        Browser.setRequestIntervalLimitGlobal(getHost(), 200);
     }
 
     private String DecryptLink(String code) {

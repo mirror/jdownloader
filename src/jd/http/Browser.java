@@ -41,6 +41,10 @@ import jd.http.requests.PostFormDataRequest;
 import jd.http.requests.PostRequest;
 import jd.http.requests.Request;
 import jd.http.requests.RequestVariable;
+import jd.nutils.Threader;
+import jd.nutils.debug.UnitTest;
+import jd.nutils.debug.UnitTestException;
+import jd.nutils.jobber.JDRunnable;
 import jd.parser.JavaScript;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -80,67 +84,9 @@ public class Browser {
 
     private boolean debug = false;
 
-    private static HashMap<String, Long> LATEST_PAGE_REQUESTS = new HashMap<String, Long>();
     private static HashMap<URL, Browser> URL_LINK_MAP = new HashMap<URL, Browser>();
-    private HashMap<String, Long> latestRequestTimes = new HashMap<String, Long>();
+
     private HashMap<String, String[]> logins = new HashMap<String, String[]>();
-    private String latestReqTimeCtrlID = null;
-    private long waittimeBetweenRequests = 0L;
-    private boolean exclusiveReqTimeCtrl = true;
-
-    private synchronized long getLastestRequestTime() {
-        if (latestReqTimeCtrlID == null) return 0L;
-        if (!exclusiveReqTimeCtrl) {
-            if (LATEST_PAGE_REQUESTS.containsKey(latestReqTimeCtrlID)) { return LATEST_PAGE_REQUESTS.get(latestReqTimeCtrlID); }
-        } else {
-            if (latestRequestTimes.containsKey(latestReqTimeCtrlID)) { return latestRequestTimes.get(latestReqTimeCtrlID); }
-        }
-        return 0L;
-    }
-
-    private synchronized void setLatestRequestTime(long time) {
-        if (latestReqTimeCtrlID == null) return;
-        if (!exclusiveReqTimeCtrl) {
-            LATEST_PAGE_REQUESTS.put(latestReqTimeCtrlID, time);
-        } else {
-            latestRequestTimes.put(latestReqTimeCtrlID, time);
-        }
-    }
-
-    public String getLatestReqTimeCtrlID() {
-        return latestReqTimeCtrlID;
-    }
-
-    public void setLatestReqTimeCtrlID(String latestReqTimeCtrlID) {
-        this.latestReqTimeCtrlID = latestReqTimeCtrlID;
-    }
-
-    public void setReqTimeCtrlExclusive(boolean value) {
-        exclusiveReqTimeCtrl = value;
-
-    }
-
-    public void setWaittimeBetweenPageRequests(long value) {
-        waittimeBetweenRequests = value;
-    }
-
-    private void waitForPageAccess() {
-        if (latestReqTimeCtrlID == null) return;
-        while (true) {
-            long time = Math.max(0, waittimeBetweenRequests - (System.currentTimeMillis() - getLastestRequestTime()));
-            if (time > 0) {
-                try {
-                    Thread.sleep(time);
-                } catch (InterruptedException e) {
-                    break;
-                }
-                continue;
-            } else {
-                break;
-            }
-        }
-        setLatestRequestTime(System.currentTimeMillis());
-    }
 
     public void clearCookies(String url) {
         String host = url;
@@ -264,7 +210,11 @@ public class Browser {
     private boolean snifferDetection = false;
     private boolean cookiesExclusive = true;
     private JDProxy proxy;
+    private HashMap<String, Integer> requestIntervalLimitMap;
+    private HashMap<String, Long> requestTimeMap;
     private static int TEMP_INDEX = 0;
+    private static HashMap<String, Integer> REQUEST_INTERVAL_LIMIT_MAP;
+    private static HashMap<String, Long> REQUESTTIME_MAP;
     private static final Authenticator AUTHENTICATOR = new Authenticator() {
         protected PasswordAuthentication getPasswordAuthentication() {
             Browser br = Browser.getAssignedBrowserInstance(this.getRequestingURL());
@@ -335,16 +285,66 @@ public class Browser {
     public String getPage(String string) throws IOException {
 
         this.openRequestConnection(this.createGetRequest(string));
+
         return this.loadConnection(null);
 
     }
 
     private void connect(Request request) throws IOException {
-        waitForPageAccess();
+        try {
+            waitForPageAccess(this, request);
+        } catch (InterruptedException e) {
+            throw new IOException("requestIntervalTime Exception");
+        }
+
+        ;
+
         assignURLToBrowserInstance(request.getJDPUrl(), this);
         request.connect();
         assignURLToBrowserInstance(request.getHttpConnection().getURL(), null);
 
+    }
+
+    private static synchronized void waitForPageAccess(Browser browser, Request request) throws InterruptedException {
+        try {
+            Integer localLimit = null;
+            Integer globalLimit = null;
+            Long localLastRequest = null;
+            Long globalLastRequest = null;
+            if (browser.requestIntervalLimitMap != null) {
+                localLimit = browser.requestIntervalLimitMap.get(request.getUrl().getHost());
+                localLastRequest = browser.requestTimeMap.get(request.getUrl().getHost());
+            }
+            if (REQUEST_INTERVAL_LIMIT_MAP != null) {
+                globalLimit = REQUEST_INTERVAL_LIMIT_MAP.get(request.getUrl().getHost());
+                globalLastRequest = REQUESTTIME_MAP.get(request.getUrl().getHost());
+            }
+
+            if (localLimit == null && globalLimit == null) return;
+            if (localLastRequest == null && globalLastRequest == null) return;
+            if (localLimit != null && localLastRequest == null) return;
+            if (globalLimit != null && globalLastRequest == null) return;
+
+            if (globalLimit == null) globalLimit = 0;
+            if (localLimit == null) localLimit = 0;
+            if (localLastRequest == null) localLastRequest = System.currentTimeMillis();
+            if (globalLastRequest == null) globalLastRequest = System.currentTimeMillis();
+            long dif = Math.max(localLimit - (System.currentTimeMillis() - localLastRequest), globalLimit - (System.currentTimeMillis() - globalLastRequest));
+
+            if (dif > 0) {
+                // System.out.println("Sleep " + dif + " before connect to " +
+                // request.getUrl().getHost());
+                Thread.sleep(dif);
+                // waitForPageAccess(request);
+            }
+        } finally {
+            if (browser.requestTimeMap != null) {
+                browser.requestTimeMap.put(request.getUrl().getHost(), System.currentTimeMillis());
+            }
+            if (REQUESTTIME_MAP != null) {
+                REQUESTTIME_MAP.put(request.getUrl().getHost(), System.currentTimeMillis());
+            }
+        }
     }
 
     private static void assignURLToBrowserInstance(URL url, Browser browser) {
@@ -1011,10 +1011,8 @@ public class Browser {
 
     public Browser cloneBrowser() {
         Browser br = new Browser();
-        br.exclusiveReqTimeCtrl = exclusiveReqTimeCtrl;
-        br.waittimeBetweenRequests = waittimeBetweenRequests;
-        br.latestRequestTimes = latestRequestTimes;
-        br.latestReqTimeCtrlID = latestReqTimeCtrlID;
+        br.requestIntervalLimitMap = this.requestIntervalLimitMap;
+        br.requestTimeMap = this.requestTimeMap;
         br.acceptLanguage = acceptLanguage;
         br.connectTimeout = connectTimeout;
         br.currentURL = currentURL;
@@ -1143,6 +1141,7 @@ public class Browser {
     }
 
     public String getPage(URL url) throws IOException {
+
         return getPage(url + "");
 
     }
@@ -1411,6 +1410,132 @@ public class Browser {
         file.deleteOnExit();
         download(file, openRequestConnection(createGetRequest(adr)));
         return file;
+    }
+
+    public void setRequestIntervalLimit(String host, int i) {
+        if (this.requestIntervalLimitMap == null) {
+            this.requestTimeMap = new HashMap<String, Long>();
+            this.requestIntervalLimitMap = new HashMap<String, Integer>();
+        }
+        requestIntervalLimitMap.put(host, i);
+
+    }
+
+    public static void setRequestIntervalLimitGlobal(String host, int i) {
+        if (REQUEST_INTERVAL_LIMIT_MAP == null) {
+            REQUEST_INTERVAL_LIMIT_MAP = new HashMap<String, Integer>();
+            REQUESTTIME_MAP = new HashMap<String, Long>();
+        }
+        REQUEST_INTERVAL_LIMIT_MAP.put(host, i);
+
+    }
+
+    public static class Test extends UnitTest {
+        public static UnitTest newInstance() {
+            return new Test();
+        }
+
+        @Override
+        public void run() throws Exception {
+
+            this.testRequestIntervalLimitExclusive();
+            this.testRequestIntervalLimitGlobal();
+
+        }
+
+        /**
+         * Testes the request time limitation globaly. different
+         * browserinstances in different threads call the same host. there
+         * should be a requestgap fo 1000 ms between each nrequest. Fails if
+         * test passes too fast
+         * 
+         * @throws Exception
+         */
+        private void testRequestIntervalLimitGlobal() throws Exception {
+
+            int interval = 1000;
+            int requests = 30;
+            int threads = 3;
+            URL url = new URL("http://jdownloader.org/home/index");
+            log("Start test");
+            log("Interval " + interval);
+            log("Requests " + requests + " in " + threads + " threads");
+            log("url " + url);
+
+            Browser.setRequestIntervalLimitGlobal(url.getHost(), interval);
+            long start = System.currentTimeMillis();
+            log("StartTime" + start);
+            log("Test should take at least " + (requests * interval) + "msec");
+            Threader th = new Threader();
+            for (int i = 0; i < threads; i++) {
+                th.add(createThread("http://jdownloader.org/home/index", requests / threads, new Browser()));
+
+            }
+            th.startAndWait();
+            log("Endtime: " + System.currentTimeMillis());
+            long dif = System.currentTimeMillis() - start;
+            log("Test took " + dif + " ms");
+            if ((requests * interval) > dif + interval) { throw new UnitTestException("time error"); }
+
+        }
+
+        /**
+         * Browser request time control test. a single browser calls out of
+         * different threads the same host. between ech request should be a
+         * timegap of 1000s Fails if test passes too fast
+         * 
+         * @throws Exception
+         */
+        private void testRequestIntervalLimitExclusive() throws Exception {
+            Browser br = new Browser();
+            int interval = 1000;
+            int requests = 30;
+            int threads = 3;
+            URL url = new URL("http://jdownloader.org/home/index");
+            log("Start test");
+            log("Interval " + interval);
+            log("Requests " + requests + " in " + threads + " threads");
+            log("url " + url);
+
+            br.setRequestIntervalLimit(url.getHost(), interval);
+
+            long start = System.currentTimeMillis();
+            log("StartTime" + start);
+            log("Test should take at least " + (requests * interval) + "msec");
+            Threader th = new Threader();
+            for (int i = 0; i < threads; i++) {
+
+                th.add(createThread("http://jdownloader.org/home/index", requests / threads, br));
+
+            }
+            th.startAndWait();
+            log("Endtime: " + System.currentTimeMillis());
+            long dif = System.currentTimeMillis() - start;
+            log("Test took " + dif + " ms");
+            if ((requests * interval) > dif + interval) { throw new UnitTestException("time error"); }
+
+        }
+
+        private JDRunnable createThread(final String string, final int i, final Browser br) {
+            return new JDRunnable() {
+
+                public void go() throws Exception {
+
+                    for (int ii = 0; ii < i; ii++) {
+                        try {
+                            br.getPage(string);
+                        } catch (IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    }
+
+                }
+
+            };
+
+        }
+
     }
 
 }

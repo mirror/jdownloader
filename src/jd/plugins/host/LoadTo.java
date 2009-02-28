@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -36,9 +37,8 @@ public class LoadTo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        br.setLatestReqTimeCtrlID(this.getHost());
-        br.setReqTimeCtrlExclusive(false);
-        br.setWaittimeBetweenPageRequests(500l);
+    
+        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
         this.setStartIntervall(2000l);
         return "http://www.load.to/terms.php";
     }

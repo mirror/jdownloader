@@ -544,6 +544,8 @@ public class JDInit {
         new DecryptPluginWrapper("jdloader", "JDLoader", "(jdlist://.+)|((dlc|rsdf|ccf)://.*/.+)", PluginWrapper.LOAD_ON_INIT);
         new DecryptPluginWrapper("jamendo.com", "JamendoCom", "http://[\\w\\.]*?jamendo\\.com/.?.?/?(album/\\d+|artist/.+)");
 
+        //extern
+        new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
     }
 
     public void loadPluginForHost() {
@@ -657,6 +659,9 @@ public class JDInit {
         new HostPluginWrapper("jamendo.com", "JamendoCom", "http://[\\w\\.]*?jamendo\\.com/.*.*/?(track|download/album)/\\d+");
         new HostPluginWrapper("fileload.us", "FileloadUs", "http://[\\w\\.]*?fileload\\.us/.*");
 
+        
+        //extern
+        new HostPluginWrapper("ifolder.ru", "IfolderRu", "http://[\\w\\.]*?ifolder\\.ru/\\d+");
     }
 
     public void loadPluginOptional() {

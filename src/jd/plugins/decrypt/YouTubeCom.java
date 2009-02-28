@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
+import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -48,8 +49,7 @@ public class YouTubeCom extends PluginForDecrypt {
 
     public YouTubeCom(PluginWrapper wrapper) {
         super(wrapper);
-        br.setLatestReqTimeCtrlID("youtube");
-        br.setWaittimeBetweenPageRequests(100l);
+        Browser.setRequestIntervalLimitGlobal(getHost(), 100);
     }
 
     private String clean(String s) {

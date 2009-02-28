@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -42,9 +43,8 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        br.setLatestReqTimeCtrlID(this.getHost());
-        br.setReqTimeCtrlExclusive(false);
-        br.setWaittimeBetweenPageRequests(500l);
+     
+        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
         String downloadSize = null;
