@@ -110,7 +110,7 @@ public class LetitBitNet extends PluginForHost {
         Browser.download(file, con);
         down.setMethod(Form.MethodType.POST);
         down.put("frameset", "Download+file");
-        String id2 = forms[3].getVarsMap().get("uid2");
+        String id2 = forms[3].getVarsMap().get("uid");
         // first trying to bypass captcha
         down.put("cap", "2f2411");
         down.put("uid2", "c0862b659695");
