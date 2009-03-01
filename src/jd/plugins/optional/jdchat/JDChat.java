@@ -21,6 +21,7 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -35,8 +36,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
@@ -80,8 +83,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private static final Pattern CMD_TOPIC = Pattern.compile("(topic|title)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_TRANSLATE = Pattern.compile("(translate)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_VERSION = Pattern.compile("(version|jdversion)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CMD_CHANNEL = Pattern.compile("(chan|channel)", Pattern.CASE_INSENSITIVE);
-    
+
     protected static final ArrayList<String> COMMANDS = new ArrayList<String>();
     private static final String HOST = "PARAM_" + "HOST";
 
@@ -128,14 +130,10 @@ public class JDChat extends PluginOptional implements ControlListener {
     private JTextPane textArea;
     private JTextField textField;
     private JLabel top;
+    private JComboBox lang;
 
     public JDChat(PluginWrapper wrapper) {
         super(wrapper);
-        String id = JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, JDLocale.isGerman() ? "german" : "english");
-
-        if (id.contains("spanish")) {
-            CHANNEL += "[es]";
-        }
 
         CHANNEL = this.getPluginConfig().getStringProperty("CHANNEL", CHANNEL);
         COMMANDS.add("/msg ");
@@ -146,7 +144,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         COMMANDS.add("/nick ");
         COMMANDS.add("/mode ");
         COMMANDS.add("/join");
-        COMMANDS.add("/channel ");
+
         COMMANDS.add("/translate ");
         initConfigEntries();
         COMMANDS.add("/translate artoda ");
@@ -849,22 +847,14 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         ConfigContainer lngse = new ConfigContainer(this, JDLocale.L("plugins.optional.jdchat.locale", "Language settings"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lngse));
-        
-        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, "CHANNEL", new String[] { "#jdownloader", "#jdownloader[ES]" }, JDLocale.L("plugins.optional.jdchat.channel", "Select Channel")));
-        String id = JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, JDLocale.isGerman() ? "german" : "english");
-        String def = "";
-        if (id.contains("spanish")) {
-            def += "[ES]";
-        }
 
-        cfg.setDefaultValue("#jdownloader" + def);
+    
 
-        
         lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLAT, JDLocale.L("plugins.optional.jdchat.doautotranslate", "Translate Chat")));
 
         cfg.setDefaultValue(false);
         ConfigEntry conditionEntry = cfg;
-    
+
         map = new HashMap<String, String>();
         map.put("ar", JDLocale.L("locale.lngs.arabic", "Arabic"));
         map.put("bg", JDLocale.L("locale.lngs.bulgarian", "Bulgarian"));
@@ -1063,7 +1053,18 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
 
         });
+        lang = new JComboBox(new String[] { "english", "german", "spanish" });
+        lang.addActionListener(new ActionListener() {
 
+            public void actionPerformed(ActionEvent e) {
+                // TODO Auto-generated method stub
+                getPluginConfig().setProperty("CHANNEL_LNG", lang.getSelectedItem());
+                getPluginConfig().save();
+                initChannel();
+            }
+
+        });
+        lang.setSelectedItem(this.getPluginConfig().getStringProperty("CHANNEL_LNG","english"));
         // Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         textArea.setContentType("text/html");
         textArea.setEditable(false);
@@ -1072,7 +1073,11 @@ public class JDChat extends PluginOptional implements ControlListener {
         frame.add(top, BorderLayout.NORTH);
         frame.add(new JScrollPane(right), BorderLayout.EAST);
         frame.add(scrollPane, BorderLayout.CENTER);
-        frame.add(textField, BorderLayout.SOUTH);
+        JPanel south = new JPanel();
+        south.setLayout(new BorderLayout());
+        south.add(textField, BorderLayout.CENTER);
+        south.add(lang, BorderLayout.EAST);
+        frame.add(south, BorderLayout.SOUTH);
         lastAction = System.currentTimeMillis();
         MouseMotionListener ml = new MouseMotionListener() {
 
@@ -1099,6 +1104,8 @@ public class JDChat extends PluginOptional implements ControlListener {
     private void initIRC() {
         NAMES.clear();
         for (int i = 0; i < 20; i++) {
+
+          
             SubConfiguration conf = JDUtilities.getSubConfig("JDCHAT");
             String host = conf.getStringProperty(HOST, "irc.freenode.net");
             int port = conf.getIntegerProperty(PORT, 6667);
@@ -1136,21 +1143,49 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     }
 
+    private void initChannel() {
+        String id = JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, JDLocale.isGerman() ? "german" : "english");
+
+        String lng = "english";
+        if (id.contains("spanish")) {
+            lng = "spanish";
+        }
+        lng = this.getPluginConfig().getStringProperty("CHANNEL_LNG", lng);
+        String newChannel = null;
+        if (lng.equals("spanish")) {
+            newChannel = "#jdownloader[es]";
+        } else {
+            newChannel = "#jdownloader";
+        }
+        if (newChannel.equalsIgnoreCase(CHANNEL)&& this.isLoggedIn()) {
+
+            if (conn != null) addToText(null, STYLE_NOTICE, "YOu are in channel: " + newChannel);
+            return;
+        }
+        NAMES.clear();
+        if (conn != null) addToText(null, STYLE_NOTICE, "Change channel to: " + newChannel);
+        if (conn != null) conn.doPart(CHANNEL, " -->" + newChannel);
+        CHANNEL = newChannel;
+        if (conn != null) conn.doJoin(CHANNEL, null);
+    }
+
     public boolean isLoggedIn() {
 
         return loggedIn;
     }
 
     public void onConnected() {
-        conn.doJoin(CHANNEL, null);
+
+        initChannel();
         setLoggedIn(true);
         perform();
 
     }
 
     public void onExit() {
-      NAMES.clear();
-      this.updateNamesPanel();
+        NAMES.clear();
+        this.setLoggedIn(false);
+        this.updateNamesPanel();
         if (conn != null) conn.close();
     }
 
@@ -1293,27 +1328,6 @@ public class JDChat extends PluginOptional implements ControlListener {
                     end = rest.length();
                 }
                 lastCommand = "/mode ";
-                conn.doMode(CHANNEL, rest.trim());
-            } else if (Regex.matches(cmd, CMD_CHANNEL)) {
-               String nch=null;
-                if(rest.trim().equalsIgnoreCase("ES")){
-                    nch="#jdownloader[es]";
-                }else{
-                    nch="#jdownloader"; 
-                }
-                if(nch.equalsIgnoreCase(CHANNEL)){
-                    addToText(null, STYLE_NOTICE, "You are already in channel: "+rest);
-                    return;
-                    
-                }
-                CHANNEL=nch;
-                this.getPluginConfig().setProperty("CHANNEL", CHANNEL);
-                this.getPluginConfig().save();
-                this.onExit();
-                addToText(null, STYLE_NOTICE, "Change Channel to: "+rest);
-                this.initIRC();
-               
-                lastCommand = "/channel ";
                 conn.doMode(CHANNEL, rest.trim());
             } else if (Regex.matches(cmd, CMD_TRANSLATE)) {
                 end = rest.indexOf(" ");

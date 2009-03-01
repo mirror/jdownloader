@@ -1260,6 +1260,10 @@ public class JDController implements ControlListener, UIListener {
             FilePackage fp;
             while (iterator.hasNext()) {
                 fp = iterator.next();
+                if(fp.getDownloadLinks().size()==0){
+                    iterator.remove();
+                    continue;
+                }
                 it = fp.getDownloadLinks().iterator();
                 while (it.hasNext()) {
                     localLink = it.next();
