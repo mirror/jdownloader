@@ -19,7 +19,6 @@ package jd.nutils.svn;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 
 import jd.utils.JDUtilities;
 
@@ -112,8 +111,8 @@ public class Subversion {
     }
 
     @SuppressWarnings("unchecked")
-    public  ArrayList<SVNLogEntry> getChangeset(int start, int end) throws SVNException {
-       Collection log = repository.log(new String[] { "" }, null, start, end, true, true);
+    public ArrayList<SVNLogEntry> getChangeset(int start, int end) throws SVNException {
+        Collection log = repository.log(new String[] { "" }, null, start, end, true, true);
 
         ArrayList<SVNLogEntry> list = new ArrayList<SVNLogEntry>();
         list.addAll(log);

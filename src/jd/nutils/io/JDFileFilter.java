@@ -18,8 +18,6 @@ package jd.nutils.io;
 import java.io.File;
 import java.io.FileFilter;
 
-import jd.utils.JDLocale;
-
 /**
  * Mit dieser Klasse kann man, sowohl bestimmte Dateien aus einem Verzeichnis
  * auflisten, als auch einen FileFilter in einem JDFileChooser nutzen
@@ -54,7 +52,11 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
      *            Sollen Verzeichnisse akzeptiert werden?
      */
     public JDFileFilter(String description, String extension, boolean acceptDirectories) {
-        if (description != null) this.description = description;
+        if (description != null) {
+            this.description = description;
+        } else {
+            this.description = "Container files";
+        }
         this.extension = extension.split("\\|");
         this.acceptDirectories = acceptDirectories;
     }
@@ -68,8 +70,9 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
         return false;
     }
 
-    // Gibt die Filefilter Beschreibung zurück
-
+    /**
+     * Gibt die Filefilter Beschreibung zurück
+     */
     @Override
     public String getDescription() {
         return this.description;

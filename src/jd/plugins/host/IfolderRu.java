@@ -77,10 +77,10 @@ public class IfolderRu extends PluginForHost {
         }
 
         Form captchaForm = br.getFormbyProperty("name", "form1");
-        String captcha = br.getRegex("(/random/images/.*?)\"").getMatch(0),
-            tag = br.getRegex("tag.value = \"(.*?)\"").getMatch(0),
-            secret = br.getRegex("s= '..(.*?)'").getMatch(0),
-            hidden = br.getRegex("'hidden_code', '..(.+?)'").getMatch(0);
+        String captcha = br.getRegex("(/random/images/.*?)\"").getMatch(0);
+        String tag = br.getRegex("tag.value = \"(.*?)\"").getMatch(0);
+        String secret = br.getRegex("s= '..(.*?)'").getMatch(0);
+        String hidden = br.getRegex("'hidden_code', '..(.+?)'").getMatch(0);
         if (captchaForm == null || captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         if (tag != null && secret != null) {
             captchaForm.put("interstitials_session", tag);
@@ -106,12 +106,11 @@ public class IfolderRu extends PluginForHost {
 
     @Override
     public void reset() {
-        // TODO Auto-generated method stub
     }
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 0001 $");
+        return getVersion("$Revision$");
     }
 
     @Override

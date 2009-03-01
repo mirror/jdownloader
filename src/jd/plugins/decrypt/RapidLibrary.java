@@ -12,6 +12,7 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.util.ArrayList;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -26,7 +27,7 @@ import jd.plugins.PluginForDecrypt;
 public class RapidLibrary extends PluginForDecrypt {
 
     private static boolean decryptRunning = false;
-    
+
     public RapidLibrary(PluginWrapper wrapper) {
         super(wrapper);
         br.setCookiesExclusive(false);
@@ -35,13 +36,14 @@ public class RapidLibrary extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        
+
         /**
-         * only the first link shows a captcha. so we wait and queue paralell requests
+         * only the first link shows a captcha. so we wait and queue paralell
+         * requests
          */
         if (RapidLibrary.decryptRunning) progress.setProgressText("Queued");
         waitQueue();
-        
+
         br.getPage(parameter.getCryptedUrl());
         String directLink = br.getRegex("\"(http://rapidshare.com.*?)\"").getMatch(0);
         if (directLink == null) {
@@ -66,11 +68,12 @@ public class RapidLibrary extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 0001 $");
+        return getVersion("$Revision$");
     }
 
     private void waitQueue() throws InterruptedException {
-        while (RapidLibrary.decryptRunning) Thread.sleep(1000);
+        while (RapidLibrary.decryptRunning)
+            Thread.sleep(1000);
         RapidLibrary.decryptRunning = true;
     }
 }

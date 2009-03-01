@@ -41,7 +41,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.update.UnZip;
-import jd.update.WebUpdater;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -164,7 +163,7 @@ public class Megauploadcom extends PluginForHost {
         // dann versucht wird ihn free zu resumen, schlägt das fehl, weil jd die
         // mehrfachchunks aus premium nicht resumen kann.
         // In diesem Fall wird der link resetted.
-        if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED) && link.getLinkStatus().getErrorMessage()!=null&&link.getLinkStatus().getErrorMessage().contains("Limit Exceeded")) {
+        if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED) && link.getLinkStatus().getErrorMessage() != null && link.getLinkStatus().getErrorMessage().contains("Limit Exceeded")) {
             link.setChunksProgress(null);
             link.getLinkStatus().setStatus(LinkStatus.ERROR_RETRY);
         }
@@ -314,14 +313,14 @@ public class Megauploadcom extends PluginForHost {
     private String getCode(File file) {
         try {
             String hash = JDHash.getMD5(file);
-            File db=null;
-            if(!(db=JDUtilities.getResourceFile("jd/captcha/methods/megaupload.com/c.db")).exists()){
-            UnZip u = new UnZip(JDUtilities.getResourceFile("jd/captcha/methods/megaupload.com/c.zip"), JDUtilities.getResourceFile("jd/captcha/methods/megaupload.com/"));
-            File[] efiles;
+            File db = null;
+            if (!(db = JDUtilities.getResourceFile("jd/captcha/methods/megaupload.com/c.db")).exists()) {
+                UnZip u = new UnZip(JDUtilities.getResourceFile("jd/captcha/methods/megaupload.com/c.zip"), JDUtilities.getResourceFile("jd/captcha/methods/megaupload.com/"));
+                File[] efiles;
 
-            efiles = u.extract();
-            efiles[0].deleteOnExit();
-            db=efiles[0];
+                efiles = u.extract();
+                efiles[0].deleteOnExit();
+                db = efiles[0];
             }
             String list = JDIO.getLocalFile(db);
 
