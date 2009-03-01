@@ -44,8 +44,6 @@ public class DatabaseConnector implements Serializable {
 
     private HashMap<String, Object> dbdata = new HashMap<String, Object>();
 
-   
-
     private static Connection con = null;
 
     static {
@@ -71,7 +69,7 @@ public class DatabaseConnector implements Serializable {
                     logger.severe("Could not delete broken Database");
                     JOptionPane.showMessageDialog(null, "Could not delete broken database. Please remove the JD_HOME/config directory and restart JD");
                     System.exit(1);
-                    
+
                 }
             }
 
@@ -105,17 +103,6 @@ public class DatabaseConnector implements Serializable {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                }
-            }
-
-            ResultSet rs = con.createStatement().executeQuery("SELECT * FROM config");
-            while (rs.next()) {
-                try {
-              
-                    dbdata.put(rs.getString(1), rs.getObject(2));
-                 
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
             }
 
@@ -196,9 +183,23 @@ public class DatabaseConnector implements Serializable {
     /**
      * Returns a configuration
      */
-    public Object getData(String name) {
-      
-        return dbdata.get(name);
+    public synchronized Object getData(String name) {
+        Object ret = dbdata.get(name);
+        try {
+            if (ret == null) {
+                // try to init the table
+                ResultSet rs = con.createStatement().executeQuery("SELECT * FROM config WHERE name = '" + name + "'");
+                if (rs.next()) {
+                    ret = rs.getObject(2);
+                    dbdata.put(rs.getString(1), ret);
+                }
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ret;
     }
 
     /**

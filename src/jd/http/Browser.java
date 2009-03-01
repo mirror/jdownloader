@@ -631,10 +631,13 @@ public class Browser {
 
     /**
      * TRies to get a fuill url out of string
+     * @throws BrowserException 
      */
-    public String getURL(String string) {
+    public String getURL(String string) throws BrowserException {
         if (string == null) string = this.getRedirectLocation();
-        if (string == null) return null;
+        if (string == null){
+           throw new BrowserException("Null URL");
+        }
         try {
             new URL(string);
         } catch (Exception e) {

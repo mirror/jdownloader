@@ -31,6 +31,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 import jd.config.CFGConfig;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.JDHash;
@@ -62,7 +63,7 @@ public class JDUpdater {
     
     
     private static Logger logger = JDUtilities.getLogger();
-    private static CFGConfig CONFIG;
+    private static SubConfiguration CONFIG;
 
     public boolean secureUploadFolder(File file, File root, String test) throws FileNotFoundException, IOException, InterruptedException {
         if (root == null) root = file;
@@ -119,7 +120,7 @@ public class JDUpdater {
     }
 
     public static void main(String args[]) throws Exception {
-        CONFIG = CFGConfig.getConfig("JDUPDATER");
+        CONFIG =  WebUpdater.getConfig("JDUPDATER");
         new JDUpdater();
     }
 
@@ -184,9 +185,9 @@ public class JDUpdater {
 
         System.out.println("Hashlist laden");
         WebUpdater updater = new WebUpdater();
-        updater.useUpdatePrefixFromServer(false);
+     
         updater.setOSFilter(false);
-        WebUpdater.setJDDirectory(workingdir);
+       
         updater.ignorePlugins(false);
         Vector<Vector<String>> files = null;
         try {

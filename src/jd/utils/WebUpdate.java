@@ -28,6 +28,7 @@ import jd.JDInit;
 import jd.Main;
 import jd.config.CFGConfig;
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
@@ -49,7 +50,7 @@ public class WebUpdate implements ControlListener {
             JDUtilities.getController().addControlListener(this);
             ListenerAdded = true;
         }
-        CFGConfig cfg = CFGConfig.getConfig("WEBUPDATE");
+        SubConfiguration cfg = WebUpdater.getConfig("WEBUPDATE");
         cfg.setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false));
         cfg.setProperty("PLAF", JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty("PLAF"));
         cfg.save();

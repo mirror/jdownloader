@@ -106,12 +106,11 @@ public class JDUtilities {
     /**
      * Parametername fÃ¼r den Konfigpath
      */
-    public static final String CONFIG_PATH = "jDownloader.config";
-
+    // public static final String CONFIG_PATH = "jDownloader.config";
     /**
      * Die Konfiguration
      */
-    private static Configuration configuration = new Configuration();
+    private static Configuration configuration = null;
 
     private static DatabaseConnector dbconnect = null;
 
@@ -150,15 +149,12 @@ public class JDUtilities {
     /**
      * Der Logger fÃ¼r Meldungen
      */
-    private static Logger logger = JDUtilities.getLogger();
-
+    // private static Logger logger = null;
     public static final int RUNTYPE_LOCAL = 1;
 
-    public static final int RUNTYPE_LOCAL_ENV = 3;
-
     public static final int RUNTYPE_LOCAL_JARED = 2;
-
-    private static final int RUNTYPE_WEBSTART = 0;
+    // ache für JD home
+    private static File JD_HOME = null;
 
     private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
 
@@ -167,6 +163,8 @@ public class JDUtilities {
      */
     private static Semaphore userio_sem = new Semaphore(1);
     private static boolean SUBCONFIG_LOCK;
+
+    private static Logger logger = null;
 
     public static String getSimString(String a, String b) {
         StringBuilder ret = new StringBuilder();
@@ -186,7 +184,7 @@ public class JDUtilities {
                 return ((Comparable) ((Map.Entry) (o1)).getKey()).compareTo(((Map.Entry) (o2)).getKey());
             }
         });
-        // logger.info(list);
+        // JDUtilities.getLogger().info(list);
         Map result = new LinkedHashMap();
         for (Iterator it = list.iterator(); it.hasNext();) {
             Map.Entry entry = (Map.Entry) it.next();
@@ -203,7 +201,7 @@ public class JDUtilities {
                 return ((Comparable) ((Map.Entry) (o2)).getKey()).compareTo(((Map.Entry) (o1)).getKey());
             }
         });
-        // logger.info(list);
+        // JDUtilities.getLogger().info(list);
         Map result = new LinkedHashMap();
         for (Iterator it = list.iterator(); it.hasNext();) {
             Map.Entry entry = (Map.Entry) it.next();
@@ -268,11 +266,11 @@ public class JDUtilities {
      */
     public static void addToGridBag(Container cont, Component comp, int x, int y, int width, int height, int weightX, int weightY, Insets insets, int fill, int anchor) {
         if (cont == null) {
-            logger.severe("Container ==null");
+            JDUtilities.getLogger().severe("Container ==null");
             return;
         }
         if (comp == null) {
-            logger.severe("Componente ==null");
+            JDUtilities.getLogger().severe("Componente ==null");
             return;
         }
         JDUtilities.addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
@@ -577,7 +575,7 @@ public class JDUtilities {
         }
         JDUtilities.getController().fireControlEvent(new ControlEvent(plugin, ControlEvent.CONTROL_CAPTCHA_LOADED, file));
 
-        logger.info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host));
+        JDUtilities.getLogger().info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host));
         if (forceJAC || JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true) && !configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false)) {
             if (!JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host) || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true)) { return null; }
 
@@ -594,9 +592,9 @@ public class JDUtilities {
             JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
             Captcha captcha = jac.createCaptcha(captchaImage);
             String captchaCode = jac.checkCaptcha(captcha);
-            logger.info("Code: " + captchaCode);
-            logger.info("Vality: " + captcha.getValityPercent());
-            logger.info("Object Detection: " + captcha.isPerfectObjectDetection());
+            JDUtilities.getLogger().info("Code: " + captchaCode);
+            JDUtilities.getLogger().info("Vality: " + captcha.getValityPercent());
+            JDUtilities.getLogger().info("Object Detection: " + captcha.isPerfectObjectDetection());
             // ScrollPaneWindow window = new ScrollPaneWindow("Captcha");
 
             plugin.setLastCaptcha(captcha);
@@ -622,7 +620,7 @@ public class JDUtilities {
                 }
             }
             // window.pack();
-            logger.info("worst letter: " + vp);
+            JDUtilities.getLogger().info("worst letter: " + vp);
             if (plugin.useUserinputIfCaptchaUnknown() && vp > (double) JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)) {
                 plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
                 acquireUserIO_Semaphore();
@@ -678,6 +676,7 @@ public class JDUtilities {
      * @return Configuration instanz
      */
     public static Configuration getConfiguration() {
+        if (configuration == null) configuration = new Configuration();
         return configuration;
     }
 
@@ -789,7 +788,7 @@ public class JDUtilities {
             br.setReadTimeout(5000);
         }
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-            logger.finer("IP Check is disabled. return current Milliseconds");
+            JDUtilities.getLogger().finer("IP Check is disabled. return current Milliseconds");
             return System.currentTimeMillis() + "";
         }
 
@@ -797,29 +796,29 @@ public class JDUtilities {
         String patt = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
 
         try {
-            logger.finer("IP Check via " + site);
+            JDUtilities.getLogger().finer("IP Check via " + site);
             Pattern pattern = Pattern.compile(patt);
             Matcher matcher = pattern.matcher(br.getPage(site));
             if (matcher.find()) {
                 if (matcher.groupCount() > 0) {
                     return matcher.group(1);
                 } else {
-                    logger.severe("Primary bad Regex: " + patt);
+                    JDUtilities.getLogger().severe("Primary bad Regex: " + patt);
 
                 }
             }
-            logger.info("Primary IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + br.toString());
+            JDUtilities.getLogger().info("Primary IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + br.toString());
 
         }
 
         catch (Exception e1) {
-            logger.severe("url not found. " + e1.toString());
+            JDUtilities.getLogger().severe("url not found. " + e1.toString());
 
         }
 
         try {
 
-            logger.finer("http://service.jdownloader.org/tools/getip.php");
+            JDUtilities.getLogger().finer("http://service.jdownloader.org/tools/getip.php");
 
             Pattern pattern = Pattern.compile(patt);
             Matcher matcher = pattern.matcher(br.getPage("http://service.jdownloader.org/tools/getip.php"));
@@ -827,15 +826,15 @@ public class JDUtilities {
                 if (matcher.groupCount() > 0) {
                     return matcher.group(1);
                 } else {
-                    logger.severe("Primary bad Regex: " + patt);
+                    JDUtilities.getLogger().severe("Primary bad Regex: " + patt);
                 }
             }
             return "offline";
         }
 
         catch (Exception e1) {
-            logger.severe("url not found. " + e1.toString());
-            logger.info("Sec. IP Check failed.");
+            JDUtilities.getLogger().severe("url not found. " + e1.toString());
+            JDUtilities.getLogger().info("Sec. IP Check failed.");
 
         }
 
@@ -874,7 +873,7 @@ public class JDUtilities {
             File homeDir = JDUtilities.getJDHomeDirectoryFromEnvironment();
             // String url = null;
             // Url Encode des pfads fÃ¼r den Classloader
-            logger.info("Create Classloader: for: " + homeDir.getAbsolutePath());
+            JDUtilities.getLogger().info("Create Classloader: for: " + homeDir.getAbsolutePath());
             jdClassLoader = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
 
         }
@@ -887,16 +886,26 @@ public class JDUtilities {
      * @return ein File, daÃŸ das Basisverzeichnis angibt
      */
     public static File getJDHomeDirectoryFromEnvironment() {
+        if (JD_HOME != null) return JD_HOME;
         String envDir = null;// System.getenv("JD_HOME");
         File currentDir = null;
 
-        String dir = Thread.currentThread().getContextClassLoader().getResource("jd/Main.class") + "";
+        URL ressource = Thread.currentThread().getContextClassLoader().getResource("jd/Main.class");
+        System.out.println("Ressource: " + ressource);
+        if (ressource == null) {
+            ressource = Thread.currentThread().getContextClassLoader().getResource("jd/update/Main.class");
+
+        }
+        String dir = ressource + "";
+        System.out.println(dir);
         dir = dir.split("\\.jar\\!")[0] + ".jar";
+        System.out.println(dir);
         dir = dir.substring(Math.max(dir.indexOf("file:"), 0));
         try {
+            System.out.println(dir);
             currentDir = new File(new URI(dir));
-
-            // logger.info(" App dir: "+currentDir+" -
+            System.out.println(currentDir);
+            // JDUtilities.getLogger().info(" App dir: "+currentDir+" -
             // "+System.getProperty("java.class.path"));
             if (currentDir.isFile()) {
                 currentDir = currentDir.getParentFile();
@@ -907,31 +916,30 @@ public class JDUtilities {
             e.printStackTrace();
         }
 
-        // logger.info("RunDir: " + currentDir);
+        // JDUtilities.getLogger().info("RunDir: " + currentDir);
 
         switch (JDUtilities.getRunType()) {
         case RUNTYPE_LOCAL_JARED:
+            System.out.println("JAR");
             envDir = currentDir.getAbsolutePath();
-            // logger.info("JD_HOME from current Path :" + envDir);
             break;
-        case RUNTYPE_LOCAL_ENV:
-            envDir = System.getenv("JD_HOME");
-            // logger.info("JD_HOME from environment:" + envDir);
-            break;
+
         default:
+            System.out.println("USER");
             envDir = System.getProperty("user.home") + System.getProperty("file.separator") + ".jd_home/";
-            // logger.info("JD_HOME from user.home :" + envDir);
 
         }
-
+        System.out.println("ENV" + envDir);
         if (envDir == null) {
             envDir = "." + System.getProperty("file.separator") + ".jd_home/";
-            logger.info("JD_HOME from current directory:" + envDir);
+            JDUtilities.getLogger().info("JD_HOME from current directory:" + envDir);
         }
+        System.out.println("ENV" + envDir);
         File jdHomeDir = new File(envDir);
         if (!jdHomeDir.exists()) {
             jdHomeDir.mkdirs();
         }
+        JD_HOME = jdHomeDir;
         return jdHomeDir;
     }
 
@@ -956,6 +964,7 @@ public class JDUtilities {
      * @return LogKlasse
      */
     public static Logger getLogger() {
+
         if (logger == null) {
 
             logger = Logger.getLogger(LOGGER_NAME);
@@ -1106,7 +1115,7 @@ public class JDUtilities {
         for (int i = 0; i < priority.size(); i++) {
             for (int b = plgs.size() - 1; b >= 0; b--) {
                 if (plgs.get(b).getHost() == null) {
-                    logger.info("OO");
+                    JDUtilities.getLogger().info("OO");
                 }
                 if (plgs.get(b).getHost().equalsIgnoreCase(priority.get(i))) {
                     HostPluginWrapper plg = plgs.remove(b);
@@ -1141,35 +1150,13 @@ public class JDUtilities {
     }
 
     public static int getRunType() {
+        String caller = (Thread.currentThread().getContextClassLoader().getResource("jd") + "");
 
-        try {
-
-            Enumeration<URL> en = Thread.currentThread().getContextClassLoader().getResources("jd/Main.class");
-            if (en.hasMoreElements()) {
-                String root = en.nextElement().toString();
-                // logger.info(root);
-                if (root.indexOf("http://") >= 0) {
-                    logger.info("Depr.: Webstart");
-                    return RUNTYPE_WEBSTART;
-                }
-                if (root.indexOf("jar") >= 0) {
-                    // logger.info("Default: Local jared");
-                    return RUNTYPE_LOCAL_JARED;
-                }
-            }
-            if (System.getenv("JD_HOME") != null) {
-                if (new File(System.getenv("JD_HOME")).exists()) {
-                    logger.info("Dev.: Local splitted from environment variable");
-                    return RUNTYPE_LOCAL_ENV;
-                }
-            }
-            // logger.info("Dev.: Local splitted");
+        if (caller.matches("jar\\:.*\\.jar\\!.*")) {
+            return RUNTYPE_LOCAL_JARED;
+        } else {
             return RUNTYPE_LOCAL;
-        } catch (Exception e) {
-
-            e.printStackTrace();
         }
-        return 0;
 
     }
 
@@ -1221,7 +1208,7 @@ public class JDUtilities {
 
     public static void restartJD() {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
-        logger.info(JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", }, getResourceFile(".").getAbsolutePath(), 0));
+        JDUtilities.getLogger().info(JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", }, getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
 
     }
@@ -1258,7 +1245,7 @@ public class JDUtilities {
         System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
         System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);
 
-        logger.info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
+        JDUtilities.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
     }
 
@@ -1419,7 +1406,7 @@ public class JDUtilities {
         }
         return new String[] { password };
     }
- 
+
     public static String passwordArrayToString(String[] passwords) {
         LinkedList<String> pws = new LinkedList<String>();
         for (int i = 0; i < passwords.length; i++) {

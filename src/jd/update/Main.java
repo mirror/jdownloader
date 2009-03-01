@@ -24,6 +24,7 @@ import java.awt.Insets;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
@@ -41,6 +42,12 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.EmptyBorder;
 
+import jd.config.SubConfiguration;
+import jd.http.Browser;
+import jd.nutils.JDHash;
+import jd.nutils.io.JDIO;
+import jd.utils.JDUtilities;
+
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
 public class Main {
@@ -51,6 +58,12 @@ public class Main {
     public static int NORTHWEST = GridBagConstraints.NORTHWEST;
     public static int REL = GridBagConstraints.RELATIVE;
     public static int REM = GridBagConstraints.REMAINDER;
+    private static SubConfiguration guiConfig;
+    private static StringBuilder log;
+    private static JFrame frame;
+    private static JTextArea logWindow;
+
+    private static JProgressBar progressload;
 
     /**
      * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
@@ -140,290 +153,105 @@ public class Main {
 
     }
 
+    /*
+     * public static File getJDHomeDirectoryFromEnvironment() { String envDir =
+     * null;// System.getenv("JD_HOME"); File currentDir = null;
+     * 
+     * String dir =Thread.currentThread().getContextClassLoader().getResource(
+     * "jd/update/Main.class") + ""; dir = dir.split("\\.jar\\!")[0] + ".jar";
+     * dir = dir.substring(Math.max(dir.indexOf("file:"), 0)); try { currentDir
+     * = new File(new URI(dir));
+     * 
+     * // logger.info(" App dir: "+currentDir+" - //
+     * "+System.getProperty("java.class.path")); if (currentDir.isFile()) {
+     * currentDir = currentDir.getParentFile(); }
+     * 
+     * } catch (URISyntaxException e) {
+     * 
+     * e.printStackTrace(); }
+     * 
+     * // logger.info("RunDir: " + currentDir);
+     * 
+     * switch (getRunType()) { case RUNTYPE_LOCAL_JARED: envDir =
+     * currentDir.getAbsolutePath(); //
+     * logger.info("JD_HOME from current Path :" + envDir); break; case
+     * RUNTYPE_LOCAL_ENV: envDir = System.getenv("JD_HOME"); //
+     * logger.info("JD_HOME from environment:" + envDir); break; default: envDir
+     * = System.getProperty("user.home") + System.getProperty("file.separator")
+     * + ".jd_home/"; // logger.info("JD_HOME from user.home :" + envDir);
+     * 
+     * }
+     * 
+     * if (envDir == null) { envDir = "." + System.getProperty("file.separator")
+     * + ".jd_home/"; System.out.println(envDir); } File jdHomeDir = new
+     * File(envDir); if (!jdHomeDir.exists()) { jdHomeDir.mkdirs(); } return
+     * jdHomeDir; }
+     */
     @SuppressWarnings("unchecked")
-    public static void main(String args[]) {
-        final StringBuilder log = new StringBuilder();
+    public static void main(String args[]){
+        try{
+        log = new StringBuilder();
+      
         boolean OSFilter = true;
-        boolean AllPlugins = false;
+        boolean loadAllPlugins = false;
         boolean clone = false;
         String clonePrefix = null;
+        System.out.println("Started"+new Exception().getStackTrace()[0].getLineNumber());
         File cfg;
-        if ((cfg = new File(WebUpdater.getJDDirectory(), "jdownloader.config")).exists()) {
-            new File(WebUpdater.getJDDirectory(), "backup/").mkdirs();
-            cfg.renameTo(new File(WebUpdater.getJDDirectory(), "backup/jdownloader.config.outdated"));
+        if ((cfg = JDUtilities.getResourceFile("jdownloader.config")).exists()) {
+            
+            JDUtilities.getResourceFile("backup/").mkdirs();
+            
+            cfg.renameTo(JDUtilities.getResourceFile("backup/jdownloader.config.outdated"));
+            
         }
+        
+        
         for (String p : args) {
             if (p.trim().equalsIgnoreCase("-noosfilter")) {
                 OSFilter = false;
             } else if (p.trim().equalsIgnoreCase("-allplugins")) {
-                AllPlugins = true;
+                loadAllPlugins = true;
             } else if (p.trim().equalsIgnoreCase("-full")) {
-                AllPlugins = true;
+                loadAllPlugins = true;
                 OSFilter = false;
             } else if (p.trim().equalsIgnoreCase("-clone")) {
-                AllPlugins = true;
+                loadAllPlugins = true;
                 OSFilter = false;
                 clone = true;
-            } else if (p.trim().equalsIgnoreCase("/nofilter")) {
-                OSFilter = false;
             } else if (clone && clonePrefix == null) {
                 clonePrefix = p.trim();
             }
         }
-
-        if (clone && clonePrefix != null) {
-            Main.log(log, "Starting...");
-            for (int i = 0; i < args.length; i++) {
-                Main.log(log, "Parameter " + i + " " + args[i] + " " + System.getProperty("line.separator"));
-            }
-            WebUpdater updater = new WebUpdater();
-            updater.setOSFilter(OSFilter);
-            updater.ignorePlugins(!SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_DISABLE", false));
-            if (AllPlugins) updater.ignorePlugins(false);
-            WebUpdater.setprimaryUpdatePrefix(clonePrefix);
-            WebUpdater.setsecondaryUpdatePrefix(clonePrefix);
-            updater.setLogger(log);
-            Main.trace("Start Webupdate");
-            Vector<Vector<String>> files;
-            try {
-                files = updater.getAvailableFiles();
-            } catch (Exception e) {
-                Main.trace("Update failed");
-                Main.log(log, "Update failed");
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e1) {
-                }
-                files = new Vector<Vector<String>>();
-            }
-
-            if (files != null) {
-                updater.filterAvailableUpdates(files);
-                JDUpdateUtils.backupDataBase();
-                updater.updateFiles(files);
-            }
-            Main.trace("End Webupdate with " + updater.getErrors() + " Errors");
-            if (new File(WebUpdater.getJDDirectory(), "webcheck.tmp").exists()) {
-                new File(WebUpdater.getJDDirectory(), "webcheck.tmp").delete();
-            }
-            System.exit(updater.getErrors());
-        }
-        UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
-        SubConfiguration guiConfig = SubConfiguration.getSubConfig("WEBUPDATE");
-        String paf = guiConfig.getStringProperty("PLAF", null);
-        boolean plafisSet = false;
-
-        log.append(SubConfiguration.getSubConfig("WEBUPDATE").getProperties() + "\r\n");
-        System.out.println(SubConfiguration.getSubConfig("WEBUPDATE").getProperties() + "\r\n");
-        System.out.println(SubConfiguration.getSubConfig("PACKAGEMANAGER").getProperties() + "\r\n");
-        log.append(SubConfiguration.getSubConfig("PACKAGEMANAGER").getProperties() + "\r\n");
-        /* Http-Proxy einstellen */
-        if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_PROXY", false)) {
-
-            String host = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_HOST", "");
-            String port = new Integer(SubConfiguration.getSubConfig("WEBUPDATE").getIntegerProperty("PROXY_PORT", 8080)).toString();
-            String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER", "");
-            String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_PASS", "");
-
-            System.setProperty("http.proxySet", "true");
-            System.setProperty("http.proxyHost", host);
-            System.setProperty("http.proxyPort", port);
-            System.setProperty("http.proxyUserName", user);
-            System.setProperty("http.proxyPassword", pass);
-
-            Main.log(log, "http-proxy: enabled" + System.getProperty("line.separator"));
-        } else {
-            System.setProperty("http.proxySet", "false");
-            System.setProperty("http.proxyHost", "");
-            Main.log(log, "http-proxy: disabled" + System.getProperty("line.separator"));
-        }
-        /* Socks-Proxy einstellen */
-        if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_SOCKS", false)) {
-
-            String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER_SOCKS", "");
-            String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_PASS_SOCKS", "");
-            String host = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("SOCKS_HOST", "");
-            String port = new Integer(SubConfiguration.getSubConfig("WEBUPDATE").getIntegerProperty("SOCKS_PORT", 1080)).toString();
-
-            System.setProperty("socksProxySet", "true");
-            System.setProperty("socksProxyHost", host);
-            System.setProperty("socksProxyPort", port);
-            System.setProperty("socksProxyUserName", user);
-            System.setProperty("socksProxyPassword", pass);
-            System.setProperty("socks.useProxy", "true");
-            System.setProperty("socks.proxyHost", host);
-            System.setProperty("socks.proxyPort", port);
-            System.setProperty("socks.proxyUserName", user);
-            System.setProperty("socks.proxyPassword", pass);
-
-            Main.log(log, "socks-proxy: enabled" + System.getProperty("line.separator"));
-        } else {
-            System.setProperty("socksProxySet", "false");
-            System.setProperty("socks.useProxy", "false");
-            System.setProperty("socks.proxyHost", "");
-            System.setProperty("socksProxyHost", "");
-            Main.log(log, "socks-proxy: disabled" + System.getProperty("line.separator"));
-        }
-
-        if (paf != null) {
-            for (LookAndFeelInfo element : info) {
-                if (element.getName().equals(paf)) {
-                    try {
-                        UIManager.setLookAndFeel(element.getClassName());
-                        plafisSet = true;
-                        break;
-                    } catch (UnsupportedLookAndFeelException e) {
-                    } catch (ClassNotFoundException e) {
-                    } catch (InstantiationException e) {
-                    } catch (IllegalAccessException e) {
-                    }
-                }
-            }
-        } else {
-            for (int i = 0; i < info.length; i++) {
-                if (!info[i].getName().matches("(?is).*(metal|motif).*")) {
-                    try {
-                        UIManager.setLookAndFeel(info[i].getClassName());
-                        plafisSet = true;
-                        break;
-                    } catch (UnsupportedLookAndFeelException e) {
-                    } catch (ClassNotFoundException e) {
-                    } catch (InstantiationException e) {
-                    } catch (IllegalAccessException e) {
-                    }
-                }
-            }
-        }
-        if (!plafisSet) {
-            try {
-                UIManager.setLookAndFeel(new WindowsLookAndFeel());
-            } catch (UnsupportedLookAndFeelException e) {
-            }
-        }
-        File file = new File(WebUpdater.getJDDirectory(), "webupdater.jar");
-        if (file.exists()) {
-            file.deleteOnExit();
-        }
-        JFrame frame = new JFrame();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setTitle("JD Update");
-        frame.setLayout(new GridBagLayout());
-        final JProgressBar progresslist = new JProgressBar();
-        progresslist.setMaximum(100);
-        progresslist.setStringPainted(true);
-        final JProgressBar progressload = new JProgressBar();
-        progressload.setMaximum(100);
-        progressload.setStringPainted(true);
-        final JTextArea logWindow = new JTextArea(30, 120);
-        JScrollPane scrollPane = new JScrollPane(logWindow);
-        scrollPane.setAutoscrolls(true);
-        logWindow.setEditable(false);
-        logWindow.setAutoscrolls(true);
-
-        Main.addToGridBag(frame, new JLabel("Webupdate is running..."), REL, REL, REM, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
-        Main.addToGridBag(frame, new JLabel("List files: "), REL, REL, REL, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
-        Main.addToGridBag(frame, progresslist, REL, REL, REM, 1, 1, 0, INSETS, BOTHRESIZE, NORTHWEST);
-        Main.addToGridBag(frame, new JLabel("Download: "), REL, REL, REL, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
-        Main.addToGridBag(frame, progressload, REL, REL, REM, 1, 1, 0, INSETS, BOTHRESIZE, NORTHWEST);
-        Main.log(log, "Starting...");
-        logWindow.setText(log.toString());
-        Main.addToGridBag(frame, scrollPane, REL, REL, REM, 1, 1, 1, INSETS, BOTHRESIZE, NORTHWEST);
-
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e1) {
-            e1.printStackTrace();
-        }
-
-        int n = 5;
-        ((JComponent) frame.getContentPane()).setBorder(new EmptyBorder(n, n, n, n));
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-
+        
+        Browser.init();
+     
+        
+        guiConfig = WebUpdater.getConfig("WEBUPDATE");
+        
+        
+        log.append(WebUpdater.getConfig("WEBUPDATE").getProperties() + "\r\n");
+        System.out.println(WebUpdater.getConfig("WEBUPDATE").getProperties() + "\r\n");
+        System.out.println(WebUpdater.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
+        log.append(WebUpdater.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
+       
+        
+        initGUI();
+        
+        
         for (int i = 0; i < args.length; i++) {
             Main.log(log, "Parameter " + i + " " + args[i] + " " + System.getProperty("line.separator"));
             logWindow.setText(log.toString());
         }
-        new Thread() {
-            public void run() {
-                while (true) {
-                    logWindow.setText(log.toString());
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                    }
-                }
-            }
-        }.start();
         WebUpdater updater = new WebUpdater();
         updater.setOSFilter(OSFilter);
         Main.log(log, "Current Date:" + new Date() + "\r\n");
-        if (new File(WebUpdater.getJDDirectory(), "updateLog.txt").exists()) {
-            if (!new File(WebUpdater.getJDDirectory(), "/backup/").exists()) {
-                new File(WebUpdater.getJDDirectory(), "/backup/").mkdirs();
-
-                Main.log(log, "Not found: " + (new File(WebUpdater.getJDDirectory(), "/backup/").getAbsolutePath()) + "\r\n");
-                JOptionPane.showMessageDialog(frame, "JDownloader could not create a backup. Please make sure that\r\n " + new File(WebUpdater.getJDDirectory(), "/backup/").getAbsolutePath() + " exists and is writable before starting the update");
-                Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
-                System.exit(0);
-                return;
-            }
-
-            File lastBackup = new File(WebUpdater.getJDDirectory(), "/backup/links.linkbackup");
-
-            Main.log(log, "Backup found. date:" + new Date(lastBackup.lastModified()) + "\r\n");
-            if (!lastBackup.exists() || (System.currentTimeMillis() - lastBackup.lastModified()) > 5 * 60 * 1000) {
-
-                new File(WebUpdater.getJDDirectory(), "/backup/").mkdirs();
-                String msg = "";
-
-                if (!lastBackup.exists()) {
-
-                    msg = "Do you want to continue without a backup? Your queue may get lost.\r\nLatest backup found: NONE!\r\nNote: You can ignore this message if this is a fresh JD-Installation and your linklist is empty anyway";
-                } else {
-                    msg = "Do you want to continue without a backup? Your queue may get lost.\r\nLatest backup found: " + new Date(lastBackup.lastModified()) + "\r\nin " + lastBackup.getAbsolutePath();
-                }
-
-                if (JOptionPane.showConfirmDialog(frame, msg, "There is no backup of your current Downloadqueue", JOptionPane.WARNING_MESSAGE) != JOptionPane.OK_OPTION) {
-                    Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
-                    System.exit(0);
-                    return;
-                }
-
-            }
-        }
-        updater.ignorePlugins(!SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_DISABLE", false));
-        if (AllPlugins) updater.ignorePlugins(false);
-        if (new File(WebUpdater.getJDDirectory(), "updateLog.txt").exists()) {
-            String warnHash = updater.getLocalHash(new File(WebUpdater.getJDDirectory(), "updatewarnings.html"));
-
-            updater.downloadBinary(new File(WebUpdater.getJDDirectory(), "updatewarnings.html").getAbsolutePath(), "http://service.jdownloader.org/messages/updatewarning.html", null);
-            String hash2 = updater.getLocalHash(new File("updatewarnings.html"));
-            if (hash2 != null && !hash2.equals(warnHash)) {
-                String str;
-                if (JOptionPane.showConfirmDialog(frame, str = utils.getLocalFile(new File("updatewarnings.html")), "UPDATE WARNINGS", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.NO_OPTION) {
-                    Main.log(log, "Abort due to warnings " + str);
-
-                    new File(WebUpdater.getJDDirectory(), "updatewarnings.html").delete();
-                    new File(WebUpdater.getJDDirectory(), "updatewarnings.html").deleteOnExit();
-                    if (new File(WebUpdater.getJDDirectory(), "webcheck.tmp").exists()) {
-                        new File(WebUpdater.getJDDirectory(), "webcheck.tmp").delete();
-                    }
-                    Main.log(log, "Local: " + new File("").getAbsolutePath());
-                    Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + WebUpdater.getJDDirectory().getAbsolutePath());
-
-                    Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
-
-                    logWindow.setText(log.toString());
-                    Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());
-                    System.exit(0);
-                    return;
-                }
-            }
-        }
+        checkBackup();
+        updater.ignorePlugins(!WebUpdater.getConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_DISABLE", false));
+        if (loadAllPlugins) updater.ignorePlugins(false);
+        checkUpdateMessage();
         updater.setLogger(log);
-        updater.setListProgress(progresslist);
+
         updater.setDownloadProgress(progressload);
         Main.trace("Start Webupdate");
         Vector<Vector<String>> files;
@@ -440,13 +268,37 @@ public class Main {
         }
 
         if (files != null) {
+         
             updater.filterAvailableUpdates(files);
-            progresslist.setValue(100);
+
             JDUpdateUtils.backupDataBase();
             updater.updateFiles(files);
         }
 
-        SubConfiguration jdus = SubConfiguration.getSubConfig("JDU");
+        installAddons();
+        Main.trace(updater.getLogger().toString());
+        Main.trace("End Webupdate");
+        logWindow.setText(log.toString());
+        Main.trace(JDUtilities.getResourceFile("updateLog.txt").getAbsoluteFile());
+
+        if (JDUtilities.getResourceFile("webcheck.tmp").exists()) {
+            JDUtilities.getResourceFile("webcheck.tmp").delete();
+        }
+        Main.log(log, "Local: " + JDUtilities.getResourceFile(".").getAbsolutePath());
+
+        Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
+        Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+
+        logWindow.setText(log.toString());
+        Main.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
+        System.exit(0);
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private static void installAddons() {
+        SubConfiguration jdus = WebUpdater.getConfig("JDU");
         ArrayList<PackageData> data = (ArrayList<PackageData>) jdus.getProperty("PACKAGEDATA", new ArrayList<PackageData>());
 
         for (PackageData pa : data) {
@@ -455,11 +307,11 @@ public class Main {
 
             Main.log(log, "Install: " + zip + System.getProperty("line.separator") + System.getProperty("line.separator"));
 
-            UnZip u = new UnZip(zip, WebUpdater.getJDDirectory());
+            UnZip u = new UnZip(zip, JDUtilities.getResourceFile("."));
             File[] efiles;
             try {
                 efiles = u.extract();
-                if (files != null) {
+                if (efiles != null) {
 
                     for (File element : efiles) {
                         Main.log(log, "       extracted: " + element + System.getProperty("line.separator"));
@@ -498,7 +350,7 @@ public class Main {
 
         }
         jdus.save();
-        File afile[] = (new File(WebUpdater.getJDDirectory(), "packages")).listFiles();
+        File afile[] = (JDUtilities.getResourceFile("packages")).listFiles();
         if (afile != null) {
             for (int l = 0; l < afile.length; l++) {
                 File jdu = afile[l];
@@ -509,22 +361,165 @@ public class Main {
                 }
             }
         }
-        Main.trace(updater.getLogger().toString());
-        Main.trace("End Webupdate");
-        logWindow.setText(log.toString());
-        Main.trace(new File(WebUpdater.getJDDirectory(), "updateLog.txt").getAbsoluteFile());
 
-        if (new File(WebUpdater.getJDDirectory(), "webcheck.tmp").exists()) {
-            new File(WebUpdater.getJDDirectory(), "webcheck.tmp").delete();
+    }
+
+    private static void checkUpdateMessage() throws IOException {
+        if (JDUtilities.getResourceFile("updateLog.txt").exists()) {
+            String warnHash = JDHash.getMD5(JDUtilities.getResourceFile("updatewarnings.html"));
+
+            Browser.download(JDUtilities.getResourceFile("updatewarnings.html"), "http://service.jdownloader.org/messages/updatewarning.html");
+            String hash2 = JDHash.getMD5(JDUtilities.getResourceFile("updatewarnings.html"));
+            if (hash2 != null && !hash2.equals(warnHash)) {
+                String str;
+                if (JOptionPane.showConfirmDialog(frame, str = JDIO.getLocalFile(new File("updatewarnings.html")), "UPDATE WARNINGS", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.NO_OPTION) {
+                    Main.log(log, "Abort due to warnings " + str);
+
+                    JDUtilities.getResourceFile("updatewarnings.html").delete();
+                    JDUtilities.getResourceFile("updatewarnings.html").deleteOnExit();
+                    if (JDUtilities.getResourceFile("webcheck.tmp").exists()) {
+                        JDUtilities.getResourceFile("webcheck.tmp").delete();
+                    }
+                    Main.log(log, "Local: " + new File("").getAbsolutePath());
+                    Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
+
+                    Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+
+                    logWindow.setText(log.toString());
+                    Main.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
+                    System.exit(0);
+                    return;
+                }
+            }
         }
-        Main.log(log, "Local: " + WebUpdater.getJDDirectory().getAbsolutePath());
 
-        Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + WebUpdater.getJDDirectory().getAbsolutePath());
-        Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
+    }
 
+    private static void checkBackup() {
+        if (JDUtilities.getResourceFile("updateLog.txt").exists()) {
+            if (!JDUtilities.getResourceFile("/backup/").exists()) {
+                JDUtilities.getResourceFile("/backup/").mkdirs();
+
+                Main.log(log, "Not found: " + (JDUtilities.getResourceFile("/backup/").getAbsolutePath()) + "\r\n");
+                JOptionPane.showMessageDialog(frame, "JDownloader could not create a backup. Please make sure that\r\n " + JDUtilities.getResourceFile("/backup/").getAbsolutePath() + " exists and is writable before starting the update");
+                Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+                System.exit(0);
+                return;
+            }
+
+            File lastBackup = JDUtilities.getResourceFile("/backup/links.linkbackup");
+
+            Main.log(log, "Backup found. date:" + new Date(lastBackup.lastModified()) + "\r\n");
+            if (!lastBackup.exists() || (System.currentTimeMillis() - lastBackup.lastModified()) > 5 * 60 * 1000) {
+
+                JDUtilities.getResourceFile("/backup/").mkdirs();
+                String msg = "";
+
+                if (!lastBackup.exists()) {
+
+                    msg = "Do you want to continue without a backup? Your queue may get lost.\r\nLatest backup found: NONE!\r\nNote: You can ignore this message if this is a fresh JD-Installation and your linklist is empty anyway";
+                } else {
+                    msg = "Do you want to continue without a backup? Your queue may get lost.\r\nLatest backup found: " + new Date(lastBackup.lastModified()) + "\r\nin " + lastBackup.getAbsolutePath();
+                }
+
+                if (JOptionPane.showConfirmDialog(frame, msg, "There is no backup of your current Downloadqueue", JOptionPane.WARNING_MESSAGE) != JOptionPane.OK_OPTION) {
+                    Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+                    System.exit(0);
+                    return;
+                }
+
+            }
+        }
+
+    }
+
+    private static void initGUI() {
+        UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
+        String paf = guiConfig.getStringProperty("PLAF", null);
+        boolean plafisSet = false;
+
+        if (paf != null) {
+            for (LookAndFeelInfo element : info) {
+                if (element.getName().equals(paf)) {
+                    try {
+                        UIManager.setLookAndFeel(element.getClassName());
+                        plafisSet = true;
+                        break;
+                    } catch (UnsupportedLookAndFeelException e) {
+                    } catch (ClassNotFoundException e) {
+                    } catch (InstantiationException e) {
+                    } catch (IllegalAccessException e) {
+                    }
+                }
+            }
+        } else {
+            for (int i = 0; i < info.length; i++) {
+                if (!info[i].getName().matches("(?is).*(metal|motif).*")) {
+                    try {
+                        UIManager.setLookAndFeel(info[i].getClassName());
+                        plafisSet = true;
+                        break;
+                    } catch (UnsupportedLookAndFeelException e) {
+                    } catch (ClassNotFoundException e) {
+                    } catch (InstantiationException e) {
+                    } catch (IllegalAccessException e) {
+                    }
+                }
+            }
+        }
+        if (!plafisSet) {
+            try {
+                UIManager.setLookAndFeel(new WindowsLookAndFeel());
+            } catch (UnsupportedLookAndFeelException e) {
+            }
+        }
+
+        frame = new JFrame();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setTitle("JD Update");
+        frame.setLayout(new GridBagLayout());
+
+        progressload = new JProgressBar();
+        progressload.setMaximum(100);
+        progressload.setStringPainted(true);
+        logWindow = new JTextArea(30, 120);
+        JScrollPane scrollPane = new JScrollPane(logWindow);
+        scrollPane.setAutoscrolls(true);
+        logWindow.setEditable(false);
+        logWindow.setAutoscrolls(true);
+
+        Main.addToGridBag(frame, new JLabel("Webupdate is running..."), REL, REL, REM, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
+       
+        Main.addToGridBag(frame, new JLabel("Download: "), REL, REL, REL, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
+        Main.addToGridBag(frame, progressload, REL, REL, REM, 1, 1, 0, INSETS, BOTHRESIZE, NORTHWEST);
+        Main.log(log, "Starting...");
         logWindow.setText(log.toString());
-        Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());
-        System.exit(0);
+        Main.addToGridBag(frame, scrollPane, REL, REL, REM, 1, 1, 1, INSETS, BOTHRESIZE, NORTHWEST);
+
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e1) {
+            e1.printStackTrace();
+        }
+
+        int n = 5;
+        ((JComponent) frame.getContentPane()).setBorder(new EmptyBorder(n, n, n, n));
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+
+        new Thread() {
+            public void run() {
+                while (true) {
+                    logWindow.setText(log.toString());
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                    }
+                }
+            }
+        }.start();
+
     }
 
     /**

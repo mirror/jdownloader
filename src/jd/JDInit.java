@@ -55,44 +55,32 @@ public class JDInit {
     private static Logger logger = JDUtilities.getLogger();
 
     public static void setupProxy() {
-        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
-            // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
-            // für evtl authentifizierung:
-            // http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
-            // -proxy-authentication/
-            // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich
-            // wäre
-            String host = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, "");
-            String port = new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080)).toString();
-            String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
-            String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
-            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.PROXY_HOST, host);
-            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.USE_PROXY, true);
-            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.PROXY_PORT, port);
-            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.PROXY_USER, user);
-            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.PROXY_PASS, pass);
-        } else {
-            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.USE_PROXY, false);
-        }
+//        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
+//            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+//            // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
+//            // für evtl authentifizierung:
+//            // http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
+//            // -proxy-authentication/
+//            // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich
+//            // wäre
+//            String host = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, "");
+//            String port = new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080)).toString();
+//            String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
+//            String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
+//            
+//        } 
     }
 
     public static void setupSocks() {
-        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
-            // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
-            String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
-            String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS, "");
-            String host = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, "");
-            String port = new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080)).toString();
-            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.SOCKS_HOST, host);
-            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.USE_SOCKS, true);
-            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.SOCKS_PORT, port);
-            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.PROXY_USER_SOCKS, user);
-            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.PROXY_PASS_SOCKS, pass);
-        } else {
-            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.USE_SOCKS, false);
-        }
+//        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
+//            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+//            // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
+//            String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
+//            String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS, "");
+//            String host = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, "");
+//            String port = new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080)).toString();
+//           
+//        } 
     }
 
     private boolean installerVisible = false;

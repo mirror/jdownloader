@@ -16,6 +16,8 @@
 
 package jd.update;
 
+import jd.config.Property;
+
 public class PackageData extends Property {
 
     private static final long serialVersionUID = 313280647294844981L;

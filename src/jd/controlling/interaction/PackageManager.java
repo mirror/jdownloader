@@ -26,14 +26,16 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.OptionalPluginWrapper;
 import jd.config.CFGConfig;
+import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
 import jd.http.Browser;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.update.JDUpdateUtils;
 import jd.update.PackageData;
+import jd.update.WebUpdater;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
@@ -80,7 +82,7 @@ public class PackageManager extends Interaction implements Serializable {
     public boolean doInteraction(Object arg) {
         checkNewInstalled();
 
-        CFGConfig config = CFGConfig.getConfig("JDU");
+        SubConfiguration config = WebUpdater.getConfig("JDU");
         boolean oldUpdatePackage = false;
         FilePackage fp = new FilePackage();
         fp.setName(JDLocale.L("modules.packagemanager.packagename", "JD-Update"));
@@ -149,12 +151,12 @@ public class PackageManager extends Interaction implements Serializable {
     @SuppressWarnings("unchecked")
     public ArrayList<PackageData> getPackageData() {
         if (PACKAGE_DATA != null) return PACKAGE_DATA;
-        CFGConfig config = CFGConfig.getConfig("JDU");
+        SubConfiguration config = WebUpdater.getConfig("JDU");
         Browser br = new Browser();
         br.setFollowRedirects(true);
         ArrayList<PackageData> data = (ArrayList<PackageData>) config.getProperty("PACKAGEDATA", new ArrayList<PackageData>());
         for (int i = data.size() - 1; i >= 0; --i) {
-            if (data.get(i).getStringProperty("category").indexOf("[LIGHT]") >= 0) {
+            if (data.get(i).getStringProperty("category")==null||data.get(i).getStringProperty("category").indexOf("[LIGHT]") >= 0) {
                 data.remove(i);
                 continue;
             }
@@ -163,7 +165,7 @@ public class PackageManager extends Interaction implements Serializable {
         config.setProperty("PACKAGEDATA", data);
 
         try {
-            String list = JDUpdateUtils.get_AddonList();
+            String list = JDIO.getLocalFile(WebUpdater.getFileMap().get("addonlist.lst"));
 
             String xml = new Regex(list, "<packages>(.*?)</packages>").getMatch(-1);
 
@@ -252,7 +254,7 @@ public class PackageManager extends Interaction implements Serializable {
                 dat.setProperty("LOCALPATH", downloadLink.getFileOutput());
                 dat.setDownloaded(true);
 
-                CFGConfig.getConfig("JDU").save();
+                WebUpdater.getConfig("JDU").save();
 
                 new Thread() {
                     @Override

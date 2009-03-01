@@ -41,6 +41,7 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.CFGConfig;
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
@@ -49,6 +50,7 @@ import jd.gui.skins.simple.JDEventQueue;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.update.WebUpdater;
 import jd.utils.CheckJava;
 import jd.utils.JDFileReg;
 import jd.utils.JDLocale;
@@ -414,7 +416,7 @@ public class Main {
         }
         JDInit.setupProxy();
         JDInit.setupSocks();
-        CFGConfig.getConfig("WEBUPDATE").save();
+        WebUpdater.getConfig("WEBUPDATE").save();
         init.removeFiles();
 
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.initcontroller", "Starte Controller"));

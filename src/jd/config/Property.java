@@ -36,7 +36,7 @@ public class Property implements Serializable {
 
     private static final long serialVersionUID = -6093927038856757256L;
 
-    protected transient Logger logger = JDUtilities.getLogger();
+    protected transient Logger logger = null;
 
     private HashMap<String, Object> properties = new HashMap<String, Object>();
 
@@ -46,7 +46,7 @@ public class Property implements Serializable {
      * 
      */
     public Property() {
-
+        logger = JDUtilities.getLogger();
     }
 
     public Property(Object obj) {
@@ -190,14 +190,14 @@ public class Property implements Serializable {
     public long getSaveCount() {
         return saveCount;
     }
-    
+
     /**
      * Gibt die Anzahl der gespeicherten Einträge zurück
      * 
      * @return Zahl der Elemente
      */
     public long getCount() {
-    	return properties.size();
+        return properties.size();
     }
 
     /**
@@ -248,7 +248,8 @@ public class Property implements Serializable {
      */
     @SuppressWarnings("unchecked")
     public void setProperty(String key, Object value) {
-        // if(key==Configuration.PARAM_USE_GLOBAL_PREMIUM&&this==JDUtilities.getConfiguration()){
+        // if(key==Configuration.PARAM_USE_GLOBAL_PREMIUM&&this==JDUtilities.
+        // getConfiguration()){
         // logger.info("II");
         // }
         saveCount++;
@@ -297,7 +298,7 @@ public class Property implements Serializable {
      */
     @Override
     public String toString() {
-        if(properties.size()==0)return "";
+        if (properties.size() == 0) return "";
         return "Property(" + saveCount + "): " + properties;
     }
 
