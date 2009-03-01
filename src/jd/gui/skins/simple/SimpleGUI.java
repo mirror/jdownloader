@@ -894,14 +894,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case JDAction.HELP:
             try {
-                JLinkButton.openURL(JDLocale.L("gui.support.forumurl", "http://www.the-lounge.org/viewforum.php?f=291"));
+                JLinkButton.openURL(JDLocale.L("gui.support.forumurl", "http://board.jdownloader.org"));
             } catch (Exception e1) {
                 e1.printStackTrace();
             }
             break;
         case JDAction.WIKI:
             try {
-                JLinkButton.openURL(JDLocale.L("gui.support.wikiurl", "http://jdownloader.org/wiki/index.php?title=JDownloader_Wiki:Portal_English"));
+                JLinkButton.openURL(JDLocale.L("gui.support.wikiurl", "http://wiki.jdownloader.org"));
             } catch (Exception e1) {
                 e1.printStackTrace();
             }

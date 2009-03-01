@@ -556,7 +556,7 @@ gui.splash.text.webupdate = Verifica aggiornamenti
 gui.statusbar.premium = Premium
 gui.statusbar.sim_ownloads = Max.Down.
 gui.statusbar.speed = Velocità 
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
+gui.support.forumurl = http://board.jdownloader.org
 gui.support.wikiurl = http://wiki.jdownloader.org/index.php?title=jDownloader_Wiki:Portal_English
 gui.tab.plugin_activity.column_plugin = Modulo
 gui.tab.plugin_activity.column_progress = Progresso

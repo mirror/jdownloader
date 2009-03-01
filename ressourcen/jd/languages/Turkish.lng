@@ -323,7 +323,7 @@ gui.dialog.about.chat = Sohbet
 gui.dialog.about.chaturl = http://jdownloader.org/support?&lng=tr
 gui.dialog.about.email = E-Posta
 gui.dialog.about.forum = Destek Forumları
-gui.dialog.about.forumurl = http://jdownloader.org/knowledge/forum
+gui.dialog.about.forumurl = http://board.jdownloader.org
 gui.dialog.about.homepage = Ana Sayfa
 gui.dialog.about.homeurl = http://jdownloader.org/home?&lng=tr
 gui.dialog.about.jddevteam = JDownloader Geliştiren Takımı
@@ -632,7 +632,7 @@ gui.statusbar.interaction = Etkileşim:
 gui.statusbar.premium = Premium
 gui.statusbar.sim_ownloads = Mak.İnd
 gui.statusbar.speed = Mak.Hız
-gui.support.forumurl = http://jdownloader.org/knowledge/forum
+gui.support.forumurl = http://board.jdownloader.org
 gui.support.wikiurl = http://wiki.jdownloader.org/index.php?title=Kategorie:Turkish_Wiki
 gui.tab.plugin_activity.column_plugin = Modül
 gui.tab.plugin_activity.column_progress = İlerleme
