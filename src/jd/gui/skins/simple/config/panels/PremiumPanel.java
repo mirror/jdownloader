@@ -182,7 +182,8 @@ public class PremiumPanel extends JPanel {
             if (!account.getUser().equals(txtUsername.getText()) || !account.getPass().equals(pass)) {
                 account.setUser(txtUsername.getText());
                 account.setPass(pass);
-                account.setProperty("accountinfo", null);
+               account.getProperties().clear();
+          
             }
 
             account.setEnabled(chkEnable.isSelected());
