@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
-import jd.config.CFGConfig;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -45,8 +44,8 @@ import jd.update.WebUpdater;
  * Diese klasse sollte in einem working directory ausgeführt werden das leer
  * ist. z.B. d:/jd_update Nach dem Start wird die aktuelle JD version vom
  * bluehost server geladen. anschließend fragt der Updater nach einem ordner in
- * dem sich die neuen fil#es befinden. Die neuen files werden hochgeladen und auf
- * crc Fehler beim Upload geprüft. Anschließend wird eine neue hashliste
+ * dem sich die neuen fil#es befinden. Die neuen files werden hochgeladen und
+ * auf crc Fehler beim Upload geprüft. Anschließend wird eine neue hashliste
  * erstellt und auf unseren server geladen. Die DLC hashes werden ebenfalls
  * aktualisiert.
  * 
@@ -56,12 +55,11 @@ import jd.update.WebUpdater;
  * logins.
  * 
  * @author coalado
- *    
+ * 
  */
 public class JDUpdater {
     private static boolean SKIP_UPLOAD = false;
-    
-    
+
     private static Logger logger = JDUtilities.getLogger();
     private static SubConfiguration CONFIG;
 
@@ -69,8 +67,6 @@ public class JDUpdater {
         if (root == null) root = file;
         if (!file.isDirectory()) return secureUploadFile(file, root, test);
         boolean ret = true;
-        ret=false;
-        ret=true;
         for (File f : file.listFiles()) {
             if (f.getName().contains("svn") || f.getName().contains("addonlist.lst")) continue;
             if (!secureUploadFolder(f, root, test)) ret = false;
@@ -120,7 +116,7 @@ public class JDUpdater {
     }
 
     public static void main(String args[]) throws Exception {
-        CONFIG =  WebUpdater.getConfig("JDUPDATER");
+        CONFIG = WebUpdater.getConfig("JDUPDATER");
         new JDUpdater();
     }
 
@@ -185,9 +181,9 @@ public class JDUpdater {
 
         System.out.println("Hashlist laden");
         WebUpdater updater = new WebUpdater();
-     
+
         updater.setOSFilter(false);
-       
+
         updater.ignorePlugins(false);
         Vector<Vector<String>> files = null;
         try {
@@ -317,7 +313,7 @@ public class JDUpdater {
         }
         return false;
     }
-   
+
     private void scanDir(File scan) {
         scan.list(new FilenameFilter() {
             public boolean accept(File scan, String name) {

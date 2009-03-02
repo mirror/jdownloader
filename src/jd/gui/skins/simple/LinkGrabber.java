@@ -265,9 +265,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         private JMenuItem mContextNewPackage;
 
         private JCheckBox chbExtract;
-        // Kennzeichnet ob das downloadDirectory schonmal manuell geändert
-        // wurde.
-        private boolean changedDir = false;
+
+        /**
+         * TODO: If user changed the packagename, the linkgrabber shouldn't change it!
+         */
+        @SuppressWarnings("unused")
+        private boolean changedName = false;
 
         public PackageTab() {
             linkList = new Vector<DownloadLink>();
@@ -376,6 +379,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             txtName = new JDTextField();
             txtName.setAutoSelect(true);
+            txtName.addKeyListener(this);
             txtPassword = new JDTextField();
             txtComment = new JDTextField();
 
@@ -387,24 +391,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
             brwSaveTo.setEditable(true);
-            // brwSaveTo.addActionListener(new ActionListener() {
-
-            // public void actionPerformed(ActionEvent arg0) {
-            // changedDir = true;
-            //
-            // }
-
-            // });
             brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
             brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
 
             txtName.setPreferredSize(new Dimension(450, 20));
-            // txtPassword.setPreferredSize(new Dimension(450, 20));
-            // chbExtract.setPreferredSize(new Dimension(200, 20));
             txtComment.setPreferredSize(new Dimension(450, 20));
             brwSaveTo.setPreferredSize(new Dimension(450, 20));
             txtName.setMinimumSize(new Dimension(250, 20));
-            // txtPassword.setMinimumSize(new Dimension(250, 20));
             txtComment.setMinimumSize(new Dimension(250, 20));
             brwSaveTo.setMinimumSize(new Dimension(250, 20));
 
@@ -474,7 +467,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             JPanel extractPW = new JPanel(new GridBagLayout());
             north.add(east, BorderLayout.WEST);
             north.add(center, BorderLayout.CENTER);
-            // extractPW.add(this.txtPassword);
             JDUtilities.addToGridBag(extractPW, txtPassword, 0, 0, 1, 1, 100, 100, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
             JDUtilities.addToGridBag(extractPW, chbExtract, 1, 0, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
@@ -486,9 +478,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             center.add(txtName);
             center.add(brwSaveTo);
             center.add(extractPW);
-            // JDUtilities.addToGridBag(center, extractPW, 0, 0, 1, 1, 0, 0,
-            // null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
             center.add(txtComment);
 
             setLayout(new BorderLayout(n, n));
@@ -579,7 +568,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
 
         public void keyReleased(KeyEvent e) {
-            if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+            if (e.getSource() == table && e.getKeyCode() == KeyEvent.VK_DELETE) {
                 int[] rows = table.getSelectedRows();
                 for (int i = rows.length - 1; i >= 0; i--) {
                     int id = rows[i];
@@ -587,6 +576,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     totalLinkList.remove(linkList.remove(id));
                 }
                 refreshTable();
+            } else if (e.getSource() == txtName) {
+                changedName = true;
             }
         }
 
@@ -666,7 +657,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         public synchronized void setPackageName(String name) {
             txtName.setText(JDUtilities.removeEndingPoints(name));
-            if (this.changedDir) return;
         }
 
         public void setPassword(String pw) {
@@ -1734,7 +1724,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                         }
                         link.getLinkStatus().setStatusText(JDLocale.L("gui.linkgrabber.checkstatus", "Onlinecheck running..."));
                         link.isAvailable();
-                        if (link.getLinkStatus().getStatusText()!=null&&link.getLinkStatus().getStatusText().equals(JDLocale.L("gui.linkgrabber.checkstatus", "Onlinecheck running..."))) {
+                        if (link.getLinkStatus().getStatusText() != null && link.getLinkStatus().getStatusText().equals(JDLocale.L("gui.linkgrabber.checkstatus", "Onlinecheck running..."))) {
                             link.getLinkStatus().setStatusText(null);
                         }
                         // addingLinkList.add(link);

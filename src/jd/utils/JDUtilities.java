@@ -46,7 +46,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -891,28 +890,26 @@ public class JDUtilities {
         File currentDir = null;
 
         URL ressource = Thread.currentThread().getContextClassLoader().getResource("jd/Main.class");
-        System.out.println("Ressource: " + ressource);
+        // System.out.println("Ressource: " + ressource);
         if (ressource == null) {
             ressource = Thread.currentThread().getContextClassLoader().getResource("jd/update/Main.class");
 
         }
         String dir = ressource + "";
-        System.out.println(dir);
+        // System.out.println(dir);
         dir = dir.split("\\.jar\\!")[0] + ".jar";
-        System.out.println(dir);
+        // System.out.println(dir);
         dir = dir.substring(Math.max(dir.indexOf("file:"), 0));
         try {
-            System.out.println(dir);
+            // System.out.println(dir);
             currentDir = new File(new URI(dir));
-            System.out.println(currentDir);
+            // System.out.println(currentDir);
             // JDUtilities.getLogger().info(" App dir: "+currentDir+" -
             // "+System.getProperty("java.class.path"));
             if (currentDir.isFile()) {
                 currentDir = currentDir.getParentFile();
             }
-
         } catch (URISyntaxException e) {
-
             e.printStackTrace();
         }
 
@@ -929,12 +926,12 @@ public class JDUtilities {
             envDir = System.getProperty("user.home") + System.getProperty("file.separator") + ".jd_home/";
 
         }
-        System.out.println("ENV" + envDir);
+        // System.out.println("ENV " + envDir);
         if (envDir == null) {
             envDir = "." + System.getProperty("file.separator") + ".jd_home/";
             JDUtilities.getLogger().info("JD_HOME from current directory:" + envDir);
         }
-        System.out.println("ENV" + envDir);
+        // System.out.println("ENV " + envDir);
         File jdHomeDir = new File(envDir);
         if (!jdHomeDir.exists()) {
             jdHomeDir.mkdirs();
@@ -958,7 +955,7 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert die Klasse zurÃ¼ck, mit der Nachrichten ausgegeben werden kÃ¶nnen
+     * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
      * Falls dieser Logger nicht existiert, wird ein neuer erstellt
      * 
      * @return LogKlasse
@@ -1043,7 +1040,7 @@ public class JDUtilities {
     }
 
     /**
-     * Sucht ein passendes Plugin fÃ¼r ein Containerfile
+     * Sucht ein passendes Plugin für ein Containerfile
      * 
      * @param container
      *            Der Host, von dem das Plugin runterladen kann
@@ -1068,7 +1065,7 @@ public class JDUtilities {
     }
 
     /**
-     * Sucht ein passendes Plugin fÃ¼r einen Anbieter
+     * Sucht ein passendes Plugin für einen Anbieter
      * 
      * @param host
      *            Der Host, von dem das Plugin runterladen kann
@@ -1098,8 +1095,8 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert alle Plugins zum Downloaden von einem Anbieter zurÃ¼ck. Die liste
-     * wird dabei sortiert zurÃ¼ckgegeben
+     * Liefert alle Plugins zum Downloaden von einem Anbieter zurück. Die liste
+     * wird dabei sortiert zurückgegeben
      * 
      * @return Plugins zum Downloaden von einem Anbieter
      */
@@ -1139,7 +1136,7 @@ public class JDUtilities {
     }
 
     /**
-     * Parsed den String revision und gibt die RevisionsNummer zurÃ¼ck
+     * Parsed den String revision und gibt die RevisionsNummer zurück
      * 
      * @param revision
      * @return RevisionsNummer
@@ -1199,7 +1196,7 @@ public class JDUtilities {
             String[] children = dir.list();
             for (String element : children) {
                 boolean success = JDUtilities.removeDirectoryOrFile(new File(dir, element));
-                if (!success) { return false; }
+                if (!success) return false;
             }
         }
 

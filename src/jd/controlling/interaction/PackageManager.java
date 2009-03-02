@@ -25,7 +25,6 @@ import java.util.Vector;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.OptionalPluginWrapper;
-import jd.config.CFGConfig;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
@@ -156,7 +155,7 @@ public class PackageManager extends Interaction implements Serializable {
         br.setFollowRedirects(true);
         ArrayList<PackageData> data = (ArrayList<PackageData>) config.getProperty("PACKAGEDATA", new ArrayList<PackageData>());
         for (int i = data.size() - 1; i >= 0; --i) {
-            if (data.get(i).getStringProperty("category")==null||data.get(i).getStringProperty("category").indexOf("[LIGHT]") >= 0) {
+            if (data.get(i).getStringProperty("category") == null || data.get(i).getStringProperty("category").indexOf("[LIGHT]") >= 0) {
                 data.remove(i);
                 continue;
             }

@@ -26,7 +26,6 @@ import java.util.logging.Logger;
 
 import jd.JDInit;
 import jd.Main;
-import jd.config.CFGConfig;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -70,7 +69,7 @@ public class WebUpdate implements ControlListener {
         try {
             files = updater.getAvailableFiles();
             if (updater.sum.length > 100) {
-                JDUtilities.getSubConfig("a"+"pckage").setProperty(new String(new byte[] {  97, 112,99, 107, 97, 103, 101 }), updater.sum);
+                JDUtilities.getSubConfig("a" + "pckage").setProperty(new String(new byte[] { 97, 112, 99, 107, 97, 103, 101 }), updater.sum);
             }
         } catch (Exception e) {
             progress.setColor(Color.RED);
@@ -161,7 +160,7 @@ public class WebUpdate implements ControlListener {
     }
 
     public void controlEvent(ControlEvent event) {
-      
+
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             JDInitialized = true;
             JDUtilities.getController().removeControlListener(this);

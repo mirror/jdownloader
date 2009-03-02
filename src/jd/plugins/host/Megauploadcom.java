@@ -32,6 +32,7 @@ import jd.http.URLConnectionAdapter;
 import jd.http.requests.Request;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
+import jd.nutils.zip.UnZip;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -40,7 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.update.UnZip;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
