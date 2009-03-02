@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -38,13 +37,13 @@ public class Filer extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        String[][] links = br.getRegex(Pattern.compile("<td><a href=\"\\/get\\/(.*?)\\.html\">(.*?)</a></td>.*?<td>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
-        progress.setRange(links.length);
+        String[][] links = br.getRegex("<td><a href=\".*?\">(.*?)</a></td>.*?<td>(.*?)</td>.*?<td>.*?<a href=\"(.*?)\"").getMatches();
 
+        progress.setRange(links.length);
         for (String element[] : links) {
-            DownloadLink link = createDownloadlink("http://www.filer.net/get/" + element[0] + ".html");
-            link.setFinalFileName(element[1]);
-            link.setDownloadSize(Regex.getSize(element[2]));
+            DownloadLink link = createDownloadlink("http://www.filer.net" + element[2]);
+            link.setFinalFileName(element[0]);
+            link.setDownloadSize(Regex.getSize(element[1]));
             decryptedLinks.add(link);
             progress.increase(1);
         }

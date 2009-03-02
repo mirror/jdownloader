@@ -705,11 +705,7 @@ public class JDInit {
                 if (file.length() == 0) continue;
                 if (!file.matches(".*?" + File.separator + "?\\.+" + File.separator + ".*?")) {
                     File delete = new File(homedir, file);
-                    if (JDUtilities.removeDirectoryOrFile(delete)) {
-                        logger.warning("Removed " + file);
-                    } else {
-                        logger.warning("Could not remove " + file);
-                    }
+                    if (JDUtilities.removeDirectoryOrFile(delete)) logger.warning("Removed " + file);
                 }
             }
         }

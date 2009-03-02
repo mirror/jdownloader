@@ -20,7 +20,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -40,77 +39,67 @@ public class FDNLinksCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
-        	
-        	String id = parameter.substring(parameter.lastIndexOf("/")+1);
-        	br.getPage("http://fdnlinks.com/ajax/links.html?a="+id+"&x="+((int)(Math.random()*1000)));
-        	String[] cryptedLinks = br.getRegex("\\<link\\>(.*?)\\</link\\>").getColumn(0);
-            progress.setRange(cryptedLinks.length);
-            
-            for (String link : cryptedLinks) {
-            	link = this.decrypt(link);
-                DownloadLink dlLink = createDownloadlink(link);
-                decryptedLinks.add(dlLink);
-                progress.increase(1);
-            }
-            
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-        
-        return decryptedLinks;
-        
-    }
-    
-    private String decrypt(String crypted) {
+        String id = parameter.substring(parameter.lastIndexOf("/") + 1);
+        br.getPage("http://fdnlinks.com/ajax/links.html?a=" + id + "&x=" + ((int) (Math.random() * 1000)));
+        String[] cryptedLinks = br.getRegex("\\<link\\>(.*?)\\</link\\>").getColumn(0);
 
-    	int v2;
-    	String v3 = "";
-    	String v4 = "";
-    	String v5 = "";
-    	String v6 = "NOPQvwxyz012RSTUVWXYZabcdefghijkABCDEFGHIJKLMlmnopqrstu3456789_-";
-    	
-    	int i = 0;
-    	while (i<crypted.length()) {
-    		v2 = v6.indexOf(crypted.charAt(i));
-    		v3 = ("000000"+Integer.toBinaryString(v2));
-    		v3 = v3.substring(v3.length()-5, v3.length());
-    		v4 += v3;
-    		i++;
-    	}
-    	
-    	i = 0;
-    	while (i<v4.length()) {
-    		
-    		if ( (i+8) > v4.length() ) {
-    			v3 = v4.substring(i);
-    		} else {
-    			v3 = v4.substring(i,i+8);
-    		}
-    		
-    		// convert binary string to int
-    		int base = 0;
-    		v2 = 0;
-    		for (int j=v3.length()-1; j>=0; j--) {
-    			if (v3.charAt(j) == '1') {
-    				v2 += Math.round(Math.pow(2,base));
-    			}
-    			base++;
-    		}
-    		// ---
-    		
-    		v5 += (char) v2;
-    		i += 8;
-    		
-    	}
-    	
-    	return v5;
-    	
+        progress.setRange(cryptedLinks.length);
+        for (String link : cryptedLinks) {
+            link = this.decrypt(link);
+            decryptedLinks.add(createDownloadlink(link));
+            progress.increase(1);
+        }
+
+        return decryptedLinks;
     }
-    
+
+    private String decrypt(String crypted) {
+        int v2;
+        String v3 = "";
+        String v4 = "";
+        String v5 = "";
+        String v6 = "NOPQvwxyz012RSTUVWXYZabcdefghijkABCDEFGHIJKLMlmnopqrstu3456789_-";
+
+        int i = 0;
+        while (i < crypted.length()) {
+            v2 = v6.indexOf(crypted.charAt(i));
+            v3 = ("000000" + Integer.toBinaryString(v2));
+            v3 = v3.substring(v3.length() - 5, v3.length());
+            v4 += v3;
+            i++;
+        }
+
+        i = 0;
+        while (i < v4.length()) {
+
+            if ((i + 8) > v4.length()) {
+                v3 = v4.substring(i);
+            } else {
+                v3 = v4.substring(i, i + 8);
+            }
+
+            // convert binary string to int
+            int base = 0;
+            v2 = 0;
+            for (int j = v3.length() - 1; j >= 0; j--) {
+                if (v3.charAt(j) == '1') {
+                    v2 += Math.round(Math.pow(2, base));
+                }
+                base++;
+            }
+            // ---
+
+            v5 += (char) v2;
+            i += 8;
+
+        }
+
+        return v5;
+    }
+
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4227 $");
+        return getVersion("$Revision$");
     }
+
 }
