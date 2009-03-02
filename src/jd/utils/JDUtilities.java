@@ -947,7 +947,7 @@ public class JDUtilities {
         ret.append(JDUtilities.getRevision());
         if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0) {
             ret.append(' ');
-            ret.append(JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÃœGBAR:"));
+            ret.append(JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR:"));
             ret.append(' ');
             ret.append(JDUtilities.getController().getWaitingUpdates().size());
         }

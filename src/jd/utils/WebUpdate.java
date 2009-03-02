@@ -36,6 +36,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.http.Browser;
 import jd.nutils.io.JDIO;
+import jd.update.FileUpdate;
 import jd.update.PackageData;
 import jd.update.WebUpdater;
 
@@ -65,7 +66,7 @@ public class WebUpdate implements ControlListener {
         }
         logger.finer("Get available files");
         // logger.info(files + "");
-        final Vector<Vector<String>> files;
+        final ArrayList<FileUpdate> files;
         try {
             files = updater.getAvailableFiles();
             if (updater.sum.length > 100) {
@@ -81,7 +82,7 @@ public class WebUpdate implements ControlListener {
             public void run() {
                 PackageManager pm = new PackageManager();
                 ArrayList<PackageData> packages = pm.getDownloadedPackages();
-                updater.filterAvailableUpdates(files, JDUtilities.getJDHomeDirectoryFromEnvironment());
+                updater.filterAvailableUpdates(files);
                 if (files != null) {
                     JDUtilities.getController().setWaitingUpdates(files);
                 }

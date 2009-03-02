@@ -49,6 +49,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
+import jd.update.FileUpdate;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -213,7 +214,7 @@ public class JDController implements ControlListener, UIListener {
      */
     private UIInterface uiInterface;
 
-    private Vector<Vector<String>> waitingUpdates = new Vector<Vector<String>>();
+    private ArrayList<FileUpdate> waitingUpdates = new ArrayList<FileUpdate>();
 
     /**
      * Der Download Watchdog verwaltet die Downloads
@@ -970,7 +971,7 @@ public class JDController implements ControlListener, UIListener {
         return uiInterface;
     }
 
-    public Vector<Vector<String>> getWaitingUpdates() {
+    public ArrayList<FileUpdate> getWaitingUpdates() {
         return waitingUpdates;
 
     }
@@ -1260,7 +1261,7 @@ public class JDController implements ControlListener, UIListener {
             FilePackage fp;
             while (iterator.hasNext()) {
                 fp = iterator.next();
-                if(fp.getDownloadLinks().size()==0){
+                if (fp.getDownloadLinks().size() == 0) {
                     iterator.remove();
                     continue;
                 }
@@ -1664,7 +1665,7 @@ public class JDController implements ControlListener, UIListener {
         uiInterface.addUIListener(this);
     }
 
-    public void setWaitingUpdates(Vector<Vector<String>> files) {
+    public void setWaitingUpdates(ArrayList<FileUpdate> files) {
         waitingUpdates = files;
     }
 

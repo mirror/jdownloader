@@ -36,6 +36,7 @@ import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.nutils.JDHash;
 import jd.plugins.Plugin;
+import jd.update.FileUpdate;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -98,9 +99,9 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
             if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
             if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && WebUpdater.PLUGIN_LIST != null) {
 
-                ArrayList<Vector<String>> filelist = new ArrayList<Vector<String>>();
-                for (Iterator<Entry<String, Vector<String>>> it = WebUpdater.PLUGIN_LIST.entrySet().iterator(); it.hasNext();) {
-                    Entry<String, Vector<String>> entry = it.next();
+                ArrayList<FileUpdate> filelist = new ArrayList<FileUpdate>();
+                for (Iterator<Entry<String, FileUpdate>> it = WebUpdater.PLUGIN_LIST.entrySet().iterator(); it.hasNext();) {
+                    Entry<String, FileUpdate> entry = it.next();
                     if (entry.getKey().startsWith(getClassName().replace(".", "/"))) {
                         filelist.add(entry.getValue());
                     }
@@ -111,13 +112,13 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
                 // Vector<String>>();
                 ProgressController progress = new ProgressController(JDLocale.LF("wrapper.webupdate.updateFile", "Update plugin %s", getClassName()), filelist.size() + 1);
                 progress.increase(1);
-                for (Vector<String> entry : filelist) {
-                    String plg = entry.get(0).split("\\?")[0];
+                for (FileUpdate entry : filelist) {
+                    String plg = entry.getLocalPath();
                     File path = JDUtilities.getResourceFile(plg);
-                    String hash = JDHash.getMD5(path);
-                    if (hash == null || !hash.equalsIgnoreCase(entry.get(1))) {
+                
+                    if (entry.equals()) {
                         if (!manualupdate) {
-                            new WebUpdater().updateFile(entry);
+                            new WebUpdater().updateUpdatefIle(entry);
                             logger.info("Updated plugin: " + plg);
                         } else {
                             logger.info("New plugin: " + plg + " available, but update-on-the-fly is disabled!");

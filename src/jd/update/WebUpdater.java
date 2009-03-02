@@ -25,18 +25,18 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.swing.JProgressBar;
 
 import jd.config.CFGConfig;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
-import jd.http.Encoding;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
+import jd.nutils.zip.UnZip;
+import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 /**
@@ -50,7 +50,7 @@ public class WebUpdater implements Serializable {
     private static final String UPDATE_ZIP_URL = "http://service.jdownloader.org/update/update.zip";
     private static String LISTPATH = "http://service.jdownloader.org/update/server.list";
     private static String UPDATE_ZIP_HASH = "http://service.jdownloader.org/update/update.md5";
-    public static HashMap<String, Vector<String>> PLUGIN_LIST = null;
+    public static HashMap<String, FileUpdate> PLUGIN_LIST = null;
 
     private boolean ignorePlugins = true;
 
@@ -301,26 +301,22 @@ public class WebUpdater implements Serializable {
      * 
      * @param files
      */
-    public void filterAvailableUpdates(Vector<Vector<String>> files) {
+    public void filterAvailableUpdates(ArrayList<FileUpdate> files) {
         // log(files.toString());
-        String akt;
-        String hash;
 
-        for (int i = files.size() - 1; i >= 0; i--) {
-            String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
+        for (Iterator<FileUpdate> it = files.iterator(); it.hasNext();) {
+            FileUpdate file = it.next();
 
-            akt = JDUtilities.getResourceFile(tmp[0]).getAbsolutePath();
-            if (!new File(akt).exists()) {
-                log("New file. " + files.elementAt(i) + " - " + akt);
+            if (!file.exists()) {
+                log("New file. " + file.getLocalPath());
                 continue;
             }
-            hash = JDHash.getMD5(new File(akt));
 
-            if (!hash.equalsIgnoreCase(files.elementAt(i).elementAt(1))) {
-                log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
+            if (!file.equals()) {
+                log("UPDATE AV. " + file.getLocalPath());
                 continue;
             }
-            files.removeElementAt(i);
+            it.remove();
         }
 
     }
@@ -360,50 +356,39 @@ public class WebUpdater implements Serializable {
      * @return Vector mit allen verfügbaren files
      * @throws UnsupportedEncodingException
      */
-    public Vector<Vector<String>> getAvailableFiles() throws Exception {
+    public ArrayList<FileUpdate> getAvailableFiles() throws Exception {
         String source;
 
-        HashMap<String, Vector<String>> plugins = new HashMap<String, Vector<String>>();
-        Vector<Vector<String>> ret = new Vector<Vector<String>>();
+        HashMap<String, FileUpdate> plugins = new HashMap<String, FileUpdate>();
+        ArrayList<FileUpdate> ret = new ArrayList<FileUpdate>();
 
-        getAvailableServers();
+        updateAvailableServers();
         loadUpdateList();
-        source = JDIO.getLocalFile(this.fileMap.get("hashlist.lst"));
+        source = JDIO.getLocalFile(fileMap.get("hashlist.lst"));
 
         String pattern = "\\$(.*?)\\=\\\"(.*?)\\\"\\;";
 
         if (source == null) {
             log("filelist nicht verfüpgbar");
-            return new Vector<Vector<String>>();
+            return ret;
         }
-        Vector<String> entry;
-        String tmp;
+        FileUpdate entry;
+
         String[] os = new String[] { "windows", "mac", "linux" };
+        String[][] matches = new Regex(source, pattern).getMatches();
         ArrayList<Byte> sum = new ArrayList<Byte>();
-        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source); r.find();) {
-            entry = new Vector<String>();
-            String tmp2 = "";
-            for (int x = 1; x <= r.groupCount(); x++) {
-                if ((tmp = r.group(x).trim()).length() > 0) {
-                    entry.add(Encoding.UTF8Decode(tmp));
-                    if (tmp.length() == 32) {
-                        sum.add((byte) tmp.charAt(0));
-                    }
-                    tmp2 += Encoding.htmlDecode(Encoding.UTF8Decode(tmp)) + " ";
+        for (String[] m : matches) {
+            entry = new FileUpdate(m[0], m[1]);
 
-                }
-            }
-            String file = entry.get(0).split("\\?")[0];
-
-            if (file.endsWith(".class")) {
-                plugins.put(file, entry);
+            if (entry.getLocalPath().endsWith(".class")) {
+                plugins.put(entry.getLocalPath(), entry);
             }
 
-            if (!file.endsWith(".class") || !this.ignorePlugins) {
+            if (!entry.getLocalPath().endsWith(".class") || !this.ignorePlugins) {
                 boolean osFound = false;
                 boolean correctOS = false;
                 for (String element : os) {
-                    if (tmp2.toLowerCase().indexOf(element) >= 0) {
+                    if (entry.getRawUrl().toLowerCase().indexOf(element) >= 0) {
                         osFound = true;
                         if (System.getProperty("os.name").toLowerCase().indexOf(element) >= 0) {
                             correctOS = true;
@@ -415,7 +400,7 @@ public class WebUpdater implements Serializable {
                     if (!osFound || osFound && correctOS) {
                         ret.add(entry);
                     } else {
-                        log("OS Filter: " + tmp2);
+                        log("OS Filter: " + entry.getRawUrl());
 
                     }
                 } else {
@@ -451,29 +436,41 @@ public class WebUpdater implements Serializable {
 
     }
 
-    private ArrayList<Server> getAvailableServers() throws IOException {
+    private ArrayList<Server> updateAvailableServers() {
         try {
-
             br.getPage(LISTPATH);
             int total = 0;
             ArrayList<Server> servers = new ArrayList<Server>();
             Server serv;
-            for (String[] match : br.getRegex("(\\d+)\\:([^\r^\n]*)").getMatches()) {
+            boolean auto = false;
+            for (String[] match : br.getRegex("(\\-?\\d+)\\:([^\r^\n]*)").getMatches()) {
 
-                servers.add(serv = new Server(Integer.parseInt(match[0]), match[1]));
+                servers.add(serv = new Server(Integer.parseInt(match[0]), match[1].trim()));
+                if (serv.getPercent() < 0) auto = true;
                 total += serv.getPercent();
             }
             for (Server s : servers) {
-                s.setPercent((s.getPercent() * 100) / total);
+                if (auto) {
+                    s.setPercent(-1);
+                } else {
+                    s.setPercent((s.getPercent() * 100) / total);
+                }
                 log("Updateserver: " + s);
             }
             if (servers.size() > 0) {
                 WebUpdater.getConfig("WEBUPDATE").setProperty("SERVERLIST", servers);
             }
-        } finally {
-
-            return (ArrayList<Server>) WebUpdater.getConfig("WEBUPDATE").getProperty("SERVERLIST");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        return getAvailableServers();
+
+    }
+
+    private ArrayList<Server> getAvailableServers() {
+
+        return (ArrayList<Server>) WebUpdater.getConfig("WEBUPDATE").getProperty("SERVERLIST");
+
     }
 
     public StringBuilder getLogger() {
@@ -568,45 +565,39 @@ public class WebUpdater implements Serializable {
      * @param files
      * @throws IOException
      */
-    public void updateFiles(Vector<Vector<String>> files) throws IOException {
-        String akt;
+    public void updateFiles(ArrayList<FileUpdate> files) throws IOException {
+
         if (progressload != null) {
             progressload.setMaximum(files.size());
         }
-        File file = null;
-        for (int i = files.size() - 1; i >= 0; i--) {
-
-            String downloadPath;
-            if (files.elementAt(i).elementAt(0).indexOf("?") >= 0) {
-                String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
-                file = JDUtilities.getResourceFile(tmp[0]);
-                downloadPath = getUpdateMirror(tmp[1]);
-            } else {
-                downloadPath = getUpdateMirror(files.elementAt(i).elementAt(0));
-            }
-            log("Webupdater: download " + downloadPath + " to " + file.getAbsolutePath());
-            // files.elementAt(i).elementAt(1)
+        int i = 0;
+        for (FileUpdate file : files) {
             try {
-                for (int iz = 0; iz < 3; iz++) {
-                    String oldfileMD5 = JDHash.getMD5(file);
-                    Browser.download(file, downloadPath);
-                    String fileMD5 = JDHash.getMD5(file);
-                    String remoteMD5 = files.elementAt(i).elementAt(1).trim();
-                    if (fileMD5.equalsIgnoreCase(remoteMD5)) {
-                        log("File OK");
-                        break;
-                    } else {
-                        log("Download failed: CRC (retry)");
-                        progressload.setForeground(Color.RED);
-                    }
+                log("Update file: " + file.getLocalPath());
+
+                if (updateUpdatefIle(file)) {
+
+                    log(file.toString());
+                    log("Successfull\r\n");
+                 
+                } else {
+                    log(file.toString());
+                    log("Failed\r\n");
+                    progressload.setForeground(Color.RED);
+
                 }
             } catch (Exception e) {
-                log("Download failed: " + e.getMessage());
+                e.printStackTrace();
+                log(e.getLocalizedMessage());
+                log(file.toString());
+                log("Failed\r\n");
                 progressload.setForeground(Color.RED);
             }
 
+            i++;
+
             if (progressload != null) {
-                progressload.setValue(files.size() - i);
+                progressload.setValue(i);
             }
         }
         if (progressload != null) {
@@ -614,16 +605,11 @@ public class WebUpdater implements Serializable {
         }
     }
 
-    private String getUpdateMirror(String string) {
-        if (string.startsWith("http")) return string;
-        Server serv = Server.selectServer();
-        String ret = "";
-        if (serv.getPath().endsWith("/") || string.startsWith("/")) {
-            ret = serv.getPath() + string;
-        } else {
-            ret = serv.getPath() + "/" + string;
-        }
-        return ret.replace("//", "/");
+    public boolean updateUpdatefIle(FileUpdate file) throws IOException {
+
+        file.reset(getAvailableServers());
+        return file.update();
+
     }
 
     public Browser getBrowser() {

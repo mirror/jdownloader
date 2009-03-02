@@ -52,6 +52,7 @@
 				<include name="jd/utils/*.class" />
 				<include name="jd/plugins/PluginException.class" />
 				<include name="sun/net/www/protocol/jdps/*.class" />
+				<include name="jd/parser/Regex.class" />
 				<include name="sun/net/www/protocol/jdp/*.class" />
 			</fileset>
 			<zipfileset src="ressourcen/libs/hsqldb.jar" excludes="META-INF/*" />  

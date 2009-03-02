@@ -68,67 +68,74 @@ public class JDClassLoader extends java.lang.ClassLoader {
         } catch (MalformedURLException e1) {
             e1.printStackTrace();
         }
-        // Hier werden die JAR Dateien ausgelesen
-        Vector<JarFile> jarFiles = new Vector<JarFile>();
-        jarFile = new Vector<File>();
-        ArrayList<String> names = new ArrayList<String>();
-        File[] files = new File(new File(rootDir), "plugins").listFiles(new JDFileFilter(null, ".jar", false));
-        if (files != null) {
 
-            // jars = new JarFile[files.length];
+        boolean isWebupdater = false;
+        System.out.println(rootDir);
+        System.out.println(" " + rootClassLoader.getResource("jd"));
+        isWebupdater = (classLoaderParent.getResource("jd") + "").contains("webupdater.jar");
+        if (!isWebupdater) {
+            // Hier werden die JAR Dateien ausgelesen
+            Vector<JarFile> jarFiles = new Vector<JarFile>();
+            jarFile = new Vector<File>();
+            ArrayList<String> names = new ArrayList<String>();
+            File[] files = new File(new File(rootDir), "plugins").listFiles(new JDFileFilter(null, ".jar", false));
+            if (files != null) {
 
-            for (int i = 0; i < files.length; i++) {
-                if (!comp(getSig(files[i].getAbsolutePath()))) {
-                    logger.severe("Not loaded due to sig violation: " + files[i]);
-                    continue;
-                }
+                // jars = new JarFile[files.length];
 
-                try {
-                    if (!files[i].getAbsolutePath().endsWith("webupdater.jar")) {
-                        if (names.contains(files[i].getName())) {
-                            logger.severe("Duplicate Jars found: " + files[i].getAbsolutePath());
-                        } else {
-                            names.add(files[i].getName());
-                            logger.finer("Jar file loaded: " + files[i].getAbsolutePath());
-                            // jars[i] = new JarFile(files[i]);
-                            jarFile.add(files[i]);
-
-                            jarFiles.add(new JarFile(files[i]));
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        // Hier werden lokale JAR Dateien ausgelesen
-        files = new File(rootDir).listFiles(new JDFileFilter(null, ".jar", false));
-        if (files != null) {
-            // jars = new JarFile[files.length];
-            for (int i = 0; i < files.length; i++) {
-
-                if (!comp(getSig(files[i].getAbsolutePath()))) {
-                    logger.severe("Not loaded due to sig violation: " + files[i]);
-                    continue;
-                }
-                try {
-                    if (!files[i].getAbsolutePath().endsWith("webupdater.jar")) {
-                        if (names.contains(files[i].getName())) {
-                            logger.severe("Duplicate Jars found: " + files[i].getAbsolutePath());
-                        } else {
-                            names.add(files[i].getName());
-                            logger.finer("Jar file loaded: " + files[i].getAbsolutePath());
-                            jarFile.add(files[i]);
-                            jarFiles.add(new JarFile(files[i]));
-                        }
+                for (int i = 0; i < files.length; i++) {
+                    if (!comp(getSig(files[i].getAbsolutePath()))) {
+                        logger.severe("Not loaded due to sig violation: " + files[i]);
+                        continue;
                     }
 
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    try {
+                        if (!files[i].getAbsolutePath().endsWith("webupdater.jar")) {
+                            if (names.contains(files[i].getName())) {
+                                logger.severe("Duplicate Jars found: " + files[i].getAbsolutePath());
+                            } else {
+                                names.add(files[i].getName());
+                                logger.finer("Jar file loaded: " + files[i].getAbsolutePath());
+                                // jars[i] = new JarFile(files[i]);
+                                jarFile.add(files[i]);
+
+                                jarFiles.add(new JarFile(files[i]));
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
+            // Hier werden lokale JAR Dateien ausgelesen
+            files = new File(rootDir).listFiles(new JDFileFilter(null, ".jar", false));
+            if (files != null) {
+                // jars = new JarFile[files.length];
+                for (int i = 0; i < files.length; i++) {
+
+                    if (!comp(getSig(files[i].getAbsolutePath()))) {
+                        logger.severe("Not loaded due to sig violation: " + files[i]);
+                        continue;
+                    }
+                    try {
+                        if (!files[i].getAbsolutePath().endsWith("webupdater.jar")) {
+                            if (names.contains(files[i].getName())) {
+                                logger.severe("Duplicate Jars found: " + files[i].getAbsolutePath());
+                            } else {
+                                names.add(files[i].getName());
+                                logger.finer("Jar file loaded: " + files[i].getAbsolutePath());
+                                jarFile.add(files[i]);
+                                jarFiles.add(new JarFile(files[i]));
+                            }
+                        }
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            jars = jarFiles.toArray(new JarFile[] {});
         }
-        jars = jarFiles.toArray(new JarFile[] {});
     }
 
     private boolean comp(byte[] sig) {
@@ -281,7 +288,8 @@ public class JDClassLoader extends java.lang.ClassLoader {
                         String url = new File(element.getName().replace("\\", "/")).toURI().toURL() + "!/" + entry.getName();
                         // // url=url.replace("file:/", "file://");
                         // logger.finer(new URL("jar","",url)+"");
-                        // logger.finer("jar:file:/"+jars[i].getName().replace("\\",
+                        // logger.finer("jar:file:/"+jars[i].getName().replace(
+                        // "\\",
                         // "/")+"!/"+entry.getName());
                         urls.add(new URL("jar", "", url));
                     } catch (MalformedURLException e) {

@@ -27,8 +27,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Scanner;
-import java.util.Vector;
 
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -46,6 +44,7 @@ import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
+import jd.nutils.zip.UnZip;
 import jd.utils.JDUtilities;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
@@ -196,7 +195,7 @@ public class Main {
         boolean loadAllPlugins = false;
         boolean clone = false;
         String clonePrefix = null;
-        System.out.println("Started"+new Exception().getStackTrace()[0].getLineNumber());
+     
         File cfg;
         if ((cfg = JDUtilities.getResourceFile("jdownloader.config")).exists()) {
             
@@ -229,7 +228,7 @@ public class Main {
         
         guiConfig = WebUpdater.getConfig("WEBUPDATE");
         
-        
+        log.append("Update JDownloader  at "+JDUtilities.getResourceFile(".") + "\r\n");
         log.append(WebUpdater.getConfig("WEBUPDATE").getProperties() + "\r\n");
         System.out.println(WebUpdater.getConfig("WEBUPDATE").getProperties() + "\r\n");
         System.out.println(WebUpdater.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
@@ -254,7 +253,7 @@ public class Main {
 
         updater.setDownloadProgress(progressload);
         Main.trace("Start Webupdate");
-        Vector<Vector<String>> files;
+        ArrayList<FileUpdate> files;
         try {
             files = updater.getAvailableFiles();
         } catch (Exception e) {
@@ -264,7 +263,7 @@ public class Main {
                 Thread.sleep(5000);
             } catch (InterruptedException e1) {
             }
-            files = new Vector<Vector<String>>();
+            files = new ArrayList<FileUpdate>();
         }
 
         if (files != null) {
@@ -287,11 +286,13 @@ public class Main {
         Main.log(log, "Local: " + JDUtilities.getResourceFile(".").getAbsolutePath());
 
         Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
-        Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+        
+  
+        JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
 
         logWindow.setText(log.toString());
         Main.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
-        System.exit(0);
+//        System.exit(0);
         }catch(Exception e){
             e.printStackTrace();
         }
@@ -383,7 +384,7 @@ public class Main {
                     Main.log(log, "Local: " + new File("").getAbsolutePath());
                     Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
 
-                    Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+                    JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
 
                     logWindow.setText(log.toString());
                     Main.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
@@ -402,7 +403,7 @@ public class Main {
 
                 Main.log(log, "Not found: " + (JDUtilities.getResourceFile("/backup/").getAbsolutePath()) + "\r\n");
                 JOptionPane.showMessageDialog(frame, "JDownloader could not create a backup. Please make sure that\r\n " + JDUtilities.getResourceFile("/backup/").getAbsolutePath() + " exists and is writable before starting the update");
-                Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+                JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
                 System.exit(0);
                 return;
             }
@@ -423,7 +424,7 @@ public class Main {
                 }
 
                 if (JOptionPane.showConfirmDialog(frame, msg, "There is no backup of your current Downloadqueue", JOptionPane.WARNING_MESSAGE) != JOptionPane.OK_OPTION) {
-                    Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+                    JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
                     System.exit(0);
                     return;
                 }
@@ -522,76 +523,7 @@ public class Main {
 
     }
 
-    /**
-     * Führt einen Externen befehl aus.
-     * 
-     * @param command
-     * @param parameter
-     * @param runIn
-     * @param waitForReturn
-     * @return null oder die rückgabe des befehls falls waitforreturn == true
-     *         ist
-     */
-    public static String runCommand(String command, String[] parameter, String runIn, int waitForReturn) {
-
-        if (parameter == null) {
-            parameter = new String[] {};
-        }
-        String[] params = new String[parameter.length + 1];
-        params[0] = command;
-        System.arraycopy(parameter, 0, params, 1, parameter.length);
-        Vector<String> tmp = new Vector<String>();
-        String par = "";
-        for (String element : params) {
-            if (element != null && element.trim().length() > 0) {
-                par += element + " ";
-                tmp.add(element.trim());
-            }
-        }
-
-        params = tmp.toArray(new String[] {});
-        ProcessBuilder pb = new ProcessBuilder(params);
-
-        if (runIn != null && runIn.length() > 0) {
-            if (new File(runIn).exists()) {
-                pb.directory(new File(runIn));
-            } else {
-                Main.trace("Working drectory " + runIn + " does not exist!");
-            }
-        }
-        Process process;
-
-        try {
-            Main.trace("Start " + par + " in " + runIn + " wait " + waitForReturn);
-            process = pb.start();
-            if (waitForReturn > 0) {
-                long t = System.currentTimeMillis();
-                while (true) {
-                    try {
-                        process.exitValue();
-                        break;
-                    } catch (Exception e) {
-                        if (System.currentTimeMillis() - t > waitForReturn * 1000) {
-                            Main.trace(command + ": Prozess ist nach " + waitForReturn + " Sekunden nicht beendet worden. Breche ab.");
-                            process.destroy();
-                        }
-                    }
-                }
-                Scanner s = new Scanner(process.getInputStream()).useDelimiter("\\Z");
-                String ret = "";
-                while (s.hasNext()) {
-                    ret += s.next();
-                }
-                return ret;
-            }
-            return null;
-        } catch (Exception e) {
-            e.printStackTrace();
-            Main.trace("Error executing " + command + ": " + e.getLocalizedMessage());
-            return null;
-        }
-    }
-
+  
     public static void trace(Object arg) {
         try {
             System.out.println(arg.toString());
