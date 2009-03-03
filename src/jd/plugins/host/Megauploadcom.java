@@ -19,9 +19,12 @@ package jd.plugins.host;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -203,18 +206,91 @@ public class Megauploadcom extends PluginForHost {
         user = UserInfo.get("s");
     }
 
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    @Override
+    public boolean[] checkLinks(DownloadLink[] urls) {
+
+        if (urls == null) { return null; }
+        boolean[] ret = new boolean[urls.length];
+
+        HashMap<String, String> map = new HashMap<String, String>();
+        int i = 0;
+        String id;
+        for (DownloadLink u : urls) {
+            id = "00000";
+            try {
+                id = getDownloadID(u);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            map.put("id" + i, id);
+            i++;
+
+        }
         this.setBrowserExclusive();
-        dlID = getDownloadID(downloadLink);
+
         user = null;
-        br.postPage("http://megaupload.com/mgr_linkcheck.php", "id0=" + dlID);
-        String temp = Encoding.htmlDecode(br + "");
-        HashMap<String, String> query = Request.parseQuery(temp);
-        if (!query.containsKey("id0") || !query.get("id0").equals("0") || query.get("n") == null || query.get("s") == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setFinalFileName(query.get("n"));
-        downloadLink.setDownloadSize(Long.parseLong(query.get("s")));
-        downloadLink.setDupecheckAllowed(true);
-        return true;
+   
+        br.getHeaders().put("Accept", "*/*");
+        br.getHeaders().put("Accept-Encoding", "*;q=0.1");
+        br.getHeaders().put("TE", "trailers");
+        br.getHeaders().put("Expect", "100-continue");
+        br.getHeaders().put("Connection", "TE");
+        SimpleDateFormat df = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss", Locale.ENGLISH);
+
+        // Tue, 03 Mar 2009 18:29:35 GMT
+        br.getHeaders().put("Date", df.format(new Date()) + " GMT");
+        br.getHeaders().put("Cache-Control", null);
+        br.getHeaders().put("Accept-Language", null);
+        br.getHeaders().put("Accept-Charset", null);
+        br.getHeaders().put("Pragma", null);
+        br.getHeaders().put("Referer", null);
+        Random rand = new Random();
+        br.getHeaders().put("User-Agent", "Mozilla/" + ((rand.nextInt(30) + 10) / 10.0) + " (compatible; MSIE " + ((rand.nextInt(60) + 10) / 10.0) + "; Windows NT 5.1)");
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+
+        try {
+            br.postPage("http://megaupload.com/mgr_linkcheck.php", map);
+
+            String[] Dls = br.postPage("http://megaupload.com/mgr_linkcheck.php", map).split("(?=id[\\d]+=)");
+
+            for (i = 1; i < Dls.length; i++) {
+                String string = Dls[i];
+                HashMap<String, String> queryQ = Request.parseQuery(Encoding.htmlDecode(string));
+                try {
+                    int d = Integer.parseInt(string.substring(2, string.indexOf('=')));
+                    String name = queryQ.get("n");
+                    if (name != null) {
+                        ret[d] = true;
+                        DownloadLink downloadLink = urls[d];
+                        downloadLink.setFinalFileName(name);
+                        downloadLink.setDownloadSize(Long.parseLong(queryQ.get("s")));
+                        downloadLink.setDupecheckAllowed(true);
+                    }
+
+                } catch (Exception e) {
+                    // TODO: handle exception
+
+                }
+
+            }
+
+        } catch (Exception e) {
+            return ret;
+        }
+
+        // HashMap<String, String> query = Request.parseQuery(temp);
+        // if (!query.containsKey("id0") || !query.get("id0").equals("0") ||
+        // query.get("n") == null || query.get("s") == null) throw new
+        // PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // downloadLink.setFinalFileName(query.get("n"));
+        // downloadLink.setDownloadSize(Long.parseLong(query.get("s")));
+        // downloadLink.setDupecheckAllowed(true);
+        return ret;
+    }
+
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        return this.checkLinks(new DownloadLink[] { downloadLink })[0];
     }
 
     public String getVersion() {
@@ -355,6 +431,7 @@ public class Megauploadcom extends PluginForHost {
     public void handleFree(DownloadLink parameter) throws Exception {
         user = null;
         getFileInformation(parameter);
+        dlID=getDownloadID(parameter);
         handleFree0(parameter, null);
     }
 
