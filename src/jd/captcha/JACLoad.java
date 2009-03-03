@@ -44,7 +44,7 @@ public class JACLoad {
         // String methodsPath=UTILITIES.getFullPath(new String[] {
         // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
         // "jd", "captcha", "methods"});
-        String hoster = "SerienJunkies.dl.am";
+        // String hoster = "SerienJunkies.dl.am";
 
         // loadSerienJunkies(new
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()
@@ -72,6 +72,7 @@ public class JACLoad {
         }
     }
 
+    @SuppressWarnings("unused")
     private void loadSerienJunkies(File file, int i) {
         UTILITIES.useCookies = true;
         // long stamp= UTILITIES.getTimer();

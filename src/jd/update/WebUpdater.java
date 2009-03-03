@@ -429,7 +429,7 @@ public class WebUpdater implements Serializable {
         UnZip u = new UnZip(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH), JDUtilities.getResourceFile("tmp/"));
 
         File[] efiles = u.extract();
-        this.fileMap = new HashMap<String, File>();
+        fileMap = new HashMap<String, File>();
         for (File f : efiles) {
             fileMap.put(f.getName().toLowerCase(), f);
         }
@@ -467,10 +467,9 @@ public class WebUpdater implements Serializable {
 
     }
 
+    @SuppressWarnings("unchecked")
     private ArrayList<Server> getAvailableServers() {
-
         return (ArrayList<Server>) WebUpdater.getConfig("WEBUPDATE").getProperty("SERVERLIST");
-
     }
 
     public StringBuilder getLogger() {
@@ -579,7 +578,7 @@ public class WebUpdater implements Serializable {
 
                     log(file.toString());
                     log("Successfull\r\n");
-                 
+
                 } else {
                     log(file.toString());
                     log("Failed\r\n");
@@ -610,11 +609,6 @@ public class WebUpdater implements Serializable {
         file.reset(getAvailableServers());
         return file.update();
 
-    }
-
-    public Browser getBrowser() {
-        // TODO Auto-generated method stub
-        return br;
     }
 
     /**

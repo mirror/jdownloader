@@ -21,7 +21,6 @@ import java.awt.HeadlessException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.JDInit;

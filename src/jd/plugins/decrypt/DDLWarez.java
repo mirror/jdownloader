@@ -27,22 +27,17 @@ import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
-import jd.http.HTMLEntities;
-
-import jd.http.Encoding;
-
-import jd.parser.Regex;
-
-import jd.gui.skins.simple.SimpleGUI;
-
-import jd.gui.skins.simple.components.CountdownConfirmDialog;
-
 import jd.PluginWrapper;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.GifDecoder;
 import jd.controlling.ProgressController;
+import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.http.Browser;
+import jd.http.Encoding;
+import jd.http.HTMLEntities;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
@@ -169,9 +164,7 @@ public class DDLWarez extends PluginForDecrypt {
                                 if (input.result) {
                                     captchaText = input.input;
                                     ipf.setValue(captchaText);
-                                }
-                                else
-                                {
+                                } else {
                                     throw new DecrypterException(DecrypterException.CAPTCHA);
                                 }
                             }

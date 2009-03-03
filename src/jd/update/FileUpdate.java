@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.update;
 
 import java.io.File;
@@ -31,22 +47,18 @@ public class FileUpdate {
     }
 
     public String getLocalPath() {
-        // TODO Auto-generated method stub
         return localPath;
     }
 
     public String getRawUrl() {
-        // TODO Auto-generated method stub
         return url;
     }
 
     public String getRemoteHash() {
-        // TODO Auto-generated method stub
         return hash;
     }
 
     public boolean exists() {
-        // TODO Auto-generated method stub
         return JDUtilities.getResourceFile(getLocalPath()).exists();
     }
 
@@ -72,7 +84,6 @@ public class FileUpdate {
     }
 
     public boolean hasServer() {
-        // TODO Auto-generated method stub
         return serverList.size() > 0;
     }
 
@@ -109,12 +120,12 @@ public class FileUpdate {
             String downloadedHash = JDHash.getMD5(tmpFile);
             if (downloadedHash.equalsIgnoreCase(hash)) {
                 this.getLocalFile().delete();
-                boolean ret=tmpFile.renameTo(getLocalFile());
-                
-                if(ret){
+                boolean ret = tmpFile.renameTo(getLocalFile());
+
+                if (ret) {
                     return ret;
-                }else{
-                    result.append("Error. Rename failed\r\n");   
+                } else {
+                    result.append("Error. Rename failed\r\n");
                 }
             } else {
 

@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.utils;
 
 import java.util.ArrayList;
@@ -40,9 +56,9 @@ public class Changelog {
             if (logEntry.getChangedPaths().size() > 0) {
                 System.out.println();
                 System.out.println("changed paths:");
-                Set changedPathsSet = logEntry.getChangedPaths().keySet();
+                Set<?> changedPathsSet = logEntry.getChangedPaths().keySet();
 
-                for (Iterator changedPaths = changedPathsSet.iterator(); changedPaths.hasNext();) {
+                for (Iterator<?> changedPaths = changedPathsSet.iterator(); changedPaths.hasNext();) {
                     SVNLogEntryPath entryPath = (SVNLogEntryPath) logEntry.getChangedPaths().get(changedPaths.next());
                     System.out.println(" " + entryPath.getType() + " " + entryPath.getPath() + ((entryPath.getCopyPath() != null) ? " (from " + entryPath.getCopyPath() + " revision " + entryPath.getCopyRevision() + ")" : ""));
                     Change c;
@@ -57,33 +73,34 @@ public class Changelog {
                     c.addAuthor(logEntry.getAuthor());
 
                 }
-          
+
             }
         }
-       System.out.println("^Type^Module^Package^Author(s)^Info^");
-        for(Iterator<Entry<String,Change>> it = map.entrySet().iterator();it.hasNext();){
+        System.out.println("^Type^Module^Package^Author(s)^Info^");
+        for (Iterator<Entry<String, Change>> it = map.entrySet().iterator(); it.hasNext();) {
             Change next = it.next().getValue();
-            
-            String changesets="[[changeset/";
-            int i=0;
-                for(Long ref:next.getRevisions()){
-                   if(i>0) changesets+="-";
-                   changesets+=ref;
-                    i++;
-                }
-                changesets+="|Details]]";
-                changesets=changesets.trim();
-                String authors="";
-                for( String a:next.getAuthors()){
-                    if(!authors.contains(a))authors+=" "+a;
-                }
-                authors=authors.trim();
-            System.out.println("|"+next.getType()+"|"+next.getName()+"|"+next.getCategory()+"|"+authors+"|"+changesets+"|"); 
+
+            String changesets = "[[changeset/";
+            int i = 0;
+            for (Long ref : next.getRevisions()) {
+                if (i > 0) changesets += "-";
+                changesets += ref;
+                i++;
+            }
+            changesets += "|Details]]";
+            changesets = changesets.trim();
+            String authors = "";
+            for (String a : next.getAuthors()) {
+                if (!authors.contains(a)) authors += " " + a;
+            }
+            authors = authors.trim();
+            System.out.println("|" + next.getType() + "|" + next.getName() + "|" + next.getCategory() + "|" + authors + "|" + changesets + "|");
         }
     }
 
     private class Change {
         private ArrayList<Long> revisions;
+
         public ArrayList<Long> getRevisions() {
             return revisions;
         }
@@ -109,18 +126,18 @@ public class Changelog {
         }
 
         public String getType() {
-           switch(type){
-           case 'M':
-               return "Update";
-           case 'A':
-               return "New";     
-           }
-           return type+"";
+            switch (type) {
+            case 'M':
+                return "Update";
+            case 'A':
+                return "New";
+            }
+            return type + "";
         }
 
         private ArrayList<String> authors;
         private char type = 'M';
-        private String category="";
+        private String category = "";
         private String name;
 
         public Change(String path) {
@@ -128,12 +145,12 @@ public class Changelog {
             this.authors = new ArrayList<String>();
             String name = new Regex(path, ".*/(.+)").getMatch(0);
             name = name.replaceAll("([a-z0-9])([A-Z][a-z0-9])", "$1 $2").trim();
-            name=name.replaceAll("(.*)\\..+","$1");
-            this.name=name;
-          this.category = getCategory(path);
-          if(category==null){
-              category="";
-          }
+            name = name.replaceAll("(.*)\\..+", "$1");
+            this.name = name;
+            this.category = getCategory(path);
+            if (category == null) {
+                category = "";
+            }
         }
 
         public String getName() {
@@ -154,7 +171,7 @@ public class Changelog {
             map.put("/trunk/ressourcen/jd/languages", "Translation");
             map.put("/trunk/src/jd/controlling/reconnect", "Reconnect");
             map.put("/trunk/src/jd/controlling", "Controlling");
-        
+
             while (path != null) {
                 path = new Regex(path, "(.*)/.*?").getMatch(0);
                 if (map.containsKey(path)) { return map.get(path); }

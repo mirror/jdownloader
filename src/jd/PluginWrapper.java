@@ -16,7 +16,6 @@
 
 package jd;
 
-import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
@@ -24,7 +23,6 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -34,7 +32,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
-import jd.nutils.JDHash;
 import jd.plugins.Plugin;
 import jd.update.FileUpdate;
 import jd.update.WebUpdater;
@@ -114,8 +111,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
                 progress.increase(1);
                 for (FileUpdate entry : filelist) {
                     String plg = entry.getLocalPath();
-                    File path = JDUtilities.getResourceFile(plg);
-                
+
                     if (entry.equals()) {
                         if (!manualupdate) {
                             new WebUpdater().updateUpdatefIle(entry);

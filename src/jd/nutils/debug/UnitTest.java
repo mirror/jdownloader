@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.nutils.debug;
 
 import java.lang.reflect.Method;
@@ -7,11 +23,11 @@ import jd.http.Browser;
 
 public abstract class UnitTest {
 
-    private static ArrayList<Class> tests;
+    private static ArrayList<Class<?>> tests;
     private StringBuffer log;
 
     private static void init() {
-        tests = new ArrayList<Class>();
+        tests = new ArrayList<Class<?>>();
         tests.add(Browser.Test.class);
 
     }
@@ -28,12 +44,12 @@ public abstract class UnitTest {
     private static void run(String pattern) {
         init();
         UnitTest testInstance;
-        for (Class test : tests) {
+        for (Class<?> test : tests) {
             String name = test.getName();
             if (!name.matches(pattern)) continue;
             try {
                 System.out.println("-----------Run Test: " + name + "----------");
-                Method f = test.getMethod("newInstance", new Class[] {});
+                Method f = test.getMethod("newInstance", new Class<?>[] {});
                 testInstance = (UnitTest) f.invoke(null, new Object[] {});
                 if (testInstance == null) {
                     System.out.println("FAILED: forgot to override public static UnitTest newInstance");
@@ -42,10 +58,10 @@ public abstract class UnitTest {
                     try {
                         testInstance.run();
                         System.out.println("Successfull");
-                        //System.out.println(testInstance.getLog());
+                        // System.out.println(testInstance.getLog());
                     } catch (Exception e) {
                         System.out.println("FAILED");
-                       // System.err.println(testInstance.getLog());
+                        // System.err.println(testInstance.getLog());
                     }
 
                 }
@@ -60,14 +76,14 @@ public abstract class UnitTest {
         // System.err.println(ee.getStackTrace()[1].getClassName() + "." +
         // ee.getStackTrace()[1].getMethodName() + "[" +
         // ee.getStackTrace()[1].getLineNumber() + "] " + msg);
-     System.out.println(new Exception().getStackTrace()[1].toString() + " : " + msg);
+        System.out.println(new Exception().getStackTrace()[1].toString() + " : " + msg);
         log.append(new Exception().getStackTrace()[1].toString() + " : " + msg + "\r\n");
     }
 
     public String getLog() {
-        // TODO Auto-generated method stub
         return log.toString();
     }
 
     public abstract void run() throws Exception;
+
 }
