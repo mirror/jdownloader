@@ -31,8 +31,6 @@ import jd.http.HTMLEntities;
 
 import jd.http.Encoding;
 
-import jd.nutils.JDHash;
-
 import jd.parser.Regex;
 
 import jd.gui.skins.simple.SimpleGUI;
@@ -50,7 +48,6 @@ import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 public class DDLWarez extends PluginForDecrypt {
