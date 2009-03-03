@@ -121,6 +121,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public void handlePremium(DownloadLink link, Account account) throws Exception {
+        dlID=getDownloadID(link);
         getFileInformation(link);
         login(account);
         if (!this.isPremium()) {
@@ -357,7 +358,7 @@ public class Megauploadcom extends PluginForHost {
                 CACHE.add(new String[] { JDHash.getMD5(file), code });
 
                 HashMap<String, String> map = new HashMap<String, String>();
-                if (CACHE.size() > 5) {
+                if (CACHE.size() > 2) {
                     for (String[] h : CACHE) {
                         map.put(h[0], h[1]);
                     }
