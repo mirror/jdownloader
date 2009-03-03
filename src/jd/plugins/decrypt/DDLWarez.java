@@ -27,6 +27,18 @@ import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
+import jd.http.HTMLEntities;
+
+import jd.http.Encoding;
+
+import jd.nutils.JDHash;
+
+import jd.parser.Regex;
+
+import jd.gui.skins.simple.SimpleGUI;
+
+import jd.gui.skins.simple.components.CountdownConfirmDialog;
+
 import jd.PluginWrapper;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
@@ -119,6 +131,7 @@ public class DDLWarez extends PluginForDecrypt {
     }
 
     public static Integer Worker_Delay = 250;
+    private static String captchaText;
 
     public DDLWarez(PluginWrapper wrapper) {
         super(wrapper);
@@ -151,9 +164,20 @@ public class DDLWarez extends PluginForDecrypt {
                     for (InputField ipf : form.getInputFields()) {
 
                         if (ipf.getType().equalsIgnoreCase("text") && ipf.getValue() == null) {
-                            String text = form.getHtmlCode().replaceAll("<.*?>", "").trim();
-                            String input = Plugin.getUserInput(text, param);
-                            ipf.setValue(input);
+                            if (captchaText != null)
+                                ipf.setValue(captchaText);
+                            else {
+                                String text = form.getHtmlCode().replaceAll("<.*?>", "").trim();
+                                CountdownConfirmDialog input = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), "DDL-Warez Human Verification", 10, true, null, CountdownConfirmDialog.STYLE_INPUTFIELD | CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, text, new Regex(Encoding.deepHtmlDecode(HTMLEntities.unhtmlAngleBrackets(text)), "[A-Za-z0-9_äÄöÖüÜß\\s\\,\\.]+[^A-Za-z0-9_äÄöÖüÜß\\,\\.]+\\s(\\S+)").getMatch(0));
+                                if (input.result) {
+                                    captchaText = input.input;
+                                    ipf.setValue(captchaText);
+                                }
+                                else
+                                {
+                                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                                }
+                            }
 
                         }
                     }
@@ -161,6 +185,7 @@ public class DDLWarez extends PluginForDecrypt {
                     br.submitForm(form);
                     form = br.getForm(1);
                     if (form != null && !form.getAction().equalsIgnoreCase("get_file.php")) {
+                        captchaText = null;
                         continue;
                     }
                 }
