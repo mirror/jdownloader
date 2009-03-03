@@ -207,6 +207,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
                     countdownThread = null;
                 }
             });
+            input=inputField.getText();
         }
         int g = 0;
         if ((style & STYLE_NO_MSGLABLE) == 0) {
