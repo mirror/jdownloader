@@ -26,6 +26,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -63,7 +65,7 @@ public class PremiumPanel extends JPanel {
     private static final Color INACTIVE = new Color(0xa40604);
     private static final Color DISABLED = new Color(0xaff0000);
     private static boolean premiumActivated = true;
-
+    private boolean specialCharsWarningDisplayed = false;
     private PluginForHost host;
     private int accountNum;
     private AccountPanel[] accs;
@@ -213,12 +215,36 @@ public class PremiumPanel extends JPanel {
 
             panel.add(lblUsername = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
             panel.add(txtUsername = new JTextField(""));
-            
+            KeyListener k = new KeyListener(){
+
+                public void keyPressed(KeyEvent e) {
+                    // TODO Auto-generated method stub
+                    
+                }
+
+                public void keyReleased(KeyEvent e) {
+                    if(!specialCharsWarningDisplayed && (""+e.getKeyChar()).matches("[^0-9a-zA-Z]*"))
+                    {
+                        JDUtilities.getGUI().showMessageDialog(JDLocale.LF("plugins.config.premium.specialCharsWarning", "Special chars may not work with %s", host.getHost()));
+                        specialCharsWarningDisplayed=true;
+                    }
+                        
+                    
+                }
+
+                public void keyTyped(KeyEvent e) {
+                    // TODO Auto-generated method stub
+                    
+                }};
+            if(!host.premiumSpecialCharsAllowed())
+            txtUsername.addKeyListener(k);
             txtUsername.addFocusListener(this);
 
             panel.add(lblPassword = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
             panel.add(txtPassword = new JDPasswordField(), "span, gapbottom 10:10:push");
             txtPassword.addFocusListener(this);
+            if(!host.premiumSpecialCharsAllowed())
+                txtPassword.addKeyListener(k);
             this.account = new Account(txtUsername.getText(), new String(txtPassword.getPassword()));
             chkEnable.setSelected(false);
             txtPassword.setEnabled(false);
