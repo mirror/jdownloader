@@ -45,7 +45,8 @@ public class PluginPattern {
         completePattern.append("|(ladekabel\\.us/\\?p=\\d+.*)");
         completePattern.append("|(load-it\\.biz/[^/]*/?)");
         completePattern.append("|(guru-world\\.net/wordpress/\\d+.*)");
-        
+        //http://blogload.org
+        completePattern.append("|(blogload\\.org/\\d+.*)");
         completePattern.append("|(pressefreiheit\\.ws/[\\d]+/.+\\.html)");
         completePattern.append("|(zeitungsjunge\\.info/.*?/.*?/.*?/)");
         String[] listType1 = { "hd-area.org", "movie-blog.org", "doku.cc", "sound-blog.org" };
