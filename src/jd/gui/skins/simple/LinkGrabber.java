@@ -379,7 +379,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             txtName = new JDTextField();
             txtName.setAutoSelect(true);
-            txtName.addKeyListener(this);
             txtPassword = new JDTextField();
             txtComment = new JDTextField();
 
@@ -423,6 +422,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             table.setDragEnabled(true);
             table.setDefaultRenderer(String.class, new InternalTableCellRenderer());
             table.addKeyListener(this);
+            txtName.addKeyListener(this);
             table.addMouseListener(this);
             table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
             table.getTableHeader().setReorderingAllowed(false);
@@ -577,10 +577,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 }
                 refreshTable();
             } else if (e.getSource() == txtName) {
-                changedName = true;
+                setChangedName(true);
             }
         }
-
+        public synchronized void setChangedName(boolean b)
+        {
+            changedName = b;
+        }
         public void keyTyped(KeyEvent e) {
         }
 
