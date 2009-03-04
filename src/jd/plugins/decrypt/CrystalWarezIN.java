@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.parser.html.Form;
