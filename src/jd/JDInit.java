@@ -569,7 +569,7 @@ public class JDInit {
         new HostPluginWrapper("Filer.net", "Filer", "http://[\\w\\.]*?filer.net/(file[\\d]+|get)/.*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Freakshare.net", "Freaksharenet", "http://[\\w\\.]*?freakshare\\.net/files/\\d+/(.*)", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Megashares.Com", "MegasharesCom", "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/.*\\?d[0-9]{2}=[0-9a-f]{7}", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Megaupload.com", "Megauploadcom", "http://[\\w\\.]*?(megaupload)\\.com/.*?\\?d=[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("Megaupload.com", "Megauploadcom", "http://[\\w\\.]*?(megaupload)\\.com/.*?(\\?|&)d=[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("MeinUpload.com", "MeinUpload", "(http://[\\w\\.]*?meinupload\\.com/{1,}dl/.+/.+)|(http://[\\w\\.]*?meinupload\\.com/\\?d=.*)|http://[\\w\\.]*?mein-upload\\.com/[a-zA-Z0-9]+(\\.html|/)", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("badongo.com", "BadongoCom", "http://[\\w\\.]*?badongo\\.viajd.*/.*(file|vid)/[0-9]+\\??[0-9]*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Mooshare.net", "Moosharenet", "http://[\\w\\.]*?mooshare\\.net/files/\\d+/.*?\\.html", PluginWrapper.LOAD_ON_INIT);
