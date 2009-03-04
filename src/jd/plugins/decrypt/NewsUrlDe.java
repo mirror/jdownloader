@@ -15,13 +15,10 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypt;
-
-import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -50,19 +47,5 @@ public class NewsUrlDe extends PluginForDecrypt {
     @Override
     public String getVersion() {
         return getVersion("$Revision$");
-    }
-
-    public static void main(String[] args) throws IOException {
-        String parameter = "http://newsurl.de/f/ofIEa";
-        Browser br = new Browser();
-
-        br.getPage(parameter);
-        br.getPage(br.getRedirectLocation());
-        String link = br.getRedirectLocation();
-        if (link == null) link = br.getRegex("<a href=\"([^\"]*)\" style").getMatch(0);
-        if (link == null) link = br.getRegex("<META HTTP-EQUIV=\"Refresh\" .*? URL=(.*?)\">").getMatch(0);
-        if (link == null) link = br.getRegex("onClick=\"top\\.location='(.*?)'\">").getMatch(0);
-        if (link == null) link = br.getRegex("<iframe name='redirectframe' id='redirectframe'.*?src='(.*?)'.*?></iframe>").getMatch(0);
-        System.out.println(link);
     }
 }
