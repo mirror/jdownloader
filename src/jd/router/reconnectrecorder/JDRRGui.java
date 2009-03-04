@@ -25,8 +25,6 @@ import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -48,7 +46,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-public class JDRRGui extends JDialog implements ActionListener, WindowListener {
+public class JDRRGui extends JDialog implements ActionListener {
 
     private static final long serialVersionUID = 1L;
 
@@ -73,7 +71,6 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
         RouterIP = ip;
         int n = 10;
         this.setTitle(JDLocale.L("gui.config.jdrr.title", "Reconnect Recorder"));
-        addWindowListener(this);
         routerip = new JTextField(RouterIP);
         btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);
@@ -295,24 +292,4 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
         }
     }
 
-    public void windowActivated(WindowEvent e) {
-    }
-
-    public void windowClosed(WindowEvent e) {
-    }
-
-    public void windowClosing(WindowEvent e) {
-    }
-
-    public void windowDeactivated(WindowEvent e) {
-    }
-
-    public void windowDeiconified(WindowEvent e) {
-    }
-
-    public void windowIconified(WindowEvent e) {
-    }
-
-    public void windowOpened(WindowEvent e) {
-    }
 }

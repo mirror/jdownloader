@@ -19,10 +19,9 @@ package jd.plugins.decrypt;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import jd.http.Browser;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -50,12 +49,13 @@ public class NewsUrlDe extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4658 $");
+        return getVersion("$Revision$");
     }
+
     public static void main(String[] args) throws IOException {
-       String parameter ="http://newsurl.de/f/ofIEa";
+        String parameter = "http://newsurl.de/f/ofIEa";
         Browser br = new Browser();
-        
+
         br.getPage(parameter);
         br.getPage(br.getRedirectLocation());
         String link = br.getRedirectLocation();

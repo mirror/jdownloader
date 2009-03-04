@@ -20,25 +20,20 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Vector;
 
-import org.xml.sax.SAXException;
-
-import jd.utils.JDUtilities;
-
-import jd.parser.JavaScript;
-
-import jd.http.URLConnectionAdapter;
-
-import jd.parser.Regex;
-
-import jd.plugins.Plugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.parser.JavaScript;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
+
+import org.xml.sax.SAXException;
 
 public class ProtectorTO extends PluginForDecrypt {
 
@@ -71,7 +66,6 @@ public class ProtectorTO extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(link));
                 return decryptedLinks;
             } catch (SAXException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
@@ -99,8 +93,7 @@ public class ProtectorTO extends PluginForDecrypt {
                     decryptedLinks.add(downloadLink);
                 }
                 container.delete();
-                if (decryptedLinks.size() > 0)
-                return decryptedLinks;
+                if (decryptedLinks.size() > 0) return decryptedLinks;
             } catch (Exception e) {
                 decryptedLinks = new ArrayList<DownloadLink>();
             }
@@ -119,6 +112,6 @@ public class ProtectorTO extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4565 $");
+        return getVersion("$Revision$");
     }
 }

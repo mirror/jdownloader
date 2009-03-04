@@ -19,12 +19,11 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.parser.html.Form;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -46,16 +45,15 @@ public class CrystalWarezIN extends PluginForDecrypt {
             br.getPage(parameter);
             if (parameter.matches(patternLink_Protected)) {
                 String code = null;
-                while(code==null)
-                {
-                File file = this.getLocalCaptchaFile(this);
-                URLConnectionAdapter con = br.cloneBrowser().openGetConnection("http://crystal-warez.in/securimage_show.php");
-                Browser.download(file, con);
-                code = Plugin.getCaptchaCode(file, this, param);
-                Form form = br.getForm(1);
-                form.put("captcha", code);
-                br.submitForm(form);
-                if (br.containsHTML("Code ist falsch")) code=null;
+                while (code == null) {
+                    File file = this.getLocalCaptchaFile(this);
+                    URLConnectionAdapter con = br.cloneBrowser().openGetConnection("http://crystal-warez.in/securimage_show.php");
+                    Browser.download(file, con);
+                    code = Plugin.getCaptchaCode(file, this, param);
+                    Form form = br.getForm(1);
+                    form.put("captcha", code);
+                    br.submitForm(form);
+                    if (br.containsHTML("Code ist falsch")) code = null;
                 }
                 String[] links = br.getRegex("window\\.open\\('(.*?)'").getColumn(0);
                 progress.setRange(links.length);
@@ -69,10 +67,8 @@ public class CrystalWarezIN extends PluginForDecrypt {
                 String pw = br.getRegex("<b>Passwort:</b></td>.*?<td.*?>(<i>)?(.*?)(</i>)?</td>").getMatch(1);
                 for (String element : mirrors) {
 
-                    
                     DownloadLink dl = createDownloadlink(element);
-                    if(!pw.toLowerCase().contains("kein"))
-                        dl.addSourcePluginPassword(pw);
+                    if (!pw.toLowerCase().contains("kein")) dl.addSourcePluginPassword(pw);
                     decryptedLinks.add(dl);
                 }
             }
@@ -82,6 +78,6 @@ public class CrystalWarezIN extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4657 $");
+        return getVersion("$Revision$");
     }
 }
