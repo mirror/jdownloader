@@ -43,6 +43,7 @@ public class PluginPattern {
         completePattern.append("(game-blog\\.us/game-.+\\.html)");
         completePattern.append("|(cinetopia\\.ws/.*\\.html)");
         completePattern.append("|(ladekabel\\.us/\\?p=\\d+.*)");
+        completePattern.append("|(load-it\\.biz/[^/]*/?)");
         completePattern.append("|(guru-world\\.net/wordpress/\\d+.*)");
         
         completePattern.append("|(pressefreiheit\\.ws/[\\d]+/.+\\.html)");

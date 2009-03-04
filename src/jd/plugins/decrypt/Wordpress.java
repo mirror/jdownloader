@@ -45,11 +45,12 @@ public class Wordpress extends PluginForDecrypt {
         defaultPasswords.put("sound-blog.org", new String[] { "sound-blog.org" });
         defaultPasswords.put("cinetopia.ws", new String[] { "cinetopia.ws" });
         defaultPasswords.put("ladekabel.us", new String[] { "Ladekabel.us" });
+        defaultPasswords.put("load-it.biz", new String[] { "load-it.biz" });
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        System.out.println(param);
+//        System.out.println(param);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
