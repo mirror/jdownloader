@@ -416,6 +416,8 @@ public class JDInit {
         new DecryptPluginWrapper("collectr.net", "Collectr", "http://[\\w\\.]*?collectr\\.net/(out/(\\d+/)?\\d+|links/\\w+)");
         new DecryptPluginWrapper("crypting.it", "CryptingIt", "http://[\\w.]*?crypting\\.it/index\\.php\\?p=show&id=\\d+");
         new DecryptPluginWrapper("protector.it", "ProtectorIT", "http://[\\w.]*?protect-it\\.org/.*");
+        new DecryptPluginWrapper("protector.to", "ProtectorTO", "http://[\\w.]*?protector\\.to/.*");
+        new DecryptPluginWrapper("newsurl.de", "NewsUrlDe", "http://[\\w.]*?newsurl.de/.*");
         new DecryptPluginWrapper("crypt-it.com", "CryptItCom", "(http|ccf)://[\\w\\.]*?crypt-it\\.com/(s|e|d|c)/[a-zA-Z0-9]+");
         new DecryptPluginWrapper("cryptlink.ws", "Cryptlinkws", "http://[\\w\\.]*?cryptlink\\.ws/\\?file=[a-zA-Z0-9]+|http://[\\w\\.]*?cryptlink\\.ws/crypt\\.php\\?file=[0-9]+");
         new DecryptPluginWrapper("crypt-me.com", "CryptMeCom", "http://[\\w\\.]*?crypt-me\\.com/folder/[a-zA-Z0-9]+\\.html");

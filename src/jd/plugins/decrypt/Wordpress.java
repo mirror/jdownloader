@@ -43,10 +43,12 @@ public class Wordpress extends PluginForDecrypt {
         defaultPasswords.put("xxx-blog.org", new String[] { "xxx-blog.org", "xxx-blog.dl.am" });
         defaultPasswords.put("zeitungsjunge.info", new String[] { "www.zeitungsjunge.info" });
         defaultPasswords.put("sound-blog.org", new String[] { "sound-blog.org" });
+        defaultPasswords.put("cinetopia.ws", new String[] { "cinetopia.ws" });
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        System.out.println(param);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
@@ -64,9 +66,8 @@ public class Wordpress extends PluginForDecrypt {
         }
 
         /* Passwort suchen */
-        String password = br.getRegex(Pattern.compile("<.*?>Passwort[<|:].*?[>|:](.*?)[\\||<]", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String password = br.getRegex(Pattern.compile("<.*?>Passwort[<|:].*?[>|:]\\s*(.*?)[\\||<]", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (password != null) link_passwds.add(password.trim());
-
         /* Alle Parts suchen */
         String[] links = br.getRegex(Pattern.compile("href=.*?(http://[^\"']+)", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.setRange(links.length);
