@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Vector;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -78,25 +79,28 @@ public class ProtectorIT extends PluginForDecrypt {
         }
         if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
         String containerlink = br.getRegex("(http://protect-it.org/\\?fetchcrypt=[^\"']*)[\"']").getMatch(0);
-        containerlink = null;
         if (containerlink != null) {
             try {
-                URLConnectionAdapter con = br.openGetConnection(containerlink);
+                URLConnectionAdapter con = br.cloneBrowser().openGetConnection(containerlink);
                 File container = JDUtilities.getResourceFile("container/" + getFileNameFormHeader(con));
                 Browser.download(container, con);
-                decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+                Vector<DownloadLink> link = JDUtilities.getController().getContainerLinks(container);
+                for (DownloadLink downloadLink : link) {
+                    decryptedLinks.add(downloadLink);
+                }
                 container.delete();
+                if (decryptedLinks.size() > 0)
+                return decryptedLinks;
             } catch (Exception e) {
+                decryptedLinks = new ArrayList<DownloadLink>();
             }
         }
-        if (decryptedLinks.size() == 0) {
             String[] matches = br.getRegex("(http://protect-it.org//?\\?de=[^\"']*)[\"']").getColumn(0);
             for (String string : matches) {
                 br.openGetConnection(string);
                 decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
                 br.getHttpConnection().disconnect();
             }
-        }
         return decryptedLinks;
     }
 
