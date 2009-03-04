@@ -44,6 +44,7 @@ public class Wordpress extends PluginForDecrypt {
         defaultPasswords.put("zeitungsjunge.info", new String[] { "www.zeitungsjunge.info" });
         defaultPasswords.put("sound-blog.org", new String[] { "sound-blog.org" });
         defaultPasswords.put("cinetopia.ws", new String[] { "cinetopia.ws" });
+        defaultPasswords.put("ladekabel.us", new String[] { "Ladekabel.us" });
     }
 
     @Override
