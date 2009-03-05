@@ -51,6 +51,27 @@ public class JACLoad {
         // + "/jd/captcha/methods" + "/" + hoster + "/captchas/"), 6000);
         loadMegaUpload();
     }
+    
+    @SuppressWarnings("unused")
+    private void loadGwarez() {
+        final String dir = "/home/dwd/.jd_home/captchas/gwarez.cc/";
+
+        for (int i = 0; i < 200; i++) {
+            new Thread(new Runnable() {
+                public void run() {
+                    Browser br = new Browser();
+                    try {
+                     //   br.getPage("http://megaupload.com/?d=02KOI7N0");
+                        String cap = "http://gwarez.cc/captcha/captcha.php";
+                        br.getDownload(new File(dir + System.currentTimeMillis() + ".png"), cap);
+                    } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        }
+    }
 
     private void loadMegaUpload() {
         final String dir = "/home/dwd/.jd_home/captchas/megaupload.com/";
