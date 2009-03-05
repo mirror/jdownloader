@@ -37,7 +37,7 @@ public class RsprotectCom extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        String link = br.getRegex("<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"").getMatch(0);
+        String link = br.getRegex("form method=\"post\" onsubmit=\"return checkStatus\\(\\)\" action=\"(.*?)\"").getMatch(0);
         if (link == null) return null;
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
 
