@@ -41,6 +41,7 @@ import jd.gui.UIInterface;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
+import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -669,7 +670,11 @@ public class JDController implements ControlListener, UIListener {
      */
     public void restart() {
         prepareShutdown();
-        logger.info(JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+        if (!OSDetector.isMac()) {
+            logger.info(JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+        } else {
+           logger.info(JDUtilities.runCommand("open", new String[] { "-n", "jDownloader.app" }, JDUtilities.getResourceFile(".").getParentFile().getParentFile().getParentFile().getParentFile().getAbsolutePath(), 0));
+        }
         System.exit(0);
     }
 
