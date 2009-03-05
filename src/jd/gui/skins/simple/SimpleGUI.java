@@ -507,12 +507,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         if (key == null) {
             key = child.getName();
         }
+        if(guiConfig==null)return;
         guiConfig.setProperty("DIMENSION_OF_" + key, child.getSize());
         if (child instanceof JFrame) guiConfig.setProperty("MAXIMIZED_STATE_OF_" + key, ((JFrame) child).getExtendedState());
         guiConfig.save();
     }
 
     public static void saveLastLocation(Component parent, String key) {
+        if(guiConfig==null)return;
         if (key == null) {
             key = parent.getName();
         }

@@ -292,7 +292,7 @@ public class Main {
 
         logWindow.setText(log.toString());
         Main.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
-//        System.exit(0);
+       System.exit(0);
         }catch(Exception e){
             e.printStackTrace();
         }

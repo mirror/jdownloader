@@ -38,6 +38,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
 import jd.nutils.JDHash;
+import jd.utils.JDUtilities;
 
 public class JDIO {
 
@@ -366,6 +367,18 @@ public class JDIO {
             return false;
         }
         return true;
+    }
+
+    public static boolean removeDirectoryOrFile(File dir) {
+        if (dir.isDirectory()) {
+            String[] children = dir.list();
+            for (String element : children) {
+                boolean success = JDIO.removeDirectoryOrFile(new File(dir, element));
+                if (!success) return false;
+            }
+        }
+    
+        return dir.delete();
     }
 
 }

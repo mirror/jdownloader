@@ -46,6 +46,18 @@ public class FileUpdate {
         }
     }
 
+    public FileUpdate(String serverString, String hash, File workingdir) {
+        this.hash = hash;
+        serverString = serverString.replace("http://78.143.20.68/update/jd/", "");
+        String[] dat = new Regex(serverString, "(.*)\\?(.*)").getRow(0);
+        if (dat == null) {
+            this.localPath = new File(workingdir, serverString).getAbsolutePath();
+        } else {
+            localPath = new File(workingdir, dat[0]).getAbsolutePath();
+            this.url = dat[1];
+        }
+    }
+
     public String getLocalPath() {
         return localPath;
     }
@@ -74,7 +86,8 @@ public class FileUpdate {
         return JDHash.getMD5(getLocalFile());
     }
 
-    private File getLocalFile() {
+    public File getLocalFile() {
+        
         return JDUtilities.getResourceFile(getLocalPath());
     }
 

@@ -251,7 +251,7 @@ public class JDUpdater {
             for (File f : filesToRemove) {
                 Thread.sleep(3000);
                 if (JOptionPane.showConfirmDialog(null, "Datei " + f.getAbsolutePath() + " wirklich entfernen?") == JOptionPane.OK_OPTION) {
-                    if (!JDUtilities.removeDirectoryOrFile(f)) {
+                    if (!JDIO.removeDirectoryOrFile(f)) {
                         logger.severe("Datei " + f + " konnte nicht entfernt werden. ABBRUCH");
                     } else {
                         System.out.println("Datei/Ordner entfernt: " + f);

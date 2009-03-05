@@ -72,7 +72,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         boolean isWebupdater = false;
         System.out.println(rootDir);
         System.out.println(" " + rootClassLoader.getResource("jd"));
-        isWebupdater = (classLoaderParent.getResource("jd") + "").contains("webupdater.jar");
+        isWebupdater = (classLoaderParent.getResource("jd") + "").contains("jdupdate.jar");
         if (!isWebupdater) {
             // Hier werden die JAR Dateien ausgelesen
             Vector<JarFile> jarFiles = new Vector<JarFile>();
@@ -84,13 +84,15 @@ public class JDClassLoader extends java.lang.ClassLoader {
                 // jars = new JarFile[files.length];
 
                 for (int i = 0; i < files.length; i++) {
-                    if (!comp(getSig(files[i].getAbsolutePath()))) {
-                        logger.severe("Not loaded due to sig violation: " + files[i]);
-                        continue;
-                    }
+                 
 
                     try {
-                        if (!files[i].getAbsolutePath().endsWith("webupdater.jar")) {
+                        if (!files[i].getAbsolutePath().endsWith("webupdater.jar")||!files[i].getAbsolutePath().endsWith("jdupdate.jar")) {
+                            if (!comp(getSig(files[i].getAbsolutePath()))) {
+                                logger.severe("Not loaded due to sig violation: " + files[i]);
+                                continue;
+                            }
+                            
                             if (names.contains(files[i].getName())) {
                                 logger.severe("Duplicate Jars found: " + files[i].getAbsolutePath());
                             } else {
@@ -113,12 +115,14 @@ public class JDClassLoader extends java.lang.ClassLoader {
                 // jars = new JarFile[files.length];
                 for (int i = 0; i < files.length; i++) {
 
-                    if (!comp(getSig(files[i].getAbsolutePath()))) {
-                        logger.severe("Not loaded due to sig violation: " + files[i]);
-                        continue;
-                    }
+                  
                     try {
-                        if (!files[i].getAbsolutePath().endsWith("webupdater.jar")) {
+                        
+                        if (!files[i].getAbsolutePath().endsWith("webupdater.jar")&&!files[i].getAbsolutePath().endsWith("jdupdate.jar")) {
+                            if (!comp(getSig(files[i].getAbsolutePath()))) {
+                                logger.severe("Not loaded due to sig violation: " + files[i]);
+                                continue;
+                            }
                             if (names.contains(files[i].getName())) {
                                 logger.severe("Duplicate Jars found: " + files[i].getAbsolutePath());
                             } else {

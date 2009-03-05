@@ -20,8 +20,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import jd.utils.JDUtilities;
+import jd.nutils.io.JDIO;
 
+import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNErrorCode;
 import org.tmatesoft.svn.core.SVNErrorMessage;
 import org.tmatesoft.svn.core.SVNException;
@@ -35,6 +36,9 @@ import org.tmatesoft.svn.core.internal.io.svn.SVNRepositoryFactoryImpl;
 import org.tmatesoft.svn.core.io.ISVNEditor;
 import org.tmatesoft.svn.core.io.ISVNReporterBaton;
 import org.tmatesoft.svn.core.io.SVNRepository;
+import org.tmatesoft.svn.core.wc.SVNClientManager;
+import org.tmatesoft.svn.core.wc.SVNRevision;
+import org.tmatesoft.svn.core.wc.SVNUpdateClient;
 import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 public class Subversion {
@@ -43,6 +47,7 @@ public class Subversion {
     private SVNURL svnurl;
     private String user;
     private String pass;
+    private ISVNAuthenticationManager authManager;
 
     public Subversion(String url) throws SVNException {
         setupType(url);
@@ -53,7 +58,7 @@ public class Subversion {
         setupType(url);
         this.user = user;
         this.pass = pass;
-        ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(this.user, this.pass);
+        authManager = SVNWCUtil.createDefaultAuthenticationManager(this.user, this.pass);
         repository.setAuthenticationManager(authManager);
         checkRoot();
     }
@@ -85,7 +90,7 @@ public class Subversion {
     }
 
     public long export(File file) throws SVNException {
-        JDUtilities.removeDirectoryOrFile(file);
+        JDIO.removeDirectoryOrFile(file);
         file.mkdirs();
 
         ISVNEditor exportEditor = new ExportEditor(file);
@@ -142,6 +147,28 @@ public class Subversion {
         // }
         // }
         // }
+
+    }
+
+    public void update(File file) throws SVNException {
+        JDIO.removeDirectoryOrFile(file);
+        file.mkdirs();
+
+        SVNClientManager clientManager = SVNClientManager.newInstance(SVNWCUtil.createDefaultOptions(true), authManager);
+
+        SVNUpdateClient updateClient = clientManager.getUpdateClient();
+        updateClient.setIgnoreExternals(false);
+        // updateClient.doCheckout(url, importDir, SVNRevision.HEAD,
+        // SVNRevision.HEAD, true);
+        // updateClient.doCheckout(svnurl, file, SVNRevision.HEAD,
+        // SVNRevision.HEAD, true, true);
+        System.out.println("UPdate svn at "+file);
+        try {
+            updateClient.doUpdate(file, SVNRevision.HEAD, SVNDepth.INFINITY, true, true);
+        } catch (Exception e) {
+            updateClient.doCheckout(svnurl, file, SVNRevision.HEAD, SVNRevision.HEAD, SVNDepth.INFINITY, true);
+        }
+        System.out.println("update finished");
 
     }
 }

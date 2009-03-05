@@ -39,7 +39,7 @@ public class JDHash {
      * @return Hashstring
      */
     public static String getFileHash(File arg, String type) {
-        if (!arg.exists()) return null;
+        if (!arg.exists()||arg.isDirectory()) return null;
         try {
             MessageDigest md = MessageDigest.getInstance(type);
             byte[] b = new byte[1024];

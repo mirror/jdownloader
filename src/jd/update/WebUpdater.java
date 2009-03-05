@@ -73,6 +73,16 @@ public class WebUpdater implements Serializable {
     public byte[] sum;
 
     private Browser br;
+    private File workingdir;
+
+    public File getWorkingdir() {
+        return workingdir;
+    }
+
+    public void setWorkingdir(File workingdir) {
+        this.workingdir = workingdir;
+    }
+
     private static HashMap<String, File> fileMap;
 
     public static HashMap<String, File> getFileMap() {
@@ -321,34 +331,35 @@ public class WebUpdater implements Serializable {
 
     }
 
-    public void filterAvailableUpdates(Vector<Vector<String>> files, File dir) {
-        // log(files.toString());
-        String akt;
-        String hash;
-        try {
-            for (int i = files.size() - 1; i >= 0; i--) {
-                String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
-
-                akt = new File(dir, tmp[0]).getAbsolutePath();
-
-                if (!new File(akt).exists()) {
-                    log("New file. " + files.elementAt(i) + " - " + akt);
-                    continue;
-                }
-                hash = JDHash.getMD5(new File(akt));
-
-                if (!hash.equalsIgnoreCase(files.elementAt(i).elementAt(1))) {
-                    log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
-                    continue;
-                }
-
-                files.removeElementAt(i);
-            }
-        } catch (Exception e) {
-            log(e.getLocalizedMessage());
-        }
-
-    }
+    // public void filterAvailableUpdates(Vector<Vector<String>> files, File
+    // dir) {
+    // // log(files.toString());
+    // String akt;
+    // String hash;
+    // try {
+    // for (int i = files.size() - 1; i >= 0; i--) {
+    // String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
+    //
+    // akt = new File(dir, tmp[0]).getAbsolutePath();
+    //
+    // if (!new File(akt).exists()) {
+    // log("New file. " + files.elementAt(i) + " - " + akt);
+    // continue;
+    // }
+    // hash = JDHash.getMD5(new File(akt));
+    //
+    // if (!hash.equalsIgnoreCase(files.elementAt(i).elementAt(1))) {
+    // log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
+    // continue;
+    // }
+    //
+    // files.removeElementAt(i);
+    // }
+    // } catch (Exception e) {
+    // log(e.getLocalizedMessage());
+    // }
+    //
+    // }
 
     /**
      * Liest alle files vom server
@@ -378,7 +389,11 @@ public class WebUpdater implements Serializable {
         String[][] matches = new Regex(source, pattern).getMatches();
         ArrayList<Byte> sum = new ArrayList<Byte>();
         for (String[] m : matches) {
-            entry = new FileUpdate(m[0], m[1]);
+            if (this.workingdir != null) {
+                entry = new FileUpdate(m[0], m[1], workingdir);
+            } else {
+                entry = new FileUpdate(m[0], m[1]);
+            }
 
             if (entry.getLocalPath().endsWith(".class")) {
                 plugins.put(entry.getLocalPath(), entry);
@@ -418,6 +433,14 @@ public class WebUpdater implements Serializable {
         WebUpdater.PLUGIN_LIST = plugins;
 
         return ret;
+    }
+
+    public boolean isIgnorePlugins() {
+        return ignorePlugins;
+    }
+
+    public void setIgnorePlugins(boolean ignorePlugins) {
+        this.ignorePlugins = ignorePlugins;
     }
 
     private void loadUpdateList() throws Exception {

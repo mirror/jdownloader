@@ -18,6 +18,7 @@ package jd;
 
 import java.awt.Toolkit;
 import java.io.File;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -30,12 +31,14 @@ import javax.swing.JOptionPane;
 
 import jd.config.Configuration;
 import jd.controlling.JDController;
+import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.JDLookAndFeelManager;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -45,6 +48,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.WebUpdate;
 
 /**
  * @author JD-Team
@@ -56,7 +60,8 @@ public class JDInit {
 
     public static void setupProxy() {
         // if
-        // (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY,
+        //(JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration
+        // .USE_PROXY,
         // false)) {
         // //
         // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
@@ -67,16 +72,20 @@ public class JDInit {
         // // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich
         // // wäre
         // String host =
-        // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST,
+        // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.
+        // PROXY_HOST,
         // "");
         // String port = new
-        // Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT,
+        // Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(
+        // Configuration.PROXY_PORT,
         // 8080)).toString();
         // String user =
-        // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER,
+        // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.
+        // PROXY_USER,
         // "");
         // String pass =
-        // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS,
+        // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.
+        // PROXY_PASS,
         // "");
         //            
         // }
@@ -84,22 +93,27 @@ public class JDInit {
 
     public static void setupSocks() {
         // if
-        // (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS,
+        //(JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration
+        // .USE_SOCKS,
         // false)) {
         // //
         // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
         // // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
         // String user =
-        // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS,
+        // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.
+        // PROXY_USER_SOCKS,
         // "");
         // String pass =
-        // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS,
+        // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.
+        // PROXY_PASS_SOCKS,
         // "");
         // String host =
-        // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST,
+        // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.
+        // SOCKS_HOST,
         // "");
         // String port = new
-        // Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT,
+        // Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(
+        // Configuration.SOCKS_PORT,
         // 1080)).toString();
         //           
         // }
@@ -122,12 +136,7 @@ public class JDInit {
     }
 
     public void checkUpdate() {
-        File updater = JDUtilities.getResourceFile("webupdater.jar");
-        if (updater.exists()) {
-            if (!updater.delete()) {
-                logger.severe("Webupdater.jar could not be deleted. PLease remove JDHOME/webupdater.jar to ensure a proper update");
-            }
-        }
+
         if (JDUtilities.getResourceFile("webcheck.tmp").exists() && JDIO.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")).indexOf("(Revision" + JDUtilities.getRevision() + ")") > 0) {
             JDUtilities.getController().getUiInterface().showTextAreaDialog("Error", "Failed Update detected!", "It seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n" + JDIO.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")));
             JDUtilities.getResourceFile("webcheck.tmp").delete();
@@ -273,7 +282,8 @@ public class JDInit {
             // logger.info("Wrapping jdownloader.config");
             // obj = JDIO.loadObject(null, file, Configuration.saveAsXML);
             // System.out.println(obj.getClass().getName());
-            // JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig",
+            // JDUtilities.getDatabaseConnector().saveConfiguration(
+            // "jdownloaderconfig",
             // obj);
             // }
         }
@@ -323,15 +333,12 @@ public class JDInit {
                     JOptionPane.showMessageDialog(null, JDLocale.L("installer.welcome", "Welcome to jDownloader. Download missing files."));
 
                     try {
-                        Browser.download(new File(home, "webupdater.jar"), "http://service.jdownloader.org/update/webupdater.jar");
+                       new WebUpdate().doWebupdate(true);
                         JDUtilities.getConfiguration().save();
                         JDUtilities.getDatabaseConnector().shutdownDatabase();
-                        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.RUNTYPE_LOCAL_JARED }, home.getAbsolutePath(), 0));
+                        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "jdupdate.jar", "/restart", "/rt" + JDUtilities.RUNTYPE_LOCAL_JARED }, home.getAbsolutePath(), 0));
                         System.exit(0);
-                    } catch (ConnectException e) {
-                        e.printStackTrace();
-                        JOptionPane.showMessageDialog(null, JDLocale.L("installer.refused", "Your connection got refused. It seems that any security software (e.g. firewalls) block JD. See http://jdownloader.org/knowledge/wiki/faq."));
-                    } catch (Exception e) {
+                     } catch (Exception e) {
                         e.printStackTrace();
                         // System.exit(0);
                     }
@@ -340,7 +347,7 @@ public class JDInit {
                 if (!home.canWrite()) {
                     logger.info("INSTALL abgebrochen");
                     JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
-                    JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
+                    JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                     System.exit(1);
                 }
 
@@ -348,7 +355,7 @@ public class JDInit {
                 logger.info("INSTALL abgebrochen2");
                 JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation", "Error. User aborted installation."));
 
-                JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
+                JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                 System.exit(0);
 
             }
@@ -356,6 +363,8 @@ public class JDInit {
 
         return JDUtilities.getConfiguration();
     }
+
+    
 
     public void loadDownloadQueue() {
         JDUtilities.getController().initDownloadLinks();
@@ -571,6 +580,7 @@ public class JDInit {
         new HostPluginWrapper("bluehost.to", "BluehostTo", "http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("depositfiles.com", "DepositFiles", "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("FileFactory.com", "FileFactory", "http://[\\w\\.]*?filefactory\\.com(/|//)file/[a-zA-Z0-9]+/?", PluginWrapper.LOAD_ON_INIT);
+        // http://www.filer.net/dl/8657bad0e042fb4
         new HostPluginWrapper("Filer.net", "Filer", "http://[\\w\\.]*?filer.net/(file[\\d]+|get)/.*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Freakshare.net", "Freaksharenet", "http://[\\w\\.]*?freakshare\\.net/files/\\d+/(.*)", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Megashares.Com", "MegasharesCom", "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/.*\\?d[0-9]{2}=[0-9a-f]{7}", PluginWrapper.LOAD_ON_INIT);
@@ -710,7 +720,7 @@ public class JDInit {
                 if (file.length() == 0) continue;
                 if (!file.matches(".*?" + File.separator + "?\\.+" + File.separator + ".*?")) {
                     File delete = new File(homedir, file);
-                    if (JDUtilities.removeDirectoryOrFile(delete)) logger.warning("Removed " + file);
+                    if (JDIO.removeDirectoryOrFile(delete)) logger.warning("Removed " + file);
                 }
             }
         }

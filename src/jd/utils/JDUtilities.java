@@ -88,6 +88,7 @@ import jd.http.Encoding;
 import jd.http.JDProxy;
 import jd.nutils.Executer;
 import jd.nutils.io.JDFileFilter;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -1191,18 +1192,6 @@ public class JDUtilities {
 
     }
 
-    public static boolean removeDirectoryOrFile(File dir) {
-        if (dir.isDirectory()) {
-            String[] children = dir.list();
-            for (String element : children) {
-                boolean success = JDUtilities.removeDirectoryOrFile(new File(dir, element));
-                if (!success) return false;
-            }
-        }
-
-        return dir.delete();
-    }
-
     public static void restartJD() {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
         JDUtilities.getLogger().info(JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", }, getResourceFile(".").getAbsolutePath(), 0));
@@ -1219,6 +1208,8 @@ public class JDUtilities {
      * @return File zu arg
      */
     public static File getResourceFile(String resource) {
+        File file;
+        if ((file = new File(resource)).isAbsolute()) { return file; }
         JDClassLoader cl = JDUtilities.getJDClassLoader();
         if (cl == null) {
             System.err.println("Classloader ==null: ");

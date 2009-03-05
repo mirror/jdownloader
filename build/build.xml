@@ -40,7 +40,7 @@
 			<attribute name="Main-Class" value="jd.update.Main" />
 			
 		</manifest>
-		<jar jarfile="${dist}/webupdater.jar" manifest="Manifest.MF">
+		<jar jarfile="${dist}/jdupdate.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/update/*.class" />
 				<include name="jd/utils/HTMLEntities.class" />
@@ -53,6 +53,7 @@
 				<include name="jd/plugins/PluginException.class" />
 				<include name="sun/net/www/protocol/jdps/*.class" />
 				<include name="jd/parser/Regex.class" />
+		
 				<include name="sun/net/www/protocol/jdp/*.class" />
 			</fileset>
 			<zipfileset src="ressourcen/libs/hsqldb.jar" excludes="META-INF/*" />  

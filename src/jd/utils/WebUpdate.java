@@ -18,6 +18,7 @@ package jd.utils;
 
 import java.awt.Color;
 import java.awt.HeadlessException;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -34,6 +35,8 @@ import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.update.FileUpdate;
 import jd.update.PackageData;
@@ -43,6 +46,52 @@ public class WebUpdate implements ControlListener {
     private static Logger logger = JDUtilities.getLogger();
     private static boolean JDInitialized = false;
     private static boolean ListenerAdded = false;
+
+    public static void updateUpdater() throws IOException {
+        Browser br = new Browser();
+        File file;
+        String localHash = JDHash.getMD5(file = JDUtilities.getResourceFile("jdupdate.jar"));
+        String remoteHash = br.getPage("http://service.jdownloader.org/update/jdupdate.jar.md5").trim();
+        if (localHash == null || !remoteHash.equalsIgnoreCase(localHash)) {
+
+            logger.info("Download " + file.getAbsolutePath() + "");
+            ProgressController progress = new ProgressController(JDLocale.LF("wrapper.webupdate.updateUpdater", "Download updater"), 3);
+            progress.increase(1);
+            URLConnectionAdapter con = br.openGetConnection("http://service.jdownloader.org/update/jdupdate.jar");
+            if (con.isOK()) {
+
+                File tmp;
+                Browser.download(tmp = new File(file.getAbsolutePath() + ".tmp"), con);
+                tmp.deleteOnExit();
+                localHash = JDHash.getMD5(tmp);
+                if (remoteHash.equalsIgnoreCase(localHash)) {
+
+                    if (!file.delete() || !tmp.renameTo(file)) {
+                        progress.finalize(2000);
+                        logger.info("Update of " + file.getAbsolutePath() + " successfull");
+                    } else {
+                        logger.severe("Rename error: jdupdate.jar");
+                        progress.setColor(Color.RED);
+                        progress.setStatusText(JDLocale.LF("wrapper.webupdate.updateUpdater.error_rename", "Could not rename jdupdate.jar.tmp to jdupdate.jar"));
+                        progress.finalize(5000);
+                    }
+                } else {
+                    logger.severe("CRC Error while downloading jdupdate.jar");
+                    progress.setColor(Color.RED);
+                    progress.setStatusText(JDLocale.LF("wrapper.webupdate.updateUpdater.error_crc", "CRC Error while downloading jdupdate.jar"));
+                    progress.finalize(5000);
+                }
+
+            } else {
+                progress.setColor(Color.RED);
+                progress.setStatusText(JDLocale.LF("wrapper.webupdate.updateUpdater.error_reqeust", "Could not download jdupdate.jar"));
+                progress.finalize(5000);
+                logger.info("Update of " + file.getAbsolutePath() + " failed");
+            }
+
+        }
+
+    }
 
     public synchronized void doWebupdate(final boolean guiCall) {
         if (!JDInitialized && !ListenerAdded) {
@@ -108,28 +157,13 @@ public class WebUpdate implements ControlListener {
                         CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI == null ? null : SimpleGUI.CURRENTGUI.getFrame(), JDLocale.LF("init.webupdate.auto.countdowndialog", "Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
                         if (ccd.result) {
 
-                            try {
-                                Browser.download(JDUtilities.getResourceFile("webupdater.jar"), "http://service.jdownloader.org/update/webupdater.jar");
-                            } catch (IOException e) {
-                                progress.setStatusText(JDLocale.L("init.webupdate.error.could_not_load_webupdater", "Could not load Webupdater"));
-                                progress.setColor(Color.RED);
-                                progress.finalize(10000l);
-                                return;
-                            }
                             doUpdate();
                         }
                     } else {
                         try {
                             CountdownConfirmDialog ccd = new CountdownConfirmDialog(JDUtilities.getGUI() != null ? ((SimpleGUI) JDUtilities.getGUI()).getFrame() : null, JDLocale.L("system.dialogs.update", "Updates available"), JDLocale.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size() + "", packages.size() + ""), 20, false, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
                             if (ccd.result) {
-                                try {
-                                    Browser.download(JDUtilities.getResourceFile("webupdater.jar"), "http://service.jdownloader.org/update/webupdater.jar");
-                                } catch (IOException e) {
-                                    progress.setStatusText(JDLocale.L("init.webupdate.error.could_not_load_webupdater", "Could not load Webupdater"));
-                                    progress.setColor(Color.RED);
-                                    progress.finalize(10000l);
-                                    return;
-                                }
+
                                 doUpdate();
                             }
                         } catch (HeadlessException e) {
@@ -152,9 +186,17 @@ public class WebUpdate implements ControlListener {
             } catch (InterruptedException e) {
             }
         }
+
         JDInit.createQueueBackup();
+
+        try {
+            WebUpdate.updateUpdater();
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        }
         JDIO.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
-        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "jdupdate.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
         System.exit(0);
     }
