@@ -45,7 +45,7 @@ public class PluginPattern {
         completePattern.append("|(ladekabel\\.us/\\?p=\\d+.*)");
         completePattern.append("|(load-it\\.biz/[^/]*/?)");
         completePattern.append("|(guru-world\\.net/wordpress/\\d+.*)");
-        //http://blogload.org
+        completePattern.append("|(klee\\.tv/blog/\\d+.*)");
         completePattern.append("|(blogload\\.org/\\d+.*)");
         completePattern.append("|(pressefreiheit\\.ws/[\\d]+/.+\\.html)");
         completePattern.append("|(zeitungsjunge\\.info/.*?/.*?/.*?/)");
