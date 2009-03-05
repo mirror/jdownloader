@@ -37,6 +37,7 @@ param.autoLetterNum=true;
 ############Parameter die die Freistellung beeinflussen
 
 param.useSpecialGetLetters=gwarez.getLetters;
+param.useLetterFilter=gwarez.letterFilter;
 param.alignAngleSteps=5;
 
 

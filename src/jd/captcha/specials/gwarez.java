@@ -58,7 +58,6 @@ public class gwarez {
             // BasicWindow.showImage(r.getB().getImage(3));
             ret.add(first);
             if (i < 4) {
-                System.out.println(r.getDecodedValue() + "");
                 captcha.crop(r.getIntersection().getWidth(), 0, 0, 0);
 
             }
@@ -66,5 +65,8 @@ public class gwarez {
         if (ret.size() < 5) return null;
         return ret.toArray(new Letter[] {});
 
+    }
+    public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {
+        return org;
     }
 }
