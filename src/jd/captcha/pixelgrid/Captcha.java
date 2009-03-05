@@ -38,7 +38,6 @@ import jd.captcha.LetterComperator;
 import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
-
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGImageEncoder;
@@ -227,6 +226,65 @@ public class Captcha extends PixelGrid {
     public void cleanBackgroundByHorizontalSampleLine(int x1, int x2, int y1, int y2) {
         int avg = getAverage(x1, y1, x2 - x1, y2 - y1);
         cleanBackgroundByColor(avg);
+
+    }
+    
+    public void cleanWithDetailMask(Captcha mask, int dif, int tolerance) {
+
+        int[][] newgrid = new int[getWidth()][getHeight()];
+        int[][] test = new int[getWidth()][getHeight()];
+        if (mask.getWidth() != getWidth() || mask.getHeight() != getHeight()) {
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.info("ERROR Maske und Bild passen nicht zusammmen");
+            }
+            return;
+        }
+        if (JAntiCaptcha.isLoggerActive()) {
+            logger.info(dif + "_");
+        }
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {
+                int min2=1;
+                test[x][y] = Math.abs(mask.getPixelValue(x, y) - getPixelValue(x, y));
+                int del = 0;
+                int del2 = 0;
+                if (UTILITIES.getColorDifference(mask.getPixelValue(x, y), getPixelValue(x, y)) < dif) {
+                    del+=tolerance;
+                    del2+=tolerance;
+                for (int i = 1; i < tolerance; i++) {
+                    if(y+i<getHeight())
+                    {
+                        if(UTILITIES.getColorDifference(mask.getPixelValue(x, y+i), getPixelValue(x, y+i)) < dif)
+                            del+=tolerance-i;
+                            del2+=tolerance-i;
+                    }
+                    else
+                        min2++;
+                }
+                for (int i = 1; i < tolerance; i++) {
+                    if(x+i<getWidth())
+                    {
+                        if(UTILITIES.getColorDifference(mask.getPixelValue(x+i, y), getPixelValue(x+i, y)) < dif)
+                            del+=tolerance-i;
+                        del2+=tolerance-i;
+                    }
+                    else
+                        min2++;
+                }
+                }
+                del*=min2;
+                if (del>(del2/1.5)) {
+                    // if (Math.abs(mask.getPixelValue(x, y) - getPixelValue(x,
+                    // y)) < dif) {
+
+                    PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue(), owner);
+
+                } else {
+                    newgrid[x][y] = grid[x][y];
+                }
+            }
+        }
+        grid = newgrid;
 
     }
 
