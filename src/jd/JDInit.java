@@ -23,8 +23,10 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
@@ -54,7 +56,7 @@ public class JDInit {
 
     public static void setupProxy() {
         // if
-        //(JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration
+        // (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration
         // .USE_PROXY,
         // false)) {
         // //
@@ -87,7 +89,7 @@ public class JDInit {
 
     public static void setupSocks() {
         // if
-        //(JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration
+        // (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration
         // .USE_SOCKS,
         // false)) {
         // //

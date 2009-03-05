@@ -88,7 +88,6 @@ import jd.http.Encoding;
 import jd.http.JDProxy;
 import jd.nutils.Executer;
 import jd.nutils.io.JDFileFilter;
-import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;

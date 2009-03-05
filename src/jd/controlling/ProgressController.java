@@ -102,7 +102,7 @@ public class ProgressController {
 
     public void fireChanges() {
         if (!isFinished()) {
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
+            if (JDUtilities.getController() != null) JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
         }
     }
 

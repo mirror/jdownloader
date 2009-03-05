@@ -38,7 +38,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
 import jd.nutils.JDHash;
-import jd.utils.JDUtilities;
 
 public class JDIO {
 
@@ -377,7 +376,7 @@ public class JDIO {
                 if (!success) return false;
             }
         }
-    
+
         return dir.delete();
     }
 

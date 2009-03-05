@@ -15,7 +15,9 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypt;
+
 import java.util.ArrayList;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -33,14 +35,16 @@ public class AllStreamInfo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(param.toString());
         String[] links = br.getRegex("<input onClick=\"window.open\\('(.*?)'").getColumn(0);
+        progress.setRange(links.length);
         for (String string : links) {
             decryptedLinks.add(createDownloadlink(string));
+            progress.increase(1);
         }
         return decryptedLinks;
     }
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4839 $");
+        return getVersion("$Revision$");
     }
 }
