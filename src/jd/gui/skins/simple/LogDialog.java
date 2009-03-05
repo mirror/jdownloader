@@ -200,15 +200,14 @@ public class LogDialog extends JFrame implements ActionListener {
             }
             content = TextAreaDialog.showDialog(this, "Log", JDLocale.L("gui.logdialog.yourlog", "Hochgeladener Log: Editieren möglich!"), content);
 
-            if (content == null || content.length() == 0) { return; }
+            if (content == null || content.length() == 0) return;
 
-            String name = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("gui.askName", "Your name?"));
-            String question = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"));
+            String name = JOptionPane.showInputDialog(this, JDLocale.L("gui.askName", "Your name?"));
+            String question = JOptionPane.showInputDialog(this, JDLocale.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"));
 
             String url = Upload.toJDownloader(content, name + "\r\n\r\n" + question);
             if (url != null) {
-                String res = JOptionPane.showInputDialog(this, JDLocale.L("gui.logDialog.logLink", "Log-Link (click ok to open)"), url);
-                if (res != null) {
+                if (JOptionPane.showInputDialog(this, JDLocale.L("gui.logDialog.logLink", "Log-Link (click ok to open)"), url) != null) {
                     try {
                         JLinkButton.openURL(url);
                     } catch (Exception e1) {
