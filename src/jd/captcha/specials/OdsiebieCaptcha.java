@@ -267,7 +267,7 @@ public class OdsiebieCaptcha {
             if (true && (akt.detected.getDecodedValue().equals("1") || akt.detected.getDecodedValue().equals("."))) {
                 it.remove();
             } else {
-                akt.id = id++;
+                akt.setId(id++);
             }
         }
         Collections.sort(r, new Comparator<Letter>() {
@@ -288,8 +288,8 @@ public class OdsiebieCaptcha {
 
         Collections.sort(list, new Comparator<Letter>() {
             public int compare(Letter o1, Letter o2) {
-                if (o1.id > o2.id) { return 1; }
-                if (o1.id < o2.id) { return -1; }
+                if (o1.getId() > o2.getId()) { return 1; }
+                if (o1.getId() < o2.getId()) { return -1; }
                 return 0;
             }
         });

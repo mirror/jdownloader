@@ -18,6 +18,8 @@ package jd.captcha;
 
 import java.io.File;
 
+import javax.swing.JOptionPane;
+
 import jd.captcha.utils.UTILITIES;
 import jd.utils.JDUtilities;
 
@@ -39,7 +41,7 @@ public class JACTest {
 
     private void go() {
         String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
-        String hoster = "gwarez.cc";
+        String hoster = "megaupload.com";
 
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
 
@@ -62,10 +64,12 @@ public class JACTest {
         // ().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+
         // "securedin1730080724541.jpg"),4);
         System.out.println(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster);
-        File f = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster).listFiles()[0];
+        File f = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster).listFiles()[10];
         System.out.println(f + "");
         jac.showPreparedCaptcha(f);
-
+if(JOptionPane.showConfirmDialog(null, "train")==JOptionPane.OK_OPTION){
+    f.renameTo(new File("C:\\Users\\coalado\\Desktop\\caps\\"+f.getName()));
+}
         // UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.
         // loadImage(new
         //File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()

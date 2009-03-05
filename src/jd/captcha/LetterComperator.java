@@ -45,6 +45,10 @@ public class LetterComperator {
      */
     public static boolean CREATEINTERSECTIONLETTER = false;
     /**
+     * Matchtable kann als Stringarray gesetzt werden... z.b. {"123","456","789"} lässt auf id platz 1 nur 1,2 oder 3 zu usw.
+     */
+    public static String[] MATCH_TABLE=null;
+    /**
      * Detection IDS Keine ERkennung. fehler!
      */
     public static final int ERROR = -1;
@@ -613,6 +617,14 @@ public class LetterComperator {
      * Führt den Vergleichsvorgang aus
      */
     public void run() {
+        if(MATCH_TABLE!=null&&this.getA().getId()>-1&&MATCH_TABLE.length>this.getA().getId()){
+            String matches = MATCH_TABLE[this.getA().getId()];
+          
+            if(!matches.contains(getB().getDecodedValue())){             
+                
+                return;
+            }
+        }
         scan();
 
     }

@@ -437,13 +437,13 @@ public class JAntiCaptcha {
         // Scannen
         Vector<LetterComperator> newLettersVector = new Vector<LetterComperator>();
         for (int i = 0; i < letters.length; i++) {
-            letters[i].id = i;
+            letters[i].setId(i);
             if (letters[i].detected != null) {
                 akt = letters[i].detected;
             } else {
                 akt = getLetter(letters[i]);
             }
-            akt.getA().id = i;
+            akt.getA().setId(i);
 
             newLettersVector.add(akt);
 
@@ -473,8 +473,8 @@ public class JAntiCaptcha {
             Collections.sort(newLettersVector, new Comparator<LetterComperator>() {
                 public int compare(LetterComperator obj1, LetterComperator obj2) {
 
-                    if (obj1.getA().id < obj2.getA().id) { return -1; }
-                    if (obj1.getA().id > obj2.getA().id) { return 1; }
+                    if (obj1.getA().getId() < obj2.getA().getId()) { return -1; }
+                    if (obj1.getA().getId() > obj2.getA().getId()) { return 1; }
                     return 0;
                 }
             });
@@ -519,7 +519,7 @@ public class JAntiCaptcha {
             } else {
                 ret += akt.getDecodedValue();
 
-                akt.getA().id = i;
+                akt.getA().setId(i);
                 correct += akt.getValityPercent();
 
             }
@@ -611,7 +611,7 @@ public class JAntiCaptcha {
                     ;
 
                     if (id != null) {
-                        tmp.id = Integer.parseInt(id);
+                        tmp.setId(Integer.parseInt(id));
                     }
                     tmp.setSourcehash(att.getNamedItem("captchaHash").getNodeValue());
                     tmp.setDecodedValue(att.getNamedItem("value").getNodeValue());
@@ -1024,7 +1024,7 @@ public class JAntiCaptcha {
             if (isShowDebugGui()) {
                 w = new ScrollPaneWindow(this);
 
-                w.setTitle(" Letter " + letter.id);
+                w.setTitle(" Letter " + letter.getId());
             }
             bvX = jas.getInteger("borderVarianceX");
             bvY = jas.getInteger("borderVarianceY");
@@ -1217,7 +1217,7 @@ public class JAntiCaptcha {
             if (isShowDebugGui()) {
                 w = new ScrollPaneWindow(this);
 
-                w.setTitle(" Letter " + letter.id);
+                w.setTitle(" Letter " + letter.getId());
             }
             int line = 0;
             lc = new LetterComperator(letter, null);
@@ -1549,7 +1549,7 @@ public class JAntiCaptcha {
                 // PixelGrid.fillLetter(letter);
                 letter.setSourcehash(UTILITIES.getLocalHash(element));
                 letter.setDecodedValue(element.getName().split("\\_")[1].split("\\.")[0]);
-
+//BasicWindow.showImage(letter.getImage(1),element.getName());
                 letter.clean();
 
                 letterDB.add(letter);

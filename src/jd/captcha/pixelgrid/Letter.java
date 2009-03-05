@@ -57,7 +57,7 @@ public class Letter extends PixelGrid {
     /**
      * ID des letters in der Lettermap
      */
-    public int id;
+    private int id;
 
     /**
      * Hash des sourcecaptchas (Fürs training wichtig)
@@ -142,7 +142,8 @@ public class Letter extends PixelGrid {
             tmp = turn(angle < 0 ? 360 + angle : angle);
             // if(JAntiCaptcha.isLoggerActive())logger.info("..
             // "+((double)tmp.getWidth()/(double)tmp.getHeight()));
-            // BasicWindow.showImage(tmp.getImage(1),(angle<0?360+angle:angle)+"_");
+            //BasicWindow.showImage(tmp.getImage(1),(angle<0?360+angle:angle)+"_"
+            // );
             if ((double) tmp.getWidth() / (double) tmp.getHeight() < bestValue) {
                 bestValue = (double) tmp.getWidth() / (double) tmp.getHeight();
                 res = tmp;
@@ -600,7 +601,6 @@ public class Letter extends PixelGrid {
             for (int x = 0; x < getWidth(); x++) {
                 ret.append(getPixelValue(x, y) / getMaxPixelValue());
 
-
             }
             ret.append('|');
         }
@@ -914,7 +914,7 @@ public class Letter extends PixelGrid {
      * @return new letter
      */
     public Letter turn(double angle) {
-
+        if (angle == 0.0) return this;
         while (angle < 0) {
             angle += 360;
         }
@@ -923,7 +923,8 @@ public class Letter extends PixelGrid {
 
         int newWidth = (int) (Math.abs(Math.cos(angle * Math.PI) * getWidth()) + Math.abs(Math.sin(angle * Math.PI) * getHeight()));
         int newHeight = (int) (Math.abs(Math.sin(angle * Math.PI) * getWidth()) + Math.abs(Math.cos(angle * Math.PI) * getHeight()));
-        // if(JAntiCaptcha.isLoggerActive())logger.info(getWidth()+"/"+getHeight()+"
+        //if(JAntiCaptcha.isLoggerActive())logger.info(getWidth()+"/"+getHeight(
+        // )+"
         // --> "+newWidth+"/"+newHeight
         // +"("+angle+"/"+(angle*180)+"/"+Math.cos(sizeAngle *
         // Math.PI)+"/"+Math.sin(sizeAngle * Math.PI));
@@ -952,6 +953,7 @@ public class Letter extends PixelGrid {
         l.setGrid(newGrid);
         l.setElementPixel(elementPixel);
         l.clean();
+        l.id = this.id;
         l.setDecodedValue(getDecodedValue());
         l.setAngle((int) (angle * 180.0));
         l.setProperties(getProperties());
@@ -960,6 +962,10 @@ public class Letter extends PixelGrid {
 
         return l;
 
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
 }
