@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 
@@ -30,7 +31,7 @@ import jd.captcha.pixelgrid.Letter;
  */
 public class MegaUpload {
     public static Letter[] getLetters(Captcha captcha) {
-
+captcha.toBlackAndWhite(0.45);
         captcha.clean();
         ArrayList<Letter> ret = new ArrayList<Letter>();
         for (int i = 0; i < 4; i++) {
@@ -49,11 +50,38 @@ public class MegaUpload {
 
             LetterComperator r = captcha.owner.getLetter(first);
 
-            // BasicWindow.showImage(r.getB().getImage(3));
+            
+            
+            Letter b = r.getB();
+//            int[] offset = new int[]{r.getIntersectionStartX(),r.getIntersectionStartY()};
+            int[] offset = r.getPosition();
+            
+            for(int x=offset[0];x<offset[0]+b.getWidth();x++){
+                
+                for(int y=offset[1];y<offset[1]+b.getHeight();y++){
+                  
+                    if(x<captcha.getWidth()&&y<captcha.getHeight()&&x>0&&y>0){
+                        if(x<b.getWidth()&&y<b.getHeight()&&b.getGrid()[x][y]<100){
+                        captcha.getGrid()[x][y]=0xffffff;
+                        }else{
+                           // captcha.getGrid()[x][y]=0x00ff00; 
+                        }
+                    }
+                    
+                } 
+            }
+//            BasicWindow.showImage(b.getImage(3));
+//            BasicWindow.showImage(r.getIntersectionLetter().getImage(3));
+//            BasicWindow.showImage(captcha.getImage(3));
             ret.add(first);
             if (i < 3) {
                 System.out.println(r.getDecodedValue() + "");
-                captcha.crop(r.getIntersection().getWidth(), 0, 0, 0);
+                captcha.crop(offset[0]+b.getWidth()/2, 0, 0, 0);
+               
+//                BasicWindow.showImage(captcha.getImage(3));
+                captcha.removeSmallObjects(0.95, 0.95,25);
+                captcha.clean();
+//                BasicWindow.showImage(captcha.getImage(3));
 
             }
         }

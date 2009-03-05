@@ -1540,7 +1540,7 @@ public class JAntiCaptcha {
                         }
                         // if(JAntiCaptcha.isLoggerActive())logger.info("-
                         // "+pixel[px]);
-                        newGrid[x][y] = pixel[px++] < 100 ? 0 : PixelGrid.getMaxPixelValue(this);
+                        newGrid[x][y] = pixel[px++] < 0x660000 ? 0 : PixelGrid.getMaxPixelValue(this);
 
                     }
                 }

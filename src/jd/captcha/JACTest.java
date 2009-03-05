@@ -43,8 +43,8 @@ public class JACTest {
 
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
 
-//         jac.setShowDebugGui(true);
-        // LetterComperator.CREATEINTERSECTIONLETTER = true;
+//        jac.setShowDebugGui(true);
+//         LetterComperator.CREATEINTERSECTIONLETTER = true;
         //
         // jac.exportDB();
         // UTILITIES.getLogger().info("has method:
@@ -52,7 +52,7 @@ public class JACTest {
 
         //
         // Megaupload2.writeDB();
-        // jac.importDB();
+//     jac.importDB();
         //
         jac.displayLibrary();
 

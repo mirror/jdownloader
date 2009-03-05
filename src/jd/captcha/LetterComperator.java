@@ -141,6 +141,7 @@ public class LetterComperator {
     private double totalPixelError = 0;
     private double valityPercent = 10000.0;
     private double widthFaktor = 0;
+    private int[] position;
 
     /**
      * @param a
@@ -724,6 +725,7 @@ public class LetterComperator {
                     setIntersectionWidth(tmpIntersectionWidth);
                     setIntersectionStartX(xx);
                     setIntersectionStartY(yy);
+                    setPosition(left,top);
                     setBothElementNum(bothElements.size());
                     setCoverageFaktorA(tmpCoverageFaktorA);
                     setCoverageFaktorB(tmpCoverageFaktorB);
@@ -751,6 +753,19 @@ public class LetterComperator {
 
         scanTime = (int) (UTILITIES.getTimer() - startTime);
 
+    }
+
+    private void setPosition(int left, int top) {
+       this.position=new int[]{left,top};
+        
+    }
+
+    public int[] getPosition() {
+        return position;
+    }
+
+    public void setPosition(int[] position) {
+        this.position = position;
     }
 
     private double scanIntersection(int xx, int yy, int left, int top, int tmpIntersectionWidth, int tmpIntersectionHeight) {
