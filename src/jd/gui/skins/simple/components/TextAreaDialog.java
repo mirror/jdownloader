@@ -17,10 +17,10 @@
 package jd.gui.skins.simple.components;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Logger;
@@ -33,8 +33,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 
-import jd.gui.skins.simple.LocationListener;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -108,10 +106,10 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         getRootPane().setDefaultButton(btnOk);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.add(p, BorderLayout.SOUTH);
-        addWindowListener(new LocationListener());
+        // addWindowListener(new LocationListener());
 
-        setMaximumSize(Toolkit.getDefaultToolkit().getScreenSize());
-      if(SimpleGUI.CURRENTGUI!=null)  SimpleGUI.restoreWindow(null, this);
+        setMaximumSize(new Dimension(800, 600));
+        // SimpleGUI.restoreWindow(null, this);
         setModal(true);
         setVisible(true);
 
@@ -202,10 +200,10 @@ public class TextAreaDialog extends JDialog implements ActionListener {
 
         getRootPane().setDefaultButton(btnOk);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        addWindowListener(new LocationListener());
+        // addWindowListener(new LocationListener());
 
-        setMaximumSize(Toolkit.getDefaultToolkit().getScreenSize());
-        SimpleGUI.restoreWindow(null, this);
+        setMaximumSize(new Dimension(800, 600));
+        // SimpleGUI.restoreWindow(null, this);
         setModal(true);
         setVisible(true);
     }
