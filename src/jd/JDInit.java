@@ -18,27 +18,21 @@ package jd;
 
 import java.awt.Toolkit;
 import java.io.File;
-import java.io.IOException;
-import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-
 import jd.config.Configuration;
 import jd.controlling.JDController;
-import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.JDLookAndFeelManager;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -333,12 +327,12 @@ public class JDInit {
                     JOptionPane.showMessageDialog(null, JDLocale.L("installer.welcome", "Welcome to jDownloader. Download missing files."));
 
                     try {
-                       new WebUpdate().doWebupdate(true);
+                        new WebUpdate().doWebupdate(true);
                         JDUtilities.getConfiguration().save();
                         JDUtilities.getDatabaseConnector().shutdownDatabase();
                         logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "jdupdate.jar", "/restart", "/rt" + JDUtilities.RUNTYPE_LOCAL_JARED }, home.getAbsolutePath(), 0));
                         System.exit(0);
-                     } catch (Exception e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                         // System.exit(0);
                     }
@@ -363,8 +357,6 @@ public class JDInit {
 
         return JDUtilities.getConfiguration();
     }
-
-    
 
     public void loadDownloadQueue() {
         JDUtilities.getController().initDownloadLinks();
@@ -534,7 +526,7 @@ public class JDInit {
         new DecryptPluginWrapper("Underground CMS", "UCMS", PluginPattern.decrypterPattern_UCMS_Plugin());
         new DecryptPluginWrapper("uploadjockey.com", "UploadJockeycom", "http://[\\w\\.]*?uploadjockey\\.com/download/[a-zA-Z0-9]+/(.*)");
         new DecryptPluginWrapper("up.picoasis.net", "UpPicoasisNet", "http://up\\.picoasis\\.net/[\\d]+");
-        new DecryptPluginWrapper("urlcash.net", "URLCash", "http://[a-zA-Z0-9\\-]{5,16}\\.(urlcash\\.net|urlcash\\.org|clb1\\.com|urlgalleries\\.com|celebclk\\.com|smilinglinks\\.com|peekatmygirlfriend\\.com|looble\\.net)");
+        new DecryptPluginWrapper("urlcash.net", "URLCash", "(http://[\\w\\.]*?sealed\\.in/.+|http://[a-zA-Z0-9\\-]{5,16}\\.(urlcash\\.net|urlcash\\.org|clb1\\.com|urlgalleries\\.com|celebclk\\.com|smilinglinks\\.com|peekatmygirlfriend\\.com|looble\\.net))");
         new DecryptPluginWrapper("urlshield.net", "UrlShieldnet", "http://[\\w\\.]*?urlshield\\.net/l/[a-zA-Z0-9]+");
         new DecryptPluginWrapper("uu.canna.to", "UUCannaTo", "http://uu\\.canna\\.to/cpuser/links\\.php\\?action=popup&kat_id=[\\d]+&fileid=[\\d]+");
         new DecryptPluginWrapper("vetax.in", "VetaXin", "http://[\\w\\.]*?vetax\\.in/view/\\d+|http://[\\w\\.]*?vetax\\.in/(dload|mirror)/[a-zA-Z0-9]+");
