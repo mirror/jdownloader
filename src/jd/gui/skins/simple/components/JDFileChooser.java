@@ -56,7 +56,7 @@ public class JDFileChooser extends JFileChooser {
     @Override
     public File getSelectedFile() {
         File ret = super.getSelectedFile();
-   
+
         if (ret == null) return null;
         if (ret.isDirectory()) {
             JDUtilities.setCurrentWorkingDirectory(ret, fcID);
@@ -65,11 +65,12 @@ public class JDFileChooser extends JFileChooser {
         }
         return ret;
     }
+
     @Override
     public File[] getSelectedFiles() {
         File[] ret = super.getSelectedFiles();
-   
-        if (ret == null||ret.length==0) return ret;
+
+        if (ret == null || ret.length == 0) return ret;
         if (ret[0].isDirectory()) {
             JDUtilities.setCurrentWorkingDirectory(ret[0], fcID);
         } else {

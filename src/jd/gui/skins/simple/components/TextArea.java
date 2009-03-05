@@ -69,8 +69,8 @@ public class TextArea extends JScrollPane implements MouseListener, ClipboardOwn
             paste.addActionListener(this);
 
             delete.addActionListener(this);
-            
-            //Add menu item to the JPopupMenu
+
+            // Add menu item to the JPopupMenu
             popup.add(copy);
             popup.add(paste);
             popup.add(delete);
@@ -115,7 +115,6 @@ public class TextArea extends JScrollPane implements MouseListener, ClipboardOwn
         }
     }
 
- 
     private static final long serialVersionUID = -3642394448923083114L;
 
     private static JTextArea txt;

@@ -20,10 +20,8 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -34,7 +32,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse ist wie die Optionspane mit textfeld nur mit textarea
@@ -42,9 +39,7 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  */
 public class TextAreaDialog extends JDialog implements ActionListener {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = -655039113948925165L;
 
     public static String showDialog(JFrame frame, String title, String question, String def) {
@@ -61,10 +56,6 @@ public class TextAreaDialog extends JDialog implements ActionListener {
 
     private JButton btnOk;
 
-    protected Insets insets = new Insets(0, 0, 0, 0);
-
-    protected Logger logger = JDUtilities.getLogger();
-
     private JScrollPane scrollPane;
     private JScrollPane optScrollPane;
     private String text = null;
@@ -76,7 +67,6 @@ public class TextAreaDialog extends JDialog implements ActionListener {
     private TextAreaDialog(JFrame frame, String title, String question, String def) {
         super(frame);
 
-        setModal(false);
         setLayout(new BorderLayout());
         setName(title);
         btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
@@ -101,14 +91,18 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         JPanel p = new JPanel();
         p.add(btnOk);
         p.add(btnCancel);
-        pack();
 
         getRootPane().setDefaultButton(btnOk);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.add(p, BorderLayout.SOUTH);
         // addWindowListener(new LocationListener());
 
-        setMaximumSize(new Dimension(800, 600));
+        if (isBiggerDimension(getPreferredSize())) {
+            setSize(new Dimension(800, 600));
+        } else {
+            pack();
+        }
+
         // SimpleGUI.restoreWindow(null, this);
         setModal(true);
         setVisible(true);
@@ -120,7 +114,6 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         GridBagConstraints c = new GridBagConstraints();
         c.fill = GridBagConstraints.BOTH;
 
-        setModal(false);
         setLayout(new GridBagLayout());
         setName(title);
         btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
@@ -196,16 +189,24 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         c.gridy = 4;
         this.add(btnCancel, c);
 
-        pack();
-
         getRootPane().setDefaultButton(btnOk);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         // addWindowListener(new LocationListener());
 
-        setMaximumSize(new Dimension(800, 600));
+        if (isBiggerDimension(getPreferredSize())) {
+            setSize(new Dimension(800, 600));
+        } else {
+            pack();
+        }
+
         // SimpleGUI.restoreWindow(null, this);
         setModal(true);
         setVisible(true);
+    }
+
+    private boolean isBiggerDimension(Dimension d) {
+        Dimension dim = new Dimension(800, 600);
+        return (d.getWidth() > dim.getWidth() || d.getHeight() > dim.getHeight());
     }
 
     public void actionPerformed(ActionEvent e) {
