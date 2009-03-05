@@ -137,7 +137,7 @@ public class BadongoCom extends PluginForHost {
             ajax.submitForm(captchaForm);
             captchaForm = ajax.getForm(0);
             String url = null;
-            this.sleep(15000, downloadLink);
+            this.sleep(45000, downloadLink);
             ajax.getPage(realURL + "?rs=getFileLink&rst=&rsrnd=" + new Date().getTime() + "&rsargs[]=yellow");
             url = ajax.getRegex("doDownload\\(\\\\\'(.*?)\\\\\'\\)").getMatch(0);
             if (url == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
