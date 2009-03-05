@@ -27,6 +27,7 @@ import jd.config.ConfigEntry;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -95,7 +96,8 @@ public class Gwarezcc extends PluginForDecrypt {
             String downloadid = new Regex(parameter, "\\/mirror/([\\d].*)/parts/([\\d].*)/").getMatch(0);
             // /* Parts suchen */
             // String parts[] =
-            // br.getRegex(Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)\"",
+            // br.getRegex(Pattern.compile(
+            // "<a href=\"redirect\\.php\\?to=([^\"]*?)\"",
             // Pattern.CASE_INSENSITIVE)).getColumn(0);
 
             Form[] forms = br.getForms();
@@ -123,18 +125,29 @@ public class Gwarezcc extends PluginForDecrypt {
                         linkString = br.getRegex("<meta http-equiv=\"refresh\".*?URL=(.*?)\">").getMatch(0);
                         if (linkString != null) break;
                         String k = br.getRegex("<script type=\"text/javascript\" src=\"http://api.recaptcha.net/challenge\\?k=(.*?)\"></script>").getMatch(0);
-                        Browser rcBr = br.cloneBrowser();
-                        rcBr.getPage("http://api.recaptcha.net/challenge?k=" + k);
-                        String challenge = rcBr.getRegex("challenge : '(.*?)',").getMatch(0);
-                        String server = rcBr.getRegex("server : '(.*?)',").getMatch(0);
-                        String captchaAddress = server + "image?c=" + challenge;
+                        if (k != null) {
+                            /* recaptcha */
+
+                            Browser rcBr = br.cloneBrowser();
+                            rcBr.getPage("http://api.recaptcha.net/challenge?k=" + k);
+                            String challenge = rcBr.getRegex("challenge : '(.*?)',").getMatch(0);
+                            String server = rcBr.getRegex("server : '(.*?)',").getMatch(0);
+                            String captchaAddress = server + "image?c=" + challenge;
+                            File captchaFile = this.getLocalCaptchaFile(this);
+                            Browser.download(captchaFile, rcBr.openGetConnection(captchaAddress));
+                            String code = Plugin.getCaptchaCode(captchaFile, this, param);
+                            if (code == null) continue;
+                            forms[ii].put("recaptcha_challenge_field", challenge);
+                            forms[ii].put("recaptcha_response_field", code);
+                            br.submitForm(forms[ii]);
+                        }
+                        Form cap = br.getForm(0);
+                        URLConnectionAdapter con = br.cloneBrowser().openGetConnection("captcha/captcha.php");
                         File captchaFile = this.getLocalCaptchaFile(this);
-                        Browser.download(captchaFile, rcBr.openGetConnection(captchaAddress));
+                        Browser.download(captchaFile, con);
                         String code = Plugin.getCaptchaCode(captchaFile, this, param);
-                        if (code == null) continue;
-                        forms[ii].put("recaptcha_challenge_field", challenge);
-                        forms[ii].put("recaptcha_response_field", code);
-                        br.submitForm(forms[ii]);
+                        cap.put("sicherheitscode", code);
+                        br.submitForm(cap);
 
                     }
                     if (linkString == null) linkString = br.getRegex("<meta http-equiv=\"refresh\".*?URL=(.*?)\">").getMatch(0);
