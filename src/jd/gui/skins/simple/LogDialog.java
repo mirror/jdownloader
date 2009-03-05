@@ -189,7 +189,7 @@ public class LogDialog extends JFrame implements ActionListener {
             Level level = JDUtilities.getLogger().getLevel();
             if (!level.equals(Level.ALL)) {
                 try {
-                    JHelpDialog.showHelpMessage(this, null, JDLocale.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log!\nPlease change it to ALL and create a new log!", level.getName()), new URL("http://jdownloader.org/knowledge/wiki/support/create-a-jd-log"), null, 30);
+                    JHelpDialog.showHelpMessage(this, null, JDLocale.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), new URL("http://jdownloader.org/knowledge/wiki/support/create-a-jd-log"), null, 30);
                 } catch (MalformedURLException e1) {
                     e1.printStackTrace();
                 }
