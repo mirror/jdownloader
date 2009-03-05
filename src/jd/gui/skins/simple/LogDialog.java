@@ -27,6 +27,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -44,6 +46,7 @@ import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.gui.skins.simple.components.JHelpDialog;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Encoding;
@@ -91,7 +94,6 @@ public class LogDialog extends JFrame implements ActionListener {
     private class LogStreamHandler extends StreamHandler {
 
         public LogStreamHandler(OutputStream stream) {
-            // super();
             setOutputStream(stream);
         }
 
@@ -174,6 +176,7 @@ public class LogDialog extends JFrame implements ActionListener {
         this.getRootPane().setDefaultButton(btnOK);
         this.setContentPane(panel);
         this.setPreferredSize(new Dimension(640, 480));
+        this.setMaximumSize(new Dimension(800, 600));
         this.pack();
         this.setLocationRelativeTo(null);
         SimpleGUI.restoreWindow(null, this);
@@ -183,6 +186,14 @@ public class LogDialog extends JFrame implements ActionListener {
         if (e.getSource() == btnOK) {
             dispose();
         } else if (e.getSource() == btnUpload) {
+            Level level = JDUtilities.getLogger().getLevel();
+            if (!level.equals(Level.ALL)) {
+                try {
+                    JHelpDialog.showHelpMessage(this, null, JDLocale.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log!\nPlease change it to ALL and create a new log!", level.getName()), new URL("http://jdownloader.org/knowledge/wiki/support/create-a-jd-log"), null, 30);
+                } catch (MalformedURLException e1) {
+                    e1.printStackTrace();
+                }
+            }
             String content = logField.getSelectedText();
             if (content == null || content.length() == 0) {
                 content = Encoding.UTF8Encode(logField.getText());
@@ -196,22 +207,14 @@ public class LogDialog extends JFrame implements ActionListener {
 
             String url = Upload.toJDownloader(content, name + "\r\n\r\n" + question);
             if (url != null) {
-                String res = null;
-
-                res = JOptionPane.showInputDialog(this, JDLocale.L("gui.logDialog.logLink", "Log-Link (click ok to open)"), url);
-
+                String res = JOptionPane.showInputDialog(this, JDLocale.L("gui.logDialog.logLink", "Log-Link (click ok to open)"), url);
                 if (res != null) {
-
                     try {
                         JLinkButton.openURL(url);
-
                     } catch (Exception e1) {
-                        // TODO Auto-generated catch block
                         e1.printStackTrace();
                     }
-
                 }
-
             } else {
                 JOptionPane.showMessageDialog(this, JDLocale.L("gui.logDialog.warning.uploadFailed", "Upload failed"));
             }
@@ -230,7 +233,7 @@ public class LogDialog extends JFrame implements ActionListener {
             }
         }
     }
-    
+
     @Override
     public String toString() {
         String content = logField.getSelectedText();
