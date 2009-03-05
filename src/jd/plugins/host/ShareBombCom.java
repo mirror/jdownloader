@@ -75,7 +75,7 @@ public class ShareBombCom extends PluginForHost {
         getFileInformation(downloadLink);
         /* Link holen */
         String url = new Regex(br, Pattern.compile("<a href=\"/?(files/.*)\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (url == null) url = new Regex(br, Pattern.compile("dlLink = unescape\\('(.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (url == null) url = new Regex(br, Pattern.compile("dlLink=unescape\\('(.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         String linkurl;
         if (url.startsWith("http")) {
