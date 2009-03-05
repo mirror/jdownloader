@@ -7,9 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -17,6 +16,7 @@ import javax.swing.JOptionPane;
 import jd.config.CFGConfig;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
@@ -96,7 +96,49 @@ public class Updater {
 
         upd.upload(list);
 
+        upd.merge();
+        upd.uploadHashList();
         System.exit(0);
+    }
+
+    private void uploadHashList() throws IOException {
+        while (true) {
+            HashMap<String, String> map = createHashList(this.workingDir);
+            Browser br = new Browser();
+            br.forceDebug(true);
+            map.put("pass", getCFG("updateHashPW"));
+            File file = new File(this.workingDir, "addonlist.lst");
+
+            String addonlist = JDIO.getLocalFile(file);
+            map.put("addonlist", Encoding.urlEncode(addonlist));
+            br.postPage("http://update1.jdownloader.org/updateHashList.php", map);
+            System.out.println(br + "");
+            if (br.containsHTML("succeed")) break;
+        }
+    }
+
+    /**
+     * 
+     * 
+     * @param dir
+     * @return
+     */
+    private HashMap<String, String> createHashList(File dir) {
+        HashMap<String, String> map = new HashMap<String, String>();
+        for (File f : getLocalFileList(dir, false)) {
+            String path = f.getAbsolutePath().replace(dir.getAbsolutePath(), "");
+
+            path = path.replace("\\", "/");
+            if (path.trim().length() == 0 || f.isDirectory()) continue;
+            map.put(JDHash.getMD5(f), path);
+        }
+
+        return map;
+    }
+
+    private void merge() throws IOException {
+        this.copyDirectory(this.updateDir, this.workingDir);
+
     }
 
     /**
@@ -105,40 +147,58 @@ public class Updater {
      * @param list
      * @throws IOException
      */
-    private void upload(ArrayList<File> list) throws IOException {
+    private boolean upload(ArrayList<File> list) throws IOException {
         Browser br = new Browser();
         System.out.println("Starting upload: " + list.size() + " files");
-        while (true) {
-            PostFormDataRequest request = (PostFormDataRequest) br.createPostFormDataRequest("http://service.jdownloader.org/newupdate/upload.php");
-            int i = 0;
-            request.addFormData(new FormData("fileNum", list.size() + ""));
-            request.addFormData(new FormData("pass", getCFG("server_pass") + ""));
-            for (File f : list) {
-                String newFile = f.getAbsolutePath().replace(updateDir.getAbsolutePath(), "");
-                if (newFile.trim().length() == 0) continue;
-                i++;
-                if (f.isDirectory()) {
 
-                    request.addFormData(new FormData("path_" + i, newFile));
-
+        PostFormDataRequest request = (PostFormDataRequest) br.createPostFormDataRequest("http://update1.jdownloader.org/upload.php");
+        int i = 0;
+        request.addFormData(new FormData("fileNum", list.size() + ""));
+        request.addFormData(new FormData("pass", getCFG("server_pass") + ""));
+        for (File f : list) {
+            if (i > 10) {
+                URLConnectionAdapter con = br.openRequestConnection(request);
+                String res = br.loadConnection(con);
+                if (res.contains("hash failed") || res.contains("Forbidden") || res.contains("Warning</b>") || res.contains("Error</b>")) {
+                    System.err.println("Error uploading: " + res);
+                    return false;
                 } else {
-                    request.addFormData(new FormData("file_" + i, f.getName(), f));
-                    request.addFormData(new FormData("path_" + i, newFile));
-                    request.addFormData(new FormData("hash_" + i, JDHash.getMD5(f)));
-                }
-            }
+                    System.out.println(res);
 
-            br.forceDebug(true);
-            URLConnectionAdapter con = br.openRequestConnection(request);
-            String res = br.loadConnection(con);
-            if (res.contains("hash failed")) {
-                System.err.println("Error uploading: " + res);
-            } else {
-                break;
+                }
+
+                request = (PostFormDataRequest) br.createPostFormDataRequest("http://update1.jdownloader.org/upload.php");
+                i = 0;
+                request.addFormData(new FormData("fileNum", list.size() + ""));
+                request.addFormData(new FormData("pass", getCFG("server_pass") + ""));
             }
+            String newFile = f.getAbsolutePath().replace(updateDir.getAbsolutePath(), "");
+            newFile = newFile.replace("\\", "/");
+            if (newFile.trim().length() == 0) continue;
+            i++;
+            if (f.isDirectory()) {
+
+                request.addFormData(new FormData("path_" + i, newFile));
+
+            } else {
+                request.addFormData(new FormData("file_" + i, f.getName(), f));
+                request.addFormData(new FormData("path_" + i, newFile));
+                request.addFormData(new FormData("hash_" + i, JDHash.getMD5(f)));
+            }
+        }
+
+        URLConnectionAdapter con = br.openRequestConnection(request);
+        String res = br.loadConnection(con);
+        if (res.contains("hash failed") || res.contains("Forbidden") || res.contains("Warning</b>") || res.contains("Error</b>")) {
+            System.err.println("Error uploading: " + res);
+            return false;
+        } else {
+            System.out.println(res);
 
         }
         System.out.println("Succeded hashes ok");
+        return true;
+       
 
     }
 
@@ -159,10 +219,12 @@ public class Updater {
             File file = it.next();
             String newHash = JDHash.getMD5(file);
             String newFile = file.getAbsolutePath().replace(updateDir.getAbsolutePath(), "");
+            newFile = newFile.replace("\\", "/");
             if (newFile.trim().length() == 0) continue;
 
             for (File rf : listLocal) {
                 String localFile = rf.getAbsolutePath().replace(workingDir.getAbsolutePath(), "");
+                localFile = localFile.replace("\\", "/");
                 if (localFile.trim().length() == 0) continue;
                 if (localFile.equalsIgnoreCase(newFile)) {
                     String localHash = JDHash.getMD5(rf);
@@ -270,7 +332,7 @@ public class Updater {
         StringBuilder sb = new StringBuilder();
         int i = 0;
         for (File f : localFiles) {
-            if (!containsFile(f)) {
+            if (!containsFile(f) && !f.getAbsolutePath().equalsIgnoreCase(workingDir.getAbsolutePath())) {
                 sb.append(f.getAbsolutePath() + "\r\n");
                 i++;
             }
@@ -308,16 +370,21 @@ public class Updater {
      * @throws Exception
      */
     @SuppressWarnings("unchecked")
-    private void webupdate() throws Exception {
+    private void webupdate() {
+        try {
+            webupdater = new WebUpdater();
+            webupdater.setIgnorePlugins(false);
+            webupdater.setWorkingdir(workingDir);
 
-        webupdater = new WebUpdater();
-        webupdater.setIgnorePlugins(false);
-        webupdater.setWorkingdir(workingDir);
-        remoteFileList = webupdater.getAvailableFiles();
-        webupdater.setOSFilter(false);
-        ArrayList<FileUpdate> update = (ArrayList<FileUpdate>) remoteFileList.clone();
-        webupdater.filterAvailableUpdates(update);
-        webupdater.updateFiles(update);
+            remoteFileList = webupdater.getAvailableFiles();
+            webupdater.setOSFilter(false);
+            ArrayList<FileUpdate> update = (ArrayList<FileUpdate>) remoteFileList.clone();
+            webupdater.filterAvailableUpdates(update);
+            webupdater.updateFiles(update);
+        } catch (Exception e) {
+            e.printStackTrace();
+            remoteFileList = new ArrayList<FileUpdate>();
+        }
 
     }
 
@@ -346,13 +413,13 @@ public class Updater {
      */
     private ArrayList<File> getLocalFileList(File dir, boolean noFilter) {
         ArrayList<File> ret = new ArrayList<File>();
-        if (noFilter || (!dir.getAbsolutePath().contains("addons.lst") && !dir.getAbsolutePath().contains(UPDATE_SUB_SRC) && !dir.getAbsolutePath().contains(UPDATE_SUB_DIR))) ret.add(dir);
+        if (noFilter || (!dir.getAbsolutePath().contains("addonlist.lst") && !dir.getAbsolutePath().contains(UPDATE_SUB_SRC) && !dir.getAbsolutePath().contains(UPDATE_SUB_DIR))) ret.add(dir);
         for (File f : dir.listFiles()) {
             if (f.isDirectory()) {
                 ret.addAll(getLocalFileList(f, noFilter));
             } else {
 
-                if (noFilter || (!dir.getAbsolutePath().contains("addons.lst") && !dir.getAbsolutePath().contains(UPDATE_SUB_SRC) && !dir.getAbsolutePath().contains(UPDATE_SUB_DIR))) ret.add(f);
+                if (noFilter || (!dir.getAbsolutePath().contains("addonlist.lst") && !dir.getAbsolutePath().contains(UPDATE_SUB_SRC) && !dir.getAbsolutePath().contains(UPDATE_SUB_DIR))) ret.add(f);
             }
         }
         return ret;

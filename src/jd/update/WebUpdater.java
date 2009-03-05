@@ -47,9 +47,9 @@ public class WebUpdater implements Serializable {
 
     private static final long serialVersionUID = 1946622313175234371L;
     private static final String UPDATE_ZIP_LOCAL_PATH = "tmp/update.zip";
-    private static final String UPDATE_ZIP_URL = "http://service.jdownloader.org/update/update.zip";
-    private static String LISTPATH = "http://service.jdownloader.org/update/server.list";
-    private static String UPDATE_ZIP_HASH = "http://service.jdownloader.org/update/update.md5";
+    private static final String UPDATE_ZIP_URL = "http://update1.jdownloader.org/update.zip";
+    private static String LISTPATH = "http://update1.jdownloader.org/server.list";
+    private static String UPDATE_ZIP_HASH = "http://update1.jdownloader.org/update.md5";
     public static HashMap<String, FileUpdate> PLUGIN_LIST = null;
 
     private boolean ignorePlugins = true;
