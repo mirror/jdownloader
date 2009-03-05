@@ -52,6 +52,8 @@ public class UCMS extends PluginForDecrypt {
 
         try {
             br.getPage(parameter);
+            if(br.getRedirectLocation()!=null)
+                br.getPage(br.getRedirectLocation());
             File captchaFile = null;
             String capTxt = "";
             String host = br.getHost();
