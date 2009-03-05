@@ -348,8 +348,12 @@ public class Megauploadcom extends PluginForHost {
                     } catch (Exception e) {
 
                     }
-                    if (!c.getRequest().getHttpConnection().isOK()) CACHE = null;
-                    CACHE.clear();
+                    if (!c.getRequest().getHttpConnection().isOK()){
+                        CACHE = null;
+                    }else{
+                        CACHE.clear();
+                    }
+                  
                 }
             }
 
