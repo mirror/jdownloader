@@ -58,6 +58,7 @@ public class Megauploadcom extends PluginForHost {
 
     private String user;
 
+
     public Megauploadcom(PluginWrapper wrapper) {
         super(wrapper);
 
@@ -284,90 +285,84 @@ public class Megauploadcom extends PluginForHost {
         if (account != null) {
             login(account);
         }
-        br.getPage("http://megaupload.com/?d=" + getDownloadID(link));
-        if (br.containsHTML("trying to download is larger than")) throw new PluginException(LinkStatus.ERROR_FATAL, "File is over 1GB and needs Premium Account");
-        Form form = br.getForm(0);
-        if (form != null && form.containsHTML("logout")) form = br.getForm(1);
-        if (form != null && form.containsHTML("filepassword")) {
-            String passCode;
-            if (link.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput(null, link);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = link.getStringProperty("pass", null);
-            }
-            form.put("filepassword", passCode);
-            br.submitForm(form);
+        int captchTries = 10;
+        Form form = null;
+        while (captchTries-- >= 0) {
+            br.getPage("http://megaupload.com/?d=" + getDownloadID(link));
+            if (br.containsHTML("trying to download is larger than")) throw new PluginException(LinkStatus.ERROR_FATAL, "File is over 1GB and needs Premium Account");
             form = br.getForm(0);
             if (form != null && form.containsHTML("logout")) form = br.getForm(1);
             if (form != null && form.containsHTML("filepassword")) {
-                link.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
-            } else {
-                link.setProperty("pass", passCode);
+                String passCode;
+                if (link.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput(null, link);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = link.getStringProperty("pass", null);
+                }
+                form.put("filepassword", passCode);
+                br.submitForm(form);
+                form = br.getForm(0);
+                if (form != null && form.containsHTML("logout")) form = br.getForm(1);
+                if (form != null && form.containsHTML("filepassword")) {
+                    link.setProperty("pass", null);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
+                } else {
+                    link.setProperty("pass", passCode);
+                }
             }
-        }
-        if (form != null && form.containsHTML("captchacode")) {
-            String captcha = form.getRegex("Enter this.*?src=\"(.*?gencap.*?)\"").getMatch(0);
-            File file = this.getLocalCaptchaFile(this);
-            URLConnectionAdapter con = br.cloneBrowser().openGetConnection(captcha);
-            Browser.download(file, con);
-            String code = getCode(file);
-            boolean db = false;
-            if (code != null) {
-                db = true;
-            } else {
+            if (form != null && form.containsHTML("captchacode")) {
+                String captcha = form.getRegex("Enter this.*?src=\"(.*?gencap.*?)\"").getMatch(0);
+                File file = this.getLocalCaptchaFile(this);
+                URLConnectionAdapter con = br.cloneBrowser().openGetConnection(captcha);
+                Browser.download(file, con);
+                String code = null;
 
                 try {
                     code = Plugin.getCaptchaCode(file, this, link);
                 } catch (PluginException ee) {
 
                 }
-            }
-            if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 1) {
-                if (code == null || code.contains("-") || code.trim().length() != 4) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 1000l); }
-            }
-            if (code == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            form.put("captcha", code);
-            br.submitForm(form);
-            form = br.getForm(0);
-            if (form != null && form.containsHTML("logout")) form = br.getForm(1);
-            if (form != null && form.containsHTML("captchacode")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            if (CACHE != null && !db) {
-                CACHE.add(new String[] { JDHash.getMD5(file), code });
 
-                HashMap<String, String> map = new HashMap<String, String>();
-                if (CACHE.size() > 0) {
-                    for (String[] h : CACHE) {
-                        map.put(h[0], h[1]);
-                    }
-                    Browser c = br.cloneBrowser();
-
-                    try {
-                        c.postPage("http://service.jdownloader.org/tools/c.php", map);
-                    } catch (Exception e) {
-
-                    }
-                    if (!c.getRequest().getHttpConnection().isOK()){
-                        CACHE = null;
-                    }else{
-                        CACHE.clear();
-                    }
-                  
+                if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 1) {
+                    if (code == null || code.contains("-") || code.trim().length() != 4) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 1000l); }
                 }
-            }
+                if (code == null) continue;
+                form.put("captcha", code);
+                br.submitForm(form);
+                form = br.getForm(0);
+                if (form != null && form.containsHTML("logout")) form = br.getForm(1);
+                if (form != null && form.containsHTML("captchacode")) {
+                    continue;
+                } else {
+                    break;
+                }
 
+            }
         }
+
+        if (form != null && form.containsHTML("captchacode")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         // String Waittime =
         // br.getRegex(Pattern.compile("<script.*?java.*?>.*?count=(\\d+);",
         // Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         // if (Waittime == null) {
-        // sleep(45 * 1000l, link);
+      
         // } else {
         // sleep(Integer.parseInt(Waittime.trim()) * 1000l, link);
         // }
+        link.getLinkStatus().setStatusText("Wait for start");
+        link.requestGuiUpdate();
+        while( JDUtilities.getController().getRunningDownloadNumByHost(this)>0){
+            
+            Thread.sleep(200);
+        }
+       
+       
+     
+      
         String url = br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
         doDownload(link, url, true, 1);
+       
     }
 
     private String getCode(File file) {
@@ -438,12 +433,14 @@ public class Megauploadcom extends PluginForHost {
     public void handleFree(DownloadLink parameter) throws Exception {
         user = null;
         getFileInformation(parameter);
-        handleFree0(parameter, null);
+        handleFree1(parameter, null);
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 2;
     }
+
+ 
 
     public void reset() {
     }

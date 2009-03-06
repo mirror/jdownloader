@@ -196,7 +196,7 @@ public class Rapidshare extends PluginForHost {
      */
     @Override
     public boolean[] checkLinks(DownloadLink[] urls) {
-
+logger.finest("Check "+urls.length+" links");
         try {
             if (urls == null) { return null; }
             boolean[] ret = new boolean[urls.length];
@@ -230,6 +230,7 @@ public class Rapidshare extends PluginForHost {
         } catch (Exception e) {
             System.gc();
             e.printStackTrace();
+            System.err.println(br);
             return null;
         }
 

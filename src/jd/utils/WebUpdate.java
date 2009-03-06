@@ -51,13 +51,13 @@ public class WebUpdate implements ControlListener {
         Browser br = new Browser();
         File file;
         String localHash = JDHash.getMD5(file = JDUtilities.getResourceFile("jdupdate.jar"));
-        String remoteHash = br.getPage("http://service.jdownloader.org/update/jdupdate.jar.md5").trim();
+        String remoteHash = br.getPage("http://update1.jdownloader.org/jdupdate.jar.md5").trim();
         if (localHash == null || !remoteHash.equalsIgnoreCase(localHash)) {
 
             logger.info("Download " + file.getAbsolutePath() + "");
             ProgressController progress = new ProgressController(JDLocale.LF("wrapper.webupdate.updateUpdater", "Download updater"), 3);
             progress.increase(1);
-            URLConnectionAdapter con = br.openGetConnection("http://service.jdownloader.org/update/jdupdate.jar");
+            URLConnectionAdapter con = br.openGetConnection("http://update1.jdownloader.org/jdupdate.jar");
             if (con.isOK()) {
 
                 File tmp;

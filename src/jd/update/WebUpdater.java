@@ -373,11 +373,12 @@ public class WebUpdater implements Serializable {
         HashMap<String, FileUpdate> plugins = new HashMap<String, FileUpdate>();
         ArrayList<FileUpdate> ret = new ArrayList<FileUpdate>();
 
+      
         updateAvailableServers();
         loadUpdateList();
         source = JDIO.getLocalFile(fileMap.get("hashlist.lst"));
 
-        String pattern = "\\$(.*?)\\=\\\"(.*?)\\\"\\;";
+        String pattern = "[\r\n\\;]*([^=]+)\\=(.*?)\\;";
 
         if (source == null) {
             log("filelist nicht verfüpgbar");
@@ -389,6 +390,7 @@ public class WebUpdater implements Serializable {
         String[][] matches = new Regex(source, pattern).getMatches();
         ArrayList<Byte> sum = new ArrayList<Byte>();
         for (String[] m : matches) {
+          
             if (this.workingdir != null) {
                 entry = new FileUpdate(m[0], m[1], workingdir);
             } else {
@@ -403,7 +405,9 @@ public class WebUpdater implements Serializable {
                 boolean osFound = false;
                 boolean correctOS = false;
                 for (String element : os) {
-                    if (entry.getRawUrl().toLowerCase().indexOf(element) >= 0) {
+                    String url=entry.getRawUrl();
+                    if(url==null)url=entry.getRelURL();
+                    if (url.toLowerCase().indexOf(element) >= 0) {
                         osFound = true;
                         if (System.getProperty("os.name").toLowerCase().indexOf(element) >= 0) {
                             correctOS = true;
@@ -461,6 +465,7 @@ public class WebUpdater implements Serializable {
 
     private ArrayList<Server> updateAvailableServers() {
         try {
+            log("Update Downloadmirrors");
             br.getPage(LISTPATH);
             int total = 0;
             ArrayList<Server> servers = new ArrayList<Server>();
@@ -605,7 +610,7 @@ public class WebUpdater implements Serializable {
                 } else {
                     log(file.toString());
                     log("Failed\r\n");
-                    progressload.setForeground(Color.RED);
+                    if (progressload != null)  progressload.setForeground(Color.RED);
 
                 }
             } catch (Exception e) {
@@ -613,7 +618,7 @@ public class WebUpdater implements Serializable {
                 log(e.getLocalizedMessage());
                 log(file.toString());
                 log("Failed\r\n");
-                progressload.setForeground(Color.RED);
+                if (progressload != null)progressload.setForeground(Color.RED);
             }
 
             i++;

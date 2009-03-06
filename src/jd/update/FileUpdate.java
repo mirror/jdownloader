@@ -34,10 +34,13 @@ public class FileUpdate {
     private StringBuilder result;
     private Server currentServer;
 
+    private String relURL;
+
     public FileUpdate(String serverString, String hash) {
         this.hash = hash;
         serverString = serverString.replace("http://78.143.20.68/update/jd/", "");
         String[] dat = new Regex(serverString, "(.*)\\?(.*)").getRow(0);
+        this.relURL = serverString;
         if (dat == null) {
             this.localPath = serverString;
         } else {
@@ -46,16 +49,26 @@ public class FileUpdate {
         }
     }
 
+  
+
     public FileUpdate(String serverString, String hash, File workingdir) {
         this.hash = hash;
+
         serverString = serverString.replace("http://78.143.20.68/update/jd/", "");
         String[] dat = new Regex(serverString, "(.*)\\?(.*)").getRow(0);
+        this.relURL = serverString;
         if (dat == null) {
+
             this.localPath = new File(workingdir, serverString).getAbsolutePath();
         } else {
             localPath = new File(workingdir, dat[0]).getAbsolutePath();
             this.url = dat[1];
+
         }
+    }
+
+    public String getRelURL() {
+        return relURL;
     }
 
     public String getLocalPath() {
@@ -87,7 +100,7 @@ public class FileUpdate {
     }
 
     public File getLocalFile() {
-        
+
         return JDUtilities.getResourceFile(getLocalPath());
     }
 
@@ -101,7 +114,7 @@ public class FileUpdate {
     }
 
     public String toString() {
-        if (result == null) return super.toString();
+        if (result == null) return this.getLocalFile().getAbsolutePath();
         return result.toString();
     }
 
@@ -177,7 +190,7 @@ public class FileUpdate {
             serv = Server.selectServer(serverList);
             this.currentServer = serv;
             serverList.remove(serv);
-            return mergeUrl(serv.getPath(), this.getLocalPath());
+            return mergeUrl(serv.getPath(), this.relURL);
         }
         if (url.toLowerCase().startsWith("http://")) { return url; }
         serv = Server.selectServer(serverList);
