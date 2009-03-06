@@ -13,9 +13,9 @@ param.trainOnlyUnknown=true;
 
 #####################Scanparameter
 param.borderVarianceX=16;
-param.borderVarianceY=6;
-param.scanVarianceX=6;
-param.scanVarianceY=6;
+param.borderVarianceY=3;
+param.scanVarianceX=3;
+param.scanVarianceY=3;
 param.intersectionDimensionWeight=5;
 param.alignAngleSteps=2;
 param.minCleftSize=4;
@@ -35,7 +35,7 @@ param.LetterSearchLimitPerfectPercent=-1;
 param.quickScanReliabilityLimit=3.0;
 param.quickScanValityLimit=20.0;
 
-param.preScanFilter=100;
+param.preScanFilter=85;
 param.preScanFaktor=4;
 ##################Prepare captcha
 
