@@ -18,12 +18,11 @@ package jd.captcha.specials;
 
 import java.util.ArrayList;
 
-import jd.captcha.utils.UTILITIES;
-
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
+import jd.captcha.utils.UTILITIES;
 
 /**
  * 
@@ -31,16 +30,16 @@ import jd.captcha.pixelgrid.Letter;
  * @author JD-Team
  */
 public class gwarez {
-    
+
     public static Letter[] getLetters(Captcha captcha) {
-//        captcha.cleanBackgroundByColor(captcha.getAverage());
+        // captcha.cleanBackgroundByColor(captcha.getAverage());
         captcha.cleanWithDetailMask(captcha.owner.createCaptcha(UTILITIES.loadImage(captcha.owner.getResourceFile("mask.png"))), 1, 8);
         captcha.clean();
-//        captcha.removeSmallObjects(0.8, 0.99);
-//        captcha.reduceBlackNoise(10);
+        // captcha.removeSmallObjects(0.8, 0.99);
+        // captcha.reduceBlackNoise(10);
         ArrayList<Letter> ret = new ArrayList<Letter>();
         for (int i = 0; i < 5; i++) {
-            int averageWidth = Math.min(captcha.getWidth(), (int) (captcha.getWidth() / (5 - i) +2));
+            int averageWidth = Math.min(captcha.getWidth(), (int) (captcha.getWidth() / (5 - i) + 2));
             Letter first = new Letter(averageWidth, captcha.getHeight());
             first.setOwner(captcha.owner);
             for (int x = 0; x < averageWidth; x++) {
@@ -66,6 +65,7 @@ public class gwarez {
         return ret.toArray(new Letter[] {});
 
     }
+
     public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {
         return org;
     }

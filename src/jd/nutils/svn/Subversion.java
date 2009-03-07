@@ -122,32 +122,6 @@ public class Subversion {
         ArrayList<SVNLogEntry> list = new ArrayList<SVNLogEntry>();
         list.addAll(log);
         return list;
-        // for (Iterator<SVNLogEntry> entries = logEntries.iterator();
-        // entries.hasNext();) {
-        // SVNLogEntry logEntry = (SVNLogEntry) entries.next();
-        // System.out.println("---------------------------------------------");
-        // System.out.println("revision: " + logEntry.getRevision());
-        // System.out.println("author: " + logEntry.getAuthor());
-        // System.out.println("date: " + logEntry.getDate());
-        // System.out.println("log message: " + logEntry.getMessage());
-        //
-        // if (logEntry.getChangedPaths().size() > 0) {
-        // System.out.println();
-        // System.out.println("changed paths:");
-        // Set changedPathsSet = logEntry.getChangedPaths().keySet();
-        //
-        // for (Iterator changedPaths = changedPathsSet.iterator();
-        // changedPaths.hasNext();) {
-        // SVNLogEntryPath entryPath = (SVNLogEntryPath)
-        // logEntry.getChangedPaths().get(changedPaths.next());
-        // System.out.println(" " + entryPath.getType() + " " +
-        // entryPath.getPath() + ((entryPath.getCopyPath() != null) ? " (from "
-        // + entryPath.getCopyPath() + " revision " +
-        // entryPath.getCopyRevision() + ")" : ""));
-        // }
-        // }
-        // }
-
     }
 
     public void update(File file) throws SVNException {
@@ -158,17 +132,13 @@ public class Subversion {
 
         SVNUpdateClient updateClient = clientManager.getUpdateClient();
         updateClient.setIgnoreExternals(false);
-        // updateClient.doCheckout(url, importDir, SVNRevision.HEAD,
-        // SVNRevision.HEAD, true);
-        // updateClient.doCheckout(svnurl, file, SVNRevision.HEAD,
-        // SVNRevision.HEAD, true, true);
-        System.out.println("UPdate svn at "+file);
+        System.out.println("SVN Update at " + file);
         try {
             updateClient.doUpdate(file, SVNRevision.HEAD, SVNDepth.INFINITY, true, true);
         } catch (Exception e) {
             updateClient.doCheckout(svnurl, file, SVNRevision.HEAD, SVNRevision.HEAD, SVNDepth.INFINITY, true);
         }
-        System.out.println("update finished");
+        System.out.println("SVN Update finished");
 
     }
 }

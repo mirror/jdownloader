@@ -38,6 +38,7 @@ import jd.captcha.LetterComperator;
 import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
+
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGImageEncoder;
@@ -228,7 +229,7 @@ public class Captcha extends PixelGrid {
         cleanBackgroundByColor(avg);
 
     }
-    
+
     public void cleanWithDetailMask(Captcha mask, int dif, int tolerance) {
 
         int[][] newgrid = new int[getWidth()][getHeight()];
@@ -244,36 +245,30 @@ public class Captcha extends PixelGrid {
         }
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                int min2=1;
+                int min2 = 1;
                 test[x][y] = Math.abs(mask.getPixelValue(x, y) - getPixelValue(x, y));
                 int del = 0;
                 int del2 = 0;
                 if (UTILITIES.getColorDifference(mask.getPixelValue(x, y), getPixelValue(x, y)) < dif) {
-                    del+=tolerance;
-                    del2+=tolerance;
-                for (int i = 1; i < tolerance; i++) {
-                    if(y+i<getHeight())
-                    {
-                        if(UTILITIES.getColorDifference(mask.getPixelValue(x, y+i), getPixelValue(x, y+i)) < dif)
-                            del+=tolerance-i;
-                            del2+=tolerance-i;
+                    del += tolerance;
+                    del2 += tolerance;
+                    for (int i = 1; i < tolerance; i++) {
+                        if (y + i < getHeight()) {
+                            if (UTILITIES.getColorDifference(mask.getPixelValue(x, y + i), getPixelValue(x, y + i)) < dif) del += tolerance - i;
+                            del2 += tolerance - i;
+                        } else
+                            min2++;
                     }
-                    else
-                        min2++;
-                }
-                for (int i = 1; i < tolerance; i++) {
-                    if(x+i<getWidth())
-                    {
-                        if(UTILITIES.getColorDifference(mask.getPixelValue(x+i, y), getPixelValue(x+i, y)) < dif)
-                            del+=tolerance-i;
-                        del2+=tolerance-i;
+                    for (int i = 1; i < tolerance; i++) {
+                        if (x + i < getWidth()) {
+                            if (UTILITIES.getColorDifference(mask.getPixelValue(x + i, y), getPixelValue(x + i, y)) < dif) del += tolerance - i;
+                            del2 += tolerance - i;
+                        } else
+                            min2++;
                     }
-                    else
-                        min2++;
                 }
-                }
-                del*=min2;
-                if (del>(del2/1.5)) {
+                del *= min2;
+                if (del > (del2 / 1.5)) {
                     // if (Math.abs(mask.getPixelValue(x, y) - getPixelValue(x,
                     // y)) < dif) {
 
@@ -1013,6 +1008,7 @@ public class Captcha extends PixelGrid {
         seperatedLetters = ret;
         return ret;
     }
+
     public Letter[] getLetters0(int letterNum, int[] gaps) {
 
         if (seperatedLetters != null) { return seperatedLetters; }
@@ -1401,13 +1397,13 @@ public class Captcha extends PixelGrid {
         StringBuilder ret = new StringBuilder();
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
-                if(isElement(getPixelValue(x, y), avg))
+                if (isElement(getPixelValue(x, y), avg))
                     ret.append("*");
                 else
                     ret.append((int) Math.floor(9 * (getPixelValue(x, y) / getMaxPixelValue())));
 
             }
-            ret.append(new char[] {'\r', '\n'});
+            ret.append(new char[] { '\r', '\n' });
         }
 
         return ret.toString();
@@ -1783,13 +1779,13 @@ public class Captcha extends PixelGrid {
     }
 
     public void addAt(int xx, int yy, Captcha tmp) {
-        for( int x=0; x<tmp.getWidth();x++){
-            for(int y=0; y<tmp.getHeight();y++){
-               if(this.getWidth()>x+xx&&this.getHeight()>y+yy)this.setPixelValue(x+xx, y+yy, tmp.getPixelValue(x, y)) ;
+        for (int x = 0; x < tmp.getWidth(); x++) {
+            for (int y = 0; y < tmp.getHeight(); y++) {
+                if (this.getWidth() > x + xx && this.getHeight() > y + yy) this.setPixelValue(x + xx, y + yy, tmp.getPixelValue(x, y));
             }
-            
+
         }
-        
+
     }
 
 }

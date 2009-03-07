@@ -43,8 +43,6 @@
 		<jar jarfile="${dist}/jdupdate.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/update/*.class" />
-				<include name="jd/utils/HTMLEntities.class" />
-				<include name="jd/utils/JDUtilities.class" />
 				<include name="jd/config/*.class" />
 				<include name="jd/http/**" />
 				<include name="jd/nutils/**" />
