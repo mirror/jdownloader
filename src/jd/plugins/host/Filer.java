@@ -126,12 +126,10 @@ public class Filer extends PluginForHost {
         ai.setTrafficLeft(trafficleft);
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yy");
 
-        try {
-            Date date = dateFormat.parse(validuntil);
-            ai.setValidUntil(date.getTime());
-        } catch (ParseException e) {
-            return null;
-        }
+        String[] splitted = validuntil.split("-");
+        Date date = dateFormat.parse(splitted[2] + "." +  splitted[1] + "." + splitted[0]);
+        ai.setValidUntil(date.getTime());
+
         ai.setValid(true);
         return ai;
     }
