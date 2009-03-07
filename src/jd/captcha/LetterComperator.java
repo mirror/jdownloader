@@ -617,6 +617,7 @@ public class LetterComperator {
      * Führt den Vergleichsvorgang aus
      */
     public void run() {
+
         if(MATCH_TABLE!=null&&this.getA().getId()>-1&&MATCH_TABLE.length>this.getA().getId()){
             String matches = MATCH_TABLE[this.getA().getId()];
           
@@ -625,6 +626,7 @@ public class LetterComperator {
                 return;
             }
         }
+
         scan();
 
     }
