@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -159,6 +160,28 @@ public class Filer extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
+    	if(downloadLink.getDownloadURL().contains("filer.net/dl/")) {
+    		downloadLink.setDownloadSize(0);
+    		downloadLink.setFinalFileName("Please logout in your Webbrowser and copy the free user links or copy the folder link.");
+    		return true;
+    		
+    		/* This method removes free-traffic from the Premium Account the url is linked to - do not use it
+    		Browser br = new Browser();
+    		URLConnectionAdapter urlConnection = null;
+    		br.setFollowRedirects(true);
+    		try {
+    			urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+    			downloadLink.setFinalFileName(Plugin.getFileNameFormHeader(urlConnection));
+                downloadLink.setBrowserUrl(downloadLink.getDownloadURL());
+                downloadLink.setDownloadSize(urlConnection.getLongContentLength());
+                downloadLink.setDupecheckAllowed(true);
+                urlConnection.disconnect();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+    		return true;*/
+    	}
+    	
         String page;
         File captchaFile;
         String code;
@@ -175,7 +198,7 @@ public class Filer extends PluginForHost {
                 page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
                 if (Regex.matches(page, PATTERN_MATCHER_ERROR)) { return false; }
                 if (downloadLink.getDownloadSize() == 0) {
-                    bytes = (int) Regex.getSize(new Regex(page, "<tr class=\"even\">.*?<th>DateigrÃ¶ÃŸe</th>.*?<td>(.*?)</td>").getMatch(0));
+                    bytes = (int) Regex.getSize(new Regex(page, "<tr class=\"even\">.*?<th>Dateigröße</th>.*?<td>(.*?)</td>").getMatch(0));
                     downloadLink.setDownloadSize(bytes);
                 }
                 br.setFollowRedirects(false);

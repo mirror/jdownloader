@@ -575,7 +575,7 @@ public class JDInit {
         new HostPluginWrapper("depositfiles.com", "DepositFiles", "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("FileFactory.com", "FileFactory", "http://[\\w\\.]*?filefactory\\.com(/|//)file/[a-zA-Z0-9]+/?", PluginWrapper.LOAD_ON_INIT);
         // http://www.filer.net/dl/8657bad0e042fb4
-        new HostPluginWrapper("Filer.net", "Filer", "http://[\\w\\.]*?filer.net/(file[\\d]+|get)/.*", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("Filer.net", "Filer", "http://[\\w\\.]*?filer.net/(file[\\d]+|get|dl)/.*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Freakshare.net", "Freaksharenet", "http://[\\w\\.]*?freakshare\\.net/files/\\d+/(.*)", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Megashares.Com", "MegasharesCom", "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/.*\\?d[0-9]{2}=[0-9a-f]{7}", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Megaupload.com", "Megauploadcom", "http://[\\w\\.]*?(megaupload)\\.com/.*?(\\?|&)d=[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
