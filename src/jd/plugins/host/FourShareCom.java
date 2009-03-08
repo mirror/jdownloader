@@ -45,8 +45,8 @@ public class FourShareCom extends PluginForHost {
         br.clearCookies(getHost());
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex(Pattern.compile("<title>4shared.com.*?download(.*?)</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        String size = br.getRegex(Pattern.compile("<td style=.*?><b>Size:</b></td>.*?<td style=.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String filename = br.getRegex(Pattern.compile("<title>4shared.com.*?download(.*?)</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0).trim();
+        String size = br.getRegex(Pattern.compile("<td style=.*?><b><t:t>Size:</t:t></b></td>.*?<td style=.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (filename == null || size == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(size.replace(",", "")));
