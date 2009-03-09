@@ -220,11 +220,11 @@ public class BaseDecoder {
      * int words = cbuf.length / charsPerWord; if (words == 0) { return new
      * byte[0]; };
      * 
-     * byte[] bbuf = new byte[words * bytesPerWord]; //if (finalize) { words--; }
-     * words--; for (int i = 0; i < words; i++) { int coff = i * charsPerWord;
-     * int boff = i * bytesPerWord; _decode(cbuf, coff, bbuf, boff, false); }
+     * byte[] bbuf = new byte[words bytesPerWord]; //if (finalize) { words--; }
+     * words--; for (int i = 0; i < words; i++) { int coff = i charsPerWord; int
+     * boff = i bytesPerWord; _decode(cbuf, coff, bbuf, boff, false); }
      * 
-     * int coff = words * charsPerWord; int boff = words * bytesPerWord;
+     * int coff = words charsPerWord; int boff = words bytesPerWord;
      * _decode(cbuf, coff, bbuf, boff, true);
      * 
      * int ipad = -1; for (int i = 0; i < charsPerWord; i++) { if
@@ -233,12 +233,12 @@ public class BaseDecoder {
      * if (ipad != -1) { int min = 8 / bitsPerChar; // minimum non-pad index if
      * (ipad <= min) { throw new BadPaddingException(); }
      * 
-     * if ((ipad * bitsPerChar) / 8 == ((ipad - 1) * bitsPerChar) / 8) { throw
-     * new BadPaddingException(); }
+     * if ((ipad bitsPerChar) / 8 == ((ipad - 1) bitsPerChar) / 8) { throw new
+     * BadPaddingException(); }
      * 
-     * int vali = (ipad * bitsPerChar) / 8; int inva = bytesPerWord - vali;
-     * byte[] bbuf2 = new byte[bbuf.length - inva]; System.arraycopy(bbuf, 0,
-     * bbuf2, 0, bbuf2.length);
+     * int vali = (ipad bitsPerChar) / 8; int inva = bytesPerWord - vali; byte[]
+     * bbuf2 = new byte[bbuf.length - inva]; System.arraycopy(bbuf, 0, bbuf2, 0,
+     * bbuf2.length);
      * 
      * return bbuf2; }
      * 

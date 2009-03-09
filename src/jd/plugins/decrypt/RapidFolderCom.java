@@ -39,7 +39,7 @@ public class RapidFolderCom extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink,ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         br.setFollowRedirects(false);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String id = new Regex(cryptedLink.getCryptedUrl(), PATTERN_SUPPORTED).getMatch(0);

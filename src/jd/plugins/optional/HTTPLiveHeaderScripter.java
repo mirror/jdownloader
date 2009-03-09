@@ -559,7 +559,8 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         menEditAddDefine = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.adddefine", "Add define tag"));
         menEditAddWait = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.addwait", "Add wait tag"));
         // menEditAddVariable = new
-        // JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.addvariable",
+        // JMenuItem(JDLocale.L(
+        // "plugins.optional.httpliveheaderscripter.gui.menu.edit.addvariable",
         // "Add variable"));
 
         menEditValidate.addActionListener(this);

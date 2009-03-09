@@ -98,7 +98,7 @@ public class MeinUpload extends PluginForHost {
             for (Entry<Integer, Integer> entry : gr.entrySet()) {
                 code += entry.getValue();
             }
-            Form captcha = br.getFormbyProperty("name","F1");
+            Form captcha = br.getFormbyProperty("name", "F1");
             captcha.put("code", code);
             captcha.put("down_script", "1");
             this.sleep((Integer.parseInt(br.getRegex("(\\d+)</span> Sekunden</span>").getMatch(0)) * 1000), downloadLink);

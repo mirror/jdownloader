@@ -85,13 +85,15 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
     // unrar.useToextractlist = false;
     //
     // boolean useExtractFolder =
-    // JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLE_EXTRACTFOLDER);
+    // JDUtilities.getConfiguration().getBooleanProperty(Unrar.
+    // PROPERTY_ENABLE_EXTRACTFOLDER);
     //
     // if (paths.size() > 1) {
     // unrar.extractFolder = new File(paths.get(1));
     // } else if (useExtractFolder) {
     // unrar.extractFolder = new
-    // File(JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_EXTRACTFOLDER));
+    // File(JDUtilities.getConfiguration().getStringProperty(Unrar.
+    // PROPERTY_EXTRACTFOLDER));
     // } else {
     //
     // if (paths.size() == 1) {
@@ -105,13 +107,16 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
     // logger.info("Unrar output folder: " + unrar.extractFolder);
     //
     // unrar.overwriteFiles =
-    // JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES,
+    // JDUtilities.getConfiguration().getBooleanProperty(Unrar.
+    // PROPERTY_OVERWRITE_FILES,
     // false);
     // unrar.autoDelete =
-    // JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_AUTODELETE,
+    //JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_AUTODELETE
+    // ,
     // true);
     // unrar.unrar =
-    // JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
+    // JDUtilities.getConfiguration().getStringProperty(Unrar.
+    // PROPERTY_UNRARCOMMAND);
     // unrar.unrar();
     //
     // if (rtime >= 1) {

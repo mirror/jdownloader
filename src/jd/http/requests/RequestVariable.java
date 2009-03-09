@@ -22,8 +22,8 @@ public class RequestVariable {
     }
 
     public RequestVariable(String key, String value) {
-      this.key=key;
-      this.value=value;
+        this.key = key;
+        this.value = value;
     }
 
 }

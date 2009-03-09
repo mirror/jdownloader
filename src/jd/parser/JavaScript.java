@@ -187,14 +187,14 @@ public final class JavaScript {
     }
 
     private void runPage() throws SAXException, IOException {
-        if (cx != null && scope!=null) return;
+        if (cx != null && scope != null) return;
         if (br == null) return;
         String data = br.toString();
-        // Logger.getLogger(HTMLDocumentImpl.class.getName()).setLevel(Level.OFF);
+        //Logger.getLogger(HTMLDocumentImpl.class.getName()).setLevel(Level.OFF)
+        // ;
         if (debug)
             Logger.getLogger(JavaFunctionObject.class.getName()).setLevel(Level.WARNING);
-        else
-        {
+        else {
             Logger.getLogger(JavaFunctionObject.class.getName()).setLevel(Level.OFF);
             Logger.getLogger(Window.class.getName()).setLevel(Level.OFF);
             Logger.getLogger(JavaObjectWrapper.class.getName()).setLevel(Level.OFF);
@@ -245,9 +245,11 @@ public final class JavaScript {
         String ret = Context.toString(result);
         return ret;
     }
+
     public Document getDocment() {
         return d;
     }
+
     public String toString() {
         try {
             runPage();

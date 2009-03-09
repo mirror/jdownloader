@@ -44,8 +44,8 @@ package jd.crypt;
  * described in http://www.faqs.org/qa/rfcc-1940.html</li>
  * </ol>
  * Special thanks to Jim Kellerman at <a
- * href="http://www.powerset.com/">http://www.powerset.com/</a> for
- * contributing the new Base64 dialects. </li>
+ * href="http://www.powerset.com/">http://www.powerset.com/</a> for contributing
+ * the new Base64 dialects.</li>
  * 
  * <li>v2.1 - Cleaned up javadoc comments and unused variables and methods.
  * Added some convenience methods for reading and writing to and from files.</li>
@@ -91,12 +91,12 @@ package jd.crypt;
  */
 public class Base64 {
 
-    /* ******** P U B L I C F I E L D S ******** */
+    /*  P U B L I C F I E L D S */
 
     /**
      * A {@link Base64.InputStream} will read data from another
-     * <tt>java.io.InputStream</tt>, given in the constructor, and
-     * encode/decode to/from Base64 notation on the fly.
+     * <tt>java.io.InputStream</tt>, given in the constructor, and encode/decode
+     * to/from Base64 notation on the fly.
      * 
      * @see Base64
      * @since 1.3
@@ -117,8 +117,7 @@ public class Base64 {
          * Constructs a {@link Base64.InputStream} in DECODE mode.
          * 
          * @param in
-         *            the <tt>java.io.InputStream</tt> from which to read
-         *            data.
+         *            the <tt>java.io.InputStream</tt> from which to read data.
          * @since 1.3
          */
         public InputStream(java.io.InputStream in) {
@@ -143,8 +142,7 @@ public class Base64 {
          * 
          * 
          * @param in
-         *            the <tt>java.io.InputStream</tt> from which to read
-         *            data.
+         *            the <tt>java.io.InputStream</tt> from which to read data.
          * @param options
          *            Specified options
          * @see Base64#ENCODE
@@ -527,7 +525,8 @@ public class Base64 {
 
     /**
      * I don't get the point of this technique, but it is described here: <a
-     * href="http://www.faqs.org/qa/rfcc-1940.html">http://www.faqs.org/qa/rfcc-1940.html</a>.
+     * href="http://www.faqs.org/qa/rfcc-1940.html">http://www.faqs.org/qa/rfcc-
+     * 1940.html</a>.
      */
     private final static byte[] _ORDERED_ALPHABET = { (byte) '-', (byte) '0', (byte) '1', (byte) '2', (byte) '3', (byte) '4', (byte) '5', (byte) '6', (byte) '7', (byte) '8', (byte) '9', (byte) 'A', (byte) 'B', (byte) 'C', (byte) 'D', (byte) 'E', (byte) 'F', (byte) 'G', (byte) 'H', (byte) 'I', (byte) 'J', (byte) 'K', (byte) 'L', (byte) 'M', (byte) 'N', (byte) 'O', (byte) 'P', (byte) 'Q', (byte) 'R', (byte) 'S', (byte) 'T', (byte) 'U', (byte) 'V', (byte) 'W', (byte) 'X', (byte) 'Y', (byte) 'Z', (byte) '_', (byte) 'a', (byte) 'b', (byte) 'c', (byte) 'd', (byte) 'e', (byte) 'f', (byte) 'g', (byte) 'h', (byte) 'i', (byte) 'j', (byte) 'k', (byte) 'l', (byte) 'm', (byte) 'n', (byte) 'o', (byte) 'p', (byte) 'q', (byte) 'r', (byte) 's', (byte) 't', (byte) 'u', (byte) 'v', (byte) 'w', (byte) 'x', (byte) 'y', (byte) 'z' };
 
@@ -637,13 +636,13 @@ public class Base64 {
     /**
      * Used in the URL- and Filename-safe dialect described in Section 4 of
      * RFC3548: <a
-     * href="http://www.faqs.org/rfcs/rfc3548.html">http://www.faqs.org/rfcs/rfc3548.html</a>.
-     * Notice that the last two bytes become "hyphen" and "underscore" instead
-     * of "plus" and "slash."
+     * href="http://www.faqs.org/rfcs/rfc3548.html">http://www.faqs.org
+     * /rfcs/rfc3548.html</a>. Notice that the last two bytes become "hyphen"
+     * and "underscore" instead of "plus" and "slash."
      */
     private final static byte[] _URL_SAFE_ALPHABET = { (byte) 'A', (byte) 'B', (byte) 'C', (byte) 'D', (byte) 'E', (byte) 'F', (byte) 'G', (byte) 'H', (byte) 'I', (byte) 'J', (byte) 'K', (byte) 'L', (byte) 'M', (byte) 'N', (byte) 'O', (byte) 'P', (byte) 'Q', (byte) 'R', (byte) 'S', (byte) 'T', (byte) 'U', (byte) 'V', (byte) 'W', (byte) 'X', (byte) 'Y', (byte) 'Z', (byte) 'a', (byte) 'b', (byte) 'c', (byte) 'd', (byte) 'e', (byte) 'f', (byte) 'g', (byte) 'h', (byte) 'i', (byte) 'j', (byte) 'k', (byte) 'l', (byte) 'm', (byte) 'n', (byte) 'o', (byte) 'p', (byte) 'q', (byte) 'r', (byte) 's', (byte) 't', (byte) 'u', (byte) 'v', (byte) 'w', (byte) 'x', (byte) 'y', (byte) 'z', (byte) '0', (byte) '1', (byte) '2', (byte) '3', (byte) '4', (byte) '5', (byte) '6', (byte) '7', (byte) '8', (byte) '9', (byte) '-', (byte) '_' };
 
-    /* ******** P R I V A T E F I E L D S ******** */
+    /*  P R I V A T E F I E L D S */
 
     /**
      * Used in decoding URL- and Filename-safe dialects of Base64.
@@ -708,7 +707,7 @@ public class Base64 {
     private final static byte EQUALS_SIGN_ENC = -1; // Indicates equals sign in
     // encoding
 
-    /* ******** S T A N D A R D B A S E 6 4 A L P H A B E T ******** */
+    /*  S T A N D A R D B A S E 6 4 A L P H A B E T */
 
     /** Specify that data should be gzip-compressed. */
     public final static int GZIP = 2;
@@ -716,7 +715,7 @@ public class Base64 {
     /** Maximum line length (76) of Base64 output. */
     private final static int MAX_LINE_LENGTH = 76;
 
-    /* ******** U R L S A F E B A S E 6 4 A L P H A B E T ******** */
+    /*  U R L S A F E B A S E 6 4 A L P H A B E T */
 
     /** The new line character (\n) as a byte. */
     private final static byte NEW_LINE = (byte) '\n';
@@ -724,27 +723,28 @@ public class Base64 {
     /** No options specified. Value is zero. */
     public final static int NO_OPTIONS = 0;
 
-    /* ******** O R D E R E D B A S E 6 4 A L P H A B E T ******** */
+    /*  O R D E R E D B A S E 6 4 A L P H A B E T */
 
     /**
      * Encode using the special "ordered" dialect of Base64 described here: <a
-     * href="http://www.faqs.org/qa/rfcc-1940.html">http://www.faqs.org/qa/rfcc-1940.html</a>.
+     * href="http://www.faqs.org/qa/rfcc-1940.html">http://www.faqs.org/qa/rfcc-
+     * 1940.html</a>.
      */
     public final static int ORDERED = 32;
 
     /** Preferred encoding. */
     private final static String PREFERRED_ENCODING = "UTF-8";
 
-    /* ******** D E T E R M I N E W H I C H A L H A B E T ******** */
+    /*  D E T E R M I N E W H I C H A L H A B E T */
 
     /**
      * Encode using Base64-like encoding that is URL- and Filename-safe as
      * described in Section 4 of RFC3548: <a
-     * href="http://www.faqs.org/rfcs/rfc3548.html">http://www.faqs.org/rfcs/rfc3548.html</a>.
-     * It is important to note that data encoded this way is <em>not</em>
-     * officially valid Base64, or at the very least should not be called Base64
-     * without also specifying that is was encoded using the URL- and
-     * Filename-safe dialect.
+     * href="http://www.faqs.org/rfcs/rfc3548.html"
+     * >http://www.faqs.org/rfcs/rfc3548.html</a>. It is important to note that
+     * data encoded this way is <em>not</em> officially valid Base64, or at the
+     * very least should not be called Base64 without also specifying that is
+     * was encoded using the URL- and Filename-safe dialect.
      */
     public final static int URL_SAFE = 16;
 
@@ -900,7 +900,7 @@ public class Base64 {
         return bytes;
     } // end decode
 
-    /* ******** E N C O D I N G M E T H O D S ******** */
+    /*  E N C O D I N G M E T H O D S */
 
     /**
      * Decodes four bytes from array <var>source</var> and writes the resulting
@@ -1148,8 +1148,9 @@ public class Base64 {
      * Encodes up to the first three bytes of array <var>threeBytes</var> and
      * returns a four-byte array in Base64 notation. The actual number of
      * significant bytes in your array is given by <var>numSigBytes</var>. The
-     * array <var>threeBytes</var> needs only be as big as <var>numSigBytes</var>.
-     * Code can reuse a byte array by passing a four-byte array as <var>b4</var>.
+     * array <var>threeBytes</var> needs only be as big as
+     * <var>numSigBytes</var>. Code can reuse a byte array by passing a
+     * four-byte array as <var>b4</var>.
      * 
      * @param b4
      *            A reusable byte array to reduce array instantiation
@@ -1250,7 +1251,7 @@ public class Base64 {
         return Base64.encodeBytes(source, 0, source.length, NO_OPTIONS);
     } // end encodeBytes
 
-    /* ******** D E C O D I N G M E T H O D S ******** */
+    /*  D E C O D I N G M E T H O D S */
 
     /**
      * Encodes a byte array into Base64 notation.
@@ -1668,7 +1669,7 @@ public class Base64 {
 
     } // end getAlphabet
 
-    /* ******** I N N E R C L A S S O U T P U T S T R E A M ******** */
+    /*  I N N E R C L A S S O U T P U T S T R E A M */
 
     /** Defeats instantiation. */
     private Base64() {

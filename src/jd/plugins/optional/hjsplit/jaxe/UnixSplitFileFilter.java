@@ -32,7 +32,7 @@ public class UnixSplitFileFilter extends FileFilter {
         if (i == -1) {
             return s;
         } else {
-            return s.substring(0, i-1);
+            return s.substring(0, i - 1);
         }
     }
 

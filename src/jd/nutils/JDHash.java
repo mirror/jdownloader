@@ -46,7 +46,7 @@ public class JDHash {
             InputStream in = new FileInputStream(arg);
             for (int n = 0; (n = in.read(b)) > -1;) {
                 md.update(b, 0, n);
-              
+
             }
             in.close();
             byte[] digest = md.digest();
@@ -82,8 +82,7 @@ public class JDHash {
         String tmp;
         for (byte d : digest) {
             tmp = Integer.toHexString(d & 0xFF);
-            if(tmp.length() < 2 )
-            ret.append('0');
+            if (tmp.length() < 2) ret.append('0');
             ret.append(tmp);
         }
         return ret.toString();

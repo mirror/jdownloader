@@ -16,7 +16,7 @@ public abstract class ReconnectMethod {
 
     public static final int LIVEHEADER = 0;
     public static final int EXTERN = 1;
-    public static final int BATCH = 2;    
+    public static final int BATCH = 2;
     public static final int CLR = 3;
     /* Integer Property: 0=LiveHeader, 1=Extern, 2=Batch, 3=CLR */
 

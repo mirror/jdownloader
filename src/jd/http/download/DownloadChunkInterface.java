@@ -29,9 +29,14 @@ public abstract class DownloadChunkInterface {
         System.out.println(this + " Chunkend to " + chunkEnd);
         this.chunkEnd = chunkEnd;
     }
+
     abstract public boolean isConnected();
-    abstract  public boolean isAlive();
+
+    abstract public boolean isAlive();
+
     abstract public long getRemainingChunkBytes();
+
     abstract public long getChunkBytes();
-    abstract     public long getSpeed();
+
+    abstract public long getSpeed();
 }

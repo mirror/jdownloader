@@ -56,7 +56,7 @@ public class CryptMeCom extends PluginForDecrypt {
         // Angebotene Containerformate herausfinden
         String[][] containers = br.getRegex("<a href='(http://crypt-me.com/dl\\.php\\?file=.*?(\\..*?))' target='_blank'>").getMatches();
 
-       for (String[] container : containers) {
+        for (String[] container : containers) {
             File containerFile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + container[1]);
             Browser.download(containerFile, container[0]);
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(containerFile));

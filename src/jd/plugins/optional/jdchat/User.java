@@ -22,14 +22,15 @@ public class User implements Comparable<Object> {
     public static final int RANK_DEFAULT = -1;
     public static final int RANK_OP = 0;
     public static final int RANK_VOICE = 1;
+
     public String getColor() {
-        String col = Integer.toHexString(new Color(name.hashCode())
-                .getRGB());
+        String col = Integer.toHexString(new Color(name.hashCode()).getRGB());
         while (col.length() < 6) {
             col = "0" + col;
         }
         return col.substring(col.length() - 6);
     }
+
     public String name;
     public int rank = RANK_DEFAULT;
 

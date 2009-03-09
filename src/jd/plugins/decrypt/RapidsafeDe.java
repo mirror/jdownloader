@@ -63,7 +63,7 @@ public class RapidsafeDe extends PluginForDecrypt {
                     String[] pwDat = pw.getRow(0);
                     String post = pwDat[0] + pwDat[1];
 
-                    if (pass == null) pass = Plugin.getUserInput("Password?", param);                    
+                    if (pass == null) pass = Plugin.getUserInput("Password?", param);
 
                     br.postPage(parameter, post + pass.trim());
 

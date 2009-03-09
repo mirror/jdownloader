@@ -202,7 +202,10 @@ public abstract class PluginForDecrypt extends Plugin {
                     // +Encoding.urlEncode
                     // (cryptedLink.getCryptedUrl().replace("http://", "")));
 
-//                    JLinkButton.openURL("http://jdownloader.org/clicknload-redirect/" + Encoding.urlEncode(cryptedLink.getCryptedUrl().replace("http://", "")));
+                    // JLinkButton.openURL(
+                    // "http://jdownloader.org/clicknload-redirect/" +
+                    // Encoding.urlEncode
+                    // (cryptedLink.getCryptedUrl().replace("http://", "")));
 
                     OPEN_CLICK_N_LOAD++;
                 } catch (Exception e) {

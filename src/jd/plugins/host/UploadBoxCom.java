@@ -61,9 +61,9 @@ public class UploadBoxCom extends PluginForHost {
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.submitForm(form);
         if (br.containsHTML("The last download from your IP was done less than 30 minutes ago")) {
-        	String strWaittime = br.getRegex("(\\d{2}:\\d{2}:\\d{2}) before you can download more").getMatch(0);
-        	String strWaittimeArray[] = strWaittime.split(":");
-        	throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "", ((Integer.parseInt(strWaittimeArray[0]) * 3600) + (Integer.parseInt(strWaittimeArray[1]) * 60) + Integer.parseInt(strWaittimeArray[2])) * 1000l);
+            String strWaittime = br.getRegex("(\\d{2}:\\d{2}:\\d{2}) before you can download more").getMatch(0);
+            String strWaittimeArray[] = strWaittime.split(":");
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "", ((Integer.parseInt(strWaittimeArray[0]) * 3600) + (Integer.parseInt(strWaittimeArray[1]) * 60) + Integer.parseInt(strWaittimeArray[2])) * 1000l);
         }
         form = br.getForm(2);
         File file = this.getLocalCaptchaFile(this);

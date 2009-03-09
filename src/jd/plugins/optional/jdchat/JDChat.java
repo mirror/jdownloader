@@ -848,8 +848,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         ConfigContainer lngse = new ConfigContainer(this, JDLocale.L("plugins.optional.jdchat.locale", "Language settings"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lngse));
 
-    
-
         lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLAT, JDLocale.L("plugins.optional.jdchat.doautotranslate", "Translate Chat")));
 
         cfg.setDefaultValue(false);
@@ -1064,7 +1062,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
 
         });
-        lang.setSelectedItem(this.getPluginConfig().getStringProperty("CHANNEL_LNG","english"));
+        lang.setSelectedItem(this.getPluginConfig().getStringProperty("CHANNEL_LNG", "english"));
         // Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         textArea.setContentType("text/html");
         textArea.setEditable(false);
@@ -1105,7 +1103,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         NAMES.clear();
         for (int i = 0; i < 20; i++) {
 
-          
             SubConfiguration conf = JDUtilities.getSubConfig("JDCHAT");
             String host = conf.getStringProperty(HOST, "irc.freenode.net");
             int port = conf.getIntegerProperty(PORT, 6667);
@@ -1157,7 +1154,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         } else {
             newChannel = "#jdownloader";
         }
-        if (newChannel.equalsIgnoreCase(CHANNEL)&& this.isLoggedIn()) {
+        if (newChannel.equalsIgnoreCase(CHANNEL) && this.isLoggedIn()) {
 
             if (conn != null) addToText(null, STYLE_NOTICE, "YOu are in channel: " + newChannel);
             return;

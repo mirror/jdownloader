@@ -32,7 +32,9 @@ public class CFGConfig extends SubConfiguration implements Serializable {
     private static final long serialVersionUID = 9187069483565313810L;
 
     /**
-     * Diese Klasse stellt Die Configuration als eine Configfile zur verfügung. Diese infos werden mit Absicht! nicht in der Datenbank gespeichert!
+     * Diese Klasse stellt Die Configuration als eine Configfile zur verfügung.
+     * Diese infos werden mit Absicht! nicht in der Datenbank gespeichert!
+     * 
      * @param name
      */
     @SuppressWarnings("unchecked")

@@ -218,7 +218,7 @@ abstract public class DownloadInterface {
                 br.getHeaders().put("Range", "bytes=" + start + "-" + end);
                 URLConnectionAdapter con;
                 if (connection.getDoOutput()) {
-                    con = br.openPostConnection(connection.getURL() + "", ((PostRequest)connection.getRequest()).getPostDataString());
+                    con = br.openPostConnection(connection.getURL() + "", ((PostRequest) connection.getRequest()).getPostDataString());
                 } else {
                     con = br.openGetConnection(connection.getURL() + "");
                 }

@@ -66,7 +66,7 @@ public class YouTubeCom extends PluginForDecrypt {
             br.setCookiesExclusive(true);
             br.clearCookies("youtube.com");
             br.getPage("http://www.youtube.com/signup?next=/index");
-            Form login = br.getFormbyProperty("name","loginForm");
+            Form login = br.getFormbyProperty("name", "loginForm");
             login.put("username", account.getUser());
             login.put("password", account.getPass());
             br.submitForm(login);

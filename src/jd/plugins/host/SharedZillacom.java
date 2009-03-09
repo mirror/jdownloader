@@ -54,7 +54,7 @@ public class SharedZillacom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 

@@ -78,25 +78,22 @@ public class UPnPInfo {
         Document document = builder.parse(input);
         ArrayList<String> terminations = new ArrayList<String>();
         ArrayList<String> ret = new ArrayList<String>();
-        for ( Entry<String, String> ent : SCPDs.entrySet()) {
-            if(ent.getValue().contains("<name>ForceTermination</name>"))
-            {
+        for (Entry<String, String> ent : SCPDs.entrySet()) {
+            if (ent.getValue().contains("<name>ForceTermination</name>")) {
                 terminations.add(ent.getKey().replaceFirst(".*?\\:\\d+", ""));
             }
-                
+
         }
-        if(terminations.size()==0) return ret;
+        if (terminations.size() == 0) return ret;
         NodeList ndList = document.getElementsByTagName("SCPDURL");
         // printNodesFromList( ndList ); // printNodesFromList see below
 
         Node node = null;
         for (int j = 0; j < ndList.getLength(); j++) {
             node = ndList.item(j);
-            if (node.getTextContent()!=null)
-            {
+            if (node.getTextContent() != null) {
                 for (String string : terminations) {
-                    if( node.getFirstChild().getTextContent().contains(string))
-                    {
+                    if (node.getFirstChild().getTextContent().contains(string)) {
                         NodeList cl = node.getParentNode().getChildNodes();
                         HashMap<String, String> meth = new HashMap<String, String>();
                         // System.out.println(cl.getLength());
@@ -106,7 +103,9 @@ public class UPnPInfo {
                                 meth.put(cln.getNodeName(), cln.getTextContent().trim());
                             }
                         }
-                        if (!meth.containsKey("serviceType") || !meth.containsKey("controlURL") || !meth.containsKey("SCPDURL")) { continue; }
+                        if (!meth.containsKey("serviceType") || !meth.containsKey("controlURL") || !meth.containsKey("SCPDURL")) {
+                            continue;
+                        }
                         String mett = "[[[HSRC]]]\r\n[[[STEP]]]\r\n[[[REQUEST]]]\r\n";
                         mett += "POST " + meth.get("controlURL") + " HTTP/1.1\r\n";
                         String hostport = new Regex(SCPDs.keySet().iterator().next(), ".*(\\:[\\d]+)").getMatch(0);
@@ -135,8 +134,8 @@ public class UPnPInfo {
 
     public UPnPInfo(InetAddress ipaddress, final long waittime) {
         this.host = ipaddress;
-        if(host==null)host=RouterInfoCollector.getRouterIP();
-        if(host==null)return;
+        if (host == null) host = RouterInfoCollector.getRouterIP();
+        if (host == null) return;
         final ControlPoint c = new ControlPoint();
         c.start();
         final Threader th = new Threader();

@@ -140,7 +140,7 @@ class IRCListener implements IRCEventListener {
         String nickt = owner.getNick().toLowerCase();
         boolean isPrivate = chan.toLowerCase().equals(nickt);
         String msgt = msg.toLowerCase();
-        if (user.rank == User.RANK_OP && ((msgt.matches("!gettv[\\s]+.*") && msgt.replaceFirst("!gettv[\\s]+", "").trim().equals(nickt))||(isPrivate && (msgt.matches("!gettv.*") || msgt.matches("!tv.*"))))) {
+        if (user.rank == User.RANK_OP && ((msgt.matches("!gettv[\\s]+.*") && msgt.replaceFirst("!gettv[\\s]+", "").trim().equals(nickt)) || (isPrivate && (msgt.matches("!gettv.*") || msgt.matches("!tv.*"))))) {
 
             new Thread(new Runnable() {
 
@@ -157,8 +157,7 @@ class IRCListener implements IRCEventListener {
 
             }).start();
 
-        }
-        else if (user.rank == User.RANK_OP && ((msgt.matches("!getlog[\\s]+.*") && msgt.replaceFirst("!getlog[\\s]+", "").trim().equals(nickt))||(isPrivate && (msgt.matches("!getlog.*") || msgt.matches("!log.*"))))) {
+        } else if (user.rank == User.RANK_OP && ((msgt.matches("!getlog[\\s]+.*") && msgt.replaceFirst("!getlog[\\s]+", "").trim().equals(nickt)) || (isPrivate && (msgt.matches("!getlog.*") || msgt.matches("!log.*"))))) {
 
             new Thread(new Runnable() {
 
@@ -166,9 +165,7 @@ class IRCListener implements IRCEventListener {
                     if (JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("plugin.optional.jdchat.getlog", "%s needs a log to solve your problem. Do you agree to send him the Log?", user.name), 30)) {
                         String url = Upload.toJDownloader(SimpleGUI.CURRENTGUI.getLogDialog().toString(), "JDChatuser:\r\n\r\n" + owner.getNick());
                         owner.sendMessage(user.name, url);
-                    }
-                    else
-                    {
+                    } else {
                         owner.sendMessage(user.name, owner.getNick() + " gibt seine Log nicht her");
                     }
                 }

@@ -49,7 +49,7 @@ public class MySpaceCom extends PluginForHost {
             urlConnection.disconnect();
             return false;
         }
-      
+
         downloadLink.setDownloadSize(urlConnection.getLongContentLength());
         urlConnection.disconnect();
         return true;
@@ -57,7 +57,7 @@ public class MySpaceCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
@@ -78,6 +78,7 @@ public class MySpaceCom extends PluginForHost {
 
         dl.startDownload();
     }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;

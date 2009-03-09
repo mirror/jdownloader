@@ -96,7 +96,6 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
         chunkProgress = new ChunkProgress();
     }
 
-
     public void connect() throws IOException, BrowserException {
         if (connectionRequested) throw new IllegalStateException("Already Connected");
         this.connectionRequested = true;
@@ -132,7 +131,7 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
             }
             URLConnectionAdapter con;
             if (connection.getDoOutput()) {
-                con = br.openPostConnection(connection.getURL() + "", ((PostRequest)connection.getRequest()).getPostDataString());
+                con = br.openPostConnection(connection.getURL() + "", ((PostRequest) connection.getRequest()).getPostDataString());
             } else {
                 con = br.openGetConnection(connection.getURL() + "");
             }
@@ -142,11 +141,11 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
             if (con.getHeaderField("Location") != null) { throw new BrowserException(JDLocale.L("exceptions.browserexception.redirecterror", "Unexpected chunkcopy error: Redirect"), BrowserException.TYPE_REDIRECT);
 
             }
-          
+
             this.connection = con;
 
             long[] range = this.connection.getRange();
-            System.out.println("CL "+con.getLongContentLength()+"- "+(range[1]-range[0]));
+            System.out.println("CL " + con.getLongContentLength() + "- " + (range[1] - range[0]));
             if (range[0] != this.getChunkStart()) { throw new BrowserException(JDLocale.L("exceptions.browserexception.rangeerror", "Chunkload error"), BrowserException.TYPE_RANGE);
 
             }
@@ -171,7 +170,7 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
     }
 
     public void setRange(long start, long end) {
-     setChunkStart(start);
+        setChunkStart(start);
         setChunkEnd(end);
 
     }
@@ -285,18 +284,17 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
                 System.out.println("write " + this + " " + buffer.position());
                 // owner.setChunkToWrite(this);
                 HDWriter.getWriter().writeAndWait(this.getBuffer(), this.owner.getOutputChannel(), this.getWritePosition());
-               
+
                 // owner.waitForWriter(this);
-           
 
                 // owner.writeBytes(this, buffer);
-                System.out.println(this+"Buffer written.. continue " + writePosition+"+"+buffer.limit()+" = "+(writePosition+buffer.limit()));
+                System.out.println(this + "Buffer written.. continue " + writePosition + "+" + buffer.limit() + " = " + (writePosition + buffer.limit()));
                 this.writePosition += buffer.limit();
                 buffer.clear();
-                System.out.println(this+"Buffer written.. continue " + this.getWritePosition());
-              
+                System.out.println(this + "Buffer written.. continue " + this.getWritePosition());
+
                 owner.onBufferWritten(this);
-         
+
                 if (miniRead == -1) break main;
                 if (this.getChunkEnd() > 0 && this.getWritePosition() > this.getChunkEnd()) {
                     System.out.println("Overhead interrupt " + (this.getChunkEnd() - this.getWritePosition() + 1));
@@ -319,11 +317,10 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
                 System.out.println("F1 " + this);
                 HDWriter.getWriter().writeAndWait(this.getBuffer(), this.owner.getOutputChannel(), this.getWritePosition());
                 this.writePosition += buffer.limit();
-                System.out.println(this+" 2Buffer written.. continue " + writePosition);
+                System.out.println(this + " 2Buffer written.. continue " + writePosition);
                 buffer.clear();
                 owner.onBufferWritten(this);
-             
-               
+
             }
 
             this.disconnect();
@@ -361,7 +358,7 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
 
     protected ChunkProgress getChunkProgress() {
         chunkProgress.setStart(this.getChunkStart());
-        chunkProgress.setEnd(this.getWritePosition()-1);
+        chunkProgress.setEnd(this.getWritePosition() - 1);
         return chunkProgress;
     }
 

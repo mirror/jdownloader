@@ -60,7 +60,7 @@ public class FileSendNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        //br.setDebug(true);
+        // br.setDebug(true);
         String linkaction = br.getRegex("innerHTML=.<form\\smethod=\"POST\"\\saction=\"(.*?)\"\\sstyle").getMatch(0);
         String linksid = br.getRegex("name=\"sid\"\\svalue=\"(.*?)\">").getMatch(0);
         String linkcountry = br.getRegex("name=\"country\"\\svalue=\"(.*?)\">").getMatch(0);
@@ -68,7 +68,7 @@ public class FileSendNet extends PluginForHost {
         br.setFollowRedirects(false);
         // this.sleep(24000, downloadLink); // uncomment when they find a better
         // way to force wait time
-        dl = br.openDownload(downloadLink, linkaction, "sid="+linksid+"&country="+linkcountry+"&download=");
+        dl = br.openDownload(downloadLink, linkaction, "sid=" + linksid + "&country=" + linkcountry + "&download=");
         dl.startDownload();
 
     }

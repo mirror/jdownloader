@@ -86,12 +86,13 @@ public class Threader {
     public boolean isHasDied() {
         return hasDied;
     }
-    public synchronized void interrupt()
-    {
+
+    public synchronized void interrupt() {
         for (Worker w : workerlist) {
             if (w.isRunnableAlive()) w.interrupt();
         }
     }
+
     private synchronized void onWorkerFinished(Worker w) {
         returnedWorker++;
         for (int i = 0; i < broadcaster.size(); i++) {

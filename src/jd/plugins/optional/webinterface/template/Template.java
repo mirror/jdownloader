@@ -290,13 +290,13 @@ public class Template {
      * @param loop_context_vars
      *            [Optional] when set to true four loop context variables are
      *            made available inside a loop:
-     *            <code>__FIRST__, __LAST__, __INNER__, __ODD__, __COUNTER__</code>.
-     *            They can be used with <code>&lt;TMPL_IF&gt;</code>,
+     *            <code>__FIRST__, __LAST__, __INNER__, __ODD__, __COUNTER__</code>
+     *            . They can be used with <code>&lt;TMPL_IF&gt;</code>,
      *            <code>&lt;TMPL_UNLESS&gt;</code> and
      *            <code>&lt;TMPL_ELSE&gt;</code> to control how a loop is
      *            output. Example:
      * 
-     * <pre>
+     *            <pre>
      *      &lt;TMPL_LOOP NAME=&quot;FOO&quot;&gt;
      *         &lt;TMPL_IF NAME=&quot;__FIRST__&quot;&gt;
      *           This only outputs on the first pass.
@@ -317,25 +317,26 @@ public class Template {
      *      &lt;/TMPL_LOOP&gt;
      * </pre>
      * 
-     * <p>
-     * NOTE: A loop with only a single pass will get both <code>__FIRST__</code>
-     * and <code>__LAST__</code> set to true, but not <code>__INNER__</code>.
-     * <p>
-     * Default: false
+     *            <p>
+     *            NOTE: A loop with only a single pass will get both
+     *            <code>__FIRST__</code> and <code>__LAST__</code> set to true,
+     *            but not <code>__INNER__</code>.
+     *            <p>
+     *            Default: false
      * @param strict
      *            [Optional] if set to false the module will allow things that
      *            look like they might be TMPL_* tags to get by without throwing
      *            an exception. Example:
      * 
-     * <pre>
+     *            <pre>
      *          &lt;TMPL_HUH NAME=ZUH&gt;
      * </pre>
      * 
-     * <p>
-     * Would normally cause an error, but if you create the Template with strict ==
-     * 0, HTML.Template will ignore it.
-     * <p>
-     * Default: true
+     *            <p>
+     *            Would normally cause an error, but if you create the Template
+     *            with strict == 0, HTML.Template will ignore it.
+     *            <p>
+     *            Default: true
      * @param die_on_bad_params
      *            [Optional] if set to true the module will complain if you try
      *            to set tmpl.setParam("param_name", "value") and param_name
@@ -350,18 +351,19 @@ public class Template {
      *            throughout the template. It also affects TMPL_IF and
      *            TMPL_UNLESS.
      * 
-     * <pre>
+     *            <pre>
      *      &lt;p&gt;This is a normal variable: &lt;TMPL_VAR NORMAL&gt;.&lt;/p&gt;
      *      &lt;TMPL_LOOP NAME=&quot;FROOT_LOOP&gt;
      *         Here it is inside the loop: &lt;TMPL_VAR NORMAL&gt;
      *      &lt;/TMPL_LOOP&gt;
      * </pre>
      * 
-     * <p>
-     * Normally this wouldn't work as expected, since &lt;TMPL_VAR NORMAL&gt;'s
-     * value outside the loop isn't available inside the loop.
-     * <p>
-     * Default: false (may change in later versions)
+     *            <p>
+     *            Normally this wouldn't work as expected, since &lt;TMPL_VAR
+     *            NORMAL&gt;'s value outside the loop isn't available inside the
+     *            loop.
+     *            <p>
+     *            Default: false (may change in later versions)
      * @param max_includes
      *            [Optional] specifies the maximum depth that includes can
      *            reach. Including files to a depth greater than this value

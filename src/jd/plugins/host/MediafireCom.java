@@ -76,7 +76,7 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        String url=null;
+        String url = null;
         for (int i = 0; i < 3; i++) {
             getFileInformation(downloadLink);
 

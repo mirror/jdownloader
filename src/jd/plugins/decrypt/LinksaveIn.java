@@ -39,8 +39,7 @@ public class LinksaveIn extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-       //wegen aktuell hitziger lage um linksave noch nicht veröffentlicht
-//        if(true)throw new DecrypterException("Out of date. Try Click'n'Load");
+
         br.getPage(param.getCryptedUrl());
         br.forceDebug(true);
         Form form = br.getFormbyProperty("name", "form");

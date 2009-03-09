@@ -48,7 +48,7 @@ public class RbaDe extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 

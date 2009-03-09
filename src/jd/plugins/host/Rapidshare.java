@@ -108,9 +108,9 @@ public class Rapidshare extends PluginForHost {
 
     public void correctURL(DownloadLink downloadLink) throws IOException {
         // cache for the correct link status.
-//        if (downloadLink.getBooleanProperty("linkcorrected", false)) return;
+        // if (downloadLink.getBooleanProperty("linkcorrected", false)) return;
         downloadLink.setUrlDownload(getCorrectedURL(downloadLink.getDownloadURL()));
-//        downloadLink.setProperty("linkcorrected", true);
+        // downloadLink.setProperty("linkcorrected", true);
     }
     public boolean premiumSpecialCharsAllowed() {
         return false;
@@ -129,28 +129,30 @@ public class Rapidshare extends PluginForHost {
         String fileid = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/([\\d]{3,9})/?.*").getMatch(0);
         String filename = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?(.*)").getMatch(0);
         return "http://rapidshare.com/files/" + fileid + "/" + filename;
-//        Regex regex = new Regex(filename, "(.*\\..*)\\.htm?");
-//        String ret = "http://rapidshare.com/files/" + fileid + "/" + filename;
-//        if (regex.matches()) {
-//            Browser c = br.cloneBrowser();
-//            int l = 0;
-//            try {
-//                l = c.postPage("http://rapidshare.com/cgi-bin/checkfiles.cgi", "urls=" + ret + "&toolmode=1").split(",").length;
-//
-//            } catch (Exception e) {
-//
-//            }
-//            if (l < 6) {
-//
-//                filename = regex.getMatch(0);
-//                return "http://rapidshare.com/files/" + fileid + "/" + filename;
-//            } else {
-//                return ret;
-//            }
-//
-//        } else {
-//            return ret;
-//        }
+        // Regex regex = new Regex(filename, "(.*\\..*)\\.htm?");
+        // String ret = "http://rapidshare.com/files/" + fileid + "/" +
+        // filename;
+        // if (regex.matches()) {
+        // Browser c = br.cloneBrowser();
+        // int l = 0;
+        // try {
+        // l = c.postPage("http://rapidshare.com/cgi-bin/checkfiles.cgi",
+        // "urls=" + ret + "&toolmode=1").split(",").length;
+        //
+        // } catch (Exception e) {
+        //
+        // }
+        // if (l < 6) {
+        //
+        // filename = regex.getMatch(0);
+        // return "http://rapidshare.com/files/" + fileid + "/" + filename;
+        // } else {
+        // return ret;
+        // }
+        //
+        // } else {
+        // return ret;
+        // }
 
     }
 
@@ -890,7 +892,7 @@ logger.finest("Check "+urls.length+" links");
             br.setCookiesExclusive(true);
             br.clearCookies(this.getHost());
             String cookie = account.getStringProperty("premcookie", null);
-            if (usesavedcookie && cookie != null ) {
+            if (usesavedcookie && cookie != null) {
                 br.setCookie("http://rapidshare.com", "user", cookie);
                 logger.finer("Cookie Login");
                 return br;

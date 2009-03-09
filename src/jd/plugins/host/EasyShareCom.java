@@ -121,7 +121,7 @@ public class EasyShareCom extends PluginForHost {
         br.getPage("http://www.easy-share.com/c/" + id);
 
         Form form = br.getForm(3);
-        String captchaUrl = "http://"+br.getHost()+"/"+br.getRegex("<p><img src=\"(.*?)\"").getMatch(0);
+        String captchaUrl = "http://" + br.getHost() + "/" + br.getRegex("<p><img src=\"(.*?)\"").getMatch(0);
         File captchaFile = this.getLocalCaptchaFile(this);
         try {
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
@@ -129,7 +129,7 @@ public class EasyShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
-        
+
         form.put("captcha", captchaCode);
         /* Datei herunterladen */
         br.setFollowRedirects(true);

@@ -8,7 +8,9 @@ import jd.http.Browser;
 public class RSCollectorClear {
 
     /**
-     * ACHTUNG!!! Dieses script löscht alle files auf einem collectors account die länger als 7 tage nicht geladen wurden!
+     * ACHTUNG!!! Dieses script löscht alle files auf einem collectors account
+     * die länger als 7 tage nicht geladen wurden!
+     * 
      * @param args
      * @throws IOException
      */
@@ -24,7 +26,7 @@ public class RSCollectorClear {
 
             String fileID = match[0];
             String fileName = match[1];
-//            String killCode = match[2];
+            // String killCode = match[2];
             int downloads = Integer.parseInt(match[3]);
             long lastdlTime = Integer.parseInt(match[4]) * 1000l;
             if ((System.currentTimeMillis() - lastdlTime) > 1000 * 60 * 60 * 24 * 7) {
@@ -34,8 +36,6 @@ public class RSCollectorClear {
 
         }
         br.getPage("http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=deletefiles_v1&type=col&login=" + id + "&password=" + pass + "&files=" + del.substring(1));
-
- 
 
     }
 

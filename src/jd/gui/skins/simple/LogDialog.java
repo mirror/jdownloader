@@ -74,7 +74,7 @@ public class LogDialog extends JFrame implements ActionListener {
             // Another example where some non-EDT Thread accesses calls a Swing
             // method. This is forbidden and might bring the whole app down.
             // more info:
-            // http://java.sun.com/products/jfc/tsc/articles/threads/threads1.html
+            //http://java.sun.com/products/jfc/tsc/articles/threads/threads1.html
             // and: http://en.wikipedia.org/wiki/Event_dispatching_thread
             if (logField != null) {
                 EventQueue.invokeLater(new Runnable() {

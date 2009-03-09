@@ -157,7 +157,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 commandvec.add("/action/set/premiumenabled/(true|false)");
                 infovector.add("Set Use Premium enabled or not");
-                
+
                 response.addContent("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\"http://www.w3.org/TR/html4/strict.dtd\"><html><head><title>JDRemoteControl Help</title><style type=\"text/css\">a {    font-size: 14px;    text-decoration: none;    background: none;    color: #599ad6;}a:hover {    text-decoration: underline;    color:#333333;}body {    color: #333333;    background:#f0f0f0;    font-family: Verdana, Arial, Helvetica, sans-serif;    font-size: 14px;    vertical-align: top;  }</style></head><body><p><br /><b>JDRemoteControl " + getVersion() + "<br /><br />Usage:</b><br />&nbsp;<br />1)Replace %X% with your value<br />Sample: /action/save/container/C:\\backup.dlc <br />2)Replace (true|false) with true or false<br /><table border=\"0\" cellspacing=\"5\">");
                 for (int commandcount = 0; commandcount < commandvec.size(); commandcount++) {
                     response.addContent("<tr><td valign=\"top\"><a href=\"http://127.0.0.1:" + getPluginConfig().getIntegerProperty("PORT", 10025) + commandvec.get(commandcount) + "\">" + commandvec.get(commandcount) + "</a></td><td valign=\"top\">" + infovector.get(commandcount) + "</td></tr>");
@@ -537,18 +537,17 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             // Add Link(s)
             else if (request.getRequestUrl().matches("(?is).*/action/add/links/grabber[01]{1}/start[01]{1}/[\\s\\S]+")) {
                 String link = new Regex(request.getRequestUrl(), "[\\s\\S]*?/action/add/links/grabber[01]{1}/start[01]{1}/(.*)").getMatch(0);
-                if(request.getParameters().size() > 0) {
-                	link += "?";
-                	Iterator<String> it = request.getParameters().keySet().iterator();
-            		while(it.hasNext()) {
-            			String help = it.next();
-            			link += help;
-            			if(!request.getParameter(help).equals("")) {
-            				link += "=" + request.getParameter(help);
-            			}
-            			if(it.hasNext())
-            				link += "&";
-            		}
+                if (request.getParameters().size() > 0) {
+                    link += "?";
+                    Iterator<String> it = request.getParameters().keySet().iterator();
+                    while (it.hasNext()) {
+                        String help = it.next();
+                        link += help;
+                        if (!request.getParameter(help).equals("")) {
+                            link += "=" + request.getParameter(help);
+                        }
+                        if (it.hasNext()) link += "&";
+                    }
                 }
                 // response.addContent(link);
                 Integer showgrab = Integer.parseInt(new Regex(request.getRequestUrl(), "[\\s\\S]*?/action/add/links/grabber([01]{1})/start[01]{1}/[\\s\\S]+").getMatch(0));
@@ -563,7 +562,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     startdl = true;
                 }
                 // response.addContent(startdl.toString());
-                //link = Encoding.htmlDecode(link);
+                // link = Encoding.htmlDecode(link);
                 // wegen leerzeichen etc, die ja in urls verändert werden...
 
                 DistributeData distributeData = new DistributeData(link, hidegrabber, startdl);

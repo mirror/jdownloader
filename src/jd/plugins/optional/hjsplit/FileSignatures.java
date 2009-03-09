@@ -51,8 +51,7 @@ public class FileSignatures {
         for (int i = 0; i < 10; i++) {
             int h = reader.read();
             String s = Integer.toHexString(h);
-            if(s.length() < 2)
-                sig.append('0');
+            if (s.length() < 2) sig.append('0');
             sig.append(s);
         }
         reader.close();

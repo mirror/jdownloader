@@ -65,7 +65,7 @@ public class RemixShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        Form down = br.getFormbyProperty("name","downform");
+        Form down = br.getFormbyProperty("name", "downform");
         br.setFollowRedirects(false);
         // this.sleep(12000, downloadLink); // uncomment when they find a better
         // way to force wait time

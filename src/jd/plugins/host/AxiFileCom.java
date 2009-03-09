@@ -58,8 +58,7 @@ public class AxiFileCom extends PluginForHost {
         String filename = br.getRegex("You have request \"(.*?)\"").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        if(filesize!=null)
-        downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
         return true;
     }
 
@@ -78,7 +77,7 @@ public class AxiFileCom extends PluginForHost {
         br.setCookie("http://" + br.getHost(), "flv", "y");
         URLConnectionAdapter con = br.openGetConnection("http://www.axifile.com/flash/baner.swf");
         BufferedInputStream is = new BufferedInputStream(con.getInputStream());
-        
+
         int i;
         char[] lastone = new char[11];
         ArrayList<Character> pool = new ArrayList<Character>();

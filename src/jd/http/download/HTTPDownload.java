@@ -511,13 +511,13 @@ public class HTTPDownload extends DownloadInterface {
             this.fileSize = orgRequest.getContentLength();
             this.addStatus(FLAG_FILESIZE_CORRECT);
         }
-        System.out.println("Chunksize: "+(fileSize / desiredChunkNum));
-        chunk.setRange(0l, fileSize / desiredChunkNum+1);
+        System.out.println("Chunksize: " + (fileSize / desiredChunkNum));
+        chunk.setRange(0l, fileSize / desiredChunkNum + 1);
         chunks.add(chunk);
 
         for (int i = 1; i < desiredChunkNum; i++) {
             if (i < desiredChunkNum - 1) {
-                chunk = new DownloadChunk(this, chunk.getChunkEnd() , fileSize * (i + 1) / desiredChunkNum+1);
+                chunk = new DownloadChunk(this, chunk.getChunkEnd(), fileSize * (i + 1) / desiredChunkNum + 1);
             } else {
                 chunk = new DownloadChunk(this, chunk.getChunkEnd(), -1);
 
@@ -579,16 +579,14 @@ public class HTTPDownload extends DownloadInterface {
     private synchronized void updateDownloadProgress() {
 
         downloadProgress.reset(chunks.size());
-        downloadProgress.totalLoaded=0;
+        downloadProgress.totalLoaded = 0;
         for (int i = 0; i < chunks.size(); i++) {
             DownloadChunk chunk = (DownloadChunk) chunks.get(i);
             ChunkProgress cp = chunk.getChunkProgress();
             downloadProgress.add(cp);
-            downloadProgress.totalLoaded+=cp.getEnd()-cp.getStart()-1;
+            downloadProgress.totalLoaded += cp.getEnd() - cp.getStart() - 1;
         }
-        
 
-     
     }
 
     public DownloadProgress getDownloadProgress() {

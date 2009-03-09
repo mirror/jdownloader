@@ -40,8 +40,7 @@ public class RInfo implements Serializable {
     public void setRouterMAC(String routerMAC) {
         if (RouterMAC == null) {
             RouterMAC = routerMAC.replaceAll(" ", "0");
-            if(RouterMAC.length()>8)
-                RouterMAC=RouterMAC.substring(0, 8);
+            if (RouterMAC.length() > 8) RouterMAC = RouterMAC.substring(0, 8);
         }
     }
 
@@ -163,6 +162,7 @@ public class RInfo implements Serializable {
     }
 
     private int id, integrety;
+
     public int getIntegrety() {
         return integrety;
     }
@@ -170,6 +170,7 @@ public class RInfo implements Serializable {
     public void setIntegrety(String integrety) {
         this.integrety = Integer.parseInt(integrety);
     }
+
     public void setIntegrety(int integrety) {
         this.integrety = integrety;
     }
@@ -178,7 +179,6 @@ public class RInfo implements Serializable {
     private boolean haveUpnp = false;
     public transient boolean setPlaceholder = false;
     private String RouterName = null;
-    
 
     public String getRouterName() {
         return RouterName;
@@ -200,38 +200,30 @@ public class RInfo implements Serializable {
         ret += EditDistance.getLevenshteinDistance(RouterPage, rInfo.RouterPage);
         return ret;
     }
-/*
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof RInfo) {
-            RInfo ob = (RInfo) obj;
-            if (RouterIP.equals(ob.RouterIP) && RouterHost.equals(ob.RouterHost) && (ob.RouterMAC == null || RouterMAC == null || RouterMAC.equals(ob.RouterMAC)) && ReconnectMethode.equals(ReconnectMethode) && ReconnectMethodeClr.equals(ReconnectMethodeClr)) {
-                if (EditDistance.getLevenshteinDifference(PageHeader, ob.PageHeader) < 5 && EditDistance.getLevenshteinDifference(RouterErrorPage, ob.RouterErrorPage) < 10 && EditDistance.getLevenshteinDifference(RouterPage, ob.RouterPage) < 10 && EditDistance.getLevenshteinDifference(RouterPageLoggedIn, ob.RouterPageLoggedIn) < 10) {
-                    if (RouterMAC == null) {
-                        RouterMAC = ob.RouterMAC;
-                    } else if (ob.RouterMAC == null) {
-                        ob.RouterMAC = RouterMAC;
-                    }
-                    if (RouterName == null) {
-                        if (ob.RouterName != null) RouterName = ob.RouterName;
-                    } else if (ob.RouterName == null) {
-                        ob.RouterName = RouterName;
-                    }
-                    if (haveUpnp && !ob.haveUpnp) {
-                        ob.haveUpnp = true;
-                        ob.haveUpnpReconnect = haveUpnpReconnect;
-                    } else if (ob.haveUpnp && !haveUpnp) {
-                        haveUpnp = true;
-                        haveUpnpReconnect = ob.haveUpnpReconnect;
-                    }
-                    return true;
-                }
 
-            }
-        }
-        return false;
-    }
-*/
+    /*
+     * @Override public boolean equals(Object obj) { if (obj instanceof RInfo) {
+     * RInfo ob = (RInfo) obj; if (RouterIP.equals(ob.RouterIP) &&
+     * RouterHost.equals(ob.RouterHost) && (ob.RouterMAC == null || RouterMAC ==
+     * null || RouterMAC.equals(ob.RouterMAC)) &&
+     * ReconnectMethode.equals(ReconnectMethode) &&
+     * ReconnectMethodeClr.equals(ReconnectMethodeClr)) { if
+     * (EditDistance.getLevenshteinDifference(PageHeader, ob.PageHeader) < 5 &&
+     * EditDistance.getLevenshteinDifference(RouterErrorPage,
+     * ob.RouterErrorPage) < 10 &&
+     * EditDistance.getLevenshteinDifference(RouterPage, ob.RouterPage) < 10 &&
+     * EditDistance.getLevenshteinDifference(RouterPageLoggedIn,
+     * ob.RouterPageLoggedIn) < 10) { if (RouterMAC == null) { RouterMAC =
+     * ob.RouterMAC; } else if (ob.RouterMAC == null) { ob.RouterMAC =
+     * RouterMAC; } if (RouterName == null) { if (ob.RouterName != null)
+     * RouterName = ob.RouterName; } else if (ob.RouterName == null) {
+     * ob.RouterName = RouterName; } if (haveUpnp && !ob.haveUpnp) { ob.haveUpnp
+     * = true; ob.haveUpnpReconnect = haveUpnpReconnect; } else if (ob.haveUpnp
+     * && !haveUpnp) { haveUpnp = true; haveUpnpReconnect =
+     * ob.haveUpnpReconnect; } return true; }
+     * 
+     * } } return false; }
+     */
     public HashMap<String, String> getHashMap() {
         Class<? extends RInfo> infoc = getClass();
         HashMap<String, String> ret = new HashMap<String, String>();
@@ -293,10 +285,12 @@ public class RInfo implements Serializable {
         return ret;
 
     }
+
     public void setRouterNames(String string) {
         // TODO Auto-generated method stub
 
     }
+
     public void sendToServer() {
         try {
             try {
@@ -327,8 +321,7 @@ public class RInfo implements Serializable {
                 // TODO: handle exception
             }
 
-            if(ReconnectMethode!=null)
-            System.out.println(SQLRouterData.br.postPage("http://localhost/router/setIntegrety2.php", getHashMap()));
+            if (ReconnectMethode != null) System.out.println(SQLRouterData.br.postPage("http://localhost/router/setIntegrety2.php", getHashMap()));
 
         } catch (Exception e) {
             e.printStackTrace();

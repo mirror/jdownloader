@@ -36,9 +36,9 @@ public class ProtectLinksCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        String redirectid = new Regex(parameter,".*?protectlinks\\.com/([^/]*)").getMatch(0);
+        String redirectid = new Regex(parameter, ".*?protectlinks\\.com/([^/]*)").getMatch(0);
         br.setFollowRedirects(true);
-        br.getPage("http://www.protectlinks.com/redirect.php?id="+redirectid);
+        br.getPage("http://www.protectlinks.com/redirect.php?id=" + redirectid);
         String link = br.getRegex("<iframe name=\"pagetext\"[^>]* src=\"\\s*(.*?)\"").getMatch(0);
         if (link == null) return null;
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));

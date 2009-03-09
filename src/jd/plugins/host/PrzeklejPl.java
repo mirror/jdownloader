@@ -78,7 +78,7 @@ public class PrzeklejPl extends PluginForHost {
             } else {
                 passCode = downloadLink.getStringProperty("pass", null);
             }
-            Form form = br.getFormbyProperty("name","haselko");
+            Form form = br.getFormbyProperty("name", "haselko");
             if (form == null) throw new PluginException(LinkStatus.ERROR_FATAL);
             form.put("haslo[haslo]", passCode);
             br.setFollowRedirects(true);

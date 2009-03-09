@@ -45,12 +45,12 @@ public class GigaSizeCom extends PluginForHost {
         String cookie = br.getCookie("http://www.gigasize.com", "Cookieuser[pass]");
         if (cookie == null) {
             account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
         cookie = br.getCookie("http://www.gigasize.com", "Cookieuser[user]");
         if (cookie == null) {
             account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
@@ -138,7 +138,7 @@ public class GigaSizeCom extends PluginForHost {
         String captchaCode = getCaptchaCode("http://www.gigasize.com/randomImage.php", downloadLink);
         captchaForm.put("txtNumber", captchaCode);
         br.submitForm(captchaForm);
-        Form download = br.getFormbyProperty("id","formDownload");
+        Form download = br.getFormbyProperty("id", "formDownload");
         dl = br.openDownload(downloadLink, download, true, 1);
         if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         dl.startDownload();

@@ -15,12 +15,15 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.optional.jdunrar;
+
 /**
- * Über das UnrarListenerinterfacegibt der unrarwarpper seinen status z.B. an JDUNrar ab.
+ * Über das UnrarListenerinterfacegibt der unrarwarpper seinen status z.B. an
+ * JDUNrar ab.
+ * 
  * @author coalado
- *
+ * 
  */
 public interface UnrarListener {
 
-    abstract public void onUnrarEvent(int id,UnrarWrapper wrapper);
+    abstract public void onUnrarEvent(int id, UnrarWrapper wrapper);
 }

@@ -60,7 +60,7 @@ public class Dataupde extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 

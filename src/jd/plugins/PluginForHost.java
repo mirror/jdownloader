@@ -48,6 +48,7 @@ public abstract class PluginForHost extends Plugin {
         super(wrapper);
 
     }
+
     /**
      * 
      * @param captchaAddress
@@ -69,6 +70,7 @@ public abstract class PluginForHost extends Plugin {
         return captchaCode;
 
     }
+
     private static final String AGB_CHECKED = "AGB_CHECKED";
     private static final String CONFIGNAME = "pluginsForHost";
     private static int currentConnections = 0;
@@ -142,8 +144,6 @@ public abstract class PluginForHost extends Plugin {
 
     }
 
- 
-
     public AccountInfo getAccountInformation(Account account) throws Exception {
         return null;
     }
@@ -171,13 +171,13 @@ public abstract class PluginForHost extends Plugin {
         int i = 1;
         int c = 0;
         for (Account a : accounts) {
-            if(a==null)continue;
+            if (a == null) continue;
             try {
-            c++;
-            if (getAccountwithoutUsername()) {
-                if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
-                account = new MenuItem(MenuItem.CONTAINER, i++ + ". " + "Account " + (i - 1), 0);
-            } else {
+                c++;
+                if (getAccountwithoutUsername()) {
+                    if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
+                    account = new MenuItem(MenuItem.CONTAINER, i++ + ". " + "Account " + (i - 1), 0);
+                } else {
 
                     if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
                     account = new MenuItem(MenuItem.CONTAINER, i++ + ". " + a.getUser(), 0);
@@ -191,10 +191,7 @@ public abstract class PluginForHost extends Plugin {
                     account.addMenuItem(m);
                     premium.addMenuItem(account);
 
-
-            }
-
-
+                }
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -490,7 +487,7 @@ public abstract class PluginForHost extends Plugin {
                         account.setStatus(downloadLink.getLinkStatus().getLongErrorMessage());
 
                         getPluginConfig().save();
-                        logger.severe("Premium Account " + account.getUser() + ": expired:"+downloadLink.getLinkStatus().getLongErrorMessage());
+                        logger.severe("Premium Account " + account.getUser() + ": expired:" + downloadLink.getLinkStatus().getLongErrorMessage());
                     } else {
 
                         account.setEnabled(false);

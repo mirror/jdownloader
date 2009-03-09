@@ -68,9 +68,11 @@ public class FilelocityCom extends PluginForHost {
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
             String wait = br.getRegex("wait\\sat\\sleast\\s(.*?)\\smore\\sseconds").getMatch(0);
             dl.getConnection().disconnect();
-            if (wait == null) throw new PluginException(LinkStatus.ERROR_RETRY); else
-            this.sleep((1+(Integer.parseInt(wait))*1001), downloadLink);
-            }
+            if (wait == null)
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            else
+                this.sleep((1 + (Integer.parseInt(wait)) * 1001), downloadLink);
+        }
         dl.startDownload();
 
     }

@@ -60,8 +60,8 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
     public abstract boolean initAddon();
 
     public abstract void onExit();
-    
+
     public Object interact(String command, Object parameter) {
-    	return null;
+        return null;
     }
 }

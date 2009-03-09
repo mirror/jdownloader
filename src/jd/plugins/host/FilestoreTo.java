@@ -43,7 +43,7 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-     
+
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
         String url = downloadLink.getDownloadURL();
         String downloadName = null;

@@ -66,7 +66,7 @@ public class FastShareorg extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 

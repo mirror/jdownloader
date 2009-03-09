@@ -85,7 +85,7 @@ public class JDProxy extends Proxy {
     private JDProxy() {
         super(JDProxy.Type.HTTP, new InetSocketAddress(80));
         // TODO Auto-generated constructor stub
-        
+
         this.direct = true;
     }
 

@@ -93,7 +93,7 @@ public class ArchivFile {
     }
 
     public File getFile() {
-        return new File(path,this.filepath);
+        return new File(path, this.filepath);
     }
 
 }

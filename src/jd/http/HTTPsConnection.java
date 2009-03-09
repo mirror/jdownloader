@@ -178,9 +178,9 @@ public class HTTPsConnection extends HTTPConnection {
         sb.append("----------------Request------------------\r\n");
 
         sb.append(getRequestMethod() + " " + getURL().getPath() + (getURL().getQuery() != null ? "?" + getURL().getQuery() : "") + " HTTP/1.1\r\n");
-        if(getURL().getPort()>0&&getURL().getPort()!=80){
+        if (getURL().getPort() > 0 && getURL().getPort() != 80) {
             sb.append("Host: " + getURL().getHost() + (":" + getURL().getPort()) + "\r\n");
-        }else{
+        } else {
             sb.append("Host: " + getURL().getHost() + "\r\n");
         }
         for (Iterator<Entry<String, List<String>>> it = this.getRequestProperties().entrySet().iterator(); it.hasNext();) {

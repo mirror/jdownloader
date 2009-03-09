@@ -576,7 +576,7 @@ public abstract class Request {
     @Override
     public String toString() {
         if (!requested) { return "Request not sent yet"; }
-    
+
         if (htmlCode == null || htmlCode.length() == 0) {
             if (getLocation() != null) { return "Not HTML Code. Redirect to: " + getLocation(); }
             return "No htmlCode read";

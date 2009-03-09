@@ -19,6 +19,7 @@ public interface URLConnectionAdapter {
     URL getURL();
 
     int getContentLength();
+
     long getLongContentLength();
 
     void setInstanceFollowRedirects(boolean followRedirects);
@@ -29,23 +30,19 @@ public interface URLConnectionAdapter {
 
     void setRequestProperty(String key, String string);
 
-    InputStream getInputStream()throws IOException;
+    InputStream getInputStream() throws IOException;
 
-    void setRequestMethod(String string)throws ProtocolException;
+    void setRequestMethod(String string) throws ProtocolException;
 
     void setDoOutput(boolean b);
 
     void connect() throws IOException;
 
-
-
-    OutputStream getOutputStream()throws IOException;
+    OutputStream getOutputStream() throws IOException;
 
     Map<String, List<String>> getRequestProperties();
 
     boolean getDoOutput();
-
-
 
     boolean isOK();
 
@@ -53,7 +50,7 @@ public interface URLConnectionAdapter {
 
     String getResponseMessage() throws IOException;
 
-    int getResponseCode()  throws IOException;
+    int getResponseCode() throws IOException;
 
     void disconnect();
 
@@ -66,10 +63,9 @@ public interface URLConnectionAdapter {
     boolean isContentDisposition();
 
     void setRequest(Request request);
+
     public Request getRequest();
 
     public String getCharset();
-
-    
 
 }

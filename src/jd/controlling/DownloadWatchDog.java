@@ -198,8 +198,8 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         int num = 0;
         synchronized (activeDownloadControllers) {
             for (int i = 0; i < activeDownloadControllers.size(); i++) {
-              
-                if (activeDownloadControllers.get(i).getDownloadLink().getPlugin().getClass()==plugin.getClass()) {
+
+                if (activeDownloadControllers.get(i).getDownloadLink().getPlugin().getClass() == plugin.getClass()) {
                     num++;
                 }
 

@@ -39,10 +39,10 @@ public class Zero10Us extends PluginForDecrypt {
         String link = null;
         if (parameter.indexOf("h-link.us") != -1) {
             link = parameter.replaceFirst("h-link.us", "zero10.us");
-        } 
+        }
         if (link == null) return null;
-        String linkid = new Regex(link,".*?zero10\\.us/([^/]*)").getMatch(0);
-        br.getPage("http://zero10.us/m1.php?id="+linkid);
+        String linkid = new Regex(link, ".*?zero10\\.us/([^/]*)").getMatch(0);
+        br.getPage("http://zero10.us/m1.php?id=" + linkid);
         String declink = br.getRegex("onclick=\"NewWindow\\('(.*?)','name'").getMatch(0);
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(declink)));
 

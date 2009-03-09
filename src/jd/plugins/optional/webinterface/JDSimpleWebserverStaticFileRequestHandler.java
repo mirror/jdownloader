@@ -34,6 +34,7 @@ public class JDSimpleWebserverStaticFileRequestHandler {
 
     /**
      * Create a new handler that serves files from a base directory
+     * 
      * @param base
      *            directory
      */

@@ -25,8 +25,8 @@ public class JDHexUtils {
     public static final String REGEX_MATCH_ALL_HEX = "([[a-fA-F0-9]{2}]*?)";
     public static final String REGEX_HTTP_NEWLINE = JDHexUtils.getHexString("\r") + "{1}" + JDHexUtils.getHexString("\n") + "{1}";
 
-    public static String toString(String hexString){
-        if (hexString==null) return null;
+    public static String toString(String hexString) {
+        if (hexString == null) return null;
         return new String(JDHexUtils.getByteArray(hexString));
     }
 

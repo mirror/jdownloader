@@ -59,7 +59,7 @@ public class UploadServiceinfo extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 

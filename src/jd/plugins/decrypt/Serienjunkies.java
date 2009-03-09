@@ -560,9 +560,9 @@ public class Serienjunkies extends PluginForDecrypt {
                 getPage(br3, url);
             }
             if (br3.containsHTML("Du hast zu oft das Captcha falsch")) {
-                rc=true;
+                rc = true;
                 if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
-                    rc=false;
+                    rc = false;
                     logger.info("Reconnect successfull. try again");
                     br3.setFollowRedirects(true);
                     getPage(br3, url);
@@ -571,7 +571,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         getPage(br3, url);
                     }
                 } else {
-                    rc=false;
+                    rc = false;
                     logger.severe("Reconnect failed. abort.");
                     return decryptedLinks;
                 }
@@ -592,9 +592,9 @@ public class Serienjunkies extends PluginForDecrypt {
                         }
                     }
                 }).start();
-rc=true;
+                rc = true;
                 if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
-                    rc=false;
+                    rc = false;
                     logger.info("Reconnect successfull. try again");
                     br3.setFollowRedirects(true);
                     getPage(br3, url);
@@ -603,7 +603,7 @@ rc=true;
                         getPage(br3, url);
                     }
                 } else {
-                    rc=false;
+                    rc = false;
                     progress.setColor(Color.red);
                     progress.setStatus(0);
                     progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.downloadlimit", "Error: SerienJunkies Downloadlimit"));
@@ -672,7 +672,7 @@ rc=true;
 
     private Browser getBrowser() {
         Browser br = new Browser();
-      
+
         return br;
     }
 

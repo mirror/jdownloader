@@ -170,9 +170,8 @@ public class ShareOnlineBiz extends PluginForHost {
         getFileInformation(downloadLink);
         String id = new Regex(downloadLink.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
         br.getPage("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
-        if(br.containsHTML("Probleme mit einem Fileserver")){
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,"Server temp. not available",15*60*1000l);
-            
+        if (br.containsHTML("Probleme mit einem Fileserver")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temp. not available", 15 * 60 * 1000l);
+
         }
         File captchaFile = this.getLocalCaptchaFile(this);
         try {

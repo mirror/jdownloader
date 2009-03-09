@@ -30,16 +30,20 @@ import jd.captcha.pixelgrid.Letter;
  */
 public class MegaUpload {
     public static Letter[] getLetters(Captcha captcha) {
+
         captcha.toBlackAndWhite(0.45);
         LetterComperator.MATCH_TABLE = new String[] { "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "1234567890"
 
         };
+
         captcha.clean();
         ArrayList<Letter> ret = new ArrayList<Letter>();
         for (int i = 0; i < 4; i++) {
             int averageWidth = Math.min(captcha.getWidth(), (int) (captcha.getWidth() / (4 - i)) + 8);
             Letter first = new Letter(averageWidth, captcha.getHeight());
+
             first.setId(i);
+
             first.setOwner(captcha.owner);
             for (int x = 0; x < averageWidth; x++) {
                 for (int y = 0; y < captcha.getHeight(); y++) {
@@ -76,9 +80,11 @@ public class MegaUpload {
             // BasicWindow.showImage(b.getImage(3));
             // BasicWindow.showImage(r.getIntersectionLetter().getImage(3));
             // BasicWindow.showImage(captcha.getImage(3));
+
             ret.add(first);
             if (i < 3) {
                 System.out.println(r.getDecodedValue() + "");
+
                 captcha.crop(offset[0] + b.getWidth() / 2, 0, 0, 0);
 
                 // BasicWindow.showImage(captcha.getImage(3));

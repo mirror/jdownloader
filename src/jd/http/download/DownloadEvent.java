@@ -66,6 +66,6 @@ public class DownloadEvent {
     public static final int STATUS_FINISHED = 1 << 3;
     protected static final int PROGRESS_CHUNK_FINISHED = 1 << 4;
     protected static final int PROGRESS_CHUNK_STARTED = 1 << 5;
-    public static final int PROGRESS_CHUNK_BUFFERWRITTEN = 1<<6;
+    public static final int PROGRESS_CHUNK_BUFFERWRITTEN = 1 << 6;
 
 }

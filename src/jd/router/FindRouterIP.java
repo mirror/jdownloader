@@ -51,10 +51,9 @@ public class FindRouterIP implements ControlListener, WindowListener {
                 GetRouterInfo rinfo = new GetRouterInfo(null);
                 mld.getProgress().setValue(80);
                 InetAddress ia = rinfo.getAdress();
-                if(ia!=null)
-                ip.setData(ia.getHostAddress());
+                if (ia != null) ip.setData(ia.getHostAddress());
                 mld.getProgress().setValue(100);
-                if(ia!=null)
+                if (ia != null)
                     mld.setTitle(JDLocale.LF("gui.config.routeripfinder.ready", "Hostname found: %s", ia.getHostAddress()));
                 else
                     mld.setTitle(JDLocale.LF("gui.config.routeripfinder.notfound", "Can't find your routers hostname"));

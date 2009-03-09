@@ -27,8 +27,6 @@ import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-
-
 public class UnZip {
     public boolean autoDelete = false;
 
@@ -36,9 +34,9 @@ public class UnZip {
     protected byte[] b;
 
     protected SortedSet<String> dirsMade;
-    
-    //Der Zielpfad in dem entpackt werden soll
-     
+
+    // Der Zielpfad in dem entpackt werden soll
+
     private File targetPath = null;
 
     protected boolean warnedMkDir = false;
@@ -98,7 +96,7 @@ public class UnZip {
         String zipName = e.getName();
         if (zipName.startsWith("/")) {
             if (!warnedMkDir) {
-               System.out.println("Ignoring absolute paths");
+                System.out.println("Ignoring absolute paths");
             }
             warnedMkDir = true;
             zipName = zipName.substring(1);

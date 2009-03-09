@@ -34,7 +34,7 @@ public class Youtube extends PluginForHost {
 
     public Youtube(PluginWrapper wrapper) {
         super(wrapper);
-        enablePremium(1,"http://www.youtube.com/login?next=/index");
+        enablePremium(1, "http://www.youtube.com/login?next=/index");
     }
 
     @Override
@@ -50,7 +50,7 @@ public class Youtube extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
@@ -128,7 +128,7 @@ public class Youtube extends PluginForHost {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage("http://www.youtube.com/signup?next=/index");
-        Form login = br.getFormbyProperty("name","loginForm");
+        Form login = br.getFormbyProperty("name", "loginForm");
         login.put("username", account.getUser());
         login.put("password", account.getPass());
         br.submitForm(login);

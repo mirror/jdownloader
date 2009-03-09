@@ -118,7 +118,7 @@ public class LetitBitNet extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         down.setAction("http://letitbit.net/download3.php");
         br.submitForm(down);
-        //if we cannot bypass, ask user for entering captcha code
+        // if we cannot bypass, ask user for entering captcha code
         if (!br.containsHTML("<frame")) {
             String code = Plugin.getCaptchaCode(file, this, downloadLink);
             down.put("cap", code);

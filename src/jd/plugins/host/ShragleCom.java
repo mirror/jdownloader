@@ -41,7 +41,7 @@ public class ShragleCom extends PluginForHost {
         this.enablePremium("http://www.shragle.com/index.php?p=accounts");
         setStartIntervall(5000l);
         br.setRequestIntervalLimit(this.getHost(), 800);
-     
+
     }
 
     @Override
@@ -109,7 +109,7 @@ public class ShragleCom extends PluginForHost {
             br.setFollowRedirects(true);
             dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, -4);
         } else {
-            Form form = br.getFormbyProperty("name","download");
+            Form form = br.getFormbyProperty("name", "download");
             br.setFollowRedirects(true);
             dl = br.openDownload(downloadLink, form, true, 0);
         }
@@ -122,7 +122,7 @@ public class ShragleCom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {        
+    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         correctUrl(downloadLink);
         String id = new Regex(downloadLink.getDownloadURL(), "shragle.com/files/(.*?)/").getMatch(0);
@@ -153,7 +153,7 @@ public class ShragleCom extends PluginForHost {
         String wait = br.getRegex(Pattern.compile("Bitte warten Sie(.*?)Minuten", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l); }
         wait = br.getRegex("var downloadWait =(.*?);").getMatch(0);
-        Form form = br.getFormbyProperty("name","download");
+        Form form = br.getFormbyProperty("name", "download");
         if (wait == null) wait = "10";
         sleep(Long.parseLong(wait.trim()) * 1000l, downloadLink);
         br.setFollowRedirects(true);

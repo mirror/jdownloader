@@ -59,7 +59,7 @@ public class YourFileSendercom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 

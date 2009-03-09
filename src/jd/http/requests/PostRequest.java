@@ -45,15 +45,12 @@ public class PostRequest extends Request {
 
     // public Request toHeadRequest() throws MalformedURLException {
 
-
-    
-
     public String getPostDataString() {
         if (postData.isEmpty()) { return null; }
 
         StringBuilder buffer = new StringBuilder();
 
-        for( RequestVariable rv:postData){
+        for (RequestVariable rv : postData) {
             if (rv.getKey() != null) {
                 buffer.append("&");
                 buffer.append(rv.getKey());
@@ -65,7 +62,7 @@ public class PostRequest extends Request {
                 }
             }
         }
-        if(buffer.length()==0)return "";
+        if (buffer.length() == 0) return "";
         return buffer.toString().substring(1);
     }
 
@@ -101,28 +98,27 @@ public class PostRequest extends Request {
     }
 
     public void addVariable(String key, String value) {
-        postData.add(new RequestVariable(key,value));
+        postData.add(new RequestVariable(key, value));
 
     }
 
-public static ArrayList<RequestVariable> variableMaptoArray(HashMap<String, String> post){
-    ArrayList<RequestVariable> ret = new ArrayList<RequestVariable>();
-    Entry<String, String> next=null;
-    for(Iterator<Entry<String, String>> it = post.entrySet().iterator();it.hasNext();){
-        next=it.next();
-        ret.add(new RequestVariable(next.getKey(),next.getValue()));
+    public static ArrayList<RequestVariable> variableMaptoArray(HashMap<String, String> post) {
+        ArrayList<RequestVariable> ret = new ArrayList<RequestVariable>();
+        Entry<String, String> next = null;
+        for (Iterator<Entry<String, String>> it = post.entrySet().iterator(); it.hasNext();) {
+            next = it.next();
+            ret.add(new RequestVariable(next.getKey(), next.getValue()));
+        }
+        return ret;
     }
-    return ret;
-}
 
     public void addAll(HashMap<String, String> post) {
-     
-        
+
     }
 
     public void addAll(ArrayList<RequestVariable> post) {
-      this.postData.addAll(post);
-        
+        this.postData.addAll(post);
+
     }
 
 }

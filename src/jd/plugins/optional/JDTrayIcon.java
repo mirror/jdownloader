@@ -498,7 +498,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
                     guiFrame.setState(JFrame.NORMAL);
                     guiFrame.setVisible(true);
                 }
-                iconfied=false;
+                iconfied = false;
             }
 
         }
@@ -546,7 +546,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
     public void mousePressed(MouseEvent arg0) {
         if (arg0.getSource() instanceof JDTrayIcon) {
             if (arg0.getClickCount() >= 2 && !SwingUtilities.isRightMouseButton(arg0)) {
-                iconfied=!iconfied;
+                iconfied = !iconfied;
                 miniIt();
             }
         }

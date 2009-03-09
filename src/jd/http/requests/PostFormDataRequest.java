@@ -71,7 +71,7 @@ public class PostFormDataRequest extends Request {
         writer.write(this.boundary);
         writer.write("--\r\n");
         writer.flush();
-        
+
         if (output != null) {
             output.flush();
             output.close();
@@ -96,11 +96,11 @@ public class PostFormDataRequest extends Request {
             writer.flush();
             outputByteWriter = new BufferedOutputStream(output);
             outputByteWriter.write(formData.getData(), 0, formData.getData().length);
-        
+
             writer.write("\r\n");
             writer.flush();
             outputByteWriter.flush();
-   
+
             break;
         case FILE:
             writer.write("Content-Disposition: form-data; name=\"" + formData.getName() + "\"; filename=\"" + formData.getValue() + "\"");
@@ -116,16 +116,15 @@ public class PostFormDataRequest extends Request {
             }
             outputByteWriter.flush();
             in.close();
-            
-         
+
             writer.write("\r\n");
             writer.flush();
-           
+
             break;
         }
 
         writer.flush();
-  
+
     }
 
     @Override
@@ -139,8 +138,8 @@ public class PostFormDataRequest extends Request {
         long range = (999999999999999l - 100000000000000l);
         long rand = (long) (Math.random() * range) + 100000000000000l;
         boundary = "----------" + rand;
-        
-       // boundary="-----------------------------41184676334";
+
+        // boundary="-----------------------------41184676334";
 
     }
 
@@ -150,20 +149,20 @@ public class PostFormDataRequest extends Request {
             br.setDebug(true);
             String[] data = br.getPage("http://rapidshare.com/cgi-bin/upload.cgi?intsysdata=1").split("\\,");
             PostFormDataRequest r = (PostFormDataRequest) br.createPostFormDataRequest("http://rs" + data[0].trim() + "cg.rapidshare.com/cgi-bin/upload.cgi");
-File file = new File("G:\\pluginressourcen\\JDLowSpeed_2009-02-11_v3 (LIGHT).jdu");
+            File file = new File("G:\\pluginressourcen\\JDLowSpeed_2009-02-11_v3 (LIGHT).jdu");
             r.addFormData(new FormData("toolmode2", "1"));
             r.addFormData(new FormData("filecontent", file.getName(), file));
             r.addFormData(new FormData("freeaccountid", ""));
-            r.addFormData(new FormData("password", "" ));
+            r.addFormData(new FormData("password", ""));
 
             r.connect();
             System.out.println(r.getHttpConnection());
             String code = r.read();
-            System.out.println(code);            
-     
+            System.out.println(code);
+
         } catch (Exception e) {
             e.printStackTrace();
-     
+
         }
 
     }

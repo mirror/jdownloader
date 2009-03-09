@@ -10,6 +10,7 @@ public class DownloadProgress implements Serializable {
      */
     private static final long serialVersionUID = 7415576592826692024L;
     private File file;
+
     public File getFile() {
         return file;
     }
@@ -21,15 +22,17 @@ public class DownloadProgress implements Serializable {
     public ChunkProgress[] getChunks() {
         return chunks;
     }
-    public String toString(){
-        String ret=""+file+"\r\n";
-        if(chunks==null)return ret;
-        for(int i=0; i<chunks.length;i++){
-            ret+=i+": "+chunks[i]+"\r\n";
+
+    public String toString() {
+        String ret = "" + file + "\r\n";
+        if (chunks == null) return ret;
+        for (int i = 0; i < chunks.length; i++) {
+            ret += i + ": " + chunks[i] + "\r\n";
         }
         return ret;
-       
+
     }
+
     private ChunkProgress[] chunks;
     private int i = 0;
     public int totalLoaded;

@@ -31,30 +31,30 @@ public class HttpServer extends Thread {
 
     public HttpServer(int port, Handler handler) throws IOException {
         this.handler = handler;
-		this.port = port;
+        this.port = port;
     }
 
     public void sstop() throws IOException {
         running = false;
         run = null;
     }
-    
-	public void start() {
-    	running = true;
-    	try {
-			ssocket = new ServerSocket(port);
-			ssocket.setSoTimeout(1000);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-    	run = new Thread(this);
+
+    public void start() {
+        running = true;
+        try {
+            ssocket = new ServerSocket(port);
+            ssocket.setSoTimeout(1000);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        run = new Thread(this);
         run.start();
     }
 
     public void run() {
-    	Thread thisThread = Thread.currentThread();
+        Thread thisThread = Thread.currentThread();
         while (run == thisThread && running) {
-            if(ssocket==null)return;
+            if (ssocket == null) return;
             try {
                 csocket = ssocket.accept();
                 new RequestHandler(csocket, handler).run();
@@ -63,12 +63,12 @@ public class HttpServer extends Thread {
                 e.printStackTrace();
             }
         }
-        
+
         try {
-			ssocket.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+            ssocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public boolean isStarted() {

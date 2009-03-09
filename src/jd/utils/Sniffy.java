@@ -34,9 +34,9 @@ public final class Sniffy {
         // if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_ENV ||
         // JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) { return
         // false; }
-//        if (OSDetector.isWindows()) { return Sniffy.hasWinSnifer();
-//
-//        }
+        // if (OSDetector.isWindows()) { return Sniffy.hasWinSnifer();
+        //
+        // }
         return false;
     }
 

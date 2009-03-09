@@ -51,7 +51,7 @@ public class DataHu extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 

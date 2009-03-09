@@ -64,7 +64,7 @@ public class CryptedLink extends Property {
     }
 
     // Setzt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
-    
+
     public void setCryptedUrl(String url) {
         this.cryptedUrl = url;
     }

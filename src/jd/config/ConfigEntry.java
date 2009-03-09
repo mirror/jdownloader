@@ -200,12 +200,12 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         enabled = true;
     }
 
-    public ConfigEntry(int type, Property propertyInstance,String propertyName, int num) {
+    public ConfigEntry(int type, Property propertyInstance, String propertyName, int num) {
         this.type = type;
         this.propertyName = propertyName;
         this.propertyInstance = propertyInstance;
-        this.end=num;
-        
+        this.end = num;
+
     }
 
     private void addConditionListener(ConfigEntry configEntry) {

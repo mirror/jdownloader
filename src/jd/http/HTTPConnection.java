@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import sun.net.www.MessageHeader;
+
 import jd.http.requests.PostFormDataRequest;
 import jd.http.requests.PostRequest;
 import jd.http.requests.Request;
@@ -45,6 +47,8 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
 
     private Request request;
 
+ 
+
     public boolean isConnected() {
 
         return connectionnEstabilished;
@@ -55,6 +59,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
         super(url, p, handler);
         this.proxy = (JDProxy) p;
         requestProperties = new HashMap<String, List<String>>();
+     
 
         Map<String, List<String>> tmp = getRequestProperties();
         Iterator<Entry<String, List<String>>> set = tmp.entrySet().iterator();
@@ -77,7 +82,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
     public void connect() throws IOException {
         this.connectionnEstabilished = true;
         super.connect();
-
+     
     }
 
     public long getLongContentLength() {
@@ -202,11 +207,11 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
         sb.append("----------------Request------------------\r\n");
 
         sb.append(getRequestMethod() + " " + getURL().getPath() + (getURL().getQuery() != null ? "?" + getURL().getQuery() : "") + " HTTP/1.1\r\n");
-       if(getURL().getPort()>0&&getURL().getPort()!=80){
-           sb.append("Host: " + getURL().getHost() + (":" + getURL().getPort()) + "\r\n");
-       }else{
-           sb.append("Host: " + getURL().getHost() + "\r\n");
-       }
+        if (getURL().getPort() > 0 && getURL().getPort() != 80) {
+            sb.append("Host: " + getURL().getHost() + (":" + getURL().getPort()) + "\r\n");
+        } else {
+            sb.append("Host: " + getURL().getHost() + "\r\n");
+        }
         for (Iterator<Entry<String, List<String>>> it = this.getRequestProperties().entrySet().iterator(); it.hasNext();) {
             Entry<String, List<String>> next = it.next();
             StringBuilder value = new StringBuilder();

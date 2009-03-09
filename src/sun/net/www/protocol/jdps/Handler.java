@@ -38,8 +38,16 @@ public class Handler extends sun.net.www.protocol.https.Handler {
         // JDHttpsURLConnectionImpl(Browser.reAssignUrlToBrowserInstance(u, new
         // URL(urlCorrect)), p, this);
         URL nurl = Browser.reAssignUrlToBrowserInstance(u, new URL(urlCorrect));
-        URLConnection con = p==null?nurl.openConnection():nurl.openConnection(p);//super.openConnection(nurl, p);
-        return new jd.http.HTTPsConnection(con,p);
+        URLConnection con = p == null ? nurl.openConnection() : nurl.openConnection(p);// super
+                                                                                       // .
+                                                                                       // openConnection
+                                                                                       // (
+                                                                                       // nurl
+                                                                                       // ,
+                                                                                       // p
+                                                                                       // )
+                                                                                       // ;
+        return new jd.http.HTTPsConnection(con, p);
 
     }
 

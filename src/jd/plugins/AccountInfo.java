@@ -43,7 +43,7 @@ public class AccountInfo extends Property {
     public AccountInfo(PluginForHost plugin, Account account) {
         this.plugin = plugin;
         this.account = account;
-        this.createTime=System.currentTimeMillis();
+        this.createTime = System.currentTimeMillis();
     }
 
     public long getCreateTime() {
@@ -136,7 +136,7 @@ public class AccountInfo extends Property {
      * 
      * @return
      */
-    public long getValidUntil() {        
+    public long getValidUntil() {
         return validUntil;
     }
 
