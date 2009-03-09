@@ -36,6 +36,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.JDProxy;
+import jd.http.RequestHeader;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -301,7 +302,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
             if (ishttps) http = "https://";
 
             HashMap<String, String> requestProperties = new HashMap<String, String>();
-            br.setHeaders(new HashMap<String, String>());
+            br.setHeaders(new RequestHeader());
             String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
             // ArrayList<String> params =
             // SimpleMatches.getAllSimpleMatches(request,

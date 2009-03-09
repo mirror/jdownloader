@@ -53,6 +53,7 @@ import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.FengShuiConfigPanel;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.http.Browser;
+import jd.http.RequestHeader;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.Threader;
 import jd.nutils.jobber.JDRunnable;
@@ -106,7 +107,7 @@ public class GetRouterInfo {
             HashMap<String, String> h = new HashMap<String, String>();
             h.put("SoapAction", "urn:schemas-upnp-org:service:WANIPConnection:1#GetStatusInfo");
             h.put("CONTENT-TYPE", "text/xml; charset=\"utf-8\"");
-            br.setHeaders(h);
+            br.setHeaders(new RequestHeader(h));
             URLConnectionAdapter con = br.openPostConnection("http://" + iPaddress + ":" + port + "/upnp/control/WANIPConn1", "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:GetStatusInfo xmlns:u='urn:schemas-upnp-org:service:WANIPConnection:1' /> </s:Body> </s:Envelope>");
 
             if (con.getHeaderField(null).contains("200")) return true;

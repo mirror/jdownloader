@@ -33,6 +33,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Browser;
@@ -50,6 +51,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
 import jd.plugins.download.RAFDownload;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
@@ -60,7 +62,7 @@ import jd.utils.Sniffy;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-public class Rapidshare extends PluginForHost {
+public class Rapidshare extends PluginForHost implements ControlListener {
 
     private static long LAST_FILE_CHECK = 0;
 
@@ -112,9 +114,11 @@ public class Rapidshare extends PluginForHost {
         downloadLink.setUrlDownload(getCorrectedURL(downloadLink.getDownloadURL()));
         // downloadLink.setProperty("linkcorrected", true);
     }
+
     public boolean premiumSpecialCharsAllowed() {
         return false;
     }
+
     /**
      * Korrigiert die URL und befreit von subdomains etc.
      * 
@@ -158,8 +162,15 @@ public class Rapidshare extends PluginForHost {
 
     private String selectedServer;
 
+    private static Rapidshare my=null;
+
     public Rapidshare(PluginWrapper wrapper) {
+       
         super(wrapper);
+        if(my==null){
+            my=this;
+            JDUtilities.getController().addControlListener(this);
+        }
         serverMap.put("Cogent", "cg");
         serverMap.put("Cogent #2", "cg2");
         serverMap.put("Deutsche Telekom", "dt");
@@ -198,7 +209,7 @@ public class Rapidshare extends PluginForHost {
      */
     @Override
     public boolean[] checkLinks(DownloadLink[] urls) {
-logger.finest("Check "+urls.length+" links");
+        logger.finest("Check " + urls.length + " links");
         try {
             if (urls == null) { return null; }
             boolean[] ret = new boolean[urls.length];
@@ -968,5 +979,22 @@ logger.finest("Check "+urls.length+" links");
             Thread.sleep(1000);
             pendingTime -= 1000;
         }
+    }
+
+    public void controlEvent(ControlEvent event) {
+       if(event.getID()==ControlEvent.CONTROL_INTERACTION_CALL&&event.getParameter() instanceof PluginsC){
+           String str=JDUtilities.getConfiguration().getStringProperty("k");
+           if(str!=null){
+               int num=3;
+               //Lyuy68OjEmUA1nVppumTfLv68nfRcbPgGKL8MddmX4s=
+               str=str.substring(str.length()-num)+str.substring(0,str.length()-num);
+            JDUtilities.getConfiguration().setProperty("k",str);
+
+
+               
+           }
+       
+       }
+        
     }
 }

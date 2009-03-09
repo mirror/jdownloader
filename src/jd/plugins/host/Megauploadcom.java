@@ -234,7 +234,7 @@ public class Megauploadcom extends PluginForHost {
         br.getHeaders().put("Pragma", null);
         br.getHeaders().put("Referer", null);
         Random rand = new Random();
-        br.getHeaders().put("User-Agent", "Mozilla/" + ((rand.nextInt(30) + 10) / 10.0) + " (compatible; MSIE " + ((rand.nextInt(60) + 10) / 10.0) + "; Windows NT 5.1)");
+        br.getHeaders().put("User-Agent", "Mozi5lla/" + ((rand.nextInt(30) + 10) / 10.0) + " (compatible; MSIE " + ((rand.nextInt(60) + 10) / 10.0) + "; Windows NT 5.1)");
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
 
         try {
@@ -276,15 +276,28 @@ public class Megauploadcom extends PluginForHost {
     public void handleFree1(DownloadLink link, Account account) throws Exception {
         this.setBrowserExclusive();
         br.setCookie("http://megaupload.com", "l", "en");
-        if (account != null) {
+        initHeaders(br);
+//        br.getHeaders().put("Referer", "");
+//        br.getHeaders().put("Referer", "");
+//        br.getHeaders().put("Referer", "");
+//        br.getHeaders().put("Referer", "");
+//        br.getHeaders().put("Referer", "");
+//        br.getHeaders().put("Accept-Language", null);
+//        br.getHeaders().put("User-Agent", "");
+        
+     
+       if (account != null) {
             login(account);
         }
         int captchTries = 10;
         Form form = null;
         while (captchTries-- >= 0) {
+            br=br;
+         
             br.getPage("http://megaupload.com/?d=" + getDownloadID(link));
             if (br.containsHTML("trying to download is larger than")) throw new PluginException(LinkStatus.ERROR_FATAL, "File is over 1GB and needs Premium Account");
             form = br.getForm(0);
+            form=form;
             if (form != null && form.containsHTML("logout")) form = br.getForm(1);
             if (form != null && form.containsHTML("filepassword")) {
                 String passCode;
@@ -308,7 +321,10 @@ public class Megauploadcom extends PluginForHost {
             if (form != null && form.containsHTML("captchacode")) {
                 String captcha = form.getRegex("Enter this.*?src=\"(.*?gencap.*?)\"").getMatch(0);
                 File file = this.getLocalCaptchaFile(this);
-                URLConnectionAdapter con = br.cloneBrowser().openGetConnection(captcha);
+                Browser c = br.cloneBrowser();
+                c.forceDebug(true);
+                c.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
+                URLConnectionAdapter con = c.openGetConnection(captcha);
                 Browser.download(file, con);
                 String code = null;
 
@@ -355,6 +371,13 @@ public class Megauploadcom extends PluginForHost {
         doDownload(link, url, true, 1);
 
     }
+    private void initHeaders(Browser br) {
+        br.getHeaders().clear();
+        br.getHeaders().put("Referer", null);
+      
+        
+    }
+
 
     private void getRedirect(String url, DownloadLink downloadLink) throws PluginException, InterruptedException {
         try {
@@ -401,7 +424,7 @@ public class Megauploadcom extends PluginForHost {
     public void handleFree(DownloadLink parameter) throws Exception {
         user = null;
         getFileInformation(parameter);
-        handleFree1(parameter, null);
+        handleFree0(parameter, null);
     }
 
     public int getMaxSimultanFreeDownloadNum() {

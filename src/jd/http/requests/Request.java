@@ -36,6 +36,7 @@ import jd.config.Configuration;
 import jd.http.Cookie;
 import jd.http.Encoding;
 import jd.http.JDProxy;
+import jd.http.RequestHeader;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -88,7 +89,7 @@ public abstract class Request {
     private int followCounter = 0;
     private boolean followRedirects = false;
 
-    private HashMap<String, String> headers;
+    private RequestHeader headers;
     private String htmlCode;
     protected URLConnectionAdapter httpConnection;
 
@@ -345,7 +346,7 @@ public abstract class Request {
         return followCounter;
     }
 
-    public HashMap<String, String> getHeaders() {
+    public RequestHeader getHeaders() {
         return headers;
     }
 
@@ -413,14 +414,19 @@ public abstract class Request {
     }
 
     private void initDefaultHeader() {
-        headers = new HashMap<String, String>();
-        headers.put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
-        headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        headers.put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+
+        headers = new RequestHeader();
         headers.put("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.4) Gecko/2008111317 Ubuntu/8.04 (hardy) Firefox/3.0.4");
-        headers.put("Connection", "close");
-        headers.put("Cache-Control", "no-cache");
+        headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        headers.put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
+        headers.put("Accept-Encoding", "gzip,deflate");
+        headers.put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
         headers.put("Pragma", "no-cache");
+
+        headers.put("Cache-Control", "no-cache");
+
+        headers.put("Pragma", "no-cache");
+        headers.put("Connection", "close");
 
     }
 
@@ -464,6 +470,9 @@ public abstract class Request {
         // der hier mit proxy..
         // da k�nnte man sich mal schlauch machen.. welche proxy typen da
         // unterst�tzt werden
+       if(!headers.contains("Host")){
+           headers.setAt(0,"Host",url.getHost());
+       }
         if (proxy != null) {
 
             httpConnection = (URLConnectionAdapter) url.openConnection(proxy);
@@ -479,13 +488,11 @@ public abstract class Request {
         httpConnection.setConnectTimeout(connectTimeout);
 
         if (headers != null) {
-            Set<String> keys = headers.keySet();
-            Iterator<String> iterator = keys.iterator();
-            String key;
-            while (iterator.hasNext()) {
-                key = iterator.next();
+         
+            for (int i=0; i<headers.size();i++) {
+             
 
-                httpConnection.setRequestProperty(key, headers.get(key));
+                httpConnection.setRequestProperty(headers.getKey(i), headers.getValue(i));
             }
         }
         preRequest(httpConnection);
@@ -607,7 +614,7 @@ public abstract class Request {
 
         ret.cookies = (ArrayList<Cookie>) this.getCookies().clone();
         ret.followRedirects = this.followRedirects;
-        ret.headers = (HashMap<String, String>) this.getHeaders().clone();
+        ret.headers = (RequestHeader) this.getHeaders().clone();
         ret.setProxy(proxy);
         ret.readTime = this.readTimeout;
 

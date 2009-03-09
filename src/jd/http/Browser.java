@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 
 import jd.config.Configuration;
 import jd.http.requests.FormData;
@@ -200,7 +201,7 @@ public class Browser {
 
     private boolean doRedirects = false;
 
-    private HashMap<String, String> headers;
+    private RequestHeader headers;
 
     private int limit = 1 * 1024 * 1024;
 
@@ -266,9 +267,9 @@ public class Browser {
         return null;
     }
 
-    public HashMap<String, String> getHeaders() {
+    public RequestHeader getHeaders() {
         if (headers == null) {
-            headers = new HashMap<String, String>();
+            headers = new RequestHeader();
         }
         return headers;
     }
@@ -571,12 +572,12 @@ public class Browser {
     }
 
     private void mergeHeaders(Request request) {
-        for (Iterator<Entry<String, String>> it = this.headers.entrySet().iterator(); it.hasNext();) {
-            Entry<String, String> next = it.next();
-            if (next.getValue() == null) {
-                request.getHeaders().remove(next.getKey());
+        for (int i = 0; i < headers.size(); i++) {
+
+            if (headers.getValue(i) == null) {
+                request.getHeaders().remove(headers.getKey(i));
             } else {
-                request.getHeaders().put(next.getKey(), next.getValue());
+                request.getHeaders().put(headers.getKey(i), headers.getValue(i));
             }
         }
 
@@ -631,13 +632,12 @@ public class Browser {
 
     /**
      * TRies to get a fuill url out of string
-     * @throws BrowserException 
+     * 
+     * @throws BrowserException
      */
     public String getURL(String string) throws BrowserException {
         if (string == null) string = this.getRedirectLocation();
-        if (string == null){
-           throw new BrowserException("Null URL");
-        }
+        if (string == null) { throw new BrowserException("Null URL"); }
         try {
             new URL(string);
         } catch (Exception e) {
@@ -848,7 +848,7 @@ public class Browser {
         return doRedirects;
     }
 
-    public void setHeaders(HashMap<String, String> h) {
+    public void setHeaders(RequestHeader h) {
         headers = h;
 
     }
@@ -948,8 +948,13 @@ public class Browser {
         file.createNewFile();
 
         BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
+        BufferedInputStream input;
+        if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
 
-        BufferedInputStream input = new BufferedInputStream(con.getInputStream());
+            input = new BufferedInputStream(new GZIPInputStream(con.getInputStream()));
+        } else {
+            input = new BufferedInputStream(con.getInputStream());
+        }
 
         byte[] b = new byte[1024];
         int len;
