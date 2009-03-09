@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import sun.net.www.MessageHeader;
-
 import jd.http.requests.PostFormDataRequest;
 import jd.http.requests.PostRequest;
 import jd.http.requests.Request;
@@ -47,8 +45,6 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
 
     private Request request;
 
- 
-
     public boolean isConnected() {
 
         return connectionnEstabilished;
@@ -59,7 +55,6 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
         super(url, p, handler);
         this.proxy = (JDProxy) p;
         requestProperties = new HashMap<String, List<String>>();
-     
 
         Map<String, List<String>> tmp = getRequestProperties();
         Iterator<Entry<String, List<String>>> set = tmp.entrySet().iterator();
@@ -82,7 +77,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
     public void connect() throws IOException {
         this.connectionnEstabilished = true;
         super.connect();
-     
+
     }
 
     public long getLongContentLength() {

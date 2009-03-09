@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -34,9 +33,6 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.Request;
-import jd.nutils.JDHash;
-import jd.nutils.io.JDIO;
-import jd.nutils.zip.UnZip;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -52,12 +48,10 @@ public class Megauploadcom extends PluginForHost {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
     private static final String CAPTCHA_MODE = "CAPTCHAMODE";
-    private static ArrayList<String[]> CACHE = new ArrayList<String[]>();
 
     private static int simultanpremium = 1;
 
     private String user;
-
 
     public Megauploadcom(PluginWrapper wrapper) {
         super(wrapper);
@@ -346,46 +340,20 @@ public class Megauploadcom extends PluginForHost {
         // br.getRegex(Pattern.compile("<script.*?java.*?>.*?count=(\\d+);",
         // Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         // if (Waittime == null) {
-      
+
         // } else {
         // sleep(Integer.parseInt(Waittime.trim()) * 1000l, link);
         // }
         link.getLinkStatus().setStatusText("Wait for start");
         link.requestGuiUpdate();
-        while( JDUtilities.getController().getRunningDownloadNumByHost(this)>0){
-            
+        while (JDUtilities.getController().getRunningDownloadNumByHost(this) > 0) {
+
             Thread.sleep(200);
         }
-       
-       
-     
-      
+
         String url = br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
         doDownload(link, url, true, 1);
-       
-    }
 
-    private String getCode(File file) {
-        try {
-            String hash = JDHash.getMD5(file);
-            File db = null;
-            if (!(db = JDUtilities.getResourceFile("jd/captcha/methods/megaupload.com/c.db")).exists()) {
-                UnZip u = new UnZip(JDUtilities.getResourceFile("jd/captcha/methods/megaupload.com/c.zip"), JDUtilities.getResourceFile("jd/captcha/methods/megaupload.com/"));
-                File[] efiles;
-
-                efiles = u.extract();
-                efiles[0].deleteOnExit();
-                db = efiles[0];
-            }
-            String list = JDIO.getLocalFile(db);
-
-            int id = list.indexOf(hash);
-            if (id < 0) return null;
-            String code = list.substring(id + 33, id + 33 + 4);
-            return code;
-        } catch (Exception e) {
-            return null;
-        }
     }
 
     private void getRedirect(String url, DownloadLink downloadLink) throws PluginException, InterruptedException {
@@ -439,8 +407,6 @@ public class Megauploadcom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 2;
     }
-
- 
 
     public void reset() {
     }
