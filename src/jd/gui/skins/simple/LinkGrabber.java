@@ -385,9 +385,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         private void initGUIElements() {
             btnToggle = new JButton();
             if (guiConfig.getBooleanProperty(PROPERTY_HEADERVIEW, true)) {
-                btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Collapse"));
+                btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Simple"));
             } else {
-                btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview1", "Expand"));
+                btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview1", "Extended"));
             }
 
             txtName = new JDTextField();
@@ -498,12 +498,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             if (guiConfig.getBooleanProperty(PROPERTY_HEADERVIEW, true)) {
                 guiConfig.setProperty(PROPERTY_HEADERVIEW, false);
                 guiConfig.save();
-                btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview1", "Expand"));
+                btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview1", "Extended"));
                 return buildSimpleHeader();
             } else {
                 guiConfig.setProperty(PROPERTY_HEADERVIEW, true);
                 guiConfig.save();
-                btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Collapse"));
+                btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Simple"));
                 return buildExtendedHeader();
             }
         }
@@ -513,15 +513,17 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             JPanel titles = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
             titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
+            titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
             titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
 
             JPanel panel1 = new JPanel(new BorderLayout(n / 2, n / 2));
-            panel1.add(txtPassword, BorderLayout.CENTER);
+            panel1.add(txtName, BorderLayout.CENTER);
             panel1.add(btnToggle, BorderLayout.EAST);
 
             JPanel elements = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
-            elements.add(txtName);
             elements.add(panel1);
+            elements.add(brwSaveTo);
+            elements.add(txtPassword);
 
             JPanel header = new JPanel(new BorderLayout(n, n));
             header.add(titles, BorderLayout.WEST);
@@ -534,8 +536,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             JPanel titles = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
             titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
-            titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
             titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
+            titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
             titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
 
             JPanel panel1 = new JPanel(new BorderLayout(n / 2, n / 2));
@@ -547,14 +549,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             panel2.add(chbUseSubdirectory, BorderLayout.EAST);
 
             JPanel panel3 = new JPanel(new BorderLayout(n / 2, n / 2));
-            panel3.add(txtComment, BorderLayout.CENTER);
+            panel3.add(txtName, BorderLayout.CENTER);
             panel3.add(btnToggle, BorderLayout.EAST);
 
             JPanel elements = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
-            elements.add(txtName);
-            elements.add(panel1);
-            elements.add(panel2);
             elements.add(panel3);
+            elements.add(panel2);
+            elements.add(panel1);
+            elements.add(txtComment);
 
             JPanel header = new JPanel(new BorderLayout(n, n));
             header.add(titles, BorderLayout.WEST);
