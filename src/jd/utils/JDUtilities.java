@@ -1102,7 +1102,7 @@ public class JDUtilities {
      */
     @SuppressWarnings("unchecked")
     public static ArrayList<HostPluginWrapper> getPluginsForHost() {
-
+ 
         ArrayList<HostPluginWrapper> plgs = new ArrayList<HostPluginWrapper>();
 
         plgs.addAll(HostPluginWrapper.getHostWrapper());
