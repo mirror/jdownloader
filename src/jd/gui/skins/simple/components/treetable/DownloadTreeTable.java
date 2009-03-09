@@ -260,7 +260,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("links");
 
             if (!guiConfig.getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?"))) {
+                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + links.size() + ")")) {
                     JDUtilities.getController().removeDownloadLinks(links);
                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
                 }
@@ -674,7 +674,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             }
 
             if (!guiConfig.getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?"))) {
+                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + links.size() + " links in " + fps.size() + " packages)")) {
                     // zuerst Pakete entfernen
                     for (FilePackage filePackage : fps) {
                         JDUtilities.getController().removePackage(filePackage);
