@@ -12,7 +12,7 @@ param.trainOnlyUnknown=true;
 
 
 #####################Scanparameter
-param.borderVarianceX=16;
+param.borderVarianceX=20;
 param.borderVarianceY=3;
 param.scanVarianceX=3;
 param.scanVarianceY=3;
@@ -22,20 +22,20 @@ param.minCleftSize=4;
 param.overlayNoiseSize=0;
 param.scanAngleLeft=0;
 param.scanAngleRight=0;
-param.scanAngleSteps=2;
+param.scanAngleSteps=0;
 param.errorAWeight=2;
 param.errorBWeight=2;
-param.coverageFaktorAWeight=2;
+param.coverageFaktorAWeight=1;
 param.coverageFaktorBWeight=4;
 param.cleftFaktor=0.0;
 
 
 ############Parameter die einen Scan frühzeitig abbrechen können, bzw mögliche TReffer frühzeitig ausfiltern
-param.LetterSearchLimitPerfectPercent=-1;
+param.LetterSearchLimitPerfectPercent=20;
 param.quickScanReliabilityLimit=3.0;
-param.quickScanValityLimit=20.0;
+param.quickScanValityLimit=10.0;
 
-param.preScanFilter=85;
+param.preScanFilter=100;
 param.preScanFaktor=4;
 ##################Prepare captcha
 
