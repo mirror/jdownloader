@@ -334,7 +334,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     dispose();
                 }
             } else if (e.getSource() == btnToggle) {
-                buildGUI();
+                rebuildGUI();
             }
         }
 
@@ -384,6 +384,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         private void initGUIElements() {
             btnToggle = new JButton();
+            if (guiConfig.getBooleanProperty(PROPERTY_HEADERVIEW, true)) {
+                btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Collapse"));
+            } else {
+                btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview1", "Expand"));
+            }
 
             txtName = new JDTextField();
             txtName.setAutoSelect(true);
@@ -467,10 +472,21 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
                 public void run() {
                     int n = 10;
-                    removeAll();
                     setLayout(new BorderLayout(n, n));
                     setBorder(new EmptyBorder(n, n, n, n));
-                    add(getHeader(), BorderLayout.NORTH);
+                    add(guiConfig.getBooleanProperty(PROPERTY_HEADERVIEW, true) ? buildExtendedHeader() : buildSimpleHeader(), BorderLayout.NORTH);
+                    add(new JScrollPane(table), BorderLayout.CENTER);
+                }
+
+            });
+        }
+
+        private void rebuildGUI() {
+            SwingUtilities.invokeLater(new Runnable() {
+
+                public void run() {
+                    removeAll();
+                    add(changeHeader(), BorderLayout.NORTH);
                     add(new JScrollPane(table), BorderLayout.CENTER);
                     SwingUtilities.updateComponentTreeUI(PackageTab.this);
                 }
@@ -478,7 +494,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             });
         }
 
-        private JPanel getHeader() {
+        private JPanel changeHeader() {
             if (guiConfig.getBooleanProperty(PROPERTY_HEADERVIEW, true)) {
                 guiConfig.setProperty(PROPERTY_HEADERVIEW, false);
                 guiConfig.save();
