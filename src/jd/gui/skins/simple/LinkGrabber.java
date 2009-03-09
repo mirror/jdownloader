@@ -472,7 +472,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     setBorder(new EmptyBorder(n, n, n, n));
                     add(getHeader(), BorderLayout.NORTH);
                     add(new JScrollPane(table), BorderLayout.CENTER);
-                    new JScrollPane().setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
                     SwingUtilities.updateComponentTreeUI(PackageTab.this);
                 }
 
