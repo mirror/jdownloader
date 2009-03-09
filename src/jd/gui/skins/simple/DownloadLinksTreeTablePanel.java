@@ -61,5 +61,18 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
         JDUtilities.getController().removeDownloadLinks(links);
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
     }
-
+    
+    public long countSelectedLinks() {
+    	Vector<DownloadLink> links = internalTreeTable.getSelectedDownloadLinks();
+        Vector<FilePackage> fps = internalTreeTable.getSelectedFilePackages();
+        for (FilePackage filePackage : fps) {
+            links.addAll(filePackage.getDownloadLinks());
+        }
+        return links.size();
+    }
+    
+    public long countSelectedPackages() {
+        Vector<FilePackage> fps = internalTreeTable.getSelectedFilePackages();
+        return fps.size();
+    }
 }
