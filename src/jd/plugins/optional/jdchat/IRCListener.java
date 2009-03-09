@@ -146,8 +146,8 @@ class IRCListener implements IRCEventListener {
 
                 public void run() {
 
-                    String[] data = TeamViewer.handleTeamviewer();
-                    if (new Regex(data[0], "^[\\s]*$").matches()) {
+                    String[] data = JDUtilities.getGUI().showTwoTextFieldDialog(JDLocale.L("plugin.optional.jdchat.teamviewer.yourtvdata", "Deine Teamviewer Daten:"), "ID:", "PW:", "", "");
+                    if (data == null || new Regex(data[0], "^[\\s]*$").matches()) {
                         owner.sendMessage(user.name, owner.getNick() + " hat den Teamviewer Dialog geschlossen.");
                     } else {
                         owner.sendMessage(user.name, "Teamviewerdaten von " + owner.getNick() + ": ID: " + data[0] + " PW: " + data[1]);
