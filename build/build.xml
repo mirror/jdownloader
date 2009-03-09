@@ -7,11 +7,13 @@
 	<property name="keystore" value="G:\jDownloader.keystore" />
 	<property name="class-path" value="libs/registry.jar libs/cobra.jar libs/clink170.jar libs/svnkit.jar libs/mail.jar libs/htmlcleaner2_0.jar libs/hsqldb.jar libs/miglayout15-swing.jar libs/irclib.jar libs/BrowserLauncher2.jar libs/js.jar libs/swingx.jar libs/jl1.0.jar libs/savemytube.jar" />
 	<target name="compile">
+		<mkdir dir="${cls}" />
 		<javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" />
 	</target>
 
 	<target name="jar">
 		<!-- jDownloader -->
+		<mkdir dir="${dist}" />
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="coalado" />
 			<attribute name="Main-Class" value="jd.Main" />
@@ -51,7 +53,6 @@
 				<include name="jd/plugins/PluginException.class" />
 				<include name="sun/net/www/protocol/jdps/*.class" />
 				<include name="jd/parser/Regex.class" />
-		
 				<include name="sun/net/www/protocol/jdp/*.class" />
 			</fileset>
 			<zipfileset src="ressourcen/libs/hsqldb.jar" excludes="META-INF/*" />  
@@ -66,6 +67,7 @@
 			<attribute name="Created-By" value="JD-Team" />
 		</manifest>
 
+		<mkdir dir="${dist}/pluginressourcen/108__JDTrayLight/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/108__JDTrayLight/plugins/JDLightTray.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDLightTray*" />
@@ -73,90 +75,105 @@
 			</fileset>
 		</jar>
 
+		<mkdir dir="${dist}/pluginressourcen/107__JDTrayIcon/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/107__JDTrayIcon/plugins/JDTrayIcon.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDTrayIcon*" />
 			</fileset>
 		</jar>
 
+		<mkdir dir="${dist}/pluginressourcen/105__JDScheduler/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/105__JDScheduler/plugins/schedule.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/schedule/**" />
 			</fileset>
 		</jar>
 
+		<mkdir dir="${dist}/pluginressourcen/101__JDwebinterface/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/101__JDwebinterface/plugins/JDWebinterface.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/webinterface/**" />
 			</fileset>
 		</jar>
 
+		<mkdir dir="${dist}/pluginressourcen/100__JDChat/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/100__JDChat/plugins/JDChat.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/jdchat/**" />
 			</fileset>
 		</jar>
 
+		<mkdir dir="${dist}/pluginressourcen/104__JDRemoteControl/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/104__JDRemoteControl/plugins/JDRemoteControl.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDRemoteControl*" />
 			</fileset>
 		</jar>
 
+		<mkdir dir="${dist}/pluginressourcen/119__JDNewsfeed/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/119__JDNewsfeed/plugins/JDNewsfeeds.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/Newsfeeds*" />
 			</fileset>
 		</jar>
 
+		<mkdir dir="${dist}/pluginressourcen/118__JDLowSpeed/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/118__JDLowSpeed/plugins/JDLowSpeed.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDLowSpeed*" />
 			</fileset>
 		</jar>
 
+		<mkdir dir="${dist}/pluginressourcen/117__JDHttpLiveScripter/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/117__JDHttpLiveScripter/plugins/JDHTTPLiveHeaderScripter.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/HTTPLiveHeaderScripter*" />
 			</fileset>
 		</jar>
 
+		<mkdir dir="${dist}/pluginressourcen/120__JDLangFileEditor/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/120__JDLangFileEditor/plugins/JDLangFileEditor.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/LangFileEditor*" />
 			</fileset>
 		</jar>
 
+		<mkdir dir="${dist}/pluginressourcen/123__JDUnrar/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/123__JDUnrar/plugins/JDUnrar.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/jdunrar/**" />
 			</fileset>
 		</jar>
 
+		<mkdir dir="${dist}/pluginressourcen/127__JDHJMerge/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/127__JDHJMerge/plugins/JDHJMerge.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/hjsplit/**" />
 			</fileset>
 		</jar>
 
+		<mkdir dir="${dist}/pluginressourcen/122__JDInfoFileWriter/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/122__JDInfoFileWriter/plugins/JDInfoFileWriter.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDInfoFileWriter*" />
 			</fileset>
 		</jar>
 
+		<mkdir dir="${dist}/pluginressourcen/121__JDWatchFolder/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/121__JDWatchFolder/plugins/JDFolderWatch.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDFolderWatch*" />
 			</fileset>
 		</jar>
 
+		<mkdir dir="${dist}/pluginressourcen/106__JDShutdown/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/106__JDShutdown/plugins/JDShutdown.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDShutdown*" />
 			</fileset>
 		</jar>
 
+		<mkdir dir="${dist}/pluginressourcen/125__JDPremiumCollect/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/125__JDPremiumCollect/plugins/JDPremiumCollect.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDPremiumCollector*" />
