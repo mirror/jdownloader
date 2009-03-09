@@ -389,6 +389,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             } else {
                 btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview1", "Extended"));
             }
+            btnToggle.setMinimumSize(new Dimension(80, 23));
+            btnToggle.setPreferredSize(new Dimension(80, 23));
+            btnToggle.setMaximumSize(new Dimension(80, 23));
 
             txtName = new JDTextField();
             txtName.setAutoSelect(true);
@@ -489,6 +492,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     add(changeHeader(), BorderLayout.NORTH);
                     add(new JScrollPane(table), BorderLayout.CENTER);
                     SwingUtilities.updateComponentTreeUI(PackageTab.this);
+                    System.out.println(btnToggle.getSize());
                 }
 
             });
@@ -545,7 +549,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             panel1.add(chbExtract, BorderLayout.EAST);
 
             JPanel panel2 = new JPanel(new BorderLayout(n / 2, n / 2));
-            panel2.add(brwSaveTo, BorderLayout.CENTER);
+            panel2.add(txtComment, BorderLayout.CENTER);
             panel2.add(chbUseSubdirectory, BorderLayout.EAST);
 
             JPanel panel3 = new JPanel(new BorderLayout(n / 2, n / 2));
@@ -554,9 +558,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             JPanel elements = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
             elements.add(panel3);
-            elements.add(panel2);
+            elements.add(brwSaveTo);
             elements.add(panel1);
-            elements.add(txtComment);
+            elements.add(panel2);
 
             JPanel header = new JPanel(new BorderLayout(n, n));
             header.add(titles, BorderLayout.WEST);
