@@ -22,8 +22,6 @@ import java.awt.Component;
 import java.awt.ComponentOrientation;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -80,7 +78,6 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
-import javax.swing.text.PlainDocument;
 
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
@@ -113,7 +110,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
      * @author JD-Team
      * 
      */
-    class PackageTab extends JPanel implements ActionListener, MouseListener, KeyListener {
+    private class PackageTab extends JPanel implements ActionListener, MouseListener, KeyListener {
 
         /**
          * Celllistrenderer Für die Linklisten
@@ -182,6 +179,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             private static final long serialVersionUID = -7475394342173736030L;
 
+            @Override
             public Class<?> getColumnClass(int columnIndex) {
                 return String.class;
             }
@@ -190,8 +188,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 return 5;
             }
 
+            @Override
             public String getColumnName(int column) {
-
                 switch (column) {
                 case 0:
                     return JDLocale.L("gui.linkgrabber.packagetab.table.column.id", "*");
@@ -205,7 +203,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     return JDLocale.L("gui.linkgrabber.packagetab.table.column.info", "Info");
                 }
                 return super.getColumnName(column);
-
             }
 
             public int getRowCount() {
@@ -213,7 +210,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
 
             public Object getValueAt(int rowIndex, int columnIndex) {
-
                 switch (columnIndex) {
                 case 0:
                     return rowIndex + 1;
@@ -248,6 +244,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         private JTable table;
 
+        private JButton btnToggle;
+
         private JDTextField txtComment;
 
         private JDTextField txtName;
@@ -266,15 +264,23 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         private JCheckBox chbExtract;
 
+        private JCheckBox chbUseSubdirectory;
+
+        private static final String PROPERTY_HEADERVIEW = "PROPERTY_HEADERVIEW";
+
         /**
-         * TODO: If user changed the packagename, the linkgrabber shouldn't change it!
+         * TODO: If user changed the packagename, the linkgrabber shouldn't
+         * change it!
          */
         @SuppressWarnings("unused")
         private boolean changedName = false;
 
         public PackageTab() {
             linkList = new Vector<DownloadLink>();
-            buildGui();
+            setPreferredSize(new Dimension(700, 350));
+            initGUIElements();
+            buildGUI();
+            buildMenu();
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -327,6 +333,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     setVisible(false);
                     dispose();
                 }
+            } else if (e.getSource() == btnToggle) {
+                buildGUI();
             }
         }
 
@@ -374,8 +382,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             sortOn();
         }
 
-        private void buildGui() {
-            setLayout(new GridBagLayout());
+        private void initGUIElements() {
+            btnToggle = new JButton();
 
             txtName = new JDTextField();
             txtName.setAutoSelect(true);
@@ -384,24 +392,18 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             chbExtract = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
             chbExtract.setSelected(true);
-            // // Vorrübergehend noch ohne Funktion
-            // chbExtract.setEnabled(false);
             chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
+
+            chbUseSubdirectory = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.useSubdirectory", "Use Subdirectory"));
+            chbUseSubdirectory.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
+            chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
 
             brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
             brwSaveTo.setEditable(true);
             brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
             brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
 
-            txtName.setPreferredSize(new Dimension(450, 20));
-            txtComment.setPreferredSize(new Dimension(450, 20));
-            brwSaveTo.setPreferredSize(new Dimension(450, 20));
-            txtName.setMinimumSize(new Dimension(250, 20));
-            txtComment.setMinimumSize(new Dimension(250, 20));
-            brwSaveTo.setMinimumSize(new Dimension(250, 20));
-
-            PlainDocument doc = (PlainDocument) txtName.getDocument();
-            doc.addDocumentListener(new DocumentListener() {
+            txtName.getDocument().addDocumentListener(new DocumentListener() {
                 public void changedUpdate(DocumentEvent e) {
                     onPackageNameChanged(PackageTab.this);
                 }
@@ -421,14 +423,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             table.setAutoCreateColumnsFromModel(true);
             table.setDragEnabled(true);
             table.setDefaultRenderer(String.class, new InternalTableCellRenderer());
-            table.addKeyListener(this);
-            txtName.addKeyListener(this);
-            table.addMouseListener(this);
             table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
             table.getTableHeader().setReorderingAllowed(false);
-            table.getTableHeader().addMouseListener(this);
-
-            setPreferredSize(new Dimension(700, 350));
 
             TableColumn col = null;
             for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
@@ -456,36 +452,99 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 case 4:
                     col.setPreferredWidth(150);
                     break;
-
                 }
             }
 
+            btnToggle.addActionListener(this);
+            txtName.addKeyListener(this);
+            table.addKeyListener(this);
+            table.addMouseListener(this);
+            table.getTableHeader().addMouseListener(this);
+        }
+
+        private void buildGUI() {
+            SwingUtilities.invokeLater(new Runnable() {
+
+                public void run() {
+                    int n = 10;
+                    removeAll();
+                    setLayout(new BorderLayout(n, n));
+                    setBorder(new EmptyBorder(n, n, n, n));
+                    add(getHeader(), BorderLayout.NORTH);
+                    add(new JScrollPane(table), BorderLayout.CENTER);
+                    new JScrollPane().setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+                    SwingUtilities.updateComponentTreeUI(PackageTab.this);
+                }
+
+            });
+        }
+
+        private JPanel getHeader() {
+            if (guiConfig.getBooleanProperty(PROPERTY_HEADERVIEW, true)) {
+                guiConfig.setProperty(PROPERTY_HEADERVIEW, false);
+                guiConfig.save();
+                btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview1", "Expand"));
+                return buildSimpleHeader();
+            } else {
+                guiConfig.setProperty(PROPERTY_HEADERVIEW, true);
+                guiConfig.save();
+                btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Collapse"));
+                return buildExtendedHeader();
+            }
+        }
+
+        private JPanel buildSimpleHeader() {
             int n = 10;
-            JPanel north = new JPanel(new BorderLayout(n, n));
-            JPanel east = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
-            JPanel center = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
-            JPanel extractPW = new JPanel(new GridBagLayout());
-            north.add(east, BorderLayout.WEST);
-            north.add(center, BorderLayout.CENTER);
-            JDUtilities.addToGridBag(extractPW, txtPassword, 0, 0, 1, 1, 100, 100, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-            JDUtilities.addToGridBag(extractPW, chbExtract, 1, 0, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-            east.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "packagename")));
-            east.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
-            east.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
-            east.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
+            JPanel titles = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
+            titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
+            titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
 
-            center.add(txtName);
-            center.add(brwSaveTo);
-            center.add(extractPW);
-            center.add(txtComment);
+            JPanel panel1 = new JPanel(new BorderLayout(n / 2, n / 2));
+            panel1.add(txtPassword, BorderLayout.CENTER);
+            panel1.add(btnToggle, BorderLayout.EAST);
 
-            setLayout(new BorderLayout(n, n));
-            setBorder(new EmptyBorder(n, n, n, n));
-            add(north, BorderLayout.NORTH);
-            add(new JScrollPane(table), BorderLayout.CENTER);
+            JPanel elements = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
+            elements.add(txtName);
+            elements.add(panel1);
 
-            buildMenu();
+            JPanel header = new JPanel(new BorderLayout(n, n));
+            header.add(titles, BorderLayout.WEST);
+            header.add(elements, BorderLayout.CENTER);
+            return header;
+        }
+
+        private JPanel buildExtendedHeader() {
+            int n = 10;
+
+            JPanel titles = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
+            titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
+            titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
+            titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
+            titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
+
+            JPanel panel1 = new JPanel(new BorderLayout(n / 2, n / 2));
+            panel1.add(txtPassword, BorderLayout.CENTER);
+            panel1.add(chbExtract, BorderLayout.EAST);
+
+            JPanel panel2 = new JPanel(new BorderLayout(n / 2, n / 2));
+            panel2.add(brwSaveTo, BorderLayout.CENTER);
+            panel2.add(chbUseSubdirectory, BorderLayout.EAST);
+
+            JPanel panel3 = new JPanel(new BorderLayout(n / 2, n / 2));
+            panel3.add(txtComment, BorderLayout.CENTER);
+            panel3.add(btnToggle, BorderLayout.EAST);
+
+            JPanel elements = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
+            elements.add(txtName);
+            elements.add(panel1);
+            elements.add(panel2);
+            elements.add(panel3);
+
+            JPanel header = new JPanel(new BorderLayout(n, n));
+            header.add(titles, BorderLayout.WEST);
+            header.add(elements, BorderLayout.CENTER);
+            return header;
         }
 
         private void buildMenu() {
@@ -551,6 +610,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             return this.chbExtract.isSelected();
         }
 
+        public boolean useSubdirectory() {
+            return this.chbUseSubdirectory.isSelected();
+        }
+
         public String getPassword() {
             return txtPassword.getText();
         }
@@ -580,10 +643,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 setChangedName(true);
             }
         }
-        public synchronized void setChangedName(boolean b)
-        {
+
+        public synchronized void setChangedName(boolean b) {
             changedName = b;
         }
+
         public void keyTyped(KeyEvent e) {
         }
 
@@ -1315,7 +1379,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         fp.setExtractAfterDownload(tab.isExtract());
         addToDownloadDirs(tab.getDownloadDirectory(), tab.getPackageName());
 
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
+        if (tab.useSubdirectory()) {
             File file = new File(new File(tab.getDownloadDirectory()), fp.getName());
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, false)) {
                 if (!file.exists()) file.mkdirs();
