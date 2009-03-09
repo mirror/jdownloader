@@ -841,7 +841,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case JDAction.ITEMS_REMOVE:
             if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?"))) {
+                if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + linkListPane.countSelectedLinks() + " links in " + linkListPane.countSelectedPackages() + " packages)")) {
                     linkListPane.removeSelectedLinks();
                 }
             } else {
