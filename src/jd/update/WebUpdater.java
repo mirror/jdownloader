@@ -373,7 +373,6 @@ public class WebUpdater implements Serializable {
         HashMap<String, FileUpdate> plugins = new HashMap<String, FileUpdate>();
         ArrayList<FileUpdate> ret = new ArrayList<FileUpdate>();
 
-      
         updateAvailableServers();
         loadUpdateList();
         source = JDIO.getLocalFile(fileMap.get("hashlist.lst"));
@@ -390,13 +389,13 @@ public class WebUpdater implements Serializable {
         String[][] matches = new Regex(source, pattern).getMatches();
         ArrayList<Byte> sum = new ArrayList<Byte>();
         for (String[] m : matches) {
-          
+
             if (this.workingdir != null) {
                 entry = new FileUpdate(m[0], m[1], workingdir);
             } else {
                 entry = new FileUpdate(m[0], m[1]);
             }
-sum.add((byte)entry.getRemoteHash().charAt(0));
+            sum.add((byte) entry.getRemoteHash().charAt(0));
             if (entry.getLocalPath().endsWith(".class")) {
                 plugins.put(entry.getLocalPath(), entry);
             }
@@ -405,8 +404,8 @@ sum.add((byte)entry.getRemoteHash().charAt(0));
                 boolean osFound = false;
                 boolean correctOS = false;
                 for (String element : os) {
-                    String url=entry.getRawUrl();
-                    if(url==null)url=entry.getRelURL();
+                    String url = entry.getRawUrl();
+                    if (url == null) url = entry.getRelURL();
                     if (url.toLowerCase().indexOf(element) >= 0) {
                         osFound = true;
                         if (System.getProperty("os.name").toLowerCase().indexOf(element) >= 0) {
@@ -419,7 +418,9 @@ sum.add((byte)entry.getRemoteHash().charAt(0));
                     if (!osFound || osFound && correctOS) {
                         ret.add(entry);
                     } else {
-                        log("OS Filter: " + entry.getRawUrl());
+                        String url = entry.getRawUrl();
+                        if (url == null) url = entry.getRelURL();
+                        log("OS Filter: " + url);
 
                     }
                 } else {
@@ -610,7 +611,7 @@ sum.add((byte)entry.getRemoteHash().charAt(0));
                 } else {
                     log(file.toString());
                     log("Failed\r\n");
-                    if (progressload != null)  progressload.setForeground(Color.RED);
+                    if (progressload != null) progressload.setForeground(Color.RED);
 
                 }
             } catch (Exception e) {
@@ -618,7 +619,7 @@ sum.add((byte)entry.getRemoteHash().charAt(0));
                 log(e.getLocalizedMessage());
                 log(file.toString());
                 log("Failed\r\n");
-                if (progressload != null)progressload.setForeground(Color.RED);
+                if (progressload != null) progressload.setForeground(Color.RED);
             }
 
             i++;

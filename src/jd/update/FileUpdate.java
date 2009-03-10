@@ -42,27 +42,25 @@ public class FileUpdate {
         String[] dat = new Regex(serverString, "(.*)\\?(.*)").getRow(0);
         this.relURL = serverString;
         if (dat == null) {
-            this.localPath = serverString;
+            if (System.getProperty("os.name").toLowerCase().indexOf("windows") == -1) {
+                if (serverString.startsWith("/")) {
+                    serverString = "." + serverString;
+                }
+            }
+            localPath = serverString;
         } else {
+            if (System.getProperty("os.name").toLowerCase().indexOf("windows") == -1) {
+                if (dat[0].startsWith("/")) {
+                    dat[0] = "." + dat[0];
+                }
+            }
             localPath = dat[0];
             this.url = dat[1];
         }
     }
 
     public FileUpdate(String serverString, String hash, File workingdir) {
-        this.hash = hash;
-
-        serverString = serverString.replace("http://78.143.20.68/update/jd/", "");
-        String[] dat = new Regex(serverString, "(.*)\\?(.*)").getRow(0);
-        this.relURL = serverString;
-        if (dat == null) {
-
-            this.localPath = new File(workingdir, serverString).getAbsolutePath();
-        } else {
-            localPath = new File(workingdir, dat[0]).getAbsolutePath();
-            this.url = dat[1];
-
-        }
+        this(new File(workingdir, serverString).getAbsolutePath(), hash);
     }
 
     public String getRelURL() {
