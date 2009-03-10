@@ -572,6 +572,9 @@ public class Browser {
     }
 
     private void mergeHeaders(Request request) {
+        if(headers.isDominant()){
+            request.getHeaders().clear();
+        }
         for (int i = 0; i < headers.size(); i++) {
 
             if (headers.getValue(i) == null) {

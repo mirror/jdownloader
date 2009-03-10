@@ -97,9 +97,10 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
             if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && WebUpdater.PLUGIN_LIST != null) {
 
                 ArrayList<FileUpdate> filelist = new ArrayList<FileUpdate>();
+                HashMap<String, FileUpdate> list = WebUpdater.PLUGIN_LIST;
                 for (Iterator<Entry<String, FileUpdate>> it = WebUpdater.PLUGIN_LIST.entrySet().iterator(); it.hasNext();) {
                     Entry<String, FileUpdate> entry = it.next();
-                    if (entry.getKey().startsWith(getClassName().replace(".", "/"))) {
+                    if (entry.getKey().startsWith("/"+getClassName().replace(".", "/"))) {
                         filelist.add(entry.getValue());
                     }
 
@@ -112,7 +113,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
                 for (FileUpdate entry : filelist) {
                     String plg = entry.getLocalPath();
 
-                    if (entry.equals()) {
+                    if (!entry.equals()) {
                         if (!manualupdate) {
                             new WebUpdater().updateUpdatefIle(entry);
                             logger.info("Updated plugin: " + plg);

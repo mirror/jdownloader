@@ -1212,7 +1212,7 @@ public class JDUtilities {
             }
         }
         return null;
-    }
+    } 
 
     public static void restartJD(String[] jdArgs) {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();

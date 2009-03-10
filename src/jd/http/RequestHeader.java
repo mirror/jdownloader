@@ -8,6 +8,14 @@ public class RequestHeader {
 
     private ArrayList<String> keys;
     private ArrayList<String> values;
+    private boolean dominant=false;
+/**
+ * if a header is dominant, it will not get merged with existing headers. It will replace it completly
+ * @param dominant
+ */
+    public void setDominant(boolean dominant) {
+        this.dominant = dominant;
+    }
 
     public RequestHeader() {
         this.keys = new ArrayList<String>();
@@ -116,6 +124,11 @@ public class RequestHeader {
         keys.set(i, key);
         values.set(i, value);
 
+    }  
+
+    public boolean isDominant() {
+        // TODO Auto-generated method stub
+        return dominant;
     }
 
 }

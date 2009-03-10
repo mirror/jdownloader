@@ -1500,7 +1500,10 @@ public class JAntiCaptcha {
      * neue db
      */
     public void importDB(File path) {
-        letterDB = new LinkedList<Letter>();
+        boolean old=true;
+        if(JOptionPane.showConfirmDialog(null, "Use format CHAR_* sinstead of NUM_CHAR?")==JOptionPane.OK_OPTION)old=false;
+            if(JOptionPane.showConfirmDialog(null, "Delete old db?")==JOptionPane.OK_OPTION)
+       letterDB = new LinkedList<Letter>();
         getResourceFile("letters.mth").delete();
         Image image;
         Letter letter;
@@ -1548,7 +1551,11 @@ public class JAntiCaptcha {
                 // letter = letter.align(-40, +40);
                 // PixelGrid.fillLetter(letter);
                 letter.setSourcehash(UTILITIES.getLocalHash(element));
+              if(old){
                 letter.setDecodedValue(element.getName().split("\\_")[1].split("\\.")[0]);
+              }else{
+                  letter.setDecodedValue(element.getName().split("\\_")[0]); 
+              }
 //BasicWindow.showImage(letter.getImage(1),element.getName());
                 letter.clean();
 

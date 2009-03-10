@@ -56,7 +56,7 @@ public class MegaUpload {
             }
 
             LetterComperator r = captcha.owner.getLetter(first);
-
+            if (r == null) return null;
             first.detected = r;
             Letter b = r.getB();
             // int[] offset = new

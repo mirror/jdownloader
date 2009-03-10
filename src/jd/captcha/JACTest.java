@@ -54,7 +54,7 @@ public class JACTest {
 
         //
         // Megaupload2.writeDB();
-//     jac.importDB();
+    //jac.importDB();
         //
         jac.displayLibrary();
 
@@ -64,7 +64,7 @@ public class JACTest {
         // ().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+
         // "securedin1730080724541.jpg"),4);
 
-        File f = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster).listFiles()[4];
+        File f = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster).listFiles()[0];
 
         System.out.println(f + "");
         jac.showPreparedCaptcha(f);

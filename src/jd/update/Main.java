@@ -187,113 +187,108 @@ public class Main {
      * jdHomeDir; }
      */
     @SuppressWarnings("unchecked")
-    public static void main(String args[]){
-        try{
-        log = new StringBuilder();
-      
-        boolean OSFilter = true;
-        boolean loadAllPlugins = false;
-        boolean clone = false;
-        String clonePrefix = null;
-     
-        File cfg;
-        if ((cfg = JDUtilities.getResourceFile("jdownloader.config")).exists()) {
-            
-            JDUtilities.getResourceFile("backup/").mkdirs();
-            
-            cfg.renameTo(JDUtilities.getResourceFile("backup/jdownloader.config.outdated"));
-            
-        }
-        
-        
-        for (String p : args) {
-            if (p.trim().equalsIgnoreCase("-noosfilter")) {
-                OSFilter = false;
-            } else if (p.trim().equalsIgnoreCase("-allplugins")) {
-                loadAllPlugins = true;
-            } else if (p.trim().equalsIgnoreCase("-full")) {
-                loadAllPlugins = true;
-                OSFilter = false;
-            } else if (p.trim().equalsIgnoreCase("-clone")) {
-                loadAllPlugins = true;
-                OSFilter = false;
-                clone = true;
-            } else if (clone && clonePrefix == null) {
-                clonePrefix = p.trim();
-            }
-        }
-        
-        Browser.init();
-     
-        
-        guiConfig = WebUpdater.getConfig("WEBUPDATE");
-        
-        log.append("Update JDownloader  at "+JDUtilities.getResourceFile(".") + "\r\n");
-        log.append(WebUpdater.getConfig("WEBUPDATE").getProperties() + "\r\n");
-        System.out.println(WebUpdater.getConfig("WEBUPDATE").getProperties() + "\r\n");
-        System.out.println(WebUpdater.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
-        log.append(WebUpdater.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
-       
-        
-        initGUI();
-        
-        
-        for (int i = 0; i < args.length; i++) {
-            Main.log(log, "Parameter " + i + " " + args[i] + " " + System.getProperty("line.separator"));
-            logWindow.setText(log.toString());
-        }
-        WebUpdater updater = new WebUpdater();
-        updater.setOSFilter(OSFilter);
-        Main.log(log, "Current Date:" + new Date() + "\r\n");
-        checkBackup();
-        updater.ignorePlugins(!WebUpdater.getConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_DISABLE", false));
-        if (loadAllPlugins) updater.ignorePlugins(false);
-        checkUpdateMessage();
-        updater.setLogger(log);
-
-        updater.setDownloadProgress(progressload);
-        Main.trace("Start Webupdate");
-        ArrayList<FileUpdate> files;
+    public static void main(String args[]) {
         try {
-            files = updater.getAvailableFiles();
-        } catch (Exception e) {
-            Main.trace("Update failed");
-            Main.log(log, "Update failed");
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e1) {
+            log = new StringBuilder();
+
+            boolean OSFilter = true;
+            boolean loadAllPlugins = false;
+            boolean clone = false;
+            String clonePrefix = null;
+
+            File cfg;
+            if ((cfg = JDUtilities.getResourceFile("jdownloader.config")).exists()) {
+
+                JDUtilities.getResourceFile("backup/").mkdirs();
+
+                cfg.renameTo(JDUtilities.getResourceFile("backup/jdownloader.config.outdated"));
+
             }
-            files = new ArrayList<FileUpdate>();
-        }
 
-        if (files != null) {
-         
-            updater.filterAvailableUpdates(files);
+            for (String p : args) {
+                if (p.trim().equalsIgnoreCase("-noosfilter")) {
+                    OSFilter = false;
+                } else if (p.trim().equalsIgnoreCase("-allplugins")) {
+                    loadAllPlugins = true;
+                } else if (p.trim().equalsIgnoreCase("-full")) {
+                    loadAllPlugins = true;
+                    OSFilter = false;
+                } else if (p.trim().equalsIgnoreCase("-clone")) {
+                    loadAllPlugins = true;
+                    OSFilter = false;
+                    clone = true;
+                } else if (clone && clonePrefix == null) {
+                    clonePrefix = p.trim();
+                }
+            }
 
-            JDUpdateUtils.backupDataBase();
-            updater.updateFiles(files);
-        }
+            Browser.init();
 
-        installAddons();
-        Main.trace(updater.getLogger().toString());
-        Main.trace("End Webupdate");
-        logWindow.setText(log.toString());
-        Main.trace(JDUtilities.getResourceFile("updateLog.txt").getAbsoluteFile());
+            guiConfig = WebUpdater.getConfig("WEBUPDATE");
 
-        if (JDUtilities.getResourceFile("webcheck.tmp").exists()) {
-            JDUtilities.getResourceFile("webcheck.tmp").delete();
-        }
-        Main.log(log, "Local: " + JDUtilities.getResourceFile(".").getAbsolutePath());
+            log.append("Update JDownloader  at " + JDUtilities.getResourceFile(".") + "\r\n");
+            log.append(WebUpdater.getConfig("WEBUPDATE").getProperties() + "\r\n");
+            System.out.println(WebUpdater.getConfig("WEBUPDATE").getProperties() + "\r\n");
+            System.out.println(WebUpdater.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
+            log.append(WebUpdater.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
 
-        Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
-        
-  
-        JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+            initGUI();
 
-        logWindow.setText(log.toString());
-        Main.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
-       System.exit(0);
-        }catch(Exception e){
+            for (int i = 0; i < args.length; i++) {
+                Main.log(log, "Parameter " + i + " " + args[i] + " " + System.getProperty("line.separator"));
+                logWindow.setText(log.toString());
+            }
+            WebUpdater updater = new WebUpdater();
+            updater.setOSFilter(OSFilter);
+            Main.log(log, "Current Date:" + new Date() + "\r\n");
+            checkBackup();
+            updater.ignorePlugins(!WebUpdater.getConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_DISABLE", false));
+            if (loadAllPlugins) updater.ignorePlugins(false);
+            checkUpdateMessage();
+            updater.setLogger(log);
+
+            updater.setDownloadProgress(progressload);
+            Main.trace("Start Webupdate");
+            ArrayList<FileUpdate> files;
+            try {
+                files = updater.getAvailableFiles();
+            } catch (Exception e) {
+                Main.trace("Update failed");
+                Main.log(log, "Update failed");
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e1) {
+                }
+                files = new ArrayList<FileUpdate>();
+            }
+
+            if (files != null) {
+
+                updater.filterAvailableUpdates(files);
+
+                JDUpdateUtils.backupDataBase();
+                updater.updateFiles(files);
+            }
+
+            installAddons();
+            Main.trace(updater.getLogger().toString());
+            Main.trace("End Webupdate");
+            logWindow.setText(log.toString());
+            Main.trace(JDUtilities.getResourceFile("updateLog.txt").getAbsoluteFile());
+
+            if (JDUtilities.getResourceFile("webcheck.tmp").exists()) {
+                JDUtilities.getResourceFile("webcheck.tmp").delete();
+            }
+            Main.log(log, "Local: " + JDUtilities.getResourceFile(".").getAbsolutePath());
+
+            Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
+
+            JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+
+            logWindow.setText(log.toString());
+            Main.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
+            System.exit(0);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -373,23 +368,26 @@ public class Main {
             String hash2 = JDHash.getMD5(JDUtilities.getResourceFile("updatewarnings.html"));
             if (hash2 != null && !hash2.equals(warnHash)) {
                 String str;
-                if (JOptionPane.showConfirmDialog(frame, str = JDIO.getLocalFile(new File("updatewarnings.html")), "UPDATE WARNINGS", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.NO_OPTION) {
-                    Main.log(log, "Abort due to warnings " + str);
+                str = JDIO.getLocalFile(new File("updatewarnings.html"));
+                if (str.trim().length() > 0) {
+                    if (JOptionPane.showConfirmDialog(frame, str, "UPDATE WARNINGS", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.NO_OPTION) {
+                        Main.log(log, "Abort due to warnings " + str);
 
-                    JDUtilities.getResourceFile("updatewarnings.html").delete();
-                    JDUtilities.getResourceFile("updatewarnings.html").deleteOnExit();
-                    if (JDUtilities.getResourceFile("webcheck.tmp").exists()) {
-                        JDUtilities.getResourceFile("webcheck.tmp").delete();
+                        JDUtilities.getResourceFile("updatewarnings.html").delete();
+                        JDUtilities.getResourceFile("updatewarnings.html").deleteOnExit();
+                        if (JDUtilities.getResourceFile("webcheck.tmp").exists()) {
+                            JDUtilities.getResourceFile("webcheck.tmp").delete();
+                        }
+                        Main.log(log, "Local: " + new File("").getAbsolutePath());
+                        Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
+
+                        JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+
+                        logWindow.setText(log.toString());
+                        Main.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
+                        System.exit(0);
+                        return;
                     }
-                    Main.log(log, "Local: " + new File("").getAbsolutePath());
-                    Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
-
-                    JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
-
-                    logWindow.setText(log.toString());
-                    Main.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
-                    System.exit(0);
-                    return;
                 }
             }
         }
@@ -490,7 +488,7 @@ public class Main {
         logWindow.setAutoscrolls(true);
 
         Main.addToGridBag(frame, new JLabel("Webupdate is running..."), REL, REL, REM, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
-       
+
         Main.addToGridBag(frame, new JLabel("Download: "), REL, REL, REL, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
         Main.addToGridBag(frame, progressload, REL, REL, REM, 1, 1, 0, INSETS, BOTHRESIZE, NORTHWEST);
         Main.log(log, "Starting...");
@@ -523,7 +521,6 @@ public class Main {
 
     }
 
-  
     public static void trace(Object arg) {
         try {
             System.out.println(arg.toString());

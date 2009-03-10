@@ -19,11 +19,11 @@ package jd.plugins.host;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Random;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -164,30 +164,37 @@ public class Megauploadcom extends PluginForHost {
         url = url.replaceFirst("megaupload\\.com/", "megaupload\\.com:" + usePort() + "/");
         br.setFollowRedirects(true);
         br.setDebug(true);
-        dl = br.openDownload(link, url, resume, chunks);
-        if (!dl.getConnection().isOK()) {
-            dl.getConnection().disconnect();
-            if (dl.getConnection().getResponseCode() == 503) {
-                String wait = dl.getConnection().getHeaderField("Retry-After");
-                if (wait == null) wait = "120";
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is already Loading or DownloadLimit exceeded!", Integer.parseInt(wait) * 1000l);
+        try {
+            dl = br.openDownload(link, url, resume, chunks);
+            if (!dl.getConnection().isOK()) {
+                dl.getConnection().disconnect();
+                if (dl.getConnection().getResponseCode() == 503) {
+                    String wait = dl.getConnection().getHeaderField("Retry-After");
+                    if (wait == null) wait = "120";
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is already Loading or DownloadLimit exceeded!", Integer.parseInt(wait) * 1000l);
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+            if (!dl.getConnection().isContentDisposition()) {
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+            }
 
-        }
-        if (!dl.getConnection().isContentDisposition()) {
+            dl.startDownload();
+            // Wenn ein Download Premium mit mehreren chunks angefangen wird,
+            // und
+            // dann versucht wird ihn free zu resumen, schlägt das fehl, weil jd
+            // die
+            // mehrfachchunks aus premium nicht resumen kann.
+            // In diesem Fall wird der link resetted.
+            if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED) && link.getLinkStatus().getErrorMessage() != null && link.getLinkStatus().getErrorMessage().contains("Limit Exceeded")) {
+                link.setChunksProgress(null);
+                link.getLinkStatus().setStatus(LinkStatus.ERROR_RETRY);
+            }
+        } finally {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-        }
 
-        dl.startDownload();
-        // Wenn ein Download Premium mit mehreren chunks angefangen wird, und
-        // dann versucht wird ihn free zu resumen, schlägt das fehl, weil jd die
-        // mehrfachchunks aus premium nicht resumen kann.
-        // In diesem Fall wird der link resetted.
-        if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED) && link.getLinkStatus().getErrorMessage() != null && link.getLinkStatus().getErrorMessage().contains("Limit Exceeded")) {
-            link.setChunksProgress(null);
-            link.getLinkStatus().setStatus(LinkStatus.ERROR_RETRY);
         }
     }
 
@@ -222,11 +229,34 @@ public class Megauploadcom extends PluginForHost {
             map.put("id" + i, id);
             i++;
         }
-        this.setBrowserExclusive();
+
+        // POST /mgr_linkcheck.php HTTP/1.1
+        // Accept: */*
+        // Accept-Encoding: *;q=0.1
+        // TE: trailers
+        // Expect: 100-continue
+        // Host: www.megaupload.com
+        // Connection: TE
+        // Date: Tue, 10 Mar 2009 16:15:47 GMT
+        // Cookie:
+        // l=de;__utmz=216392970.1234861776.1.1.utmcsr=(direct)|utmccn=(direct
+        // )|utmcmd
+        // =(none);__utma=216392970.610707062448237200.1234861776.1234890668
+        // .1234890671.8
+        // User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)
+        // Content-Length: 12
+        // Content-Type: application/x-www-form-urlencoded
+        //        
+        // this.setBrowserExclusive();
+        //        
+
+        br.getHeaders().clear();
+        br.getHeaders().setDominant(true);
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("Accept-Encoding", "*;q=0.1");
         br.getHeaders().put("TE", "trailers");
         br.getHeaders().put("Expect", "100-continue");
+        br.getHeaders().put("Host", "www.megaupload.com");
         br.getHeaders().put("Connection", "TE");
         SimpleDateFormat df = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss", Locale.ENGLISH);
 
@@ -237,15 +267,16 @@ public class Megauploadcom extends PluginForHost {
         br.getHeaders().put("Accept-Charset", null);
         br.getHeaders().put("Pragma", null);
         br.getHeaders().put("Referer", null);
-        Random rand = new Random();
-        br.getHeaders().put("User-Agent", "Mozi5lla/" + ((rand.nextInt(30) + 10) / 10.0) + " (compatible; MSIE " + ((rand.nextInt(60) + 10) / 10.0) + "; Windows NT 5.1)");
+
+        br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
+        br.getHeaders().put("Content-Length", "12");
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
 
         try {
-            br.postPage("http://megaupload.com/mgr_linkcheck.php", map);
 
             String[] Dls = br.postPage("http://megaupload.com/mgr_linkcheck.php", map).split("(?=id[\\d]+=)");
-
+            br.getHeaders().clear();
+            br.getHeaders().setDominant(false);
             for (i = 1; i < Dls.length; i++) {
                 String string = Dls[i];
                 HashMap<String, String> queryQ = Request.parseQuery(Encoding.htmlDecode(string));
@@ -298,9 +329,11 @@ public class Megauploadcom extends PluginForHost {
         int captchTries = 10;
         Form form = null;
         while (captchTries-- >= 0) {
+
             br.getPage("http://megaupload.com/?d=" + getDownloadID(link));
             if (br.containsHTML("trying to download is larger than")) throw new PluginException(LinkStatus.ERROR_FATAL, "File is over 1GB and needs Premium Account");
             form = br.getForm(0);
+
             if (form != null && form.containsHTML("logout")) form = br.getForm(1);
             if (form != null && form.containsHTML("filepassword")) {
                 String passCode;
@@ -378,10 +411,12 @@ public class Megauploadcom extends PluginForHost {
     private void initHeaders(Browser br) {
         br.getHeaders().clear();
         br.getHeaders().put("Referer", null);
+
     }
 
     private void getRedirect(String url, DownloadLink downloadLink) throws PluginException, InterruptedException {
         try {
+
             br.getPage(url);
         } catch (IOException e) {
             try {
@@ -405,6 +440,15 @@ public class Megauploadcom extends PluginForHost {
     public void handleFree0(DownloadLink link, Account account) throws Exception {
         br.setFollowRedirects(false);
         String dlID = getDownloadID(link);
+        br.getHeaders().clear();
+        br.getHeaders().setDominant(true);
+        br.getHeaders().put("Accept", "text/plain,text/html,*/*;q=0.3");
+        br.getHeaders().put("Accept-Encoding", "*;q=0.1");
+        br.getHeaders().put("TE", "trailers");
+        br.getHeaders().put("Host", "www.megaupload.com");
+        br.getHeaders().put("Connection", "TE");
+        br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
+
         if (user != null) {
             getRedirect("http://megaupload.com/mgr_dl.php?d=" + dlID + "&u=" + user, link);
         } else {
@@ -427,7 +471,14 @@ public class Megauploadcom extends PluginForHost {
             Thread.sleep(200);
         }
         String url = br.getRedirectLocation();
+
+        br.getHeaders().put("Host", new URL(url).getHost());
+        br.getHeaders().put("Connection", "Keep-Alive,TE");
+
         doDownload(link, url, true, 1);
+
+        br.getHeaders().clear();
+        br.getHeaders().setDominant(false);
     }
 
     @Override
@@ -439,7 +490,7 @@ public class Megauploadcom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE;
+        return 1;
     }
 
     @Override
