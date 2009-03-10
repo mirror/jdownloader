@@ -57,7 +57,7 @@ public class UploadBoxCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         getFileInformation(link);
-        Form form = br.getForm(2);
+        Form form = br.getForm(1);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.submitForm(form);
         if (br.containsHTML("The last download from your IP was done less than 30 minutes ago")) {
@@ -65,7 +65,7 @@ public class UploadBoxCom extends PluginForHost {
             String strWaittimeArray[] = strWaittime.split(":");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "", ((Integer.parseInt(strWaittimeArray[0]) * 3600) + (Integer.parseInt(strWaittimeArray[1]) * 60) + Integer.parseInt(strWaittimeArray[2])) * 1000l);
         }
-        form = br.getForm(2);
+        form = br.getForm(1);
         File file = this.getLocalCaptchaFile(this);
         String captchaUrl = form.getRegex("captcha.*?src=\"(.*?)\"").getMatch(0);
         if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -76,7 +76,7 @@ public class UploadBoxCom extends PluginForHost {
         br.submitForm(form);
         if (br.containsHTML("read the captcha code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.setDebug(true);
-        String dlUrl = br.getRegex("please.*?href=\"(.*?)\">click").getMatch(0);
+        String dlUrl = br.getRegex("please <a href=\"(.*?)\">click").getMatch(0);
         if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dl = br.openDownload(link, dlUrl, true, 1);
         dl.startDownload();
