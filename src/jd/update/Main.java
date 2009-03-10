@@ -273,6 +273,7 @@ public class Main {
             installAddons();
             Main.trace(updater.getLogger().toString());
             Main.trace("End Webupdate");
+           
             logWindow.setText(log.toString());
             Main.trace(JDUtilities.getResourceFile("updateLog.txt").getAbsoluteFile());
 
@@ -282,7 +283,7 @@ public class Main {
             Main.log(log, "Local: " + JDUtilities.getResourceFile(".").getAbsolutePath());
 
             Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
-
+            JDUtilities.getDatabaseConnector().shutdownDatabase();
             JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
 
             logWindow.setText(log.toString());
@@ -323,7 +324,7 @@ public class Main {
 
                     Main.log(log, "Installation successfull: " + zip + System.getProperty("line.separator"));
 
-                    zip.delete();
+                   System.out.println("Delete "+zip.delete());
                     zip.deleteOnExit();
 
                 }

@@ -230,6 +230,7 @@ public class DatabaseConnector implements Serializable {
      */
     public void shutdownDatabase() {
         try {
+            
             con.close();
         } catch (SQLException e) {
             e.printStackTrace();

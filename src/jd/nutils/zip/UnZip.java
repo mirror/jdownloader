@@ -85,6 +85,7 @@ public class UnZip {
                 ret.add(file);
             }
         }
+        zipF.close();
         if (autoDelete) {
             zipFile.delete();
         }

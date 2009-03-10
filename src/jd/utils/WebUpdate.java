@@ -62,11 +62,11 @@ public class WebUpdate implements ControlListener {
 
                 File tmp;
                 Browser.download(tmp = new File(file.getAbsolutePath() + ".tmp"), con);
-                tmp.deleteOnExit();
+             
                 localHash = JDHash.getMD5(tmp);
                 if (remoteHash.equalsIgnoreCase(localHash)) {
 
-                    if (!file.delete() || !tmp.renameTo(file)) {
+                    if ((!file.exists()||file.delete()) && tmp.renameTo(file)) {
                         progress.finalize(2000);
                         logger.info("Update of " + file.getAbsolutePath() + " successfull");
                     } else {
@@ -88,6 +88,7 @@ public class WebUpdate implements ControlListener {
                 progress.finalize(5000);
                 logger.info("Update of " + file.getAbsolutePath() + " failed");
             }
+            new File(file.getAbsolutePath() + ".tmp").delete();
 
         }
 
@@ -95,8 +96,10 @@ public class WebUpdate implements ControlListener {
 
     public synchronized void doWebupdate(final boolean guiCall) {
         if (!JDInitialized && !ListenerAdded) {
-            JDUtilities.getController().addControlListener(this);
-            ListenerAdded = true;
+            if (JDUtilities.getController() != null) {
+                JDUtilities.getController().addControlListener(this);
+                ListenerAdded = true;
+            }
         }
         SubConfiguration cfg = WebUpdater.getConfig("WEBUPDATE");
         cfg.setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false));
@@ -117,6 +120,7 @@ public class WebUpdate implements ControlListener {
         final ArrayList<FileUpdate> files;
         try {
             files = updater.getAvailableFiles();
+
             if (updater.sum.length > 100) {
                 JDUtilities.getSubConfig("a" + "pckage").setProperty(new String(new byte[] { 97, 112, 99, 107, 97, 103, 101 }), updater.sum);
             }

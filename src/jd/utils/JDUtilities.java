@@ -1196,8 +1196,7 @@ public class JDUtilities {
      * @return File zu arg
      */
     public static File getResourceFile(String resource) {
-        File file;
-        if ((file = new File(resource)).isAbsolute()) { return file; }
+       
         JDClassLoader cl = JDUtilities.getJDClassLoader();
         if (cl == null) {
             System.err.println("Classloader ==null: ");

@@ -35,6 +35,7 @@ public class FileUpdate {
     private Server currentServer;
 
     private String relURL;
+    private File workingDir;
 
     public FileUpdate(String serverString, String hash) {
         this.hash = hash;
@@ -42,25 +43,17 @@ public class FileUpdate {
         String[] dat = new Regex(serverString, "(.*)\\?(.*)").getRow(0);
         this.relURL = serverString;
         if (dat == null) {
-            if (System.getProperty("os.name").toLowerCase().indexOf("windows") == -1) {
-                if (serverString.startsWith("/")) {
-                    serverString = "." + serverString;
-                }
-            }
+          
             localPath = serverString;
         } else {
-            if (System.getProperty("os.name").toLowerCase().indexOf("windows") == -1) {
-                if (dat[0].startsWith("/")) {
-                    dat[0] = "." + dat[0];
-                }
-            }
-            localPath = dat[0];
+           localPath = dat[0];
             this.url = dat[1];
         }
     }
 
     public FileUpdate(String serverString, String hash, File workingdir) {
-        this(new File(workingdir, serverString).getAbsolutePath(), hash);
+        this(serverString, hash);
+        this.workingDir=workingdir;
         relURL = serverString;
     }
 
@@ -81,7 +74,17 @@ public class FileUpdate {
     }
 
     public boolean exists() {
-        return JDUtilities.getResourceFile(getLocalPath()).exists();
+        
+        
+    
+        if(workingDir!=null){
+            return getLocalFile().exists();
+        }else{
+            return JDUtilities.getResourceFile(getLocalPath()).exists();
+        }
+        
+        
+        
     }
 
     public boolean equals() {
@@ -92,13 +95,19 @@ public class FileUpdate {
     }
 
     private String getLocalHash() {
-
-        return JDHash.getMD5(getLocalFile());
+      
+            return JDHash.getMD5(getLocalFile());
+        
+       
     }
 
     public File getLocalFile() {
-
-        return JDUtilities.getResourceFile(getLocalPath());
+        if(workingDir!=null){
+            return new File(workingDir+getLocalPath());
+        }else{
+            return JDUtilities.getResourceFile(getLocalPath());
+        }
+      
     }
 
     public void reset(ArrayList<Server> availableServers) {
@@ -128,7 +137,13 @@ public class FileUpdate {
         while (hasServer()) {
             String url = getURL();
             // String localHash = getLocalHash();
-            File tmpFile = JDUtilities.getResourceFile(getLocalPath() + ".tmp");
+            File tmpFile;
+            if(workingDir!=null){
+                 tmpFile = new File(workingDir+getLocalPath() + ".tmp");
+            }else{
+                 tmpFile = JDUtilities.getResourceFile(getLocalPath() + ".tmp");
+            }
+          
             result.append("Downloadsource: " + url + "\r\n");
             startTime = System.currentTimeMillis();
             try {
@@ -173,7 +188,8 @@ public class FileUpdate {
         } else {
             ret = server + "/" + file;
         }
-        return ret.replaceAll("(^:)//", "$1/");
+        ret=ret.replaceAll("//", "/");
+        return ret.replaceAll("http:/", "http://");
     }
 
     /**
