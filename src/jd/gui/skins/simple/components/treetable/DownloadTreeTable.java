@@ -674,7 +674,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             }
 
             if (!guiConfig.getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + links.size() + " links in " + fps.size() + " packages)")) {
+                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDLocale.LF("gui.downloadlist.delete.size_package", "%s links in %s packages", links.size(), fps.size()) + ")")) {
                     // zuerst Pakete entfernen
                     for (FilePackage filePackage : fps) {
                         JDUtilities.getController().removePackage(filePackage);
