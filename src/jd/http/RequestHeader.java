@@ -114,6 +114,10 @@ public class RequestHeader {
     }
 
     public void setAt(int i, String key, String value) {
+        if(keys.size()==0){
+            this.put(key, value);
+            return;
+        }
         keys.add(keys.get(keys.size() - 1));
         values.add(values.get(values.size() - 1));
         for (int e = keys.size() - 3; e >= i; e--) {
