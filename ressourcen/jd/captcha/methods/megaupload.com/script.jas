@@ -3,7 +3,7 @@
 ##### erkennung nötig sind #####
 #####################################---rapidshare.de---####################################
 ##############Set parameter
-param.simplifyFaktor = 2;
+param.simplifyFaktor = 1;
 param.colorType = RGB;
 
 
@@ -13,16 +13,16 @@ param.trainOnlyUnknown=true;
 
 #####################Scanparameter
 param.borderVarianceX=20;
-param.borderVarianceY=3;
-param.scanVarianceX=3;
-param.scanVarianceY=3;
+param.borderVarianceY=6;
+param.scanVarianceX=6;
+param.scanVarianceY=6;
 param.intersectionDimensionWeight=5;
 param.alignAngleSteps=2;
 param.minCleftSize=4;
 param.overlayNoiseSize=0;
-param.scanAngleLeft=0;
-param.scanAngleRight=0;
-param.scanAngleSteps=0;
+param.scanAngleLeft=8;
+param.scanAngleRight=8;
+param.scanAngleSteps=2;
 param.errorAWeight=2;
 param.errorBWeight=2;
 param.coverageFaktorAWeight=1;
