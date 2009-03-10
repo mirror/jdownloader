@@ -61,6 +61,7 @@ public class FileUpdate {
 
     public FileUpdate(String serverString, String hash, File workingdir) {
         this(new File(workingdir, serverString).getAbsolutePath(), hash);
+        relURL = serverString;
     }
 
     public String getRelURL() {
