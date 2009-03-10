@@ -56,9 +56,6 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 
 import jd.PluginWrapper;
-import jd.captcha.LetterComperator;
-import jd.captcha.pixelgrid.Letter;
-import jd.captcha.utils.UTILITIES;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.DistributeData;
@@ -83,7 +80,6 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class Serienjunkies extends PluginForDecrypt {
-    // private static final String host = "Serienjunkies.org";
 
     public static String lastHtmlCode = "";
 
@@ -219,7 +215,9 @@ public class Serienjunkies extends PluginForDecrypt {
         return false;
     }
 
-    // Für Links die bei denen die Parts angezeigt werden
+    /**
+     * Für Links die bei denen die Parts angezeigt werden
+     */
     private Vector<String> ContainerLinks(String url, CryptedLink downloadLink) throws PluginException {
         final Vector<String> links = new Vector<String>();
         final Browser br3 = getBrowser();
@@ -238,7 +236,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 Matcher matcher = patternCaptcha.matcher(htmlcode);
                 if (matcher.find()) {
                     if (captchaFile != null && capTxt != null) {
-                        JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
+                        JDUtilities.appendInfoToFilename(captchaFile, capTxt, false);
                     }
                     String[][] gifs = new Regex(htmlcode, patternCaptcha).getMatches();
 
@@ -324,7 +322,6 @@ public class Serienjunkies extends PluginForDecrypt {
                     htmlcode = postPage(br3, url, "s=" + matcher.group(1) + "&c=" + capTxt + "&action=Download");
 
                 } else {
-                    captchaMethod(captchaFile, capTxt);
                     break;
                 }
             }
@@ -372,12 +369,8 @@ public class Serienjunkies extends PluginForDecrypt {
                                                     try {
                                                         thread.notify();
                                                         thread.interrupt();
-
                                                     } catch (Exception e2) {
-                                                        // TODO: handle
-                                                        // exception
                                                     }
-
                                                 }
                                                 threads.removeAllElements();
                                                 links.removeAllElements();
@@ -444,40 +437,9 @@ public class Serienjunkies extends PluginForDecrypt {
         return links;
     }
 
-    private void captchaMethod(File captchaFile, String capTxt) {
-        if (captchaFile != null && capTxt != null) {
-            JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
-
-            if (useUserinputIfCaptchaUnknown() && getCaptchaDetectionID() == Plugin.CAPTCHA_USER_INPUT && getLastCaptcha() != null && getLastCaptcha().getLetterComperators() != null) {
-                LetterComperator[] lcs = getLastCaptcha().getLetterComperators();
-                getLastCaptcha().setCorrectcaptchaCode(capTxt.trim());
-
-                if (lcs.length == capTxt.trim().length()) {
-                    for (int i = 0; i < capTxt.length(); i++) {
-                        if (lcs[i] != null && lcs[i].getDecodedValue() != null && capTxt.substring(i, i + 1).equalsIgnoreCase(lcs[i].getDecodedValue()) && lcs[i].getValityPercent() < 30.0) { //
-                            logger.severe("OK letter: " + i + ": JAC:" + lcs[i].getDecodedValue() + "(" + lcs[i].getValityPercent() + ") USER: " + capTxt.substring(i, i + 1));
-                        } else {
-                            logger.severe("Unknown letter: // " + i + ":  JAC:" + lcs[i].getDecodedValue() + "(" + lcs[i].getValityPercent() + ") USER:  " + capTxt.substring(i, i + 1));
-                            final String character = capTxt.substring(i, i + 1);
-                            logger.info("SEND");
-                            Letter letter = lcs[i].getA();
-                            String captchaHash = UTILITIES.getLocalHash(captchaFile);
-                            letter.setSourcehash(captchaHash);
-                            letter.setOwner(getLastCaptcha().owner);
-                            letter.setDecodedValue(character);
-                            getLastCaptcha().owner.letterDB.add(letter);
-                            getLastCaptcha().owner.saveMTHFile();
-                        }
-                    }
-
-                } else {
-                    logger.info("LCS not length comp");
-                }
-            }
-        }
-    }
-
-    // Für Links die gleich auf den Hoster relocaten
+    /**
+     * Für Links die gleich auf den Hoster relocaten
+     */
     private String EinzelLinks(String url, CryptedLink downloadLink) throws PluginException {
         String links = "";
         Browser br3 = getBrowser();
@@ -497,7 +459,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 Matcher matcher = patternCaptcha.matcher(htmlcode);
                 if (matcher.find()) {
                     if (captchaFile != null && capTxt != null) {
-                        JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
+                        JDUtilities.appendInfoToFilename(captchaFile, capTxt, false);
                     }
                     String captchaAdress = "http://serienjunkies.org" + matcher.group(2);
                     captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
@@ -527,7 +489,6 @@ public class Serienjunkies extends PluginForDecrypt {
 
                     htmlcode = postPage(br3, url, "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
                 } else {
-                    captchaMethod(captchaFile, capTxt);
                     break;
                 }
             }
@@ -709,10 +670,12 @@ public class Serienjunkies extends PluginForDecrypt {
         return dlink;
     }
 
+    @Override
     public String cutMatches(String data) {
         return data.replaceAll("(?i)http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es).*", "--CUT--");
     }
 
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
         Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
@@ -778,9 +741,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         try {
                             bet = br.getRegex("<p><strong>(" + name + ".*?)</strong>(.*?)</p>").getMatches()[0];
                         } catch (Exception e) {
-                            // TODO: handle exception
                         }
-
                     }
 
                     String[] links = HTMLParser.getHttpLinks(bet[1], br.getRequest().getUrl().toString());
@@ -830,7 +791,6 @@ public class Serienjunkies extends PluginForDecrypt {
                             htmlcode += "\n" + getPage(br, "http://serienjunkies.org/?cat=" + cat + "&paged=" + i);
                         }
                     } catch (Exception e) {
-                        // TODO: handle exception
                     }
                 }
                 HashMap<String, Integer> mirrors = new HashMap<String, Integer>();
@@ -853,7 +813,6 @@ public class Serienjunkies extends PluginForDecrypt {
                             size = "" + si;
                             size = size.substring(0, size.indexOf("."));
                         } catch (Exception e) {
-                            // TODO: handle exception
                         }
                         FilePackage fp = new FilePackage();
                         fp.setName(title + (b > 1 ? " " + b : ""));
@@ -954,6 +913,7 @@ public class Serienjunkies extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    @Override
     public CryptedLink[] getDecryptableLinks(String data) {
         String[] links = new Regex(data, "http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*", Pattern.CASE_INSENSITIVE).getColumn(-1);
         ArrayList<CryptedLink> ret = new ArrayList<CryptedLink>();
@@ -1031,7 +991,6 @@ public class Serienjunkies extends PluginForDecrypt {
             try {
                 mirror = HTMLParser.getHttpLinks(element, link)[c];
             } catch (Exception e) {
-                // TODO: handle exception
             }
             if (mirror != null && !mirror.matches("[\\s]*")) {
                 ret.add(mirror);
@@ -1041,12 +1000,11 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     private int getSerienJunkiesCat() {
-
         sCatDialog();
         return useScat[0];
-
     }
 
+    @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -1062,12 +1020,9 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     private void sCatDialog() {
-        if (scatChecked || useScat[1] == saveScat) { return; }
+        if (scatChecked || useScat[1] == saveScat) return;
         new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
 
-            /**
-             * 
-             */
             private static final long serialVersionUID = -5144850223169000644L;
 
             void init() {
@@ -1087,40 +1042,32 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
 
                     public String toString() {
-
                         return name;
                     }
                 }
                 addWindowListener(new WindowListener() {
 
                     public void windowActivated(WindowEvent e) {
-
                     }
 
                     public void windowClosed(WindowEvent e) {
-
                     }
 
                     public void windowClosing(WindowEvent e) {
                         useScat = new int[] { ((meth) methods.getSelectedItem()).var, 0 };
                         dispose();
-
                     }
 
                     public void windowDeactivated(WindowEvent e) {
-
                     }
 
                     public void windowDeiconified(WindowEvent e) {
-
                     }
 
                     public void windowIconified(WindowEvent e) {
-
                     }
 
                     public void windowOpened(WindowEvent e) {
-
                     }
                 });
                 meth[] meths = new meth[3];
@@ -1170,6 +1117,7 @@ public class Serienjunkies extends PluginForDecrypt {
         cfg.setDefaultValue(true);
     }
 
+    @Override
     public boolean useUserinputIfCaptchaUnknown() {
         return false;
     }
@@ -1306,8 +1254,8 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 }
 
-@SuppressWarnings("serial")
 class SerienjunkiesSJTable extends JDialog {
+    private static final long serialVersionUID = 4525944250937805028L;
     protected JTable m_table;
     private Thread countdownThread;
     private int countdown = 60;
@@ -1375,29 +1323,23 @@ class SerienjunkiesSJTable extends JDialog {
             }
 
             public void windowClosed(WindowEvent e) {
-
                 dispose();
-
             }
 
             public void windowClosing(WindowEvent e) {
                 dls = new ArrayList<DownloadLink>();
-
             }
 
             public void windowDeactivated(WindowEvent e) {
-
             }
 
             public void windowDeiconified(WindowEvent e) {
-
             }
 
             public void windowIconified(WindowEvent e) {
             }
 
             public void windowOpened(WindowEvent e) {
-
             }
         });
         del.addActionListener(new ActionListener() {
@@ -1419,8 +1361,8 @@ class SerienjunkiesSJTable extends JDialog {
 
             public void actionPerformed(ActionEvent e) {
                 dispose();
-
             }
+
         });
         panel.add(insertButton);
         getContentPane().add(panel, BorderLayout.SOUTH);
@@ -1481,8 +1423,9 @@ class SerienjunkiesColumnData {
     }
 }
 
-@SuppressWarnings("serial")
 class SerienjunkiesTM extends AbstractTableModel {
+    private static final long serialVersionUID = 5068062216039834333L;
+
     static final public SerienjunkiesColumnData m_columns[] = { new SerienjunkiesColumnData(JDLocale.L("gui.packageinfo.name", "Name"), 200, JLabel.LEFT), new SerienjunkiesColumnData(JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), 160, JLabel.LEFT), new SerienjunkiesColumnData(JDLocale.L("gui.linkgrabber.packagetab.table.column.size", "Größe"), 100, JLabel.RIGHT) };
 
     ArrayList<DownloadLink> dls;

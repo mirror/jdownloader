@@ -52,8 +52,7 @@ public class UCMS extends PluginForDecrypt {
 
         try {
             br.getPage(parameter);
-            if(br.getRedirectLocation()!=null)
-                br.getPage(br.getRedirectLocation());
+            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
             File captchaFile = null;
             String capTxt = "";
             String host = br.getHost();
@@ -76,7 +75,7 @@ public class UCMS extends PluginForDecrypt {
 
                     if (matcher.find()) {
                         if (captchaFile != null && capTxt != null) {
-                            JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
+                            JDUtilities.appendInfoToFilename(captchaFile, capTxt, false);
                         }
 
                         logger.finest("Captcha Protected");
@@ -92,7 +91,7 @@ public class UCMS extends PluginForDecrypt {
                         }
                     } else {
                         if (captchaFile != null && capTxt != null) {
-                            JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
+                            JDUtilities.appendInfoToFilename(captchaFile, capTxt, true);
                         }
 
                         Matcher matcher_no = PAT_NO_CAPTCHA.matcher(element[2]);

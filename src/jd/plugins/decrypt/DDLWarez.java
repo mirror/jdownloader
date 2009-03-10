@@ -16,21 +16,11 @@
 
 package jd.plugins.decrypt;
 
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.IndexColorModel;
-import java.awt.image.PixelGrabber;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import javax.imageio.ImageIO;
-
 import jd.PluginWrapper;
-import jd.captcha.JAntiCaptcha;
-import jd.captcha.pixelgrid.Captcha;
-import jd.captcha.utils.GifDecoder;
 import jd.controlling.ProgressController;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
@@ -214,63 +204,65 @@ public class DDLWarez extends PluginForDecrypt {
         return null;
     }
 
-    public static File convert(File file) {
-        try {
-            JAntiCaptcha jas = new JAntiCaptcha("DUMMY", "DUMMY");
-            jas.getJas().setColorType("RGB");
-            GifDecoder d = new GifDecoder();
-            d.read(file.getAbsolutePath());
-            int n = d.getFrameCount();
-
-            int width = (int) d.getFrameSize().getWidth();
-            int height = (int) d.getFrameSize().getHeight();
-
-            Captcha tmp;
-            Captcha[] frames = new Captcha[n];
-            for (int i = 0; i < n; i++) {
-                BufferedImage frame = d.getFrame(i);
-                tmp = new Captcha(width, height);
-                tmp.setOwner(jas);
-                PixelGrabber pg = new PixelGrabber(frame, 0, 0, width, height, false);
-                try {
-                    pg.grabPixels();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                ColorModel cm = pg.getColorModel();
-                tmp.setColorModel(cm);
-                frames[i] = tmp;
-                if (!(cm instanceof IndexColorModel)) {
-
-                    tmp.setPixel((int[]) pg.getPixels());
-                } else {
-                    tmp.setPixel((byte[]) pg.getPixels());
-                }
-                // BasicWindow.showImage(tmp.getFullImage(), "img " + i);
-            }
-            if (n < 4) return null;
-            frames[n - 4].crop(10, 20, 10, 10);
-            frames[n - 3].crop(10, 20, 10, 10);
-            frames[n - 2].crop(10, 20, 10, 10);
-            frames[n - 1].crop(10, 20, 10, 10);
-
-            Captcha merged = new Captcha(frames[n - 4].getWidth() * 4 + 3, frames[n - 4].getHeight());
-            merged.setOwner(jas);
-            merged.addAt(0, 0, frames[n - 4]);
-            merged.addAt(frames[n - 4].getWidth() + 1, 0, frames[n - 3]);
-            merged.addAt(frames[n - 4].getWidth() * 2 + 2, 0, frames[n - 2]);
-            merged.addAt(frames[n - 4].getWidth() * 3 + 3, 0, frames[n - 1]);
-            // merged.toBlackAndWhite(0.01);
-            // BasicWindow.showImage(merged.getImage());
-            ImageIO.write((BufferedImage) merged.getImage(), "png", new File(file.getAbsoluteFile() + ".png"));
-            return new File(file.getAbsoluteFile() + ".png");
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return null;
-
-    }
+    // public static File convert(File file) {
+    // try {
+    // JAntiCaptcha jas = new JAntiCaptcha("DUMMY", "DUMMY");
+    // jas.getJas().setColorType("RGB");
+    // GifDecoder d = new GifDecoder();
+    // d.read(file.getAbsolutePath());
+    // int n = d.getFrameCount();
+    //
+    // int width = (int) d.getFrameSize().getWidth();
+    // int height = (int) d.getFrameSize().getHeight();
+    //
+    // Captcha tmp;
+    // Captcha[] frames = new Captcha[n];
+    // for (int i = 0; i < n; i++) {
+    // BufferedImage frame = d.getFrame(i);
+    // tmp = new Captcha(width, height);
+    // tmp.setOwner(jas);
+    // PixelGrabber pg = new PixelGrabber(frame, 0, 0, width, height, false);
+    // try {
+    // pg.grabPixels();
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // }
+    // ColorModel cm = pg.getColorModel();
+    // tmp.setColorModel(cm);
+    // frames[i] = tmp;
+    // if (!(cm instanceof IndexColorModel)) {
+    //
+    // tmp.setPixel((int[]) pg.getPixels());
+    // } else {
+    // tmp.setPixel((byte[]) pg.getPixels());
+    // }
+    // // BasicWindow.showImage(tmp.getFullImage(), "img " + i);
+    // }
+    // if (n < 4) return null;
+    // frames[n - 4].crop(10, 20, 10, 10);
+    // frames[n - 3].crop(10, 20, 10, 10);
+    // frames[n - 2].crop(10, 20, 10, 10);
+    // frames[n - 1].crop(10, 20, 10, 10);
+    //
+    // Captcha merged = new Captcha(frames[n - 4].getWidth() * 4 + 3, frames[n -
+    // 4].getHeight());
+    // merged.setOwner(jas);
+    // merged.addAt(0, 0, frames[n - 4]);
+    // merged.addAt(frames[n - 4].getWidth() + 1, 0, frames[n - 3]);
+    // merged.addAt(frames[n - 4].getWidth() * 2 + 2, 0, frames[n - 2]);
+    // merged.addAt(frames[n - 4].getWidth() * 3 + 3, 0, frames[n - 1]);
+    // // merged.toBlackAndWhite(0.01);
+    // // BasicWindow.showImage(merged.getImage());
+    // ImageIO.write((BufferedImage) merged.getImage(), "png", new
+    // File(file.getAbsoluteFile() + ".png"));
+    // return new File(file.getAbsoluteFile() + ".png");
+    // } catch (Exception e) {
+    // // TODO Auto-generated catch block
+    // e.printStackTrace();
+    // }
+    // return null;
+    //
+    // }
 
     @Override
     public String getVersion() {

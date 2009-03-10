@@ -21,8 +21,6 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -33,22 +31,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
-public class FileHostMecom extends PluginForHost{
+public class FileHostMecom extends PluginForHost {
     private String passCode = null;
     private String url;
-//    private static FileHostMecom me = null;
 
     public FileHostMecom(PluginWrapper wrapper) {
         super(wrapper);
-
         this.enablePremium("http://www.filehostme.com/premium.html");
-//        if (me == null) {
-//            JDUtilities.getController().addControlListener(this);
-//
-//        }
-//        me = this;
     }
 
     @Override
@@ -115,6 +105,7 @@ public class FileHostMecom extends PluginForHost{
         return getVersion("$Revision$");
     }
 
+    @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         DownloadLink downloadLink = (DownloadLink) parameter;
         getFileInformation(parameter);
@@ -207,6 +198,7 @@ public class FileHostMecom extends PluginForHost{
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
@@ -218,7 +210,5 @@ public class FileHostMecom extends PluginForHost{
     @Override
     public void resetPluginGlobals() {
     }
-
-
 
 }

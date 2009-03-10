@@ -87,7 +87,6 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.JDProxy;
 import jd.nutils.Executer;
-import jd.nutils.io.JDFileFilter;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -101,11 +100,8 @@ import jd.plugins.PluginsC;
  * @author astaldo/JD-Team
  */
 public class JDUtilities {
-    public static String LOGGER_NAME = "java_downloader";
-    /**
-     * Parametername fÃ¼r den Konfigpath
-     */
-    // public static final String CONFIG_PATH = "jDownloader.config";
+    private static String LOGGER_NAME = "java_downloader";
+
     /**
      * Die Konfiguration
      */
@@ -121,12 +117,7 @@ public class JDUtilities {
     private static JDController controller = null;
 
     /**
-     * Damit werden die JARs rausgesucht
-     */
-    public static JDFileFilter filterJar = new JDFileFilter(null, ".jar", false);
-
-    /**
-     * Alle verfÃ¼gbaren Bilder werden hier gespeichert
+     * Alle verfügbaren Bilder werden hier gespeichert
      */
     private static HashMap<String, Image> images = new HashMap<String, Image>();
 
@@ -145,24 +136,24 @@ public class JDUtilities {
      */
     private static JDClassLoader jdClassLoader = null;
 
-    /**
-     * Der Logger fÃ¼r Meldungen
-     */
-    // private static Logger logger = null;
     public static final int RUNTYPE_LOCAL = 1;
 
     public static final int RUNTYPE_LOCAL_JARED = 2;
-    // ache für JD home
+
     private static File JD_HOME = null;
 
     private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
 
-    /*
+    /**
      * nur 1 UserIO Dialog gleichzeitig (z.b.PW,Captcha)
      */
     private static Semaphore userio_sem = new Semaphore(1);
+
     private static boolean SUBCONFIG_LOCK;
 
+    /**
+     * Der Logger für Meldungen
+     */
     private static Logger logger = null;
 
     public static String getSimString(String a, String b) {
@@ -225,12 +216,12 @@ public class JDUtilities {
     }
 
     /**
-     * FÃ¼gt ein Bild zur Map hinzu
+     * Fügt ein Bild zur Map hinzu
      * 
      * @param imageName
-     *            Name des Bildes, daÃŸ hinzugefÃ¼gt werden soll
+     *            Name des Bildes, dass hinzugefügt werden soll
      * @param image
-     *            Das hinzuzufÃ¼gende Bild
+     *            Das hinzuzufügende Bild
      */
     public static void addImage(String imageName, Image image) {
         Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
@@ -257,7 +248,7 @@ public class JDUtilities {
      * @param weightY
      *            Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
      * @param insets
-     *            AbstÃ¤nde der Komponente
+     *            Abstände der Komponente
      * @param fill
      *            Verteilung der Komponente innerhalb der zugewiesen Zelle/n
      * @param anchor
@@ -295,7 +286,7 @@ public class JDUtilities {
      * @param weightY
      *            Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
      * @param insets
-     *            AbstÃ¤nder der Komponente
+     *            Abständer der Komponente
      * @param iPadX
      *            Leerraum zwischen einer GridBagZelle und deren Inhalt
      *            (X-Richtung)
@@ -328,16 +319,16 @@ public class JDUtilities {
     }
 
     /**
-     * FÃ¼gt dem Dateinamen den erkannten Code noch hinzu
+     * Fügt dem Dateinamen den erkannten Code noch hinzu
      * 
      * @param file
-     *            Die Datei, der der Captchacode angefÃ¼gt werden soll
+     *            Die Datei, der der Captchacode angefügt werden soll
      * @param captchaCode
      *            Der erkannte Captchacode
      * @param isGood
      *            Zeigt, ob der erkannte Captchacode korrekt ist
      */
-    public static void appendInfoToFilename(final Plugin plugin, File file, String captchaCode, boolean isGood) {
+    public static void appendInfoToFilename(File file, String captchaCode, boolean isGood) {
         String dest = file.getAbsolutePath();
         if (captchaCode == null) {
             captchaCode = "null";
@@ -376,8 +367,7 @@ public class JDUtilities {
     }
 
     /**
-     * verschlÃ¼sselt string mit der Ã¼bergebenen encryption
-     * (Containerpluginname
+     * verschlüsselt string mit der übergebenen encryption (Containerpluginname
      * 
      * @param string
      * @param encryption
@@ -393,13 +383,12 @@ public class JDUtilities {
     }
 
     /**
-     * HÃ¤ngt an i solange fill vorne an bis die zechenlÃ¤nge von i gleich num
-     * ist
+     * Hängt an i solange fill vorne an bis die zechenlänge von i gleich num ist
      * 
      * @param i
      * @param num
      * @param fill
-     * @return aufgefÃ¼llte Zeichenkette
+     * @return aufgefüllte Zeichenkette
      */
     public static String fillInteger(long i, int num, String fill) {
         String ret = "" + i;
@@ -422,7 +411,7 @@ public class JDUtilities {
     }
 
     /**
-     * GIbt den Integer der sich in src befindet zurÃ¼ck. alle nicht
+     * GIbt den Integer der sich in src befindet zurück. alle nicht
      * integerzeichen werden ausgefiltert
      * 
      * @param src
@@ -553,7 +542,7 @@ public class JDUtilities {
 
     /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den
-     * eingegebenen Text zurÃ¼ck.
+     * eingegebenen Text zurück.
      * 
      * @param controller
      *            Der Controller
@@ -643,7 +632,7 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert einen Punkt zurÃ¼ck, mit dem eine Komponente auf eine andere
+     * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere
      * zentriert werden kann
      * 
      * @param parent
@@ -680,7 +669,7 @@ public class JDUtilities {
     }
 
     /**
-     * Gibt den verwendeten Controller zurÃ¼ck
+     * Gibt den verwendeten Controller zurück
      * 
      * @return gerade verwendete controller-instanz
      */
@@ -720,8 +709,8 @@ public class JDUtilities {
     }
 
     /**
-     * Gibt das aktuelle Working Directory zurÃ¼ck. Beim FilebRowser etc wird da
-     * s gebraucht.
+     * Gibt das aktuelle Working Directory zurück. Beim FileBrowser etc wird das
+     * gebraucht.
      * 
      * @return
      */
@@ -749,11 +738,11 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert aus der Map der geladenen Bilder ein Element zurÃ¼ck
+     * Liefert aus der Map der geladenen Bilder ein Element zurück
      * 
      * @param imageName
-     *            Name des Bildes das zurÃ¼ckgeliefert werden soll
-     * @return Das gewÃ¼nschte Bild oder null, falls es nicht gefunden werden
+     *            Name des Bildes das zurückgeliefert werden soll
+     * @return Das gewünschte Bild oder null, falls es nicht gefunden werden
      *         kann
      */
     public static Image getImage(String imageName) {
@@ -771,7 +760,7 @@ public class JDUtilities {
     }
 
     /**
-     * PrÃ¼ft anhand der Globalen IP Check einstellungen die IP
+     * Prüft anhand der Globalen IP Check einstellungen die IP
      * 
      * @param br
      *            TODO
@@ -841,17 +830,17 @@ public class JDUtilities {
     }
 
     /**
-     * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurÃ¼ck
+     * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurück
      * 
      * @author JD-Team
-     * @return gibt den Pfad zu den JAC Methoden zurÃ¼ck
+     * @return gibt den Pfad zu den JAC Methoden zurück
      */
     public static String getJACMethodsDirectory() {
         return "jd/captcha/methods/";
     }
 
     /**
-     * @return Gibt die verwendete java Version als Double Value zurÃ¼ck. z.B.
+     * @return Gibt die verwendete java Version als Double Value zurück. z.B.
      *         1.603
      */
     public static Double getJavaVersion() {
@@ -862,7 +851,7 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert einen URLClassLoader zurÃ¼ck, um Dateien aus dem Stammverzeichnis
+     * Liefert einen URLClassLoader zurück, um Dateien aus dem Stammverzeichnis
      * zu laden
      * 
      * @return URLClassLoader
@@ -871,7 +860,7 @@ public class JDUtilities {
         if (jdClassLoader == null) {
             File homeDir = JDUtilities.getJDHomeDirectoryFromEnvironment();
             // String url = null;
-            // Url Encode des pfads fÃ¼r den Classloader
+            // Url Encode des pfads für den Classloader
             JDUtilities.getLogger().info("Create Classloader: for: " + homeDir.getAbsolutePath());
             jdClassLoader = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
 
@@ -880,9 +869,9 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert das Basisverzeichnis fÃ¼r jD zurÃ¼ck.
+     * Liefert das Basisverzeichnis für jD zurück.
      * 
-     * @return ein File, daÃŸ das Basisverzeichnis angibt
+     * @return ein File, dass das Basisverzeichnis angibt
      */
     public static File getJDHomeDirectoryFromEnvironment() {
         if (JD_HOME != null) return JD_HOME;
@@ -1015,11 +1004,11 @@ public class JDUtilities {
 
     /**
      * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ
-     * Frame gefunden wird, oder es keine Ã¼bergeordnete Komponente gibt
+     * Frame gefunden wird, oder es keine übergeordnete Komponente gibt
      * 
      * @param comp
      *            Komponente, dessen Frame Objekt gesucht wird
-     * @return Ein Frame Objekt, das die Komponente beinhÃ¤lt oder null, falls
+     * @return Ein Frame Objekt, das die Komponente beinhält oder null, falls
      *         keins gefunden wird
      */
     public static Frame getParentFrame(Component comp) {
@@ -1102,7 +1091,7 @@ public class JDUtilities {
      */
     @SuppressWarnings("unchecked")
     public static ArrayList<HostPluginWrapper> getPluginsForHost() {
- 
+
         ArrayList<HostPluginWrapper> plgs = new ArrayList<HostPluginWrapper>();
 
         plgs.addAll(HostPluginWrapper.getHostWrapper());
@@ -1199,7 +1188,7 @@ public class JDUtilities {
     }
 
     /**
-     * Gibt ein FileOebject zu einem Resourcstring zurÃ¼ck
+     * Gibt ein FileOebject zu einem Resourcstring zurück
      * 
      * @author JD-Team
      * @param resource
@@ -1237,13 +1226,13 @@ public class JDUtilities {
     }
 
     /**
-     * FÃ¼hrt einen Externen befehl aus.
+     * Führt einen Externen befehl aus.
      * 
      * @param command
      * @param parameter
      * @param runIn
      * @param waitForReturn
-     * @return null oder die rÃ¼ckgabe des befehls falls waitforreturn == true
+     * @return null oder die rückgabe des befehls falls waitforreturn == true
      *         ist
      */
     public static String runCommand(String command, String[] parameter, String runIn, int waitForReturn) {
@@ -1300,7 +1289,7 @@ public class JDUtilities {
     }
 
     /**
-     * Setztd as aktuelle woringdirectory fÃ¼r den filebrowser
+     * Setzt das aktuelle woringdirectory für den filebrowser
      * 
      * @param f
      * @param id
@@ -1322,7 +1311,7 @@ public class JDUtilities {
     }
 
     /**
-     * ÃœberprÃ¼ft ob eine IP gÃ¼ltig ist. das verwendete Pattern aknn in der
+     * Überprüft ob eine IP gültig ist. das verwendete Pattern aknn in der
      * config editiert werden.
      * 
      * @param ip
