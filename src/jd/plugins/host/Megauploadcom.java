@@ -48,6 +48,7 @@ public class Megauploadcom extends PluginForHost {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
     private static final String CAPTCHA_MODE = "CAPTCHAMODE";
+    private static  int FREE = 1;
 
     private static int simultanpremium = 1;
 
@@ -285,7 +286,7 @@ public class Megauploadcom extends PluginForHost {
 //        br.getHeaders().put("Accept-Language", null);
 //        br.getHeaders().put("User-Agent", "");
         
-     
+        FREE=2;
        if (account != null) {
             login(account);
         }
@@ -417,6 +418,14 @@ public class Megauploadcom extends PluginForHost {
             }
             return;
         }
+        FREE=1;
+        link.getLinkStatus().setStatusText("Wait for start");
+        link.requestGuiUpdate();
+        
+        while (JDUtilities.getController().getRunningDownloadNumByHost(this) > 0) {
+
+            Thread.sleep(200);
+        }
         String url = br.getRedirectLocation();
         doDownload(link, url, true, 1);
     }
@@ -428,7 +437,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return FREE;
     }
 
     public void reset() {
