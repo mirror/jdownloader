@@ -17,8 +17,10 @@
 package jd.plugins.host;
 
 import java.io.File;
+import java.net.URL;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -44,7 +46,12 @@ public class Odsiebiecom extends PluginForHost {
         try {
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() == null) {
-                String filename = br.getRegex("<dt>Nazwa pliku:</dt>.*?<dd>(.*?)</dd>").getMatch(0);
+                String filename = br.getRegex("Nazwa\\s+pliku:</dt>\\s+<dd[^>]*?>(.*?)dd>").getMatch(0);
+                System.out.println(filename);
+                filename = filename.replaceAll("<!--.*?-->", " ");
+                System.out.println(filename);
+                filename = new Regex(filename, "[\\s*?]*(.*?)</").getMatch(0);
+                System.out.println(filename);
                 String filesize;
                 if ((filesize = br.getRegex("<dt>Rozmiar pliku:</dt>.*?<dd>(.*?)MB</dd>").getMatch(0)) != null) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.replaceAll(",", "")) * 1024 * 1024));
@@ -69,17 +76,18 @@ public class Odsiebiecom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
+        String finalfn = downloadLink.getName();
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         /*
          * Zuerst schaun ob wir nen Button haben oder direkt das File vorhanden
          * ist
          */
 
-        String steplink = br.getRegex("<a class=\".*?\" href=\"/pobierz/(.*?)\">Pobierz plik</a>").getMatch(0);
+        String steplink = br.getRegex("class=\"pob..\"\\s+href=\"/pobierz/(.*?)\">").getMatch(0);
         if (steplink == null) {
             /* Kein Button, also muss der Link irgendwo auf der Page sein */
             /* Film,Mp3 */
-            downloadurl = br.getRegex("<PARAM NAME=\"FileName\" VALUE=\"(.*?)\"").getMatch(0);
+            downloadurl = br.getRegex("flashvars=\"url=(.*?)&v_autostart").getMatch(0);
             /* Flash */
             if (downloadurl == null) {
                 downloadurl = br.getRegex("<PARAM NAME=\"movie\" VALUE=\"(.*?)\"").getMatch(0);
@@ -114,7 +122,7 @@ public class Odsiebiecom extends PluginForHost {
             }
             br.setFollowRedirects(false);
             /* DownloadLink suchen */
-            steplink = br.getRegex("<a href=\"/download/(.*?)\"").getMatch(0);
+            steplink = br.getRegex("here\\s+to\\s+<a href=\"/download/(.*?)\"").getMatch(0);
             if (steplink == null) { throw new PluginException(LinkStatus.ERROR_RETRY); }
             downloadurl = "http://odsiebie.com/download/" + steplink;
             br.getPage(downloadurl);
@@ -135,6 +143,7 @@ public class Odsiebiecom extends PluginForHost {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FATAL, "Server Error");
         }
+        downloadLink.setFinalFileName(finalfn);
         dl.startDownload();
     }
 
