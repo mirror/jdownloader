@@ -156,6 +156,8 @@ public class JDUtilities {
      */
     private static Logger logger = null;
 
+    private static String LATEST_IP = null;
+
     public static String getSimString(String a, String b) {
         StringBuilder ret = new StringBuilder();
         for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
@@ -768,6 +770,7 @@ public class JDUtilities {
      * @return ip oder /offline
      */
     public static String getIPAddress(Browser br) {
+
         if (br == null) {
             br = new Browser();
             br.setProxy(JDProxy.NO_PROXY);
@@ -789,7 +792,7 @@ public class JDUtilities {
             Matcher matcher = pattern.matcher(br.getPage(site));
             if (matcher.find()) {
                 if (matcher.groupCount() > 0) {
-                    return matcher.group(1);
+                    return LATEST_IP = matcher.group(1);
                 } else {
                     JDUtilities.getLogger().severe("Primary bad Regex: " + patt);
 
@@ -812,11 +815,12 @@ public class JDUtilities {
             Matcher matcher = pattern.matcher(br.getPage("http://service.jdownloader.org/tools/getip.php"));
             if (matcher.find()) {
                 if (matcher.groupCount() > 0) {
-                    return matcher.group(1);
+                    return LATEST_IP = matcher.group(1);
                 } else {
                     JDUtilities.getLogger().severe("Primary bad Regex: " + patt);
                 }
             }
+            LATEST_IP = null;
             return "offline";
         }
 
@@ -825,8 +829,13 @@ public class JDUtilities {
             JDUtilities.getLogger().info("Sec. IP Check failed.");
 
         }
-
+        LATEST_IP = null;
         return "offline";
+    }
+
+    public static String getLatestIP() {
+        if (LATEST_IP == null) getIPAddress(null);
+        return LATEST_IP;
     }
 
     /**
@@ -1196,7 +1205,7 @@ public class JDUtilities {
      * @return File zu arg
      */
     public static File getResourceFile(String resource) {
-       
+
         JDClassLoader cl = JDUtilities.getJDClassLoader();
         if (cl == null) {
             System.err.println("Classloader ==null: ");
@@ -1211,7 +1220,7 @@ public class JDUtilities {
             }
         }
         return null;
-    } 
+    }
 
     public static void restartJD(String[] jdArgs) {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();

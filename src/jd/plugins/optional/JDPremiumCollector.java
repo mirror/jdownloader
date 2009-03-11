@@ -89,6 +89,7 @@ public class JDPremiumCollector extends PluginOptional {
                     for (String[] acc : accs) {
                         if (acc[3].equalsIgnoreCase(plg.getHost())) {
                             Account account = new Account(acc[1], acc[2]);
+                            account.setProperty("PREMCOLLECTOR", true);
                             if (subConfig.getBooleanProperty(PROPERTY_ACCOUNTS, true)) {
                                 try {
                                     AccountInfo accInfo = plg.getPlugin().getAccountInformation(account);
@@ -117,6 +118,7 @@ public class JDPremiumCollector extends PluginOptional {
                         for (Account oldacc : oldaccounts) {
                             if (newacc.getUser().trim().equalsIgnoreCase(oldacc.getUser().trim())) {
                                 oldacc.setPass(newacc.getPass().trim());
+                                oldacc.setProperty("PREMCOLLECTOR", true);
                                 found = true;
                                 break;
                             }
