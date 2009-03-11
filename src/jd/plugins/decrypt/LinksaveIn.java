@@ -19,6 +19,9 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -42,9 +45,11 @@ public class LinksaveIn extends PluginForDecrypt {
 
         br.getPage(param.getCryptedUrl());
         br.forceDebug(true);
+        //Linksave_Besucherpasswort=%FEd10fb83.64625
+   
         Form form = br.getFormbyProperty("name", "form");
         while (form != null) {
-            String url = form.getRegex("<img id=\"captcha\" src=\"\\.\\/(.*?)\" ").getMatch(0);
+            String url = "captcha/cap.php?hsh="+form.getRegex("\\/captcha\\/cap\\.php\\?hsh=([^\"]+)").getMatch(0);
             File captchaFile = this.getLocalCaptchaFile(this);
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(url));
 
@@ -59,10 +64,19 @@ public class LinksaveIn extends PluginForDecrypt {
                 break;
             }
         }
+       
         String[] container = br.getRegex("link\\'\\)\\.href\\=\\'(.*?)\\'\\;").getColumn(0);
         if (container != null && container.length > 0) {
+            
+       
+            
             File file = null;
             for (String c : container) {
+                Context cx = Context.enter();
+                Scriptable scope = cx.initStandardObjects();
+                String fun = "function f(){ \nreturn '" + c + "';} f()";
+                Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+                c=result.toString();
                 URLConnectionAdapter con = br.openGetConnection("http://linksave.in/" + c);
                 if (con.getResponseCode() == 200) {
                     br.downloadConnection(file = JDUtilities.getResourceFile("tmp/linksave/" + c.replace(".cnl", ".dlc").replace("dlc://", "http://")), con);
