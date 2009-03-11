@@ -1137,7 +1137,7 @@ public class JDUtilities {
         double r = Double.parseDouble(getVersion("$Revision$")) / 1000.0;
         return REVISION=new DecimalFormat("0.000").format(r).replace(",", ".");
     }
-
+  
     /**
      * Parsed den String revision und gibt die RevisionsNummer zurück
      * 
