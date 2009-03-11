@@ -235,11 +235,7 @@ public class JDInit {
     }
 
     void init() {
-        new Thread(new Runnable() {
-            public void run() {
                 Browser.init();
-            }
-        }).start();
 
     }
 
