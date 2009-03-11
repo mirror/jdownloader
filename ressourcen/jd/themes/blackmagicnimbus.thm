@@ -1,0 +1,93 @@
+#blackmagicnimbus Theme by Freeloader
+gui.images.add = blackmagicnimbus/add
+gui.images.clipboard = blackmagicnimbus/clipboard
+gui.images.clipboardon = blackmagicnimbus/clipboardon
+gui.images.clipboardoff = blackmagicnimbus/clipboardoff
+gui.images.ceson = blackmagicnimbus/ceson
+gui.images.cesoff = blackmagicnimbus/cesoff
+
+gui.images.config.container = blackmagicnimbus/database
+gui.images.config.addons = blackmagicnimbus/tool
+gui.images.config.find = blackmagicnimbus/find
+gui.images.config.home = blackmagicnimbus/home
+gui.images.config.infoFile = blackmagicnimbus/attach
+gui.images.config.network_local = blackmagicnimbus/network_local
+gui.images.config.ocr = blackmagicnimbus/charset
+gui.images.config.unrar = blackmagicnimbus/package
+gui.images.config.packagemanager = blackmagicnimbus/run
+gui.images.config.eventmanager = blackmagicnimbus/chronometer
+gui.images.config.tip = blackmagicnimbus/help_hint
+gui.images.config.updater=blackmagicnimbus/update_manager
+gui.images.config.gui=blackmagicnimbus/style
+gui.images.config.reconnect=blackmagicnimbus/clear_time
+gui.images.config.host=blackmagicnimbus/host
+gui.images.config.decrypt=blackmagicnimbus/decrypted
+
+
+
+gui.images.configuration = blackmagicnimbus/configuration
+gui.images.delete = blackmagicnimbus/delete
+gui.images.down = blackmagicnimbus/down
+gui.images.exit = blackmagicnimbus/exit
+gui.images.find = blackmagicnimbus/find
+gui.images.go_bottom = blackmagicnimbus/go_bottom
+gui.images.go_top = blackmagicnimbus/go_top
+gui.images.jd_logo = jd_logo
+gui.images.led_empty = led_empty
+gui.images.led_green = led_green
+gui.images.load = blackmagicnimbus/load
+gui.images.next = blackmagicnimbus/next
+gui.images.reconnect = blackmagicnimbus/reconnect
+gui.images.reconnect_bad = blackmagicnimbus/reconnect_bad
+gui.images.reconnect_ok = blackmagicnimbus/reconnect_ok
+gui.images.save = blackmagicnimbus/save
+gui.images.stop = blackmagicnimbus/stop
+gui.images.stop_after = blackmagicnimbus/stop_after
+gui.images.stop_after_active = blackmagicnimbus/stop_after_active
+gui.images.terminal = blackmagicnimbus/terminal
+gui.images.top = blackmagicnimbus/top
+gui.images.update_manager = blackmagicnimbus/update_manager
+
+gui.images.help=blackmagicnimbus/help
+gui.images.package_opened = blackmagicnimbus/package_opened
+gui.images.package_closed = blackmagicnimbus/package_closed
+gui.images.link=blackmagicnimbus/link
+gui.images.selected=blackmagicnimbus/checked
+gui.images.unselected=blackmagicnimbus/unchecked
+gui.images.warning=blackmagicnimbus/dialog_warning
+
+
+gui.icons.copy=blackmagicnimbus/editcopy
+gui.icons.cut=blackmagicnimbus/editcut
+gui.icons.paste=blackmagicnimbus/editpaste
+gui.icons.select_all=blackmagicnimbus/edit_select_all
+gui.icons.delete=blackmagicnimbus/editdelete
+gui.color.downloadlist.font = 000000
+
+gui.color.downloadlist.row_a = EEEEEE
+gui.color.downloadlist.row_b = FFFFFF
+gui.color.downloadlist.row_selected = 7a98b9
+gui.color.downloadlist.row_selected_border = 7a98b9
+gui.color.downloadlist.row_package = AAAAAA
+gui.color.downloadlist.row_link_done = 7cd622
+gui.color.downloadlist.row_link_error = a40604
+gui.color.downloadlist.row_link_disabled = BBBBBB
+gui.color.downloadlist.grid = FFFFFF
+
+gui.color.downloadlist.package_progress = 94baff
+gui.color.downloadlist.progress_error = a40604
+gui.color.downloadlist.progress_done = 7cd622
+gui.color.downloadlist.progress_inactive = BBBBBB
+gui.color.downloadlist.progress_active = 94baff
+
+gui.color.downloadlist.package_progress_font_a = 000000
+gui.color.downloadlist.progress_error_font_a = 000000
+gui.color.downloadlist.progress_done_font_a = 000000
+gui.color.downloadlist.progress_inactive_font_a = 000000
+gui.color.downloadlist.progress_active_font_a = 000000
+
+gui.color.downloadlist.package_progress_font_b = 000000
+gui.color.downloadlist.progress_error_font_b = 000000
+gui.color.downloadlist.progress_done_font_b = 000000
+gui.color.downloadlist.progress_inactive_font_b = 000000
+gui.color.downloadlist.progress_active_font_b = 000000
