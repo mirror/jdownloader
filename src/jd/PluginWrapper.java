@@ -22,7 +22,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -97,13 +96,10 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
             if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && WebUpdater.PLUGIN_LIST != null) {
 
                 ArrayList<FileUpdate> filelist = new ArrayList<FileUpdate>();
-                HashMap<String, FileUpdate> list = WebUpdater.PLUGIN_LIST;
-                for (Iterator<Entry<String, FileUpdate>> it = WebUpdater.PLUGIN_LIST.entrySet().iterator(); it.hasNext();) {
-                    Entry<String, FileUpdate> entry = it.next();
-                    if (entry.getKey().startsWith("/"+getClassName().replace(".", "/"))) {
+                for (Entry<String, FileUpdate> entry : WebUpdater.PLUGIN_LIST.entrySet()) {
+                    if (entry.getKey().startsWith("/" + getClassName().replace(".", "/"))) {
                         filelist.add(entry.getValue());
                     }
-
                 }
                 // HashMap<String, Vector<String>> list = WebUpdater.PLUGIN_LIST
                 // != null ? WebUpdater.PLUGIN_LIST : new HashMap<String,

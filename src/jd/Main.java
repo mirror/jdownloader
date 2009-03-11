@@ -361,20 +361,17 @@ public class Main {
     private static void setSplashStatus(final SplashScreen splashScreen, final int i, final String l) {
         // System.out.println(l);
         if (splashScreen == null) { return; }
-        EventQueue.invokeLater( new Runnable() 
-        { 
-          public void run() { 
-              try {
-                  Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
-                  splashScreen.setText(l);
-                  splashScreen.setValue(splashScreen.getValue() + i);
-              } catch (Exception e) {
-                  // TODO: handle exception
-              }
-          } 
-        } );
-
-
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                try {
+                    Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
+                    splashScreen.setText(l);
+                    splashScreen.setValue(splashScreen.getValue() + i);
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
+            }
+        });
 
     }
 
@@ -420,8 +417,8 @@ public class Main {
         if (debug) {
             JDUtilities.getLogger().setLevel(Level.ALL);
         }
-        JDInit.setupProxy();
-        JDInit.setupSocks();
+        // JDInit.setupProxy();
+        // JDInit.setupSocks();
         WebUpdater.getConfig("WEBUPDATE").save();
         init.removeFiles();
 

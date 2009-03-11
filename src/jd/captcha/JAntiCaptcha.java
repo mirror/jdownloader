@@ -65,6 +65,7 @@ import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
+import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
@@ -142,7 +143,7 @@ public class JAntiCaptcha {
 
         File[] entries = dir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
                 if (pathname.isDirectory() && new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml").exists() && !JDIO.getLocalFile(new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml")).contains("disabled")) {
 
@@ -203,7 +204,7 @@ public class JAntiCaptcha {
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, methodName);
         File[] entries = captchaDir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
                 if (pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
 
@@ -255,7 +256,7 @@ public class JAntiCaptcha {
 
             w.repack();
 
-            inputCode = UTILITIES.prompt("Bitte Captcha Code eingeben", code);
+            inputCode = JOptionPane.showInputDialog("Bitte Captcha Code eingeben", code);
 
             w.setText(5, i, "User:" + inputCode);
             w.repack();
@@ -281,7 +282,7 @@ public class JAntiCaptcha {
         w.setText(0, i + 1, "Erkennung: " + UTILITIES.getPercent(correctLetters, totalLetters) + "%");
         w.setText(4, i + 1, "Richtig: " + correctLetters);
         w.setText(5, i + 1, "Falsch: " + (totalLetters - correctLetters));
-        UTILITIES.showMessage("Erkennung: " + correctLetters + "/" + totalLetters + " = " + UTILITIES.getPercent(correctLetters, totalLetters) + "%");
+        JOptionPane.showMessageDialog(null, "Erkennung: " + correctLetters + "/" + totalLetters + " = " + UTILITIES.getPercent(correctLetters, totalLetters) + "%");
     }
 
     /**
@@ -783,18 +784,12 @@ public class JAntiCaptcha {
                 public Integer id = new Integer(ii);
 
                 public void actionPerformed(ActionEvent arg) {
-                    // TODO Auto-generated method stub
-
-                    // TODO Auto-generated method stub
                     JCheckBox src = ((JCheckBox) arg.getSource());
                     if (src.getText().equals("DELETE")) {
-
                         rem.add(id);
                     } else {
                         rem.remove(id);
-
                     }
-
                 }
 
             });
@@ -813,20 +808,19 @@ public class JAntiCaptcha {
         b.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                // TODO Auto-generated method stub
                 System.out.println(rem + "");
-                ArrayList<Letter> list= new ArrayList<Letter>();
+                ArrayList<Letter> list = new ArrayList<Letter>();
                 int s = letterDB.size();
                 for (Integer i : rem) {
                     try {
                         Letter let = letterDB.get(s - 1 - i);
                         list.add(let);
-                       
+
                     } catch (Exception ew) {
                         ew.printStackTrace();
                     }
                 }
-                for(Letter letter:list){
+                for (Letter letter : list) {
                     removeLetterFromLibrary(letter);
                 }
                 saveMTHFile();
@@ -1500,10 +1494,9 @@ public class JAntiCaptcha {
      * neue db
      */
     public void importDB(File path) {
-        boolean old=true;
-        if(JOptionPane.showConfirmDialog(null, "Use format CHAR_* sinstead of NUM_CHAR?")==JOptionPane.OK_OPTION)old=false;
-            if(JOptionPane.showConfirmDialog(null, "Delete old db?")==JOptionPane.OK_OPTION)
-       letterDB = new LinkedList<Letter>();
+        boolean old = true;
+        if (JOptionPane.showConfirmDialog(null, "Use format CHAR_* sinstead of NUM_CHAR?") == JOptionPane.OK_OPTION) old = false;
+        if (JOptionPane.showConfirmDialog(null, "Delete old db?") == JOptionPane.OK_OPTION) letterDB = new LinkedList<Letter>();
         getResourceFile("letters.mth").delete();
         Image image;
         Letter letter;
@@ -1550,13 +1543,13 @@ public class JAntiCaptcha {
                 letter.setGrid(newGrid);
                 // letter = letter.align(-40, +40);
                 // PixelGrid.fillLetter(letter);
-                letter.setSourcehash(UTILITIES.getLocalHash(element));
-              if(old){
-                letter.setDecodedValue(element.getName().split("\\_")[1].split("\\.")[0]);
-              }else{
-                  letter.setDecodedValue(element.getName().split("\\_")[0]); 
-              }
-//BasicWindow.showImage(letter.getImage(1),element.getName());
+                letter.setSourcehash(JDHash.getMD5(element));
+                if (old) {
+                    letter.setDecodedValue(element.getName().split("\\_")[1].split("\\.")[0]);
+                } else {
+                    letter.setDecodedValue(element.getName().split("\\_")[0]);
+                }
+                // BasicWindow.showImage(letter.getImage(1),element.getName());
                 letter.clean();
 
                 letterDB.add(letter);
@@ -1945,7 +1938,7 @@ public class JAntiCaptcha {
             }
 
             // String methodsPath = UTILITIES.getFullPath(new String[] {
-            //JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
+            // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
             // "jd", "captcha", "methods" });
             // String hoster = "rscat.com";
             // JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
@@ -2048,7 +2041,7 @@ public class JAntiCaptcha {
         // Lade das Bild
         Image captchaImage = UTILITIES.loadImage(captchafile);
         // Erstelle hashwert
-        String captchaHash = UTILITIES.getLocalHash(captchafile);
+        String captchaHash = JDHash.getMD5(captchafile);
 
         // Prüfe ob dieser captcha schon aufgenommen wurde und überspringe ihn
         // falls ja
@@ -2201,7 +2194,7 @@ public class JAntiCaptcha {
             //
             // }
             if (getCodeFromFileName(captchafile.getName(), captchaHash) == null) {
-                code = UTILITIES.prompt("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
+                code = JOptionPane.showInputDialog("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
                 if (code != null && code.equals(guess)) {
                     code = "";
                 } else if (code == null) {

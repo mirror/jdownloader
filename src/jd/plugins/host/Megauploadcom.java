@@ -48,7 +48,7 @@ public class Megauploadcom extends PluginForHost {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
     private static final String CAPTCHA_MODE = "CAPTCHAMODE";
-    private static int FREE = 1;
+    // private static int FREE = 1;
 
     private static int simultanpremium = 1;
 
@@ -291,7 +291,6 @@ public class Megauploadcom extends PluginForHost {
                         downloadLink.setDupecheckAllowed(true);
                     }
                 } catch (Exception e) {
-                    // TODO: handle exception
                 }
             }
         } catch (Exception e) {
@@ -314,15 +313,8 @@ public class Megauploadcom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://megaupload.com", "l", "en");
         initHeaders(br);
-        // br.getHeaders().put("Referer", "");
-        // br.getHeaders().put("Referer", "");
-        // br.getHeaders().put("Referer", "");
-        // br.getHeaders().put("Referer", "");
-        // br.getHeaders().put("Referer", "");
-        // br.getHeaders().put("Accept-Language", null);
-        // br.getHeaders().put("User-Agent", "");
 
-        FREE = 2;
+        // FREE = 2;
         if (account != null) {
             login(account);
         }
@@ -388,14 +380,7 @@ public class Megauploadcom extends PluginForHost {
         }
 
         if (form != null && form.containsHTML("captchacode")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-        // String Waittime =
-        // br.getRegex(Pattern.compile("<script.*?java.*?>.*?count=(\\d+);",
-        // Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        // if (Waittime == null) {
 
-        // } else {
-        // sleep(Integer.parseInt(Waittime.trim()) * 1000l, link);
-        // }
         link.getLinkStatus().setStatusText("Wait for start");
         link.requestGuiUpdate();
         while (JDUtilities.getController().getRunningDownloadNumByHost(this) > 0) {
@@ -462,7 +447,7 @@ public class Megauploadcom extends PluginForHost {
             }
             return;
         }
-        FREE = 1;
+        // FREE = 1;
         link.getLinkStatus().setStatusText("Wait for start");
         link.requestGuiUpdate();
 

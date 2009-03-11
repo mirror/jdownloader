@@ -66,13 +66,7 @@ public class Schedule extends PluginOptional {
 
     @SuppressWarnings("unchecked")
     private void initGUI() {
-//        try {
-            schedules = (Vector<ScheduleFrame>) getPluginConfig().getProperty(PROPERTY_SCHEDULES, new Vector<ScheduleFrame>());
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            logger.warning("Could not load saved schedules!");
-//            schedules = new Vector<ScheduleFrame>();
-//        }
+        schedules = (Vector<ScheduleFrame>) getPluginConfig().getProperty(PROPERTY_SCHEDULES, new Vector<ScheduleFrame>());
         reloadList();
 
         dialog = new JDialog();
@@ -82,6 +76,7 @@ public class Schedule extends PluginOptional {
                 dialog.setVisible(false);
                 status.stop();
                 getPluginConfig().setProperty(PROPERTY_SCHEDULES, schedules);
+                getPluginConfig().save();
             }
         });
 
@@ -126,11 +121,11 @@ public class Schedule extends PluginOptional {
         panel.add(aPanel, BorderLayout.CENTER);
 
         dialog.setContentPane(panel);
-        
-        status = new Timer(15 * 1000, this);
+
+        status = new Timer(1 * 1000, this);
         status.setInitialDelay(1000);
         status.start();
-        
+
         dialog.setVisible(true);
     }
 
@@ -142,14 +137,14 @@ public class Schedule extends PluginOptional {
             schedules.add(new ScheduleFrame(JDLocale.L("addons.schedule.menu.schedule", "Schedule") + " " + (schedules.size() + 1)));
             reloadList();
             list.setSelectedIndex(schedules.size() - 1);
-            SwingUtilities.updateComponentTreeUI(dialog);
+            SwingUtilities.updateComponentTreeUI(aPanel);
         } else if (e.getSource() == remove) {
             schedules.remove(list.getSelectedIndex());
             reloadList();
             list.setSelectedIndex(Math.max(0, schedules.size() - 1));
             setCenterPanel(null);
             renameLabels();
-            SwingUtilities.updateComponentTreeUI(dialog);
+            SwingUtilities.updateComponentTreeUI(aPanel);
         } else if (e.getSource() == show) {
             if (show.getText().equals(JDLocale.L("addons.schedule.menu.edit", "Edit"))) {
                 show.setText(JDLocale.L("addons.schedule.menu.close", "Close"));
@@ -162,7 +157,7 @@ public class Schedule extends PluginOptional {
                 status.start();
                 changeControls(true);
             }
-            SwingUtilities.updateComponentTreeUI(dialog);
+            SwingUtilities.updateComponentTreeUI(aPanel);
         } else if (e.getSource() == status) {
             int size = schedules.size();
 
@@ -172,7 +167,7 @@ public class Schedule extends PluginOptional {
                 infoPanel.add(new JLabel(JDLocale.L("addons.schedule.menu.schedule", "Schedule") + " " + (i + 1) + " " + JDLocale.L("addons.schedule.menu.status", "Status") + ": " + s.getStatusLabel().getText()));
             }
             setCenterPanel(infoPanel);
-            SwingUtilities.updateComponentTreeUI(dialog);
+            SwingUtilities.updateComponentTreeUI(aPanel);
         } else if (e.getSource() == list) {
             show.setEnabled(schedules.size() > 0);
             remove.setEnabled(schedules.size() > 0);
