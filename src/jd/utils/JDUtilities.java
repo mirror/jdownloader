@@ -158,6 +158,10 @@ public class JDUtilities {
 
     private static String LATEST_IP = null;
 
+    private static String REVISION;
+
+    private static String VERSION;
+
     public static String getSimString(String a, String b) {
         StringBuilder ret = new StringBuilder();
         for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
@@ -1129,8 +1133,9 @@ public class JDUtilities {
      * @return RevisionID
      */
     public static String getRevision() {
+        if(REVISION!=null)return REVISION;
         double r = Double.parseDouble(getVersion("$Revision$")) / 1000.0;
-        return new DecimalFormat("0.000").format(r).replace(",", ".");
+        return REVISION=new DecimalFormat("0.000").format(r).replace(",", ".");
     }
 
     /**
@@ -1140,8 +1145,9 @@ public class JDUtilities {
      * @return RevisionsNummer
      */
     public static String getVersion(String revision) {
+        if(VERSION!=null)return VERSION;
         String ret = new Regex(revision, "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return VERSION=ret == null ? "0.0" : ret;
     }
 
     public static int getRunType() {

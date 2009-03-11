@@ -340,18 +340,18 @@ public class JDInit {
                 File home = JDUtilities.getResourceFile(".");
                 if (home.canWrite() && !JDUtilities.getResourceFile("noupdate.txt").exists()) {
 
-                    JOptionPane.showMessageDialog(null, JDLocale.L("installer.welcome", "Welcome to jDownloader. Download missing files."));
+                    JOptionPane.showMessageDialog(null, JDLocale.L("installer.welcome", "Welcome to jDownloader."));
 
-                    try {
-                        new WebUpdate().doWebupdate(true);
-                        JDUtilities.getConfiguration().save();
-                        JDUtilities.getDatabaseConnector().shutdownDatabase();
-                        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "jdupdate.jar", "/restart", "/rt" + JDUtilities.RUNTYPE_LOCAL_JARED }, home.getAbsolutePath(), 0));
-                        System.exit(0);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        // System.exit(0);
-                    }
+//                    try {
+//                        new WebUpdate().doWebupdate(true);
+//                        JDUtilities.getConfiguration().save();
+//                        JDUtilities.getDatabaseConnector().shutdownDatabase();
+//                        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "jdupdate.jar", "/restart", "/rt" + JDUtilities.RUNTYPE_LOCAL_JARED }, home.getAbsolutePath(), 0));
+//                        System.exit(0);
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                        // System.exit(0);
+//                    }
 
                 }
                 if (!home.canWrite()) {

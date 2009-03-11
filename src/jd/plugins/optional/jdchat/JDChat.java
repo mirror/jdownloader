@@ -1453,7 +1453,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         EventQueue.invokeLater(new Runnable() {
             public void run() {
-                right.setText(USERLIST_STYLE + sb);
+                if(right!=null)                right.setText(USERLIST_STYLE + sb);
                 // frame.pack();
             }
         });

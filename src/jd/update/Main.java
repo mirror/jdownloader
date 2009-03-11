@@ -365,7 +365,7 @@ public class Main {
         if (JDUtilities.getResourceFile("updateLog.txt").exists()) {
             String warnHash = JDHash.getMD5(JDUtilities.getResourceFile("updatewarnings.html"));
 
-            Browser.download(JDUtilities.getResourceFile("updatewarnings.html"), "http://service.jdownloader.org/messages/updatewarning.html");
+            Browser.download(JDUtilities.getResourceFile("updatewarnings.html"), "http://jdupdate1.jdownloader.org/messages/updatewarning.html");
             String hash2 = JDHash.getMD5(JDUtilities.getResourceFile("updatewarnings.html"));
             if (hash2 != null && !hash2.equals(warnHash)) {
                 String str;

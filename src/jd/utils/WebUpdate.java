@@ -57,7 +57,7 @@ public class WebUpdate implements ControlListener {
             logger.info("Download " + file.getAbsolutePath() + "");
             ProgressController progress = new ProgressController(JDLocale.LF("wrapper.webupdate.updateUpdater", "Download updater"), 3);
             progress.increase(1);
-            URLConnectionAdapter con = br.openGetConnection("http://update1.jdownloader.org/jdupdate.jar");
+            URLConnectionAdapter con = br.openGetConnection("http://update1.jdownloader.org/jdupdate.jar"+"?t="+System.currentTimeMillis());
             if (con.isOK()) {
 
                 File tmp;

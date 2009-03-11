@@ -47,6 +47,8 @@ public class JDLocale {
 
     private static File localeFile;
 
+    private static int key;
+
     public static String getLocale() {
         return localeID;
     }
@@ -81,7 +83,7 @@ public class JDLocale {
             JDLocale.setLocale(JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, JDLocale.isGerman() ? "german" : "english"));
         }
 
-        int key = key2.toLowerCase().hashCode();
+        key = key2.toLowerCase().hashCode();
         if (data.containsKey(key)) return data.get(key);
 
         System.out.println("Key not found: " + key2 + " Defaultvalue: " + def);

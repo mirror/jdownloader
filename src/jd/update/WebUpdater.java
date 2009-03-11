@@ -467,7 +467,7 @@ public class WebUpdater implements Serializable {
     private ArrayList<Server> updateAvailableServers() {
         try {
             log("Update Downloadmirrors");
-            br.getPage(LISTPATH);
+            br.getPage(LISTPATH+"?t="+System.currentTimeMillis());
             int total = 0;
             ArrayList<Server> servers = new ArrayList<Server>();
             Server serv;
