@@ -18,9 +18,11 @@ package jd.update;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -143,18 +145,28 @@ public class FileUpdate {
             }else{
                  tmpFile = JDUtilities.getResourceFile(getLocalPath() + ".tmp");
             }
-          
+          if(url.contains("?")){
+              url+="&r="+System.currentTimeMillis();
+          }else{
+              url+="?r="+System.currentTimeMillis();
+          }
             result.append("Downloadsource: " + url + "\r\n");
             startTime = System.currentTimeMillis();
+            URLConnectionAdapter con=null;
             try {
-                br.openGetConnection(url);
+                con = br.openGetConnection(url);
                 endTime = System.currentTimeMillis();
                 currentServer.setRequestTime(endTime - startTime);
             } catch (Exception e) {
                 currentServer.setRequestTime(10000l);
+               
             }
 
-            Browser.download(tmpFile, url);
+            if(con==null){
+                result.append("Error. Connection error\r\n");
+                return false;
+            }
+            Browser.download(tmpFile, con);
             String downloadedHash = JDHash.getMD5(tmpFile);
             if (downloadedHash.equalsIgnoreCase(hash)) {
                 this.getLocalFile().delete();
