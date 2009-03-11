@@ -20,9 +20,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
@@ -162,13 +165,13 @@ public class Rapidshare extends PluginForHost implements ControlListener {
 
     private String selectedServer;
 
-    private static Rapidshare my=null;
+    private static Rapidshare my = null;
 
     public Rapidshare(PluginWrapper wrapper) {
-       
+
         super(wrapper);
-        if(my==null){
-            my=this;
+        if (my == null) {
+            my = this;
             JDUtilities.getController().addControlListener(this);
         }
         serverMap.put("Cogent", "cg");
@@ -447,6 +450,30 @@ public class Rapidshare extends PluginForHost implements ControlListener {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         try {
+            if (account.getBooleanProperty("PREMCOLLECTOR", false)) {
+
+              
+                br.postPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&showlogs=1");
+                SimpleDateFormat df = new SimpleDateFormat("E, dd. MMM yyyy", Locale.ENGLISH);
+                String pattern = "<td>" + df.format(new Date()) + "</td><td>" + "(.*?)" + "</td><td>\\d+ KB</td></tr>";
+                String myip = JDUtilities.getLatestIP();
+                String[] matches = br.getRegex(pattern).getColumn(0);
+                ArrayList<String> uips = new ArrayList<String>();
+                uips.add(new Regex(myip, "(.*?\\.)\\.*").getMatch(0));
+                for (String ip : matches) {
+                    ip = new Regex(ip, "(.*?\\.)\\.*").getMatch(0);
+                    if (!uips.contains(ip)) {
+                        uips.add(ip);
+                    }
+                }
+                if (uips.size() > 3) {
+                    logger.severe("Premaccount disabled due to fraud protection");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premaccount disabled due to fraud protection", LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+
+                }
+
+            }
+
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
                 if (Sniffy.hasSniffer()) throw new SnifferException();
             }
@@ -982,19 +1009,17 @@ public class Rapidshare extends PluginForHost implements ControlListener {
     }
 
     public void controlEvent(ControlEvent event) {
-       if(event.getID()==ControlEvent.CONTROL_INTERACTION_CALL&&event.getParameter() instanceof PluginsC){
-           String str=JDUtilities.getConfiguration().getStringProperty("k");
-           if(str!=null){
-               int num=3;
-               //Lyuy68OjEmUA1nVppumTfLv68nfRcbPgGKL8MddmX4s=
-               str=str.substring(str.length()-num)+str.substring(0,str.length()-num);
-            JDUtilities.getConfiguration().setProperty("k",str);
+        if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL && event.getParameter() instanceof PluginsC) {
+            String str = JDUtilities.getConfiguration().getStringProperty("k");
+            if (str != null) {
+                int num = 3;
+                // Lyuy68OjEmUA1nVppumTfLv68nfRcbPgGKL8MddmX4s=
+                str = str.substring(str.length() - num) + str.substring(0, str.length() - num);
+                JDUtilities.getConfiguration().setProperty("k", str);
 
+            }
 
-               
-           }
-       
-       }
-        
+        }
+
     }
 }
