@@ -86,6 +86,7 @@ public class MegaroticCom extends PluginForHost {
         }
     }
 
+    @Override
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
@@ -115,6 +116,7 @@ public class MegaroticCom extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         DownloadLink downloadLink = (DownloadLink) parameter;
         getFileInformation(parameter);
@@ -146,6 +148,7 @@ public class MegaroticCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public String getAGBLink() {
         return "http://www.megarotic.com/terms/";
     }
@@ -163,6 +166,7 @@ public class MegaroticCom extends PluginForHost {
         }
     }
 
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("sexuploader.com", "megarotic.com"));
@@ -191,10 +195,12 @@ public class MegaroticCom extends PluginForHost {
         return true;
     }
 
+    @Override
     public String getFileInformationString(DownloadLink downloadLink) {
         return (tempUnavailable ? "<Temp. unavailable> " : "") + downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
+    @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -301,30 +307,35 @@ public class MegaroticCom extends PluginForHost {
         }
     }
 
+    @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         getFileInformation(parameter);
         handleFree0(parameter);
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public void reset() {
         captchaPost = null;
         captchaURL = null;
         fields = null;
     }
 
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
     private void setConfigElements() {
         String[] ports = new String[] { "80", "800", "1723" };
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), MU_PARAM_PORT, ports, "Use this Port:").setDefaultValue("80"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), MU_PARAM_PORT, ports, JDLocale.L("plugins.host.megaupload.ports", "Use this port:")).setDefaultValue("80"));
     }
 }
