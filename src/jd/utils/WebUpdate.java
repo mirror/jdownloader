@@ -51,22 +51,22 @@ public class WebUpdate implements ControlListener {
         Browser br = new Browser();
         File file;
         String localHash = JDHash.getMD5(file = JDUtilities.getResourceFile("jdupdate.jar"));
-        String remoteHash = br.getPage("http://update1.jdownloader.org/jdupdate.jar.md5").trim();
+        String remoteHash = br.getPage("http://update1.jdownloader.org/jdupdate.jar.md5" + "?t=" + System.currentTimeMillis()).trim();
         if (localHash == null || !remoteHash.equalsIgnoreCase(localHash)) {
 
             logger.info("Download " + file.getAbsolutePath() + "");
             ProgressController progress = new ProgressController(JDLocale.LF("wrapper.webupdate.updateUpdater", "Download updater"), 3);
             progress.increase(1);
-            URLConnectionAdapter con = br.openGetConnection("http://update1.jdownloader.org/jdupdate.jar"+"?t="+System.currentTimeMillis());
+            URLConnectionAdapter con = br.openGetConnection("http://update1.jdownloader.org/jdupdate.jar" + "?t=" + System.currentTimeMillis());
             if (con.isOK()) {
 
                 File tmp;
                 Browser.download(tmp = new File(file.getAbsolutePath() + ".tmp"), con);
-             
+
                 localHash = JDHash.getMD5(tmp);
                 if (remoteHash.equalsIgnoreCase(localHash)) {
 
-                    if ((!file.exists()||file.delete()) && tmp.renameTo(file)) {
+                    if ((!file.exists() || file.delete()) && tmp.renameTo(file)) {
                         progress.finalize(2000);
                         logger.info("Update of " + file.getAbsolutePath() + " successfull");
                     } else {

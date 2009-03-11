@@ -449,10 +449,10 @@ public class WebUpdater implements Serializable {
     }
 
     private void loadUpdateList() throws Exception {
-        String serverHash = br.getPage(UPDATE_ZIP_HASH).trim();
+        String serverHash = br.getPage(UPDATE_ZIP_HASH + "?t=" + System.currentTimeMillis()).trim();
         String localHash = JDHash.getMD5(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH));
         if (!serverHash.equalsIgnoreCase(localHash)) {
-            Browser.download(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH), UPDATE_ZIP_URL);
+            Browser.download(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH), UPDATE_ZIP_URL + "?t=" + System.currentTimeMillis());
         }
         UnZip u = new UnZip(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH), JDUtilities.getResourceFile("tmp/"));
 
@@ -467,7 +467,7 @@ public class WebUpdater implements Serializable {
     private ArrayList<Server> updateAvailableServers() {
         try {
             log("Update Downloadmirrors");
-            br.getPage(LISTPATH+"?t="+System.currentTimeMillis());
+            br.getPage(LISTPATH + "?t=" + System.currentTimeMillis());
             int total = 0;
             ArrayList<Server> servers = new ArrayList<Server>();
             Server serv;
