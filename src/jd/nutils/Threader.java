@@ -103,7 +103,31 @@ public class Threader {
             this.notify();
         }
     }
+    public void startWorkers()
+    {
+        this.hasStarted = true;
+        for (Worker w : workerlist) {
+            w.start();
+        }
 
+        waitFlag = true;
+    }
+    public void waitOnWorkers()
+    {
+        synchronized (this) {
+            while (waitFlag) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    for (Worker w : workerlist)
+                        w.interrupt();
+
+                    return;
+                }
+            }
+        }
+        this.hasDied = true;
+    }
     public void startAndWait() {
         this.hasStarted = true;
         for (Worker w : workerlist) {

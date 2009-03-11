@@ -358,15 +358,23 @@ public class Main {
 
     }
 
-    private static void setSplashStatus(SplashScreen splashScreen, int i, String l) {
+    private static void setSplashStatus(final SplashScreen splashScreen, final int i, final String l) {
         // System.out.println(l);
         if (splashScreen == null) { return; }
-        try {
-            splashScreen.setText(l);
-            splashScreen.setValue(splashScreen.getValue() + i);
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+        EventQueue.invokeLater( new Runnable() 
+        { 
+          public void run() { 
+              try {
+                  Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
+                  splashScreen.setText(l);
+                  splashScreen.setValue(splashScreen.getValue() + i);
+              } catch (Exception e) {
+                  // TODO: handle exception
+              }
+          } 
+        } );
+
+
 
     }
 

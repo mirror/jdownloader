@@ -27,6 +27,10 @@ import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import jd.nutils.jobber.JDRunnable;
+
+import jd.nutils.Threader;
+
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
@@ -56,7 +60,7 @@ public class JDInit {
 
     public static void setupProxy() {
         // if
-        // (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration
+        //(JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration
         // .USE_PROXY,
         // false)) {
         // //
@@ -89,7 +93,7 @@ public class JDInit {
 
     public static void setupSocks() {
         // if
-        // (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration
+        //(JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration
         // .USE_SOCKS,
         // false)) {
         // //
@@ -231,7 +235,12 @@ public class JDInit {
     }
 
     void init() {
-        Browser.init();
+        new Thread(new Runnable() {
+            public void run() {
+                Browser.init();
+            }
+        }).start();
+
     }
 
     public JDController initController() {
@@ -250,18 +259,29 @@ public class JDInit {
         loadPluginForDecrypt();
         loadPluginForHost();
         loadCPlugins();
-        loadPluginOptional();
-        for (OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
-            if (!plg.isLoaded()) continue;
-            try {
-                if (plg.isEnabled() && !plg.getPlugin().initAddon()) {
-                    logger.severe("Error loading Optional Plugin: FALSE");
-                }
-            } catch (Throwable e) {
-                logger.severe("Error loading Optional Plugin: " + e.getMessage());
-                e.printStackTrace();
+        loadPluginOptional();       
+        Threader th = new Threader();
+
+        for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
+            if (plg.isLoaded()){
+                th.add(new JDRunnable() {
+
+                    public void go() throws Exception {
+                        try {
+                            if (plg.isEnabled() && !plg.getPlugin().initAddon()) {
+                                logger.severe("Error loading Optional Plugin: FALSE");
+                            }
+                        } catch (Throwable e) {
+                            logger.severe("Error loading Optional Plugin: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+
+                    }
+                });
+
             }
         }
+        th.startAndWait();
     }
 
     public boolean installerWasVisible() {
@@ -368,8 +388,8 @@ public class JDInit {
      * Bilder werden dynamisch aus dem Homedir geladen.
      */
     public void loadImages() {
-        ClassLoader cl = JDUtilities.getJDClassLoader();
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        final ClassLoader cl = JDUtilities.getJDClassLoader();
+        final Toolkit toolkit = Toolkit.getDefaultToolkit();
 
         File dir = JDUtilities.getResourceFile("jd/img/");
 
@@ -378,16 +398,22 @@ public class JDInit {
             logger.severe("Could not find the img directory");
             return;
         }
-        for (String element : images) {
-            if (element.toLowerCase().endsWith(".png") || element.toLowerCase().endsWith(".gif")) {
-                File f = new File(element);
+        Threader th = new Threader();
 
-                logger.finer("Loaded image: " + f.getName().split("\\.")[0] + " from " + cl.getResource("jd/img/" + f.getName()));
-                JDUtilities.addImage(f.getName().split("\\.")[0], toolkit.getImage(cl.getResource("jd/img/" + f.getName())));
-            }
+        for (final String element : images) {
+            th.add(new JDRunnable() {
+                public void go() throws Exception {
+                    if (element.toLowerCase().endsWith(".png") || element.toLowerCase().endsWith(".gif")) {
+                        File f = new File(element);
+
+                        logger.finer("Loaded image: " + f.getName().split("\\.")[0] + " from " + cl.getResource("jd/img/" + f.getName()));
+                        JDUtilities.addImage(f.getName().split("\\.")[0], toolkit.getImage(cl.getResource("jd/img/" + f.getName())));
+                    }
+                }
+            });
 
         }
-
+        th.startAndWait();
     }
 
     public void loadCPlugins() {
@@ -400,7 +426,22 @@ public class JDInit {
     }
 
     public void loadPluginForDecrypt() {
+        Threader th = new Threader();
+        th.add(new JDRunnable() {
 
+            public void go() throws Exception {
+                new DecryptPluginWrapper("Serienjunkies.org", "Serienjunkies", new String(), PluginWrapper.LOAD_ON_INIT);
+
+            }
+        });
+        th.add(new JDRunnable() {
+
+            public void go() throws Exception {
+                new DecryptPluginWrapper("jdloader", "JDLoader", "(jdlist://.+)|((dlc|rsdf|ccf)://.*/.+)", PluginWrapper.LOAD_ON_INIT);
+
+            }
+        });
+        th.startWorkers();
         new DecryptPluginWrapper("charts4you.org", "Charts4You", "http://[\\w\\.]*?charts4you\\.org\\/\\?id=\\d+");
         new DecryptPluginWrapper("alpha-link.eu", "AlphaLink", "http://[\\w\\.]*?alpha\\-link\\.eu\\/\\?id=[a-fA-F0-9]+");
         new DecryptPluginWrapper("protectbox.in", "ProtectBoxIn", "http://[\\w\\.]*?protectbox\\.in\\/\\?id=[a-fA-F0-9]+");
@@ -511,7 +552,6 @@ public class JDInit {
         new DecryptPluginWrapper("sdx.cc", "SdxCc", "http://[\\w\\.]*?sdx\\.cc/infusions/(pro_download_panel|user_uploads)/download\\.php\\?did=\\d+");
         new DecryptPluginWrapper("secured.in", "Secured", "http://[\\w\\.]*?secured\\.in/download-[\\d]+-[a-zA-Z0-9]{8}\\.html");
         new DecryptPluginWrapper("se-cur.net", "SeCurNet", "http://[\\w\\.]*?se-cur\\.net/q\\.php\\?d=.+");
-        new DecryptPluginWrapper("Serienjunkies.org", "Serienjunkies", new String(), PluginWrapper.LOAD_ON_INIT);
         new DecryptPluginWrapper("sexuria.com", "Sexuriacom", "http://[\\w\\.]*?sexuria\\.com/Pornos_Kostenlos_.+?_(\\d+)\\.html|http://[\\w\\.]*?sexuria\\.com/dl_links_\\d+_(\\d+)\\.html|http://[\\w\\.]*?sexuria\\.com/out.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+");
         new DecryptPluginWrapper("sharebank.ws", "SharebankWs", "http://[\\w\\.]*?sharebank\\.ws/\\?(v|go)=[a-zA-Z0-9]+");
         new DecryptPluginWrapper("sharebee.com", "SharebeeCom", "http://[\\w\\.]*?sharebee\\.com/[a-zA-Z0-9]{8}");
@@ -557,48 +597,159 @@ public class JDInit {
         new DecryptPluginWrapper("remixshare.com", "RemixShareComFolder", "http://[\\w\\.]*?remixshare\\.com/container/\\?id=[a-z0-9].+");
         new DecryptPluginWrapper("zero10.us", "Zero10Us", "http://[\\w\\.]*?zero10\\.us/\\d+");
         new DecryptPluginWrapper("h-link.us", "Zero10Us", "http://[\\w\\.]*?h-link\\.us/\\d+");
-        new DecryptPluginWrapper("jdloader", "JDLoader", "(jdlist://.+)|((dlc|rsdf|ccf)://.*/.+)", PluginWrapper.LOAD_ON_INIT);
         new DecryptPluginWrapper("jamendo.com", "JamendoCom", "http://[\\w\\.]*?jamendo\\.com/.?.?/?(album/\\d+|artist/.+)");
         new DecryptPluginWrapper("fdnlinks.com", "FDNLinksCom", "http://[\\w\\.]*?fdnlinks\\.com/link/[a-zA-Z0-9]+");
         new DecryptPluginWrapper("sprezer.com", "SprezerCom", "http://[\\w\\.]*?sprezer\\.com/file-.+");
         // extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
-
+        th.waitOnWorkers();
     }
 
     public void loadPluginForHost() {
+        Threader th = new Threader();
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("RapidShare.com", "Rapidshare", "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?.+", PluginWrapper.LOAD_ON_INIT);
 
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("Uploaded.to", "Uploadedto", "http://[\\w\\.]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[a-zA-Z0-9]+/?", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
         // Premium Hoster
-        new HostPluginWrapper("RapidShare.com", "Rapidshare", "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?.+", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Uploaded.to", "Uploadedto", "http://[\\w\\.]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[a-zA-Z0-9]+/?", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("bluehost.to", "BluehostTo", "http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("depositfiles.com", "DepositFiles", "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("FileFactory.com", "FileFactory", "http://[\\w\\.]*?filefactory\\.com(/|//)file/[a-zA-Z0-9]+/?", PluginWrapper.LOAD_ON_INIT);
-        // http://www.filer.net/dl/8657bad0e042fb4
-        new HostPluginWrapper("Filer.net", "Filer", "http://[\\w\\.]*?filer.net/(file[\\d]+|get|dl)/.*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Freakshare.net", "Freaksharenet", "http://[\\w\\.]*?freakshare\\.net/files/\\d+/(.*)", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Megashares.Com", "MegasharesCom", "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/.*\\?d[0-9]{2}=[0-9a-f]{7}", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Megaupload.com", "Megauploadcom", "http://[\\w\\.]*?(megaupload)\\.com/.*?(\\?|&)d=[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("MeinUpload.com", "MeinUpload", "(http://[\\w\\.]*?meinupload\\.com/{1,}dl/.+/.+)|(http://[\\w\\.]*?meinupload\\.com/\\?d=.*)|http://[\\w\\.]*?mein-upload\\.com/[a-zA-Z0-9]+(\\.html|/)", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("badongo.com", "BadongoCom", "http://[\\w\\.]*?badongo\\.viajd.*/.*(file|vid)/[0-9]+\\??[0-9]*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Mooshare.net", "Moosharenet", "http://[\\w\\.]*?mooshare\\.net/files/\\d+/.*?\\.html", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Netload.in", "Netloadin", "http://[\\w\\.]*?netload\\.in/.+", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Qshare.Com", "QshareCom", "http://[\\w\\.]*?qshare\\.com\\/get\\/[0-9]{1,20}\\/.*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("RapidShare.De", "RapidShareDe", "http://[\\w\\.]*?rapidshare\\.de/files/[\\d]{3,9}/.*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("sharebase.to", "ShareBaseTo", "http://[\\w\\.]*?sharebase\\.(de|to)/files/[a-zA-Z0-9]+\\.html", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Youtube.com", "Youtube", "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Share-Online.Biz", "ShareOnlineBiz", "http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("filehostme.com", "FileHostMecom", "http://[\\w\\.]*?filehostme\\.com/[a-zA-Z0-9]+\\.html", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("gigasize.com", "GigaSizeCom", "http://[\\w\\.]*?gigasize\\.com/get\\.php.*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("letitbit.net", "LetitBitNet", "http://[\\w\\.]*?letitbit\\.net/download/[a-zA-Z0-9]+?/.*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Megarotic.com", "MegaroticCom", "http://[\\w\\.]*?(megarotic|sexuploader)\\.com/.*?\\?d=[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Share-Now.net", "ShareNownet", "http://[\\w\\.]*?share-now\\.net/{1,}files/\\d+-(.*?)\\.html", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Speedy-Share.com", "Speedy_ShareCom", "http://[\\w\\.]*?speedy\\-share\\.com/[a-zA-Z0-9]+/(.*)");
-        new HostPluginWrapper("shragle.com", "ShragleCom", "http://[\\w\\.]*?shragle\\.(com|de)/files/[a-zA-Z0-9]+/.*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Vip-file.com", "Vipfilecom", "http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("easy-share.com", "EasyShareCom", "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("uploader.pl", "UploaderPl", "http://[\\w\\.]*?uploader\\.pl/\\?d=[A-F0-9]+", PluginWrapper.LOAD_ON_INIT);
-
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("bluehost.to", "BluehostTo", "http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("depositfiles.com", "DepositFiles", "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("FileFactory.com", "FileFactory", "http://[\\w\\.]*?filefactory\\.com(/|//)file/[a-zA-Z0-9]+/?", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("Filer.net", "Filer", "http://[\\w\\.]*?filer.net/(file[\\d]+|get|dl)/.*", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("Freakshare.net", "Freaksharenet", "http://[\\w\\.]*?freakshare\\.net/files/\\d+/(.*)", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("Megashares.Com", "MegasharesCom", "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/.*\\?d[0-9]{2}=[0-9a-f]{7}", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("Megaupload.com", "Megauploadcom", "http://[\\w\\.]*?(megaupload)\\.com/.*?(\\?|&)d=[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("MeinUpload.com", "MeinUpload", "(http://[\\w\\.]*?meinupload\\.com/{1,}dl/.+/.+)|(http://[\\w\\.]*?meinupload\\.com/\\?d=.*)|http://[\\w\\.]*?mein-upload\\.com/[a-zA-Z0-9]+(\\.html|/)", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("badongo.com", "BadongoCom", "http://[\\w\\.]*?badongo\\.viajd.*/.*(file|vid)/[0-9]+\\??[0-9]*", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("Mooshare.net", "Moosharenet", "http://[\\w\\.]*?mooshare\\.net/files/\\d+/.*?\\.html", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("Netload.in", "Netloadin", "http://[\\w\\.]*?netload\\.in/.+", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("Qshare.Com", "QshareCom", "http://[\\w\\.]*?qshare\\.com\\/get\\/[0-9]{1,20}\\/.*", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("RapidShare.De", "RapidShareDe", "http://[\\w\\.]*?rapidshare\\.de/files/[\\d]{3,9}/.*", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("sharebase.to", "ShareBaseTo", "http://[\\w\\.]*?sharebase\\.(de|to)/files/[a-zA-Z0-9]+\\.html", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("Youtube.com", "Youtube", "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("Share-Online.Biz", "ShareOnlineBiz", "http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("filehostme.com", "FileHostMecom", "http://[\\w\\.]*?filehostme\\.com/[a-zA-Z0-9]+\\.html", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("gigasize.com", "GigaSizeCom", "http://[\\w\\.]*?gigasize\\.com/get\\.php.*", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("letitbit.net", "LetitBitNet", "http://[\\w\\.]*?letitbit\\.net/download/[a-zA-Z0-9]+?/.*", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("Megarotic.com", "MegaroticCom", "http://[\\w\\.]*?(megarotic|sexuploader)\\.com/.*?\\?d=[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("Share-Now.net", "ShareNownet", "http://[\\w\\.]*?share-now\\.net/{1,}files/\\d+-(.*?)\\.html", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("Speedy-Share.com", "Speedy_ShareCom", "http://[\\w\\.]*?speedy\\-share\\.com/[a-zA-Z0-9]+/(.*)");
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("shragle.com", "ShragleCom", "http://[\\w\\.]*?shragle\\.(com|de)/files/[a-zA-Z0-9]+/.*", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("Vip-file.com", "Vipfilecom", "http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("easy-share.com", "EasyShareCom", "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.add(new JDRunnable() {
+            public void go() throws Exception {
+                new HostPluginWrapper("uploader.pl", "UploaderPl", "http://[\\w\\.]*?uploader\\.pl/\\?d=[A-F0-9]+", PluginWrapper.LOAD_ON_INIT);
+            }
+        });
+        th.startWorkers();
         // Free Hoster
         new HostPluginWrapper("archiv.to", "ArchivTo", "http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*");
         new HostPluginWrapper("axifile.com", "AxiFileCom", "http://[\\w\\.]*?axifile\\.com/\\?\\d+");
@@ -680,30 +831,45 @@ public class JDInit {
 
         // extern
         new HostPluginWrapper("ifolder.ru", "IfolderRu", "http://[\\w\\.]*?ifolder\\.ru/\\d+");
-
+        th.waitOnWorkers();
     }
 
     public void loadPluginOptional() {
-
         new OptionalPluginWrapper("JDTrayIcon", 1.6);
-        new OptionalPluginWrapper("JDLightTray", 1.6);
-        new OptionalPluginWrapper("webinterface.JDWebinterface", 1.5);
-        new OptionalPluginWrapper("schedule.Schedule", 1.5);
-        new OptionalPluginWrapper("JDFolderWatch", 1.5);
-        new OptionalPluginWrapper("JDShutdown", 1.5);
-        new OptionalPluginWrapper("JDRemoteControl", 1.5);
-        new OptionalPluginWrapper("JDLowSpeed", 1.5);
-        new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5);
-        new OptionalPluginWrapper("jdchat.JDChat", 1.5);
-        new OptionalPluginWrapper("Newsfeeds", 1.5);
-        new OptionalPluginWrapper("JDInfoFileWriter", 1.5);
-        new OptionalPluginWrapper("StreamingShareTool", 1.5);
-        new OptionalPluginWrapper("LangFileEditor", 1.5);
-        new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5);
-        new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5);
-        new OptionalPluginWrapper("JDPremiumCollector", 1.5);
-        new OptionalPluginWrapper("JDGrowlNotification", 1.5);
 
+        new OptionalPluginWrapper("JDLightTray", 1.6);
+
+        new OptionalPluginWrapper("webinterface.JDWebinterface", 1.5);
+
+        new OptionalPluginWrapper("schedule.Schedule", 1.5);
+
+        new OptionalPluginWrapper("JDFolderWatch", 1.5);
+
+        new OptionalPluginWrapper("JDShutdown", 1.5);
+
+        new OptionalPluginWrapper("JDRemoteControl", 1.5);
+
+        new OptionalPluginWrapper("JDLowSpeed", 1.5);
+
+        new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5);
+
+        new OptionalPluginWrapper("jdchat.JDChat", 1.5);
+
+        new OptionalPluginWrapper("Newsfeeds", 1.5);
+
+        new OptionalPluginWrapper("JDInfoFileWriter", 1.5);
+
+        new OptionalPluginWrapper("StreamingShareTool", 1.5);
+
+        new OptionalPluginWrapper("LangFileEditor", 1.5);
+
+        new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5);
+
+        new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5);
+
+        new OptionalPluginWrapper("JDPremiumCollector", 1.5);
+
+        new OptionalPluginWrapper("JDGrowlNotification", 1.5);
     }
 
     public void removeFiles() {
