@@ -40,17 +40,19 @@ public class LogFormatter extends SimpleFormatter {
     // Line separator string. This is the value of the line.separator
     // property at the moment that the SimpleFormatter was created.
     private String lineSeparator = System.getProperty("line.separator");
-
+    private StringBuilder sb;
+    private StringBuffer text;
+    
     @Override
     public synchronized String format(LogRecord record) {
 
-        StringBuilder sb = new StringBuilder();
+    	sb = new StringBuilder();
 
         // Minimize memory allocations here.
         dat.setTime(record.getMillis());
         args[0] = dat;
 
-        StringBuffer text = new StringBuffer();
+        text = new StringBuffer();
         if (formatter == null) {
             formatter = new MessageFormat(format);
         }
