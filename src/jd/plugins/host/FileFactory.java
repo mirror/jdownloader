@@ -43,8 +43,8 @@ public class FileFactory extends PluginForHost {
     private static final String CAPTCHA_WRONG = "verification code you entered was incorrect";
     private static final String DOWNLOAD_LIMIT = "(Thank you for waiting|exceeded the download limit)";
 
-    private static final String FILENAME = "<h1 style=\"width:370px;\">(.*)</h1>";
-    private static final String FILESIZE = "Size: (.*?)(B|KB|MB)<br />";
+    private static final String FILENAME = "<h1>(.*)</h1>";
+    private static final String FILESIZE = "<span>(.*? (B|KB|MB)) file";
     private static Pattern frameForCaptcha = Pattern.compile("<iframe src=\"/(check[^\"]*)\" frameborder=\"0\"");
 
     private static final String NO_SLOT = "no free download slots";
@@ -331,7 +331,7 @@ public class FileFactory extends PluginForHost {
             } else {
                 String fileName = Encoding.htmlDecode(new Regex(br.toString().replaceAll("\\&\\#8203\\;", ""), FILENAME).getMatch(0));
 
-                String fileSize = new Regex(br.toString(), FILESIZE).getMatch(-1);
+                String fileSize = new Regex(br.toString(), FILESIZE).getMatch(0);
 
                 downloadLink.setName(fileName);
                 downloadLink.setDownloadSize(Regex.getSize(fileSize));
