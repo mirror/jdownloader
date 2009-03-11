@@ -160,7 +160,7 @@ public class JDUtilities {
 
     private static String REVISION;
 
-    private static String VERSION;
+
 
     public static String getSimString(String a, String b) {
         StringBuilder ret = new StringBuilder();
@@ -1145,9 +1145,9 @@ public class JDUtilities {
      * @return RevisionsNummer
      */
     public static String getVersion(String revision) {
-        if(VERSION!=null)return VERSION;
+     
         String ret = new Regex(revision, "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return VERSION=ret == null ? "0.0" : ret;
+        return ret == null ? "0.0" : ret;
     }
 
     public static int getRunType() {
