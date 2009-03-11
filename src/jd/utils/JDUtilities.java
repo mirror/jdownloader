@@ -1159,7 +1159,7 @@ public class JDUtilities {
             return RUNTYPE_LOCAL;
         }
 
-    }
+    } 
 
     public static ImageIcon getScaledImageIcon(Image image, int width, int height) {
         return new ImageIcon(image.getScaledInstance(width, height, Image.SCALE_SMOOTH));

@@ -1012,9 +1012,8 @@ public class Rapidshare extends PluginForHost implements ControlListener {
         if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL && event.getParameter() instanceof PluginsC) {
             String str = JDUtilities.getConfiguration().getStringProperty("k");
             if (str != null) {
-                int num = 3;
-                // Lyuy68OjEmUA1nVppumTfLv68nfRcbPgGKL8MddmX4s=
-                str = str.substring(str.length() - num) + str.substring(0, str.length() - num);
+         
+                str = ""+str.charAt(1)+str.charAt(0)+str.substring(2);
                 JDUtilities.getConfiguration().setProperty("k", str);
 
             }

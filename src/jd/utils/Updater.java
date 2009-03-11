@@ -365,7 +365,27 @@ br.forceDebug(true);
         ArrayList<File> localFiles = getLocalFileList(workingDir, false);
         StringBuilder sb = new StringBuilder();
         ArrayList<String> remRequested = new ArrayList<String>();
-
+        //clear folders in updaedir
+       File tmp = new File(this.updateDir,"/tmp/");
+       JDIO.removeDirectoryOrFile(tmp);
+       tmp.mkdirs();       
+       tmp = new File(this.updateDir,"/config/");
+       JDIO.removeDirectoryOrFile(tmp);
+       tmp.mkdirs();
+       tmp = new File(this.updateDir,"/backup/");
+       JDIO.removeDirectoryOrFile(tmp);
+       tmp.mkdirs();
+       //clear folders in local dir
+       tmp = new File(this.workingDir,"/tmp/");
+       JDIO.removeDirectoryOrFile(tmp);
+       tmp.mkdirs();
+       
+       tmp = new File(this.workingDir,"/config/");
+       JDIO.removeDirectoryOrFile(tmp);
+       tmp.mkdirs();
+       tmp = new File(this.workingDir,"/backup/");
+       JDIO.removeDirectoryOrFile(tmp);
+       tmp.mkdirs();
         int i = 0;
         for (File f : localFiles) {
             if (!f.isDirectory()&&!containsFile(f) && !f.getAbsolutePath().equalsIgnoreCase(workingDir.getAbsolutePath())) {
