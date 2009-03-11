@@ -49,7 +49,7 @@ public class JamendoCom extends PluginForDecrypt {
             /* Übersicht der Alben */
             String ArtistID = new Regex(parameter.toString(), "artist/(.+)").getMatch(0);
             br.getPage("http://www.jamendo.com/en/artist/" + ArtistID);
-            String Albums[] = br.getRegex("<a href=\"/en/album/(\\d+)\"").getColumn(0);
+            String Albums[] = br.getRegex("<a .*? href=\"/en/album/(\\d+)\"").getColumn(0);
             DownloadLink link;
             for (String Album : Albums) {
                 if (getPluginConfig().getBooleanProperty(PREFER_WHOLEALBUM, true)) {
