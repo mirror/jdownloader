@@ -30,10 +30,10 @@ public class SpeedShareOrg extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex(Pattern.compile(">Highspeed Download:</font><font size=.*?>(.*?)</font>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String filename = br.getRegex(Pattern.compile("<title>SpeedShare - Download (.*)</title>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim());
-        String filesize = br.getRegex(Pattern.compile("Sie haben.*?<font.*?>.*?</font>(.*?)angefordert", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String filesize = br.getRegex(Pattern.compile("\\((.*?)\\) angefordert\\.</b></div></td></td>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
         return true;
     }
