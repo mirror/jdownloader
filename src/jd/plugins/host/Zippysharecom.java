@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -51,6 +52,7 @@ public class Zippysharecom extends PluginForHost {
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return true;
@@ -64,12 +66,21 @@ public class Zippysharecom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("(http%3A%2F%2Fwww[0-9]+\\.zippyshare\\.com%2Fd%2F.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (linkurl == null) {
+        String[][] linkurls = new Regex(br, Pattern.compile("unescape\\('(http%3A%2F%2Fwww.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatches();
+        if (linkurls == null || linkurls.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
+        URLConnectionAdapter con;
+        String downloadURL = null;
+        for (int i = 0; i < linkurls.length; i++) {
+            downloadURL = Encoding.htmlDecode(linkurls[i][0]);
+            con = br.openGetConnection(downloadURL);
+            if (con.isContentDisposition()) {
+                break;
+            }
+        }
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, linkurl);
+        dl = br.openDownload(downloadLink, downloadURL);
         dl.startDownload();
     }
 
