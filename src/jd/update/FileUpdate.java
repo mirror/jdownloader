@@ -18,7 +18,6 @@ package jd.update;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 
 import jd.http.Browser;
@@ -45,17 +44,17 @@ public class FileUpdate {
         String[] dat = new Regex(serverString, "(.*)\\?(.*)").getRow(0);
         this.relURL = serverString;
         if (dat == null) {
-          
+
             localPath = serverString;
         } else {
-           localPath = dat[0];
+            localPath = dat[0];
             this.url = dat[1];
         }
     }
 
     public FileUpdate(String serverString, String hash, File workingdir) {
         this(serverString, hash);
-        this.workingDir=workingdir;
+        this.workingDir = workingdir;
         relURL = serverString;
     }
 
@@ -76,17 +75,13 @@ public class FileUpdate {
     }
 
     public boolean exists() {
-        
-        
-    
-        if(workingDir!=null){
+
+        if (workingDir != null) {
             return getLocalFile().exists();
-        }else{
+        } else {
             return JDUtilities.getResourceFile(getLocalPath()).exists();
         }
-        
-        
-        
+
     }
 
     public boolean equals() {
@@ -97,19 +92,18 @@ public class FileUpdate {
     }
 
     private String getLocalHash() {
-      
-            return JDHash.getMD5(getLocalFile());
-        
-       
+
+        return JDHash.getMD5(getLocalFile());
+
     }
 
     public File getLocalFile() {
-        if(workingDir!=null){
-            return new File(workingDir+getLocalPath());
-        }else{
+        if (workingDir != null) {
+            return new File(workingDir + getLocalPath());
+        } else {
             return JDUtilities.getResourceFile(getLocalPath());
         }
-      
+
     }
 
     public void reset(ArrayList<Server> availableServers) {
@@ -140,29 +134,29 @@ public class FileUpdate {
             String url = getURL();
             // String localHash = getLocalHash();
             File tmpFile;
-            if(workingDir!=null){
-                 tmpFile = new File(workingDir+getLocalPath() + ".tmp");
-            }else{
-                 tmpFile = JDUtilities.getResourceFile(getLocalPath() + ".tmp");
+            if (workingDir != null) {
+                tmpFile = new File(workingDir + getLocalPath() + ".tmp");
+            } else {
+                tmpFile = JDUtilities.getResourceFile(getLocalPath() + ".tmp");
             }
-          if(url.contains("?")){
-              url+="&r="+System.currentTimeMillis();
-          }else{
-              url+="?r="+System.currentTimeMillis();
-          }
+            if (url.contains("?")) {
+                url += "&r=" + System.currentTimeMillis();
+            } else {
+                url += "?r=" + System.currentTimeMillis();
+            }
             result.append("Downloadsource: " + url + "\r\n");
             startTime = System.currentTimeMillis();
-            URLConnectionAdapter con=null;
+            URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(url);
                 endTime = System.currentTimeMillis();
                 currentServer.setRequestTime(endTime - startTime);
             } catch (Exception e) {
                 currentServer.setRequestTime(10000l);
-               
+
             }
 
-            if(con==null){
+            if (con == null) {
                 result.append("Error. Connection error\r\n");
                 return false;
             }
@@ -200,7 +194,7 @@ public class FileUpdate {
         } else {
             ret = server + "/" + file;
         }
-        ret=ret.replaceAll("//", "/");
+        ret = ret.replaceAll("//", "/");
         return ret.replaceAll("http:/", "http://");
     }
 

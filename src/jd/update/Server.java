@@ -54,19 +54,21 @@ public class Server implements Serializable {
             if (s.getPercent() <= 0) { return selectServerByRequestTime(list); }
             ret = s;
             total += s.getPercent();
-            if (rand<=total && rand>total-s.getPercent()) break;
+            if (rand <= total && rand > total - s.getPercent()) break;
         }
 
         return ret;
 
     }
-/**
- * Gibt den server mit der besten requestzeit zurück
- * @param list
- * @return
- */
+
+    /**
+     * Gibt den server mit der besten requestzeit zurück
+     * 
+     * @param list
+     * @return
+     */
     private static Server selectServerByRequestTime(ArrayList<Server> list) {
-      
+
         Server ret = null;
         for (Server s : list) {
             if (ret == null || s.getRequestTime() < ret.getRequestTime()) ret = s;
@@ -84,7 +86,7 @@ public class Server implements Serializable {
     public void setRequestTime(long l) {
         requestTime = (requestTime * requestCount + l) / (requestCount + 1);
         this.requestCount++;
-        System.out.println(this+" requesttime="+requestTime);
+        System.out.println(this + " requesttime=" + requestTime);
     }
 
     public long getRequestTime() {

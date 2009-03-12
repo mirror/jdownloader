@@ -36,9 +36,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.OSDetector;
-import jd.nutils.Threader;
 import jd.nutils.io.JDIO;
-import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
 import jd.plugins.BackupLink;
 import jd.plugins.DownloadLink;
@@ -46,7 +44,6 @@ import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.WebUpdate;
 
 /**
  * @author JD-Team
@@ -56,74 +53,9 @@ public class JDInit {
 
     private static Logger logger = JDUtilities.getLogger();
 
-    // public static void setupProxy() {
-    // if
-    // (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration
-    // .USE_PROXY,
-    // false)) {
-    // //
-    // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
-    // // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
-    // // für evtl authentifizierung:
-    // // http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
-    // // -proxy-authentication/
-    // // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich
-    // // wäre
-    // String host =
-    // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.
-    // PROXY_HOST,
-    // "");
-    // String port = new
-    // Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(
-    // Configuration.PROXY_PORT,
-    // 8080)).toString();
-    // String user =
-    // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.
-    // PROXY_USER,
-    // "");
-    // String pass =
-    // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.
-    // PROXY_PASS,
-    // "");
-    //            
-    // }
-    // }
-
-    // public static void setupSocks() {
-    // if
-    // (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration
-    // .USE_SOCKS,
-    // false)) {
-    // //
-    // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
-    // // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
-    // String user =
-    // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.
-    // PROXY_USER_SOCKS,
-    // "");
-    // String pass =
-    // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.
-    // PROXY_PASS_SOCKS,
-    // "");
-    // String host =
-    // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.
-    // SOCKS_HOST,
-    // "");
-    // String port = new
-    // Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(
-    // Configuration.SOCKS_PORT,
-    // 1080)).toString();
-    //           
-    // }
-    // }
-
     private boolean installerVisible = false;
 
     private SplashScreen splashScreen;
-
-    // private static long LASTREQUEST = 0;
-
-    // private Vector<Vector<String>> files;
 
     public JDInit() {
         this(null);
@@ -134,7 +66,6 @@ public class JDInit {
     }
 
     public void checkUpdate() {
-
         if (JDUtilities.getResourceFile("webcheck.tmp").exists() && JDIO.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")).indexOf("(Revision" + JDUtilities.getRevision() + ")") > 0) {
             JDUtilities.getController().getUiInterface().showTextAreaDialog("Error", "Failed Update detected!", "It seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n" + JDIO.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")));
             JDUtilities.getResourceFile("webcheck.tmp").delete();
@@ -234,7 +165,6 @@ public class JDInit {
 
     void init() {
         Browser.init();
-
     }
 
     public JDController initController() {
@@ -333,16 +263,19 @@ public class JDInit {
 
                     JOptionPane.showMessageDialog(null, JDLocale.L("installer.welcome", "Welcome to jDownloader."));
 
-//                    try {
-//                        new WebUpdate().doWebupdate(true);
-//                        JDUtilities.getConfiguration().save();
-//                        JDUtilities.getDatabaseConnector().shutdownDatabase();
-//                        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "jdupdate.jar", "/restart", "/rt" + JDUtilities.RUNTYPE_LOCAL_JARED }, home.getAbsolutePath(), 0));
-//                        System.exit(0);
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                        // System.exit(0);
-//                    }
+                    // try {
+                    // new WebUpdate().doWebupdate(true);
+                    // JDUtilities.getConfiguration().save();
+                    // JDUtilities.getDatabaseConnector().shutdownDatabase();
+                    // logger.info(JDUtilities.runCommand("java", new String[] {
+                    // "-jar", "jdupdate.jar", "/restart", "/rt" +
+                    // JDUtilities.RUNTYPE_LOCAL_JARED },
+                    // home.getAbsolutePath(), 0));
+                    // System.exit(0);
+                    // } catch (Exception e) {
+                    // e.printStackTrace();
+                    // // System.exit(0);
+                    // }
 
                 }
                 if (!home.canWrite()) {
@@ -563,12 +496,13 @@ public class JDInit {
         new DecryptPluginWrapper("fdnlinks.com", "FDNLinksCom", "http://[\\w\\.]*?fdnlinks\\.com/link/[a-zA-Z0-9]+");
         new DecryptPluginWrapper("sprezer.com", "SprezerCom", "http://[\\w\\.]*?sprezer\\.com/file-.+");
 
-        // extern
+        // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
 
     }
 
     public void loadPluginForHost() {
+        // Premium Hoster
         new HostPluginWrapper("RapidShare.com", "Rapidshare", "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?.+", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Uploaded.to", "Uploadedto", "http://[\\w\\.]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[a-zA-Z0-9]+/?", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("bluehost.to", "BluehostTo", "http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*", PluginWrapper.LOAD_ON_INIT);
@@ -679,7 +613,7 @@ public class JDInit {
         new HostPluginWrapper("jamendo.com", "JamendoCom", "http://[\\w\\.]*?jamendo\\.com/.*.*/?(track|download/album)/\\d+");
         new HostPluginWrapper("fileload.us", "FileloadUs", "http://[\\w\\.]*?fileload\\.us/.*");
 
-        // extern
+        // Hoster from Extern
         new HostPluginWrapper("ifolder.ru", "IfolderRu", "http://[\\w\\.]*?ifolder\\.ru/\\d+");
 
     }

@@ -51,12 +51,12 @@ import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
 public class Main {
 
-    public static int BOTHRESIZE = GridBagConstraints.BOTH;
-    public static Insets INSETS = new Insets(5, 5, 5, 5);
-    public static int NORESIZE = GridBagConstraints.NONE;
-    public static int NORTHWEST = GridBagConstraints.NORTHWEST;
-    public static int REL = GridBagConstraints.RELATIVE;
-    public static int REM = GridBagConstraints.REMAINDER;
+    private static int BOTHRESIZE = GridBagConstraints.BOTH;
+    private static Insets INSETS = new Insets(5, 5, 5, 5);
+    private static int NORESIZE = GridBagConstraints.NONE;
+    private static int NORTHWEST = GridBagConstraints.NORTHWEST;
+    private static int REL = GridBagConstraints.RELATIVE;
+    private static int REM = GridBagConstraints.REMAINDER;
     private static SubConfiguration guiConfig;
     private static StringBuilder log;
     private static JFrame frame;
@@ -152,41 +152,6 @@ public class Main {
 
     }
 
-    /*
-     * public static File getJDHomeDirectoryFromEnvironment() { String envDir =
-     * null;// System.getenv("JD_HOME"); File currentDir = null;
-     * 
-     * String dir =Thread.currentThread().getContextClassLoader().getResource(
-     * "jd/update/Main.class") + ""; dir = dir.split("\\.jar\\!")[0] + ".jar";
-     * dir = dir.substring(Math.max(dir.indexOf("file:"), 0)); try { currentDir
-     * = new File(new URI(dir));
-     * 
-     * // logger.info(" App dir: "+currentDir+" - //
-     * "+System.getProperty("java.class.path")); if (currentDir.isFile()) {
-     * currentDir = currentDir.getParentFile(); }
-     * 
-     * } catch (URISyntaxException e) {
-     * 
-     * e.printStackTrace(); }
-     * 
-     * // logger.info("RunDir: " + currentDir);
-     * 
-     * switch (getRunType()) { case RUNTYPE_LOCAL_JARED: envDir =
-     * currentDir.getAbsolutePath(); //
-     * logger.info("JD_HOME from current Path :" + envDir); break; case
-     * RUNTYPE_LOCAL_ENV: envDir = System.getenv("JD_HOME"); //
-     * logger.info("JD_HOME from environment:" + envDir); break; default: envDir
-     * = System.getProperty("user.home") + System.getProperty("file.separator")
-     * + ".jd_home/"; // logger.info("JD_HOME from user.home :" + envDir);
-     * 
-     * }
-     * 
-     * if (envDir == null) { envDir = "." + System.getProperty("file.separator")
-     * + ".jd_home/"; System.out.println(envDir); } File jdHomeDir = new
-     * File(envDir); if (!jdHomeDir.exists()) { jdHomeDir.mkdirs(); } return
-     * jdHomeDir; }
-     */
-    @SuppressWarnings("unchecked")
     public static void main(String args[]) {
         try {
             log = new StringBuilder();
@@ -273,7 +238,7 @@ public class Main {
             installAddons();
             Main.trace(updater.getLogger().toString());
             Main.trace("End Webupdate");
-           
+
             logWindow.setText(log.toString());
             Main.trace(JDUtilities.getResourceFile("updateLog.txt").getAbsoluteFile());
 
@@ -297,6 +262,7 @@ public class Main {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static void installAddons() {
         SubConfiguration jdus = WebUpdater.getConfig("JDU");
         ArrayList<PackageData> data = (ArrayList<PackageData>) jdus.getProperty("PACKAGEDATA", new ArrayList<PackageData>());
@@ -327,7 +293,7 @@ public class Main {
 
                     Main.log(log, "Installation successfull: " + zip + System.getProperty("line.separator"));
 
-                   System.out.println("Delete "+zip.delete());
+                    System.out.println("Delete " + zip.delete());
                     zip.deleteOnExit();
 
                 }
@@ -542,11 +508,7 @@ public class Main {
      */
     public static boolean writeLocalFile(File file, String content) {
         try {
-            if (file.isFile()) {
-                if (!file.delete()) {
-
-                return false; }
-            }
+            if (file.isFile() && !file.delete()) { return false; }
             if (file.getParent() != null && !file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
             }

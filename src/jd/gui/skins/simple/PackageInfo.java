@@ -217,8 +217,8 @@ public class PackageInfo extends JDialog implements ChangeListener {
         addEntry(JDLocale.L("gui.packageinfo.dldirectory", "Downloaddirectory"), fp.getDownloadDirectory());
         addEntry(JDLocale.L("gui.packageinfo.packagesize", "Packagesize"), JDUtilities.formatKbReadable(fp.getTotalEstimatedPackageSize()) + " [" + fp.getTotalEstimatedPackageSize() + " KB]");
         addEntry(JDLocale.L("gui.packageinfo.loaded", "Loaded"), JDUtilities.formatKbReadable(fp.getTotalKBLoaded()) + " [" + fp.getTotalKBLoaded() + " KB]");
-        addEntry(JDLocale.L("gui.packageinfo.links", "Links"), "");
         addEntry(JDLocale.L("gui.packageinfo.extractafter", "Autoextract"), fp.isExtractAfterDownload() ? "[x]" : "[ ]");
+        addEntry(JDLocale.L("gui.packageinfo.links", "Links"), "");
         int i = 0;
         JProgressBar p;
         for (DownloadLink link : fp.getDownloadLinks()) {
