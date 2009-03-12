@@ -572,7 +572,7 @@ public class Browser {
     }
 
     private void mergeHeaders(Request request) {
-        if(headers.isDominant()){
+        if (headers.isDominant()) {
             request.getHeaders().clear();
         }
         for (int i = 0; i < headers.size(); i++) {
@@ -1449,9 +1449,42 @@ public class Browser {
         @Override
         public void run() throws Exception {
 
-            this.testRequestIntervalLimitExclusive();
-            this.testRequestIntervalLimitGlobal();
+           this.testRequestIntervalLimitExclusive();
+           this.testRequestIntervalLimitGlobal();
+            this.proxyAuthTest();
 
+        }
+
+        private void proxyAuthTest() throws UnitTestException {
+            Browser.init();
+            log("init Proxy");
+            
+            JDProxy pr = new JDProxy(Proxy.Type.HTTP,this.getStringProperty("proxy_ip") , getIntegerProperty("proxy_port"));
+            String user = this.getStringProperty("proxy_user");
+            String pass = this.getStringProperty("proxy_pass");
+            
+            
+            if (user != null && user.trim().length() > 0) {
+                pr.setUser(user);
+            }
+            if (pass != null && pass.trim().length() > 0) {
+                pr.setPass(pass);
+            }
+            Browser.setGlobalProxy(pr);
+           
+            Browser br = new Browser();
+            try{
+            br.getPage("http://jdownloader.org");
+            }catch(Exception e){
+                throw new UnitTestException("proxy error: "+e.getLocalizedMessage());
+                
+            }
+            if(br.getHttpConnection().isOK()){
+                log("proxy ok");
+            }else{
+                log("proxy  FAILED");
+                throw new UnitTestException("proxy error: "+br.getHttpConnection().toString());
+            }
         }
 
         /**
