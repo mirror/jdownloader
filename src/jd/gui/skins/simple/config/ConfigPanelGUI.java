@@ -97,8 +97,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         ConfigContainer links = new ConfigContainer(this, JDLocale.L("gui.config.gui.container.tab", "Downloadlinks"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, links));
 
-        links.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, LinkGrabber.PROPERTY_AUTOPACKAGE_LIMIT, JDLocale.L("gui.config.gui.autopackagelimit", "Schwelle der Auto. Paketverwaltung."), 0, 100));
-        ce.setDefaultValue(99);
+    
 
         links.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, LinkGrabber.PROPERTY_ONLINE_CHECK, JDLocale.L("gui.config.gui.linkgrabber.onlinecheck", "Linkgrabber:Linkstatus überprüfen(Verfügbarkeit)")));
         ce.setDefaultValue(true);

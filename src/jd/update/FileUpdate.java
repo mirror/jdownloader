@@ -129,6 +129,8 @@ public class FileUpdate {
     public boolean update() throws IOException {
         this.result = new StringBuilder();
         Browser br = new Browser();
+        br.setReadTimeout(3*60*1000);
+        br.setConnectTimeout(3*60*1000);
         long startTime, endTime;
         while (hasServer()) {
             String url = getURL();
@@ -139,11 +141,14 @@ public class FileUpdate {
             } else {
                 tmpFile = JDUtilities.getResourceFile(getLocalPath() + ".tmp");
             }
-            if (url.contains("?")) {
-                url += "&r=" + System.currentTimeMillis();
-            } else {
-                url += "?r=" + System.currentTimeMillis();
-            }
+
+            tmpFile.delete();
+          if(url.contains("?")){
+              url+="&r="+System.currentTimeMillis();
+          }else{
+              url+="?r="+System.currentTimeMillis();
+          }
+
             result.append("Downloadsource: " + url + "\r\n");
             startTime = System.currentTimeMillis();
             URLConnectionAdapter con = null;

@@ -72,7 +72,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         boolean isWebupdater = false;
         System.out.println(rootDir);
         System.out.println(" " + rootClassLoader.getResource("jd"));
-        isWebupdater = (classLoaderParent.getResource("jd") + "").contains("jdupdate.jar");
+        isWebupdater = (classLoaderParent.getResource("jd") + "").contains("jdupdate.jar")||(classLoaderParent.getResource("jd") + "").contains("webupdater.jar");
         if (!isWebupdater) {
             // Hier werden die JAR Dateien ausgelesen
             Vector<JarFile> jarFiles = new Vector<JarFile>();

@@ -39,8 +39,6 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -82,10 +80,13 @@ import javax.swing.table.TableColumn;
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.DistributeData;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JDTextField;
+import jd.nutils.debug.UnitTest;
+import jd.nutils.debug.UnitTestException;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
@@ -726,6 +727,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     }
                 }
             }
+
             refreshTable();
         }
 
@@ -790,7 +792,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     public static final String PROPERTY_STARTAFTERADDING = "PROPERTY_STARTAFTERADDING";
 
-    public static final String PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT_V3";
+  
 
     private static final String PROPERTY_HOSTSELECTIONPACKAGEONLY = "PROPERTY_HOSTSELECTIONPACKAGEONLY";
 
@@ -867,6 +869,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     // private Vector<DownloadLink> addingLinkList;
 
     private Timer gathertimer;
+
+    private PackageTab firstTab;
 
     /**
      * @param parent
@@ -1179,68 +1183,34 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         PackageTab tab = new PackageTab();
         tab.setPackageName(JDLocale.L("gui.linkgrabber.lbl.newpackage", "neues package"));
         tabList.add(tab);
+        if (this.firstTab == null) this.firstTab = tab;
         tabbedPane.addTab(tab.getPackageName(), tab);
         return tab;
     }
 
     private void attachLinkToPackage(DownloadLink link) {
         String packageName;
-        boolean autoPackage = false;
+        PackageTab tab = this.firstTab;
         if (link.getFilePackage() != FilePackage.getDefaultFilePackage()) {
             packageName = link.getFilePackage().getName();
-        } else {
-            autoPackage = true;
-            packageName = removeExtension(link.getName());
+            tab = this.getTabByName(packageName);
+            if (tab == null) {
+                tab = addTab();
+                tab.setPackageName(packageName);
+            }
         }
         // System.out.println(link.getDownloadURL());
-        if (!guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true)) {
-            // logger.finer("No Auto package");
-            int lastIndex = tabList.size() - 1;
-            if (lastIndex < 0) {
-                addTab().setPackageName(packageName);
-            }
-            lastIndex = tabList.size() - 1;
-            addLinkToTab(link, lastIndex);
-            String newPackageName = JDUtilities.getSimString(tabList.get(lastIndex).getPackageName(), removeExtension(link.getName()));
-            tabList.get(lastIndex).setPackageName(newPackageName);
-            onPackageNameChanged(tabList.get(lastIndex));
 
-        } else {
-            // logger.finer("Auto package");
-            int bestSim = 0;
-            int bestIndex = -1;
-            // logger.info("link: " + link.getName());
-            for (int i = 0; i < tabList.size(); i++) {
+        // logger.finer("No Auto package");
 
-                int sim = comparePackages(tabList.get(i).getPackageName(), packageName);
-                if (sim > bestSim) {
-                    bestSim = sim;
-                    bestIndex = i;
-                }
-            }
-
-            String g = null;
-            try {
-                g = new URL(link.getDownloadURL()).getQuery();
-            } catch (MalformedURLException e) {
-
-            }
-            // logger.info("Best sym: "+bestSim);
-            if ((bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 99) && !(!link.isAvailabilityChecked() && g != null)) || bestSim <= 0) {
-
-                addLinkToTab(link, tabList.size());
-                tabList.get(tabList.size() - 1).setPackageName(packageName);
-            } else {
-                // logger.info("Found package " +
-                // tabList.get(bestIndex).getpackageName());
-                String newPackageName = autoPackage ? JDUtilities.getSimString(tabList.get(bestIndex).getPackageName(), packageName) : packageName;
-                tabList.get(bestIndex).setPackageName(newPackageName);
-                onPackageNameChanged(tabList.get(bestIndex));
-                addLinkToTab(link, bestIndex);
-
-            }
-
+        if (tab == null) {
+            tab = addTab();
+            tab.setPackageName("various");
         }
+
+        tab.addLinks(new DownloadLink[] { link });
+        // validate();
+        onPackageNameChanged(tab);
 
     }
 
@@ -1686,23 +1656,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
     }
 
-    private String removeExtension(String a) {
-        if (a == null) { return a; }
-        a = a.replaceAll("\\.part([0-9]+)", "");
-        a = a.replaceAll("\\.html", "");
-        a = a.replaceAll("\\.htm", "");
-
-        int i = a.lastIndexOf(".");
-        String ret;
-        if (i <= 1 || a.length() - i > 5) {
-            ret = a.trim();
-        } else {
-            ret = a.substring(0, i).trim();
-        }
-
-        return JDUtilities.removeEndingPoints(ret);
-    }
-
     private void removeOfflineLinks(PackageTab tab) {
         Vector<DownloadLink> list = tab.getLinkList();
         for (int i = list.size() - 1; i >= 0; --i) {
@@ -1714,7 +1667,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     protected void removePackage(PackageTab tab) {
-        removePackageAt(tabList.indexOf(tab));
+        int id = tabList.indexOf(tab);
+        removePackageAt(id);
 
         totalLinkList.removeAll(tab.getLinkList());
     }
@@ -1808,11 +1762,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                                     }
                                 }
                             }
-                        }
-                        link.getLinkStatus().setStatusText(JDLocale.L("gui.linkgrabber.checkstatus", "Onlinecheck running..."));
-                        link.isAvailable();
-                        if (link.getLinkStatus().getStatusText() != null && link.getLinkStatus().getStatusText().equals(JDLocale.L("gui.linkgrabber.checkstatus", "Onlinecheck running..."))) {
-                            link.getLinkStatus().setStatusText(null);
+
+                            link.getLinkStatus().setStatusText(JDLocale.L("gui.linkgrabber.checkstatus", "Onlinecheck running..."));
+                            link.isAvailable();
+                            if (link.getLinkStatus().getStatusText() != null && link.getLinkStatus().getStatusText().equals(JDLocale.L("gui.linkgrabber.checkstatus", "Onlinecheck running..."))) {
+                                link.getLinkStatus().setStatusText(null);
+                            }
+                            autoPackage();
                         }
                         // addingLinkList.add(link);
                     }
@@ -1899,6 +1855,176 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         gatherer.start();
     }
 
+    public synchronized void autoPackage() {
+        if (!guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true)) { return; }
+        if (this.firstTab == null) return;
+
+        ArrayList<DownloadLink> list = new ArrayList<DownloadLink>();
+        for (DownloadLink link : this.firstTab.getLinkList()) {
+            if (link.isAvailabilityChecked() || link.getFinalFileName() != null) {
+                list.add(link);
+            }
+        }
+
+        // for( Iterator<Entry<String, Vector<DownloadLink>>> it =
+        // waitingLinkList.entrySet().iterator();it.hasNext();){
+        // Vector<DownloadLink> hosterList = it.next().getValue();
+        // for(DownloadLink link:hosterList){
+        // if(this.firstTab.getLinkList().contains(link))list.add(link);
+        // }
+        // }
+
+        Collections.sort(list, new Comparator<DownloadLink>() {
+            public int compare(DownloadLink o1, DownloadLink o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
+        Vector<DownloadLink> group = new Vector<DownloadLink>();
+        for (int i = 0; i < list.size(); i++) {
+            DownloadLink c = list.get(i);
+            checkAlreadyinList(c);
+            String name = cleanFileName(c.getName());
+
+            if (group.size() == 0 || group.get(0).getStringProperty("pname").equalsIgnoreCase(name)) {
+                group.add(c);
+                c.setProperty("pname", name);
+            } else {
+                if (group.size() > 0) {
+                    String pName = group.get(0).getStringProperty("pname");
+                    PackageTab tab = this.getTabByName(pName);
+                    if (group.size() > 1 || tab != null) {
+                        System.out.println("Package: " + group);
+
+                        firstTab.removeLinks(group);
+
+                        if (tab == null) {
+                            tab = addTab();
+                            tab.setPackageName(pName);
+                        }
+                            tab.addLinks(group.toArray(new DownloadLink[] {}));
+                            onPackageNameChanged(tab);
+                            onPackageNameChanged(firstTab);
+
+                      
+                        if (firstTab.getLinkList().size() == 0) {
+
+                            this.removePackage(firstTab);
+                            firstTab = null;
+                        }
+                    }
+                }
+                group = new Vector<DownloadLink>();
+                group.add(c);
+                c.setProperty("pname", name);
+            }
+
+        }
+        if (group.size() > 0) {
+            String pName = group.get(0).getStringProperty("pname");
+            PackageTab tab = this.getTabByName(pName);
+            if (group.size() > 1 || tab != null) {
+                System.out.println("Package: " + group);
+
+                firstTab.removeLinks(group);
+
+                if (tab == null) {
+                    tab = addTab();
+                    tab.setPackageName(pName);
+                }
+                    tab.addLinks(group.toArray(new DownloadLink[] {}));
+                    onPackageNameChanged(tab);
+                    onPackageNameChanged(firstTab);
+
+               
+                if (firstTab.getLinkList().size() == 0) {
+
+                    this.removePackage(firstTab);
+                    firstTab = null;
+                }
+            }
+        }
+        // // logger.finer("Auto package");
+        // int bestSim = 0;
+        // int bestIndex = -1;
+        // // logger.info("link: " + link.getName());
+        // for (int i = 0; i < tabList.size(); i++) {
+        //
+        // int sim = comparePackages(tabList.get(i).getPackageName(),
+        // packageName);
+        // if (sim > bestSim) {
+        // bestSim = sim;
+        // bestIndex = i;
+        // }
+        // }
+        //
+        // String g = null;
+        // try {
+        // g = new URL(link.getDownloadURL()).getQuery();
+        // } catch (MalformedURLException e) {
+        //
+        // }
+        // // logger.info("Best sym: "+bestSim);
+        // if ((bestSim <
+        // guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 99) &&
+        // !(!link.isAvailabilityChecked() && g != null)) || bestSim <= 0) {
+        //
+        // addLinkToTab(link, tabList.size());
+        // tabList.get(tabList.size() - 1).setPackageName(packageName);
+        // } else {
+        // // logger.info("Found package " +
+        // // tabList.get(bestIndex).getpackageName());
+        // String newPackageName = autoPackage ?
+        // JDUtilities.getSimString(tabList.get(bestIndex).getPackageName(),
+        // packageName) : packageName;
+        // tabList.get(bestIndex).setPackageName(newPackageName);
+        // onPackageNameChanged(tabList.get(bestIndex));
+        // addLinkToTab(link, bestIndex);
+        //
+        // }
+
+        // }
+
+    }
+
+    private PackageTab getTabByName(String name) {
+        for (PackageTab tab : this.tabList) {
+            if (tab.getPackageName().equalsIgnoreCase(name)) return tab;
+        }
+        return null;
+    }
+
+    private String cleanFileName(String name) {
+        /** remove rar extensions */
+
+        name = getNameMatch(name, "(.*)\\.part[0]*[1].rar$");
+        name = getNameMatch(name, "(.*)\\.part[0-9]+.rar$");
+        name = getNameMatch(name, "(.*)\\.rar$");
+
+        name = getNameMatch(name, "(.*)\\.r\\d+$");
+
+        /**
+         * remove 7zip and hjmerge extensions
+         */
+
+        name = getNameMatch(name, "(?is).*\\.7z\\.[\\d]+$");
+        name = getNameMatch(name, "(.*)\\.a.$");
+        name = getNameMatch(name, "(.*)\\.[\\d]+($|\\.[^\\d]*$)");
+
+        int lastPoint = name.lastIndexOf(".");
+        if (lastPoint <= 0) return name;
+        String extension = name.substring(name.length() - lastPoint + 1);
+        if (extension.length() > 0 && extension.length() < 6) {
+            name = name.substring(0, lastPoint);
+        }
+        return JDUtilities.removeEndingPoints(name).replaceAll("[^a-z^A-Z^0-9]+", " ");
+    }
+
+    private String getNameMatch(String name, String pattern) {
+        String match = new Regex(name, pattern).getMatch(0);
+        if (match != null) return match;
+        return name;
+    }
+
     public void checkAlreadyinList(DownloadLink link) {
         if (link.isAvailabilityChecked() && link.isAvailable()) {
             if (JDUtilities.getController().hasDownloadLinkURL(link.getDownloadURL())) {
@@ -1944,4 +2070,77 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public void windowOpened(WindowEvent arg0) {
     }
 
+    public static class Test extends UnitTest {
+        public static UnitTest newInstance() {
+            return new Test();
+        }
+
+        private LinkGrabber linkGrabber;
+        private Vector<DownloadLink> links;
+
+        @Override
+        public void run() throws Exception {
+            initJD();
+            try {
+                this.openLinkgrabber();
+                this.openLinkGrabberClean();
+
+            } finally {
+                // if (linkGrabber != null) linkGrabber.dispose();
+            }
+        }
+
+        private void openLinkGrabberClean() throws UnitTestException {
+            log("Test opening Linkgrabber");
+            String linklist = getStringProperty("linkgrabberLinkList");
+
+            log("Scan for links: " + linklist);
+            DistributeData distributeData = new DistributeData(linklist);
+
+            this.links = distributeData.findLinks();
+            for (DownloadLink l : links) {
+                l.setAvailable(null);
+                l.setFilePackage(FilePackage.getDefaultFilePackage());
+            }
+            log("Found links. Open Linkgrabber now " + linklist);
+            linkGrabber = new LinkGrabber(null, links.toArray(new DownloadLink[] {}));
+
+            // linkGrabber.setAlwaysOnTop(true);
+
+            if (!ask("Linkgrabber opened correctly. links should get autopackaged?")) {
+
+                throw new UnitTestException("Linkgrabber not shown correctly");
+
+            } else {
+                log("Linkgrabber ok");
+            }
+        }
+
+        private void openLinkgrabber() throws UnitTestException {
+            log("Test opening Linkgrabber");
+            String linklist = getStringProperty("linkgrabberLinkList");
+            // "http://serienfreaks.to/category/Boese_Maedchen/Boese_Maedchen_S02E01_German_SATRip_XviD-c0nFuSed_16344.html\r\nhttp://serienfreaks.to/category/Boese_Maedchen/Boese_Maedchen_S02E02_German_SATRip_XviD-c0nFuSed_16345.html\r\nhttp://serienfreaks.to/category/CSI_Miami/CSI_Miami_S06E19_GERMAN_DUBBED_WS_DVDRiP_XviD-SOF_16333.html"
+            // ;
+            log("Scan for links: " + linklist);
+            DistributeData distributeData = new DistributeData(linklist);
+
+            this.links = distributeData.findLinks();
+
+            log("Found links. Open Linkgrabber now " + linklist);
+            linkGrabber = new LinkGrabber(null, links.toArray(new DownloadLink[] {}));
+
+            // linkGrabber.setAlwaysOnTop(true);
+
+            if (!ask("Linkgrabber opened correctly.\r\n Links should be in predefined packages?")) {
+
+                throw new UnitTestException("Linkgrabber not shown correctly");
+
+            } else {
+                log("Linkgrabber ok");
+            }
+            linkGrabber.dispose();
+
+        }
+
+    }
 }

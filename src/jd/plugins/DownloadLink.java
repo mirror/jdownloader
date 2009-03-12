@@ -720,7 +720,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         getDownloadLinkController().abortDownload();
     }
 
-    public void setAvailable(boolean available) {
+    public void setAvailable(Boolean available) {
         this.available = available;
     }
 

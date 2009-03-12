@@ -43,7 +43,7 @@ public class Changelog {
     private void load() throws SVNException {
 
         Subversion svn = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/src/");
-        ArrayList<SVNLogEntry> entries = svn.getChangeset(4761, 4794);
+        ArrayList<SVNLogEntry> entries = svn.getChangeset(4812, 4936);
         HashMap<String, Change> map = new HashMap<String, Change>();
         for (SVNLogEntry logEntry : entries) {
 
@@ -60,13 +60,19 @@ public class Changelog {
 
                 for (Iterator<?> changedPaths = changedPathsSet.iterator(); changedPaths.hasNext();) {
                     SVNLogEntryPath entryPath = (SVNLogEntryPath) logEntry.getChangedPaths().get(changedPaths.next());
+                    
                     System.out.println(" " + entryPath.getType() + " " + entryPath.getPath() + ((entryPath.getCopyPath() != null) ? " (from " + entryPath.getCopyPath() + " revision " + entryPath.getCopyRevision() + ")" : ""));
                     Change c;
                     if (map.containsKey(entryPath.getPath())) {
                         c = map.get(entryPath.getPath());
                     } else {
+
                         c = new Change(entryPath.getPath());
-                        map.put(entryPath.getPath(), c);
+                        if (!c.getName().contains("test")&&!c.getName().contains("Test")&&c.getCategory()!=null&&c.getCategory().trim().length()>2&&c.getName().trim().length()>3&&logEntry.getMessage() != null && logEntry.getMessage().trim().length() > 0&&!logEntry.getMessage().contains("Merged")&&!logEntry.getMessage().contains("*nochangelog*")) {
+
+                            map.put(entryPath.getPath(), c);
+
+                        }
                     }
                     c.setType(entryPath.getType());
                     c.addRevision(logEntry.getRevision());

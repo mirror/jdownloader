@@ -163,7 +163,7 @@ public class JDInit {
         JDIO.saveObject(null, ret, file, "links.linkbackup", "linkbackup", false);
     }
 
-    void init() {
+    public void init() {
         Browser.init();
     }
 

@@ -224,6 +224,7 @@ public class DistributeData extends ControlBroadcaster {
         data = HTMLEntities.unhtmlentities(data);
         data = data.replaceAll("jd://", "http://");
         Vector<DownloadLink> ret = findLinks(true);
+        ret=ret;
         data = Encoding.urlDecode(data, true);
         ret.addAll(findLinks(true));
         data = data.replaceAll("--CUT--", "\n");

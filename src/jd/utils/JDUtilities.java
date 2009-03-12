@@ -1110,7 +1110,7 @@ public class JDUtilities {
         plgs.addAll(HostPluginWrapper.getHostWrapper());
 
         ArrayList<HostPluginWrapper> pfh = new ArrayList<HostPluginWrapper>();
-        Vector<String> priority = (Vector<String>) configuration.getProperty(Configuration.PARAM_HOST_PRIORITY, new Vector<String>());
+        Vector<String> priority = (Vector<String>) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_HOST_PRIORITY, new Vector<String>());
         for (int i = 0; i < priority.size(); i++) {
             for (int b = plgs.size() - 1; b >= 0; b--) {
                 if (plgs.get(b).getHost() == null) {

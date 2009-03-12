@@ -77,9 +77,10 @@ public class LinksaveIn extends PluginForDecrypt {
                 String fun = "function f(){ \nreturn '" + c + "';} f()";
                 Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
                 c=result.toString();
-                URLConnectionAdapter con = br.openGetConnection("http://linksave.in/" + c);
+                URLConnectionAdapter con = br.openGetConnection("http://linksave.in/" + c.replace("dlc://linksave.in/", ""));
                 if (con.getResponseCode() == 200) {
-                    br.downloadConnection(file = JDUtilities.getResourceFile("tmp/linksave/" + c.replace(".cnl", ".dlc").replace("dlc://", "http://")), con);
+                    file = JDUtilities.getResourceFile("tmp/linksave/" + c.replace(".cnl", ".dlc").replace("dlc://", "http://").replace("http://linksave.in", ""));
+                    br.downloadConnection(file, con);
                     break;
                 } else {
                     con.disconnect();

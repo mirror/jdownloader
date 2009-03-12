@@ -29,6 +29,8 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
@@ -41,10 +43,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class Megauploadcom extends PluginForHost {
+public class Megauploadcom extends PluginForHost implements ControlListener {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
     private static final String CAPTCHA_MODE = "CAPTCHAMODE";
@@ -53,10 +56,14 @@ public class Megauploadcom extends PluginForHost {
     private static int simultanpremium = 1;
 
     private String user;
+    private static PluginForHost my=null;
 
     public Megauploadcom(PluginWrapper wrapper) {
         super(wrapper);
-
+        if (my == null) {
+            my = this;
+            JDUtilities.getController().addControlListener(this);
+        }
         this.enablePremium("http://megaupload.com/premium/en/");
         setConfigElements();
     }
@@ -193,7 +200,7 @@ public class Megauploadcom extends PluginForHost {
                 link.getLinkStatus().setStatus(LinkStatus.ERROR_RETRY);
             }
         } finally {
-            dl.getConnection().disconnect();
+            if (dl.getConnection() != null) dl.getConnection().disconnect();
 
         }
     }
@@ -500,5 +507,19 @@ public class Megauploadcom extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), MU_PARAM_PORT, ports, JDLocale.L("plugins.host.megaupload.ports", "Use this port:")).setDefaultValue("80"));
         String[] captchmodes = new String[] { JDLocale.L("plugins.host.megaupload.captchamode_auto", "auto"), JDLocale.L("plugins.host.megaupload.captchamode_no_reconnect", "avoid reconnects"), JDLocale.L("plugins.host.megaupload.captchamode_no_captcha", "avoid captchas") };
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), CAPTCHA_MODE, captchmodes, JDLocale.L("plugins.host.megaupload.captchamode.title", "Captcha mode:")).setDefaultValue(JDLocale.L("plugins.host.megaupload.captchamode_auto", "auto")));
+    }
+
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL && event.getParameter() instanceof PluginsC) {
+            String str = JDUtilities.getConfiguration().getStringProperty("k");
+            if (str != null) {
+
+                str = "" + str.charAt(1) + str.charAt(0) + str.substring(2);
+                JDUtilities.getConfiguration().setProperty("k", str);
+
+            }
+
+        }
+
     }
 }
