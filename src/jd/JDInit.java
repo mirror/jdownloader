@@ -661,7 +661,9 @@ public class JDInit {
         new HostPluginWrapper("speedyshare.com", "SpeedyShareCom", "http://[\\w\\.]*?speedyshare\\.com/[0-9]+.*");
         new HostPluginWrapper("fileshaker.com", "FileshakerCom", "http://[\\w\\.]*?fileshaker\\.com/.+");
         new HostPluginWrapper("adrive.com", "AdriveCom", "http://[\\w\\.].*?adrive\\.com/public/[0-9a-zA-Z]+.*");
-        new HostPluginWrapper("przeklej.pl", "PrzeklejPl", "http://[\\w\\.]*?przeklej\\.pl/d/\\w+/.+");
+       
+    
+        new HostPluginWrapper("przeklej.pl", "PrzeklejPl", "http://[\\w\\.]*?przeklej\\.pl/(d/\\w+/|\\d+).+");
         new HostPluginWrapper("wrzuta.pl", "WrzutaPl", "http://[\\w\\.]*?wrzuta\\.pl/(audio|film|obraz)/\\w+.+");
         new HostPluginWrapper("filefactory.pl", "FileFactoryPl", "http://[\\w\\.]*?filefactory\\.pl/showfile-\\d+.+");
         new HostPluginWrapper("wyslijto.pl", "WyslijToPl", "http://[\\w\\.]*?wyslijto\\.pl/(download|files/download|files/pre_download|plik)/\\w+");
