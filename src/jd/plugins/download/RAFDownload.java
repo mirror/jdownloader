@@ -283,7 +283,7 @@ public class RAFDownload extends DownloadInterface {
     protected void setupChunks() throws Exception {
         try {
 
-            if (checkResumabled() && isResume()) {
+            if (isResume() && checkResumabled()) {
                 logger.finer("Setup resume");
                 this.setupResume();
 
