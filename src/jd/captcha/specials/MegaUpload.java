@@ -17,11 +17,16 @@
 package jd.captcha.specials;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
+import jd.captcha.utils.UTILITIES;
+import jd.utils.JDUtilities;
 
 /**
  * 
@@ -39,7 +44,7 @@ public class MegaUpload {
         captcha.clean();
         ArrayList<Letter> ret = new ArrayList<Letter>();
         for (int i = 0; i < 4; i++) {
-            int averageWidth = Math.min(captcha.getWidth(), (int) (captcha.getWidth() / (4 - i)) + 8);
+            int averageWidth = Math.min(captcha.getWidth(), (int) (captcha.getWidth() / (4 - i)) + 6);
             Letter first = new Letter(averageWidth, captcha.getHeight());
 
             first.setId(i);
@@ -62,14 +67,19 @@ public class MegaUpload {
             // int[] offset = new
             // int[]{r.getIntersectionStartX(),r.getIntersectionStartY()};
             int[] offset = r.getPosition();
-
+            if (offset == null) return null;
             for (int x = offset[0]; x < offset[0] + b.getWidth(); x++) {
 
                 for (int y = offset[1]; y < offset[1] + b.getHeight(); y++) {
 
                     if (x < captcha.getWidth() && y < captcha.getHeight() && x > 0 && y > 0) {
                         if (x < b.getWidth() && y < b.getHeight() && b.getGrid()[x][y] < 100) {
-                            captcha.getGrid()[x][y] = 0xffffff;
+                            setValue(captcha, x, y, 0xffffff);
+                            // setValue(captcha,x-1,y,0xffffff);
+                            // setValue(captcha,x+1,y,0xffffff);
+                            // setValue(captcha,x,y-1,0xffffff);
+                            // setValue(captcha,x,y+1,0xffffff);
+
                         } else {
                             // captcha.getGrid()[x][y]=0x00ff00;
                         }
@@ -99,7 +109,59 @@ public class MegaUpload {
 
     }
 
+    private static void setValue(Captcha captcha, int x, int y, int value) {
+        if (y < 0 || x < 0) return;
+        if (y >= captcha.getHeight() || x >= captcha.getWidth()) return;
+        captcha.setPixelValue(x, y, value);
+
+    }
+
     public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {
         return org;
     }
+
+    public static void main(String args[]) {
+        String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
+
+        String hoster = "megaupload.com";
+
+        JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
+
+        LinkedList<Letter> letterdb = jac.letterDB;
+        LinkedList<Letter> newlb = new LinkedList<Letter>();
+        for (Iterator<Letter> it1 = letterdb.iterator(); it1.hasNext();) {
+            Letter l = it1.next();
+            boolean foundinNew = false;
+            for (Iterator<Letter> it = newlb.iterator(); it.hasNext();) {
+                Letter n = it.next();
+                if (n == l) continue;
+                if (l.getDecodedValue().equalsIgnoreCase(n.getDecodedValue())) {
+
+                    LetterComperator lc = new LetterComperator(l, n);
+                    lc.setOwner(jac);
+                    lc.run();
+                    double vp = lc.getValityPercent();
+
+                    if (vp < 5.0) {
+                        foundinNew = true;
+                        BasicWindow.showImage(l.getImage(), vp + "");
+                        BasicWindow.showImage(n.getImage(), vp + "");
+                        vp = vp;
+                        break;
+                    }
+
+                }
+
+            }
+            if (!foundinNew) {
+                newlb.add(l);
+            }
+
+        }
+        
+        jac.letterDB=newlb;
+        jac.saveMTHFile();
+
+    }
+
 }

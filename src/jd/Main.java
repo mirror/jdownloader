@@ -27,6 +27,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TreeSet;
@@ -443,7 +444,10 @@ public class Main {
         Main.setSplashStatus(splashScreen, 100, JDLocale.L("gui.splash.text.finished", "Fertig"));
 
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
-
+        
+       HashMap<String, String> head = new HashMap<String,String>();
+       head.put("rev", JDUtilities.getRevision());
+        JDUtilities.getConfiguration().setProperty("head",head);
         // init.createQueueBackup();
 
         Properties pr = System.getProperties();

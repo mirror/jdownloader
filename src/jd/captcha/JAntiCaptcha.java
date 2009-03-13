@@ -23,9 +23,6 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.IndexColorModel;
-import java.awt.image.PixelGrabber;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -62,11 +59,11 @@ import jd.captcha.gui.ImageComponent;
 import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
-import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
+import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 import org.w3c.dom.Document;
@@ -143,7 +140,7 @@ public class JAntiCaptcha {
 
         File[] entries = dir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
                 if (pathname.isDirectory() && new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml").exists() && !JDIO.getLocalFile(new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml")).contains("disabled")) {
 
@@ -204,7 +201,7 @@ public class JAntiCaptcha {
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, methodName);
         File[] entries = captchaDir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
                 if (pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
 
@@ -887,7 +884,7 @@ public class JAntiCaptcha {
                 if (JAntiCaptcha.isLoggerActive()) {
                     logger.info(pathname.getName());
                 }
-                if (pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
+                if (pathname.getName().endsWith(".bmp") ||pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
 
                     return true;
                 } else {
@@ -1077,6 +1074,11 @@ public class JAntiCaptcha {
                 }
             }
             while (iter.hasNext()) {
+                if( Thread.currentThread().isInterrupted()){
+                  
+                    throw new InterruptedException();
+                    
+                }
                 tmp = (Letter) iter.next();
 
                 if (Math.abs(tmp.getHeight() - letter.getHeight()) > bvY || Math.abs(tmp.getWidth() - letter.getWidth()) > bvX) {
@@ -1277,6 +1279,10 @@ public class JAntiCaptcha {
                 Iterator<Letter> iter = letterDB.iterator();
                 int tt = 0;
                 while (iter.hasNext()) {
+                    if( Thread.currentThread().isInterrupted()){
+                        throw new InterruptedException();
+                        
+                    }
                     if (turnDB) {
                         tmp = ((Letter) iter.next()).turn(angle);
 
@@ -1494,15 +1500,22 @@ public class JAntiCaptcha {
      * neue db
      */
     public void importDB(File path) {
-        boolean old = true;
-        if (JOptionPane.showConfirmDialog(null, "Use format CHAR_* sinstead of NUM_CHAR?") == JOptionPane.OK_OPTION) old = false;
+
+        String pattern = JOptionPane.showInputDialog("PATTERN");
         if (JOptionPane.showConfirmDialog(null, "Delete old db?") == JOptionPane.OK_OPTION) letterDB = new LinkedList<Letter>();
         getResourceFile("letters.mth").delete();
+        System.out.println("LETTERS BEFOPRE: "+letterDB.size());
         Image image;
         Letter letter;
         File[] images = getImages(path.getAbsolutePath());
         for (File element : images) {
             image = UTILITIES.loadImage(element);
+            try {
+                image=ImageIO.read(element);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
             System.out.println(element.getAbsolutePath());
             int width = image.getWidth(null);
             int height = image.getHeight(null);
@@ -1511,61 +1524,33 @@ public class JAntiCaptcha {
                     logger.severe("ERROR: Image nicht korrekt.");
                 }
             }
-            PixelGrabber pg = new PixelGrabber(image, 0, 0, width, height, false);
-            try {
-                pg.grabPixels();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+
+            Captcha cap = createCaptcha(image);
+
             letter = new Letter();
 
             letter.setOwner(this);
 
-            ColorModel cm = pg.getColorModel();
+            letter.setGrid(cap.grid);
+            // letter = letter.align(-40, +40);
+            // PixelGrid.fillLetter(letter);
+            letter.setSourcehash(JDHash.getMD5(element));
 
-            if (!(cm instanceof IndexColorModel)) {
-                // not an indexed file (ie: not a gif file)
+            String let = new Regex(element.getName(), pattern).getMatch(0);
 
-                int[] pixel = (int[]) pg.getPixels();
-                int[][] newGrid = new int[width][height];
-                int px = 0;
-                for (int y = 0; y < height; y++) {
-                    for (int x = 0; x < width; x++) {
-                        while (pixel[px] < 0) {
-                            pixel[px] += 0xffffff + 1;
-                        }
-                        // if(JAntiCaptcha.isLoggerActive())logger.info("-
-                        // "+pixel[px]);
-                        newGrid[x][y] = pixel[px++] < 0x660000 ? 0 : PixelGrid.getMaxPixelValue(this);
+            letter.setDecodedValue(let);
 
-                    }
-                }
-                letter.setGrid(newGrid);
-                // letter = letter.align(-40, +40);
-                // PixelGrid.fillLetter(letter);
-                letter.setSourcehash(JDHash.getMD5(element));
-                if (old) {
-                    letter.setDecodedValue(element.getName().split("\\_")[1].split("\\.")[0]);
-                } else {
-                    letter.setDecodedValue(element.getName().split("\\_")[0]);
-                }
-                // BasicWindow.showImage(letter.getImage(1),element.getName());
-                letter.clean();
+            // BasicWindow.showImage(letter.getImage(1),element.getName());
+            letter.clean();
 
-                letterDB.add(letter);
+            letterDB.add(letter);
 
-                // letter.resizetoHeight(25);
-
-            } else {
-
-                if (JAntiCaptcha.isLoggerActive()) {
-                    logger.severe("Bildformat von ImportDB nicht unterstützt:" + element);
-                }
-            }
+            // letter.resizetoHeight(25);
 
             // BasicWindow.showImage(ret.getImage());
 
         }
+        System.out.println("LETTERS AFTER: "+letterDB.size());
         sortLetterDB();
         saveMTHFile();
     }
@@ -1938,7 +1923,7 @@ public class JAntiCaptcha {
             }
 
             // String methodsPath = UTILITIES.getFullPath(new String[] {
-            // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
+            //JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
             // "jd", "captcha", "methods" });
             // String hoster = "rscat.com";
             // JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);

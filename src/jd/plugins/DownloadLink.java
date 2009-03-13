@@ -259,8 +259,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public String getContainerFile() {
         if (containerFile == null) return null;
-        String Filename = new File(containerFile).getName();
-        return JDUtilities.getResourceFile("container/" + Filename).getAbsolutePath();
+        if(new File(containerFile).isAbsolute()){
+            containerFile="container/"+new File(containerFile).getName();
+        }      
+        return containerFile;
     }
 
     public int getContainerIndex() {
@@ -721,7 +723,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         getDownloadLinkController().abortDownload();
     }
 
-    public void setAvailable(Boolean available) {
+    public void setAvailable(boolean available) {
         this.available = available;
     }
 
@@ -736,6 +738,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void setContainerFile(String containerFile) {
+        containerFile = containerFile.replace("\\", "/");
+
+        int index;
+        if ((index = containerFile.indexOf("/container/")) > 0) {
+            containerFile = containerFile.substring(index + 1);
+
+        }
+
         this.containerFile = containerFile;
     }
 

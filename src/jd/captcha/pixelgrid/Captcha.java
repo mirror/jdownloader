@@ -93,7 +93,8 @@ public class Captcha extends PixelGrid {
         try {
             pg.grabPixels();
         } catch (Exception e) {
-            e.printStackTrace();
+           
+            return null;
         }
 
         Captcha ret = new Captcha(width, height);

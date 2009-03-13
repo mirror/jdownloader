@@ -29,12 +29,11 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.Request;
+import jd.nutils.JDHash;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -43,27 +42,26 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class Megauploadcom extends PluginForHost implements ControlListener {
+public class Megauploadcom extends PluginForHost {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
     private static final String CAPTCHA_MODE = "CAPTCHAMODE";
+    private static int FREE = 10;
     // private static int FREE = 1;
 
     private static int simultanpremium = 1;
 
     private String user;
-    private static PluginForHost my = null;
+
+
+    private static Boolean DL = false;
 
     public Megauploadcom(PluginWrapper wrapper) {
         super(wrapper);
-        if (my == null) {
-            my = this;
-            JDUtilities.getController().addControlListener(this);
-        }
+
         this.enablePremium("http://megaupload.com/premium/en/");
         setConfigElements();
     }
@@ -321,15 +319,28 @@ public class Megauploadcom extends PluginForHost implements ControlListener {
         br.setCookie("http://megaupload.com", "l", "en");
         initHeaders(br);
 
-        // FREE = 2;
         if (account != null) {
             login(account);
         }
         int captchTries = 10;
         Form form = null;
+        String code = null;
+        String hash = null;
         while (captchTries-- >= 0) {
 
             br.getPage("http://megaupload.com/?d=" + getDownloadID(link));
+            String red = br.getRegex("document\\.location='(.*?)'").getMatch(0);
+            if (red != null) {
+                logger.severe("YOur IP got banned");
+                br.getPage(red);
+                String wait = br.getRegex("Please check back in (\\d+) minute").getMatch(0);
+                long l = 30 * 60 * 1000l;
+                if (wait != null) {
+                    l = Long.parseLong(wait.trim());
+                }
+                // "throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 1000l); "
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, l);
+            }
             if (br.containsHTML("trying to download is larger than")) throw new PluginException(LinkStatus.ERROR_FATAL, "File is over 1GB and needs Premium Account");
             form = br.getForm(0);
 
@@ -361,14 +372,26 @@ public class Megauploadcom extends PluginForHost implements ControlListener {
                 c.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
                 URLConnectionAdapter con = c.openGetConnection(captcha);
                 Browser.download(file, con);
-                String code = null;
-
+                hash = JDHash.getMD5(file);
+                code = null;
+                Browser br2 = new Browser();
                 try {
-                    code = Plugin.getCaptchaCode(file, this, link);
-                } catch (PluginException ee) {
+                    br2.postPage("http://service.jdownloader.org/tools/cg.php", "h=" + hash);
+                    if (br2.getHttpConnection().isOK() && !br2.containsHTML("error")) {
+                        code = br2.toString().trim();
+
+                    }
+                } catch (Exception e) {
 
                 }
 
+                if (code == null) {
+                    try {
+                        code = Plugin.getCaptchaCode(file, this, link);
+                    } catch (PluginException ee) {
+
+                    }
+                }
                 if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 1) {
                     if (code == null || code.contains("-") || code.trim().length() != 4) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 1000l); }
                 }
@@ -380,6 +403,7 @@ public class Megauploadcom extends PluginForHost implements ControlListener {
                 if (form != null && form.containsHTML("captchacode")) {
                     continue;
                 } else {
+
                     break;
                 }
 
@@ -388,16 +412,25 @@ public class Megauploadcom extends PluginForHost implements ControlListener {
 
         if (form != null && form.containsHTML("captchacode")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
 
+        if (code != null) {
+
+            Browser br2 = new Browser();
+            br2.postPage("http://service.jdownloader.org/tools/c.php", hash + "=" + code);
+        }
+        // waitForNext(link);
         link.getLinkStatus().setStatusText("Wait for start");
         link.requestGuiUpdate();
-        while (JDUtilities.getController().getRunningDownloadNumByHost(this) > 0) {
-
-            Thread.sleep(200);
-        }
-
+      
         String url = br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
-        doDownload(link, url, true, 1);
-
+        synchronized (DL) {
+           if( Thread.currentThread().isInterrupted()){
+               throw new InterruptedException();
+               
+           }
+            doDownload(link, url, true, 1);
+        }
+        // decreaseCounter();
+       
     }
 
     private void initHeaders(Browser br) {
@@ -430,6 +463,7 @@ public class Megauploadcom extends PluginForHost implements ControlListener {
     }
 
     public void handleFree0(DownloadLink link, Account account) throws Exception {
+      
         br.setFollowRedirects(false);
         String dlID = getDownloadID(link);
         br.getHeaders().clear();
@@ -454,21 +488,18 @@ public class Megauploadcom extends PluginForHost implements ControlListener {
             }
             return;
         }
-        // FREE = 1;
+
         link.getLinkStatus().setStatusText("Wait for start");
         link.requestGuiUpdate();
 
-        while (JDUtilities.getController().getRunningDownloadNumByHost(this) > 0) {
-
-            Thread.sleep(200);
-        }
+ 
         String url = br.getRedirectLocation();
 
         br.getHeaders().put("Host", new URL(url).getHost());
         br.getHeaders().put("Connection", "Keep-Alive,TE");
-
-        doDownload(link, url, true, 1);
-
+        synchronized (DL) {
+            doDownload(link, url, true, 1);
+        }
         br.getHeaders().clear();
         br.getHeaders().setDominant(false);
     }
@@ -482,7 +513,7 @@ public class Megauploadcom extends PluginForHost implements ControlListener {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return FREE;
     }
 
     @Override
@@ -509,17 +540,41 @@ public class Megauploadcom extends PluginForHost implements ControlListener {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), CAPTCHA_MODE, captchmodes, JDLocale.L("plugins.host.megaupload.captchamode.title", "Captcha mode:")).setDefaultValue(JDLocale.L("plugins.host.megaupload.captchamode_auto", "auto")));
     }
 
-    public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL && event.getParameter() instanceof PluginsC) {
-            String str = JDUtilities.getConfiguration().getStringProperty("k");
-            if (str != null) {
+    public static void main(String[] args) throws IOException {
+        int i = 0;
+        HashMap<String, File> map = new HashMap<String, File>();
+        File dir = JDUtilities.getResourceFile("caps/megaupload.com/captchas/");
+        for (File f : dir.listFiles()) {
 
-                str = "" + str.charAt(1) + str.charAt(0) + str.substring(2);
-                JDUtilities.getConfiguration().setProperty("k", str);
+            map.put(JDHash.getMD5(f), f);
+        }
+        int ii = 0;
+        while (true) {
+            i++;
+            Browser br = new Browser();
+            br.setCookie("http://megaupload.com", "l", "en");
+            br.getPage("http://www.megaupload.com/?d=ML38NV20");
+            Form form = br.getForm(0);
 
+            String captcha = form.getRegex("Enter this.*?src=\"(.*?gencap.*?)\"").getMatch(0);
+
+            br.forceDebug(true);
+            br.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
+            URLConnectionAdapter con = br.openGetConnection(captcha);
+            File file;
+            Browser.download(file = JDUtilities.getResourceFile("caps/megaupload.com/captchas/caps_" + System.currentTimeMillis() + ".png"), con);
+
+            String hash = JDHash.getMD5(file);
+
+            if (map.containsKey(hash)) {
+                ii++;
+
+                System.out.println("Rem " + ii);
+                file.delete();
+            } else {
+                map.put(hash, file);
             }
 
         }
-
     }
 }

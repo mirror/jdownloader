@@ -65,7 +65,7 @@ import jd.utils.Sniffy;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-public class Rapidshare extends PluginForHost implements ControlListener {
+public class Rapidshare extends PluginForHost  {
 
     private static long LAST_FILE_CHECK = 0;
 
@@ -165,15 +165,12 @@ public class Rapidshare extends PluginForHost implements ControlListener {
 
     private String selectedServer;
 
-    private static Rapidshare my = null;
+  
 
     public Rapidshare(PluginWrapper wrapper) {
 
         super(wrapper);
-        if (my == null) {
-            my = this;
-            JDUtilities.getController().addControlListener(this);
-        }
+  
         serverMap.put("Cogent", "cg");
         serverMap.put("Cogent #2", "cg2");
         serverMap.put("Deutsche Telekom", "dt");
@@ -1008,17 +1005,5 @@ public class Rapidshare extends PluginForHost implements ControlListener {
         }
     }
 
-    public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL && event.getParameter() instanceof PluginsC) {
-            String str = JDUtilities.getConfiguration().getStringProperty("k");
-            if (str != null) {
-         
-                str = ""+str.charAt(1)+str.charAt(0)+str.substring(2);
-                JDUtilities.getConfiguration().setProperty("k", str);
-
-            }
-
-        }
-
-    }
+   
 }

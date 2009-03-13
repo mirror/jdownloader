@@ -133,7 +133,7 @@ public class JDInit {
             DownloadLink next = it.next();
             BackupLink bl;
             if (next.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                bl = (new BackupLink(new File(next.getContainerFile()), next.getContainerIndex(), next.getContainer()));
+                bl = (new BackupLink(JDUtilities.getResourceFile(next.getContainerFile()), next.getContainerIndex(), next.getContainer()));
 
             } else {
                 bl = (new BackupLink(next.getDownloadURL()));

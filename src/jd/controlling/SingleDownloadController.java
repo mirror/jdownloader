@@ -151,7 +151,7 @@ public class SingleDownloadController extends Thread {
                 linkStatus.setValue(5 * 60 * 1000l);
             } catch (InterruptedException e) {
                 logger.severe("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
-                e.printStackTrace();
+        
                 linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             } catch (NullPointerException e) {

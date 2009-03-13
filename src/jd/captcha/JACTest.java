@@ -45,8 +45,8 @@ public class JACTest {
 
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
 
-//        jac.setShowDebugGui(true);
-//         LetterComperator.CREATEINTERSECTIONLETTER = true;
+       jac.setShowDebugGui(true);
+       LetterComperator.CREATEINTERSECTIONLETTER = true;
         //
         // jac.exportDB();
         // UTILITIES.getLogger().info("has method:
@@ -54,7 +54,8 @@ public class JACTest {
 
         //
         // Megaupload2.writeDB();
-    //jac.importDB();
+// jac.importDB();
+// jac.importDB();   
         //
         jac.displayLibrary();
 
@@ -63,8 +64,11 @@ public class JACTest {
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment
         // ().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+
         // "securedin1730080724541.jpg"),4);
+ File[] list = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster).listFiles();
+ int id=(int)(Math.random()*(list.length-1));
 
-        File f = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster).listFiles()[0];
+ System.out.println("ID: "+id);
+ File f = list[id];
 
         System.out.println(f + "");
         jac.showPreparedCaptcha(f);

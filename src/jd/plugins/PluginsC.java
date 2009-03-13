@@ -167,7 +167,7 @@ public abstract class PluginsC extends Plugin {
             logger.severe("Containerfile == null");
             return;
         }
-        File f = new File(file);
+        File f = JDUtilities.getResourceFile(file);
         if (md5 == null) {
             md5 = JDHash.getMD5(f);
         }
@@ -202,9 +202,82 @@ public abstract class PluginsC extends Plugin {
         if (dlU == null) {
             initContainer(downloadLink.getContainerFile(), (byte[]) downloadLink.getProperty("k", new byte[] {}));
         }
+        checkWorkaround(downloadLink);
         if (dlU == null || dlU.size() <= downloadLink.getContainerIndex()) { return null; }
         downloadLink.setProperty("k", k);
         return dlU.get(downloadLink.getContainerIndex());
+    }
+/**
+ * workaround and cortrection of a dlc bug
+ * @param downloadLink
+ */
+    private void checkWorkaround(DownloadLink downloadLink) {
+        Vector<DownloadLink> links = JDUtilities.getController().getDownloadLinks();
+        ArrayList<DownloadLink> failed = new ArrayList<DownloadLink>();
+        int biggestIndex = 0;
+        for (DownloadLink l : links) {
+            if (l.getContainerFile() != null && l.getContainerFile().equalsIgnoreCase(downloadLink.getContainerFile())) {
+                failed.add(l);
+                biggestIndex = Math.max(biggestIndex, l.getContainerIndex());
+            }
+        }
+     
+
+        if (biggestIndex >= dlU.size()) {
+            ArrayList<DownloadLink> rename = new ArrayList<DownloadLink>();
+            System.err.println("DLC missmatch found");
+            String ren = "";
+            for (DownloadLink l : failed) {
+                if (new File(l.getFileOutput()).exists() && l.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                    rename.add(l);
+                    ren += l.getFileOutput() + "<br>";
+                }
+            }
+            
+            if (JDUtilities.getGUI().showHTMLDialog("DLC Missmatch", "<b>JD discovered an error while downloading DLC links.</b> <br>The following files may have errors:<br>" + ren + "<br><u> Do you want JD to try to correct them?</u>")) {
+                int ffailed = 0;
+                ren = "";
+                for (DownloadLink l : rename) {
+                    String name = l.getName();
+                    String filename = new File(l.getFileOutput()).getName();
+                    l.setUrlDownload(dlU.get(l.getContainerIndex() / 2));
+                    if (l.isAvailable()) {
+
+                        String newName = l.getName();
+
+                        if (!name.equals(newName)) {
+                            if (JDUtilities.getGUI().showHTMLDialog("Rename file", "<b>Filename missmatch</b> <br>This file seems to have the wrong name:" + filename + "<br><u> Rename it to " + newName + "?</u>")) {
+                                File newFile = new File(new File(l.getFileOutput()).getParent() + "/restore/" + newName);
+                                newFile.mkdirs();
+                                if (newFile.exists()) {
+                                    ffailed++;
+                                    ren += l.getFileOutput() + " -> RENAME TO " + newFile + " FAILED<br>";
+                                } else {
+
+                                    if (new File(l.getFileOutput()).renameTo(newFile)) {
+                                        ren += l.getFileOutput() + " -> " + newFile + "<br>";
+                                    } else {
+                                        ren += l.getFileOutput() + " -> RENAME TO " + newFile + " FAILED<br>";
+                                    }
+                                }
+
+                            }
+
+                        }
+
+                    }
+                    l.setUrlDownload(null);
+                }
+                JDUtilities.getGUI().showHTMLDialog("DLC Correction", "<b>Correction result:</b> <br>" + ren + "");
+
+                ren = null;
+            }
+            for (DownloadLink l : failed) {
+
+                l.setContainerIndex(l.getContainerIndex() / 2);
+            }
+        }
+
     }
 
     /**
@@ -263,6 +336,21 @@ public abstract class PluginsC extends Plugin {
     }
 
     public synchronized void initContainer(String filename, byte[] bs) {
+
+        File rel = JDUtilities.getResourceFile(filename);
+        File ab = new File(filename);
+        String md;
+
+        if (!rel.exists() && ab.exists()) {
+            String extension = JDIO.getFileExtension(ab);
+            md = JDHash.getMD5(ab);
+            File newFile = JDUtilities.getResourceFile("container/" + md + "." + extension);
+            if (!newFile.exists()) {
+                JDIO.copyFile(ab, newFile);
+            }
+            filename = "container/" + md + "." + extension;
+        }
+
         if (filename == null) { return; }
         if (CONTAINER.containsKey(filename) && CONTAINER.get(filename) != null && CONTAINER.get(filename).size() > 0) {
             logger.info("Cached " + filename);
