@@ -94,6 +94,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.optional.jdunrar.FileSignatures;
+import jd.plugins.optional.jdunrar.Signature;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -1865,7 +1867,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 list.add(link);
             }
         }
-
+System.out.println("Autopackage call "+list);
         // for( Iterator<Entry<String, Vector<DownloadLink>>> it =
         // waitingLinkList.entrySet().iterator();it.hasNext();){
         // Vector<DownloadLink> hosterList = it.next().getValue();
@@ -2008,15 +2010,17 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         name = getNameMatch(name, "(?is).*\\.7z\\.[\\d]+$");
         name = getNameMatch(name, "(.*)\\.a.$");
-        name = getNameMatch(name, "(.*)\\.[\\d]+($|\\.[^\\d]*$)");
+        for(Signature sig:FileSignatures.getSignatureList()){
+        name = getNameMatch(name, "(.*)\\.[\\d]+($|\\."+sig.getExtension()+"$)");
 
+        }
         int lastPoint = name.lastIndexOf(".");
         if (lastPoint <= 0) return name;
         String extension = name.substring(name.length() - lastPoint + 1);
         if (extension.length() > 0 && extension.length() < 6) {
             name = name.substring(0, lastPoint);
         }
-        return JDUtilities.removeEndingPoints(name).replaceAll("[^a-z^A-Z^0-9]+", " ");
+        return JDUtilities.removeEndingPoints(name).replaceAll("[\\.\\:\\,\\;\\-\\_\\#\"\\'\\§\\$\\%\\&]+", " ");
     }
 
     private String getNameMatch(String name, String pattern) {
@@ -2099,7 +2103,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             this.links = distributeData.findLinks();
             for (DownloadLink l : links) {
-                l.setAvailable(null);
+                l.reset();
+              
                 l.setFilePackage(FilePackage.getDefaultFilePackage());
             }
             log("Found links. Open Linkgrabber now " + linklist);
