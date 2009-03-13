@@ -74,10 +74,11 @@ public abstract class PluginForHost extends Plugin {
     private static final String AGB_CHECKED = "AGB_CHECKED";
     private static final String CONFIGNAME = "pluginsForHost";
     private static int currentConnections = 0;
-    
+
     public boolean premiumSpecialCharsAllowed() {
         return true;
     }
+
     private static HashMap<Class<? extends PluginForHost>, Long> HOSTER_WAIT_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
     private static HashMap<Class<? extends PluginForHost>, Long> HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
 
@@ -413,7 +414,12 @@ public abstract class PluginForHost extends Plugin {
 
         if (downloadLink.isDupeCheckallowed()) {
             /* check ob Datei existiert oder bereits geladen wird */
-            if (DownloadInterface.preDownloadCheckFailed(downloadLink)) return;
+            System.out.println("PreDupeChecked: checking...");
+            if (DownloadInterface.preDownloadCheckFailed(downloadLink)) {
+                System.out.println("PreDupeChecked: mirror already loading!");
+                return;
+            }
+            System.out.println("PreDupeChecked: no mirror found!");
         }
 
         Long t = 0l;

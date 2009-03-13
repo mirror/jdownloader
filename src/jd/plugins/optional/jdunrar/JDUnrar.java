@@ -120,7 +120,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
                     for (File archiveStartFile : list) {
                         if (getArchivePartType(archiveStartFile) == JDUnrarConstants.NO_RAR_ARCHIVE || getArchivePartType(archiveStartFile) == JDUnrarConstants.NO_START_PART) continue;
-                        link = JDUtilities.getController().getDownloadLinkByFileOutput(archiveStartFile);
+                        link = JDUtilities.getController().getDownloadLinkByFileOutput(archiveStartFile, LinkStatus.FINISHED);
 
                         if (link == null) {
                             link = new DownloadLink(null, archiveStartFile.getName(), DUMMY_HOSTER, "", true);
@@ -277,7 +277,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     }
 
     private int getArchivePartType(File file) {
-        if (file.getName().matches(".*part[0]*[1].rar$")) return JDUnrarConstants.MULTIPART_START_PART;
+        if (file.getName().matches(".*part\\d+.rar$")) return JDUnrarConstants.MULTIPART_START_PART;
         if (file.getName().matches(".*.rar$")) {
             String filename = new Regex(file, "(.*)\\.rar$").getMatch(0);
             if ((new File(filename + ".r0")).exists()) {
@@ -321,7 +321,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             if (!(file = new File(filename + ".rar")).exists()) { return null; }
         }
 
-        DownloadLink dlink = JDUtilities.getController().getDownloadLinkByFileOutput(file);
+        DownloadLink dlink = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
         if (dlink == null) {
             System.out.print("DLink nicht gefunden.. erstelle Dummy");
             dlink = new DownloadLink(null, file.getName(), DUMMY_HOSTER, "", true);
@@ -537,7 +537,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 File[] list = fc.getSelectedFiles();
                 if (list == null) return;
                 for (File archiveStartFile : list) {
-                    link = JDUtilities.getController().getDownloadLinkByFileOutput(archiveStartFile);
+                    link = JDUtilities.getController().getDownloadLinkByFileOutput(archiveStartFile, LinkStatus.FINISHED);
 
                     if (link == null) {
                         link = new DownloadLink(null, archiveStartFile.getName(), DUMMY_HOSTER, "", true);
@@ -1323,8 +1323,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             if ((test = new Regex(downloadLink.getFileOutput(), "part(\\d*?)\\.").getMatch(0)) != null) {
                 nums = test.length();
                 i = 1;
-                while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".part" + JDUtilities.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file) != null) {
-                    ret.add(JDUtilities.getController().getDownloadLinkByFileOutput(file));
+                while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".part" + JDUtilities.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
+                    ret.add(JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED));
                     i++;
                 }
                 break;
@@ -1343,8 +1343,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     }
                 }
                 if (nums != -1) {
-                    while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".r" + JDUtilities.fillString(i + "", "0", "", nums))).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file) != null) {
-                        ret.add(JDUtilities.getController().getDownloadLinkByFileOutput(file));
+                    while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".r" + JDUtilities.fillString(i + "", "0", "", nums))).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
+                        ret.add(JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED));
                         i++;
                     }
                 }

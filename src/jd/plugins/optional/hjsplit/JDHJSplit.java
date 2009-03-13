@@ -230,7 +230,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                 logger.info("Archive " + archiveStartFile + " is incomplete or no archive. Validation failed");
                 return;
             }
-            link = JDUtilities.getController().getDownloadLinkByFileOutput(archiveStartFile);
+            link = JDUtilities.getController().getDownloadLinkByFileOutput(archiveStartFile, LinkStatus.FINISHED);
             if (link == null) link = createDummyLink(archiveStartFile);
 
             final DownloadLink finalLink = link;

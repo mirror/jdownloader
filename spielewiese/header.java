@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 
 import jd.http.Browser;
 import jd.http.JDProxy;
+import jd.parser.Regex;
 import jd.plugins.Plugin;
 import jd.update.JDUpdateUtils;
 
@@ -41,7 +42,7 @@ public class header {
 
     public static void main(String[] args) throws IOException {
         // TODO Auto-generated method stub
-        if (true) {
+        if (false) {
             //    
 
             Browser br = new Browser();
@@ -53,12 +54,12 @@ public class header {
             p.setPass("");
             br.setProxy(p);
             br.setAuth("service.jdownloader.org", "", "");
-           
+
             br.getPage("https://ssl.rapidshare.com/premiumzone.html");
             jd.parser.html.Form forms = br.getForms()[0];
             forms.put("login", "");
             forms.put("password", "");
-            //br.submitForm(forms);
+            // br.submitForm(forms);
 
             System.out.println(br + "");
 
@@ -106,10 +107,26 @@ public class header {
         // System.out.println("Right Java Version");
         // }
         // }
-        if (false) {
-            JDUpdateUtils.setUpdateUrl("http://service.jdownloader.org/update/update.zip");
-            String jj = JDUpdateUtils.get_AddonList();
-            String kk = JDUpdateUtils.get_UpdateList();
+        if (true) {
+            long start = System.currentTimeMillis();
+            String query = "id0=0&s=102760448&d=0&n=Bat&amp;Rob.part13.rar";
+            String[] dd;
+            for (int i = 1; i < 1000000; i++) {
+                dd = new Regex(query.trim(), "&?(.*?=.*?)($|&(?=.*?=.*?))").getColumn(0);
+                // String[] split = query.trim().split("[\\&|=]");
+            }
+            long stop = System.currentTimeMillis();
+            System.out.println(stop - start);
+
+            start = System.currentTimeMillis();
+
+            for (int i = 1; i < 1000000; i++) {
+                // String[] dd = new Regex(query.trim(),
+                // "&?(.*?=.*?)($|&(?=.*?=.*?))").getColumn(0);
+                dd = query.trim().split("[\\&|=]");
+            }
+            stop = System.currentTimeMillis();
+            System.out.println(stop - start);
         }
         if (false) {
             System.out.println(base64totext("kALaLX9NF0SfcVSf99CsZ5umsHeyg4tGhJ\"ePoCNNxv6\"mIeln34L0YRoEGBwB6lB3snQVhp1yCSznAgpjFWa\"oC_P5bc0dNsFTc6sw3YqNfRD\"hJ_RZTmQD\"s\"CwGUnTxxDPQ3zfGW8Z0A9mqLP95Qg9zwr4YLuhSIC9gOHf7TawDE\"vDUs_jI36\"CbIy\"n1I3o03BD05k6mOx3nr6C9b8tqBwhgbxV17MnrGRO0IRX2WD06r8eQndm5q9Yt8I1qRNeKMUpKIqrpGj"));

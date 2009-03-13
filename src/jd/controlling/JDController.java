@@ -673,7 +673,7 @@ public class JDController implements ControlListener, UIListener {
         if (!OSDetector.isMac()) {
             logger.info(JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
         } else {
-           logger.info(JDUtilities.runCommand("open", new String[] { "-n", "jDownloader.app" }, JDUtilities.getResourceFile(".").getParentFile().getParentFile().getParentFile().getParentFile().getAbsolutePath(), 0));
+            logger.info(JDUtilities.runCommand("open", new String[] { "-n", "jDownloader.app" }, JDUtilities.getResourceFile(".").getParentFile().getParentFile().getParentFile().getParentFile().getAbsolutePath(), 0));
         }
         System.exit(0);
     }
@@ -1838,7 +1838,7 @@ public class JDController implements ControlListener, UIListener {
 
     }
 
-    public DownloadLink getDownloadLinkByFileOutput(File file) {
+    public DownloadLink getDownloadLinkByFileOutput(File file, Integer Linkstatus) {
         // synchronized (packages) {
         try {
             Iterator<FilePackage> iterator = packages.iterator();
@@ -1849,7 +1849,12 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (new File(nextDownloadLink.getFileOutput()).getAbsoluteFile().equals(file.getAbsoluteFile())) return nextDownloadLink;
+                    if (new File(nextDownloadLink.getFileOutput()).getAbsoluteFile().equals(file.getAbsoluteFile())) {
+                        if (Linkstatus != null) {
+                            if (nextDownloadLink.getLinkStatus().hasStatus(Linkstatus)) return nextDownloadLink;
+                        } else
+                            return nextDownloadLink;
+                    }
                 }
             }
         } catch (Exception e) {

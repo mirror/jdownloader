@@ -381,7 +381,7 @@ public class Netloadin extends PluginForHost {
                 entries = br.getRegex(";(.*?);(.*?);(.*?)").getRow(0);
                 if (entries == null || entries.length < 3) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 downloadLink.setDownloadSize((int) Regex.getSize(entries[1] + " bytes"));
-                downloadLink.setName(entries[0]);
+                downloadLink.setFinalFileName(entries[0]);
                 downloadLink.setDupecheckAllowed(true);
                 fileStatusText = "Might be offline";
                 return true;
@@ -389,7 +389,7 @@ public class Netloadin extends PluginForHost {
 
             if (entries == null || entries.length < 3) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-            downloadLink.setName(entries[1]);
+            downloadLink.setFinalFileName(entries[1]);
             downloadLink.setDupecheckAllowed(true);
             fileStatusText = entries[2];
             downloadLink.setDownloadSize((int) Regex.getSize(entries[2] + " bytes"));

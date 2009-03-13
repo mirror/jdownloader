@@ -695,8 +695,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 logger.severe(JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
             }
         }
-        finalFileName = null;
-        setDupecheckAllowed(false);
+        if (!isDupeCheckallowed()) {
+            finalFileName = null;
+        }
         localSpeedLimit = -1;
         getPlugin().resetHosterWaitTime();
     }

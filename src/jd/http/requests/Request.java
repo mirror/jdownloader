@@ -56,31 +56,17 @@ public abstract class Request {
         if (query == null) { return null; }
         HashMap<String, String> ret = new HashMap<String, String>();
         if (query.toLowerCase().trim().startsWith("http")) {
-
             query = new URL(query).getQuery();
-
         }
 
         if (query == null) { return ret; }
-
-        String[] split = query.trim().split("[\\&|=]");
-        int i = 0;
-        while (true) {
-            String key = null;
-            String value = null;
-            if (split.length > i) key = split[i++];
-            if (split.length > i) value = split[i++];
-
-            if (key != null) {
-                ret.put(key, value);
-            } else {
-                break;
+        String[][] split = new Regex(query.trim(), "&?(.*?)=(.*?)($|&(?=.*?=.+))").getMatches();
+        if (split != null) {
+            for (int i = 0; i < split.length; i++) {
+                ret.put(split[i][0], split[i][1]);
             }
-
         }
-
         return ret;
-
     }
 
     private int connectTimeout;
@@ -469,9 +455,9 @@ public abstract class Request {
         // der hier mit proxy..
         // da k�nnte man sich mal schlauch machen.. welche proxy typen da
         // unterst�tzt werden
-       if(!headers.contains("Host")){
-           headers.setAt(0,"Host",url.getHost());
-       }
+        if (!headers.contains("Host")) {
+            headers.setAt(0, "Host", url.getHost());
+        }
         if (proxy != null) {
 
             httpConnection = (URLConnectionAdapter) url.openConnection(proxy);
@@ -487,9 +473,8 @@ public abstract class Request {
         httpConnection.setConnectTimeout(connectTimeout);
 
         if (headers != null) {
-         
-            for (int i=0; i<headers.size();i++) {
-             
+
+            for (int i = 0; i < headers.size(); i++) {
 
                 httpConnection.setRequestProperty(headers.getKey(i), headers.getValue(i));
             }

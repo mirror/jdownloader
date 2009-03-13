@@ -56,7 +56,7 @@ public class Megauploadcom extends PluginForHost implements ControlListener {
     private static int simultanpremium = 1;
 
     private String user;
-    private static PluginForHost my=null;
+    private static PluginForHost my = null;
 
     public Megauploadcom(PluginWrapper wrapper) {
         super(wrapper);
@@ -285,7 +285,7 @@ public class Megauploadcom extends PluginForHost implements ControlListener {
             br.getHeaders().clear();
             br.getHeaders().setDominant(false);
             for (i = 1; i < Dls.length; i++) {
-                String string = Dls[i];
+                String string = Dls[i];                
                 HashMap<String, String> queryQ = Request.parseQuery(Encoding.htmlDecode(string));
                 try {
                     int d = Integer.parseInt(string.substring(2, string.indexOf('=')));

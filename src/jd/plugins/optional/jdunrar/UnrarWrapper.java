@@ -167,8 +167,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     public void run() {
         try {
             fireEvent(JDUnrarConstants.WRAPPER_STARTED);
-
-            ;
             if (open()) {
                 if (this.files.size() == 0) {
                     this.fireEvent(NO_FILES_FOUND);
@@ -670,15 +668,21 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                         if (match != null) currentVolume = Integer.parseInt(match.trim()) + 2;
                     }
                 }
-                return false;
+                throw new UnrarException("Bad archive " + filename);
             }
             if (res.contains("Cannot open ") || res.contains("Das System kann die angegebene Datei nicht finden")) { throw new UnrarException("File not found " + file.getAbsolutePath()); }
-            if (res.contains("is not RAR archive")) return false;
+            if (res.contains("is not RAR archive")) {
+                String message = new Regex(res, Pattern.compile("(^.*?is not RAR archive)", Pattern.MULTILINE)).getMatch(0);
+                throw new UnrarException(message);
+            }
             if (res.indexOf(" (password incorrect") != -1 || res.contains("the file header is corrupt")) {
                 JDUtilities.getLogger().finest("Password incorrect: " + file.getName() + " pw: " + pass);
                 continue;
             } else {
-                if (res.indexOf("Cannot find volume") != -1) { return false; }
+                if (res.indexOf("Cannot find volume") != -1) {
+                    String message = new Regex(res, Pattern.compile("(^.*?Cannot find volume.*?$)", Pattern.MULTILINE)).getMatch(0);
+                    throw new UnrarException(message);
+                }
                 String[] volumes = Pattern.compile("Volume (.*?)Pathname/Comment", Pattern.DOTALL).split(res);
                 ArchivFile tmp = null;
                 String namen = "";
