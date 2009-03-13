@@ -56,7 +56,6 @@ public class Megauploadcom extends PluginForHost {
 
     private String user;
 
-
     private static Boolean DL = false;
 
     public Megauploadcom(PluginWrapper wrapper) {
@@ -279,11 +278,11 @@ public class Megauploadcom extends PluginForHost {
 
         try {
 
-            String[] Dls = br.postPage("http://megaupload.com/mgr_linkcheck.php", map).split("(?=id[\\d]+=)");
+            String[] Dls = br.postPage("http://megaupload.com/mgr_linkcheck.php", map).split("&?(?=id[\\d]+=)");
             br.getHeaders().clear();
             br.getHeaders().setDominant(false);
             for (i = 1; i < Dls.length; i++) {
-                String string = Dls[i];                
+                String string = Dls[i];
                 HashMap<String, String> queryQ = Request.parseQuery(Encoding.htmlDecode(string));
                 try {
                     int d = Integer.parseInt(string.substring(2, string.indexOf('=')));
@@ -420,17 +419,18 @@ public class Megauploadcom extends PluginForHost {
         // waitForNext(link);
         link.getLinkStatus().setStatusText("Wait for start");
         link.requestGuiUpdate();
-      
+
         String url = br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
         synchronized (DL) {
-           if( Thread.currentThread().isInterrupted()){
-               throw new InterruptedException();
-               
-           }
+            if (Thread.currentThread().isInterrupted()) {
+                link.getLinkStatus().setStatusText(null);
+                link.requestGuiUpdate();
+                return;
+            }
             doDownload(link, url, true, 1);
         }
         // decreaseCounter();
-       
+
     }
 
     private void initHeaders(Browser br) {
@@ -463,7 +463,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink link, Account account) throws Exception {
-      
+
         br.setFollowRedirects(false);
         String dlID = getDownloadID(link);
         br.getHeaders().clear();
@@ -492,12 +492,18 @@ public class Megauploadcom extends PluginForHost {
         link.getLinkStatus().setStatusText("Wait for start");
         link.requestGuiUpdate();
 
- 
         String url = br.getRedirectLocation();
 
         br.getHeaders().put("Host", new URL(url).getHost());
         br.getHeaders().put("Connection", "Keep-Alive,TE");
         synchronized (DL) {
+            if (Thread.currentThread().isInterrupted()) {
+                link.getLinkStatus().setStatusText(null);
+                link.requestGuiUpdate();
+                br.getHeaders().clear();
+                br.getHeaders().setDominant(false);
+                return;
+            }
             doDownload(link, url, true, 1);
         }
         br.getHeaders().clear();
