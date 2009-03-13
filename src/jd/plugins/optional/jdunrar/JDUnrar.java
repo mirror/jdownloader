@@ -712,11 +712,10 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         ConfigEntry ce;
         ConfigEntry conditionEntry;
         String unrar = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null);
-        if (unrar == null || !isUnrarCommandValid(unrar)) {
+        if (unrar == null) {
             checkUnrarCommand();
-            unrar = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null);
+            config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")));
         }
-        if (unrar == null || !isUnrarCommandValid(unrar)) config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")));
 
         config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_EXTRACT_PATH, JDLocale.L("gui.config.unrar.use_extractto", "Use customized extract path")));
         conditionEntry.setDefaultValue(false);
@@ -827,8 +826,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      * Überprüft den eingestellten UNrarbefehl und setzt ihn notfalls neu.
      */
     private void checkUnrarCommand() {
+
         String path = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null);
-        if (path == null || !isUnrarCommandValid(path)) {
+        if (path == null || !isUnrarCommandValid(path, true)) {
             if (OSDetector.isWindows()) {
                 path = JDUtilities.getResourceFile("tools\\windows\\unrarw32\\unrar.exe").getAbsolutePath();
                 this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
@@ -838,7 +838,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 if (OSDetector.isLinux()) {
                     path = JDUtilities.getResourceFile("tools/linux/unrar/unrar").getAbsolutePath();
                     chmodUnrar(path);
-                    if (isUnrarCommandValid(path)) {
+                    if (isUnrarCommandValid(path, true)) {
                         this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                         this.getPluginConfig().save();
                         return;
@@ -847,19 +847,19 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 if (OSDetector.isMac()) {
                     path = JDUtilities.getResourceFile("tools/mac/unrar").getAbsolutePath();
                     chmodUnrar(path);
-                    if (isUnrarCommandValid(path)) {
+                    if (isUnrarCommandValid(path, true)) {
                         this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                         this.getPluginConfig().save();
                         return;
                     }
                 }
-                if (isUnrarCommandValid("unrar")) {
+                if (isUnrarCommandValid("unrar", true)) {
                     path = "unrar";
                     this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                     this.getPluginConfig().save();
                     return;
                 }
-                if (isUnrarCommandValid("rar")) {
+                if (isUnrarCommandValid("rar", true)) {
                     path = "rar";
                     this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                     this.getPluginConfig().save();
@@ -870,12 +870,12 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     for (String element : charset) {
                         File fi = new File(element, "unrar");
                         File fi2 = new File(element, "rar");
-                        if (fi.isFile() && isUnrarCommandValid(fi.getAbsolutePath())) {
+                        if (fi.isFile() && isUnrarCommandValid(fi.getAbsolutePath(), true)) {
                             path = fi.getAbsolutePath();
                             this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                             this.getPluginConfig().save();
                             return;
-                        } else if (fi2.isFile() && isUnrarCommandValid(fi2.getAbsolutePath())) {
+                        } else if (fi2.isFile() && isUnrarCommandValid(fi2.getAbsolutePath(), true)) {
                             path = fi2.getAbsolutePath();
                             this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                             this.getPluginConfig().save();
@@ -897,8 +897,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      * @param path
      * @return
      */
-    private boolean isUnrarCommandValid(String path) {
-        return UnrarWrapper.isUnrarCommandValid(path);
+    private boolean isUnrarCommandValid(String path, boolean reset) {
+        return UnrarWrapper.isUnrarCommandValid(path, reset);
     }
 
     @Override
