@@ -46,17 +46,10 @@ public class Odsiebiecom extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() == null) {
                 String filename = br.getRegex("Nazwa\\s+pliku:</dt>\\s+<dd[^>]*?>(.*?)dd>").getMatch(0);
-                System.out.println(filename);
                 filename = filename.replaceAll("<!--.*?-->", " ");
-                System.out.println(filename);
                 filename = new Regex(filename, "[\\s*?]*(.*?)</").getMatch(0);
-                System.out.println(filename);
-                String filesize;
-                if ((filesize = br.getRegex("<dt>Rozmiar pliku:</dt>.*?<dd>(.*?)MB</dd>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.replaceAll(",", "")) * 1024 * 1024));
-                } else if ((filesize = br.getRegex("<dt>Rozmiar pliku:</dt>.*?<dd>(.*?)KB</dd>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.replaceAll(",", "")) * 1024));
-                }
+                String filesize = br.getRegex("<dt>Rozmiar pliku:</dt>.*?<dd>(.*?)</dd>").getMatch(0);
+                downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
                 downloadLink.setName(filename);
                 return true;
             }
@@ -137,6 +130,7 @@ public class Odsiebiecom extends PluginForHost {
         /* Datei herunterladen */
         br.setFollowRedirects(true);
         br.setDebug(true);
+        downloadLink.setDownloadSize(0);
         dl = br.openDownload(downloadLink, downloadurl, false, 1);
         if (dl.getConnection().getContentType().contains("text")) {
             dl.getConnection().disconnect();

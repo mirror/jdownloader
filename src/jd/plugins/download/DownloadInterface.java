@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
 
 import jd.config.Configuration;
 import jd.http.Browser;
@@ -274,8 +275,12 @@ abstract public class DownloadInterface {
             try {
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
+                if (connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
+                    inputStream = new GZIPInputStream(connection.getInputStream());
+                } else {
+                    inputStream = connection.getInputStream();
+                }
 
-                inputStream = connection.getInputStream();
                 source = Channels.newChannel(inputStream);
 
                 buffer.clear();
