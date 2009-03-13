@@ -44,14 +44,10 @@ public class Zippysharecom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title>Zippyshare.com - File does not exist</title>")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        if (br.containsHTML("<title>Zippyshare.com - File does not exist</title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<strong>Name: </strong>(.*?)</font><br", Pattern.CASE_INSENSITIVE)).getMatch(0));
         String filesize = br.getRegex(Pattern.compile("<strong>Size: </strong>(.*?)</font><br", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
 
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
@@ -66,18 +62,19 @@ public class Zippysharecom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String[][] linkurls = new Regex(br, Pattern.compile("unescape\\('(http%3A%2F%2Fwww.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatches();
-        if (linkurls == null || linkurls.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        }
+        String[][] linkurls = new Regex(br, Pattern.compile("unescape\\('(.*?http%3A%2F%2Fwww.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatches();
+        if (linkurls == null || linkurls.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         URLConnectionAdapter con;
         String downloadURL = null;
         for (int i = 0; i < linkurls.length; i++) {
-            downloadURL = Encoding.htmlDecode(linkurls[i][0]);
+            String url = new Regex(linkurls[i][0], Pattern.compile("(http%3A%2F%2Fwww.+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            downloadURL = Encoding.htmlDecode(url);
             con = br.openGetConnection(downloadURL);
             if (con.isContentDisposition()) {
+                con.disconnect();
                 break;
             }
+            con.disconnect();
         }
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, downloadURL);
