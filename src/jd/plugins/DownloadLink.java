@@ -685,6 +685,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         downloadLinkController = null;
         downloadCurrent = 0;
         linkStatus.reset();
+        this.available=null;
         this.setEnabled(true);
         linkStatus = new LinkStatus(this);
         if (new File(this.getFileOutput()).exists()) {
