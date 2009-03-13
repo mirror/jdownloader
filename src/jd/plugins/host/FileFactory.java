@@ -39,25 +39,22 @@ import jd.utils.JDUtilities;
 
 public class FileFactory extends PluginForHost {
 
-    private static Pattern baseLink = Pattern.compile("<a href=\"(.*?)\" id=\"basicLink\"", Pattern.CASE_INSENSITIVE);
-    private static final String CAPTCHA_WRONG = "verification code you entered was incorrect";
+    private static Pattern baseLink = Pattern.compile("<a class=\"download\" href=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
+    private static final String CAPTCHA_WRONG = "Download code was incorrect";
     private static final String DOWNLOAD_LIMIT = "(Thank you for waiting|exceeded the download limit)";
 
     private static final String FILENAME = "<h1>(.*)</h1>";
     private static final String FILESIZE = "<span>(.*? (B|KB|MB)) file";
-    private static Pattern frameForCaptcha = Pattern.compile("<iframe src=\"/(check[^\"]*)\" frameborder=\"0\"");
 
     private static final String NO_SLOT = "no free download slots";
     private static final String NOT_AVAILABLE = "class=\"box error\"";
-    private static final String PATTERN_DOWNLOADING_TOO_MANY_FILES = "downloading too many files";
+    private static final String PATTERN_DOWNLOADING_TOO_MANY_FILES = "currently downloading too many files at once";
+    private static final String WAIT_TIME = "have exceeded the download limit for free users.  Please wait ([0-9]+) minutes to download more files";
 
-    private static Pattern patternForCaptcha = Pattern.compile("src=\"(/securimage/securimage_show.php\\?[^\"]*)\" alt=");
-    private static Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
+    private static Pattern patternForCaptcha = Pattern.compile("<img class=\"captchaImage\" src=\"(.*?)\"");
+    private static Pattern patternForDownloadlink = Pattern.compile("<p><a href=\"(.*?)\" class=\"download\">");
 
     private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
-
-    // private static final String WAIT_TIME =
-    // "wait ([0-9]+ [minutes|seconds])";
 
     public FileFactory(PluginWrapper wrapper) {
         super(wrapper);
@@ -100,7 +97,6 @@ public class FileFactory extends PluginForHost {
         br.getPage(Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(baseLink).getMatch(0)));
 
         br.setCookie(br.getURL(), "viewad11", "yes");
-        br.getPage(Encoding.htmlDecode("http://www.filefactory.com/" + br.getRegex(frameForCaptcha).getMatch(0)));
         String captchaCode = null;
         int vp = JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18);
         // JDUtilities.getSubConfig("JAC").setProperty(Configuration.
@@ -144,8 +140,8 @@ public class FileFactory extends PluginForHost {
         parameter.getLinkStatus().setStatusText("JAC send: " + captchaCode);
         parameter.requestGuiUpdate();
         JDUtilities.getSubConfig("JAC").setProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, vp);
-        Form captchaForm = br.getForm(0);
-        captchaForm.put("captcha", captchaCode);
+        Form captchaForm = br.getForm(1);
+        captchaForm.put("captchaText", captchaCode);
         br.submitForm(captchaForm);
 
         if (br.containsHTML(CAPTCHA_WRONG)) {
@@ -175,7 +171,9 @@ public class FileFactory extends PluginForHost {
             br.followConnection();
             if (br.containsHTML(DOWNLOAD_LIMIT)) {
                 logger.info("Traffic Limit for Free User reached");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
+                System.out.println(br.toString());
+                System.out.println(br.getRegex(WAIT_TIME).getMatch(0));
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex(WAIT_TIME).getMatch(0)) * 60 * 1000l);
             } else if (br.containsHTML(PATTERN_DOWNLOADING_TOO_MANY_FILES)) {
                 logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) and retry afterwards");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);
