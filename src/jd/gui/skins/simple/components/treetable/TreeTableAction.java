@@ -29,7 +29,8 @@ public class TreeTableAction extends AbstractAction {
     public static final int DOWNLOAD_ABORT = 18;
     public static final int DOWNLOAD_BROWSE_LINK = 7;
     // public static final int DOWNLOAD_CHECK_AVAILABILITY = 24;
-    public static final int DOWNLOAD_COPY_PASSWORD = 3;;
+    public static final int DOWNLOAD_COPY_PASSWORD = 3;
+    public static final int DOWNLOAD_COPY_URL = 301;
     public static final int DOWNLOAD_DISABLE = 6;
     public static final int DOWNLOAD_DLC = 20;
     public static final int DOWNLOAD_DOWNLOAD_DIR = 1;

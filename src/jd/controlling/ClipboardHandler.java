@@ -69,6 +69,10 @@ public class ClipboardHandler extends Thread implements ControlListener {
         this.setName("ClipboardHandler");
     }
 
+    public void setOldData(String data) {
+        olddata = data;
+    }
+
     /**
      * Gibt an ob die clipboard überwachung aktiv ist
      * 

@@ -57,6 +57,7 @@ import javax.swing.tree.TreePath;
 import jd.config.MenuItem;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.DownloadInfo;
 import jd.gui.skins.simple.DownloadLinksView;
@@ -353,6 +354,11 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         case TreeTableAction.DOWNLOAD_COPY_PASSWORD:
             link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
             Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(link.getFilePackage().getPassword()), null);
+            break;
+        case TreeTableAction.DOWNLOAD_COPY_URL:
+            link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
+            ClipboardHandler.getClipboard().setOldData(link.getBrowserUrl());
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(link.getBrowserUrl()), null);
             break;
         case TreeTableAction.PACKAGE_INFO:
             fp = (FilePackage) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("package");
@@ -866,11 +872,13 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.copyPassword", "Copy Password"), TreeTableAction.DOWNLOAD_COPY_PASSWORD, new Property("downloadlink", obj))));
-
+                popup.add(tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.copyLink", "Copy URL"), TreeTableAction.DOWNLOAD_COPY_URL, new Property("downloadlink", obj))));
+                if (((DownloadLink) obj).getLinkType() != DownloadLink.LINKTYPE_NORMAL) tmp.setEnabled(false);
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.dlc", "DLC erstellen") + " (" + alllinks.size() + ")", TreeTableAction.DOWNLOAD_DLC, new Property("downloadlinks", alllinks))));
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + alllinks.size() + ")", TreeTableAction.SET_PW, new Property("links", alllinks))));
+
                 for (Component comp : createPackageMenu(((DownloadLink) obj).getFilePackage(), fps)) {
                     packagePopup.add(comp);
                 }
