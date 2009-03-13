@@ -64,7 +64,7 @@ public class MediafireCom extends PluginForHost {
         String filename = br.getRegex("<title>(.*?)<\\/title>").getMatch(0);
         String filesize = br.getRegex("<input type=\"hidden\" id=\"sharedtabsfileinfo1-fs\" value=\"(.*?)\">").getMatch(0);
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        downloadLink.setName(filename.trim());
+        downloadLink.setFinalFileName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return true;
     }
@@ -100,6 +100,7 @@ public class MediafireCom extends PluginForHost {
             }
             break;
         }
+        br.setDebug(true);
         dl = br.openDownload(downloadLink, url, true, 0);
         dl.startDownload();
     }
