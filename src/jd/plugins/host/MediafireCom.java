@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -49,6 +50,13 @@ public class MediafireCom extends PluginForHost {
         for (int i = 0; i < 3; i++) {
             try {
                 br.getPage(url);
+                if (br.getRedirectLocation() != null && br.getCookie("http://www.mediafire.com", "ukey") != null) {
+                    downloadLink.setProperty("type", "direct");
+                    if (!downloadLink.getStringProperty("origin", "").equalsIgnoreCase("decrypter")) {
+                        downloadLink.setName(Plugin.extractFileNameFromURL(br.getRedirectLocation()));
+                    }
+                    return true;
+                }
                 break;
             } catch (IOException e) {
                 if (e.getMessage().contains("code: 500")) {
@@ -79,26 +87,29 @@ public class MediafireCom extends PluginForHost {
         String url = null;
         for (int i = 0; i < 3; i++) {
             getFileInformation(downloadLink);
+            if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
+                url = br.getRedirectLocation();
+            } else {
+                String[][] para = br.getRegex("[a-z]{2}\\(\\'([a-z0-9]{7,14})\\'\\,\\'([0-f0-9]*?)\\'\\,\\'([a-z0-9]{2,14})\\'\\)\\;").getMatches();
+                if (para.length == 0 || para[0].length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+                br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + para[0][0] + "&pk=" + para[0][1] + "&r=" + para[0][2]);
+                String error = br.getRegex("var et=(.*?);").getMatch(0);
+                if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+                url = br.getRegex("(\"http\\:\\/\\/\".*?)\\+'\"").getMatch(0);
+                String js = br.getRegex("<script language=\"Javascript\">.*?\\<\\!\\-\\-(.*?)function").getMatch(0);
+                String fnc = "function f(){" + js + "\r\nreturn " + url + ";}f();";
+                Context cx = Context.enter();
+                try {
+                    Scriptable scope = cx.initStandardObjects();
+                    url = Context.toString(cx.evaluateString(scope, fnc, "<cnd>", 1, null));
 
-            String[][] para = br.getRegex("[a-z]{2}\\(\\'([a-z0-9]{7,14})\\'\\,\\'([0-f0-9]*?)\\'\\,\\'([a-z0-9]{2,14})\\'\\)\\;").getMatches();
-            if (para.length == 0 || para[0].length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
-            br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + para[0][0] + "&pk=" + para[0][1] + "&r=" + para[0][2]);
-            String error = br.getRegex("var et=(.*?);").getMatch(0);
-            if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-            url = br.getRegex("(\"http\\:\\/\\/\".*?)\\+'\"").getMatch(0);
-            String js = br.getRegex("<script language=\"Javascript\">.*?\\<\\!\\-\\-(.*?)function").getMatch(0);
-            String fnc = "function f(){" + js + "\r\nreturn " + url + ";}f();";
-            Context cx = Context.enter();
-            try {
-                Scriptable scope = cx.initStandardObjects();
-                url = Context.toString(cx.evaluateString(scope, fnc, "<cnd>", 1, null));
-
-                Context.exit();
-            } catch (EvaluatorException e) {
-                if (i == 2) throw new PluginException(LinkStatus.ERROR_FATAL, "Javascript error");
-                continue;
+                    Context.exit();
+                } catch (EvaluatorException e) {
+                    if (i == 2) throw new PluginException(LinkStatus.ERROR_FATAL, "Javascript error");
+                    continue;
+                }
+                break;
             }
-            break;
         }
         br.setDebug(true);
         dl = br.openDownload(downloadLink, url, true, 0);
