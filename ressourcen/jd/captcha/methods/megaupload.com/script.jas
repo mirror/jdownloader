@@ -33,12 +33,12 @@ param.scanstepy=1;
 
 
 ############Parameter die einen Scan frühzeitig abbrechen können, bzw mögliche TReffer frühzeitig ausfiltern
-param.LetterSearchLimitPerfectPercent=18;
+param.LetterSearchLimitPerfectPercent=16;
 param.quickScanReliabilityLimit=3.0;
 param.quickScanValityLimit=10.0;
 
-param.preScanFilter=85;
-param.preScanFaktor=4;
+param.preScanFilter=65;
+param.preScanFaktor=3;
 ##################Prepare captcha
 
 
