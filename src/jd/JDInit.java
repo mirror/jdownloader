@@ -612,6 +612,8 @@ public class JDInit {
         new HostPluginWrapper("uploadbox.com", "UploadBoxCom", "http://[\\w\\.]*?uploadbox\\.com/.*?files/[0-9a-zA-Z]+");
         new HostPluginWrapper("jamendo.com", "JamendoCom", "http://[\\w\\.]*?jamendo\\.com/.*.*/?(track|download/album)/\\d+");
         new HostPluginWrapper("fileload.us", "FileloadUs", "http://[\\w\\.]*?fileload\\.us/.*");
+        //new HostPluginWrapper("filesdump.com", "FilesDumpCom", "http://.*?filesdump\\.com/file/[a-f0-9]+/.*?");
+        new HostPluginWrapper("upmusic.in", "UpMusicIn", "http://[\\w\\.]*?upmusic\\.in/[a-z0-9]+.*?");
 
         // Hoster from Extern
         new HostPluginWrapper("ifolder.ru", "IfolderRu", "http://[\\w\\.]*?ifolder\\.ru/\\d+");
