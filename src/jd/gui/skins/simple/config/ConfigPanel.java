@@ -91,14 +91,13 @@ public abstract class ConfigPanel extends JTabbedPanel {
         loadConfigEntries();
     }
 
-    @Override
     public void onHide() {
         PropertyType changes = this.hasChanges();
         if (changes != ConfigEntry.PropertyType.NONE) {
-            if (JOptionPane.showConfirmDialog(this, JDLocale.L("gui.config.save.doyourealywant", "Do you want to save your changes?"), JDLocale.L("gui.config.save.doyourealywant.title", "Changes"), JOptionPane.YES_NO_OPTION) == JOptionPane.OK_OPTION) {
+            if (showConfirmDialog(JDLocale.L("gui.config.save.doyourealywant", "Do you want to save your changes?"), JDLocale.L("gui.config.save.doyourealywant.title", "Changes"))) {
                 this.save();
                 if (changes == ConfigEntry.PropertyType.NEEDS_RESTART) {
-                    if (JOptionPane.showConfirmDialog(this, JDLocale.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDLocale.L("gui.config.save.restart.title", "JDownloader restart requested"), JOptionPane.YES_NO_OPTION) == JOptionPane.OK_OPTION) {
+                    if (showConfirmDialog(JDLocale.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDLocale.L("gui.config.save.restart.title", "JDownloader restart requested"))) {
                         JDUtilities.restartJD();
                     }
                 }
@@ -137,7 +136,13 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
         return ret;
     }
-
+    @Override
+    public boolean showConfirmDialog(String message, String title) {
+        // logger.info("ConfirmDialog");
+        Object[] options = { JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No") };
+        int n = JOptionPane.showOptionDialog(this, message, title, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+        return (n == 0);
+    }
     public void saveConfigEntries() {
         GUIConfigEntry akt;
         ArrayList<SubConfiguration> subs = new ArrayList<SubConfiguration>();

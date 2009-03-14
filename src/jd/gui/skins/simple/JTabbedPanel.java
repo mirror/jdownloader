@@ -17,4 +17,9 @@ public abstract class JTabbedPanel extends JPanel {
     abstract public void onDisplay(int i);
 
     abstract public void onHide();
+
+    public boolean showConfirmDialog(String message, String title) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }

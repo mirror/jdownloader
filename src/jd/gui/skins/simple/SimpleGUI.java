@@ -961,7 +961,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             linkGrabber= new LinkGrabber(this, linkList);
             SideTreeModel model = treeTabbedPane.getRoot();
          
-            model.insertNodeInto(linkGrabberNode=new TreeTabbedNode(linkGrabber, "Linkgrabber", JDTheme.II("gui.images.add")));
+            model.insertNodeInto(linkGrabberNode=new TreeTabbedNode(linkGrabber, JDLocale.L("gui.linkgrabber.bar.title","LinkGrabber"), JDTheme.II("gui.images.add")));
             treeTabbedPane.display(linkGrabberNode);
 
         } else {
@@ -986,9 +986,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         linkListPane = new DownloadLinksTreeTablePanel(this);
         treeTabbedPane = new TreeTabbedPane(this);
         SideTreeModel model = treeTabbedPane.getRoot();
-        model.insertNodeInto(new TreeTabbedNode(linkListPane, "Download", JDTheme.II("gui.images.down")));
+        model.insertNodeInto(new TreeTabbedNode(linkListPane, JDLocale.L("gui.download.title","Download"), JDTheme.II("gui.images.down")));
         TreeTabbedNode config;
-        model.insertNodeInto(config = new TreeTabbedNode("Konfiguration", JDTheme.II("gui.images.configuration")));
+        model.insertNodeInto(config = new TreeTabbedNode(JDLocale.L("gui.config.title","Configuration"), JDTheme.II("gui.images.configuration")));
         Object[] configConstructorOPbjects = new Object[] { JDUtilities.getConfiguration() };
         model.insertNodeInto(new TreeTabbedNode(ConfigPanelGeneral.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.general", "General settings"), JDTheme.II("gui.images.config.home")), config);
         model.insertNodeInto(new TreeTabbedNode(ConfigPanelDownload.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.download", "Download/Network settings"), JDTheme.II("gui.images.config.network_local")), config);
