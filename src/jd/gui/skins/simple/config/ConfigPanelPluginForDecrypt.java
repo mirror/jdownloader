@@ -131,7 +131,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
     }
 
     private void editEntry(DecryptPluginWrapper dpw) {
-        SimpleGUI.showConfigDialog(ConfigurationDialog.DIALOG, dpw.getPlugin().getConfig());
+        SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI.getFrame(), dpw.getPlugin().getConfig());
     }
 
     private void editEntry() {

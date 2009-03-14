@@ -46,6 +46,7 @@ import javax.swing.table.TableColumn;
 
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
+import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.utils.JDLocale;
@@ -134,7 +135,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             if (col == 5) {
                 if ((Boolean) value) {
                     String msg = JDLocale.LF("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!", pluginsForHost.get(row).getHost());
-                    if (JOptionPane.showConfirmDialog(ConfigurationDialog.DIALOG, msg) == JOptionPane.OK_OPTION) {
+                    if (JOptionPane.showConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), msg) == JOptionPane.OK_OPTION) {
                         pluginsForHost.get(row).setAGBChecked((Boolean) value);
                     }
                 } else {
@@ -205,7 +206,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     private void editEntry(HostPluginWrapper hpw) {
-        SimpleGUI.showConfigDialog(ConfigurationDialog.DIALOG, hpw.getPlugin().getConfig());
+        SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI.getFrame(), hpw.getPlugin().getConfig());
     }
 
     private void editEntry() {
@@ -339,6 +340,15 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         }
         configuration.setProperty(Configuration.PARAM_HOST_PRIORITY, priority);
         if (changed) ((SimpleGUI) JDUtilities.getGUI()).createHostPluginsMenuEntries();
+    }
+
+    public PropertyType hasChanges() {
+        ArrayList<HostPluginWrapper> savedOrder = JDUtilities.getPluginsForHost();
+
+        for (int i = 0; i < savedOrder.size(); i++) {
+            if (pluginsForHost.get(i) != savedOrder.get(i)) return PropertyType.NORMAL;
+        }
+        return PropertyType.NONE;
     }
 
 }

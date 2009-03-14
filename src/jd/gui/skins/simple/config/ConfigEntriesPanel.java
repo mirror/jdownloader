@@ -21,11 +21,14 @@ import java.awt.ComponentOrientation;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigEntry.PropertyType;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class ConfigEntriesPanel extends ConfigPanel {
@@ -99,6 +102,18 @@ public class ConfigEntriesPanel extends ConfigPanel {
         loadConfigEntries();
     }
 
+    public PropertyType hasChanges() {
+        PropertyType ret = super.hasChanges();
+
+        if (subPanels != null) {
+            for (int i = 0; i < subPanels.size(); i++) {
+                ret = ret.getMax(subPanels.get(i).hasChanges());
+            }
+        }
+        return ret;
+
+    }
+
     @Override
     public void save() {
         if (subPanels != null) {
@@ -116,5 +131,9 @@ public class ConfigEntriesPanel extends ConfigPanel {
 
         saveConfigEntries();
     }
+
+
+
+   
 
 }

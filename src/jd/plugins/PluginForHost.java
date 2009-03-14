@@ -98,8 +98,8 @@ public abstract class PluginForHost extends Plugin {
 
     private String premiumurl = null;
 
-    public boolean[] checkLinks(DownloadLink[] urls) {
-        return null;
+    public boolean checkLinks(DownloadLink[] urls) {
+        return false;
     }
 
     @Override

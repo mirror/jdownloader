@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
 
-public abstract class DownloadLinksView extends JPanel implements ControlListener {
+public abstract class DownloadLinksView extends JTabbedPanel implements ControlListener {
 
     public final static int REFRESH_ALL_DATA_CHANGED = 1;
     public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;

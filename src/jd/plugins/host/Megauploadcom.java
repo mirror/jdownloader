@@ -217,9 +217,9 @@ public class Megauploadcom extends PluginForHost {
     }
 
     @Override
-    public boolean[] checkLinks(DownloadLink[] urls) {
-        if (urls == null) return null;
-        boolean[] ret = new boolean[urls.length];
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null) return false;
+      
         HashMap<String, String> map = new HashMap<String, String>();
         int i = 0;
         String id;
@@ -287,25 +287,30 @@ public class Megauploadcom extends PluginForHost {
                 try {
                     int d = Integer.parseInt(string.substring(2, string.indexOf('=')));
                     String name = queryQ.get("n");
+                    DownloadLink downloadLink = urls[d];
                     if (name != null) {
-                        ret[d] = true;
-                        DownloadLink downloadLink = urls[d];
+                        
+                       
+                      
                         downloadLink.setFinalFileName(name);
                         downloadLink.setDownloadSize(Long.parseLong(queryQ.get("s")));
                         downloadLink.setDupecheckAllowed(true);
                     }
+                    downloadLink.setAvailable(false);
                 } catch (Exception e) {
                 }
             }
         } catch (Exception e) {
-            return ret;
+            return false;
         }
-        return ret;
+        return true;
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        return this.checkLinks(new DownloadLink[] { downloadLink })[0];
+        this.checkLinks(new DownloadLink[] { downloadLink });
+        
+        return downloadLink.isAvailable();
     }
 
     @Override

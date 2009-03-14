@@ -63,7 +63,7 @@ import jd.utils.Sniffy;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-public class Rapidshare extends PluginForHost  {
+public class Rapidshare extends PluginForHost {
 
     private static long LAST_FILE_CHECK = 0;
 
@@ -163,12 +163,10 @@ public class Rapidshare extends PluginForHost  {
 
     private String selectedServer;
 
-  
-
     public Rapidshare(PluginWrapper wrapper) {
 
         super(wrapper);
-  
+
         serverMap.put("Cogent", "cg");
         serverMap.put("Cogent #2", "cg2");
         serverMap.put("Deutsche Telekom", "dt");
@@ -206,11 +204,11 @@ public class Rapidshare extends PluginForHost  {
      * kann das über diese Funktion gemacht werden.
      */
     @Override
-    public boolean[] checkLinks(DownloadLink[] urls) {
+
+    public boolean checkLinks(DownloadLink[] urls) {
         logger.finest("Check " + urls.length + " links");
         try {
-            if (urls == null) { return null; }
-            boolean[] ret = new boolean[urls.length];
+            if (urls == null) { return false; }
 
             StringBuilder idlist = new StringBuilder();
             StringBuilder namelist = new StringBuilder();
@@ -234,15 +232,15 @@ public class Rapidshare extends PluginForHost  {
                 } else {
                     u.setAvailable(true);
                 }
-                ret[i] = u.isAvailable();
+
                 i++;
             }
-            return ret;
+            return true;
         } catch (Exception e) {
             System.gc();
             e.printStackTrace();
             System.err.println(br);
-            return null;
+            return false;
         }
 
     }
@@ -447,7 +445,6 @@ public class Rapidshare extends PluginForHost  {
         try {
             if (account.getBooleanProperty("PREMCOLLECTOR", false)) {
 
-              
                 br.postPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&showlogs=1");
                 SimpleDateFormat df = new SimpleDateFormat("E, dd. MMM yyyy", Locale.ENGLISH);
                 String pattern = "<td>" + df.format(new Date()) + "</td><td>" + "(.*?)" + "</td><td>\\d+ KB</td></tr>";
@@ -802,7 +799,8 @@ public class Rapidshare extends PluginForHost  {
         correctURL(downloadLink);
 
         LAST_FILE_CHECK = System.currentTimeMillis();
-        return checkLinks(new DownloadLink[] { downloadLink })[0];
+        checkLinks(new DownloadLink[] { downloadLink });
+        return downloadLink.isAvailable();
 
     }
 
@@ -1003,5 +1001,4 @@ public class Rapidshare extends PluginForHost  {
         }
     }
 
-   
 }

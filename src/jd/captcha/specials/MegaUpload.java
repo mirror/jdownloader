@@ -142,7 +142,7 @@ public class MegaUpload {
                     lc.run();
                     double vp = lc.getValityPercent();
 
-                    if (vp < 5.0) {
+                    if (vp < 1.0) {
                         foundinNew = true;
                         BasicWindow.showImage(l.getImage(), vp + "");
                         BasicWindow.showImage(n.getImage(), vp + "");

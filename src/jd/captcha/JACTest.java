@@ -20,6 +20,7 @@ import java.io.File;
 
 import javax.swing.JOptionPane;
 
+import jd.captcha.specials.MegaUpload;
 import jd.captcha.utils.UTILITIES;
 import jd.utils.JDUtilities;
 
@@ -45,8 +46,8 @@ public class JACTest {
 
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
 
-       jac.setShowDebugGui(true);
-       LetterComperator.CREATEINTERSECTIONLETTER = true;
+//       jac.setShowDebugGui(true);
+//       LetterComperator.CREATEINTERSECTIONLETTER = true;
         //
         // jac.exportDB();
         // UTILITIES.getLogger().info("has method:
@@ -55,7 +56,8 @@ public class JACTest {
         //
         // Megaupload2.writeDB();
 // jac.importDB();
-// jac.importDB();   
+// jac.importDB(); 
+ //MegaUpload.main(null);
         //
         jac.displayLibrary();
 

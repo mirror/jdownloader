@@ -46,7 +46,7 @@ public class MacOSController extends Application {
         }
 
         public void handlePreferences(ApplicationEvent e) {
-            SimpleGUI.CURRENTGUI.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
+//            SimpleGUI.CURRENTGUI.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
         }
     }
 

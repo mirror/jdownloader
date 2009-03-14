@@ -26,6 +26,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.simple.JDLookAndFeelManager;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
@@ -66,7 +67,7 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getSubConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")));
         ce.setDefaultValue(Locale.getDefault());
-
+        ce.setPropertyType(PropertyType.NEEDS_RESTART);
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.LF("gui.config.gui.languageFileInfo", "Current Language File: %s from %s in version %s", JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, Locale.getDefault().toString()), JDLocale.getTranslater(), JDLocale.getVersion())));
 
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -78,15 +79,16 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")));
         ce.setDefaultValue("default");
-
+        ce.setPropertyType(PropertyType.NEEDS_RESTART);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDSounds.PARAM_CURRENTTHEME, JDSounds.getSoundIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.soundTheme", "Soundtheme")));
         ce.setDefaultValue("noSounds");
-
+        ce.setPropertyType(PropertyType.NEEDS_RESTART);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDLookAndFeelManager.PARAM_PLAF, JDLookAndFeelManager.getInstalledLookAndFeels(), JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")));
         ce.setDefaultValue(JDLookAndFeelManager.getPlaf());
-
+        ce.setPropertyType(PropertyType.NEEDS_RESTART);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_SHOW_SPEEDMETER, JDLocale.L("gui.config.gui.show_speed_graph", "Display speedmeter graph")));
         ce.setDefaultValue(true);
+        ce.setPropertyType(PropertyType.NEEDS_RESTART);
         ConfigEntry cond = ce;
 
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGUI.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDLocale.L("gui.config.gui.show_speed_graph_window", "Speedmeter Time period (sec)"), 10, 60 * 60 * 12));
@@ -124,9 +126,10 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGUI.PARAM_NUM_PREMIUM_CONFIG_FIELDS, JDLocale.L("gui.config.gui.premiumconfigfilednum", "How many Premiumaccount fields should be displayed"), 1, 10));
         ce.setDefaultValue(5);
-
+        ce.setPropertyType(PropertyType.NEEDS_RESTART);
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, "FILE_REGISTER", JDLocale.L("gui.config.gui.reg_protocols", "Link ccf/dlc/rsdf to JDownloader")));
         ce.setDefaultValue(true);
+        ce.setPropertyType(PropertyType.NEEDS_RESTART);
         if (!OSDetector.isWindows()) ce.setEnabled(false);
 
         // Browser Tab
@@ -239,6 +242,10 @@ public class ConfigPanelGUI extends ConfigPanel {
     public void save() {
         cep.save();
         subConfig.save();
+    }
+    public PropertyType hasChanges() {
+      
+        return PropertyType.getMax(super.hasChanges(),cep.hasChanges());
     }
 
 }

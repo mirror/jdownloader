@@ -1501,7 +1501,7 @@ public class JAntiCaptcha {
      */
     public void importDB(File path) {
 
-        String pattern = JOptionPane.showInputDialog("PATTERN");
+        String pattern = JOptionPane.showInputDialog("PATTERN","(\\w).*");
         if (JOptionPane.showConfirmDialog(null, "Delete old db?") == JOptionPane.OK_OPTION) letterDB = new LinkedList<Letter>();
         getResourceFile("letters.mth").delete();
         System.out.println("LETTERS BEFOPRE: "+letterDB.size());
@@ -1540,7 +1540,7 @@ public class JAntiCaptcha {
 
             letter.setDecodedValue(let);
 
-            // BasicWindow.showImage(letter.getImage(1),element.getName());
+//             BasicWindow.showImage(letter.getImage(1),element.getName());
             letter.clean();
 
             letterDB.add(letter);

@@ -45,8 +45,10 @@ import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -120,6 +122,8 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 
     private InternalTableModel tableModel;
 
+    private boolean changes;
+
     @SuppressWarnings("unchecked")
     public ConfigPanelEventmanager(Configuration configuration) {
         super();
@@ -185,6 +189,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
     }
 
     private void editEntry() {
+        changes = true;
         currentInteraction = interactions.elementAt(table.getSelectedRow());
         ConfigPanel config = new ConfigEntriesPanel(currentInteraction.getConfig());
 
@@ -202,7 +207,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         panel.add(npanel, BorderLayout.NORTH);
         if (config != null) panel.add(config);
 
-        ConfigurationPopup pop = new ConfigurationPopup(ConfigurationDialog.DIALOG, config, panel);
+        ConfigurationPopup pop = new ConfigurationPopup(SimpleGUI.CURRENTGUI.getFrame(), config, panel);
         pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
         pop.setVisible(true);
     }
@@ -264,7 +269,9 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() > 1 && interactions.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
+
             editEntry();
+            changes = true;
         }
     }
 
@@ -280,10 +287,21 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
     public void mouseReleased(MouseEvent e) {
     }
 
+    public void onDisplay(int i) {
+        super.onDisplay(i);
+        this.changes = false;
+    }
+
     @Override
     public void save() {
         subConfig.setProperty(Configuration.PARAM_INTERACTIONS, interactions);
         subConfig.save();
+    }
+
+    public PropertyType hasChanges() {
+        PropertyType ret=PropertyType.NONE;
+        if (changes) ret = PropertyType.NORMAL;
+        return ret.getMax(super.hasChanges());
     }
 
 }

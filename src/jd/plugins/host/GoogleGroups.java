@@ -42,7 +42,7 @@ public class GoogleGroups extends PluginForHost {
     }
 
     @Override
-    public boolean[] checkLinks(DownloadLink[] urls) {
+    public boolean checkLinks(DownloadLink[] urls) {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         HashMap<String, ArrayList<DownloadLink>> map = new HashMap<String, ArrayList<DownloadLink>>();
@@ -57,10 +57,7 @@ public class GoogleGroups extends PluginForHost {
                 map.put(subd, link);
             }
         }
-        boolean[] ret = new boolean[urls.length];
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = false;
-        }
+   for(DownloadLink l:urls) l.setAvailable(false);
         for (Entry<String, ArrayList<DownloadLink>> entry : map.entrySet()) {
             try {
                 br.getPage("http://groups.google.com/group/" + entry.getKey() + "/files");
@@ -70,12 +67,8 @@ public class GoogleGroups extends PluginForHost {
                     na = na.replaceFirst("googlegroups.com/web/.*", "googlegroups.com/web/") + URLEncoder.encode(na.replaceFirst("http://.*?\\.googlegroups.com/web/", ""), "UTF-8");
                     for (String[] strings : infos) {
                         if (strings[0].contains(na) || downloadLink.getName().equals(strings[1])) {
-                            for (int i = 0; i < ret.length; i++) {
-                                if (urls[i] == downloadLink) {
-                                    ret[i] = true;
-                                    break;
-                                }
-                            }
+                           
+                            downloadLink.setAvailable(true);
                             downloadLink.setFinalFileName(strings[1]);
                             downloadLink.setDupecheckAllowed(true);
                             downloadLink.setDownloadSize(Regex.getSize(strings[2]));
@@ -87,14 +80,16 @@ public class GoogleGroups extends PluginForHost {
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
+                return false;
             }
         }
-        return ret;
+        return true;
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-        return checkLinks(new DownloadLink[] { downloadLink })[0];
+        checkLinks(new DownloadLink[] { downloadLink });
+        return downloadLink.isAvailable();
     }
 
     @Override

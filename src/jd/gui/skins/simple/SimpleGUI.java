@@ -110,8 +110,16 @@ import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.ConfigPanelAddons;
+import jd.gui.skins.simple.config.ConfigPanelCaptcha;
+import jd.gui.skins.simple.config.ConfigPanelDownload;
+import jd.gui.skins.simple.config.ConfigPanelEventmanager;
+import jd.gui.skins.simple.config.ConfigPanelGUI;
+import jd.gui.skins.simple.config.ConfigPanelGeneral;
+import jd.gui.skins.simple.config.ConfigPanelPluginForContainer;
+import jd.gui.skins.simple.config.ConfigPanelPluginForDecrypt;
 import jd.gui.skins.simple.config.ConfigPanelPluginForHost;
-import jd.gui.skins.simple.config.ConfigurationDialog;
+import jd.gui.skins.simple.config.ConfigPanelReconnect;
+
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.gui.skins.simple.config.FengShuiConfigPanel;
 import jd.nutils.io.JDFileFilter;
@@ -507,14 +515,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         if (key == null) {
             key = child.getName();
         }
-        if(guiConfig==null)return;
+        if (guiConfig == null) return;
         guiConfig.setProperty("DIMENSION_OF_" + key, child.getSize());
         if (child instanceof JFrame) guiConfig.setProperty("MAXIMIZED_STATE_OF_" + key, ((JFrame) child).getExtendedState());
         guiConfig.save();
     }
 
     public static void saveLastLocation(Component parent, String key) {
-        if(guiConfig==null)return;
+        if (guiConfig == null) return;
         if (key == null) {
             key = parent.getName();
         }
@@ -530,7 +538,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionClipBoard;
 
-    private JDAction actionConfig;
+//    private JDAction actionConfig;
 
     private JDAction actionDnD;
 
@@ -639,7 +647,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     private TabProgress progressBar;
 
-    private JSplitPane splitpane;
+    private JSplitPane horizontalSplitPane;
 
     /**
      * Die Statusleiste für Meldungen
@@ -665,6 +673,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private Thread warningWorker;
 
     private SpeedMeterPanel speedmeter;
+
+    private TreeTabbedPane treeTabbedPane;
+
+    private TreeTabbedNode linkGrabberNode;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -908,44 +920,54 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 e1.printStackTrace();
             }
             break;
-        case JDAction.APP_CONFIGURATION:
-            showConfig();
-            break;
+//        case JDAction.APP_CONFIGURATION:
+//            showConfig();
+//            break;
         }
 
     }
 
-    public void showConfig() {
-        if (guiConfig.getBooleanProperty(PARAM_SHOW_FENGSHUI, true) == false) {
-            ConfigurationDialog.showConfig(frame);
-        } else {
-            if (ConfigurationDialog.DIALOG != null) {
-                if (ConfigurationDialog.DIALOG.isVisible() == false) {
-                    FengShuiConfigPanel.getInstance();
-                } else {
-                    ConfigurationDialog.showConfig(frame);
-                }
-            } else {
-                FengShuiConfigPanel.getInstance();
-            }
-        }
-    }
+//    public void showConfig() {
+//        if (guiConfig.getBooleanProperty(PARAM_SHOW_FENGSHUI, true) == false) {
+//            ConfigurationDialog.showConfig(frame);
+//        } else {
+//            if (SimpleGUI.CURRENTGUI.getFrame() != null) {
+//                if (SimpleGUI.CURRENTGUI.getFrame().isVisible() == false) {
+//                    FengShuiConfigPanel.getInstance();
+//                } else {
+//                    ConfigurationDialog.showConfig(frame);
+//                }
+//            } else {
+//                FengShuiConfigPanel.getInstance();
+//            }
+//        }
+//    }
 
     public synchronized void addLinksToGrabber(Vector<DownloadLink> links) {
         logger.info("GRAB");
+        
+      
+      
+        
+        
         DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
-        if (linkGrabber != null && (!linkGrabber.isDisplayable() || !linkGrabber.isVisible())) {
-            logger.info("Linkgrabber should be disposed");
-            linkGrabber.dispose();
-            linkGrabber = null;
-        }
+//        if (linkGrabber != null) {
+//            logger.info("Linkgrabber should be disposed");
+//            linkGrabber.dispose();
+//            linkGrabber = null;
+//        }
         if (linkGrabber == null) {
             logger.info("new linkgrabber");
-            linkGrabber = new LinkGrabber(this, linkList);
+            linkGrabber= new LinkGrabber(this, linkList);
+            SideTreeModel model = treeTabbedPane.getRoot();
+         
+            model.insertNodeInto(linkGrabberNode=new TreeTabbedNode(linkGrabber, "Linkgrabber", JDTheme.II("gui.images.add")));
+            treeTabbedPane.display(linkGrabberNode);
 
         } else {
             logger.info("add to grabber");
             linkGrabber.addLinks(linkList);
+            treeTabbedPane.display(linkGrabberNode);
         }
         dragNDrop.setText(JDLocale.L("gui.droptarget.grabbed", "Grabbed:") + " " + linkList.length + " (" + links.size() + ")");
     }
@@ -962,12 +984,30 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private void buildUI() {
         CURRENTGUI = this;
         linkListPane = new DownloadLinksTreeTablePanel(this);
+        treeTabbedPane = new TreeTabbedPane(this);
+        SideTreeModel model = treeTabbedPane.getRoot();
+        model.insertNodeInto(new TreeTabbedNode(linkListPane, "Download", JDTheme.II("gui.images.down")));
+        TreeTabbedNode config;
+        model.insertNodeInto(config = new TreeTabbedNode("Konfiguration", JDTheme.II("gui.images.configuration")));
+        Object[] configConstructorOPbjects = new Object[] { JDUtilities.getConfiguration() };
+        model.insertNodeInto(new TreeTabbedNode(ConfigPanelGeneral.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.general", "General settings"), JDTheme.II("gui.images.config.home")), config);
+        model.insertNodeInto(new TreeTabbedNode(ConfigPanelDownload.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.download", "Download/Network settings"), JDTheme.II("gui.images.config.network_local")), config);
+        model.insertNodeInto(new TreeTabbedNode(ConfigPanelGUI.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.gui", "Benutzeroberfläche"), JDTheme.II("gui.images.config.gui")), config);
+        model.insertNodeInto(new TreeTabbedNode(ConfigPanelReconnect.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.reconnect", "Reconnect settings"), JDTheme.II("gui.images.config.reconnect")), config);
+        model.insertNodeInto(new TreeTabbedNode(ConfigPanelCaptcha.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.jac", "OCR Captcha settings"), JDTheme.II("gui.images.config.ocr")), config);
+        model.insertNodeInto(new TreeTabbedNode(ConfigPanelPluginForHost.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.hostPlugin", "Host Plugin settings"), JDTheme.II("gui.images.config.host")), config);
+        model.insertNodeInto(new TreeTabbedNode(ConfigPanelPluginForDecrypt.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.decryptPlugin", "Decrypter Plugin settings"), JDTheme.II("gui.images.config.decrypt")), config);
+        model.insertNodeInto(new TreeTabbedNode(ConfigPanelAddons.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.addons", "Addon manager"), JDTheme.II("gui.images.config.packagemanager")), config);
+        model.insertNodeInto(new TreeTabbedNode(ConfigPanelPluginForContainer.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.containerPlugin", "Link-Container settings"), JDTheme.II("gui.images.config.container")), config);
+        model.insertNodeInto(new TreeTabbedNode(ConfigPanelEventmanager.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.eventManager", "Eventmanager"), JDTheme.II("gui.images.config.eventmanager")), config);
+
+        treeTabbedPane.display(0);
         progressBar = new TabProgress();
         statusBar = new StatusBar();
-        splitpane = new JSplitPane();
-        splitpane.setBottomComponent(progressBar);
-        splitpane.setTopComponent(linkListPane);
-        splitpane.setOrientation(JSplitPane.VERTICAL_SPLIT);
+        horizontalSplitPane = new JSplitPane();
+        horizontalSplitPane.setBottomComponent(progressBar);
+        horizontalSplitPane.setTopComponent(treeTabbedPane);
+        horizontalSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
         btnStartStop = createMenuButton(actionStartStopDownload);
         btnPause = createMenuButton(actionPause);
         btnPause.setEnabled(false);
@@ -990,8 +1030,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(createMenuButton(actionItemsDown));
         toolBar.add(createMenuButton(actionItemsUp));
         toolBar.add(createMenuButton(actionItemsTop));
-        toolBar.addSeparator();
-        toolBar.add(createMenuButton(actionConfig));
+//        toolBar.addSeparator();
+//        toolBar.add(createMenuButton(actionConfig));
         toolBar.addSeparator();
         toolBar.add(btnReconnect);
         toolBar.add(createMenuButton(actionReconnect));
@@ -1016,7 +1056,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         frame.setContentPane(panel);
 
         panel.add(toolBar, BorderLayout.NORTH);
-        panel.add(splitpane, BorderLayout.CENTER);
+        panel.add(horizontalSplitPane, BorderLayout.CENTER);
         panel.add(statusBar, BorderLayout.SOUTH);
 
         // Einbindung des Log Dialogs
@@ -1280,7 +1320,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
         if (progressBar.getControllers().size() > 0) {
-            splitpane.setDividerLocation(0.8);
+            horizontalSplitPane.setDividerLocation(0.8);
         }
     }
 
@@ -1304,7 +1344,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionLog = new JDAction(this, JDTheme.V("gui.images.terminal"), "action.viewlog", JDAction.APP_LOG);
         actionBackup = new JDAction(this, JDTheme.V("gui.images.save"), "action.backup", JDAction.APP_BACKUP);
         actionClipBoard = new JDAction(this, getClipBoardImage(), "action.clipboard", JDAction.APP_CLIPBOARD);
-        actionConfig = new JDAction(this, JDTheme.V("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
+//        actionConfig = new JDAction(this, JDTheme.V("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, JDTheme.V("gui.images.reconnect"), "action.reconnect", JDAction.APP_RECONNECT);
         actionUpdate = new JDAction(this, JDTheme.V("gui.images.update_manager"), "action.update", JDAction.APP_UPDATE);
         actionItemsDelete = new JDAction(this, JDTheme.V("gui.images.delete"), "action.edit.items_remove", JDAction.ITEMS_REMOVE);
@@ -1354,7 +1394,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menFile.add(SimpleGUI.createMenuItem(actionRestart));
         menFile.add(SimpleGUI.createMenuItem(actionExit));
 
-        menExtra.add(SimpleGUI.createMenuItem(actionConfig));
+//       menExtra.add(SimpleGUI.createMenuItem(actionConfig));
         menExtra.addSeparator();
         menExtra.add(SimpleGUI.createMenuItem(actionDnD));
 

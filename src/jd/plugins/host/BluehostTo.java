@@ -140,10 +140,10 @@ public class BluehostTo extends PluginForHost {
         return "http://bluehost.to/agb.php";
     }
 
-    public boolean[] checkLinks(DownloadLink[] urls) {
+    public boolean checkLinks(DownloadLink[] urls) {
         try {
-            if (urls == null) { return null; }
-            boolean[] ret = new boolean[urls.length];
+            if (urls == null) { return false; }
+       
             logger.finest("Checked Links with one request: " + urls.length);
             StringBuilder sb = new StringBuilder();
             sb.append("http://bluehost.to/fileinfo/urls=");
@@ -164,17 +164,17 @@ public class BluehostTo extends PluginForHost {
                     urls[i].setFinalFileName(dat[0]);
                     urls[i].setDupecheckAllowed(true);
                     urls[i].setDownloadSize(Long.parseLong(dat[2]));
-                    ret[i] = true;
+                    urls[i].setAvailable(true);
                 } catch (Exception e) {
-                    ret[i] = false;
+                    urls[i].setAvailable(false);
                 }
             }
-            return ret;
+            return true;
 
         } catch (Exception e) {
             System.gc();
             e.printStackTrace();
-            return null;
+            return false;
         }
 
     }

@@ -75,4 +75,16 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
         Vector<FilePackage> fps = internalTreeTable.getSelectedFilePackages();
         return fps.size();
     }
+
+    @Override
+    public void onDisplay(int i) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void onHide() {
+        // TODO Auto-generated method stub
+        
+    }
 }

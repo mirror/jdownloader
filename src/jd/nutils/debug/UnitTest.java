@@ -67,7 +67,7 @@ public abstract class UnitTest {
     private static void init() {
         tests = new ArrayList<Class<?>>();
         tests.add(Browser.Test.class);
-        tests.add(LinkGrabber.Test.class);
+       // tests.add(LinkGrabber.Test.class);
   
 
     }

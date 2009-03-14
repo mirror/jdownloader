@@ -20,6 +20,8 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -27,6 +29,25 @@ import java.util.logging.Logger;
 import jd.utils.JDUtilities;
 
 public class ConfigEntry implements Serializable, PropertyChangeListener {
+    public static enum PropertyType {
+        NONE, NORMAL, NEEDS_RESTART;
+
+        public PropertyType getMax(PropertyType propertyType) {
+
+            return getMax(propertyType,this);
+        }
+public String toString(){
+    return this.name();
+}
+        public static PropertyType getMax(PropertyType... changes) {
+            ArrayList<PropertyType> sorter = new ArrayList<PropertyType>();
+            for(PropertyType type:changes)sorter.add(type);
+            Collections.sort(sorter);
+            PropertyType ret = sorter.get(sorter.size()-1);
+            
+            return ret;
+        }
+    }
 
     @SuppressWarnings("unused")
     private static Logger logger = JDUtilities.getLogger();
@@ -63,7 +84,17 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
     private int step = 1;
 
-    private int type;;
+    private int type;
+
+    private PropertyType propertyType = PropertyType.NORMAL;
+
+    public PropertyType getPropertyType() {
+        return propertyType;
+    }
+
+    public void setPropertyType(PropertyType propertyType) {
+        this.propertyType = propertyType;
+    }
 
     /**
      * KOnstruktor für Komponenten die nix brauchen. z.B. JSpearator

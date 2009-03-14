@@ -32,6 +32,7 @@ import jd.captcha.JAntiCaptcha;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.config.ConfigEntry.PropertyType;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -157,6 +158,11 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
     public void save() {
         cep.save();
         saveConfigEntries();
+    }
+
+    public PropertyType hasChanges() {
+
+        return PropertyType.getMax(super.hasChanges(), cep.hasChanges());
     }
 
     public void setupContainer() {

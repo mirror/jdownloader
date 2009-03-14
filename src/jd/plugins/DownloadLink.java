@@ -259,9 +259,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public String getContainerFile() {
         if (containerFile == null) return null;
-        if(new File(containerFile).isAbsolute()){
-            containerFile="container/"+new File(containerFile).getName();
-        }      
+        if (new File(containerFile).isAbsolute()) {
+            containerFile = "container/" + new File(containerFile).getName();
+        }
         return containerFile;
     }
 
@@ -584,7 +584,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityChecked() {
+
         return available != null;
+
     }
 
     /**
@@ -596,7 +598,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public boolean isAvailable() {
         if (available != null) { return available; }
         int wait = 0;
-        available = false;
+
         for (int retry = 0; retry < 5; retry++) {
             try {
                 available = ((PluginForHost) getPlugin()).getFileInformation(this);
@@ -631,9 +633,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             } catch (Exception e) {
                 logger.severe("Hoster Plugin Version: " + getPlugin().getVersion());
                 e.printStackTrace();
+                available = false;
                 break;
             }
         }
+        if (available == null) available = false;
         if (available == false) setDupecheckAllowed(false);
         return available;
     }
@@ -685,7 +689,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         downloadLinkController = null;
         downloadCurrent = 0;
         linkStatus.reset();
-        this.available=null;
+        this.available = null;
         this.setEnabled(true);
         linkStatus = new LinkStatus(this);
         if (new File(this.getFileOutput()).exists()) {

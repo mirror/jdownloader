@@ -604,7 +604,11 @@ public class Letter extends PixelGrid {
             }
             ret.append('|');
         }
-        return ret.toString().substring(0, ret.length() - 1);
+        String ps = ret.toString();
+        if(ps.length()==0){
+            System.out.println("IK");
+        }
+        return ps.substring(0, ps.length() - 1);
     }
 
     /**

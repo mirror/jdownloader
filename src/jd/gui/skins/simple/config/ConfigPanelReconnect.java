@@ -32,6 +32,7 @@ import javax.swing.ScrollPaneConstants;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.reconnect.BatchReconnect;
 import jd.controlling.reconnect.ExternReconnect;
 import jd.controlling.reconnect.HTTPLiveHeader;
@@ -174,6 +175,18 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
             lhclr.save();
             lhclr.saveConfigEntries();
         }
+    }
+
+    public PropertyType hasChanges() {
+
+        PropertyType ret = PropertyType.getMax(super.hasChanges(), cep.hasChanges());
+
+        if (lh != null) {
+
+        return lh.hasChanges().getMax(ret); }
+        if (er != null) { return er.hasChanges().getMax(ret); }
+        if (lhclr != null) { return lhclr.hasChanges().getMax(ret); }
+        return ret;
     }
 
     private void setReconnectType() {

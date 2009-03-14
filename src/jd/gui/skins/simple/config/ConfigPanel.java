@@ -20,20 +20,27 @@ import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
+import jd.config.ConfigEntry.PropertyType;
+import jd.gui.skins.simple.JTabbedPanel;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public abstract class ConfigPanel extends JPanel {
+public abstract class ConfigPanel extends JTabbedPanel {
     /**
      * serialVersionUID
      */
+
     private static final long serialVersionUID = 3383448498625377495L;
 
     protected Vector<GUIConfigEntry> entries = new Vector<GUIConfigEntry>();
@@ -45,6 +52,7 @@ public abstract class ConfigPanel extends JPanel {
     protected JPanel panel;
 
     public ConfigPanel() {
+
         int n = 2;
         setLayout(new BorderLayout(n, n));
         setBorder(new EmptyBorder(n, n, n, n));
@@ -77,25 +85,77 @@ public abstract class ConfigPanel extends JPanel {
 
     public abstract void save();
 
+    @Override
+    public void onDisplay(int i) {
+        System.out.println("Display " + this + ": " + i);
+        loadConfigEntries();
+    }
+
+    @Override
+    public void onHide() {
+        PropertyType changes = this.hasChanges();
+        if (changes != ConfigEntry.PropertyType.NONE) {
+            if (JOptionPane.showConfirmDialog(this, JDLocale.L("gui.config.save.doyourealywant", "Do you want to save your changes?"), JDLocale.L("gui.config.save.doyourealywant.title", "Changes"), JOptionPane.YES_NO_OPTION) == JOptionPane.OK_OPTION) {
+                this.save();
+                if (changes == ConfigEntry.PropertyType.NEEDS_RESTART) {
+                    if (JOptionPane.showConfirmDialog(this, JDLocale.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDLocale.L("gui.config.save.restart.title", "JDownloader restart requested"), JOptionPane.YES_NO_OPTION) == JOptionPane.OK_OPTION) {
+                        JDUtilities.restartJD();
+                    }
+                }
+            }
+        }
+
+    }
+
+    public ConfigEntry.PropertyType hasChanges() {
+        PropertyType ret = ConfigEntry.PropertyType.NONE;
+        GUIConfigEntry akt;
+        Object old;
+        for (Iterator<GUIConfigEntry> it = entries.iterator(); it.hasNext();) {
+            akt = it.next();
+
+            if (akt.getConfigEntry().getPropertyInstance() != null && akt.getConfigEntry().getPropertyName() != null) {
+                old = akt.getConfigEntry().getPropertyInstance().getProperty(akt.getConfigEntry().getPropertyName());
+                if (old == null && akt.getText() != null) {
+                    ret = ret.getMax(akt.getConfigEntry().getPropertyType());
+                    System.out.println(akt.getConfigEntry().getPropertyName()+"1: "+ret);
+                    continue;
+                }
+                if (old == akt.getText()) {
+                    System.out.println(akt.getConfigEntry().getPropertyName()+"2: "+ret);
+                    continue;
+                }
+                if (!old.equals(akt.getText())) {
+                    ret = ret.getMax(akt.getConfigEntry().getPropertyType());
+                 
+                    System.out.println(akt.getConfigEntry().getPropertyName()+"3: "+ret);
+                    continue;
+                }
+            }
+
+        }
+
+        return ret;
+    }
+
     public void saveConfigEntries() {
-        Iterator<GUIConfigEntry> it = entries.iterator();
-        Vector<SubConfiguration> subs = new Vector<SubConfiguration>();
-        while (it.hasNext()) {
-            GUIConfigEntry akt = it.next();
+        GUIConfigEntry akt;
+        ArrayList<SubConfiguration> subs = new ArrayList<SubConfiguration>();
+        for (Iterator<GUIConfigEntry> it = entries.iterator(); it.hasNext();) {
+            akt = it.next();
             if (akt.getConfigEntry().getPropertyInstance() instanceof SubConfiguration && subs.indexOf(akt.getConfigEntry().getPropertyInstance()) < 0) {
                 subs.add((SubConfiguration) akt.getConfigEntry().getPropertyInstance());
-
             }
-            // logger.info("entries: "+entries.size()+" :
-            // "+akt.getConfigEntry().getPropertyInstance());
+
             if (akt.getConfigEntry().getPropertyInstance() != null && akt.getConfigEntry().getPropertyName() != null) {
                 akt.getConfigEntry().getPropertyInstance().setProperty(akt.getConfigEntry().getPropertyName(), akt.getText());
             }
 
         }
-        Iterator<SubConfiguration> it2 = subs.iterator();
-        while (it2.hasNext()) {
-            it2.next().save();
+
+        for (Iterator<SubConfiguration> it = subs.iterator(); it.hasNext();) {
+            it.next().save();
         }
     }
+
 }
