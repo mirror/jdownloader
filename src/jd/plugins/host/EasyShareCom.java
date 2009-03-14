@@ -110,7 +110,7 @@ public class EasyShareCom extends PluginForHost {
         String wait = br.getRegex("id=\"freeButton\" value=\" Seconds to wait:(.*?)\"").getMatch(0);
         int waittime = 0;
         if (wait != null) waittime = Integer.parseInt(wait.trim());
-        if (waittime > 60) {
+        if (waittime > 300) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 1000l);
         } else {
             sleep(waittime * 1000l, downloadLink);
