@@ -268,13 +268,13 @@ public class Main {
                 splashScreen.setVisible(true);
                 SplashScreenImages ssiImages = new SplashScreenImages(splashScreen.getImage());
                 splashScreen.setSplashScreenImages(ssiImages);
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_languages.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_languages.png").getAbsolutePath()), 350, 125);
+                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_languages.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_languages.png").getAbsolutePath()), 160, 60);
                 ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_settings.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_settings2.png").getAbsolutePath()));
                 ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_controller.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_controller.png").getAbsolutePath()));
                 ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_update.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_update.png").getAbsolutePath()));
                 ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_plugins.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_plugins.png").getAbsolutePath()));
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_screen.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_screen.png").getAbsolutePath()), -10);
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_dllist.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_dllist.png").getAbsolutePath()), 25);
+                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_screen.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_screen.png").getAbsolutePath()), -5);
+                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_dllist.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_dllist.png").getAbsolutePath()), 12);
             }
         } catch (Exception e) {
             // TODO: handle exception
