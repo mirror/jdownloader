@@ -55,8 +55,9 @@ public class SplashScreen implements ActionListener {
     private float duration = 1000.0f;
 
     // Your logo
-    private final BufferedImage image;
-
+    private BufferedImage image;
+    private SplashScreenImages imgDb;
+    
     private boolean isBlendIn = true, isBlendOut = false;
 
     private SplashPainter label;
@@ -68,13 +69,29 @@ public class SplashScreen implements ActionListener {
 
     private final Timer timer;
     private JWindow window;
-
+    private float alphaValue;
+    
+    public BufferedImage getImage() {
+    	return image;
+    }
+    
+    public void setSplashScreenImages(SplashScreenImages imgDb) {
+    	this.imgDb = imgDb;
+    }
+    
+    public void setNextImage() {
+    	image = imgDb.paintNext();
+    	drawImage(alphaValue);
+    	//label.setImage(currentImage);
+        label.repaint();
+    }
+    
     public SplashScreen(String path) throws IOException, AWTException {
         // final URL url =
         // this.getClass().getClassLoader().getResource(path);
         JDLookAndFeelManager.setUIManager();
         image = ImageIO.read(new File(path));
-
+        
         currentImage = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(image.getWidth(null), image.getHeight(null));
         final Dimension screenDimension = Toolkit.getDefaultToolkit().getScreenSize();
         progressBar = new JProgressBar();
@@ -122,7 +139,7 @@ public class SplashScreen implements ActionListener {
             percent = 1.0f - percent;
         }
 
-        float alphaValue = percent;
+        alphaValue = percent;
 
         if (percent >= 1.0) {
             timer.stop();
