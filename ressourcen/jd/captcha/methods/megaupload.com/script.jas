@@ -33,7 +33,7 @@ param.scanstepy=1;
 
 
 ############Parameter die einen Scan frühzeitig abbrechen können, bzw mögliche TReffer frühzeitig ausfiltern
-param.LetterSearchLimitPerfectPercent=16;
+param.LetterSearchLimitPerfectPercent=10;
 param.quickScanReliabilityLimit=3.0;
 param.quickScanValityLimit=10.0;
 
