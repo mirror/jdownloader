@@ -142,27 +142,25 @@ public class BluehostTo extends PluginForHost {
 
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null) { return false; }
-        int p = 0;
-        int MAX = 20;
-        while (true) {
+    
             try {
 
-                logger.finest("Checked Links with one request: " + (Math.min(urls.length, p + MAX)-p));
+                logger.finest("Checked Links with one request: " + urls.length);
                 StringBuilder sb = new StringBuilder();
-                sb.append("http://bluehost.to/fileinfo/urls=");
-                for (int i = p; i < Math.min(urls.length, p + MAX); i++) {
+                sb.append("urls=");
+                for (int i = 0; i < urls.length; i++) {
                     sb.append(urls[i].getDownloadURL());
                     sb.append(',');
                 }
                 this.setBrowserExclusive();
                 br.forceDebug(true);
                 br.setCookie("http://bluehost.to", "bluehost_lang", "DE");
-                br.getPage(sb + "");
+                br.postPage("http://bluehost.to/fileinfo/multi",sb.toString());
 
                 String[] lines = Regex.getLines(br + "");
 
-                for (int i = p; i < Math.min(urls.length, p + MAX); i++) {
-                    String[] dat = lines[i-p].split("\\, ");
+                for (int i = 0; i < urls.length; i++) {
+                    String[] dat = lines[i].split("\\, ");
                     try {
                         urls[i].setMD5Hash(dat[5].trim());
                         urls[i].setFinalFileName(dat[0]);
@@ -179,9 +177,7 @@ public class BluehostTo extends PluginForHost {
                 e.printStackTrace();
                 return false;
             }
-            if (Math.min(urls.length, p + MAX) == urls.length) break;
-            p += MAX;
-        }
+      
         return true;
     }
 

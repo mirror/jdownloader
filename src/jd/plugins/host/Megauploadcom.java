@@ -49,7 +49,7 @@ public class Megauploadcom extends PluginForHost {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
     private static final String CAPTCHA_MODE = "CAPTCHAMODE";
-    private static int FREE = 10;
+    private static int FREE = 30;
     // private static int FREE = 1;
 
     private static int simultanpremium = 1;
@@ -119,7 +119,9 @@ public class Megauploadcom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         getFileInformation(link);
+        br.setDebug(true);
         login(account);
+
         if (!isPremium()) {
             simultanpremium = 1;
             handleFree0(link, account);
@@ -132,8 +134,10 @@ public class Megauploadcom extends PluginForHost {
             }
         }
         String url = null;
+
         br.setFollowRedirects(false);
         br.getPage("http://megaupload.com/?d=" + getDownloadID(link));
+
         if (br.getRedirectLocation() == null) {
             Form form = br.getForm(0);
             if (form != null && form.containsHTML("logout")) form = br.getForm(1);
@@ -210,16 +214,27 @@ public class Megauploadcom extends PluginForHost {
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://megaupload.com", "l", "en");
-        br.getPage("http://megaupload.com/?c=login");
-        br.postPage("http://megaupload.com/?c=login", "login=1&redir=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        if (account.getUser().trim().equalsIgnoreCase("cookie")) {
+            br.setCookie("http://megaupload.com", "user", account.getPass());
+            br.setCookie("http://www.megaupload.com", "user", account.getPass());
+            br.setDebug(true);
+            br.getPage("http://megaupload.com/");
+        } else {
+            br.setCookie("http://megaupload.com", "l", "en");
+            br.getPage("http://megaupload.com/?c=login");
+            br.postPage("http://megaupload.com/?c=login", "login=1&redir=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+
+        }
         user = br.getCookie("http://megaupload.com", "user");
+        br.setCookie("http://megaupload.com", "user", user);
+        br.setCookie("http://www.megaupload.com", "user", user);
         if (user == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null) return false;
-      
+
         HashMap<String, String> map = new HashMap<String, String>();
         int i = 0;
         String id;
@@ -289,9 +304,7 @@ public class Megauploadcom extends PluginForHost {
                     String name = queryQ.get("n");
                     DownloadLink downloadLink = urls[d];
                     if (name != null) {
-                        
-                       
-                      
+
                         downloadLink.setFinalFileName(name);
                         downloadLink.setDownloadSize(Long.parseLong(queryQ.get("s")));
                         downloadLink.setDupecheckAllowed(true);
@@ -309,7 +322,7 @@ public class Megauploadcom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.checkLinks(new DownloadLink[] { downloadLink });
-        
+
         return downloadLink.isAvailable();
     }
 
@@ -372,7 +385,7 @@ public class Megauploadcom extends PluginForHost {
                 String captcha = form.getRegex("Enter this.*?src=\"(.*?gencap.*?)\"").getMatch(0);
                 File file = this.getLocalCaptchaFile(this);
                 Browser c = br.cloneBrowser();
-                c.forceDebug(true);
+
                 c.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
                 URLConnectionAdapter con = c.openGetConnection(captcha);
                 Browser.download(file, con);
@@ -390,8 +403,10 @@ public class Megauploadcom extends PluginForHost {
                 }
 
                 if (code == null) {
+
                     try {
                         code = Plugin.getCaptchaCode(file, this, link);
+
                     } catch (PluginException ee) {
 
                     }
@@ -518,6 +533,7 @@ public class Megauploadcom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         user = null;
+        br.setCookie("http://megaupload.com", "l", "en");
         getFileInformation(parameter);
         handleFree0(parameter, null);
     }
@@ -569,7 +585,6 @@ public class Megauploadcom extends PluginForHost {
 
             String captcha = form.getRegex("Enter this.*?src=\"(.*?gencap.*?)\"").getMatch(0);
 
-            br.forceDebug(true);
             br.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
             URLConnectionAdapter con = br.openGetConnection(captcha);
             File file;

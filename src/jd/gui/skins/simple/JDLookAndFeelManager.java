@@ -19,11 +19,11 @@ package jd.gui.skins.simple;
 import java.io.Serializable;
 
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.UIManager.LookAndFeelInfo;
 
 import jd.config.SubConfiguration;
 import jd.utils.JDUtilities;
+import de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel;
 
 public class JDLookAndFeelManager implements Serializable {
 
@@ -71,14 +71,14 @@ public class JDLookAndFeelManager implements Serializable {
         if (uiInitated) return;
         uiInitated = true;
         try {
-            UIManager.setLookAndFeel(getPlaf().getClassName());
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (UnsupportedLookAndFeelException e) {
+            // UIManager.setLookAndFeel(new SyntheticaStandardLookAndFeel());
+            // UIManager.setLookAndFeel(new SyntheticaSilverMoonLookAndFeel());
+
+            UIManager.setLookAndFeel(new de.javasoft.plaf.synthetica.SyntheticaBlueMoonLookAndFeel());
+            // UIManager.setLookAndFeel( new SubstanceCremeLookAndFeel());
+            // UIManager.setLookAndFeel(getPlaf().getClassName());
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

@@ -18,21 +18,15 @@ package jd.plugins.host;
 
 import java.io.IOException;
 
-import utils.Property;
-//import java.util.Locale;
-
 import jd.PluginWrapper;
-//import jd.http.Encoding;
+import jd.config.Property;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-//import jd.plugins.Account;
-//import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-//import jd.utils.JDLocale;
 
 public class UpMusicIn extends PluginForHost {
 

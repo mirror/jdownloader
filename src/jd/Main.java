@@ -264,17 +264,9 @@ public class Main {
         try {
             if (showSplash && JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)) {
 
-                splashScreen = new SplashScreen(JDUtilities.getResourceFile("/jd/img/jddesigncp5.png").getAbsolutePath());
+                splashScreen = new SplashScreen(JDUtilities.getResourceFile("/jd/img/jd_logo_large.png").getAbsolutePath());
                 splashScreen.setVisible(true);
-                SplashScreenImages ssiImages = new SplashScreenImages(splashScreen.getImage());
-                splashScreen.setSplashScreenImages(ssiImages);
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_languages.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_languages.png").getAbsolutePath()), 160, 60);
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_settings.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_settings2.png").getAbsolutePath()));
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_controller.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_controller.png").getAbsolutePath()));
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_update.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_update.png").getAbsolutePath()));
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_plugins.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_plugins.png").getAbsolutePath()));
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_screen.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_screen.png").getAbsolutePath()), -5);
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_dllist.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_dllist.png").getAbsolutePath()), 12);
+
             }
         } catch (Exception e) {
             // TODO: handle exception
@@ -370,7 +362,6 @@ public class Main {
     private static void setSplashStatus(SplashScreen splashScreen, int i, String l) {
         // System.out.println(l);
         if (splashScreen == null) { return; }
-        splashScreen.setNextImage();
         splashScreen.setText(l);
         splashScreen.setValue(splashScreen.getValue() + i);
 
