@@ -23,7 +23,7 @@ import javax.swing.UIManager.LookAndFeelInfo;
 
 import jd.config.SubConfiguration;
 import jd.utils.JDUtilities;
-import de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel;
+import de.javasoft.plaf.synthetica.SyntheticaBlueMoonLookAndFeel;
 
 public class JDLookAndFeelManager implements Serializable {
 
@@ -73,10 +73,10 @@ public class JDLookAndFeelManager implements Serializable {
         try {
             // UIManager.setLookAndFeel(new SyntheticaStandardLookAndFeel());
             // UIManager.setLookAndFeel(new SyntheticaSilverMoonLookAndFeel());
-
-            UIManager.setLookAndFeel(new de.javasoft.plaf.synthetica.SyntheticaBlueMoonLookAndFeel());
+           // UIManager.setLookAndFeel(new de.javasoft.plaf.synthetica.SyntheticaSimple2DLookAndFeel());
+            //UIManager.setLookAndFeel(new SyntheticaBlueMoonLookAndFeel());
             // UIManager.setLookAndFeel( new SubstanceCremeLookAndFeel());
-            // UIManager.setLookAndFeel(getPlaf().getClassName());
+             UIManager.setLookAndFeel(getPlaf().getClassName());
 
         } catch (Exception e) {
             e.printStackTrace();

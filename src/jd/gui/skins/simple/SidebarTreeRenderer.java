@@ -2,6 +2,7 @@ package jd.gui.skins.simple;
 
 import java.awt.Component;
 
+import javax.swing.JLabel;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
 
@@ -21,7 +22,9 @@ public class SidebarTreeRenderer extends DefaultTreeCellRenderer {
                 this.setClosedIcon(node.getIcon());
             }
         }
-        Component ret = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+this.setBackground(null);
+        JLabel ret = (JLabel) super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+
         return ret;
     }
 

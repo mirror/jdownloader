@@ -110,15 +110,10 @@ import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.ConfigPanelAddons;
-import jd.gui.skins.simple.config.ConfigPanelCaptcha;
-import jd.gui.skins.simple.config.ConfigPanelDownload;
-import jd.gui.skins.simple.config.ConfigPanelEventmanager;
-import jd.gui.skins.simple.config.ConfigPanelGUI;
-import jd.gui.skins.simple.config.ConfigPanelGeneral;
-import jd.gui.skins.simple.config.ConfigPanelPluginForContainer;
-import jd.gui.skins.simple.config.ConfigPanelPluginForDecrypt;
 import jd.gui.skins.simple.config.ConfigPanelPluginForHost;
+
 import jd.gui.skins.simple.config.ConfigPanelReconnect;
+
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
@@ -132,8 +127,6 @@ import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
-
-import org.jdesktop.swingx.JXTitledSeparator;
 
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener, DropTargetListener {
 
@@ -672,9 +665,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private SpeedMeterPanel speedmeter;
 
-    private TreeTabbedPane treeTabbedPane;
+    private TabbedPane taskPane;
 
-    private TreeTabbedNode linkGrabberNode;
+
 
     /**
      * Das Hauptfenster wird erstellt
@@ -952,16 +945,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // }
         if (linkGrabber == null) {
             logger.info("new linkgrabber");
-            linkGrabber = new LinkGrabber(this, linkList);
-            SideTreeModel model = treeTabbedPane.getRoot();
 
-            model.insertNodeInto(linkGrabberNode = new TreeTabbedNode(linkGrabber, JDLocale.L("gui.linkgrabber.bar.title", "LinkGrabber"), JDTheme.II("gui.images.add")));
-            treeTabbedPane.display(linkGrabberNode);
+            linkGrabber = new LinkGrabber(this, linkList);
+            taskPane.add(new GrabberTaskPane("Linkgrabber",JDTheme.II("gui.images.add"),linkGrabber));
+     
+            taskPane.displayPanel(linkGrabber);
+
 
         } else {
             logger.info("add to grabber");
             linkGrabber.addLinks(linkList);
-            treeTabbedPane.display(linkGrabberNode);
+            taskPane.displayPanel(linkGrabber);
         }
         dragNDrop.setText(JDLocale.L("gui.droptarget.grabbed", "Grabbed:") + " " + linkList.length + " (" + links.size() + ")");
     }
@@ -978,29 +972,19 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private void buildUI() {
         CURRENTGUI = this;
         linkListPane = new DownloadLinksTreeTablePanel(this);
-        treeTabbedPane = new TreeTabbedPane(this);
-        SideTreeModel model = treeTabbedPane.getRoot();
-        model.insertNodeInto(new TreeTabbedNode(linkListPane, JDLocale.L("gui.download.title", "Download"), JDTheme.II("gui.images.down")));
-        TreeTabbedNode config;
-        model.insertNodeInto(config = new TreeTabbedNode(JDLocale.L("gui.config.title", "Configuration"), JDTheme.II("gui.images.configuration")));
-        Object[] configConstructorOPbjects = new Object[] { JDUtilities.getConfiguration() };
-        model.insertNodeInto(new TreeTabbedNode(ConfigPanelGeneral.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.general", "General settings"), JDTheme.II("gui.images.config.home")), config);
-        model.insertNodeInto(new TreeTabbedNode(ConfigPanelDownload.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.download", "Download/Network settings"), JDTheme.II("gui.images.config.network_local")), config);
-        model.insertNodeInto(new TreeTabbedNode(ConfigPanelGUI.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.gui", "Benutzeroberfläche"), JDTheme.II("gui.images.config.gui")), config);
-        model.insertNodeInto(new TreeTabbedNode(ConfigPanelReconnect.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.reconnect", "Reconnect settings"), JDTheme.II("gui.images.config.reconnect")), config);
-        model.insertNodeInto(new TreeTabbedNode(ConfigPanelCaptcha.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.jac", "OCR Captcha settings"), JDTheme.II("gui.images.config.ocr")), config);
-        model.insertNodeInto(new TreeTabbedNode(ConfigPanelPluginForHost.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.hostPlugin", "Host Plugin settings"), JDTheme.II("gui.images.config.host")), config);
-        model.insertNodeInto(new TreeTabbedNode(ConfigPanelPluginForDecrypt.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.decryptPlugin", "Decrypter Plugin settings"), JDTheme.II("gui.images.config.decrypt")), config);
-        model.insertNodeInto(new TreeTabbedNode(ConfigPanelAddons.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.addons", "Addon manager"), JDTheme.II("gui.images.config.packagemanager")), config);
-        model.insertNodeInto(new TreeTabbedNode(ConfigPanelPluginForContainer.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.containerPlugin", "Link-Container settings"), JDTheme.II("gui.images.config.container")), config);
-        model.insertNodeInto(new TreeTabbedNode(ConfigPanelEventmanager.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.eventManager", "Eventmanager"), JDTheme.II("gui.images.config.eventmanager")), config);
 
-        treeTabbedPane.display(0);
+        taskPane = new TabbedPane(this);
+        taskPane.add(new DownloadTaskPane("Download",JDTheme.II("gui.images.down"),linkListPane));
+
+
+        taskPane.add(new ConfigTaskPane("Configuration",JDTheme.II("gui.images.configuration")));
+        taskPane.displayPanel(linkListPane);
+        // taskPane.display(0);
         progressBar = new TabProgress();
         statusBar = new StatusBar();
         horizontalSplitPane = new JSplitPane();
         horizontalSplitPane.setBottomComponent(progressBar);
-        horizontalSplitPane.setTopComponent(treeTabbedPane);
+        horizontalSplitPane.setTopComponent(taskPane);
         horizontalSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
         btnStartStop = createMenuButton(actionStartStopDownload);
         btnPause = createMenuButton(actionPause);
