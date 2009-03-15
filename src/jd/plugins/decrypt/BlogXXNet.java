@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -35,10 +36,15 @@ public class BlogXXNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         br.getPage(parameter);
-        String password = br.getRegex(Pattern.compile("<div align=\"center\">Password:</div>.*?<div align=\"center\">(.*?)</div>", Pattern.DOTALL)).getMatch(0);
-        String[] links = br.getRegex("url=(.*?)\" target").getColumn(0);
+        String[] charcodes = br.getRegex(Pattern.compile("document.write\\(String.fromCharCode\\((.*?)\\)\\);", Pattern.DOTALL)).getMatch(0).split(",");
+        String decrypted = "";
+        for (String charcode : charcodes) {
+        	decrypted += (char) Integer.valueOf(charcode).intValue();
+        }
+
+        String password = new Regex(decrypted, Pattern.compile("<div class=\"d.*?>Password:</div>.*?<div class=\"d.*?>(.*?)</div>", Pattern.DOTALL)).getMatch(0);
+        String[] links = new Regex(decrypted, "url=(.*?)\" target").getColumn(0);
         progress.setRange(links.length);
         DownloadLink dLink;
         for (String link : links) {
