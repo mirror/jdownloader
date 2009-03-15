@@ -25,7 +25,6 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
@@ -37,9 +36,6 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public abstract class ConfigPanel extends JTabbedPanel {
-    /**
-     * serialVersionUID
-     */
 
     private static final long serialVersionUID = 3383448498625377495L;
 
@@ -94,10 +90,10 @@ public abstract class ConfigPanel extends JTabbedPanel {
     public void onHide() {
         PropertyType changes = this.hasChanges();
         if (changes != ConfigEntry.PropertyType.NONE) {
-            if (showConfirmDialog(JDLocale.L("gui.config.save.doyourealywant", "Do you want to save your changes?"), JDLocale.L("gui.config.save.doyourealywant.title", "Changes"))) {
+            if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.save.doyourealywant", "Do you want to save your changes?"), JDLocale.L("gui.config.save.doyourealywant.title", "Changes"))) {
                 this.save();
                 if (changes == ConfigEntry.PropertyType.NEEDS_RESTART) {
-                    if (showConfirmDialog(JDLocale.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDLocale.L("gui.config.save.restart.title", "JDownloader restart requested"))) {
+                    if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDLocale.L("gui.config.save.restart.title", "JDownloader restart requested"))) {
                         JDUtilities.restartJD();
                     }
                 }
@@ -117,17 +113,17 @@ public abstract class ConfigPanel extends JTabbedPanel {
                 old = akt.getConfigEntry().getPropertyInstance().getProperty(akt.getConfigEntry().getPropertyName());
                 if (old == null && akt.getText() != null) {
                     ret = ret.getMax(akt.getConfigEntry().getPropertyType());
-                    System.out.println(akt.getConfigEntry().getPropertyName()+"1: "+ret);
+                    System.out.println(akt.getConfigEntry().getPropertyName() + "1: " + ret);
                     continue;
                 }
                 if (old == akt.getText()) {
-                    System.out.println(akt.getConfigEntry().getPropertyName()+"2: "+ret);
+                    System.out.println(akt.getConfigEntry().getPropertyName() + "2: " + ret);
                     continue;
                 }
                 if (!old.equals(akt.getText())) {
                     ret = ret.getMax(akt.getConfigEntry().getPropertyType());
-                 
-                    System.out.println(akt.getConfigEntry().getPropertyName()+"3: "+ret);
+
+                    System.out.println(akt.getConfigEntry().getPropertyName() + "3: " + ret);
                     continue;
                 }
             }
@@ -136,13 +132,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
         return ret;
     }
-    @Override
-    public boolean showConfirmDialog(String message, String title) {
-        // logger.info("ConfirmDialog");
-        Object[] options = { JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No") };
-        int n = JOptionPane.showOptionDialog(this, message, title, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-        return (n == 0);
-    }
+
     public void saveConfigEntries() {
         GUIConfigEntry akt;
         ArrayList<SubConfiguration> subs = new ArrayList<SubConfiguration>();

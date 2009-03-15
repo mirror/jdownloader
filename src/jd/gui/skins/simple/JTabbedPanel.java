@@ -6,6 +6,8 @@ import javax.swing.JPanel;
 
 public abstract class JTabbedPanel extends JPanel {
 
+    private static final long serialVersionUID = -7856570342778191232L;
+
     public JTabbedPanel(LayoutManager layout) {
         super(layout);
     }
@@ -18,8 +20,4 @@ public abstract class JTabbedPanel extends JPanel {
 
     abstract public void onHide();
 
-    public boolean showConfirmDialog(String message, String title) {
-        // TODO Auto-generated method stub
-        return false;
-    }
 }

@@ -119,9 +119,7 @@ import jd.gui.skins.simple.config.ConfigPanelPluginForContainer;
 import jd.gui.skins.simple.config.ConfigPanelPluginForDecrypt;
 import jd.gui.skins.simple.config.ConfigPanelPluginForHost;
 import jd.gui.skins.simple.config.ConfigPanelReconnect;
-
 import jd.gui.skins.simple.config.ConfigurationPopup;
-import jd.gui.skins.simple.config.FengShuiConfigPanel;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.plugins.Account;
@@ -538,7 +536,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionClipBoard;
 
-//    private JDAction actionConfig;
+    // private JDAction actionConfig;
 
     private JDAction actionDnD;
 
@@ -920,48 +918,44 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 e1.printStackTrace();
             }
             break;
-//        case JDAction.APP_CONFIGURATION:
-//            showConfig();
-//            break;
+        // case JDAction.APP_CONFIGURATION:
+        // showConfig();
+        // break;
         }
 
     }
 
-//    public void showConfig() {
-//        if (guiConfig.getBooleanProperty(PARAM_SHOW_FENGSHUI, true) == false) {
-//            ConfigurationDialog.showConfig(frame);
-//        } else {
-//            if (SimpleGUI.CURRENTGUI.getFrame() != null) {
-//                if (SimpleGUI.CURRENTGUI.getFrame().isVisible() == false) {
-//                    FengShuiConfigPanel.getInstance();
-//                } else {
-//                    ConfigurationDialog.showConfig(frame);
-//                }
-//            } else {
-//                FengShuiConfigPanel.getInstance();
-//            }
-//        }
-//    }
+    // public void showConfig() {
+    // if (guiConfig.getBooleanProperty(PARAM_SHOW_FENGSHUI, true) == false) {
+    // ConfigurationDialog.showConfig(frame);
+    // } else {
+    // if (SimpleGUI.CURRENTGUI.getFrame() != null) {
+    // if (SimpleGUI.CURRENTGUI.getFrame().isVisible() == false) {
+    // FengShuiConfigPanel.getInstance();
+    // } else {
+    // ConfigurationDialog.showConfig(frame);
+    // }
+    // } else {
+    // FengShuiConfigPanel.getInstance();
+    // }
+    // }
+    // }
 
     public synchronized void addLinksToGrabber(Vector<DownloadLink> links) {
         logger.info("GRAB");
-        
-      
-      
-        
-        
+
         DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
-//        if (linkGrabber != null) {
-//            logger.info("Linkgrabber should be disposed");
-//            linkGrabber.dispose();
-//            linkGrabber = null;
-//        }
+        // if (linkGrabber != null) {
+        // logger.info("Linkgrabber should be disposed");
+        // linkGrabber.dispose();
+        // linkGrabber = null;
+        // }
         if (linkGrabber == null) {
             logger.info("new linkgrabber");
-            linkGrabber= new LinkGrabber(this, linkList);
+            linkGrabber = new LinkGrabber(this, linkList);
             SideTreeModel model = treeTabbedPane.getRoot();
-         
-            model.insertNodeInto(linkGrabberNode=new TreeTabbedNode(linkGrabber, JDLocale.L("gui.linkgrabber.bar.title","LinkGrabber"), JDTheme.II("gui.images.add")));
+
+            model.insertNodeInto(linkGrabberNode = new TreeTabbedNode(linkGrabber, JDLocale.L("gui.linkgrabber.bar.title", "LinkGrabber"), JDTheme.II("gui.images.add")));
             treeTabbedPane.display(linkGrabberNode);
 
         } else {
@@ -986,9 +980,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         linkListPane = new DownloadLinksTreeTablePanel(this);
         treeTabbedPane = new TreeTabbedPane(this);
         SideTreeModel model = treeTabbedPane.getRoot();
-        model.insertNodeInto(new TreeTabbedNode(linkListPane, JDLocale.L("gui.download.title","Download"), JDTheme.II("gui.images.down")));
+        model.insertNodeInto(new TreeTabbedNode(linkListPane, JDLocale.L("gui.download.title", "Download"), JDTheme.II("gui.images.down")));
         TreeTabbedNode config;
-        model.insertNodeInto(config = new TreeTabbedNode(JDLocale.L("gui.config.title","Configuration"), JDTheme.II("gui.images.configuration")));
+        model.insertNodeInto(config = new TreeTabbedNode(JDLocale.L("gui.config.title", "Configuration"), JDTheme.II("gui.images.configuration")));
         Object[] configConstructorOPbjects = new Object[] { JDUtilities.getConfiguration() };
         model.insertNodeInto(new TreeTabbedNode(ConfigPanelGeneral.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.general", "General settings"), JDTheme.II("gui.images.config.home")), config);
         model.insertNodeInto(new TreeTabbedNode(ConfigPanelDownload.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.download", "Download/Network settings"), JDTheme.II("gui.images.config.network_local")), config);
@@ -1030,8 +1024,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(createMenuButton(actionItemsDown));
         toolBar.add(createMenuButton(actionItemsUp));
         toolBar.add(createMenuButton(actionItemsTop));
-//        toolBar.addSeparator();
-//        toolBar.add(createMenuButton(actionConfig));
+        // toolBar.addSeparator();
+        // toolBar.add(createMenuButton(actionConfig));
         toolBar.addSeparator();
         toolBar.add(btnReconnect);
         toolBar.add(createMenuButton(actionReconnect));
@@ -1344,7 +1338,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionLog = new JDAction(this, JDTheme.V("gui.images.terminal"), "action.viewlog", JDAction.APP_LOG);
         actionBackup = new JDAction(this, JDTheme.V("gui.images.save"), "action.backup", JDAction.APP_BACKUP);
         actionClipBoard = new JDAction(this, getClipBoardImage(), "action.clipboard", JDAction.APP_CLIPBOARD);
-//        actionConfig = new JDAction(this, JDTheme.V("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
+        // actionConfig = new JDAction(this,
+        // JDTheme.V("gui.images.configuration"), "action.configuration",
+        // JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, JDTheme.V("gui.images.reconnect"), "action.reconnect", JDAction.APP_RECONNECT);
         actionUpdate = new JDAction(this, JDTheme.V("gui.images.update_manager"), "action.update", JDAction.APP_UPDATE);
         actionItemsDelete = new JDAction(this, JDTheme.V("gui.images.delete"), "action.edit.items_remove", JDAction.ITEMS_REMOVE);
@@ -1394,7 +1390,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menFile.add(SimpleGUI.createMenuItem(actionRestart));
         menFile.add(SimpleGUI.createMenuItem(actionExit));
 
-//       menExtra.add(SimpleGUI.createMenuItem(actionConfig));
+        // menExtra.add(SimpleGUI.createMenuItem(actionConfig));
         menExtra.addSeparator();
         menExtra.add(SimpleGUI.createMenuItem(actionDnD));
 
@@ -1673,6 +1669,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // logger.info("ConfirmDialog");
         Object[] options = { JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No") };
         int n = JOptionPane.showOptionDialog(frame, message, "", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+        return (n == 0);
+    }
+
+    public boolean showConfirmDialog(String message, String title) {
+        // logger.info("ConfirmDialog");
+        Object[] options = { JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No") };
+        int n = JOptionPane.showOptionDialog(frame, message, title, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
         return (n == 0);
     }
 

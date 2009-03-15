@@ -121,6 +121,8 @@ public interface UIInterface extends ControlListener {
      */
     public boolean showConfirmDialog(String string);
 
+    public boolean showConfirmDialog(String string, String title);
+
     /**
      * Zeigt einen MessageDialog mit Countdown an
      * 
