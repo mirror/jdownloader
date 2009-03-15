@@ -141,42 +141,48 @@ public class BluehostTo extends PluginForHost {
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
-        try {
-            if (urls == null) { return false; }
-       
-            logger.finest("Checked Links with one request: " + urls.length);
-            StringBuilder sb = new StringBuilder();
-            sb.append("http://bluehost.to/fileinfo/urls=");
-            for (int i = 0; i < urls.length; i++) {
-                sb.append(urls[i].getDownloadURL());
-                sb.append(',');
-            }
-            this.setBrowserExclusive();
-            br.setCookie("http://bluehost.to", "bluehost_lang", "DE");
-            br.getPage(sb + "");
+        if (urls == null) { return false; }
+        int p = 0;
+        int MAX = 20;
+        while (true) {
+            try {
 
-            String[] lines = Regex.getLines(br + "");
-
-            for (int i = 0; i < urls.length; i++) {
-                String[] dat = lines[i].split("\\, ");
-                try {
-                    urls[i].setMD5Hash(dat[5].trim());
-                    urls[i].setFinalFileName(dat[0]);
-                    urls[i].setDupecheckAllowed(true);
-                    urls[i].setDownloadSize(Long.parseLong(dat[2]));
-                    urls[i].setAvailable(true);
-                } catch (Exception e) {
-                    urls[i].setAvailable(false);
+                logger.finest("Checked Links with one request: " + (Math.min(urls.length, p + MAX)-p));
+                StringBuilder sb = new StringBuilder();
+                sb.append("http://bluehost.to/fileinfo/urls=");
+                for (int i = p; i < Math.min(urls.length, p + MAX); i++) {
+                    sb.append(urls[i].getDownloadURL());
+                    sb.append(',');
                 }
+                this.setBrowserExclusive();
+                br.forceDebug(true);
+                br.setCookie("http://bluehost.to", "bluehost_lang", "DE");
+                br.getPage(sb + "");
+
+                String[] lines = Regex.getLines(br + "");
+
+                for (int i = p; i < Math.min(urls.length, p + MAX); i++) {
+                    String[] dat = lines[i-p].split("\\, ");
+                    try {
+                        urls[i].setMD5Hash(dat[5].trim());
+                        urls[i].setFinalFileName(dat[0]);
+                        urls[i].setDupecheckAllowed(true);
+                        urls[i].setDownloadSize(Long.parseLong(dat[2]));
+                        urls[i].setAvailable(true);
+                    } catch (Exception e) {
+                        urls[i].setAvailable(false);
+                    }
+                }
+
+            } catch (Exception e) {
+                System.gc();
+                e.printStackTrace();
+                return false;
             }
-            return true;
-
-        } catch (Exception e) {
-            System.gc();
-            e.printStackTrace();
-            return false;
+            if (Math.min(urls.length, p + MAX) == urls.length) break;
+            p += MAX;
         }
-
+        return true;
     }
 
     @Override
