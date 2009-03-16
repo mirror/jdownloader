@@ -147,11 +147,11 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         dim.width = Math.max(dim.width, 300);
         progress.setPreferredSize(dim);
         progress.setMinimumSize(dim);
-        if (JDUtilities.getJavaVersion() >= 1.6) {
-            ui = new TreeProgressBarUI();
-            ui.setSelectionForeground(Color.BLACK);
-            progress.setUI(ui);
-        }
+//        if (JDUtilities.getJavaVersion() >= 1.6) {
+//            ui = new TreeProgressBarUI();
+//            ui.setSelectionForeground(Color.BLACK);
+//            progress.setUI(ui);
+//        }
         progress.setBorderPainted(false);
         progress.setStringPainted(true);
         progress.setOpaque(false);

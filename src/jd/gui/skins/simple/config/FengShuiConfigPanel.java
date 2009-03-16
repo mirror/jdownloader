@@ -24,8 +24,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -46,7 +44,6 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenu;
@@ -72,7 +69,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
-import jd.gui.skins.simple.LocationListener;
+import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.Progressor;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.BrowseFile;
@@ -89,7 +86,9 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class FengShuiConfigPanel extends JFrame implements ActionListener {
+import org.jdesktop.swingx.JXPanel;
+
+public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener {
 
     private static final String WRAP_BETWEEN_ROWS = ", wrap 10!";
     private static final String WRAP = ", wrap 20";
@@ -121,36 +120,21 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         super();
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         this.setName("FENGSHUICONFIG");
-        this.setTitle(JDLocale.L("gui.config.fengshui.title", "Feng Shui Config"));
-        this.addWindowListener(new LocationListener());
 
         JPanel panel = getPanel();
-        Dimension minSize = panel.getMinimumSize();
-        this.setContentPane(new JScrollPane(panel));
-        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        this.pack();
-        Dimension ps = this.getPreferredSize();
-        this.setPreferredSize(new Dimension(Math.min(800, ps.width), Math.min(600, ps.height)));
-        this.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.configuration")));
-        this.pack();
-        panel.setPreferredSize(minSize);
-        if (SimpleGUI.CURRENTGUI != null) this.setLocation(SimpleGUI.getLastLocation(SimpleGUI.CURRENTGUI.getFrame(), null, this));
-        this.setResizable(false);
-        this.setVisible(true);
+
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnCancel)
-            dispose();
-        else if (e.getSource() == btnMore) {
+
+        if (e.getSource() == btnMore) {
             save();
-            dispose();
 
             SimpleGUI.CURRENTGUI.getGuiConfig().setProperty(SimpleGUI.PARAM_SHOW_FENGSHUI, false);
-            SimpleGUI.CURRENTGUI.showConfig();
+            // SimpleGUI.CURRENTGUI.showConfig();
         } else if (e.getSource() == btnApply) {
             save();
-            dispose();
+
         } else if (e.getSource() == btnRR) {
             JDRRGui jd = new JDRRGui(SimpleGUI.CURRENTGUI.getFrame(), ip.getText());
             jd.setModal(true);
@@ -399,7 +383,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
                         panel.setBorder(new EmptyBorder(n, n, n, n));
 
                         JOptionPane op = new JOptionPane(panel, JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_CANCEL_OPTION, icon);
-                        JDialog dialog = op.createDialog(ConfigurationDialog.PARENTFRAME, JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"));
+                        JDialog dialog = op.createDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"));
                         dialog.add(op);
                         dialog.setModal(true);
                         dialog.setPreferredSize(new Dimension(400, 500));
@@ -537,18 +521,15 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
     private static final String DEBUG = "";
 
     private JPanel getPanel() {
-        panel = new JPanel(new MigLayout(DEBUG + "ins 20", "[right, pref!]0[grow,fill]0[]"));
+        panel = this;
+        this.setLayout(new MigLayout(DEBUG + "ins 20", "[right, pref!]0[grow,fill]0[]"));
         routerIp = config.getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
         Reconnectmethode = config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null);
         addSeparator(panel, JDLocale.L("gui.config.general.name", "Allgemein"), JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.configuration"), 32, 32), JDLocale.L("gui.fengshuiconfig.general.tooltip", "<html>You can set the Downloadpath and the language here"));
 
         languages = new JComboBox(JDLocale.getLocaleIDs().toArray(new String[] {}));
         languages.setSelectedItem(JDUtilities.getSubConfig(JDLocale.CONFIG).getProperty(JDLocale.LOCALE_ID, Locale.getDefault()));
-        addWindowListener(new WindowAdapter() {
-            public void windowOpened(WindowEvent e) {
-                downloadDirectory.requestFocus();
-            }
-        });
+
         downloadDirectory = new BrowseFile();
         downloadDirectory.setEditable(true);
         downloadDirectory.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -744,5 +725,17 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             instance = new FengShuiConfigPanel();
         else if (instance.isVisible() == false) instance = new FengShuiConfigPanel();
         return instance;
+    }
+
+    @Override
+    public void onDisplay() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void onHide() {
+        // TODO Auto-generated method stub
+        
     }
 }

@@ -2,9 +2,9 @@ package jd.gui.skins.simple;
 
 import java.awt.LayoutManager;
 
-import javax.swing.JPanel;
+import org.jdesktop.swingx.JXPanel;
 
-public abstract class JTabbedPanel extends JPanel {
+public abstract class JTabbedPanel extends JXPanel {
 
     private static final long serialVersionUID = -7856570342778191232L;
 
@@ -16,7 +16,7 @@ public abstract class JTabbedPanel extends JPanel {
         super();
     }
 
-    abstract public void onDisplay(int i);
+    abstract public void onDisplay();
 
     abstract public void onHide();
 

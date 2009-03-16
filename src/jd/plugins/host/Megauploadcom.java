@@ -303,13 +303,15 @@ public class Megauploadcom extends PluginForHost {
                     int d = Integer.parseInt(string.substring(2, string.indexOf('=')));
                     String name = queryQ.get("n");
                     DownloadLink downloadLink = urls[d];
+                    downloadLink.setAvailable(false);
                     if (name != null) {
 
                         downloadLink.setFinalFileName(name);
                         downloadLink.setDownloadSize(Long.parseLong(queryQ.get("s")));
                         downloadLink.setDupecheckAllowed(true);
+                        downloadLink.setAvailable(true);
                     }
-                    downloadLink.setAvailable(false);
+                  
                 } catch (Exception e) {
                 }
             }

@@ -16,170 +16,78 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Dimension;
+import java.awt.Color;
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Vector;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
-import javax.swing.JPanel;
+import javax.swing.JLabel;
 import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.Timer;
-import javax.swing.event.TableModelEvent;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
+import javax.swing.JSeparator;
 
 import jd.controlling.ProgressController;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
+
+import org.jdesktop.swingx.JXPanel;
+import org.jdesktop.swingx.JXTaskPane;
 
 /**
  * Diese Klasse zeigt alle Fortschritte von momenten aktiven Plugins an.
  * 
  * @author JD-Team
  */
-public class TabProgress extends JPanel implements ActionListener {
-    /**
-     * Das TableModel ist notwendig, um die Daten darzustellen
-     * 
-     * @author astaldo
-     */
-    private class InternalTableModel extends AbstractTableModel {
-        /**
-         * serialVersionUID
-         */
-        private static final long serialVersionUID = 8135707376690458846L;
-
-        /**
-         * Bezeichnung der Spalte für die Fortschrittsanzeige
-         */
-        private String labelColumnProgress = JDLocale.L("gui.tab.plugin_activity.column_progress", "Progress");
-
-        /**
-         * Bezeichnung der Spalte für den Pluginnamen
-         */
-        private String labelColumnStatusText = JDLocale.L("gui.tab.plugin_activity.column_plugin", "Module");
-
-        @Override
-        public Class<?> getColumnClass(int columnIndex) {
-            switch (columnIndex) {
-
-            case 0:
-                return String.class;
-            case 1:
-                return JProgressBar.class;
-            }
-            return String.class;
-        }
-
-        public int getColumnCount() {
-            return 2;
-        }
-
-        @Override
-        public String getColumnName(int column) {
-            switch (column) {
-            case 0:
-                return labelColumnStatusText;
-
-            case 1:
-                return labelColumnProgress;
-            }
-            return super.getColumnName(column);
-        }
-
-        public int getRowCount() {
-
-            return controllers.size();
-        }
-
-        public Object getValueAt(int rowIndex, int columnIndex) {
-
-            if (controllers.size() <= rowIndex) { return null; }
-            ProgressController p = controllers.get(rowIndex);
-            if (bars.size() <= rowIndex) { return null; }
-            JProgressBar b = bars.get(rowIndex);
-            switch (columnIndex) {
-            case 0:
-                return p.getID() + ": " + p.getStatusText();
-            case 1:
-                return b;
-
-            }
-            return null;
-        }
-
-        @Override
-        public String toString() {
-            return " col " + controllers.size();
-        }
-    }
-
-    /**
-     * Diese Klasse zeichnet eine JProgressBar in der Tabelle
-     * 
-     * @author astaldo
-     */
-    private class ProgressBarRenderer implements TableCellRenderer {
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            return (JProgressBar) value;
-        }
-
-    }
+public class TabProgress extends JXTaskPane implements ActionListener, ControlListener, MouseListener {
 
     /**
      * serialVersionUID
      */
     private static final long serialVersionUID = -8537543161116653345L;
 
-    private Vector<JProgressBar> bars;
+    private static final int MAX_BARS = 6;
+
+    private static final String COLLAPSED = "COLLAPSED";
 
     /**
      * Hier werden alle Fortschritte der Plugins gespeichert
      */
 
-    private Vector<ProgressController> controllers;
+    private ArrayList<ProgressController> controllers;
 
-    // private Logger logger = JDUtilities.getLogger();
-
-    private Timer flickerTimer;
+    private ProgressEntry[] lines;
 
     /**
      * Die Tabelle für die Pluginaktivitäten
      */
-    private JTable table;
 
     public TabProgress() {
-        controllers = new Vector<ProgressController>();
-        bars = new Vector<JProgressBar>();
-        setLayout(new BorderLayout());
-        table = new JTable();
-        table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
-        InternalTableModel internalTableModel;
-        table.setModel(internalTableModel = new InternalTableModel());
-        table.getColumn(table.getColumnName(1)).setCellRenderer(new ProgressBarRenderer());
-        TableColumn column = null;
-        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
-            column = table.getColumnModel().getColumn(c);
-            switch (c) {
-            case 0:
-                column.setPreferredWidth(600);
-                break;
+        controllers = new ArrayList<ProgressController>();
+        JDUtilities.getController().addControlListener(this);
+        this.addMouseListener(this);
 
-            case 1:
-                column.setPreferredWidth(230);
-                break;
+        // PanelUI uid = this.getUI();
+        // org.jvnet.substance.swingx.SubstanceTaskPaneUI.
+        // this.setUI(new UI());
+        lines = new ProgressEntry[MAX_BARS];
+        this.setCollapsed(JDUtilities.getSubConfig("gui").getBooleanProperty(TabProgress.COLLAPSED, false));
+        setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
+        this.setTitle(JDLocale.LF("gui.progresspane.title", "%s modules running", 0));
+        initGUI();
+    }
 
-            }
+    private void initGUI() {
+        for (int i = 0; i < MAX_BARS; i++) {
+            lines[i] = new ProgressEntry();
         }
-        setVisible(false);
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setPreferredSize(new Dimension(800, 100));
 
-        add(scrollPane);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -187,69 +95,172 @@ public class TabProgress extends JPanel implements ActionListener {
 
     }
 
-    public synchronized void addController(ProgressController source) {
+    private synchronized void addController(ProgressController source) {
 
-        JProgressBar progressBar = new JProgressBar();
-        progressBar.setMaximum((int) source.getMax());
-        progressBar.setValue((int) source.getValue());
-        progressBar.setStringPainted(true);
-        if (source.getColor() != null) progressBar.setForeground(source.getColor());
-        bars.add(0, progressBar);
         controllers.add(0, source);
-        updateController(source);
 
     }
 
-    public synchronized Vector<ProgressController> getControllers() {
-
-        return controllers;
-    }
-
-    public synchronized boolean hasController(ProgressController source) {
+    private synchronized boolean hasController(ProgressController source) {
         return controllers.contains(source);
     }
 
-    public synchronized void removeController(ProgressController source) {
+    private synchronized void removeController(ProgressController source) {
         int index = controllers.indexOf(source);
 
         if (index >= 0) {
-            bars.remove(index);
+
             controllers.remove(source);
-            updateController(source);
+
         }
 
     }
 
-    public synchronized void updateController(ProgressController source) {
-        if (source == null) {
-            table.tableChanged(new TableModelEvent(table.getModel()));
-            return;
-        }
-        if (controllers.size() > 0) {
-            if (source.isFinished()) {
-
-            } else {
-                setVisible(true);
-                if (flickerTimer != null && flickerTimer.isRunning()) {
-                    flickerTimer.stop();
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == ControlEvent.CONTROL_ON_PROGRESS && event.getSource() instanceof ProgressController) {
+            ProgressController source = (ProgressController) event.getSource();
+            try {
+                if (source.isFinished()) {
+                    this.removeController(source);
+                    return;
                 }
-                if (controllers.indexOf(source) < bars.size()) {
-                    bars.get(controllers.indexOf(source)).setMaximum((int) source.getMax());
-                    bars.get(controllers.indexOf(source)).setValue((int) source.getValue());
-                    if (source.getColor() != null) bars.get(controllers.indexOf(source)).setForeground(source.getColor());
-                    bars.get(controllers.indexOf(source)).setString(source.getProgressText());
+                if (!hasController(source)) {
+                    addController(source);
                 }
-
+            } finally {
+                sortControllers();
+                EventQueue.invokeLater(new Runnable() {
+                    public void run() {
+                        update();
+                    }
+                });
             }
 
-        } else {
-            flickerTimer = new Timer(3000, this);
-            flickerTimer.setRepeats(false);
-            flickerTimer.start();
-
         }
 
-        table.tableChanged(new TableModelEvent(table.getModel()));
+    }
+
+    protected void update() {
+        for (int i = 0; i < MAX_BARS; i++) {
+            this.remove(this.lines[i]);
+        }
+        for (int i = 0; i < Math.min(controllers.size(), MAX_BARS); i++) {
+            lines[i].update(this.controllers.get(i));
+            this.add(lines[i], "height 20!");
+        }
+
+        this.setTitle(JDLocale.LF("gui.progresspane.title", "%s modules running", controllers.size()));
+        this.revalidate();
+        this.repaint();
+    }
+
+    /**
+     * Sorts the controllers
+     */
+    private void sortControllers() {
+        Collections.sort(controllers, new Comparator<ProgressController>() {
+
+            public int compare(ProgressController o1, ProgressController o2) {
+
+                if (o1.getPercent() == o2.getPercent()) return 0;
+                return o1.getPercent() < o2.getPercent() ? 1 : -1;
+            }
+        });
 
     }
+
+    class ProgressEntry extends JXPanel {
+        /**
+         * 
+         */
+        private static final long serialVersionUID = 2676301394570621548L;
+        private JLabel label;
+        private JProgressBar bar;
+
+        public ProgressEntry() {
+            this.setLayout(new MigLayout("ins 0", "[20!]0[grow,fill]", "16!"));
+            this.add(label = new JLabel(), "sizegroup labels");
+            this.add(bar = new JProgressBar(), "wrap,sizegroup bars");
+            this.add(new JSeparator(), "span");
+        }
+
+        public void update(ProgressController controller) {
+
+            label.setIcon(controller.getIcon());
+            bar.setMaximum((int) controller.getMax());
+            bar.setValue((int) controller.getValue());
+            bar.setStringPainted(true);
+            bar.setString(controller.getStatusText());
+        
+           if(controller.getColor()!=null) bar.setBackground(controller.getColor());
+
+          //  if (controller.getColor() != null) bar.setForeground(controller.getColor());
+
+        }
+    }
+
+    // public static void main(String[] args) {
+    // SwingUtilities.invokeLater(new Runnable() {
+    // public void run() {
+    // JFrame f = new JFrame("Test Oriented Collapsible Pane");
+    //
+    // f.add(new JLabel("Press Ctrl+F or Ctrl+G to collapse panes."),
+    // BorderLayout.NORTH);
+    //
+    // JTree tree1 = new JTree();
+    // tree1.setBorder(BorderFactory.createEtchedBorder());
+    // f.add(tree1);
+    //
+    // JXCollapsiblePane pane = new JXCollapsiblePane();
+    // pane.setCollapsed(true);
+    // JTree tree2 = new JTree();
+    // tree2.setBorder(BorderFactory.createEtchedBorder());
+    // pane.add(tree2);
+    // f.add(pane, BorderLayout.SOUTH);
+    //
+    // pane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.
+    // getKeyStroke("ctrl F"), JXCollapsiblePane.TOGGLE_ACTION);
+    //
+    // pane = new JXCollapsiblePane();
+    // JTree tree3 = new JTree();
+    // pane.add(tree3);
+    // tree3.setBorder(BorderFactory.createEtchedBorder());
+    // f.add(pane, BorderLayout.WEST);
+    //
+    // pane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.
+    // getKeyStroke("ctrl G"), JXCollapsiblePane.TOGGLE_ACTION);
+    //
+    // f.setSize(640, 480);
+    // f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    // f.setVisible(true);
+    // }
+    // });
+    // }
+
+    public void mouseClicked(MouseEvent e) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void mouseEntered(MouseEvent e) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void mouseExited(MouseEvent e) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void mousePressed(MouseEvent e) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void mouseReleased(MouseEvent e) {
+        System.out.println("Task is :" + this.isCollapsed());
+        JDUtilities.getSubConfig("gui").setProperty(TabProgress.COLLAPSED, this.isCollapsed());
+        JDUtilities.getSubConfig("gui").save();
+    }
+
 }

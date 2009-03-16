@@ -16,14 +16,20 @@
 
 package jd.gui.skins.simple;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.Serializable;
+import java.net.URL;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
 
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 
 import jd.config.SubConfiguration;
+import jd.parser.Regex;
 import jd.utils.JDUtilities;
-import de.javasoft.plaf.synthetica.SyntheticaBlueMoonLookAndFeel;
 
 public class JDLookAndFeelManager implements Serializable {
 
@@ -67,16 +73,62 @@ public class JDLookAndFeelManager implements Serializable {
         return new JDLookAndFeelManager(UIManager.getSystemLookAndFeelClassName());
     }
 
+    public static void installSubstance() {
+
+        File directory = null;
+        String pkg = "org/jvnet/substance/skin/";
+        URL res = JDUtilities.getJDClassLoader().getResource(pkg);
+        String url = new Regex(res, "(.*)\\!.*").getMatch(0);
+        url = url.substring(4);
+        File file;
+        try {
+            file = new File(new URL(url).toURI());
+            directory = new File(res.getFile());     
+
+            JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
+            JarEntry e;
+            while ((e = jarFile.getNextJarEntry()) != null) {
+                if (e.getName().startsWith(pkg)) {
+                    String laf = new Regex(e.getName(), "org/jvnet/substance/skin/(.*?)LookAndFeel\\.class").getMatch(0);
+                    if (laf != null) {
+                        System.out.println("Installed LAF: " + laf);
+                        UIManager.installLookAndFeel(laf.replace("Substance", "NEW: "), "org.jvnet.substance.skin." + laf + "LookAndFeel");
+                    }
+                }
+                System.out.println();
+            }
+
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+
+        }
+       
+
+    }
+
     public static void setUIManager() {
         if (uiInitated) return;
         uiInitated = true;
+
+        installSubstance();
         try {
             // UIManager.setLookAndFeel(new SyntheticaStandardLookAndFeel());
-            // UIManager.setLookAndFeel(new SyntheticaSilverMoonLookAndFeel());
-           // UIManager.setLookAndFeel(new de.javasoft.plaf.synthetica.SyntheticaSimple2DLookAndFeel());
-            //UIManager.setLookAndFeel(new SyntheticaBlueMoonLookAndFeel());
-            // UIManager.setLookAndFeel( new SubstanceCremeLookAndFeel());
-             UIManager.setLookAndFeel(getPlaf().getClassName());
+            // UIManager.setLookAndFeel(new
+            // de.javasoft.plaf.synthetica.SyntheticaBlackStarLookAndFeel());
+            // UIManager.setLookAndFeel(new
+            // de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel());
+            // UIManager.setLookAndFeel(new SyntheticaBlueMoonLookAndFeel());
+            // UIManager.setLookAndFeel(new org.jvnet.substance.skin.());
+            // UIManager.setLookAndFeel(new
+            // org.jvnet.substance.skin.SubstanceModerateLookAndFeel());
+            // UIManager.setLookAndFeel(new
+            // org.jvnet.substance.skin.SubstanceMistAquaLookAndFeel());
+            // UIManager.setLookAndFeel(new
+            // org.jvnet.substance.skin.SubstanceBusinessBlueSteelLookAndFeel
+            // ());
+
+            UIManager.setLookAndFeel(getPlaf().getClassName());
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -41,11 +41,15 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -65,7 +69,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
-import javax.swing.JSplitPane;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
@@ -74,7 +77,6 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.MenuEvent;
@@ -88,6 +90,7 @@ import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
 import jd.controlling.ProgressController;
@@ -110,8 +113,19 @@ import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.ConfigPanelAddons;
+import jd.gui.skins.simple.config.ConfigPanelCaptcha;
+import jd.gui.skins.simple.config.ConfigPanelDownload;
+import jd.gui.skins.simple.config.ConfigPanelEventmanager;
+import jd.gui.skins.simple.config.ConfigPanelGUI;
+import jd.gui.skins.simple.config.ConfigPanelGeneral;
+import jd.gui.skins.simple.config.ConfigPanelPluginForDecrypt;
 import jd.gui.skins.simple.config.ConfigPanelPluginForHost;
+import jd.gui.skins.simple.config.ConfigPanelReconnect;
 import jd.gui.skins.simple.config.ConfigurationPopup;
+import jd.gui.skins.simple.config.FengShuiConfigPanel;
+import jd.gui.skins.simple.tasks.ConfigTaskPane;
+import jd.gui.skins.simple.tasks.DownloadTaskPane;
+import jd.gui.skins.simple.tasks.GrabberTaskPane;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.plugins.Account;
@@ -125,6 +139,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.jdesktop.swingx.JXTitledSeparator;
 
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener, DropTargetListener {
@@ -637,8 +652,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     private TabProgress progressBar;
 
-    private JSplitPane horizontalSplitPane;
-
     /**
      * Die Statusleiste für Meldungen
      */
@@ -664,9 +677,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private SpeedMeterPanel speedmeter;
 
-    private TabbedPane taskPane;
+    private TaskPane taskPane;
 
+    private ContentPanel contentPanel;
 
+    private HashMap<Class, JTabbedPanel> panelMap;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -688,7 +703,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         initMenuBar();
         localize();
         buildUI();
-
+        panelMap = new HashMap<Class, JTabbedPanel>();
         frame.setName("MAINFRAME");
         Dimension dim = SimpleGUI.getLastDimension(frame, null);
         if (dim == null) {
@@ -946,15 +961,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             logger.info("new linkgrabber");
 
             linkGrabber = new LinkGrabber(this, linkList);
-            taskPane.add(new GrabberTaskPane("Linkgrabber",JDTheme.II("gui.images.add"),linkGrabber));
-     
-            taskPane.displayPanel(linkGrabber);
+            taskPane.add(new GrabberTaskPane("Linkgrabber", JDTheme.II("gui.images.add"), linkGrabber));
 
+            contentPanel.display(linkGrabber);
 
         } else {
             logger.info("add to grabber");
             linkGrabber.addLinks(linkList);
-            taskPane.displayPanel(linkGrabber);
+            contentPanel.display(linkGrabber);
         }
         dragNDrop.setText(JDLocale.L("gui.droptarget.grabbed", "Grabbed:") + " " + linkList.length + " (" + links.size() + ")");
     }
@@ -965,26 +979,153 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
     }
 
+    /***
+     * INstanziert ein jPanel und cached es in einer hasmap
+     * 
+     * @param class1
+     * @param configConstructorObjects
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    private JTabbedPanel loadPanel(Class class1, Object[] configConstructorObjects) {
+        JTabbedPanel ret = panelMap.get(class1);
+        if (ret == null) {
+            Class[] classes = new Class[configConstructorObjects.length];
+            for (int i = 0; i < configConstructorObjects.length; i++)
+                classes[i] = configConstructorObjects[i].getClass();
+
+            Constructor con;
+            try {
+                con = class1.getConstructor(classes);
+
+                ret = (JTabbedPanel) con.newInstance(configConstructorObjects);
+
+                panelMap.put(class1, ret);
+            } catch (SecurityException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (NoSuchMethodException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IllegalArgumentException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (InstantiationException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+        return ret;
+    }
+
     /**
      * Hier wird die komplette Oberfläche der Applikation zusammengestrickt
      */
     private void buildUI() {
         CURRENTGUI = this;
         linkListPane = new DownloadLinksTreeTablePanel(this);
+        taskPane = new TaskPane();
+        taskPane.setBackgroundPainter(null);
 
-        taskPane = new TabbedPane(this);
-        taskPane.add(new DownloadTaskPane("Download",JDTheme.II("gui.images.down"),linkListPane));
+        DownloadTaskPane dlTskPane = new DownloadTaskPane("Download", JDTheme.II("gui.images.down"));
+        dlTskPane.addActionListener(new ActionListener() {
 
+            public void actionPerformed(ActionEvent e) {
+                System.out.println(e.getActionCommand());
+                if (e.getID() == DownloadTaskPane.ACTION_CLICK) {
+                    contentPanel.display(linkListPane);
+                }
 
-        taskPane.add(new ConfigTaskPane("Configuration",JDTheme.II("gui.images.configuration")));
-        taskPane.displayPanel(linkListPane);
+            }
+
+        });
+        taskPane.add(dlTskPane);
+
+        ConfigTaskPane cfgTskPane = new ConfigTaskPane("Configuration", JDTheme.II("gui.images.configuration"));
+        cfgTskPane.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                Object[] configConstructorObjects = new Object[] { JDUtilities.getConfiguration() };
+                switch (e.getID()) {
+                case ConfigTaskPane.ACTION_SAVE:
+                    boolean restart = false;
+                    for (Iterator<JTabbedPanel> it = panelMap.values().iterator(); it.hasNext();) {
+                        JTabbedPanel next = it.next();
+                        if (next instanceof ConfigPanel) {
+                            if (((ConfigPanel) next).hasChanges() == PropertyType.NEEDS_RESTART) restart = true;
+                            ((ConfigPanel) next).save();
+                          
+                        }
+
+                    }
+                    if (restart) {
+                        if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDLocale.L("gui.config.save.restart.title", "JDownloader restart requested"))) {
+                            JDUtilities.restartJD();
+                        }
+                    }
+                    break;
+
+                case ConfigTaskPane.ACTION_CLICK:
+                    contentPanel.display(new FengShuiConfigPanel());
+
+                    break;
+                case ConfigTaskPane.ACTION_ADDONS:
+                    contentPanel.display(loadPanel(ConfigPanelAddons.class, configConstructorObjects));
+
+                    break;
+                case ConfigTaskPane.ACTION_CAPTCHA:
+                    contentPanel.display(loadPanel(ConfigPanelCaptcha.class, configConstructorObjects));
+
+                    break;
+                case ConfigTaskPane.ACTION_DECRYPT:
+                    contentPanel.display(loadPanel(ConfigPanelPluginForDecrypt.class, configConstructorObjects));
+
+                    break;
+                case ConfigTaskPane.ACTION_DOWNLOAD:
+                    contentPanel.display(loadPanel(ConfigPanelDownload.class, configConstructorObjects));
+
+                    break;
+                case ConfigTaskPane.ACTION_EVENTMANAGER:
+                    contentPanel.display(loadPanel(ConfigPanelEventmanager.class, configConstructorObjects));
+
+                    break;
+                case ConfigTaskPane.ACTION_GENERAL:
+                    contentPanel.display(loadPanel(ConfigPanelGeneral.class, configConstructorObjects));
+                    break;
+                case ConfigTaskPane.ACTION_GUI:
+                    contentPanel.display(loadPanel(ConfigPanelGUI.class, configConstructorObjects));
+
+                    break;
+                case ConfigTaskPane.ACTION_HOST:
+                    contentPanel.display(loadPanel(ConfigPanelPluginForHost.class, configConstructorObjects));
+
+                    break;
+                case ConfigTaskPane.ACTION_RECONNECT:
+                    contentPanel.display(loadPanel(ConfigPanelReconnect.class, configConstructorObjects));
+
+                    break;
+                }
+
+            }
+        });
+
+        taskPane.add(cfgTskPane);
+        contentPanel = new ContentPanel();
+        contentPanel.display(linkListPane);
+        // taskPane.add(new
+        // ConfigTaskPane("Configuration",JDTheme.II("gui.images.configuration"
+        // )));
+        // taskPane.displayPanel(linkListPane);
         // taskPane.display(0);
         progressBar = new TabProgress();
         statusBar = new StatusBar();
-        horizontalSplitPane = new JSplitPane();
-        horizontalSplitPane.setBottomComponent(progressBar);
-        horizontalSplitPane.setTopComponent(taskPane);
-        horizontalSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
+
         btnStartStop = createMenuButton(actionStartStopDownload);
         btnPause = createMenuButton(actionPause);
         btnPause.setEnabled(false);
@@ -1023,18 +1164,53 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             // toolBar.add(Box.createGlue());
             toolBar.add(speedmeter);
         }
-        JPanel panel = new JPanel(new BorderLayout());
-        int n = 2;
-        toolBar.setBorder(new EmptyBorder(n, 0, n, 0));
-        n = 5;
-        panel.setBorder(new EmptyBorder(0, n, 0, n));
-        n = 3;
-        statusBar.setBorder(new EmptyBorder(n, 0, n, 0));
+        JPanel panel = new JPanel(new MigLayout("ins 0,wrap 2", "[fill]0[fill,grow 100]", "[]0[grow,fill]0[]0[]"));
+        // int n = 2;
+        // toolBar.setBorder(new EmptyBorder(n, 0, n, 0));
+        // n = 5;
+        // panel.setBorder(new EmptyBorder(0, n, 0, n));
+        // n = 3;
+        // statusBar.setBorder(new EmptyBorder(n, 0, n, 0));
         frame.setContentPane(panel);
+        final ProgressController pc = new ProgressController("tester");
+        pc.setIcon(JDTheme.II("gui.images.warning", 16, 16));
+        pc.setRange(10);
 
-        panel.add(toolBar, BorderLayout.NORTH);
-        panel.add(horizontalSplitPane, BorderLayout.CENTER);
-        panel.add(statusBar, BorderLayout.SOUTH);
+        final ProgressController pc2 = new ProgressController("tester2");
+        pc2.setIcon(JDTheme.II("gui.images.warning", 16, 16));
+
+        pc2.setRange(20);
+        new Thread() {
+            public void run() {
+                while (true) {
+                    pc.increase(1);
+                    pc2.increase(1);
+                    if (pc.getPercent() >= 1.0) {
+                        pc.finalize();
+                    }
+                    if (pc2.getPercent() >= 1.0) {
+                        pc2.setColor(Color.RED);
+                        pc2.setStatusText("Error in Module");
+                        pc2.finalize(5000);
+                    }
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
+
+        panel.add(toolBar, "span");
+        panel.add(taskPane);
+        // taskPane.setBorder(BorderFactory.createLineBorder(Color.RED));
+        panel.add(contentPanel);
+        // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
+        panel.add(progressBar, "span");
+        // progressBar.setBorder(BorderFactory.createLineBorder(Color.BLUE));
+        panel.add(statusBar, "span");
 
         // Einbindung des Log Dialogs
         logDialog = new LogDialog(frame, logger);
@@ -1080,9 +1256,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                         }
                     }
                     break;
-                case ControlEvent.CONTROL_ON_PROGRESS:
-                    handleProgressController((ProgressController) event.getSource(), event.getParameter());
-                    break;
+
                 case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                     logger.info("ALL FINISHED");
                     btnStartStop.setEnabled(true);
@@ -1283,21 +1457,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             return JDTheme.V("gui.images.next");
         } else {
             return JDTheme.V("gui.images.stop");
-        }
-    }
-
-    private void handleProgressController(ProgressController source, Object parameter) {
-
-        if (!progressBar.hasController(source) && !source.isFinished()) {
-            progressBar.addController(source);
-        } else if (source.isFinished()) {
-            progressBar.removeController(source);
-        } else {
-            progressBar.updateController(source);
-        }
-
-        if (progressBar.getControllers().size() > 0) {
-            horizontalSplitPane.setDividerLocation(0.8);
         }
     }
 
@@ -1558,7 +1717,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             statusBar.setSpeed(JDUtilities.getController().getSpeedMeter());
         }
 
-        progressBar.updateController(null);
         frame.setTitle(JDUtilities.getJDTitle());
     }
 

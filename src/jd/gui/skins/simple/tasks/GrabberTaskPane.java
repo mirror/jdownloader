@@ -1,17 +1,18 @@
-package jd.gui.skins.simple;
+package jd.gui.skins.simple.tasks;
 
 import javax.swing.ImageIcon;
 
-import jd.utils.JDLocale;
+import jd.gui.skins.simple.LinkGrabber;
+import jd.gui.skins.simple.TreeTabbedNode;
 import jd.utils.JDTheme;
 
-public class GrabberTaskPane extends TreeTaskPane {
+public class GrabberTaskPane extends TaskPanel {
 
     private LinkGrabber grabber;
     private TreeTabbedNode linkGrabberNode;
 
     public GrabberTaskPane(String string, ImageIcon ii, LinkGrabber grabber) {
-        super(string, ii);
+super(string,ii);
         this.grabber = grabber;
         initGUI();
 

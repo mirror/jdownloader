@@ -255,7 +255,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     if (con.getLongContentLength() < 1000) {
                         con.disconnect();
                         logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
-                        progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.decryptlimit", "SJ Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)"));
+                        progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.decryptlimit", "SJ Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)"));
                         new Thread(new Runnable() {
                             public void run() {
                                 for (int i = 0; i < 100; i++) {
@@ -273,7 +273,7 @@ public class Serienjunkies extends PluginForDecrypt {
                             rc = false;
                             progress.setColor(Color.red);
                             progress.setStatus(0);
-                            progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.downloadlimit", "Error: SerienJunkies Downloadlimit"));
+                            progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.downloadlimit", "Error: SerienJunkies Downloadlimit"));
                             for (int i = 0; i < 100; i++) {
                                 try {
                                     Thread.sleep(100);
@@ -314,7 +314,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         e.printStackTrace();
                         progress.setColor(Color.red);
                         progress.setStatus(0);
-                        progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.captcha", "Error: Captcha"));
+                        progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.captcha", "Error: Captcha"));
                         return new Vector<String>();
                     }
                     active--;
@@ -331,7 +331,7 @@ public class Serienjunkies extends PluginForDecrypt {
             Form[] forms = br3.getForms();
             final Vector<Thread> threads = new Vector<Thread>();
             final Browser[] br2 = new Browser[] { br3.cloneBrowser(), br3.cloneBrowser(), br3.cloneBrowser(), br3.cloneBrowser() };
-            progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.getLinks", "get links"));
+            progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.getLinks", "get links"));
             progress.setStatus(0);
 
             ArrayList<String> actions = new ArrayList<String>();
@@ -540,7 +540,7 @@ public class Serienjunkies extends PluginForDecrypt {
             }
             if (br3.containsHTML("Download-Limit")) {
                 logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
-                progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.decryptlimit", "SJ Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)"));
+                progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.decryptlimit", "SJ Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)"));
                 new Thread(new Runnable() {
                     public void run() {
                         for (int i = 0; i < 100; i++) {
@@ -567,7 +567,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     rc = false;
                     progress.setColor(Color.red);
                     progress.setStatus(0);
-                    progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.downloadlimit", "Error: SerienJunkies Downloadlimit"));
+                    progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.downloadlimit", "Error: SerienJunkies Downloadlimit"));
                     for (int i = 0; i < 100; i++) {
                         try {
                             Thread.sleep(100);
@@ -1149,6 +1149,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
                 }
                 ArrayList<DownloadLink> dls = getDLinks(link, cryptedLink);
+                dls=dls;
                 if (dls != null && dls.size() < 1) {
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                     if (linkStatus.getErrorMessage() == null || linkStatus.getErrorMessage().endsWith("")) linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.pageerror", "SJ liefert keine Downloadlinks"));
@@ -1164,7 +1165,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         if (finaldls.size() > 0) {
                             try {
                                 DownloadLink[] linksar = finaldls.toArray(new DownloadLink[finaldls.size()]);
-                                progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.checkLinks", "check links"));
+                                progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.checkLinks", "check links"));
                                 progress.setStatus(0);
                                 int inc = 100 / linksar.length;
                                 linksar[0].getPlugin().checkLinks(linksar);
@@ -1201,7 +1202,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                     if (finaldls.size() > 0) {
                                         try {
                                             DownloadLink[] linksar = finaldls.toArray(new DownloadLink[finaldls.size()]);
-                                            progress.setProgressText(JDLocale.L("plugins.decrypt.serienjunkies.progress.checkMirror", "check mirror"));
+                                            progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.checkMirror", "check mirror"));
                                             progress.setStatus(0);
                                             int inc = 100 / linksar.length;
                                             linksar[0].getPlugin().checkLinks(linksar);

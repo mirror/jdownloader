@@ -2009,7 +2009,7 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
     }
 
     @Override
-    public void onDisplay(int i) {
+    public void onDisplay() {
         // TODO Auto-generated method stub
         
     }

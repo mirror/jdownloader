@@ -39,7 +39,7 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
         super(parent, new BorderLayout());
         internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(this));
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
-        scrollPane.setPreferredSize(new Dimension(800, 450));
+        //scrollPane.setPreferredSize(new Dimension(800, 450));
         this.add(scrollPane);
     }
 
@@ -77,7 +77,7 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
     }
 
     @Override
-    public void onDisplay(int i) {
+    public void onDisplay() {
         // TODO Auto-generated method stub
         
     }

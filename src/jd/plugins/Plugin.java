@@ -95,11 +95,11 @@ public abstract class Plugin implements ActionListener {
     }
 
     public static ConversionMode DisplayDialog(ArrayList<ConversionMode> displaymodes, String name, CryptedLink link) throws InterruptedException {
-        link.getProgressController().setProgressText(SimpleGUI.WAITING_USER_IO);
+        link.getProgressController().setStatusText(SimpleGUI.WAITING_USER_IO);
         JDUtilities.acquireUserIO_Semaphore();
         ConversionMode temp = ConvertDialog.DisplayDialog(displaymodes, name);
         JDUtilities.releaseUserIO_Semaphore();
-        link.getProgressController().setProgressText(null);
+        link.getProgressController().setStatusText(null);
         return temp;
     }
 

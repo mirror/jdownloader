@@ -65,10 +65,9 @@ import jd.utils.WebUpdate;
 
 public class Main {
 
-    private static boolean debug = false;
-    private static boolean rfu = false;
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger LOGGER;
     private static SplashScreen splashScreen;
+    private static Object INIT_WAITER;
 
     public static String getCaptcha(String path, String host) {
 
@@ -139,82 +138,39 @@ public class Main {
     }
 
     public static boolean returnedfromUpdate() {
-        return rfu;
+        return JDInitFlags.SWITCH_RETURNED_FROM_UPDATE;
     }
 
     public static void main(String args[]) {
         System.setProperty("file.encoding", "UTF-8");
-        // Mac specific //
-        if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
-            logger.info("apple.laf.useScreenMenuBar=true");
-            logger.info("com.apple.mrj.application.growbox.intrudes=false");
-            logger.info("com.apple.mrj.application.apple.menu.about.name=jDownloader");
-            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "jDownloader");
-            System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
-            System.setProperty("apple.laf.useScreenMenuBar", "true");
-            new MacOSController();
-        }
+        LOGGER = JDUtilities.getLogger();
+        initMACProperties();
 
         for (String p : args) {
             if (p.equalsIgnoreCase("-debug")) {
-                debug = true;
+                JDInitFlags.SWITCH_DEBUG = true;
             }
             if (p.equalsIgnoreCase("-rfb")) {
-                rfu = true;
+                JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
             }
         }
+        preInitChecks();
 
-        if (!CheckJava.check()) {
-            System.out.println("Wrong Java Version! JDownloader needs at least Java 1.5 or higher!");
-            System.exit(0);
-        }
-        Boolean newInstance = false;
-        boolean showSplash = true;
-        boolean stop = false;
-        // boolean extractSwitch = false;
-        // long extractTime = 0;
-        // Vector<String> paths = new Vector<String>();
-        boolean enoughtMemory = !(Runtime.getRuntime().maxMemory() < 100000000);
-        if (!enoughtMemory) {
-            showSplash = false;
-        }
-        // pre start parameters //
         for (int i = 0; i < args.length; i++) {
-            // if (extractSwitch) {
-            // if (args[i].equals("--rotate") || args[i].equals("-r")) {
-            //
-            // extractTime = -1;
-            //
-            // } else if (extractTime == -1) {
-            //
-            // if (args[i].matches("[\\d]+")) {
-            // extractTime = Integer.parseInt(args[i]);
-            // } else {
-            // extractTime = 0;
-            // }
-            //
-            // } else if (!args[i].matches("[\\s]*")) {
-            //
-            // paths.add(args[i]);
-            //
-            // }
-            //
-            // } else if (args[i].equals("--new-instance") ||
-            // args[i].equals("-n")) {
 
             if (args[i].equals("-prot")) {
 
-                logger.info(args[i] + " " + args[i + 1]);
+                LOGGER.info(args[i] + " " + args[i + 1]);
                 i++;
 
             } else if (args[i].equals("--new-instance") || args[i].equals("-n")) {
 
-                if (!enoughtMemory) {
+                if (!JDInitFlags.ENOUGH_MEMORY) {
                     JDUtilities.restartJD(args);
                 }
 
-                logger.info(args[i] + " parameter");
-                newInstance = true;
+                LOGGER.info(args[i] + " parameter");
+                JDInitFlags.SWITCH_NEW_INSTANCE = true;
 
             } else if (args[i].equals("--help") || args[i].equals("-h")) {
 
@@ -225,7 +181,7 @@ public class Main {
 
                 if (args.length > i + 2) {
 
-                    logger.setLevel(Level.OFF);
+                    LOGGER.setLevel(Level.OFF);
                     String captchaValue = Main.getCaptcha(args[i + 1], args[i + 2]);
                     System.out.println("" + captchaValue);
                     System.exit(0);
@@ -238,45 +194,60 @@ public class Main {
 
                 }
 
-                // } else if (args[i].equals("--extract") ||
-                // args[i].equals("-e")) {
-                // extractSwitch = true;
-                // stop = true;
-                // showSplash = false;
             } else if (args[i].equals("--show") || args[i].equals("-s")) {
 
                 JACController.showDialog(false);
-                // extractSwitch = false;
-                stop = true;
+                JDInitFlags.STOP = true;
 
             } else if (args[i].equals("--train") || args[i].equals("-t")) {
 
                 JACController.showDialog(true);
-                // extractSwitch = false;
-                stop = true;
+                JDInitFlags.STOP = true;
 
-            } else if (showSplash && args[i].matches("(--add-.*|--start-download|-[dDmfHr]|--stop-download|--minimize|--focus|--hide|--reconnect)")) {
-                showSplash = false;
+            } else if (JDInitFlags.SHOW_SPLASH && args[i].matches("(--add-.*|--start-download|-[dDmfHr]|--stop-download|--minimize|--focus|--hide|--reconnect)")) {
+                JDInitFlags.SHOW_SPLASH = false;
             }
 
         }
         splashScreen = null;
-        try {
-            if (showSplash && JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)) {
-            	splashScreen = new SplashScreen(JDUtilities.getResourceFile("/jd/img/jddesigncp5.png").getAbsolutePath());
-                splashScreen.setVisible(true);
-                SplashScreenImages ssiImages = new SplashScreenImages(splashScreen.getImage());
-                splashScreen.setSplashScreenImages(ssiImages);
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_languages.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_languages.png").getAbsolutePath()), 160, 60);
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_settings.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_settings2.png").getAbsolutePath()));
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_controller.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_controller.png").getAbsolutePath()));
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_update.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_update.png").getAbsolutePath()));
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_plugins.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_plugins.png").getAbsolutePath()));
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_screen.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_screen.png").getAbsolutePath()), -5);
-                ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_dllist.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_dllist.png").getAbsolutePath()), 12);
+        INIT_WAITER = new Object();
+        if (JDInitFlags.SHOW_SPLASH) {
+            if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)) {
+
+                EventQueue.invokeLater(new Runnable() {
+                    public void run() {
+                        try {
+                            splashScreen = new SplashScreen(JDUtilities.getResourceFile("/jd/img/jddesigncp5.png").getAbsolutePath());
+                            splashScreen.setVisible(true);
+                            SplashScreenImages ssiImages = new SplashScreenImages(splashScreen.getImage());
+                            splashScreen.setSplashScreenImages(ssiImages);
+                            ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_languages.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_languages.png").getAbsolutePath()), 160, 60);
+                            ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_settings.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_settings2.png").getAbsolutePath()));
+                            ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_controller.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_controller.png").getAbsolutePath()));
+                            ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_update.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_update.png").getAbsolutePath()));
+                            ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_plugins.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_plugins.png").getAbsolutePath()));
+                            ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_screen.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_screen.png").getAbsolutePath()), -5);
+                            ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_dllist.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_dllist.png").getAbsolutePath()), 12);
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        synchronized (INIT_WAITER) {
+                            INIT_WAITER.notify();
+                        }
+
+                    }
+                });
+                /* Waits until splash is loaded */
+                try {
+                    synchronized (INIT_WAITER) {
+                        INIT_WAITER.wait();
+                    }
+                } catch (InterruptedException e) {
+
+                    e.printStackTrace();
+                }
             }
-        } catch (Exception e) {
-            // TODO: handle exception
         }
         Interaction.initTriggers();
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadLanguage", "lade Sprachen"));
@@ -284,16 +255,16 @@ public class Main {
         JDTheme.setTheme("default");
         JDSounds.setSoundTheme("default");
 
-        if (!newInstance && Main.tryConnectToServer(args)) {
+        if (!JDInitFlags.SWITCH_NEW_INSTANCE && Main.tryConnectToServer(args)) {
 
             if (args.length > 0) {
 
-                logger.info("Send parameters to existing jD instance and exit");
+                LOGGER.info("Send parameters to existing jD instance and exit");
                 System.exit(0);
 
             } else {
 
-                logger.info("There is already a running jD instance");
+                LOGGER.info("There is already a running jD instance");
                 Main.tryConnectToServer(new String[] { "--focus" });
                 System.exit(0);
 
@@ -301,15 +272,7 @@ public class Main {
 
         } else {
 
-            // if (extractSwitch) {
-            //
-            // logger.info("Extract: [" + paths.toString() + " | " + extractTime
-            // + "]");
-            // Server.extract(paths, extractTime, true);
-            //
-            // }
-
-            if (!stop && !enoughtMemory) {
+            if (!JDInitFlags.STOP && !JDInitFlags.ENOUGH_MEMORY) {
                 JDUtilities.restartJD(args);
             }
 
@@ -320,7 +283,7 @@ public class Main {
                 server.go();
                 final String[] processArgs = args;
 
-                if (!stop) {
+                if (!JDInitFlags.STOP) {
 
                     final Main main = new Main();
 
@@ -330,7 +293,7 @@ public class Main {
                             Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
                             main.go();
                             for (String p : processArgs) {
-                                logger.severe("Param: " + p);
+                                LOGGER.severe("Param: " + p);
                             }
                             // post start parameters //
                             try {
@@ -346,16 +309,16 @@ public class Main {
 
             } catch (RemoteException e) {
 
-                logger.severe("Server could not be started - ignore parameters");
+                LOGGER.severe("Server could not be started - ignore parameters");
                 e.printStackTrace();
 
-                if (!stop) {
+                if (!JDInitFlags.STOP) {
 
                     Main main = new Main();
                     main.go();
 
                     for (String p : args) {
-                        logger.severe("Param: " + p);
+                        LOGGER.severe("Param: " + p);
                     }
 
                 }
@@ -366,9 +329,50 @@ public class Main {
 
     }
 
+    private static void preInitChecks() {
+        heapCheck();
+        javaCheck();
+    }
+
+    private static void heapCheck() {
+        JDInitFlags.ENOUGH_MEMORY = !(Runtime.getRuntime().maxMemory() < 100000000);
+        if (!JDInitFlags.ENOUGH_MEMORY) {
+            JDInitFlags.SHOW_SPLASH = false;
+        }
+    }
+
+    /**
+     * Checks if the user uses a correct java version
+     */
+    private static void javaCheck() {
+        if (!CheckJava.check()) {
+            System.out.println("Wrong Java Version! JDownloader needs at least Java 1.5 or higher!");
+            System.exit(0);
+        }
+
+    }
+
+    /**
+     * Sets special Properties for MAC
+     */
+    private static void initMACProperties() {
+        // Mac specific //
+        if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
+            LOGGER.info("apple.laf.useScreenMenuBar=true");
+            LOGGER.info("com.apple.mrj.application.growbox.intrudes=false");
+            LOGGER.info("com.apple.mrj.application.apple.menu.about.name=jDownloader");
+            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "jDownloader");
+            System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+            new MacOSController();
+        }
+
+    }
+
     private static void setSplashStatus(SplashScreen splashScreen, int i, String l) {
         // System.out.println(l);
         if (splashScreen == null) { return; }
+
         splashScreen.setNextImage();
         splashScreen.setText(l);
         splashScreen.setValue(splashScreen.getValue() + i);
@@ -397,7 +401,7 @@ public class Main {
     @SuppressWarnings("unchecked")
     private void go() {
         final JDInit init = new JDInit(splashScreen);
-        logger.info("Register plugins");
+        LOGGER.info("Register plugins");
         init.init();
         init.loadImages();
 
@@ -414,7 +418,7 @@ public class Main {
 
             JOptionPane.showMessageDialog(null, "JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
-        if (debug) {
+        if (JDInitFlags.SWITCH_DEBUG) {
             JDUtilities.getLogger().setLevel(Level.ALL);
         }
         // JDInit.setupProxy();
@@ -426,9 +430,9 @@ public class Main {
 
         final JDController controller = init.initController();
 
-        if (debug || JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false)) {
+        if (JDInitFlags.SWITCH_DEBUG || JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false)) {
             try {
-                File log = JDUtilities.getResourceFile("logs/" + (debug ? "debug" : "") + "log_" + System.currentTimeMillis() + ".log");
+                File log = JDUtilities.getResourceFile("logs/" + (JDInitFlags.SWITCH_DEBUG ? "debug" : "") + "log_" + System.currentTimeMillis() + ".log");
                 if (!log.getParentFile().exists()) {
                     log.getParentFile().mkdirs();
                 }
@@ -444,18 +448,35 @@ public class Main {
         init.initPlugins();
 
         Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
-        init.initGUI(controller);
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
 
+                init.initGUI(controller);
+                synchronized (INIT_WAITER) {
+
+                    INIT_WAITER.notify();
+                }
+            }
+        });
+        /* wait until gui is loaded */
+        synchronized (INIT_WAITER) {
+            try {
+                INIT_WAITER.wait();
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
         Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loaddownloadqueue", "Lade Downloadliste"));
         init.loadDownloadQueue();
 
         Main.setSplashStatus(splashScreen, 100, JDLocale.L("gui.splash.text.finished", "Fertig"));
 
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
-        
-       HashMap<String, String> head = new HashMap<String,String>();
-       head.put("rev", JDUtilities.getRevision());
-        JDUtilities.getConfiguration().setProperty("head",head);
+
+        HashMap<String, String> head = new HashMap<String, String>();
+        head.put("rev", JDUtilities.getRevision());
+        JDUtilities.getConfiguration().setProperty("head", head);
         // init.createQueueBackup();
 
         Properties pr = System.getProperties();
@@ -463,11 +484,11 @@ public class Main {
 
         for (Iterator it = propKeys.iterator(); it.hasNext();) {
             String key = (String) it.next();
-            logger.finer("" + key + "=" + pr.get(key));
+            LOGGER.finer("" + key + "=" + pr.get(key));
         }
 
-        logger.info("Revision: " + JDUtilities.getJDTitle());
-        logger.info("Runtype: " + JDUtilities.getRunType());
+        LOGGER.info("Revision: " + JDUtilities.getJDTitle());
+        LOGGER.info("Runtype: " + JDUtilities.getRunType());
 
         try {
             splashScreen.finish();
@@ -480,7 +501,7 @@ public class Main {
         // logger.info(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).
         // getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS,
         // false).toString());
-        if ((JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) && (JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) || level.equals(Level.ALL) || level.equals(Level.FINER) || level.equals(Level.FINE)) && !debug && (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false))) {
+        if ((JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) && (JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) || level.equals(Level.ALL) || level.equals(Level.FINER) || level.equals(Level.FINE)) && !JDInitFlags.SWITCH_DEBUG && (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false))) {
             JDUtilities.getGUI().showHelpMessage(JDLocale.L("main.start.logwarning.title", "Logwarnung"), JDLocale.LF("main.start.logwarning.body", "ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet.", level.getName(), JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) ? JDLocale.L("main.status.active", "an") : JDLocale.L("main.status.inactive", "aus")), true, JDLocale.L("main.urls.faq", "http://jdownloader.org/faq.php?lng=deutsch"), null, 10);
         }
 
@@ -495,5 +516,37 @@ public class Main {
         }
         new PackageManager().interact(this);
 
+        // loadFavs();
+
     }
+
+    // private void loadFavs() {
+    // for (HostPluginWrapper host : JDUtilities.getPluginsForHost()) {
+    //
+    // Browser br = new Browser();
+    // try {
+    // String page = br.getPage("http://" + host.getHost());
+    // String url = br.getRegex("href=.?(.*?favicon\\.ico)").getMatch(0);
+    // if(url==null)url="/favicon.ico";
+    // if(url!=null){
+    // File file;
+    // br.download(file=JDUtilities.getResourceFile("icons/"+
+    // host.getHost()+".ico"), "http://" + host.getHost()+"/"+url);
+    // List<BufferedImage> image = ICODecoder.read(file);
+    // for(BufferedImage i:image){
+    //                        
+    // ImageIO.write(i, "png", JDUtilities.getResourceFile("icons/"+
+    // host.getHost()+".png"));
+    //                        
+    // }
+    //                
+    // }
+    //               
+    // } catch (Exception e) {
+    // // TODO Auto-generated catch block
+    // e.printStackTrace();
+    // }
+    // }
+    //
+    // }
 }

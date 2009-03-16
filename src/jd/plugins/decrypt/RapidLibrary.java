@@ -41,7 +41,7 @@ public class RapidLibrary extends PluginForDecrypt {
          * only the first link shows a captcha. so we wait and queue paralell
          * requests
          */
-        if (RapidLibrary.decryptRunning) progress.setProgressText("Queued");
+        if (RapidLibrary.decryptRunning) progress.setStatusText("Queued");
         waitQueue();
 
         br.getPage(parameter.getCryptedUrl());

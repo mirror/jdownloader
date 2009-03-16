@@ -115,12 +115,12 @@ public class LinkbaseBiz extends PluginForDecrypt {
                 br.getPage(parameter);
                 if (br.getRegex("Du hast.*?Du musst noch").matches()) {
                     param.getProgressController().setRange(30);
-                    param.getProgressController().setProgressText("Wrong captcha, please wait 30 secs!");
+                    param.getProgressController().setStatusText("Wrong captcha, please wait 30 secs!");
                     for (int i = 0; i < 30; i++) {
                         Thread.sleep(1000);
                         param.getProgressController().increase(1);
                     }
-                    param.getProgressController().setProgressText(null);
+                    param.getProgressController().setStatusText(null);
                     param.getProgressController().setStatus(0);
                     continue;
                 }

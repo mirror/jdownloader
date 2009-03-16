@@ -287,8 +287,8 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
     public void mouseReleased(MouseEvent e) {
     }
 
-    public void onDisplay(int i) {
-        super.onDisplay(i);
+    public void onDisplay() {
+        super.onDisplay();
         this.changes = false;
     }
 

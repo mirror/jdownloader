@@ -480,9 +480,9 @@ public class JDUtilities {
     }
 
     public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC, CryptedLink link) throws InterruptedException {
-        link.getProgressController().setProgressText(SimpleGUI.WAITING_USER_IO);
+        link.getProgressController().setStatusText(SimpleGUI.WAITING_USER_IO);
         String code = getCaptcha(plugin, method, file, forceJAC);
-        link.getProgressController().setProgressText(null);
+        link.getProgressController().setStatusText(null);
         return code;
     }
 
@@ -514,16 +514,16 @@ public class JDUtilities {
     }
 
     public static String getUserInput(String message, CryptedLink link) throws InterruptedException {
-        link.getProgressController().setProgressText(SimpleGUI.WAITING_USER_IO);
+        link.getProgressController().setStatusText(SimpleGUI.WAITING_USER_IO);
         String password = getUserInput(message);
-        link.getProgressController().setProgressText(null);
+        link.getProgressController().setStatusText(null);
         return password;
     }
 
     public static String getUserInput(String message, String defaultmessage, CryptedLink link) throws InterruptedException {
-        link.getProgressController().setProgressText(SimpleGUI.WAITING_USER_IO);
+        link.getProgressController().setStatusText(SimpleGUI.WAITING_USER_IO);
         String password = getUserInput(message, defaultmessage);
-        link.getProgressController().setProgressText(null);
+        link.getProgressController().setStatusText(null);
         return password;
     }
 
