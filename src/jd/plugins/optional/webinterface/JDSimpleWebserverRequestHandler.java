@@ -241,7 +241,7 @@ public class JDSimpleWebserverRequestHandler {
                     bestIndex = i;
                 }
             }
-            if (bestSim < guiConfig.getIntegerProperty(LinkGrabber.PROPERTY_AUTOPACKAGE_LIMIT, 99)) {
+            if (bestSim <  99) {
 
                 FilePackage fp = new FilePackage();
                 fp.setName(packageName);

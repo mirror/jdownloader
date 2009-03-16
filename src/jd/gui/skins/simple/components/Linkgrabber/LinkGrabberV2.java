@@ -55,12 +55,6 @@ public class LinkGrabberV2 extends JTabbedPanel {
     }
 
     @Override
-    public void onDisplay(int i) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
     public void onHide() {
         // TODO Auto-generated method stub
 
@@ -228,6 +222,12 @@ public class LinkGrabberV2 extends JTabbedPanel {
         }
         if (Math.min(a.length(), b.length()) == 0) { return 0; }
         return c * 100 / b.length();
+    }
+
+    @Override
+    public void onDisplay() {
+        // TODO Auto-generated method stub
+        
     }
 
 }

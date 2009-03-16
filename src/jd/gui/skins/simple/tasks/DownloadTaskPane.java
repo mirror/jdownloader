@@ -20,16 +20,12 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
 
     public DownloadTaskPane(String string, ImageIcon ii) {
         super(string, ii, "downloadtask");
-
         this.setLayout(new MigLayout("ins 0, wrap 2", "[][fill]"));
         initGUI();
-
     }
 
     private void initGUI() {
-
         add(new JLabel(JDTheme.II("gui.images.next")));
-
         JTextPane tp = new JTextPane();
         tp.setText("Click Start/Stop in \r\n the toolbar to \r\ndownload your links");
         tp.setEditable(false);
