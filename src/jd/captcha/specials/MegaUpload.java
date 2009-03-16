@@ -146,7 +146,6 @@ public class MegaUpload {
                         foundinNew = true;
                         BasicWindow.showImage(l.getImage(), vp + "");
                         BasicWindow.showImage(n.getImage(), vp + "");
-                        vp = vp;
                         break;
                     }
 

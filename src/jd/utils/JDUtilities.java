@@ -160,8 +160,6 @@ public class JDUtilities {
 
     private static String REVISION;
 
-
-
     public static String getSimString(String a, String b) {
         StringBuilder ret = new StringBuilder();
         for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
@@ -739,7 +737,7 @@ public class JDUtilities {
     }
 
     public static UIInterface getGUI() {
-        if (JDUtilities.getController() == null) { return null; }
+        if (JDUtilities.getController() == null) return null;
         return JDUtilities.getController().getUiInterface();
     }
 
@@ -752,11 +750,10 @@ public class JDUtilities {
      *         kann
      */
     public static Image getImage(String imageName) {
-
-        if (images.get(imageName) == null) {
-            ClassLoader cl = JDUtilities.getJDClassLoader();
-            Toolkit toolkit = Toolkit.getDefaultToolkit();
-            return toolkit.getImage(cl.getResource("jd/img/" + imageName + ".png"));
+        if (!images.containsKey(imageName)) {
+            Image newImage = Toolkit.getDefaultToolkit().getImage(getResourceURL("jd/img/" + imageName + ".png"));
+            images.put(imageName, newImage);
+            return newImage;
         }
         return images.get(imageName);
     }
@@ -1133,11 +1130,11 @@ public class JDUtilities {
      * @return RevisionID
      */
     public static String getRevision() {
-        if(REVISION!=null)return REVISION;
+        if (REVISION != null) return REVISION;
         double r = Double.parseDouble(getVersion("$Revision$")) / 1000.0;
-        return REVISION=new DecimalFormat("0.000").format(r).replace(",", ".");
+        return REVISION = new DecimalFormat("0.000").format(r).replace(",", ".");
     }
-  
+
     /**
      * Parsed den String revision und gibt die RevisionsNummer zurück
      * 
@@ -1145,7 +1142,7 @@ public class JDUtilities {
      * @return RevisionsNummer
      */
     public static String getVersion(String revision) {
-     
+
         String ret = new Regex(revision, "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
@@ -1159,7 +1156,7 @@ public class JDUtilities {
             return RUNTYPE_LOCAL;
         }
 
-    } 
+    }
 
     public static ImageIcon getScaledImageIcon(Image image, int width, int height) {
         return new ImageIcon(image.getScaledInstance(width, height, Image.SCALE_SMOOTH));
@@ -1202,6 +1199,15 @@ public class JDUtilities {
 
     }
 
+    public static URL getResourceURL(String resource) {
+        JDClassLoader cl = JDUtilities.getJDClassLoader();
+        if (cl == null) {
+            System.err.println("Classloader == null");
+            return null;
+        }
+        return cl.getResource(resource);
+    }
+
     /**
      * Gibt ein FileOebject zu einem Resourcstring zurück
      * 
@@ -1211,14 +1217,7 @@ public class JDUtilities {
      * @return File zu arg
      */
     public static File getResourceFile(String resource) {
-
-        JDClassLoader cl = JDUtilities.getJDClassLoader();
-        if (cl == null) {
-            System.err.println("Classloader ==null: ");
-            return null;
-        }
-        URL clURL = cl.getResource(resource);
-
+        URL clURL = getResourceURL(resource);
         if (clURL != null) {
             try {
                 return new File(clURL.toURI());

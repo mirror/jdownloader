@@ -164,14 +164,12 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         if (column == DownloadTreeTableModel.COL_STATUS && value instanceof FilePackage) {
             String label = "";
             fp = (FilePackage) value;
-            if (fp.getLinksInProgress() > 0) {
-                label = fp.getLinksInProgress() + "/" + fp.size() + " " + JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
-            }
-            if (fp.getTotalDownloadSpeed() > 0) {
-                label = "[" + fp.getLinksInProgress() + "/" + fp.size() + "] ETA " + JDUtilities.formatSeconds(fp.getETA()) + " @ " + JDUtilities.formatKbReadable(fp.getTotalDownloadSpeed() / 1024) + "/s";
-            }
             if (fp.isFinished()) {
                 label = JDLocale.L("gui.downloadlink.finished", "[finished]");
+            } else if (fp.getTotalDownloadSpeed() > 0) {
+                label = "[" + fp.getLinksInProgress() + "/" + fp.size() + "] ETA " + JDUtilities.formatSeconds(fp.getETA()) + " @ " + JDUtilities.formatKbReadable(fp.getTotalDownloadSpeed() / 1024) + "/s";
+            } else if (fp.getLinksInProgress() > 0) {
+                label = fp.getLinksInProgress() + "/" + fp.size() + " " + JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
             }
             miniBar.setText(label);
             miniBar.setPercent(fp.getPercent() / 100.0);
@@ -247,6 +245,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                 return progress;
             }
             label.setText("");
+            label.setIcon(null);
             return label;
         } else if (column == DownloadTreeTableModel.COL_PROGRESS && value instanceof FilePackage) {
             fp = (FilePackage) value;
@@ -266,6 +265,11 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                 progress.setString(c.format(fp.getPercent()) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize())) + ")");
             }
             return progress;
+        } else if (column == DownloadTreeTableModel.COL_HOSTER && value instanceof DownloadLink) {
+            dLink = (DownloadLink) value;
+            label.setText(dLink.getPlugin().getHost() + dLink.getPlugin().getSessionInfo());
+            if (dLink.getPlugin().getHosterIcon() != null) label.setIcon(dLink.getPlugin().getHosterIcon());
+            return label;
         }
 
         co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);

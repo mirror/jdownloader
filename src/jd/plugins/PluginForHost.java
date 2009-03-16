@@ -16,12 +16,15 @@
 
 package jd.plugins;
 
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
+
+import javax.swing.ImageIcon;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -275,10 +278,8 @@ public abstract class PluginForHost extends Plugin {
                     }
 
                 } catch (IllegalArgumentException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 } catch (SecurityException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
@@ -711,8 +712,6 @@ public abstract class PluginForHost extends Plugin {
      * @throws Exception
      */
     public void prepareLink(DownloadLink downloadLink) throws Exception {
-        // TODO Auto-generated method stub
-
     }
 
     /**
@@ -721,8 +720,13 @@ public abstract class PluginForHost extends Plugin {
      * @return
      */
     public String getSessionInfo() {
-        // TODO Auto-generated method stub
         return "";
+    }
+
+    public final ImageIcon getHosterIcon() {
+        Image image = JDUtilities.getImage("hostericons/" + getHost());
+        if (image != null) return new ImageIcon(image);
+        return null;
     }
 
 }
