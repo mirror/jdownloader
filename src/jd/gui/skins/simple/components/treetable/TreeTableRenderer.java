@@ -268,7 +268,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         } else if (column == DownloadTreeTableModel.COL_HOSTER && value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
             label.setText(dLink.getPlugin().getHost() + dLink.getPlugin().getSessionInfo());
-            if (dLink.getPlugin().getHosterIcon() != null) label.setIcon(dLink.getPlugin().getHosterIcon());
+            if (dLink.getPlugin().hasHosterIcon()) label.setIcon(dLink.getPlugin().getHosterIcon());
             return label;
         }
 

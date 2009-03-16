@@ -723,6 +723,11 @@ public abstract class PluginForHost extends Plugin {
         return "";
     }
 
+    public final boolean hasHosterIcon() {
+        File res = JDUtilities.getResourceFile("jd/img/hostericons/" + getHost() + ".png");
+        return (res != null && res.exists());
+    }
+
     public final ImageIcon getHosterIcon() {
         Image image = JDUtilities.getImage("hostericons/" + getHost());
         if (image != null) return new ImageIcon(image);
