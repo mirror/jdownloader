@@ -67,6 +67,7 @@ public class Schedule extends PluginOptional {
     @SuppressWarnings("unchecked")
     private void initGUI() {
         schedules = (Vector<ScheduleFrame>) getPluginConfig().getProperty(PROPERTY_SCHEDULES, new Vector<ScheduleFrame>());
+        logger.finer("Scheduler: restored " + schedules.size() + " schedules");
         reloadList();
 
         dialog = new JDialog();
@@ -75,6 +76,7 @@ public class Schedule extends PluginOptional {
             public void windowClosing(WindowEvent e) {
                 dialog.setVisible(false);
                 status.stop();
+                logger.finer("Scheduler: saving " + schedules.size() + " schedules");
                 getPluginConfig().setProperty(PROPERTY_SCHEDULES, schedules);
                 getPluginConfig().save();
             }
