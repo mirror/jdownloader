@@ -27,10 +27,14 @@ public class LinkGrabberV2FilePackage extends Property {
 
     public LinkGrabberV2FilePackage() {
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
-        brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
-        brwSaveTo.setEditable(true);
-        brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-        brwSaveTo.setText(downloadDirectory);
+    }
+
+    public String getDownloadDirectory() {
+        return downloadDirectory;
+    }
+
+    public void setDownloadDirectory(String dir) {
+        downloadDirectory = dir;
     }
 
     public LinkGrabberV2FilePackage(String name) {

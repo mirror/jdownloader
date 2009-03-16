@@ -20,10 +20,8 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
 
     public static final int COL_STATUS = 3;
 
-    public static final int COL_DLFOLDER = 4;
-
     /** table column names */
-    static protected String[] COLUMN_NAMES = { JDLocale.L("gui.linkgrabber.header.treeandfiles", "Packages/Files"), JDLocale.L("gui.linkgrabber.header.size", "Size"), JDLocale.L("gui.linkgrabber.header.hoster", "Anbieter"), JDLocale.L("gui.linkgrabber.header.status", "Status"), JDLocale.L("gui.linkgrabber.header.downloaddir", "Downloadfolder") };
+    static protected String[] COLUMN_NAMES = { JDLocale.L("gui.linkgrabber.header.treeandfiles", "Packages/Files"), JDLocale.L("gui.linkgrabber.header.size", "Size"), JDLocale.L("gui.linkgrabber.header.hoster", "Anbieter"), JDLocale.L("gui.linkgrabber.header.status", "Status") };
 
     private LinkGrabberV2 owner;
 
@@ -92,8 +90,6 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
             return String.class;
         case COL_STATUS:
             return String.class;
-        case COL_DLFOLDER:
-            return ComboBrowseFile.class;
         }
         return Object.class;
     }
@@ -179,8 +175,6 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
                 return filePackage.getHoster();
             case COL_STATUS:
                 return "";
-            case COL_DLFOLDER:
-                return filePackage.getComboBrowseFile();
             default:
                 return "";
             }

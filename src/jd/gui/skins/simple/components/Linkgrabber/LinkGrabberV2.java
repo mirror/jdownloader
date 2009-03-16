@@ -7,9 +7,16 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.BorderFactory;
+import javax.swing.JComponent;
 import javax.swing.JScrollPane;
+import javax.swing.JTree;
+import javax.swing.KeyStroke;
+
+import org.jdesktop.swingx.JXCollapsiblePane;
 
 import jd.config.SubConfiguration;
+import jd.controlling.ProgressController;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.DownloadLink;
@@ -23,8 +30,8 @@ public class LinkGrabberV2 extends JTabbedPanel {
     protected Vector<LinkGrabberV2FilePackage> packages = new Vector<LinkGrabberV2FilePackage>();
     public static final String PROPERTY_ONLINE_CHECK = "DO_ONLINE_CHECK_V2";
 
-    private ArrayList<DownloadLink> totalLinkList = new ArrayList<DownloadLink>();
-    private ArrayList<DownloadLink> waitingList = new ArrayList<DownloadLink>();
+    private Vector<DownloadLink> totalLinkList = new Vector<DownloadLink>();
+    private Vector<DownloadLink> waitingList = new Vector<DownloadLink>();
 
     private LinkGrabberV2TreeTable internalTreeTable;
 
@@ -34,16 +41,35 @@ public class LinkGrabberV2 extends JTabbedPanel {
     private Thread gatherer;
     private String PACKAGENAME_UNSORTED;
     private String PACKAGENAME_UNCHECKED;
+    private ProgressController pc;
+    private JXCollapsiblePane collapsepane;
+    private LinkGrabberV2FilePackageInfo FilePackageInfo;
 
     public LinkGrabberV2(SimpleGUI parent) {
         super(new BorderLayout());
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
-        internalTreeTable = new LinkGrabberV2TreeTable(new LinkGrabberV2TreeTableModel(this));
+        internalTreeTable = new LinkGrabberV2TreeTable(new LinkGrabberV2TreeTableModel(this), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
-        scrollPane.setPreferredSize(new Dimension(800, 450));
+        // scrollPane.setPreferredSize(new Dimension(800, 450));
         this.add(scrollPane);
+
+        FilePackageInfo = new LinkGrabberV2FilePackageInfo(guiConfig);
+        collapsepane = new JXCollapsiblePane();
+        collapsepane.setCollapsed(true);
+
+        collapsepane.add(FilePackageInfo);
+        this.add(collapsepane, BorderLayout.SOUTH);
+    }
+
+    public void showFilePackageInfo(LinkGrabberV2FilePackage fp) {
+        FilePackageInfo.updatePackage(fp);
+        collapsepane.setCollapsed(false);
+    }
+
+    public void hideFilePackageInfo() {
+        collapsepane.setCollapsed(true);
     }
 
     public Vector<LinkGrabberV2FilePackage> getPackages() {
@@ -70,7 +96,6 @@ public class LinkGrabberV2 extends JTabbedPanel {
     }
 
     public synchronized void addToWaitingList(DownloadLink element) {
-        if (waitingList.contains(element)) return;
         totalLinkList.add(element);
         waitingList.add(element);
         attachToPackagesFirstStage(element);
@@ -148,18 +173,34 @@ public class LinkGrabberV2 extends JTabbedPanel {
         if (gatherer != null && gatherer.isAlive()) { return; }
         gatherer = new Thread() {
             public void run() {
+                pc = new ProgressController("onlinecheck");
+                pc.setRange(0);
+                Vector<DownloadLink> links = new Vector<DownloadLink>();
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
                 }
                 if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) return;
-                for (Iterator<DownloadLink> it = waitingList.iterator(); it.hasNext();) {
-                    DownloadLink l = it.next();
-                    it.remove();
-                    l.isAvailable();
-                    attachToPackagesSecondStage(l);
-                    fireTableChanged(1, null);
+                while (waitingList.size() != 0) {
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                    }
+                    long size = waitingList.size() - 1;
+                    pc.addToMax(size);
+                    for (int i = waitingList.size() - 1; i >= 0; i--) {
+                        links.add(waitingList.remove(i));
+                    }
+                    for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
+                        pc.increase(1);
+                        DownloadLink l = it.next();
+                        it.remove();
+                        l.isAvailable();
+                        attachToPackagesSecondStage(l);
+                        fireTableChanged(1, null);
+                    }
                 }
+                pc.finalize();
             }
         };
         gatherer.start();
@@ -227,7 +268,7 @@ public class LinkGrabberV2 extends JTabbedPanel {
     @Override
     public void onDisplay() {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

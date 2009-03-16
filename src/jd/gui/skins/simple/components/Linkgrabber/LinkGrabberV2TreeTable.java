@@ -49,14 +49,16 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListene
     public int mouseOverColumn;
     private boolean update = true;
     private boolean update2 = true;
+    private LinkGrabberV2 linkgrabber;
 
     public static final String PROPERTY_EXPANDED = "expanded";
 
     public static final String PROPERTY_SELECTED = "selected";
 
-    public LinkGrabberV2TreeTable(LinkGrabberV2TreeTableModel treeModel) {
+    public LinkGrabberV2TreeTable(LinkGrabberV2TreeTableModel treeModel, LinkGrabberV2 linkgrabber) {
         super(treeModel);
         model = treeModel;
+        this.linkgrabber = linkgrabber;
         this.setUI(new LinkGrabberV2TreeTablePaneUI());
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
@@ -76,20 +78,6 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListene
         supporter.fireTreeStructureChanged(new TreePath(model.getRoot()));
         updateSelectionAndExpandStatus();
         update = true;
-    }
-
-    public TableCellRenderer getCellRenderer(int row, int col) {
-        if (getPathForRow(row).getLastPathComponent() instanceof LinkGrabberV2FilePackage) {
-            if (col == 4) return ComboBrowseFile.getTableCellRenderer();
-        }
-        return super.getCellRenderer(row, col);
-    }
-
-    public TableCellEditor getCellEditor(int row, int col) {
-        if (getPathForRow(row).getLastPathComponent() instanceof LinkGrabberV2FilePackage) {
-            if (col == 4) return ComboBrowseFile.getTableCellEditor();
-        }
-        return super.getCellEditor(row, col);
     }
 
     public LinkGrabberV2TreeTableModel getLinkGrabberV2TreeTableModel() {
@@ -202,9 +190,16 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListene
         fp.setProperty(PROPERTY_EXPANDED, true);
     }
 
-    public void mouseClicked(MouseEvent arg0) {
-        // TODO Auto-generated method stub
-
+    public void mouseClicked(MouseEvent e) {
+        Point point = e.getPoint();
+        int row = rowAtPoint(point);
+        if (getPathForRow(row) == null) { return; }
+        Object obj = getPathForRow(row).getLastPathComponent();
+        if (obj instanceof LinkGrabberV2FilePackage) {
+            linkgrabber.showFilePackageInfo((LinkGrabberV2FilePackage) obj);
+        } else {
+            linkgrabber.hideFilePackageInfo();
+        }
     }
 
     public void mouseEntered(MouseEvent arg0) {
@@ -232,7 +227,7 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListene
         }
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
 
-            if (getPathForRow(row) == null) { return; }            
+            if (getPathForRow(row) == null) { return; }
             Object obj = getPathForRow(row).getLastPathComponent();
             JPopupMenu popup = new JPopupMenu();
             if (obj instanceof DownloadLink) {
