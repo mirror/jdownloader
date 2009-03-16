@@ -7,6 +7,8 @@ import javax.swing.ImageIcon;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 public class TreeTabbedNode extends DefaultMutableTreeNode {
+
+    private static final long serialVersionUID = 4915789292173918601L;
     private static final int MAX_ICON_HEIGHT = 16;
     private String name = null;
 
@@ -45,10 +47,9 @@ public class TreeTabbedNode extends DefaultMutableTreeNode {
         this(null, name, ii);
     }
 
-    public TreeTabbedNode(Class clazz, Object[] objects, String name, ImageIcon ii) {
+    public TreeTabbedNode(Class<?> clazz, Object[] objects, String name, ImageIcon ii) {
         this(name, ii);
         this.leafWrapper = new LeafPanelWrapper(clazz, objects);
-
     }
 
     public void setIcon(Icon icon) {

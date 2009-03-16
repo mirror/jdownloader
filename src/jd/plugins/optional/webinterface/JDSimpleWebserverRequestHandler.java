@@ -121,12 +121,7 @@ public class JDSimpleWebserverRequestHandler {
                             dlinks.add(link);
                             dlinks.addAll(links);
                             if (dlinks.size() > 1) {
-                                boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(dlinks.toArray(new DownloadLink[] {}));
-                                if (ret != null) {
-                                    for (int i = 0; i < dlinks.size(); i++) {
-                                        dlinks.get(i).setAvailable(ret[i]);
-                                    }
-                                }
+                                link.getPlugin().checkLinks(dlinks.toArray(new DownloadLink[] {}));
                             }
                         }
                         link.isAvailable();

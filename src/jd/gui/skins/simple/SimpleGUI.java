@@ -111,9 +111,6 @@ import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.ConfigPanelAddons;
 import jd.gui.skins.simple.config.ConfigPanelPluginForHost;
-
-import jd.gui.skins.simple.config.ConfigPanelReconnect;
-
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
@@ -127,6 +124,8 @@ import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdesktop.swingx.JXTitledSeparator;
 
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener, DropTargetListener {
 

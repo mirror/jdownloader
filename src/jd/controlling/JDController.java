@@ -460,12 +460,7 @@ public class JDController implements ControlListener, UIListener {
                 }
 
                 if (links.size() > 1) {
-                    boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(links.toArray(new DownloadLink[] {}));
-                    if (ret != null) {
-                        for (int i = 0; i < links.size(); i++) {
-                            dlLinks.get(i).setAvailable(ret[i]);
-                        }
-                    }
+                    link.getPlugin().checkLinks(links.toArray(new DownloadLink[] {}));
                 }
 
                 // if (link.isAvailable() || ((PluginForHost)

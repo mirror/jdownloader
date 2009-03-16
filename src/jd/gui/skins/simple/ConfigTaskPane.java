@@ -25,20 +25,18 @@ public class ConfigTaskPane extends TreeTaskPane {
 
     private void initGUI() {
 
-        Object[] configConstructorOPbjects = new Object[] { JDUtilities.getConfiguration() };
-        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelGeneral.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.general", "General settings"), JDTheme.II("gui.images.config.home")));
-        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelDownload.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.download", "Download/Network settings"), JDTheme.II("gui.images.config.network_local")));
-        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelGUI.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.gui", "Benutzeroberfläche"), JDTheme.II("gui.images.config.gui")));
-        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelReconnect.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.reconnect", "Reconnect settings"), JDTheme.II("gui.images.config.reconnect")));
-        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelCaptcha.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.jac", "OCR Captcha settings"), JDTheme.II("gui.images.config.ocr")));
-        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelPluginForHost.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.hostPlugin", "Host Plugin settings"), JDTheme.II("gui.images.config.host")));
-        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelPluginForDecrypt.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.decryptPlugin", "Decrypter Plugin settings"), JDTheme.II("gui.images.config.decrypt")));
-        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelAddons.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.addons", "Addon manager"), JDTheme.II("gui.images.config.packagemanager")));
-        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelPluginForContainer.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.containerPlugin", "Link-Container settings"), JDTheme.II("gui.images.config.container")));
-        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelEventmanager.class, configConstructorOPbjects, JDLocale.L("gui.config.tabLables.eventManager", "Eventmanager"), JDTheme.II("gui.images.config.eventmanager")));
- 
-        
-        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelAddons.class, configConstructorOPbjects, "Save", JDTheme.II("gui.images.save")));
+        Object[] configConstructorObjects = new Object[] { JDUtilities.getConfiguration() };
+        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelGeneral.class, configConstructorObjects, JDLocale.L("gui.config.tabLables.general", "General settings"), JDTheme.II("gui.images.config.home")));
+        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelDownload.class, configConstructorObjects, JDLocale.L("gui.config.tabLables.download", "Download/Network settings"), JDTheme.II("gui.images.config.network_local")));
+        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelGUI.class, configConstructorObjects, JDLocale.L("gui.config.tabLables.gui", "Benutzeroberfläche"), JDTheme.II("gui.images.config.gui")));
+        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelReconnect.class, configConstructorObjects, JDLocale.L("gui.config.tabLables.reconnect", "Reconnect settings"), JDTheme.II("gui.images.config.reconnect")));
+        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelCaptcha.class, configConstructorObjects, JDLocale.L("gui.config.tabLables.jac", "OCR Captcha settings"), JDTheme.II("gui.images.config.ocr")));
+        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelPluginForHost.class, configConstructorObjects, JDLocale.L("gui.config.tabLables.hostPlugin", "Host Plugin settings"), JDTheme.II("gui.images.config.host")));
+        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelPluginForDecrypt.class, configConstructorObjects, JDLocale.L("gui.config.tabLables.decryptPlugin", "Decrypter Plugin settings"), JDTheme.II("gui.images.config.decrypt")));
+        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelAddons.class, configConstructorObjects, JDLocale.L("gui.config.tabLables.addons", "Addon manager"), JDTheme.II("gui.images.config.packagemanager")));
+        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelPluginForContainer.class, configConstructorObjects, JDLocale.L("gui.config.tabLables.containerPlugin", "Link-Container settings"), JDTheme.II("gui.images.config.container")));
+        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelEventmanager.class, configConstructorObjects, JDLocale.L("gui.config.tabLables.eventManager", "Eventmanager"), JDTheme.II("gui.images.config.eventmanager")));
+        getRoot().insertNodeInto(new TreeTabbedNode(ConfigPanelAddons.class, configConstructorObjects, "Save", JDTheme.II("gui.images.save")));
         
     }
 

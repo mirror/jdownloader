@@ -21,13 +21,9 @@ import java.awt.LayoutManager;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
 
@@ -40,10 +36,7 @@ public abstract class DownloadLinksView extends JTabbedPanel implements ControlL
      * 
      */
     private static final long serialVersionUID = 1L;
-    /**
-     * Dieser Vector enthält alle Downloadlinks
-     */
-    protected Vector<DownloadLink> allLinks = new Vector<DownloadLink>();
+
     /**
      * Der Logger für Meldungen
      */
@@ -51,21 +44,16 @@ public abstract class DownloadLinksView extends JTabbedPanel implements ControlL
     /**
      * contains all packages we have downloadlinks for
      */
-    protected Vector<FilePackage> packages = new Vector<FilePackage>();
-
-    protected SimpleGUI parent;
-
-    protected JPopupMenu popup;
+    private Vector<FilePackage> packages = new Vector<FilePackage>();
 
     protected DownloadLinksView(SimpleGUI parent, LayoutManager layout) {
         super(layout);
-        this.parent = parent;
         JDUtilities.getController().addControlListener(this);
     }
 
     public void controlEvent(final ControlEvent event) {
         if (event == null) {
-            logger.warning("vent==null");
+            logger.warning("event == null");
             return;
         }
         // Moved the whole content of this method into a Runnable run by
@@ -76,7 +64,6 @@ public abstract class DownloadLinksView extends JTabbedPanel implements ControlL
                 case ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED:
                     fireTableChanged(REFRESH_SPECIFIED_LINKS, event.getParameter());
                     break;
-
                 case ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED:
                     fireTableChanged(REFRESH_ALL_DATA_CHANGED, null);
                     break;
@@ -85,7 +72,6 @@ public abstract class DownloadLinksView extends JTabbedPanel implements ControlL
                         DownloadLinksView.this.setPackages(JDUtilities.getController().getPackages());
                     }
                     fireTableChanged(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
-
                 }
             }
         });
