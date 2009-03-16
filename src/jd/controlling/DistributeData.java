@@ -250,9 +250,11 @@ public class DistributeData extends ControlBroadcaster {
 
         // Edit Coa:
         // Hier werden auch die SourcePLugins in die Downloadlinks gesetzt
+        ArrayList<DownloadLink> alldecrypted = handleDecryptPlugins();
 
-        for (DownloadLink decrypted : handleDecryptPlugins()) {
-            for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
+        for (DownloadLink decrypted : alldecrypted) {
+            ArrayList<HostPluginWrapper> pHostAll = JDUtilities.getPluginsForHost();
+            for (HostPluginWrapper pHost : pHostAll) {
                 try {
                     if (pHost.usePlugin() && pHost.canHandle(decrypted.getDownloadURL())) {
                         Vector<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != FilePackage.getDefaultFilePackage() ? decrypted.getFilePackage() : null);
@@ -271,6 +273,7 @@ public class DistributeData extends ControlBroadcaster {
                             dLinks.get(c).setSubdirectory(decrypted);
                         }
                         links.addAll(dLinks);
+                        break;
                     }
                 } catch (Exception e) {
                     logger.severe("Decrypter/Search Fehler: " + e.getMessage());

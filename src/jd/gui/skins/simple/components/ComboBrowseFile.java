@@ -17,9 +17,11 @@
 package jd.gui.skins.simple.components;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.EventObject;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -27,10 +29,62 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
+import javax.swing.JTable;
+import javax.swing.event.CellEditorListener;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+
+class ComboBrowseFileEditor implements TableCellEditor, ActionListener {
+
+    private boolean stop = false;
+
+    public void actionPerformed(ActionEvent e) {
+        stop = true;
+    }
+
+    public void addCellEditorListener(CellEditorListener l) {
+    }
+
+    public void cancelCellEditing() {
+    }
+
+    public Object getCellEditorValue() {
+        return null;
+    }
+
+    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+        stop = false;
+        ComboBrowseFile btn = (ComboBrowseFile) value;
+        btn.addActionListener(this);
+        return btn;
+    }
+
+    public boolean isCellEditable(EventObject anEvent) {
+        return true;
+    }
+
+    public void removeCellEditorListener(CellEditorListener l) {
+    }
+
+    public boolean shouldSelectCell(EventObject anEvent) {
+        return false;
+    }
+
+    public boolean stopCellEditing() {
+        return stop;
+    }
+
+}
+
+class ComboBrowseFileRenderer implements TableCellRenderer {
+    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        return (ComboBrowseFile) value;
+    }
+}
 
 public class ComboBrowseFile extends JPanel implements ActionListener {
 
@@ -87,15 +141,14 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
             if (sel != null) {
                 setCurrentPath(new File(sel.toString()));
                 dispatchEvent(event);
-                for (ActionListener l : listenerList) {
-                    l.actionPerformed(event);
-                }
             }
         } else if (e.getSource() == btnBrowse) {
             setCurrentPath(getPath());
             dispatchEvent(event);
         }
-
+        for (ActionListener l : listenerList) {
+            l.actionPerformed(event);
+        }
     }
 
     /**
@@ -283,4 +336,11 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         listenerList.remove(l);
     }
 
+    public static ComboBrowseFileEditor getTableCellEditor() {
+        return new ComboBrowseFileEditor();
+    }
+
+    public static ComboBrowseFileRenderer getTableCellRenderer() {
+        return new ComboBrowseFileRenderer();
+    }
 }

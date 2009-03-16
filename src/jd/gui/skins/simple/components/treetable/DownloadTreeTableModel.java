@@ -60,7 +60,6 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
      */
     public DownloadTreeTableModel(DownloadLinksTreeTablePanel treeTable) {
         super("root");
-
         owner = treeTable;
     }
 

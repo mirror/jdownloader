@@ -321,7 +321,7 @@ public class FilePackage extends Property implements Serializable {
      * 
      * @return
      */
-    public int getTotalEstimatedPackageSize() {
+    public long getTotalEstimatedPackageSize() {
         if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
             updateCollectives();
         }
