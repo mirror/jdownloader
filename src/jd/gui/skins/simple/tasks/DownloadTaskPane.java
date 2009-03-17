@@ -28,7 +28,7 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
     private void initGUI() {
         add(new JLabel(JDTheme.II("gui.images.next")));
         JTextPane tp = new JTextPane();
-        tp.setText(JDLocale.L("gui.taskpanes.download.info","Click Start/Stop in \r\n the toolbar to \r\ndownload your links"));
+        tp.setText(JDLocale.L("gui.taskpanes.download.info", "Click Start/Stop in\r\nthe toolbar to\r\ndownload your links"));
         tp.setEditable(false);
         add(tp);
 

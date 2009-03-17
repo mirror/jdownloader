@@ -20,7 +20,6 @@ import java.io.File;
 
 import javax.swing.JOptionPane;
 
-import jd.captcha.specials.MegaUpload;
 import jd.captcha.utils.UTILITIES;
 import jd.utils.JDUtilities;
 

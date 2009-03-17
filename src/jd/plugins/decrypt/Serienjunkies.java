@@ -1149,7 +1149,6 @@ public class Serienjunkies extends PluginForDecrypt {
 
                 }
                 ArrayList<DownloadLink> dls = getDLinks(link, cryptedLink);
-                dls=dls;
                 if (dls != null && dls.size() < 1) {
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                     if (linkStatus.getErrorMessage() == null || linkStatus.getErrorMessage().endsWith("")) linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.pageerror", "SJ liefert keine Downloadlinks"));

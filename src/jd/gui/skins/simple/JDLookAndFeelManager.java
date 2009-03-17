@@ -21,7 +21,6 @@ import java.io.FileInputStream;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 
 import javax.swing.UIManager;
@@ -75,15 +74,12 @@ public class JDLookAndFeelManager implements Serializable {
 
     public static void installSubstance() {
 
-        File directory = null;
         String pkg = "org/jvnet/substance/skin/";
         URL res = JDUtilities.getJDClassLoader().getResource(pkg);
         String url = new Regex(res, "(.*)\\!.*").getMatch(0);
         url = url.substring(4);
-        File file;
         try {
-            file = new File(new URL(url).toURI());
-            directory = new File(res.getFile());     
+            File file = new File(new URL(url).toURI());
 
             JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
             JarEntry e;
@@ -95,16 +91,11 @@ public class JDLookAndFeelManager implements Serializable {
                         UIManager.installLookAndFeel(laf.replace("Substance", "NEW: "), "org.jvnet.substance.skin." + laf + "LookAndFeel");
                     }
                 }
-                System.out.println();
             }
 
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
-
         }
-       
-
     }
 
     public static void setUIManager() {

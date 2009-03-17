@@ -48,13 +48,13 @@ public class Schedule extends PluginOptional {
 
     private JPanel panel;
     private JPanel aPanel;
-
-    private JButton add;
-    private JComboBox list;
     private JPanel menu;
-    private JButton remove;
 
+    private JComboBox list;
+    private JButton add;
+    private JButton remove;
     private JButton show;
+
     private Timer status;
 
     private Vector<String> listData = new Vector<String>();
@@ -74,11 +74,11 @@ public class Schedule extends PluginOptional {
         dialog.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                dialog.setVisible(false);
-                status.stop();
                 logger.finer("Scheduler: saving " + schedules.size() + " schedules");
                 getPluginConfig().setProperty(PROPERTY_SCHEDULES, schedules);
                 getPluginConfig().save();
+                dialog.setVisible(false);
+                status.stop();
             }
         });
 

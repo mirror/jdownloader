@@ -21,14 +21,12 @@ import java.awt.ComponentOrientation;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class ConfigEntriesPanel extends ConfigPanel {

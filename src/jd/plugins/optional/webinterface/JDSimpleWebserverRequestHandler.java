@@ -40,7 +40,6 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 public class JDSimpleWebserverRequestHandler {

@@ -21,7 +21,6 @@ import java.awt.Color;
 import javax.swing.Icon;
 
 import jd.event.ControlEvent;
-import jd.gui.skins.simple.TabProgress;
 import jd.utils.JDUtilities;
 
 /**
@@ -30,7 +29,6 @@ import jd.utils.JDUtilities;
  * plugins etc und der GUI
  * 
  * @author JD-Team
- * 
  */
 public class ProgressController {
 
@@ -45,9 +43,8 @@ public class ProgressController {
     private Object source;
     private String statusText;
     private Color progresscolor;
-    private String progressText;
-    public Icon icon=null;
 
+    public Icon icon = null;
 
     public Icon getIcon() {
         return icon;
@@ -59,7 +56,6 @@ public class ProgressController {
 
     public ProgressController(String name) {
         this(name, 100l);
-        progressText = null;
     }
 
     public ProgressController(String name, long max) {
@@ -69,7 +65,6 @@ public class ProgressController {
         currentValue = 0;
         finished = false;
         progresscolor = null;
-        progressText = null;
         fireChanges();
     }
 
@@ -177,13 +172,6 @@ public class ProgressController {
         fireChanges();
     }
 
-    public void setProgressText(String text) {
-        progressText = text;
-        fireChanges();
-    }
-
-
-
     public void setStatusText(String statusText) {
         this.statusText = statusText;
         fireChanges();
@@ -194,5 +182,4 @@ public class ProgressController {
         return "ProgressController " + id;
     }
 
- 
 }
