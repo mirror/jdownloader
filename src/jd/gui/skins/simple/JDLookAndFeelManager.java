@@ -74,12 +74,15 @@ public class JDLookAndFeelManager implements Serializable {
 
     public static void installSubstance() {
 
+
         String pkg = "org/jvnet/substance/skin/";
         URL res = JDUtilities.getJDClassLoader().getResource(pkg);
         String url = new Regex(res, "(.*)\\!.*").getMatch(0);
         url = url.substring(4);
         try {
+
             File file = new File(new URL(url).toURI());
+
 
             JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
             JarEntry e;
@@ -87,10 +90,11 @@ public class JDLookAndFeelManager implements Serializable {
                 if (e.getName().startsWith(pkg)) {
                     String laf = new Regex(e.getName(), "org/jvnet/substance/skin/(.*?)LookAndFeel\\.class").getMatch(0);
                     if (laf != null) {
-                        System.out.println("Installed LAF: " + laf);
+                  
                         UIManager.installLookAndFeel(laf.replace("Substance", "NEW: "), "org.jvnet.substance.skin." + laf + "LookAndFeel");
                     }
                 }
+
             }
 
         } catch (Exception e) {
@@ -114,7 +118,7 @@ public class JDLookAndFeelManager implements Serializable {
             // UIManager.setLookAndFeel(new
             // org.jvnet.substance.skin.SubstanceModerateLookAndFeel());
             // UIManager.setLookAndFeel(new
-            // org.jvnet.substance.skin.SubstanceMistAquaLookAndFeel());
+  
             // UIManager.setLookAndFeel(new
             // org.jvnet.substance.skin.SubstanceBusinessBlueSteelLookAndFeel
             // ());

@@ -24,6 +24,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.text.DecimalFormat;
 
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -35,32 +36,12 @@ import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
+
+import org.jdesktop.swingx.JXPanel;
 
 public class TreeTableRenderer extends DefaultTableCellRenderer {
-    private class MiniBar extends JLabel {
-
-        private static final long serialVersionUID = -3508403269097752259L;
-        private double p;
-
-        public double getPercent() {
-            return p;
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            if (p != 0) {
-                int n = 3;
-                ((Graphics2D) g).setPaint(new GradientPaint(0, 0, ACTIVE_PROGRESS_COLOR, getWidth(), getHeight(), ACTIVE_PROGRESS_COLOR.darker()));
-                g.fillRect(0, getHeight() - n, (int) (getWidth() * p), n);
-            }
-            super.paintComponent(g);
-        }
-
-        public void setPercent(double percent) {
-            p = percent;
-        }
-    }
-
+   
     private static Color ACTIVE_PROGRESS_COLOR;
 
     private static Color ACTIVE_PROGRESS_COLOR_FONT_A;
@@ -99,7 +80,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
 
     private DecimalFormat c = new DecimalFormat("0.00");
 
-    private Component co;
+    private DefaultTableCellRenderer co;
 
     private DownloadLink dLink;
 
@@ -107,15 +88,34 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
 
     private JLabel label;
 
-    private MiniBar miniBar;
+
 
     private JDProgressBar progress;
 
     private DownloadTreeTable table;
 
-    private TreeProgressBarUI ui;
+    private Color FONT_COLOR_SELECTED;
+
+    private ImageIcon icon_fp_closed;
+
+    private ImageIcon icon_fp_open;
+
+    private ImageIcon icon_link;
+
+    private JXPanel sublabelPanel1;
 
     TreeTableRenderer(DownloadTreeTable downloadTreeTable) {
+
+        FONT_COLOR_SELECTED = JDTheme.C("gui.color.downloadlist.font_selected", "ffffff");
+        icon_link = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.link")));
+
+        // , SwingConstants.LEFT);
+        icon_fp_open = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.package_closed")));
+
+        icon_fp_closed = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.package_opened")));
+        sublabelPanel1 = new JXPanel(new MigLayout("ins 0", "[grow,fill]"));
+
+        sublabelPanel1.setOpaque(false);
 
         FONT_COLOR = JDTheme.C("gui.color.downloadlist.font", "000000");
 
@@ -141,17 +141,17 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         table = downloadTreeTable;
         label = new JLabel();
         label.setOpaque(false);
-        miniBar = new MiniBar();
+       
         progress = new JDProgressBar();
         Dimension dim = progress.getPreferredSize();
         dim.width = Math.max(dim.width, 300);
         progress.setPreferredSize(dim);
         progress.setMinimumSize(dim);
-//        if (JDUtilities.getJavaVersion() >= 1.6) {
-//            ui = new TreeProgressBarUI();
-//            ui.setSelectionForeground(Color.BLACK);
-//            progress.setUI(ui);
-//        }
+        // if (JDUtilities.getJavaVersion() >= 1.6) {
+        // ui = new TreeProgressBarUI();
+        // ui.setSelectionForeground(Color.BLACK);
+        // progress.setUI(ui);
+        // }
         progress.setBorderPainted(false);
         progress.setStringPainted(true);
         progress.setOpaque(false);
@@ -161,6 +161,8 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         column = this.table.getColumn(column).getModelIndex();
+        if (column == DownloadTreeTableModel.COL_HIDDEN) return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        if (column == DownloadTreeTableModel.COL_PART) return getTreeCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         if (column == DownloadTreeTableModel.COL_STATUS && value instanceof FilePackage) {
             String label = "";
             fp = (FilePackage) value;
@@ -171,69 +173,79 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
             } else if (fp.getLinksInProgress() > 0) {
                 label = fp.getLinksInProgress() + "/" + fp.size() + " " + JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
             }
-            miniBar.setText(label);
-            miniBar.setPercent(fp.getPercent() / 100.0);
-            return miniBar;
+            co = (DefaultTableCellRenderer) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            co.setText(fp.getName());
+            co.setIcon(null);
+          
+            return  co;
         } else if (column == DownloadTreeTableModel.COL_PROGRESS && value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
             if (dLink.getPlugin() == null) {
-                progress.setForeground(ERROR_PROGRESS_COLOR);
-                if (ui != null) {
-                    ui.setSelectionForeground(DONE_COLOR_FONT_A);
-                    ui.setSelectionBackground(DONE_COLOR_FONT_B);
-                }
+                // progress.setForeground(ERROR_PROGRESS_COLOR);
+                // if (ui != null) {
+                // ui.setSelectionForeground(DONE_COLOR_FONT_A);
+                // ui.setSelectionBackground(DONE_COLOR_FONT_B);
+                // }
                 progress.setString("Plugin loading failed");
             } else if (!dLink.getPlugin().getWrapper().usePlugin()) {
-                progress.setForeground(INACTIVE_PROGRESS_COLOR);
-                if (ui != null) {
-                    ui.setSelectionForeground(INACTIVE_PROGRESS_COLOR_FONT_A);
-                    ui.setSelectionBackground(INACTIVE_PROGRESS_COLOR_FONT_B);
-                }
+                // progress.setForeground(INACTIVE_PROGRESS_COLOR);
+                // if (ui != null) {
+                // ui.setSelectionForeground(INACTIVE_PROGRESS_COLOR_FONT_A);
+                // ui.setSelectionBackground(INACTIVE_PROGRESS_COLOR_FONT_B);
+                // }
                 progress.setString(JDLocale.L("gui.downloadlink.plugindisabled", "[Plugin disabled]"));
+                progress.setBackground(null);
+                progress.setOpaque(false);
                 return progress;
             } else if (dLink.getPluginProgress() != null) {
-                progress.setForeground(dLink.getPluginProgress().getColor());
-                if (ui != null) {
-                    ui.setSelectionForeground(DONE_COLOR_FONT_A);
-                    ui.setSelectionBackground(DONE_COLOR_FONT_B);
-                }
+                // progress.setForeground(dLink.getPluginProgress().getColor());
+                // if (ui != null) {
+                // ui.setSelectionForeground(DONE_COLOR_FONT_A);
+                // ui.setSelectionBackground(DONE_COLOR_FONT_B);
+                // }
                 progress.setString(dLink.getPluginProgress().getPercent() + "%");
                 progress.setMaximum(dLink.getPluginProgress().getTotal());
                 progress.setValue(dLink.getPluginProgress().getCurrent());
+                progress.setBackground(null);
+                progress.setOpaque(false);
                 return progress;
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
-                progress.setForeground(ERROR_PROGRESS_COLOR);
-                if (ui != null) {
-                    ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
-                    ui.setSelectionBackground(ERROR_PROGRESS_COLOR_FONT_B);
-                }
+                // progress.setForeground(ERROR_PROGRESS_COLOR);
+                // if (ui != null) {
+                // ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
+                // ui.setSelectionBackground(ERROR_PROGRESS_COLOR_FONT_B);
+                // }
                 progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
                 progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
+                progress.setBackground(null);
+                progress.setOpaque(false);
                 return progress;
             } else if (dLink.getDownloadCurrent() > 0) {
                 if (!dLink.getLinkStatus().isPluginActive()) {
                     if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        progress.setForeground(DONE_COLOR);
-                        if (ui != null) {
-                            ui.setSelectionForeground(DONE_COLOR_FONT_A);
-                            ui.setSelectionBackground(DONE_COLOR_FONT_B);
-                        }
+                        // progress.setForeground(DONE_COLOR);
+                        // if (ui != null) {
+                        // ui.setSelectionForeground(DONE_COLOR_FONT_A);
+                        // ui.setSelectionBackground(DONE_COLOR_FONT_B);
+                        // }
                         progress.setString("- 100% -");
                     } else {
-                        progress.setForeground(INACTIVE_PROGRESS_COLOR);
-                        if (ui != null) {
-                            ui.setSelectionForeground(INACTIVE_PROGRESS_COLOR_FONT_A);
-                            ui.setSelectionBackground(INACTIVE_PROGRESS_COLOR_FONT_B);
-                        }
+                        // progress.setForeground(INACTIVE_PROGRESS_COLOR);
+                        // if (ui != null) {
+                        // ui.setSelectionForeground(
+                        // INACTIVE_PROGRESS_COLOR_FONT_A);
+                        // ui.setSelectionBackground(
+                        // INACTIVE_PROGRESS_COLOR_FONT_B);
+                        // }
                         progress.setString("");
                     }
                 } else {
-                    progress.setForeground(ACTIVE_PROGRESS_COLOR);
-                    if (ui != null) {
-                        ui.setSelectionForeground(ACTIVE_PROGRESS_COLOR_FONT_A);
-                        ui.setSelectionBackground(ACTIVE_PROGRESS_COLOR_FONT_B);
-                    }
+                    // progress.setForeground(ACTIVE_PROGRESS_COLOR);
+                    // if (ui != null) {
+                    // ui.setSelectionForeground(ACTIVE_PROGRESS_COLOR_FONT_A);
+                    // ui.setSelectionBackground(ACTIVE_PROGRESS_COLOR_FONT_B);
+                    // }
                     if (dLink.getLinkStatus().hasStatus(LinkStatus.WAITING_USERIO)) {
                         progress.setString(SimpleGUI.WAITING_USER_IO);
                     } else {
@@ -250,31 +262,75 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         } else if (column == DownloadTreeTableModel.COL_PROGRESS && value instanceof FilePackage) {
             fp = (FilePackage) value;
             if (fp.isFinished()) {
-                progress.setForeground(DONE_COLOR_Package);
+                // progress.setForeground(DONE_COLOR_Package);
                 progress.setMaximum(100);
                 progress.setValue(100);
                 progress.setString("- 100% -");
             } else {
                 progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
-                progress.setForeground(PACKAGE_PROGRESS_COLOR);
-                if (ui != null) {
-                    ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
-                    ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
-                }
+                // progress.setForeground(PACKAGE_PROGRESS_COLOR);
+                // if (ui != null) {
+                // ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
+                // ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
+                // }
                 progress.setValue(fp.getTotalKBLoaded());
                 progress.setString(c.format(fp.getPercent()) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize())) + ")");
             }
+            progress.setBackground(null);
+            progress.setOpaque(false);
             return progress;
         } else if (column == DownloadTreeTableModel.COL_HOSTER && value instanceof DownloadLink) {
-            dLink = (DownloadLink) value;
-            label.setText(dLink.getPlugin().getHost() + dLink.getPlugin().getSessionInfo());
-            if (dLink.getPlugin().hasHosterIcon()) label.setIcon(dLink.getPlugin().getHosterIcon());
-            return label;
+            dLink = (DownloadLink) value; 
+            co = (DefaultTableCellRenderer) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            co.setText(dLink.getPlugin().getHost() + dLink.getPlugin().getSessionInfo());
+            co.setIcon(null);
+            if (dLink.getPlugin().hasHosterIcon()) co.setIcon(dLink.getPlugin().getHosterIcon());
+            return co;
         }
 
-        co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        co.setForeground(FONT_COLOR);
-        co.setBackground(FONT_COLOR);
+        co = (TreeTableRenderer) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        co.setIcon(null);
+        // co.setForeground(FONT_COLOR);
+        // co.setBackground(FONT_COLOR);
         return co;
+    }
+
+    private Component getTreeCellRendererComponent(JTable table2, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        if (value instanceof FilePackage) {
+
+            fp = (FilePackage) value;
+            co = (TreeTableRenderer) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            co.setText(fp.getName());
+            if (fp.getBooleanProperty(DownloadTreeTable.PROPERTY_EXPANDED, false)) {
+
+                co.setIcon(this.icon_fp_open);
+
+            } else {
+                co.setIcon(this.icon_fp_closed);
+
+            }
+            sublabelPanel1.setBackground(null);
+            sublabelPanel1.setOpaque(false);
+            sublabelPanel1.removeAll();
+            sublabelPanel1.add(co);
+            return this.sublabelPanel1;
+
+        } else if (value instanceof DownloadLink) {
+            dLink = (DownloadLink) value;
+            co = (TreeTableRenderer) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            co.setText("Datei");
+            co.setIcon(this.icon_link);
+            sublabelPanel1.removeAll();
+            sublabelPanel1.setBackground(null);
+            sublabelPanel1.setOpaque(false);
+            
+            sublabelPanel1.add(co, "gapleft 15");
+            return this.sublabelPanel1;
+
+            // return lbl_link;
+        } else {
+            return null;
+        }
+
     }
 }

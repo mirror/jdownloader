@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -86,6 +85,7 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
     private void initGUI() {
         for (int i = 0; i < MAX_BARS; i++) {
             lines[i] = new ProgressEntry();
+
         }
 
     }
@@ -141,14 +141,33 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
     }
 
     protected void update() {
-        for (int i = 0; i < MAX_BARS; i++) {
-            this.remove(this.lines[i]);
-        }
-        for (int i = 0; i < Math.min(controllers.size(), MAX_BARS); i++) {
-            lines[i].update(this.controllers.get(i));
-            this.add(lines[i], "height 20!");
-        }
 
+        // 
+      //  this.setCollapsed(JDUtilities.getSubConfig("gui").getBooleanProperty(TabProgress.COLLAPSED, false));
+
+        for (int i = 0; i < Math.min(controllers.size(), MAX_BARS); i++) {
+            if (!lines[i].isAttached()) {
+                this.add(lines[i], "height 20!");
+                System.out.println("ATTACH " + i);
+                lines[i].setAttached(true);
+            } else {
+                System.out.println("OK " + i);
+            }
+            lines[i].update(this.controllers.get(i));
+
+        }
+        for (int i = Math.max(0, Math.min(controllers.size(), MAX_BARS)); i < MAX_BARS; i++) {
+            if (lines[i].isAttached()) {
+                this.remove(this.lines[i]);
+                System.out.println("GONE " + i);
+
+                lines[i].setAttached(false);
+            }
+
+        }
+        if (controllers.size() == 0){ this.setVisible(false);}else{
+            this.setVisible(true);
+        }
         this.setTitle(JDLocale.LF("gui.progresspane.title", "%s modules running", controllers.size()));
         this.revalidate();
         this.repaint();
@@ -176,12 +195,22 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         private static final long serialVersionUID = 2676301394570621548L;
         private JLabel label;
         private JProgressBar bar;
+        private boolean attached = false;
+
+        public void setAttached(boolean attached) {
+            this.attached = attached;
+        }
 
         public ProgressEntry() {
-            this.setLayout(new MigLayout("ins 0", "[20!]0[grow,fill]", "16!"));
+            this.setLayout(new MigLayout("ins 0", "[18!]0[grow,fill]", "16!"));
             this.add(label = new JLabel(), "sizegroup labels");
             this.add(bar = new JProgressBar(), "wrap,sizegroup bars");
             this.add(new JSeparator(), "span");
+        }
+
+        public boolean isAttached() {
+            // TODO Auto-generated method stub
+            return attached;
         }
 
         public void update(ProgressController controller) {
@@ -191,10 +220,11 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
             bar.setValue((int) controller.getValue());
             bar.setStringPainted(true);
             bar.setString(controller.getStatusText());
-        
-           if(controller.getColor()!=null) bar.setBackground(controller.getColor());
 
-          //  if (controller.getColor() != null) bar.setForeground(controller.getColor());
+            bar.setBackground(controller.getColor());
+
+            // if (controller.getColor() != null)
+            // bar.setForeground(controller.getColor());
 
         }
     }

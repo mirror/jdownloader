@@ -32,20 +32,20 @@ import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 
 public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
-    public static final int COL_FILE = 1;
+    public static final int COL_FILE = 2;
 
-    public static final int COL_HOSTER = 2;
+    public static final int COL_HOSTER = 3;
 
     /** index of tree column */
+    public static final int COL_HIDDEN = 0;
+    public static final int COL_PART = 1;
 
-    public static final int COL_PART = 0;
+    public static final int COL_PROGRESS = 5;
 
-    public static final int COL_PROGRESS = 4;
-
-    public static final int COL_STATUS = 3;
+    public static final int COL_STATUS = 4;
 
     /** table column names */
-    static protected String[] COLUMN_NAMES = { JDLocale.L("gui.treetable.header_1.tree", "Pakete"), JDLocale.L("gui.treetable.header_2.files", "Dateien"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
+    static protected String[] COLUMN_NAMES = {"hidden", JDLocale.L("gui.treetable.header_1.tree", "Pakete"), JDLocale.L("gui.treetable.header_2.files", "Dateien"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
 
     private DownloadLinksTreeTablePanel owner;
 
@@ -61,6 +61,14 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
     public DownloadTreeTableModel(DownloadLinksTreeTablePanel treeTable) {
         super("root");
         owner = treeTable;
+    }
+
+    public static int getIDFormHeaderLabel(String label) {
+        for (int i = 0; i < COLUMN_NAMES.length; i++) {
+            if (COLUMN_NAMES[i].equals(label)) { return i; }
+
+        }
+        return -1;
     }
 
     public boolean containesPackage(FilePackage fp) {
@@ -109,8 +117,10 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
     @Override
     public Class<?> getColumnClass(int column) {
         switch (column) {
-        case COL_PART:
+        case COL_HIDDEN:
             return String.class;
+        case COL_PART:
+            return Object.class;
         case COL_FILE:
             return String.class;
         case COL_HOSTER:
@@ -179,13 +189,14 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             DownloadLink downloadLink = (DownloadLink) node;
             switch (column) {
             case COL_PART:
-                if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
-                    PackageData pd = (PackageData) downloadLink.getProperty("JDU");
-                    return JDLocale.L("gui.treetable.part.label_update", "Update") + " " + pd.getInstalledVersion() + " -> " + pd.getStringProperty("version");
-                } else {
-                    int id = downloadLink.getPartByName();
-                    return JDLocale.L("gui.treetable.part.label", "Datei") + " " + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0"));
-                }
+                return downloadLink;
+//                if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
+//                    PackageData pd = (PackageData) downloadLink.getProperty("JDU");
+//                    return JDLocale.L("gui.treetable.part.label_update", "Update") + " " + pd.getInstalledVersion() + " -> " + pd.getStringProperty("version");
+//                } else {
+//                    int id = downloadLink.getPartByName();
+//                    return JDLocale.L("gui.treetable.part.label", "Datei") + " " + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0"));
+//                }
             case COL_FILE:
                 return downloadLink.getName().replaceAll("\\.jdu", "");
             case COL_HOSTER:
@@ -199,7 +210,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             FilePackage filePackage = (FilePackage) node;
             switch (column) {
             case COL_PART:
-                return filePackage.getName();
+                return filePackage;
             case COL_FILE:
                 return filePackage.getDownloadLinks().size() + " " + JDLocale.L("gui.treetable.parts", "Teil(e)");
             case COL_HOSTER:

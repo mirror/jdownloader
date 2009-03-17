@@ -1171,43 +1171,43 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // n = 3;
         // statusBar.setBorder(new EmptyBorder(n, 0, n, 0));
         frame.setContentPane(panel);
-        final ProgressController pc = new ProgressController("tester");
-        pc.setIcon(JDTheme.II("gui.images.warning", 16, 16));
-        pc.setRange(10);
-
-        final ProgressController pc2 = new ProgressController("tester2");
-        pc2.setIcon(JDTheme.II("gui.images.warning", 16, 16));
-
-        pc2.setRange(20);
-        new Thread() {
-            public void run() {
-                while (true) {
-                    pc.increase(1);
-                    pc2.increase(1);
-                    if (pc.getPercent() >= 1.0) {
-                        pc.finalize();
-                    }
-                    if (pc2.getPercent() >= 1.0) {
-                        pc2.setColor(Color.RED);
-                        pc2.setStatusText("Error in Module");
-                        pc2.finalize(5000);
-                    }
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
+//        final ProgressController pc = new ProgressController("tester");
+//        pc.setIcon(JDTheme.II("gui.images.warning", 16, 16));
+//        pc.setRange(10);
+//
+//        final ProgressController pc2 = new ProgressController("tester2");
+//        pc2.setIcon(JDTheme.II("gui.images.warning", 16, 16));
+//
+//        pc2.setRange(20);
+//        new Thread() {
+//            public void run() {
+//                while (true) {
+//                    pc.increase(1);
+//                    pc2.increase(1);
+//                    if (pc.getPercent() >= 1.0) {
+//                        pc.finalize();
+//                    }
+//                    if (pc2.getPercent() >= 1.0) {
+//                        pc2.setColor(Color.RED);
+//                        pc2.setStatusText("Error in Module");
+//                        pc2.finalize(5000);
+//                    }
+//                    try {
+//                        Thread.sleep(1000);
+//                    } catch (InterruptedException e) {
+//                        // TODO Auto-generated catch block
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }
+//        }.start();
 
         panel.add(toolBar, "span");
         panel.add(taskPane);
         // taskPane.setBorder(BorderFactory.createLineBorder(Color.RED));
         panel.add(contentPanel);
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
-        panel.add(progressBar, "span");
+        panel.add(progressBar, "span,hidemode 3");
         // progressBar.setBorder(BorderFactory.createLineBorder(Color.BLUE));
         panel.add(statusBar, "span");
 

@@ -18,6 +18,7 @@ package jd.gui.skins.simple.components.treetable;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.LinearGradientPaint;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
@@ -28,10 +29,14 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
@@ -51,6 +56,7 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.event.TreeWillExpandListener;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
 
@@ -73,20 +79,37 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.JXTreeTable;
+import org.jdesktop.swingx.decorator.ColorHighlighter;
+import org.jdesktop.swingx.decorator.ComponentAdapter;
+import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.Highlighter;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
+import org.jdesktop.swingx.decorator.IconHighlighter;
+import org.jdesktop.swingx.decorator.PainterHighlighter;
+import org.jdesktop.swingx.painter.MattePainter;
+import org.jdesktop.swingx.painter.Painter;
+import org.jdesktop.swingx.table.TableColumnExt;
 import org.jdesktop.swingx.tree.TreeModelSupport;
+import org.jvnet.lafwidget.animation.FadeConfigurationManager;
+import org.jvnet.lafwidget.animation.FadeKind;
+import org.jvnet.substance.SubstanceLookAndFeel;
+import org.jvnet.substance.api.ComponentState;
+import org.jvnet.substance.api.SubstanceColorScheme;
+import org.jvnet.substance.painter.highlight.ClassicHighlightPainter;
+import org.jvnet.substance.skin.SkinInfo;
+import org.jvnet.substance.utils.SubstanceColorSchemeUtilities;
+import org.jvnet.substance.utils.SubstanceCoreUtilities;
 
-public class DownloadTreeTable extends JXTreeTable implements  TreeWillExpandListener, TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener, KeyListener {
+public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandListener, TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener, KeyListener {
 
     abstract class Caller {
         abstract public void call();
     }
 
-   
     public static final String PROPERTY_EXPANDED = "expanded";
 
     public static final String PROPERTY_SELECTED = "selected";
@@ -115,10 +138,6 @@ public class DownloadTreeTable extends JXTreeTable implements  TreeWillExpandLis
 
     private Timer timer;
 
-
-
-
-
     private TreeTableTransferHandler transferHandler;
 
     private HashMap<FilePackage, ArrayList<DownloadLink>> updatePackages;
@@ -133,15 +152,21 @@ public class DownloadTreeTable extends JXTreeTable implements  TreeWillExpandLis
 
     private boolean updatelock = false;
 
+    private Color SELECTED_ROW_COLOR;
+
     public DownloadTreeTable(DownloadTreeTableModel treeModel) {
         super(treeModel);
+
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         cellRenderer = new TreeTableRenderer(this);
-        
-        Highlighter hl = HighlighterFactory.createAlternateStriping(Color.WHITE, UIManager.getColor("Panel.background")); 
-        this.setHighlighters(new Highlighter[]{hl});
+
+        // setTreeCellRenderer(treeCellRenderer);
+        // this.setHighlighters(new Highlighter[] { hl });
+        // this.setModel(treeModel)
         model = treeModel;
-        //this.setUI(new TreeTablePaneUI());
+
+        createColumns();
+        // this.setUI(new TreeTablePaneUI());
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
         // this.setExpandsSelectedPaths(true);
@@ -153,7 +178,8 @@ public class DownloadTreeTable extends JXTreeTable implements  TreeWillExpandLis
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setColumnControlVisible(true);
-     
+        this.setColumnControl(new JColumnControlButton(this));
+
         usedoubleclick = guiConfig.getBooleanProperty(SimpleGUI.PARAM_DCLICKPACKAGE, false);
         setEditable(false);
         setAutoscrolls(false);
@@ -163,11 +189,240 @@ public class DownloadTreeTable extends JXTreeTable implements  TreeWillExpandLis
         addMouseListener(this);
         addKeyListener(this);
         addMouseMotionListener(this);
+        UIManager.put("Table.focusCellHighlightBorder", null);
         setTransferHandler(transferHandler = new TreeTableTransferHandler(this));
         if (JDUtilities.getJavaVersion() > 1.6) {
             setDropMode(DropMode.USE_SELECTION);
         }
-     
+
+        this.setHighlighters(new Highlighter[] {});
+        setHighlighters(HighlighterFactory.createAlternateStriping(UIManager.getColor("Panel.background").brighter(), UIManager.getColor("Panel.background")));
+
+        addHighlighter(new ColorHighlighter(HighlightPredicate.IS_FOLDER, JDTheme.C("gui.color.downloadlist.row_package", "fffa7c"), Color.BLACK));
+
+        addFinishedHighlighter();
+        addDisabledHighlighter();
+        addPostErrorHighlighter();
+        addWaitHighlighter();
+        addErrorHighlighter();
+
+        // addHighlighter(new FilepackageRowHighlighter(this, Color.RED,
+        // Color.BLUE, Color.RED, Color.BLUE) {
+        // @Override
+        // public boolean doHighlight(FilePackage fp) {
+        // return true;
+        // }
+        // });
+//        addHighlighter(new PainterHighlighter(HighlightPredicate.IS_FOLDER, getPainter()));
+
+        // Highlighter extendPrefWidth = new AbstractHighlighter() {
+        // @Override
+        // protected Component doHighlight(Component component, ComponentAdapter
+        // adapter) {
+        // Dimension dim = component.getPreferredSize();
+        // int width = 600;
+        // dim.width = Math.max(dim.width, width);
+        // component.setPreferredSize(dim);
+        // return component;
+        //
+        // }
+        // };
+        //
+        // addHighlighter(extendPrefWidth);
+        // ATTENTION >=1.6
+        /**
+         * correct paint errors in JXTreeTable due to annimation over the first
+         * row. The first row is a tree and thus does not implement
+         * PainterHighlighter. Without modding the TreeTable code, it seems
+         * unpossible to fix this.
+         */
+        if (JDUtilities.getJavaVersion() > 1.9) {
+            FadeConfigurationManager.getInstance().disallowFades(FadeKind.ROLLOVER, this);
+            FadeConfigurationManager.getInstance().disallowFades(FadeKind.SELECTION, this);
+            SubstanceColorScheme colorScheme = SubstanceColorSchemeUtilities.getColorScheme(this, ComponentState.SELECTED);
+            addHighlighter(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, colorScheme.getSelectionBackgroundColor(), colorScheme.getSelectionForegroundColor()));
+            Map<String, SkinInfo> skins = SubstanceLookAndFeel.getAllSkins();
+            ClassicHighlightPainter hp = (ClassicHighlightPainter) SubstanceLookAndFeel.getCurrentSkin().getHighlightPainter();
+            hp = null;
+            boolean jd = SubstanceCoreUtilities.toUseHighlightColorScheme(this);
+            jd = false;
+            UIManager.put(SubstanceCoreUtilities.USE_HIGHLIGHT, false);
+            jd = SubstanceCoreUtilities.toUseHighlightColorScheme(this);
+            jd = false;
+        } else {
+            /**
+             * Set here colors if java version is below 1.6 and substance cannot
+             * be used
+             */
+            // addHighlighter(new
+            // ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, Color.GRAY,
+            // Color.BLACK));
+        }
+
+    }
+
+    /**
+     * Link HIghlighters
+     */
+    private void addWaitHighlighter() {
+        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936");
+        Color foreground = Color.DARK_GRAY;
+        Color selectedBackground = background.darker();
+        Color selectedForground = foreground;
+
+        addHighlighter(new DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+            @Override
+            public boolean doHighlight(DownloadLink dLink) {
+                return dLink.getLinkStatus().getRemainingWaittime() > 0 || dLink.getPlugin() == null || dLink.getPlugin().getRemainingHosterWaittime() > 0;
+            }
+        });
+
+    }
+
+    private void addErrorHighlighter() {
+        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936");
+        Color foreground = Color.DARK_GRAY;
+        Color selectedBackground = background.darker();
+        Color selectedForground = foreground;
+
+        addHighlighter(new DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+            @Override
+            public boolean doHighlight(DownloadLink link) {
+                return link.getLinkStatus().isFailed();
+            }
+        });
+
+    }
+
+    private void addPostErrorHighlighter() {
+        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936");
+        Color foreground = Color.DARK_GRAY;
+        Color selectedBackground = background.darker();
+        Color selectedForground = foreground;
+
+        addHighlighter(new DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+            @Override
+            public boolean doHighlight(DownloadLink link) {
+                return link.getLinkStatus().hasStatus(LinkStatus.ERROR_POST_PROCESS);
+            }
+        });
+
+    }
+
+    private void addDisabledHighlighter() {
+        Color background = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad");
+        Color foreground = Color.DARK_GRAY;
+        Color selectedBackground = background.darker();
+        Color selectedForground = foreground;
+
+        addHighlighter(new DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+            @Override
+            public boolean doHighlight(DownloadLink link) {
+                return !link.isEnabled();
+            }
+        });
+
+    }
+
+    private void addFinishedHighlighter() {
+        Color background = JDTheme.C("gui.color.downloadlist.row_link_done", "c4ffd2");
+        Color backGroundPackage = JDTheme.C("gui.color.downloadlist.row_package_done", "339933");
+        Color foreground = Color.BLACK;
+        Color selectedBackground = background.darker();
+        Color selectedForground = foreground;
+        addHighlighter(new FilepackageRowHighlighter(this, backGroundPackage, foreground, selectedBackground, selectedForground) {
+            @Override
+            public boolean doHighlight(FilePackage fp) {
+                return fp.isFinished();
+            }
+        });
+        addHighlighter(new DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+            @Override
+            public boolean doHighlight(DownloadLink link) {
+                return link.getLinkStatus().hasStatus(LinkStatus.FINISHED);
+            }
+        });
+
+        ((TableColumnExt) getColumns(true).get(3)).addHighlighter(new IconHighlighter(new HighlightPredicate() {
+            public boolean isHighlighted(Component renderer, ComponentAdapter adapter) {
+                TreePath path = getPathForRow(adapter.row);
+                Object element;
+                if (path != null) {
+                    element = path.getLastPathComponent();
+                    if (element instanceof DownloadLink) {
+                        DownloadLink link = (DownloadLink) element;
+                        // TableColumnExt ext = getColumnExt(adapter.column);
+                        // getColumns(true).get(adapter.column);
+                        if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && !new File(link.getFileOutput()).exists()) {
+
+                        return true; }
+
+                    }
+                }
+
+                return false;
+            }
+
+        }, JDTheme.II("gui.images.delete", 16, 16)));
+
+    }
+
+    public TableCellRenderer getCellRenderer(int row, int col) {
+        return cellRenderer;
+        // if (col >= 1) { return cellRenderer; }
+        // return super.getCellRenderer(row, col);
+
+    }
+
+    public Painter getPainter() {
+
+        int width = 100;
+        int height = 30;
+        Color color1 = JDTheme.C("gui.color.downloadlist.row_package", "fffa7c");
+        Color color2 = Color.GRAY;
+        LinearGradientPaint gradientPaint = new LinearGradientPaint(1, 0, 1, height, new float[] { 0.0f, 1.0f }, new Color[] { color1, color2 });
+
+        MattePainter mattePainter = new MattePainter(gradientPaint);
+
+        return mattePainter;
+
+    }
+
+    private void createColumns() {
+        // TODO Auto-generated method stub
+        setAutoCreateColumnsFromModel(false);
+        List<TableColumn> columns = getColumns(true);
+        for (Iterator<TableColumn> iter = columns.iterator(); iter.hasNext();) {
+            getColumnModel().removeColumn(iter.next());
+
+        }
+
+        final SubConfiguration config = JDUtilities.getSubConfig("gui");
+
+        for (int i = 0; i < getModel().getColumnCount(); i++) {
+
+            TableColumnExt tableColumn = getColumnFactory().createAndConfigureTableColumn(getModel(), i);
+
+            tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
+                public void propertyChange(PropertyChangeEvent evt) {
+                    TableColumnExt column = (TableColumnExt) evt.getSource();
+                    if (evt.getPropertyName().equals("width")) {
+                        config.setProperty("WIDTH_COL_" + column.getModelIndex(), evt.getNewValue());
+                        config.save();
+                    } else if (evt.getPropertyName().equals("visible")) {
+                        config.setProperty("VISABLE_COL_" + column.getModelIndex(), evt.getNewValue());
+                        config.save();
+                    }
+                }
+            });
+
+            tableColumn.setVisible(config.getBooleanProperty("VISABLE_COL_" + i, true));
+            tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + i, tableColumn.getWidth()));
+            if (tableColumn != null) {
+                getColumnModel().addColumn(tableColumn);
+            }
+        }
+
     }
 
     @SuppressWarnings("unchecked")
@@ -561,11 +816,6 @@ public class DownloadTreeTable extends JXTreeTable implements  TreeWillExpandLis
 
     }
 
-    public TableCellRenderer getCellRenderer(int row, int col) {
-        if (col >= 1) { return cellRenderer; }
-        return super.getCellRenderer(row, col);
-    }
-
     public DownloadTreeTableModel getDownladTreeTableModel() {
         return (DownloadTreeTableModel) getTreeTableModel();
     }
@@ -688,7 +938,7 @@ public class DownloadTreeTable extends JXTreeTable implements  TreeWillExpandLis
     public void mouseClicked(MouseEvent e) {
         ignoreSelectionsAndExpansions(-100);
         lastMouseClicked();
-      
+
         if (e.getButton() == MouseEvent.BUTTON1 && 2 == e.getClickCount()) {
             TreePath path = getPathForRow(rowAtPoint(e.getPoint()));
             if (path == null) return;
@@ -708,7 +958,7 @@ public class DownloadTreeTable extends JXTreeTable implements  TreeWillExpandLis
     }
 
     public void mouseExited(MouseEvent e) {
-      
+
     }
 
     public void mouseMoved(MouseEvent e) {
@@ -718,9 +968,6 @@ public class DownloadTreeTable extends JXTreeTable implements  TreeWillExpandLis
         Point screen = getLocationOnScreen();
         mousePoint.x += screen.x;
         mousePoint.y += screen.y;
-        
-
-        
 
         mouseOverRow = moRow;
         mouseOverColumn = moColumn;
@@ -928,7 +1175,6 @@ public class DownloadTreeTable extends JXTreeTable implements  TreeWillExpandLis
             JDSounds.PT("sound.gui.selectLink");
         }
 
-     
     }
 
     public void moveSelectedItems(int id) {
@@ -1000,8 +1246,6 @@ public class DownloadTreeTable extends JXTreeTable implements  TreeWillExpandLis
 
     }
 
-  
-
     /**
      * Die Listener speichern bei einer Selection oder beim aus/Einklappen von
      * Ästen deren Status
@@ -1072,8 +1316,6 @@ public class DownloadTreeTable extends JXTreeTable implements  TreeWillExpandLis
 
     }
 
-
-
     public void treeWillCollapse(TreeExpansionEvent arg0) throws ExpandVetoException {
         if (updatelock) return;
         if (this.usedoubleclick && System.currentTimeMillis() > lastMouseClicked + 200) throw new ExpandVetoException(arg0);
@@ -1083,4 +1325,5 @@ public class DownloadTreeTable extends JXTreeTable implements  TreeWillExpandLis
         if (updatelock) return;
         if (this.usedoubleclick && System.currentTimeMillis() > lastMouseClicked + 200) throw new ExpandVetoException(arg0);
     }
+
 }
