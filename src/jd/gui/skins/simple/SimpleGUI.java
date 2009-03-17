@@ -1020,7 +1020,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         taskPane = new TaskPane();
         taskPane.setBackgroundPainter(null);
 
-        DownloadTaskPane dlTskPane = new DownloadTaskPane("Download", JDTheme.II("gui.images.down"));
+        DownloadTaskPane dlTskPane = new DownloadTaskPane(JDLocale.L("gui.taskpanes.download","Download"), JDTheme.II("gui.images.down"));
         dlTskPane.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -1035,7 +1035,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         taskPane.add(dlTskPane);
 
         linkGrabber = new LinkGrabberV2(this);
-        LinkGrabberTaskPane lgTaskPane = new LinkGrabberTaskPane("LinkGrabber", JDTheme.II("gui.images.add"));
+        LinkGrabberTaskPane lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber","LinkGrabber"), JDTheme.II("gui.images.add"));
         lgTaskPane.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 System.out.println(e.getActionCommand());
@@ -1046,7 +1046,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         });
         taskPane.add(lgTaskPane);
 
-        ConfigTaskPane cfgTskPane = new ConfigTaskPane("Configuration", JDTheme.II("gui.images.configuration"));
+        ConfigTaskPane cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration","Configuration"), JDTheme.II("gui.images.configuration"));
         cfgTskPane.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
