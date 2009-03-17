@@ -16,47 +16,23 @@
 
 package jd.nutils.debug;
 
-import java.awt.EventQueue;
-import java.awt.Toolkit;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.lang.reflect.Method;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.TreeSet;
-import java.util.logging.Level;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import jd.JDInit;
-import jd.Main;
-import jd.Server;
-import jd.SplashScreen;
-import jd.captcha.JACController;
-import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
-import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
-import jd.gui.skins.simple.JDEventQueue;
-import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
-import jd.update.WebUpdater;
-import jd.utils.CheckJava;
-import jd.utils.JDFileReg;
-import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.MacOSController;
-import jd.utils.WebUpdate;
 
 public abstract class UnitTest {
 
@@ -67,8 +43,7 @@ public abstract class UnitTest {
     private static void init() {
         tests = new ArrayList<Class<?>>();
         tests.add(Browser.Test.class);
-       // tests.add(LinkGrabber.Test.class);
-  
+        // tests.add(LinkGrabber.Test.class);
 
     }
 
@@ -81,24 +56,26 @@ public abstract class UnitTest {
         cfg.save();
         return ret;
     }
+
     public int getIntegerProperty(String string) {
         SubConfiguration cfg = JDUtilities.getSubConfig("UNITTEST");
         int ret = cfg.getIntegerProperty(string);
 
-        ret = Integer.parseInt(JOptionPane.showInputDialog(frame, "Enter " + string, ret+""));
+        ret = Integer.parseInt(JOptionPane.showInputDialog(frame, "Enter " + string, ret + ""));
         cfg.setProperty(string, ret);
         cfg.save();
         return ret;
     }
+
     public boolean ask(String string) {
         return JOptionPane.showConfirmDialog(frame, string) == JOptionPane.OK_OPTION;
 
     }
 
     public void initJD() {
-        frame=new JFrame();
+        frame = new JFrame();
         frame.setVisible(true);
-      //  frame.setAlwaysOnTop(true);
+        // frame.setAlwaysOnTop(true);
         System.setProperty("file.encoding", "UTF-8");
         // Mac specific //
         if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
@@ -147,7 +124,7 @@ public abstract class UnitTest {
     }
 
     public static void main(String args[]) throws Exception {
-         //UnitTest.run("jd\\.http.*");
+        // UnitTest.run("jd\\.http.*");
         UnitTest.run("jd\\.gui.*");
     }
 

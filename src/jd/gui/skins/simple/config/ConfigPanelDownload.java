@@ -122,7 +122,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_USER, JDLocale.L("gui.config.download.proxy.user", "User")));
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_PASS, JDLocale.L("gui.config.download.proxy.pass", "Pass")));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, config, Configuration.PROXY_PASS, JDLocale.L("gui.config.download.proxy.pass", "Pass")));
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         network.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -140,7 +140,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_USER_SOCKS, JDLocale.L("gui.config.download.proxy.user", "User")));
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_PASS_SOCKS, JDLocale.L("gui.config.download.proxy.pass", "Pass")));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, config, Configuration.PROXY_PASS_SOCKS, JDLocale.L("gui.config.download.proxy.pass", "Pass")));
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         // Download Tab
