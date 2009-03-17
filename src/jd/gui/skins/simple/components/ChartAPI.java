@@ -154,7 +154,9 @@ public abstract class ChartAPI extends JComponent {
         if (calc < 0.01 && calc > 0.0)
             calc = 0.01;
         else if (calc < 0) calc = 0;
-        return String.valueOf(calc);
+        String ret = String.valueOf(calc);
+        if(ret.length() > 16) ret = ret.substring(0, 16);
+        return ret;
     }
 
     public void downloadImage(String path) {
