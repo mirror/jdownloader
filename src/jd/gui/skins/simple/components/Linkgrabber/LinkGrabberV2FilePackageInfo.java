@@ -8,11 +8,15 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+
+import net.miginfocom.swing.MigLayout;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
@@ -43,8 +47,12 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements ActionListen
 
     private JCheckBox chbUseSubdirectory;
     private SubConfiguration guiConfig;
+    
+    private JTabbedPane tabbedPane;    
 
-    private LinkGrabberV2FilePackage fp = null;
+    private JPanel simplePanel, extendedPanel;
+    
+    private LinkGrabberV2FilePackage fp = null;  
 
     private boolean isRemoved = false;
 
@@ -59,12 +67,7 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements ActionListen
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnToggle) {
-            rebuildGUI();
-        } else if (fp != null) {
-            if (e.getSource() == txtName) fp.setName(txtName.getText());
-            if (e.getSource() == brwSaveTo) fp.setDownloadDirectory(brwSaveTo.getText());
-        }
+        
     }
 
     public void setPackage(LinkGrabberV2FilePackage fp) {
@@ -82,18 +85,23 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements ActionListen
     }
 
     private void initGUIElements() {
-        btnToggle = new JButton();
-        if (guiConfig.getBooleanProperty(PROPERTY_HEADERVIEW, true)) {
-            btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Simple"));
-        } else {
-            btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview1", "Extended"));
-        }
-        btnToggle.setMinimumSize(new Dimension(80, 23));
-        btnToggle.setPreferredSize(new Dimension(80, 23));
-        btnToggle.setMaximumSize(new Dimension(80, 23));
+        
+        tabbedPane = new JTabbedPane();
+                        
+        simplePanel = new JPanel();
+        extendedPanel = new JPanel();
 
         txtName = new JDTextField();
         txtName.setAutoSelect(true);
+        txtName.addActionListener(this);
+        
+        brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
+        brwSaveTo.setEditable(true);
+        brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
+        
+        brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
+        brwSaveTo.addActionListener(this);
+   
         txtPassword = new JDTextField();
         txtComment = new JDTextField();
 
@@ -104,14 +112,7 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements ActionListen
         chbUseSubdirectory = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.useSubdirectory", "Use Subdirectory"));
         chbUseSubdirectory.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
         chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
-
-        brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
-        brwSaveTo.setEditable(true);
-        brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-        brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
-        brwSaveTo.addActionListener(this);
-        btnToggle.addActionListener(this);
-        txtName.addActionListener(this);
+      
     }
 
     private void buildGUI() {
@@ -120,89 +121,36 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements ActionListen
                 int n = 10;
                 setLayout(new BorderLayout(n, n));
                 setBorder(new EmptyBorder(n, n, n, n));
-                add(guiConfig.getBooleanProperty(PROPERTY_HEADERVIEW, true) ? buildExtendedHeader() : buildSimpleHeader(), BorderLayout.NORTH);
+                add(buildTabbedPanel(), BorderLayout.NORTH);
             }
         });
     }
+    
+    private JComponent buildTabbedPanel() {
 
-    private void rebuildGUI() {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                removeAll();
-                add(changeHeader(), BorderLayout.NORTH);
-            }
-        });
+        simplePanel.setLayout(new MigLayout("", "[]10px[grow]", "[][]"));
+        
+        simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
+        simplePanel.add(txtName, "growx, wrap");
+        simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
+        simplePanel.add(brwSaveTo, "growx");
+        
+        tabbedPane.add(JDLocale.L("gui.linkgrabber.packagetab.toggleview1", "Simple"), simplePanel);
+
+        extendedPanel.setLayout(new MigLayout("", "[]10px[grow][right]", "[][]"));
+        
+        extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
+        extendedPanel.add(txtPassword, "growx");
+        extendedPanel.add(chbExtract, "wrap");
+        extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
+        extendedPanel.add(txtComment, "grow");
+        extendedPanel.add(chbUseSubdirectory, "wrap");
+
+        tabbedPane.add(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Extended"), extendedPanel);
+
+        return tabbedPane;
     }
 
-    private JPanel changeHeader() {
-        if (guiConfig.getBooleanProperty(PROPERTY_HEADERVIEW, true)) {
-            guiConfig.setProperty(PROPERTY_HEADERVIEW, false);
-            guiConfig.save();
-            btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview1", "Extended"));
-            return buildSimpleHeader();
-        } else {
-            guiConfig.setProperty(PROPERTY_HEADERVIEW, true);
-            guiConfig.save();
-            btnToggle.setText(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Simple"));
-            return buildExtendedHeader();
-        }
-    }
-
-    private JPanel buildSimpleHeader() {
-        int n = 10;
-
-        JPanel titles = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
-        titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
-        titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
-        titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
-
-        JPanel panel1 = new JPanel(new BorderLayout(n / 2, n / 2));
-        panel1.add(txtName, BorderLayout.CENTER);
-        panel1.add(btnToggle, BorderLayout.EAST);
-
-        JPanel elements = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
-        elements.add(panel1);
-        elements.add(brwSaveTo);
-        elements.add(txtPassword);
-
-        JPanel header = new JPanel(new BorderLayout(n, n));
-        header.add(titles, BorderLayout.WEST);
-        header.add(elements, BorderLayout.CENTER);
-        return header;
-    }
-
-    private JPanel buildExtendedHeader() {
-        int n = 10;
-
-        JPanel titles = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
-        titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
-        titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
-        titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
-        titles.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
-
-        JPanel panel1 = new JPanel(new BorderLayout(n / 2, n / 2));
-        panel1.add(txtPassword, BorderLayout.CENTER);
-        panel1.add(chbExtract, BorderLayout.EAST);
-
-        JPanel panel2 = new JPanel(new BorderLayout(n / 2, n / 2));
-        panel2.add(txtComment, BorderLayout.CENTER);
-        panel2.add(chbUseSubdirectory, BorderLayout.EAST);
-
-        JPanel panel3 = new JPanel(new BorderLayout(n / 2, n / 2));
-        panel3.add(txtName, BorderLayout.CENTER);
-        panel3.add(btnToggle, BorderLayout.EAST);
-
-        JPanel elements = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
-        elements.add(panel3);
-        elements.add(brwSaveTo);
-        elements.add(panel1);
-        elements.add(panel2);
-
-        JPanel header = new JPanel(new BorderLayout(n, n));
-        header.add(titles, BorderLayout.WEST);
-        header.add(elements, BorderLayout.CENTER);
-        return header;
-    }
 
     public void UpdateEvent(UpdateEvent event) {
         if (event.getSource() instanceof LinkGrabberV2FilePackage && this.fp != null && event.getSource() == fp && event.getID() == UpdateEvent.EMPTY_EVENT) {
