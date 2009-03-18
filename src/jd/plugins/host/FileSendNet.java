@@ -61,14 +61,16 @@ public class FileSendNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         // br.setDebug(true);
-        String linkaction = br.getRegex("innerHTML=.<form\\smethod=\"POST\"\\saction=\"(.*?)\"\\sstyle").getMatch(0);
-        String linksid = br.getRegex("name=\"sid\"\\svalue=\"(.*?)\">").getMatch(0);
-        String linkcountry = br.getRegex("name=\"country\"\\svalue=\"(.*?)\">").getMatch(0);
-        if (linkaction == null || linksid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String linkform =  br.getRegex("innerHTML=.(<form.*?</form>)").getMatch(0);
+        String linkaction = new Regex(linkform,"\\smethod=\"POST\"\\saction=\"(.*?)\"").getMatch(0);
+        String linkname = new Regex(linkform,"\\stype=\"hidden\"\\sname=\"(.*?)\"").getMatch(0);
+        String linkvalue = new Regex(linkform,"\\sname=\""+linkname+"\"\\svalue=\"(.*?)\"").getMatch(0);
+        //System.out.println(linkform+" "+linkaction+" "+linkname+" "+linkvalue);
+        if (linkaction == null || linkname== null || linkform == null || linkvalue == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(false);
         // this.sleep(24000, downloadLink); // uncomment when they find a better
         // way to force wait time
-        dl = br.openDownload(downloadLink, linkaction, "sid=" + linksid + "&country=" + linkcountry + "&download=");
+        dl = br.openDownload(downloadLink, linkaction, linkname + "=" + linkvalue + "&download=");
         dl.startDownload();
 
     }
