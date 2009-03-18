@@ -59,12 +59,15 @@ public class SuperSharePl extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         // br.setDebug(true);
-        String getlink = br.getRegex("downloadlink\\s+=\\s+'(*.?)';").getMatch(0);
+        String filename = downloadLink.getName();
+        String getlink = br.getRegex("downloadlink\\s+=\\s+'(.*?)';").getMatch(0);
+        if (getlink == null) getlink = br.getRegex("file=(.*?)\"").getMatch(0);
         if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
         // this.sleep(10000, downloadLink); // uncomment when they find a better
         // way to force wait time
         dl = br.openDownload(downloadLink, getlink, false, 1);
+        downloadLink.setFinalFileName(filename);
         dl.startDownload();
 
     }
