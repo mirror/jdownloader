@@ -143,5 +143,4 @@ public class JDEventQueue extends EventQueue {
         Point pt = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), t);
         menu.show(t, pt.x, pt.y);
     }
-
 }
