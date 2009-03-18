@@ -5,8 +5,6 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Graphics;
 import java.awt.Rectangle;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 
 import javax.swing.CellRendererPane;
 import javax.swing.JComponent;
@@ -19,7 +17,6 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.tree.TreePath;
 
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;
 

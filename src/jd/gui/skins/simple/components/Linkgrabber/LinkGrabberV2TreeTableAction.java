@@ -18,7 +18,9 @@ public class LinkGrabberV2TreeTableAction extends AbstractAction {
     public static final int PACKAGE_PRIO = 104;
     public static final int DOWNLOAD_PRIO = 200;
     public static final int SET_PW = 201;
-    public static final int DELETE = 300;
+    public static final int ADD_ALL = 300;
+    public static final int ADD_SELECTED = 301;
+    public static final int DELETE = 999;
 
     private int actionID;
     private ActionListener actionListener;

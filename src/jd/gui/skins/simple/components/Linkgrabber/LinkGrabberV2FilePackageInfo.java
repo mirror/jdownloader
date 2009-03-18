@@ -22,7 +22,12 @@ import jd.gui.skins.simple.components.JDTextField;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class LinkGrabberV2FilePackageInfo extends JPanel implements ActionListener {
+public class LinkGrabberV2FilePackageInfo extends JPanel implements ActionListener, UpdateListener {
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 5410296068527460629L;
 
     private ComboBrowseFile brwSaveTo;
 
@@ -39,6 +44,10 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements ActionListen
     private JCheckBox chbUseSubdirectory;
     private SubConfiguration guiConfig;
 
+    private LinkGrabberV2FilePackage fp = null;
+
+    private boolean isRemoved = false;
+
     private static final String PROPERTY_HEADERVIEW = "PROPERTY_HEADERVIEW";
 
     public LinkGrabberV2FilePackageInfo(SubConfiguration guiConfig) {
@@ -46,17 +55,27 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements ActionListen
         // setPreferredSize(new Dimension(700, 350));
         initGUIElements();
         buildGUI();
+        fp = null;
     }
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnToggle) {
             rebuildGUI();
+        } else if (fp != null) {
+            if (e.getSource() == txtName) fp.setName(txtName.getText());
+            if (e.getSource() == brwSaveTo) fp.setDownloadDirectory(brwSaveTo.getText());
         }
     }
 
-    public void updatePackage(LinkGrabberV2FilePackage fp) {
+    public void setPackage(LinkGrabberV2FilePackage fp) {
+        this.fp = fp;
+        fp.getUpdateBroadcaster().addUpdateListener(this);
         txtName.setText(fp.getName());
         brwSaveTo.setText(fp.getDownloadDirectory());
+    }
+
+    public LinkGrabberV2FilePackage getPackage() {
+        return fp;
     }
 
     private void initGUIElements() {
@@ -87,8 +106,9 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements ActionListen
         brwSaveTo.setEditable(true);
         brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
         brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
-
+        brwSaveTo.addActionListener(this);
         btnToggle.addActionListener(this);
+        txtName.addActionListener(this);
     }
 
     private void buildGUI() {
@@ -179,6 +199,16 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements ActionListen
         header.add(titles, BorderLayout.WEST);
         header.add(elements, BorderLayout.CENTER);
         return header;
+    }
+
+    public void UpdateEvent(UpdateEvent event) {
+        if (event.getSource() instanceof LinkGrabberV2FilePackage && this.fp != null && event.getSource() == fp && event.getID() == UpdateEvent.EMPTY_EVENT) {
+            fp.getUpdateBroadcaster().removeUpdateListener(this);
+            fp = null;
+        } else if (event.getSource() instanceof LinkGrabberV2FilePackage && this.fp != null && event.getSource() == fp && event.getID() == UpdateEvent.UPDATE_EVENT) {
+            txtName.setText(fp.getName());
+            brwSaveTo.setText(fp.getDownloadDirectory());
+        }
     }
 
 }

@@ -1,33 +1,34 @@
 package jd.gui.skins.simple.components.Linkgrabber;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.util.ArrayList;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.BorderFactory;
-import javax.swing.JComponent;
 import javax.swing.JScrollPane;
-import javax.swing.JTree;
-import javax.swing.KeyStroke;
 
-import org.jdesktop.swingx.JXCollapsiblePane;
-
+import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.event.UIEvent;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class LinkGrabberV2 extends JTabbedPanel {
+import org.jdesktop.swingx.JXCollapsiblePane;
+
+public class LinkGrabberV2 extends JTabbedPanel implements ActionListener, UpdateListener {
 
     private static final long serialVersionUID = 1607433619381447389L;
-    protected Vector<LinkGrabberV2FilePackage> packages = new Vector<LinkGrabberV2FilePackage>();
+    protected static Vector<LinkGrabberV2FilePackage> packages = new Vector<LinkGrabberV2FilePackage>();
     public static final String PROPERTY_ONLINE_CHECK = "DO_ONLINE_CHECK_V2";
 
     private Vector<DownloadLink> totalLinkList = new Vector<DownloadLink>();
@@ -44,6 +45,7 @@ public class LinkGrabberV2 extends JTabbedPanel {
     private ProgressController pc;
     private JXCollapsiblePane collapsepane;
     private LinkGrabberV2FilePackageInfo FilePackageInfo;
+    private boolean isRemoved = false;
 
     public LinkGrabberV2(SimpleGUI parent) {
         super(new BorderLayout());
@@ -64,7 +66,7 @@ public class LinkGrabberV2 extends JTabbedPanel {
     }
 
     public void showFilePackageInfo(LinkGrabberV2FilePackage fp) {
-        FilePackageInfo.updatePackage(fp);
+        FilePackageInfo.setPackage(fp);
         collapsepane.setCollapsed(false);
     }
 
@@ -77,7 +79,9 @@ public class LinkGrabberV2 extends JTabbedPanel {
     }
 
     public synchronized void fireTableChanged(int id, Object param) {
-        internalTreeTable.fireTableChanged(id, param);
+        synchronized (packages) {
+            internalTreeTable.fireTableChanged(id, param);
+        }
     }
 
     @Override
@@ -98,6 +102,7 @@ public class LinkGrabberV2 extends JTabbedPanel {
     public synchronized void addToWaitingList(DownloadLink element) {
         totalLinkList.add(element);
         waitingList.add(element);
+        checkAlreadyinList(element);
         attachToPackagesFirstStage(element);
     }
 
@@ -108,19 +113,19 @@ public class LinkGrabberV2 extends JTabbedPanel {
             packageName = link.getFilePackage().getName();
             fp = getFPwithName(packageName);
             if (fp == null) {
-                fp = new LinkGrabberV2FilePackage(packageName);
+                fp = new LinkGrabberV2FilePackage(packageName, this);
             }
         }
         if (fp == null) {
             if (guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) {
                 fp = getFPwithName(PACKAGENAME_UNCHECKED);
                 if (fp == null) {
-                    fp = new LinkGrabberV2FilePackage(PACKAGENAME_UNCHECKED);
+                    fp = new LinkGrabberV2FilePackage(PACKAGENAME_UNCHECKED, this);
                 }
             } else {
                 fp = getFPwithName(PACKAGENAME_UNSORTED);
                 if (fp == null) {
-                    fp = new LinkGrabberV2FilePackage(PACKAGENAME_UNSORTED);
+                    fp = new LinkGrabberV2FilePackage(PACKAGENAME_UNSORTED, this);
                 }
             }
         }
@@ -152,13 +157,12 @@ public class LinkGrabberV2 extends JTabbedPanel {
     }
 
     private void addToPackages(LinkGrabberV2FilePackage fp, DownloadLink link) {
-        LinkGrabberV2FilePackage fptmp = getFPwithLink(link);
-        if (fptmp != null) fptmp.remove(link);
-        for (int i = packages.size() - 1; i >= 0; i--) {
-            if (packages.get(i).size() == 0) packages.remove(i);
+        synchronized (packages) {
+            LinkGrabberV2FilePackage fptmp = getFPwithLink(link);
+            if (fptmp != null) fptmp.remove(link);
+            if (!packages.contains(fp)) packages.add(fp);
+            fp.add(link);
         }
-        if (!packages.contains(fp)) packages.add(fp);
-        fp.add(link);
     }
 
     private boolean isDupe(DownloadLink link) {
@@ -271,4 +275,99 @@ public class LinkGrabberV2 extends JTabbedPanel {
 
     }
 
+    public void UpdateEvent(UpdateEvent event) {
+        synchronized (packages) {
+            if (event.getSource() instanceof LinkGrabberV2FilePackage && event.getID() == UpdateEvent.EMPTY_EVENT) {
+                ((LinkGrabberV2FilePackage) event.getSource()).getUpdateBroadcaster().removeUpdateListener(this);
+                if (FilePackageInfo.getPackage() == ((LinkGrabberV2FilePackage) event.getSource())) {
+                    this.hideFilePackageInfo();
+                }
+                packages.remove(event.getSource());
+            }
+        }
+
+    }
+
+    public void actionPerformed(ActionEvent arg0) {
+        if (arg0.getSource() instanceof LinkGrabberTaskPane) {
+            if (arg0.getID() == LinkGrabberV2TreeTableAction.ADD_ALL) {
+                confirmAll();
+            }
+        }
+    }
+
+    private void confirmAll() {
+        synchronized (packages) {
+            for (int i = 0; i < packages.size(); ++i) {
+                confirmPackage(i, null);
+            }
+            packages.clear();
+            fireTableChanged(1, null);
+        }
+    }
+
+    private void confirmPackage(int idx, String host) {
+        synchronized (packages) {
+            LinkGrabberV2FilePackage fpv2 = packages.get(idx);
+            Vector<DownloadLink> linkList = fpv2.getDownloadLinks();
+            if (linkList.isEmpty()) return;
+
+            FilePackage fp = new FilePackage();
+            fp.setName(fpv2.getName());
+            fp.setComment(fpv2.getComment());
+            fp.setPassword(fpv2.getPassword());
+            // fp.setExtractAfterDownload(fpv2.isExtract());
+            // addToDownloadDirs(fpv2.getDownloadDirectory(), fpv2.getName());
+
+            // if (fpv2.useSubdirectory()) {
+            if (true) {
+                File file = new File(new File(fpv2.getDownloadDirectory()), fp.getName());
+                if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, false)) {
+                    if (!file.exists()) file.mkdirs();
+                }
+                fp.setDownloadDirectory(file.getAbsolutePath());
+            } else {
+                fp.setDownloadDirectory(fpv2.getDownloadDirectory());
+            }
+            int files = 0;
+            if (host == null) {
+                files = linkList.size();
+                fp.setDownloadLinks(linkList);
+                for (DownloadLink link : linkList) {
+                    boolean avail = true;
+                    if (link.isAvailabilityChecked()) avail = link.isAvailable();
+                    link.getLinkStatus().reset();
+                    if (!avail) link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    link.setFilePackage(fp);
+                }
+                fpv2.setDownloadLinks(new Vector<DownloadLink>());
+            } else {
+                Vector<DownloadLink> linkListHost = new Vector<DownloadLink>();
+                for (int i = fpv2.getDownloadLinks().size() - 1; i >= 0; --i) {
+                    if (linkList.elementAt(i).getHost().compareTo(host) == 0) {
+                        DownloadLink link = linkList.remove(i);
+                        boolean avail = true;
+                        if (link.isAvailabilityChecked()) avail = link.isAvailable();
+                        link.getLinkStatus().reset();
+                        if (!avail) link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        totalLinkList.remove(link);
+                        linkListHost.add(link);
+                        link.setFilePackage(fp);
+                        ++files;
+                    }
+                }
+                if (files == 0) return;
+                fp.setDownloadLinks(linkListHost);
+                fpv2.setDownloadLinks(linkList);
+            }
+            JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_PACKAGE_GRABBED, fp));
+        }
+    }
+
+    public void checkAlreadyinList(DownloadLink link) {
+        if (JDUtilities.getController().hasDownloadLinkURL(link.getDownloadURL())) {
+            link.getLinkStatus().setErrorMessage("Already in Downloadlist");
+            link.getLinkStatus().addStatus(LinkStatus.ERROR_ALREADYEXISTS);
+        }
+    }
 }

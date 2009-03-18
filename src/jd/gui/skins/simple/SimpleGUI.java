@@ -1037,10 +1037,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         linkGrabber = new LinkGrabberV2(this);
         LinkGrabberTaskPane lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber","LinkGrabber"), JDTheme.II("gui.images.add"));
+        lgTaskPane.addActionListener(linkGrabber);
         lgTaskPane.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 System.out.println(e.getActionCommand());
-                if (e.getID() == DownloadTaskPane.ACTION_CLICK) {
+                if (e.getID() == LinkGrabberTaskPane.ACTION_CLICK) {
                     contentPanel.display(linkGrabber);
                 }
             }

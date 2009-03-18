@@ -5,7 +5,6 @@ import java.util.Vector;
 
 import jd.config.Property;
 import jd.gui.skins.simple.components.ComboBrowseFile;
-import jd.gui.skins.simple.components.JDFileChooser;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
@@ -25,8 +24,19 @@ public class LinkGrabberV2FilePackage extends Property {
     private String comment = null;
     private String password = null;
 
+    private UpdateBroadcaster upc = new UpdateBroadcaster();
+
     public LinkGrabberV2FilePackage() {
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
+    }
+
+    public LinkGrabberV2FilePackage(String name, UpdateListener listener) {
+        this(name);
+        upc.addUpdateListener(listener);
+    }
+
+    public UpdateBroadcaster getUpdateBroadcaster() {
+        return upc;
     }
 
     public String getDownloadDirectory() {
@@ -35,6 +45,7 @@ public class LinkGrabberV2FilePackage extends Property {
 
     public void setDownloadDirectory(String dir) {
         downloadDirectory = dir;
+        upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.UPDATE_EVENT));
     }
 
     public LinkGrabberV2FilePackage(String name) {
@@ -122,11 +133,13 @@ public class LinkGrabberV2FilePackage extends Property {
 
     public boolean remove(DownloadLink link) {
         boolean ret = downloadLinks.remove(link);
+        if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
         return ret;
     }
 
     public DownloadLink remove(int index) {
         DownloadLink link = downloadLinks.remove(index);
+        if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
         return link;
     }
 
@@ -143,6 +156,7 @@ public class LinkGrabberV2FilePackage extends Property {
             this.name = JDUtilities.removeEndingPoints(JDLocale.L("controller.packages.defaultname", "various"));
         } else
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
+        upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.UPDATE_EVENT));
     }
 
     public void setPassword(String password) {

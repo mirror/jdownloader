@@ -2,8 +2,8 @@ package jd.gui.skins.simple.components.Linkgrabber;
 
 import java.util.Vector;
 
-import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -148,6 +148,7 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
 
         if (node instanceof DownloadLink) {
             DownloadLink downloadLink = (DownloadLink) node;
+            String status = "";
             switch (column) {
             case COL_FILE:
                 return downloadLink.getName();
@@ -156,11 +157,18 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
             case COL_HOSTER:
                 return downloadLink.getPlugin().getHost();
             case COL_STATUS:
-                if (!downloadLink.isAvailabilityChecked()) return "availability unchecked!";
-                if (downloadLink.isAvailable()) {
-                    return "online";
-                } else
-                    return "offline";
+                if (!downloadLink.isAvailabilityChecked()) {
+                    status = "availability unchecked!";
+                } else {
+                    if (downloadLink.isAvailable()) {
+                        status = "online";
+                    } else
+                        status = "offline";
+                }
+                if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+                    status += " (Already in List)";
+                }
+                return status;
             default:
                 return "";
             }

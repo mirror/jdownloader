@@ -1,39 +1,29 @@
 package jd.gui.skins.simple.components.Linkgrabber;
 
-import java.awt.Component;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
-import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.tree.TreePath;
 
-import jd.config.MenuItem;
 import jd.config.Property;
-import jd.event.ControlEvent;
-import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.JXTreeTable;
 import org.jdesktop.swingx.tree.TreeModelSupport;
