@@ -127,6 +127,7 @@ import jd.gui.skins.simple.config.FengShuiConfigPanel;
 import jd.gui.skins.simple.tasks.ConfigTaskPane;
 import jd.gui.skins.simple.tasks.DownloadTaskPane;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
+import jd.nutils.OSDetector;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.plugins.Account;
@@ -1925,20 +1926,25 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void windowClosing(WindowEvent e) {
-        if (e.getComponent() == getFrame()) {
-            boolean doIt;
-            if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                doIt = showConfirmDialog(JDLocale.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"));
-            } else {
-                doIt = true;
+        if (!OSDetector.isMac()) {
+            if (e.getComponent() == getFrame()) {
+                boolean doIt;
+                if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+                    doIt = showConfirmDialog(JDLocale.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"));
+                } else {
+                    doIt = true;
+                }
+                if (doIt) {
+                    SimpleGUI.saveLastLocation(e.getComponent(), null);
+                    SimpleGUI.saveLastDimension(e.getComponent(), null);
+                    guiConfig.save();
+                    fireUIEvent(new UIEvent(this, UIEvent.UI_EXIT, null));
+                }
             }
-            if (doIt) {
-                SimpleGUI.saveLastLocation(e.getComponent(), null);
-                SimpleGUI.saveLastDimension(e.getComponent(), null);
-                guiConfig.save();
-                fireUIEvent(new UIEvent(this, UIEvent.UI_EXIT, null));
-            }
+        } else {
+            e.getWindow().setVisible(false);
         }
+            
     }
 
     public void windowDeactivated(WindowEvent e) {
