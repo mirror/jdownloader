@@ -198,11 +198,11 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
 //                    return JDLocale.L("gui.treetable.part.label", "Datei") + " " + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0"));
 //                }
             case COL_FILE:
-                return downloadLink.getName().replaceAll("\\.jdu", "");
+                return downloadLink;
             case COL_HOSTER:
                 return downloadLink;
             case COL_STATUS:
-                return downloadLink.getLinkStatus().getStatusString();
+                return downloadLink;
             case COL_PROGRESS:
                 return downloadLink;
             }
@@ -212,9 +212,9 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             case COL_PART:
                 return filePackage;
             case COL_FILE:
-                return filePackage.getDownloadLinks().size() + " " + JDLocale.L("gui.treetable.parts", "Teil(e)");
+                return filePackage;
             case COL_HOSTER:
-                return filePackage.getHoster();
+                return filePackage;
             case COL_STATUS:
                 return filePackage;
             case COL_PROGRESS:

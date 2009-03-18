@@ -16,9 +16,14 @@
 
 package jd.captcha.specials;
 
+import java.awt.image.RenderedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
+
+import javax.imageio.ImageIO;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
@@ -37,6 +42,7 @@ public class MegaUpload {
     public static Letter[] getLetters(Captcha captcha) {
 
         captcha.toBlackAndWhite(0.45);
+
         LetterComperator.MATCH_TABLE = new String[] { "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "1234567890"
 
         };
@@ -120,6 +126,34 @@ public class MegaUpload {
         return org;
     }
 
+    public static void saveBoders(Captcha captcha) {
+        int[][] grid = new int[captcha.getWidth()][captcha.getHeight()];
+        for (int x = 0; x < captcha.getWidth(); x++) {
+            for (int y = 0; y < captcha.getHeight(); y++) {
+                int avg = captcha.getAverage(x, y, 3, 3);
+                double dif = Math.min(UTILITIES.getColorDifference(avg, 0), UTILITIES.getColorDifference(avg, 0xffffff));
+
+                if (dif > 0.0) {
+                    grid[x][y] = 0;
+                } else {
+                    grid[x][y] = 0xffffff;
+                }
+
+            }
+        }
+        captcha.setGrid(grid);
+        try {
+            BasicWindow.showImage(captcha.getImage(1));
+            File file;
+            ImageIO.write((RenderedImage) captcha.getImage(1), "png", file = JDUtilities.getResourceFile("caps/mu/" + System.currentTimeMillis() + ".png"));
+
+            System.out.println(file);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
+    }
+
     public static void main(String args[]) {
         String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
 
@@ -157,8 +191,8 @@ public class MegaUpload {
             }
 
         }
-        
-        jac.letterDB=newlb;
+
+        jac.letterDB = newlb;
         jac.saveMTHFile();
 
     }

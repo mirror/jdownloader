@@ -93,7 +93,6 @@ import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
-import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -1021,7 +1020,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         taskPane = new TaskPane();
         taskPane.setBackgroundPainter(null);
 
-        DownloadTaskPane dlTskPane = new DownloadTaskPane(JDLocale.L("gui.taskpanes.download","Download"), JDTheme.II("gui.images.down"));
+        DownloadTaskPane dlTskPane = new DownloadTaskPane(JDLocale.L("gui.taskpanes.download", "Download"), JDTheme.II("gui.images.down"));
         dlTskPane.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -1036,7 +1035,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         taskPane.add(dlTskPane);
 
         linkGrabber = new LinkGrabberV2(this);
-        LinkGrabberTaskPane lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber","LinkGrabber"), JDTheme.II("gui.images.add"));
+        LinkGrabberTaskPane lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add"));
         lgTaskPane.addActionListener(linkGrabber);
         lgTaskPane.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -1048,7 +1047,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         });
         taskPane.add(lgTaskPane);
 
-        ConfigTaskPane cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration","Configuration"), JDTheme.II("gui.images.configuration"));
+        ConfigTaskPane cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.configuration"));
         cfgTskPane.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -1173,36 +1172,36 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // n = 3;
         // statusBar.setBorder(new EmptyBorder(n, 0, n, 0));
         frame.setContentPane(panel);
-//        final ProgressController pc = new ProgressController("tester");
-//        pc.setIcon(JDTheme.II("gui.images.warning", 16, 16));
-//        pc.setRange(10);
-//
-//        final ProgressController pc2 = new ProgressController("tester2");
-//        pc2.setIcon(JDTheme.II("gui.images.warning", 16, 16));
-//
-//        pc2.setRange(20);
-//        new Thread() {
-//            public void run() {
-//                while (true) {
-//                    pc.increase(1);
-//                    pc2.increase(1);
-//                    if (pc.getPercent() >= 1.0) {
-//                        pc.finalize();
-//                    }
-//                    if (pc2.getPercent() >= 1.0) {
-//                        pc2.setColor(Color.RED);
-//                        pc2.setStatusText("Error in Module");
-//                        pc2.finalize(5000);
-//                    }
-//                    try {
-//                        Thread.sleep(1000);
-//                    } catch (InterruptedException e) {
-//                        // TODO Auto-generated catch block
-//                        e.printStackTrace();
-//                    }
-//                }
-//            }
-//        }.start();
+        // final ProgressController pc = new ProgressController("tester");
+        // pc.setIcon(JDTheme.II("gui.images.warning", 16, 16));
+        // pc.setRange(10);
+        //
+        // final ProgressController pc2 = new ProgressController("tester2");
+        // pc2.setIcon(JDTheme.II("gui.images.warning", 16, 16));
+        //
+        // pc2.setRange(20);
+        // new Thread() {
+        // public void run() {
+        // while (true) {
+        // pc.increase(1);
+        // pc2.increase(1);
+        // if (pc.getPercent() >= 1.0) {
+        // pc.finalize();
+        // }
+        // if (pc2.getPercent() >= 1.0) {
+        // pc2.setColor(Color.RED);
+        // pc2.setStatusText("Error in Module");
+        // pc2.finalize(5000);
+        // }
+        // try {
+        // Thread.sleep(1000);
+        // } catch (InterruptedException e) {
+        // // TODO Auto-generated catch block
+        // e.printStackTrace();
+        // }
+        // }
+        // }
+        // }.start();
 
         panel.add(toolBar, "span");
         panel.add(taskPane);
@@ -1410,10 +1409,27 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public String getCaptchaCodeFromUser(final Plugin plugin, final File captchaAddress, final String def) {
-        CaptchaDialog captchaDialog = new CaptchaDialog(frame, plugin, captchaAddress, def);
+final Object lock= new Object();
+        GuiRunnable run;
+        EventQueue.invokeLater(run = new GuiRunnable() {
+            public void run() {
 
-        logger.info("Returned: " + captchaDialog.getCaptchaText());
-        return captchaDialog.getCaptchaText();
+                put("dialog", new CaptchaDialog(frame, plugin, captchaAddress, def));
+                synchronized (lock) {
+                    lock.notify();
+                }
+            }
+        });
+
+        synchronized (lock) {
+            try {
+                lock.wait();
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+        return ((CaptchaDialog) run.get("dialog")).getCaptchaText();
     }
 
     public String getInputFromUser(final String message, final String def) {
@@ -1945,7 +1961,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         } else {
             e.getWindow().setVisible(false);
         }
-            
+
     }
 
     public void windowDeactivated(WindowEvent e) {

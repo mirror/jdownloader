@@ -1,5 +1,8 @@
 package jd.gui.skins.simple.components.treetable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.swing.Action;
 import javax.swing.table.TableColumn;
 
@@ -8,7 +11,9 @@ import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.table.ColumnControlButton;
+import org.jdesktop.swingx.table.ColumnControlPopup;
 import org.jdesktop.swingx.table.TableColumnExt;
+import org.jdesktop.swingx.table.ColumnControlButton.DefaultColumnControlPopup;
 
 public class JColumnControlButton extends ColumnControlButton {
 
@@ -17,10 +22,11 @@ public class JColumnControlButton extends ColumnControlButton {
      */
     private static final long serialVersionUID = 3234874733654121548L;
     private SubConfiguration config;
+    private JXTable tab;
 
     public JColumnControlButton(JXTable table) {
         super(table);
-
+this.tab=table;
     }
 
 //    protected ColumnVisibilityAction createColumnVisibilityAction(TableColumn column) {
@@ -42,7 +48,16 @@ public class JColumnControlButton extends ColumnControlButton {
     /**
      * 
      */
-
+//    protected ColumnControlPopup createColumnControlPopup() {
+//        return new DefaultColumnControlPopup(){
+//            
+//        };
+//    }
+    protected List<Action> getAdditionalActions() {
+        List<Action> actions = super.getAdditionalActions();
+        actions.remove(0);
+        return actions;
+    }
     public class JColumnVisibilityAction extends ColumnVisibilityAction {
 
    

@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
@@ -83,32 +82,16 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.JXTreeTable;
-import org.jdesktop.swingx.decorator.ColorHighlighter;
-import org.jdesktop.swingx.decorator.ComponentAdapter;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.Highlighter;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
-import org.jdesktop.swingx.decorator.IconHighlighter;
 import org.jdesktop.swingx.decorator.PainterHighlighter;
 import org.jdesktop.swingx.painter.MattePainter;
 import org.jdesktop.swingx.painter.Painter;
 import org.jdesktop.swingx.table.TableColumnExt;
 import org.jdesktop.swingx.tree.TreeModelSupport;
-import org.jvnet.lafwidget.animation.FadeConfigurationManager;
-import org.jvnet.lafwidget.animation.FadeKind;
-import org.jvnet.substance.SubstanceLookAndFeel;
-import org.jvnet.substance.api.ComponentState;
-import org.jvnet.substance.api.SubstanceColorScheme;
-import org.jvnet.substance.painter.highlight.ClassicHighlightPainter;
-import org.jvnet.substance.skin.SkinInfo;
-import org.jvnet.substance.utils.SubstanceColorSchemeUtilities;
-import org.jvnet.substance.utils.SubstanceCoreUtilities;
 
 public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandListener, TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener, KeyListener {
-
-    abstract class Caller {
-        abstract public void call();
-    }
 
     public static final String PROPERTY_EXPANDED = "expanded";
 
@@ -154,6 +137,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
 
     private Color SELECTED_ROW_COLOR;
 
+    private TableColumnExt[] cols;
+
     public DownloadTreeTable(DownloadTreeTableModel treeModel) {
         super(treeModel);
 
@@ -175,7 +160,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
             setDropMode(DropMode.ON_OR_INSERT_ROWS);
         }
         setDragEnabled(true);
-        setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+        setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setColumnControlVisible(true);
         this.setColumnControl(new JColumnControlButton(this));
@@ -198,7 +183,9 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
         this.setHighlighters(new Highlighter[] {});
         setHighlighters(HighlighterFactory.createAlternateStriping(UIManager.getColor("Panel.background").brighter(), UIManager.getColor("Panel.background")));
 
-        addHighlighter(new ColorHighlighter(HighlightPredicate.IS_FOLDER, JDTheme.C("gui.color.downloadlist.row_package", "fffa7c"), Color.BLACK));
+        // addHighlighter(new ColorHighlighter(HighlightPredicate.ALWAYS,
+        // JDTheme.C("gui.color.downloadlist.row_package", "fffa7c"),
+        // Color.BLACK));
 
         addFinishedHighlighter();
         addDisabledHighlighter();
@@ -213,7 +200,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
         // return true;
         // }
         // });
-//        addHighlighter(new PainterHighlighter(HighlightPredicate.IS_FOLDER, getPainter()));
+        addHighlighter(new PainterHighlighter(HighlightPredicate.IS_FOLDER, getGradientPainter(JDTheme.C("gui.color.downloadlist.row_package", "fffa7c"))));
 
         // Highlighter extendPrefWidth = new AbstractHighlighter() {
         // @Override
@@ -236,19 +223,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
          * PainterHighlighter. Without modding the TreeTable code, it seems
          * unpossible to fix this.
          */
-        if (JDUtilities.getJavaVersion() > 1.9) {
-            FadeConfigurationManager.getInstance().disallowFades(FadeKind.ROLLOVER, this);
-            FadeConfigurationManager.getInstance().disallowFades(FadeKind.SELECTION, this);
-            SubstanceColorScheme colorScheme = SubstanceColorSchemeUtilities.getColorScheme(this, ComponentState.SELECTED);
-            addHighlighter(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, colorScheme.getSelectionBackgroundColor(), colorScheme.getSelectionForegroundColor()));
-            Map<String, SkinInfo> skins = SubstanceLookAndFeel.getAllSkins();
-            ClassicHighlightPainter hp = (ClassicHighlightPainter) SubstanceLookAndFeel.getCurrentSkin().getHighlightPainter();
-            hp = null;
-            boolean jd = SubstanceCoreUtilities.toUseHighlightColorScheme(this);
-            jd = false;
-            UIManager.put(SubstanceCoreUtilities.USE_HIGHLIGHT, false);
-            jd = SubstanceCoreUtilities.toUseHighlightColorScheme(this);
-            jd = false;
+        if (JDUtilities.getJavaVersion() >= 1.6) {
+
         } else {
             /**
              * Set here colors if java version is below 1.6 and substance cannot
@@ -330,40 +306,46 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
         Color foreground = Color.BLACK;
         Color selectedBackground = background.darker();
         Color selectedForground = foreground;
-        addHighlighter(new FilepackageRowHighlighter(this, backGroundPackage, foreground, selectedBackground, selectedForground) {
+        HighlightPredicate o = new FilepackageRowHighlighter(this, backGroundPackage, foreground, selectedBackground, selectedForground) {
             @Override
             public boolean doHighlight(FilePackage fp) {
                 return fp.isFinished();
             }
-        });
-        addHighlighter(new DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+        }.getHighlightPredicate();
+
+        o = new DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
             @Override
             public boolean doHighlight(DownloadLink link) {
                 return link.getLinkStatus().hasStatus(LinkStatus.FINISHED);
             }
-        });
+        }.getHighlightPredicate();
+        addHighlighter(new PainterHighlighter(o, getGradientPainter(background)));
 
-        ((TableColumnExt) getColumns(true).get(3)).addHighlighter(new IconHighlighter(new HighlightPredicate() {
-            public boolean isHighlighted(Component renderer, ComponentAdapter adapter) {
-                TreePath path = getPathForRow(adapter.row);
-                Object element;
-                if (path != null) {
-                    element = path.getLastPathComponent();
-                    if (element instanceof DownloadLink) {
-                        DownloadLink link = (DownloadLink) element;
-                        // TableColumnExt ext = getColumnExt(adapter.column);
-                        // getColumns(true).get(adapter.column);
-                        if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && !new File(link.getFileOutput()).exists()) {
-
-                        return true; }
-
-                    }
-                }
-
-                return false;
-            }
-
-        }, JDTheme.II("gui.images.delete", 16, 16)));
+        //        
+        // ((TableColumnExt) getColumns(true).get(3)).addHighlighter(new
+        // IconHighlighter(new HighlightPredicate() {
+        // public boolean isHighlighted(Component renderer, ComponentAdapter
+        // adapter) {
+        // TreePath path = getPathForRow(adapter.row);
+        // Object element;
+        // if (path != null) {
+        // element = path.getLastPathComponent();
+        // if (element instanceof DownloadLink) {
+        // DownloadLink link = (DownloadLink) element;
+        // // TableColumnExt ext = getColumnExt(adapter.column);
+        // // getColumns(true).get(adapter.column);
+        // if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && !new
+        // File(link.getFileOutput()).exists()) {
+        //
+        // return true; }
+        //
+        // }
+        // }
+        //
+        // return false;
+        // }
+        //
+        // }, JDTheme.II("gui.images.delete", 16, 16)));
 
     }
 
@@ -374,12 +356,13 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
 
     }
 
-    public Painter getPainter() {
+    public Painter getGradientPainter(Color color1) {
 
         int width = 100;
-        int height = 30;
-        Color color1 = JDTheme.C("gui.color.downloadlist.row_package", "fffa7c");
-        Color color2 = Color.GRAY;
+        int height = 20;
+        Color color2;
+        color1 = new Color(color1.getRed(), color1.getGreen(), color1.getBlue(), 40);
+        color2 = new Color(color1.getRed(), color1.getGreen(), color1.getBlue(), 200);
         LinearGradientPaint gradientPaint = new LinearGradientPaint(1, 0, 1, height, new float[] { 0.0f, 1.0f }, new Color[] { color1, color2 });
 
         MattePainter mattePainter = new MattePainter(gradientPaint);
@@ -398,31 +381,39 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
         }
 
         final SubConfiguration config = JDUtilities.getSubConfig("gui");
-
+cols=new TableColumnExt[getModel().getColumnCount()];
         for (int i = 0; i < getModel().getColumnCount(); i++) {
 
             TableColumnExt tableColumn = getColumnFactory().createAndConfigureTableColumn(getModel(), i);
-
-            tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent evt) {
-                    TableColumnExt column = (TableColumnExt) evt.getSource();
-                    if (evt.getPropertyName().equals("width")) {
-                        config.setProperty("WIDTH_COL_" + column.getModelIndex(), evt.getNewValue());
-                        config.save();
-                    } else if (evt.getPropertyName().equals("visible")) {
-                        config.setProperty("VISABLE_COL_" + column.getModelIndex(), evt.getNewValue());
-                        config.save();
+            cols[i]=tableColumn;
+            if (i > 0) {
+                tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        TableColumnExt column = (TableColumnExt) evt.getSource();
+                        if (evt.getPropertyName().equals("width")) {
+                            config.setProperty("WIDTH_COL_" + column.getModelIndex(), evt.getNewValue());
+                            config.save();
+                        } else if (evt.getPropertyName().equals("visible")) {
+                            config.setProperty("VISABLE_COL_" + column.getModelIndex(), evt.getNewValue());
+                            config.save();
+                        }
                     }
-                }
-            });
+                });
 
-            tableColumn.setVisible(config.getBooleanProperty("VISABLE_COL_" + i, true));
-            tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + i, tableColumn.getWidth()));
-            if (tableColumn != null) {
-                getColumnModel().addColumn(tableColumn);
+                tableColumn.setVisible(config.getBooleanProperty("VISABLE_COL_" + i, true));
+                tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + i, tableColumn.getWidth()));
+                if (tableColumn != null) {
+                    getColumnModel().addColumn(tableColumn);
+                }
+            } else {
+                tableColumn.setVisible(false);
             }
         }
 
+    }
+
+    public TableColumnExt[] getCols() {
+        return cols;
     }
 
     @SuppressWarnings("unchecked")
@@ -1167,10 +1158,22 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
     }
 
     public void mouseReleased(MouseEvent e) {
+
         TreePath path = getPathForLocation(e.getX(), e.getY());
 
+        int column = this.columnAtPoint(e.getPoint());
         if (path != null && path.getLastPathComponent() instanceof FilePackage) {
             JDSounds.PT("sound.gui.selectPackage");
+            if (column == 0) {
+                FilePackage fp = (FilePackage) path.getLastPathComponent();
+                if (fp.getBooleanProperty(DownloadTreeTable.PROPERTY_EXPANDED, false)) {
+                    this.collapsePath(path);
+
+                } else {
+                    expandPath(path);
+                }
+            }
+
         } else if (path != null) {
             JDSounds.PT("sound.gui.selectLink");
         }
