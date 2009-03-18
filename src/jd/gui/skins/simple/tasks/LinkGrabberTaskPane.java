@@ -34,7 +34,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
 
     private void initGUI() {
         this.add_all = addButton(this.createButton(JDLocale.L("gui.linkgrabberv2.addall", "Add all packages"), JDTheme.II("gui.images.add", 16, 16)));
-        this.add_selected = addButton(this.createButton(JDLocale.L("gui.linkgrabberv2.addselected", "Add selected package"), JDTheme.II("gui.images.add", 16, 16)));
+        this.add_selected = addButton(this.createButton(JDLocale.L("gui.linkgrabberv2.addselected", "Add selected package(s)"), JDTheme.II("gui.images.add", 16, 16)));
     }
 
     private JButton addButton(JButton bt) {

@@ -303,7 +303,8 @@ public class LinkGrabberV2 extends JTabbedPanel implements ActionListener, Updat
                 return;
             }
             if (arg0.getID() == LinkGrabberV2TreeTableAction.ADD_SELECTED) {
-                confirmPackage(this.FilePackageInfo.getPackage(), null);
+                Vector<LinkGrabberV2FilePackage> selected = new Vector<LinkGrabberV2FilePackage>(this.internalTreeTable.getSelectedFilePackages());
+                confirmPackages(selected);
                 fireTableChanged(1, null);
                 return;
             }
