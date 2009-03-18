@@ -318,7 +318,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         } else if (value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
             co = (TreeTableRenderer) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            co.setText("Datei");
+            co.setText(JDLocale.L("gui.treetable.part.label", "Part"));
             co.setIcon(this.icon_link);
             sublabelPanel1.removeAll();
             sublabelPanel1.setBackground(null);
