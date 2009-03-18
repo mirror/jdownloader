@@ -68,10 +68,13 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements ActionListen
     }
 
     public void setPackage(LinkGrabberV2FilePackage fp) {
+        if (this.fp != null) this.fp.getUpdateBroadcaster().removeUpdateListener(this);
         this.fp = fp;
-        fp.getUpdateBroadcaster().addUpdateListener(this);
-        txtName.setText(fp.getName());
-        brwSaveTo.setText(fp.getDownloadDirectory());
+        if (this.fp != null) {
+            fp.getUpdateBroadcaster().addUpdateListener(this);
+            txtName.setText(fp.getName());
+            brwSaveTo.setText(fp.getDownloadDirectory());
+        }
     }
 
     public LinkGrabberV2FilePackage getPackage() {

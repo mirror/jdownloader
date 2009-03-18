@@ -148,7 +148,8 @@ public class LinkGrabberV2FilePackage extends Property {
     }
 
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
-        this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
+        this.downloadLinks = new Vector<DownloadLink>(downloadLinks);        
+        if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
     }
 
     public void setName(String name) {
