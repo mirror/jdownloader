@@ -296,7 +296,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
 
                         JPanel panel = new JPanel(new BorderLayout(10, 10));
                         final DefaultListModel defaultListModel = new DefaultListModel();
-                        final String text = "Search Router Model";
+                        final String text = JDLocale.L("gui.config.fengshui.searchroutermodel","Search Router Model");
                         final JTextField searchField = new JTextField();
                         searchField.setForeground(Color.lightGray);
                         final JList list = new JList(defaultListModel);
@@ -368,7 +368,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
                         JPanel p = new JPanel(new BorderLayout(5, 5));
                         p.add(searchField, BorderLayout.CENTER);
                         p.add(reset, BorderLayout.EAST);
-                        JLabel example = new JLabel("Example: 3Com ADSL");
+                        JLabel example = new JLabel(JDLocale.L("gui.config.fengshui.example","Example:")+ "3Com ADSL");
                         example.setForeground(Color.gray);
                         p.add(example, BorderLayout.SOUTH);
                         for (String element : d) {
