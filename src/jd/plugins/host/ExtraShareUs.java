@@ -34,7 +34,12 @@ public class ExtraShareUs extends PluginForHost {
     public String getAGBLink() {
         return "http://www.extrashare.us/rules.php";
     }
-
+    
+    @Override
+    public String getCoder() {
+        return "TnS";
+    }
+    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 

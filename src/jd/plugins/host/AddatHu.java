@@ -34,6 +34,11 @@ public class AddatHu extends PluginForHost {
     public String getAGBLink() {
         return "http://www.addat.hu/";
     }
+    
+    @Override
+    public String getCoder() {
+        return "TnS";
+    }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
