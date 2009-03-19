@@ -37,7 +37,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -52,10 +51,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -66,7 +62,6 @@ import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
-import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -81,20 +76,16 @@ import javax.swing.table.TableColumn;
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.DistributeData;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JDTextField;
-import jd.nutils.debug.UnitTest;
-import jd.nutils.debug.UnitTestException;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 /**
@@ -331,7 +322,7 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
                 if (tabList.size() == 0) {
                     stopGatherer();
                     setVisible(false);
-                    //TODO
+                    // TODO
                 }
             } else if (e.getSource() == btnToggle) {
                 rebuildGUI();
@@ -692,7 +683,7 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
 
                 sortOn();
             } else if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-                mContextTabPopup.show(table, e.getX(), e.getY());
+                if (mContextTabPopup != null) mContextTabPopup.show(table, e.getX(), e.getY());
             }
 
         }
@@ -706,7 +697,7 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
                     table.tableChanged(new TableModelEvent(table.getModel()));
                     onPackageNameChanged(PackageTab.this);
 
-                  //TODO      LinkGrabber.this.setTitle();
+                    // TODO LinkGrabber.this.setTitle();
                 }
             });
         }
@@ -872,7 +863,6 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
 
     private PackageTab uncheckedTab;
 
-
     private boolean abortGatherer = false;
 
     private PackageTab unsortedTab;
@@ -888,16 +878,15 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
-       
+
         parentFrame = parent;
         tabList = new Vector<PackageTab>();
         waitingLinkList = new Vector<DownloadLink>();
         // addingLinkList = new Vector<DownloadLink>();
         initGUI();
 
-        addLinks(linkList);            
-    
-    
+        addLinks(linkList);
+
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -1012,8 +1001,8 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
         } else if (e.getSource() == acceptAll) {
             stopGatherer();
             confirmAll();
-//            setVisible(false);
-            //TODO  dispose();
+            // setVisible(false);
+            // TODO dispose();
         } else if (e.getSource() == sortPackages) {
             reprintTabbedPane();
         } else if (e.getSource() == mMerge) {
@@ -1130,7 +1119,7 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
                 }
             }
         }
-      //TODO  this.setTitle();
+        // TODO this.setTitle();
     }
 
     public synchronized void addLinks(final DownloadLink[] linkList) {
@@ -1185,16 +1174,14 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
 
     private PackageTab addTab() {
 
+        PackageTab tab = new PackageTab();
+        tab.setPackageName(JDLocale.L("gui.linkgrabber.lbl.newpackage", "neues package"));
+        tabList.add(tab);
+        tabbedPane.addTab(tab.getPackageName(), tab);
+        System.out.println("now tabs: " + tabbedPane.getTabCount());
 
+        return tab;
 
-            PackageTab tab = new PackageTab();
-            tab.setPackageName(JDLocale.L("gui.linkgrabber.lbl.newpackage", "neues package"));
-            tabList.add(tab);
-            tabbedPane.addTab(tab.getPackageName(), tab);
-            System.out.println("now tabs: " + tabbedPane.getTabCount());
-
-            return tab;
-        
     }
 
     private void attachLinkToPackage(DownloadLink link) {
@@ -1230,132 +1217,169 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
 
     }
 
-//    private void buildMenu() {
-//        // Where the GUI is created:
-//        JMenuBar menuBar;
-//        JMenu menu, submenu, subsubmenu;
-//
-//        // Create the menu bar.
-//        menuBar = new JMenuBar();
-//
-//        // Extras Menü
-//        menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.extras", "Extras"));
-//        menuBar.add(menu);
-//
-//        mAutoPackage = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.autopackage", "Auto. Pakete"));
-//        mAutoPackage.setSelected(guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true));
-//        mAutoPackage.addActionListener(this);
-//
-//        mStartAfterAdding = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.startafteradding", "Automatischer Downloadstart"));
-//        mStartAfterAdding.setSelected(guiConfig.getBooleanProperty(PROPERTY_STARTAFTERADDING, false));
-//        mStartAfterAdding.addActionListener(this);
-//
-//        menu.add(mAutoPackage);
-//        menu.add(mStartAfterAdding);
-//
-//        // Edit Menü
-//        menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.edit", "Bearbeiten"));
-//        menuBar.add(menu);
-//
-//        mMerge = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.merge", "Zu einem Paket zusammenfassen"));
-//        mMerge.addActionListener(this);
-//        menu.add(mMerge);
-//        mSplitByHost = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.splitByHost", "Pakete nach Host aufteilen"));
-//        mSplitByHost.addActionListener(this);
-//        menu.add(mSplitByHost);
-//        menu.addSeparator();
-//        mRemoveOffline = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeOffline", "Fehlerhafte Links entfernen (Paket)"));
-//        mRemoveOffline.addActionListener(this);
-//        menu.add(mRemoveOffline);
-//        mRemoveOfflineAll = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeOfflineAll", "Fehlerhafte Links entfernen (Alle)"));
-//        mRemoveOfflineAll.addActionListener(this);
-//        menu.add(mRemoveOfflineAll);
-//        menu.addSeparator();
-//        mRemovePackage = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removepackage", "Paket verwerfen"));
-//        mRemovePackage.addActionListener(this);
-//        menu.add(mRemovePackage);
-//        mRemoveEmptyPackages = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeEmptypackages", "Leere Pakete verwerfen"));
-//        mRemoveEmptyPackages.addActionListener(this);
-//        menu.add(mRemoveEmptyPackages);
-//
-//        // Auswahl Menü
-//        menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.selection", "Auswahl"));
-//        menuBar.add(menu);
-//
-//        submenu = new JMenu(JDLocale.L("gui.linkgrabber.menu.selection.mirror", "Mirrorauswahl"));
-//        menu.add(submenu);
-//        mPremiumMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.premium", "Premium"));
-//        mPremiumMirror.setEnabled(true);
-//        mPremiumMirror.addActionListener(this);
-//        submenu.add(mPremiumMirror);
-//        mFreeMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.free", "Free"));
-//        mFreeMirror.setEnabled(true);
-//        mFreeMirror.addActionListener(this);
-//        submenu.add(mFreeMirror);
-//        mPriorityMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.priority", "Priority"));
-//        mPriorityMirror.setEnabled(true);
-//        mPriorityMirror.addActionListener(this);
-//        submenu.add(mPriorityMirror);
-//        menu.addSeparator();
-//        submenu = new JMenu(JDLocale.L("gui.linkgrabber.menu.hostSelection", "Host Auswahl"));
-//        menu.add(submenu);
-//        mHostSelectionPackageOnly = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.hostSelectionPackageOnly", "Nur aktuelles Paket"));
-//        mHostSelectionPackageOnly.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONPACKAGEONLY, false));
-//        mHostSelectionPackageOnly.addActionListener(this);
-//        submenu.add(mHostSelectionPackageOnly);
-//        mHostSelectionRemove = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.hostSelectionRemove", "Restliche Links verwerfen"));
-//        mHostSelectionRemove.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONREMOVE, true));
-//        mHostSelectionRemove.addActionListener(this);
-//        submenu.add(mHostSelectionRemove);
-//        submenu.addSeparator();
-//        ArrayList<HostPluginWrapper> hosts = JDUtilities.getPluginsForHost();
-//        mHostSelection = new JMenuItem[hosts.size()];
-//        subsubmenu = null;
-//        for (int i = 0; i < hosts.size(); ++i) {
-//            if (i % 10 == 0) {
-//                if (subsubmenu != null) {
-//                    submenu = subsubmenu;
-//                }
-//                if (hosts.size() - i > 10) {
-//                    subsubmenu = new JMenu(JDLocale.L("gui.linkgrabber.menu.hostSelectionMore", "Weitere Hoster"));
-//                    submenu.add(subsubmenu);
-//                    submenu.addSeparator();
-//                }
-//            }
-//            mHostSelection[i] = new JMenuItem(hosts.get(i).getHost());
-//            mHostSelection[i].addActionListener(this);
-//            submenu.add(mHostSelection[i]);
-//        }
-//
-//        setJMenuBar(menuBar);
-//
-//        // Create Context Menü
-//        mContextPopup = new JPopupMenu();
-//
-//        mContextDelete = new JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.delete", "Entfernen"));
-//        mContextNewPackage = new JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.newpackage", "Neues Paket"));
-//
-//        mContextDelete.addActionListener(this);
-//        mContextNewPackage.addActionListener(this);
-//
-//        mContextPopup.add(mContextDelete);
-//        mContextPopup.add(mContextNewPackage);
-//    }
+    // private void buildMenu() {
+    // // Where the GUI is created:
+    // JMenuBar menuBar;
+    // JMenu menu, submenu, subsubmenu;
+    //
+    // // Create the menu bar.
+    // menuBar = new JMenuBar();
+    //
+    // // Extras Menü
+    // menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.extras", "Extras"));
+    // menuBar.add(menu);
+    //
+    // mAutoPackage = new
+    // JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.autopackage",
+    // "Auto. Pakete"));
+    // mAutoPackage.setSelected(guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE,
+    // true));
+    // mAutoPackage.addActionListener(this);
+    //
+    // mStartAfterAdding = new
+    // JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.startafteradding",
+    // "Automatischer Downloadstart"));
+    // mStartAfterAdding.setSelected(guiConfig.getBooleanProperty(PROPERTY_STARTAFTERADDING,
+    // false));
+    // mStartAfterAdding.addActionListener(this);
+    //
+    // menu.add(mAutoPackage);
+    // menu.add(mStartAfterAdding);
+    //
+    // // Edit Menü
+    // menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.edit", "Bearbeiten"));
+    // menuBar.add(menu);
+    //
+    // mMerge = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.merge",
+    // "Zu einem Paket zusammenfassen"));
+    // mMerge.addActionListener(this);
+    // menu.add(mMerge);
+    // mSplitByHost = new
+    // JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.splitByHost",
+    // "Pakete nach Host aufteilen"));
+    // mSplitByHost.addActionListener(this);
+    // menu.add(mSplitByHost);
+    // menu.addSeparator();
+    // mRemoveOffline = new
+    // JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeOffline",
+    // "Fehlerhafte Links entfernen (Paket)"));
+    // mRemoveOffline.addActionListener(this);
+    // menu.add(mRemoveOffline);
+    // mRemoveOfflineAll = new
+    // JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeOfflineAll",
+    // "Fehlerhafte Links entfernen (Alle)"));
+    // mRemoveOfflineAll.addActionListener(this);
+    // menu.add(mRemoveOfflineAll);
+    // menu.addSeparator();
+    // mRemovePackage = new
+    // JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removepackage",
+    // "Paket verwerfen"));
+    // mRemovePackage.addActionListener(this);
+    // menu.add(mRemovePackage);
+    // mRemoveEmptyPackages = new
+    // JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeEmptypackages",
+    // "Leere Pakete verwerfen"));
+    // mRemoveEmptyPackages.addActionListener(this);
+    // menu.add(mRemoveEmptyPackages);
+    //
+    // // Auswahl Menü
+    // menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.selection",
+    // "Auswahl"));
+    // menuBar.add(menu);
+    //
+    // submenu = new JMenu(JDLocale.L("gui.linkgrabber.menu.selection.mirror",
+    // "Mirrorauswahl"));
+    // menu.add(submenu);
+    // mPremiumMirror = new
+    // JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.premium",
+    // "Premium"));
+    // mPremiumMirror.setEnabled(true);
+    // mPremiumMirror.addActionListener(this);
+    // submenu.add(mPremiumMirror);
+    // mFreeMirror = new
+    // JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.free", "Free"));
+    // mFreeMirror.setEnabled(true);
+    // mFreeMirror.addActionListener(this);
+    // submenu.add(mFreeMirror);
+    // mPriorityMirror = new
+    // JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.priority",
+    // "Priority"));
+    // mPriorityMirror.setEnabled(true);
+    // mPriorityMirror.addActionListener(this);
+    // submenu.add(mPriorityMirror);
+    // menu.addSeparator();
+    // submenu = new JMenu(JDLocale.L("gui.linkgrabber.menu.hostSelection",
+    // "Host Auswahl"));
+    // menu.add(submenu);
+    // mHostSelectionPackageOnly = new
+    // JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.hostSelectionPackageOnly",
+    // "Nur aktuelles Paket"));
+    // mHostSelectionPackageOnly.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONPACKAGEONLY,
+    // false));
+    // mHostSelectionPackageOnly.addActionListener(this);
+    // submenu.add(mHostSelectionPackageOnly);
+    // mHostSelectionRemove = new
+    // JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.hostSelectionRemove",
+    // "Restliche Links verwerfen"));
+    // mHostSelectionRemove.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONREMOVE,
+    // true));
+    // mHostSelectionRemove.addActionListener(this);
+    // submenu.add(mHostSelectionRemove);
+    // submenu.addSeparator();
+    // ArrayList<HostPluginWrapper> hosts = JDUtilities.getPluginsForHost();
+    // mHostSelection = new JMenuItem[hosts.size()];
+    // subsubmenu = null;
+    // for (int i = 0; i < hosts.size(); ++i) {
+    // if (i % 10 == 0) {
+    // if (subsubmenu != null) {
+    // submenu = subsubmenu;
+    // }
+    // if (hosts.size() - i > 10) {
+    // subsubmenu = new
+    // JMenu(JDLocale.L("gui.linkgrabber.menu.hostSelectionMore",
+    // "Weitere Hoster"));
+    // submenu.add(subsubmenu);
+    // submenu.addSeparator();
+    // }
+    // }
+    // mHostSelection[i] = new JMenuItem(hosts.get(i).getHost());
+    // mHostSelection[i].addActionListener(this);
+    // submenu.add(mHostSelection[i]);
+    // }
+    //
+    // setJMenuBar(menuBar);
+    //
+    // // Create Context Menü
+    // mContextPopup = new JPopupMenu();
+    //
+    // mContextDelete = new
+    // JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.delete",
+    // "Entfernen"));
+    // mContextNewPackage = new
+    // JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.newpackage",
+    // "Neues Paket"));
+    //
+    // mContextDelete.addActionListener(this);
+    // mContextNewPackage.addActionListener(this);
+    //
+    // mContextPopup.add(mContextDelete);
+    // mContextPopup.add(mContextNewPackage);
+    // }
 
-    private int comparePackages(String a, String b) {
-
-        int c = 0;
-        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
-            if (a.charAt(i) == b.charAt(i)) {
-                c++;
-            }
-        }
-
-        if (Math.min(a.length(), b.length()) == 0) { return 0; }
-        // logger.info("comp: " + a + " <<->> " + b + "(" + (c * 100) /
-        // (b.length()) + ")");
-        return c * 100 / b.length();
-    }
+    // private int comparePackages(String a, String b) {
+    //
+    // int c = 0;
+    // for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
+    // if (a.charAt(i) == b.charAt(i)) {
+    // c++;
+    // }
+    // }
+    //
+    // if (Math.min(a.length(), b.length()) == 0) { return 0; }
+    // // logger.info("comp: " + a + " <<->> " + b + "(" + (c * 100) /
+    // // (b.length()) + ")");
+    // return c * 100 / b.length();
+    // }
 
     private void confirmAll() {
         if (insertAtPosition.getSelectedItem().equals(JDLocale.L("gui.linkgrabber.pos.top", "Anfang"))) {
@@ -1427,7 +1451,8 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
         }
 
         parentFrame.fireUIEvent(new UIEvent(this, UIEvent.UI_PACKAGE_GRABBED, fp));
-        if (mStartAfterAdding.isSelected()) parentFrame.fireUIEvent(new UIEvent(this, UIEvent.UI_START_DOWNLOADS, null));
+        // if (mStartAfterAdding.isSelected()) parentFrame.fireUIEvent(new
+        // UIEvent(this, UIEvent.UI_START_DOWNLOADS, null));
         parentFrame.setDropTargetText(JDLocale.L("gui.dropTarget.downloadsAdded", "Downloads hinzugefügt: ") + files);
     }
 
@@ -1532,8 +1557,8 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
     private void emptyCheck() {
         if (tabList.size() == 0) {
             stopGatherer();
-          //TODO   setVisible(false);
-          //TODO   dispose();
+            // TODO setVisible(false);
+            // TODO dispose();
         }
     }
 
@@ -1570,7 +1595,7 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
     }
 
     private void initGUI() {
-      //TODO  buildMenu();
+        // TODO buildMenu();
 
         sortPackages = new JButton(JDLocale.L("gui.linkgrabber.btn.sortPackages", "Pakete sortieren"));
         sortPackages.addActionListener(this);
@@ -1595,14 +1620,13 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
         new DropTarget(tabbedPane, this);
 
         setName("LINKGRABBER");
-//        this.addWindowListener(this);
-//        this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        // this.addWindowListener(this);
+        // this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 
         int n = 7;
         JPanel panel = this;
         this.setLayout(new BorderLayout(n, n));
         panel.setBorder(new EmptyBorder(n, n, n, n));
-    
 
         JPanel south = new JPanel(new BorderLayout(n, n));
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, n, 0));
@@ -1622,11 +1646,11 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
         panel.add(tabbedPane, BorderLayout.CENTER);
         panel.add(south, BorderLayout.SOUTH);
 
-//        getRootPane().setDefaultButton(acceptAll);
+        // getRootPane().setDefaultButton(acceptAll);
 
-//        setPreferredSize(new Dimension(640, 480));
-//        setLocationRelativeTo(null);
-//        pack();
+        // setPreferredSize(new Dimension(640, 480));
+        // setLocationRelativeTo(null);
+        // pack();
     }
 
     private boolean isDupe(DownloadLink link) {
@@ -1691,12 +1715,12 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
     }
 
     protected void removePackageAt(int i) {
-   
-            PackageTab tab = tabList.remove(i);
-            tabbedPane.removeTabAt(i);
-            totalLinkList.removeAll(tab.getLinkList());
-          //TODO   this.setTitle();
-        
+
+        PackageTab tab = tabList.remove(i);
+        tabbedPane.removeTabAt(i);
+        totalLinkList.removeAll(tab.getLinkList());
+        // TODO this.setTitle();
+
     }
 
     private void reprintTabbedPane() {
@@ -1718,7 +1742,7 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
                         tabbedPane.add(getTitleForPackageTab(tab), tab);
                         tabbedPane.setToolTipTextAt(i, tab.getPackageName());
                     }
-                  //TODO      LinkGrabber.this.setTitle();
+                    // TODO LinkGrabber.this.setTitle();
                 }
             }
         });
@@ -1740,10 +1764,13 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
             }
         });
     }
-////TODO  
-//    private void setTitle() {
-//        setTitle(JDLocale.LF("gui.linkgrabber.title", "Linksammler: %s  Link(s) in %s Paket(en)", getTotalLinkCount(), tabList.size()));
-//    }
+
+    // //TODO
+    // private void setTitle() {
+    // setTitle(JDLocale.LF("gui.linkgrabber.title",
+    // "Linksammler: %s  Link(s) in %s Paket(en)", getTotalLinkCount(),
+    // tabList.size()));
+    // }
 
     private void startLinkGatherer() {
         new Thread() {
@@ -1790,11 +1817,12 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
                             }
 
                         }
-                        uncheckedTab.removeLinks(hosterList);
-                        unsortedTab.addLinks(hosterList.toArray(new DownloadLink[] {}));
-
-                        onPackageNameChanged(unsortedTab);
-                        onPackageNameChanged(uncheckedTab);
+                        if (unsortedTab != null) {
+                            uncheckedTab.removeLinks(hosterList);
+                            unsortedTab.addLinks(hosterList.toArray(new DownloadLink[] {}));
+                            onPackageNameChanged(unsortedTab);
+                            onPackageNameChanged(uncheckedTab);
+                        }
                         for (int i = 0; i < hosterList.size(); i++) {
                             link = hosterList.get(i);
                             if (link.getLinkStatus().getStatusText() != null && link.getLinkStatus().getStatusText().equals(onlinecheckRunning)) link.getLinkStatus().setStatusText(null);
@@ -1803,8 +1831,9 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
                         SwingUtilities.invokeLater(new Runnable() {
 
                             public void run() {
-                        autoPackage();
-                            }});
+                                autoPackage();
+                            }
+                        });
                     }
                     // addingLinkList.add(link);
 
@@ -2011,17 +2040,13 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
     @Override
     public void onDisplay() {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void onHide() {
         // TODO Auto-generated method stub
-        
+
     }
 
-  
-
-
-    
 }

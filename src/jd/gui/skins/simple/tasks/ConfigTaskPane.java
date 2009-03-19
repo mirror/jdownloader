@@ -60,10 +60,10 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
         this.addons = addButton(this.createButton(JDLocale.L("gui.config.tabLables.addons", "addons"), JDTheme.II("gui.images.config.packagemanager", 16, 16)));
         this.eventmanager = addButton(this.createButton(JDLocale.L("gui.config.tabLables.eventManager", "eventManager"), JDTheme.II("gui.images.config.eventmanager", 16, 16)));
 
-       add(new JSeparator());
+        add(new JSeparator());
 
         this.sav = addButton(this.createButton(JDLocale.L("gui.task.config.save", "Save changes"), JDTheme.II("gui.images.save", 16, 16)));
-     
+
     }
 
     private JButton addButton(JButton bt) {
@@ -78,9 +78,8 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
      */
     private static final long serialVersionUID = -7720749076951577192L;
 
-
     public void actionPerformed(ActionEvent e) {
-     
+
         if (e.getSource() == general) {
             this.broadcastEvent(new ActionEvent(this, ACTION_GENERAL, ((JButton) e.getSource()).getName()));
             return;
@@ -121,7 +120,6 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
             this.broadcastEvent(new ActionEvent(this, ACTION_SAVE, ((JButton) e.getSource()).getName()));
             return;
         }
-       
 
     }
 
@@ -136,7 +134,7 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
                         this.restart = true;
                     }
                 }
-                if(changes){
+                if (changes) {
                     sav.setEnabled(true);
                 }
 

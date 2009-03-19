@@ -17,6 +17,8 @@ import org.jdesktop.swingx.JXTaskPane;
 
 public class TaskPanel extends JXTaskPane implements MouseListener {
 
+    private static final long serialVersionUID = 2136414459422852581L;
+
     public static final int ACTION_TOGGLE = -1;
     public static final int ACTION_CLICK = -2;
     protected EventListenerList listenerList;
@@ -73,23 +75,15 @@ public class TaskPanel extends JXTaskPane implements MouseListener {
     }
 
     public void mouseClicked(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseEntered(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseExited(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mousePressed(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseReleased(MouseEvent e) {

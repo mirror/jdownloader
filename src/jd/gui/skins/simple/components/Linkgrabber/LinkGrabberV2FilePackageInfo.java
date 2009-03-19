@@ -1,8 +1,6 @@
 package jd.gui.skins.simple.components.Linkgrabber;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -16,8 +14,6 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
-import net.miginfocom.swing.MigLayout;
-
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.components.ComboBrowseFile;
@@ -25,6 +21,7 @@ import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JDTextField;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class LinkGrabberV2FilePackageInfo extends JPanel implements ActionListener, UpdateListener {
 

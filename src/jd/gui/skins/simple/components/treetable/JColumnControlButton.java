@@ -1,19 +1,14 @@
 package jd.gui.skins.simple.components.treetable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.Action;
 import javax.swing.table.TableColumn;
 
 import jd.config.SubConfiguration;
-import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.table.ColumnControlButton;
-import org.jdesktop.swingx.table.ColumnControlPopup;
-import org.jdesktop.swingx.table.TableColumnExt;
-import org.jdesktop.swingx.table.ColumnControlButton.DefaultColumnControlPopup;
 
 public class JColumnControlButton extends ColumnControlButton {
 

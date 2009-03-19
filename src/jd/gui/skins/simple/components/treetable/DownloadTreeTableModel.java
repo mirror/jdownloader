@@ -23,7 +23,6 @@ import javax.swing.tree.TreePath;
 import jd.gui.skins.simple.DownloadLinksTreeTablePanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 

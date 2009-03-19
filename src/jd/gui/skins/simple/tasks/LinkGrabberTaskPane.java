@@ -5,14 +5,10 @@ import java.awt.event.ActionListener;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JSeparator;
 
-import jd.config.ConfigEntry.PropertyType;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.skins.simple.ContentPanel;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2TreeTableAction;
-import jd.gui.skins.simple.config.ConfigPanel;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

@@ -17,7 +17,6 @@
 package jd.gui.skins.simple;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.util.Vector;
 
 import javax.swing.JScrollPane;

@@ -19,12 +19,12 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class PremiumTaskPane extends TaskPanel implements ControlListener, ActionListener {
-	private static final long serialVersionUID = -373653036070545536L;
+    private static final long serialVersionUID = -373653036070545536L;
 
-	ArrayList<JButton> hoster = new ArrayList<JButton>();
-	
-	public PremiumTaskPane(String string, ImageIcon ii) {
-		super(string, ii, "premium");
+    ArrayList<JButton> hoster = new ArrayList<JButton>();
+
+    public PremiumTaskPane(String string, ImageIcon ii) {
+        super(string, ii, "premium");
         this.setLayout(new MigLayout("ins 0, wrap 1", "[fill]"));
         JDUtilities.getController().addControlListener(this);
         initGUI();
@@ -43,9 +43,9 @@ public class PremiumTaskPane extends TaskPanel implements ControlListener, Actio
         add(new JSeparator());
 
         addButton(this.createButton(JDLocale.L("gui.task.premium.add", "Add Premiumacccount"), JDTheme.II("gui.images.add", 16, 16)));
-     
+
     }
-    
+
     private JButton addButton(JButton bt) {
         bt.addActionListener(this);
         bt.setHorizontalAlignment(JButton.LEFT);
@@ -53,14 +53,10 @@ public class PremiumTaskPane extends TaskPanel implements ControlListener, Actio
         return bt;
     }
 
-	@Override
-	public void controlEvent(ControlEvent event) {
-		// TODO Auto-generated method stub
-		
-	}
+    public void controlEvent(ControlEvent event) {
+    }
 
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		this.broadcastEvent(e);
-	}
+    public void actionPerformed(ActionEvent e) {
+        this.broadcastEvent(e);
+    }
 }
