@@ -1,9 +1,12 @@
 package jd.nutils;
 
+import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.Transparency;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
@@ -13,7 +16,7 @@ import javax.swing.JFileChooser;
 
 public class Image {
     public static ImageIcon iconToImage(Icon icon) {
-        if (icon instanceof ImageIcon) {
+        if (icon instanceof ImageIcon && false) {
             return ((ImageIcon) icon);
         } else {
             int w = icon.getIconWidth();
@@ -21,7 +24,7 @@ public class Image {
             GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
             GraphicsDevice gd = ge.getDefaultScreenDevice();
             GraphicsConfiguration gc = gd.getDefaultConfiguration();
-            BufferedImage image = gc.createCompatibleImage(w, h);
+            BufferedImage image = gc.createCompatibleImage(w, h, Transparency.BITMASK);
             Graphics2D g = image.createGraphics();
             icon.paintIcon(null, g, 0, 0);
             g.dispose();
@@ -34,16 +37,15 @@ public class Image {
         File file = null;
         try {
             file = File.createTempFile("icon", "." + ext);
-            
+
             sun.awt.shell.ShellFolder shellFolder = sun.awt.shell.ShellFolder.getShellFolder(file);
-            shellFolder=null;
-            shellFolder.canExecute();
+        
             return new ImageIcon(shellFolder.getIcon(true));
 
         } catch (Throwable e) {
 
-//            FileSystemView view = FileSystemView.getFileSystemView();
-//            return iconToImage(view.getSystemIcon(file));
+            // FileSystemView view = FileSystemView.getFileSystemView();
+            // return iconToImage(view.getSystemIcon(file));
             return iconToImage(new JFileChooser().getIcon(file));
 
         } finally {
