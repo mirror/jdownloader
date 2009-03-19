@@ -40,7 +40,7 @@ public class JDAction extends AbstractAction {
 
     public static final int APP_ALLOW_RECONNECT = 31;
     public static final int APP_CLIPBOARD = 28;
-//    public static final int APP_CONFIGURATION = 18;
+    // public static final int APP_CONFIGURATION = 18;
     public static final int APP_EXIT = 16;
     public static final int APP_RESTART = 161;
     public static final int APP_LOAD_CONTAINER = 15;
@@ -79,7 +79,7 @@ public class JDAction extends AbstractAction {
 
     public static final int APP_OPEN_OPT_CONFIG = 36;
 
-    public static final int APP_OPEN_HOST_CONFIG = 37;
+    // public static final int APP_OPEN_HOST_CONFIG = 37;
 
     private static final long serialVersionUID = 7393495345332708426L;
 

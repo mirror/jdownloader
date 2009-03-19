@@ -82,7 +82,6 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
-import jd.HostPluginWrapper;
 import jd.JDInit;
 import jd.OptionalPluginWrapper;
 import jd.config.ConfigContainer;
@@ -557,8 +556,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionOptionalConfig;
 
-    private JDAction actionHostConfig;
-
     private JDAction actionItemsAdd;
 
     private JDAction actionItemsBottom;
@@ -681,7 +678,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private ContentPanel contentPanel;
 
-    private HashMap<Class, JTabbedPanel> panelMap;
+    private HashMap<Class<?>, JTabbedPanel> panelMap;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -703,7 +700,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         initMenuBar();
         localize();
         buildUI();
-        panelMap = new HashMap<Class, JTabbedPanel>();
+        panelMap = new HashMap<Class<?>, JTabbedPanel>();
         frame.setName("MAINFRAME");
         Dimension dim = SimpleGUI.getLastDimension(frame, null);
         if (dim == null) {
@@ -869,10 +866,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             SimpleGUI.showConfigDialog(frame, new ConfigPanelAddons(JDUtilities.getConfiguration()), false);
             JDUtilities.getConfiguration().save();
             break;
-        case JDAction.APP_OPEN_HOST_CONFIG:
-            SimpleGUI.showConfigDialog(frame, new ConfigPanelPluginForHost(JDUtilities.getConfiguration()), false);
-            JDUtilities.getConfiguration().save();
-            break;
+        // case JDAction.APP_OPEN_HOST_CONFIG:
+        // SimpleGUI.showConfigDialog(frame, new
+        // ConfigPanelPluginForHost(JDUtilities.getConfiguration()), false);
+        // JDUtilities.getConfiguration().save();
+        // break;
         case JDAction.ITEMS_REMOVE_PACKAGES:
             if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
                 if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete_packages", "Remove completed packages?"))) {
@@ -989,22 +987,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
                 panelMap.put(class1, ret);
             } catch (SecurityException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             } catch (NoSuchMethodException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             } catch (IllegalArgumentException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             } catch (InstantiationException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             } catch (IllegalAccessException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             } catch (InvocationTargetException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
@@ -1116,19 +1108,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         });
 
         taskPane.add(cfgTskPane);
-        
+
         PremiumTaskPane premTskPane = new PremiumTaskPane(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"), JDTheme.II("gui.images.configuration"));
         premTskPane.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if(!(e.getSource() instanceof JButton))
-					return;
-				Object[] configConstructorObjects = new Object[] { ((JButton) e.getSource()).getText() };
-				contentPanel.display(loadPanel(PremiumPane.class, configConstructorObjects));
-			}
+            public void actionPerformed(ActionEvent e) {
+                if (!(e.getSource() instanceof JButton)) return;
+                Object[] configConstructorObjects = new Object[] { ((JButton) e.getSource()).getText() };
+                contentPanel.display(loadPanel(PremiumPane.class, configConstructorObjects));
+            }
         });
         taskPane.add(premTskPane);
-        
+
         contentPanel = new ContentPanel();
         contentPanel.display(linkListPane);
         // taskPane.add(new
@@ -1422,7 +1412,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public String getCaptchaCodeFromUser(final Plugin plugin, final File captchaAddress, final String def) {
-final Object lock= new Object();
+        final Object lock = new Object();
         GuiRunnable run;
         EventQueue.invokeLater(run = new GuiRunnable() {
             public void run() {
@@ -1438,7 +1428,6 @@ final Object lock= new Object();
             try {
                 lock.wait();
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
@@ -1502,7 +1491,6 @@ final Object lock= new Object();
         actionRemovePackages = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.packages", JDAction.ITEMS_REMOVE_PACKAGES);
         actionDnD = new JDAction(this, JDTheme.V("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
         actionOptionalConfig = new JDAction(this, JDTheme.V("gui.images.config.packagemanager"), "action.optconfig", JDAction.APP_OPEN_OPT_CONFIG);
-        actionHostConfig = new JDAction(this, JDTheme.V("gui.images.config.host"), "action.hostconfig", JDAction.APP_OPEN_HOST_CONFIG);
         actionLoadDLC = new JDAction(this, JDTheme.V("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
         actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
         actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
