@@ -144,7 +144,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             } else if (col == 6) {
                 pluginsForHost.get(row).setUsePlugin((Boolean) value);
             }
-            ((SimpleGUI) JDUtilities.getGUI()).createHostPluginsMenuEntries();
         }
     }
 
@@ -339,7 +338,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             priority.add(plg.getHost());
         }
         configuration.setProperty(Configuration.PARAM_HOST_PRIORITY, priority);
-        if (changed) ((SimpleGUI) JDUtilities.getGUI()).createHostPluginsMenuEntries();
     }
 
     public PropertyType hasChanges() {

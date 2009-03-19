@@ -123,9 +123,11 @@ import jd.gui.skins.simple.config.ConfigPanelPluginForHost;
 import jd.gui.skins.simple.config.ConfigPanelReconnect;
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.gui.skins.simple.config.FengShuiConfigPanel;
+import jd.gui.skins.simple.premium.PremiumPane;
 import jd.gui.skins.simple.tasks.ConfigTaskPane;
 import jd.gui.skins.simple.tasks.DownloadTaskPane;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
+import jd.gui.skins.simple.tasks.PremiumTaskPane;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
@@ -641,8 +643,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JMenu menAddons;
 
-    private JMenu menHosts;
-
     private JMenuItem menViewLog = null;
 
     private JMenuItem createBackup = null;
@@ -976,7 +976,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     @SuppressWarnings("unchecked")
     private JTabbedPanel loadPanel(Class class1, Object[] configConstructorObjects) {
         JTabbedPanel ret = panelMap.get(class1);
-        if (ret == null) {
+        if (ret == null || ret instanceof PremiumPane) {
             Class[] classes = new Class[configConstructorObjects.length];
             for (int i = 0; i < configConstructorObjects.length; i++)
                 classes[i] = configConstructorObjects[i].getClass();
@@ -1116,6 +1116,19 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         });
 
         taskPane.add(cfgTskPane);
+        
+        PremiumTaskPane premTskPane = new PremiumTaskPane(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"), JDTheme.II("gui.images.configuration"));
+        premTskPane.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(!(e.getSource() instanceof JButton))
+					return;
+				Object[] configConstructorObjects = new Object[] { ((JButton) e.getSource()).getText() };
+				contentPanel.display(loadPanel(PremiumPane.class, configConstructorObjects));
+			}
+        });
+        taskPane.add(premTskPane);
+        
         contentPanel = new ContentPanel();
         contentPanel.display(linkListPane);
         // taskPane.add(new
@@ -1521,7 +1534,6 @@ final Object lock= new Object();
         JMenu menFile = new JMenu(JDLocale.L("gui.menu.file", "File"));
         JMenu menExtra = new JMenu(JDLocale.L("gui.menu.extra", "Extras"));
         menAddons = new JMenu(JDLocale.L("gui.menu.addons", "Addons"));
-        menHosts = new JMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
         JMenu menHelp = new JMenu(JDLocale.L("gui.menu.plugins.help", "?"));
 
         menViewLog = SimpleGUI.createMenuItem(actionLog);
@@ -1529,9 +1541,6 @@ final Object lock= new Object();
 
         // Adds the menus from the Addons
         createOptionalPluginsMenuEntries();
-
-        // Adds the menus from the Host Plugins
-        createHostPluginsMenuEntries();
 
         JMenu menAdd = createMenu(JDLocale.L("gui.menu.add", "Add"), "gui.images.add");
         menAdd.add(SimpleGUI.createMenuItem(actionAddLinks));
@@ -1569,7 +1578,6 @@ final Object lock= new Object();
         JDUtilities.addToGridBag(menuBar, menFile, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(menuBar, menExtra, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(menuBar, menAddons, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(menuBar, menHosts, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(menuBar, menHelp, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(menuBar, new JLabel(""), m++, 0, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
@@ -1669,58 +1677,6 @@ final Object lock= new Object();
         }
         if (menAddons.getItem(menAddons.getItemCount() - 1) == null) {
             menAddons.remove(menAddons.getItemCount() - 1);
-        }
-    }
-
-    public void createHostPluginsMenuEntries() {
-        Component temp = null;
-        if (menHosts.getComponentCount() != 0) {
-            temp = menHosts.getComponent(0);
-        } else {
-            temp = SimpleGUI.createMenuItem(actionHostConfig);
-        }
-        menHosts.removeAll();
-        menHosts.add(temp);
-
-        menHosts.addSeparator();
-        for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
-            if (wrapper.isLoaded() && wrapper.usePlugin()) {
-                final PluginForHost helpPlugin = wrapper.getPlugin();
-                if (helpPlugin.createMenuitems() != null) {
-                    JMenuItem mi = SimpleGUI.getJMenuItem(new MenuItem(MenuItem.CONTAINER, helpPlugin.getHost(), 0));
-                    if (mi != null) {
-                        menHosts.add(mi);
-                        ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
-                        ((JMenu) mi).addMenuListener(new MenuListener() {
-                            public void menuCanceled(MenuEvent e) {
-                            }
-
-                            public void menuDeselected(MenuEvent e) {
-                            }
-
-                            public void menuSelected(MenuEvent e) {
-                                JMenu m = (JMenu) e.getSource();
-                                JMenuItem c;
-                                m.removeAll();
-                                for (MenuItem menuItem : helpPlugin.createMenuitems()) {
-                                    c = SimpleGUI.getJMenuItem(menuItem);
-                                    if (c == null) {
-                                        m.addSeparator();
-                                    } else {
-                                        m.add(c);
-                                    }
-                                }
-                            }
-                        });
-                    } else {
-                        menHosts.addSeparator();
-                    }
-                }
-            }
-
-        }
-        if (menHosts.getItemCount() == 0) {
-            menHosts.setEnabled(false);
         }
     }
 
