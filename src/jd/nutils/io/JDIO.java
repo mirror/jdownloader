@@ -309,24 +309,7 @@ public class JDIO {
 
     }
 
-    public static Icon getFileIcon(String ext) {
 
-        File file = null;
-        try {
-            file = File.createTempFile("icon", "." + ext);
-            sun.awt.shell.ShellFolder shellFolder = sun.awt.shell.ShellFolder.getShellFolder(file);
-            return new ImageIcon(shellFolder.getIcon(true));
-
-        } catch (Throwable e) {
-
-            FileSystemView view = FileSystemView.getFileSystemView();
-            return view.getSystemIcon(file);
-
-        } finally {
-            file.delete();
-        }
-
-    }
 
     public static String getFileExtension(String str) {
         if (str == null) { return null; }

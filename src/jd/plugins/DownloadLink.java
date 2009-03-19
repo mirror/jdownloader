@@ -24,7 +24,6 @@ import java.net.UnknownHostException;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
 import jd.config.Configuration;
@@ -33,6 +32,7 @@ import jd.controlling.SingleDownloadController;
 import jd.controlling.SpeedMeter;
 import jd.event.ControlEvent;
 import jd.http.Encoding;
+import jd.nutils.Image;
 import jd.nutils.io.JDIO;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDLocale;
@@ -1059,7 +1059,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return
      */
     public ImageIcon getIcon(int width,int height) {
-     return JDUtilities.getScaledImageIcon((ImageIcon) JDIO.getFileIcon(JDIO.getFileExtension(getFileOutput())), width, height);
+     return JDUtilities.getScaledImageIcon(Image.getFileIcon(JDIO.getFileExtension(getFileOutput())), width, height);
     
     }
     /**
@@ -1067,7 +1067,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return
      */  
     public ImageIcon getIcon() {
-        if (icon == null) icon = JDUtilities.getScaledImageIcon((ImageIcon) JDIO.getFileIcon(JDIO.getFileExtension(getFileOutput())), 16, 16);
+        if (icon == null) icon =JDUtilities.getScaledImageIcon(Image.getFileIcon(JDIO.getFileExtension(getFileOutput())), 16, 16);
         return icon;
     }
 }
