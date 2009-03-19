@@ -157,8 +157,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private HostPluginWrapper draggedPlugin;
 
-    private boolean changed = false;
-
     private ArrayList<HostPluginWrapper> pluginsForHost;
 
     private JTable table;
@@ -195,7 +193,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         pluginsForHost.add(id, draggedPlugin);
         tableModel.fireTableRowsUpdated(Math.min(oldId, id), Math.max(oldId, id));
         table.getSelectionModel().setSelectionInterval(id, id);
-        changed = true;
     }
 
     public void drop(DropTargetDropEvent e) {
