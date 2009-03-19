@@ -46,8 +46,6 @@ public class LinkGrabberV2 extends JTabbedPanel implements ActionListener, Updat
     private ProgressController pc;
     private JXCollapsiblePane collapsepane;
     private LinkGrabberV2FilePackageInfo FilePackageInfo;
-    private boolean isRemoved = false;
-
     public LinkGrabberV2(SimpleGUI parent) {
         super(new BorderLayout());
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
@@ -71,8 +69,7 @@ public class LinkGrabberV2 extends JTabbedPanel implements ActionListener, Updat
         collapsepane.setCollapsed(false);
     }
 
-    public void hideFilePackageInfo() {
-        FilePackageInfo.setPackage(null);
+    public void hideFilePackageInfo() {        
         collapsepane.setCollapsed(true);
     }
 

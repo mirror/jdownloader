@@ -1,12 +1,18 @@
 package jd.gui.skins.simple.components.Linkgrabber;
 
+import java.awt.Color;
+import java.awt.LinearGradientPaint;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JMenu;
@@ -14,18 +20,39 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.UIManager;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import javax.swing.tree.TreePath;
 
 import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.treetable.DownloadLinkRowHighlighter;
+import jd.gui.skins.simple.components.treetable.DownloadTreeTable;
+import jd.gui.skins.simple.components.treetable.JColumnControlButton;
+import jd.gui.skins.simple.components.treetable.TreeTableRenderer;
+import jd.gui.skins.simple.components.treetable.TreeTableTransferHandler;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
+import jd.utils.JDSounds;
+import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.JXTreeTable;
+import org.jdesktop.swingx.decorator.HighlightPredicate;
+import org.jdesktop.swingx.decorator.Highlighter;
+import org.jdesktop.swingx.decorator.HighlighterFactory;
+import org.jdesktop.swingx.decorator.PainterHighlighter;
+import org.jdesktop.swingx.painter.MattePainter;
+import org.jdesktop.swingx.painter.Painter;
+import org.jdesktop.swingx.table.TableColumnExt;
 import org.jdesktop.swingx.tree.TreeModelSupport;
 
 public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListener, MouseListener, MouseMotionListener, TreeExpansionListener, TreeSelectionListener {
@@ -40,26 +67,45 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListene
     private boolean update = true;
     private boolean update2 = true;
     private LinkGrabberV2 linkgrabber;
+    private LinkGrabberV2TreeTableRenderer cellRenderer;
+    private TableColumnExt[] cols;
 
-    public static final String PROPERTY_EXPANDED = "expanded";
+    public static final String PROPERTY_EXPANDED = "lg_expanded";
 
-    public static final String PROPERTY_SELECTED = "selected";
+    public static final String PROPERTY_SELECTED = "lg_selected";
 
     public LinkGrabberV2TreeTable(LinkGrabberV2TreeTableModel treeModel, LinkGrabberV2 linkgrabber) {
         super(treeModel);
-        model = treeModel;
         this.linkgrabber = linkgrabber;
-        this.setUI(new LinkGrabberV2TreeTablePaneUI());
+        JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+        cellRenderer = new LinkGrabberV2TreeTableRenderer(this);
+        model = treeModel;
+        createColumns();
+
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
+        setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-        setEditable(true);
+        setEditable(false);
         setAutoscrolls(false);
+        setColumnControlVisible(true);
+        this.setColumnControl(new JColumnControlButton(this));
         addTreeExpansionListener(this);
         addTreeSelectionListener(this);
-        addMouseMotionListener(this);
         addMouseListener(this);
+        addMouseMotionListener(this);
+        UIManager.put("Table.focusCellHighlightBorder", null);
+        this.setHighlighters(new Highlighter[] {});
+        setHighlighters(HighlighterFactory.createAlternateStriping(UIManager.getColor("Panel.background").brighter(), UIManager.getColor("Panel.background")));
+        addOfflineHighlighter();
+        addOnlineHighlighter();
+        addExistsHighlighter();
+        addUncheckedHighlighter();
+        addHighlighter(new PainterHighlighter(HighlightPredicate.IS_FOLDER, getGradientPainter(JDTheme.C("gui.color.linkgrabber.row_package", "fffa7c"))));
+    }
+
+    public TableCellRenderer getCellRenderer(int row, int col) {
+        return cellRenderer;
     }
 
     public synchronized void fireTableChanged(int id, Object param) {
@@ -202,9 +248,19 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListene
 
     }
 
-    public void mouseReleased(MouseEvent arg0) {
-        // TODO Auto-generated method stub
-
+    public void mouseReleased(MouseEvent e) {
+        TreePath path = getPathForLocation(e.getX(), e.getY());
+        int column = this.columnAtPoint(e.getPoint());
+        if (path != null && path.getLastPathComponent() instanceof LinkGrabberV2FilePackage) {
+            if (column == 0) {
+                LinkGrabberV2FilePackage fp = (LinkGrabberV2FilePackage) path.getLastPathComponent();
+                if (fp.getBooleanProperty(PROPERTY_EXPANDED, false)) {
+                    this.collapsePath(path);
+                } else {
+                    expandPath(path);
+                }
+            }
+        }
     }
 
     public void mousePressed(MouseEvent e) {
@@ -258,6 +314,118 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListene
             tmp.setEnabled(true);
         }
         return prioPopup;
+    }
+
+    public Painter getGradientPainter(Color color1) {
+        int height = 20;
+        Color color2;
+        color1 = new Color(color1.getRed(), color1.getGreen(), color1.getBlue(), 40);
+        color2 = new Color(color1.getRed(), color1.getGreen(), color1.getBlue(), 200);
+        LinearGradientPaint gradientPaint = new LinearGradientPaint(1, 0, 1, height, new float[] { 0.0f, 1.0f }, new Color[] { color1, color2 });
+        MattePainter mattePainter = new MattePainter(gradientPaint);
+        return mattePainter;
+    }
+
+    private void addOnlineHighlighter() {
+        Color background = JDTheme.C("gui.color.linkgrabber.online", "00ff00");
+        Color foreground = Color.DARK_GRAY;
+        Color selectedBackground = background.darker();
+        Color selectedForground = foreground;
+
+        addHighlighter(new LinkGrabberV2DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+            @Override
+            public boolean doHighlight(DownloadLink link) {
+                if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return false;
+                if (link.isAvailabilityChecked() && link.isAvailable()) return true;
+                return false;
+            }
+        });
+
+    }
+
+    private void addOfflineHighlighter() {
+        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff0000");
+        Color foreground = Color.DARK_GRAY;
+        Color selectedBackground = background.darker();
+        Color selectedForground = foreground;
+
+        addHighlighter(new LinkGrabberV2DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+            @Override
+            public boolean doHighlight(DownloadLink link) {
+                if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return false;
+                if (link.isAvailabilityChecked() && !link.isAvailable()) return true;
+                return false;
+            }
+        });
+
+    }
+
+    private void addExistsHighlighter() {
+        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff7f00");
+        Color foreground = Color.DARK_GRAY;
+        Color selectedBackground = background.darker();
+        Color selectedForground = foreground;
+
+        addHighlighter(new LinkGrabberV2DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+            @Override
+            public boolean doHighlight(DownloadLink link) {
+                if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return true;
+                return false;
+            }
+        });
+    }
+
+    private void addUncheckedHighlighter() {
+        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff7f00");
+        Color foreground = Color.DARK_GRAY;
+        Color selectedBackground = background.darker();
+        Color selectedForground = foreground;
+
+        addHighlighter(new LinkGrabberV2DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+            @Override
+            public boolean doHighlight(DownloadLink link) {
+                if (!link.isAvailabilityChecked()) return true;
+                return false;
+            }
+        });
+
+    }
+
+    private void createColumns() {
+        // TODO Auto-generated method stub
+        setAutoCreateColumnsFromModel(false);
+        List<TableColumn> columns = getColumns(true);
+        for (Iterator<TableColumn> iter = columns.iterator(); iter.hasNext();) {
+            getColumnModel().removeColumn(iter.next());
+        }
+        final SubConfiguration config = JDUtilities.getSubConfig("linkgrabber");
+        cols = new TableColumnExt[getModel().getColumnCount()];
+        for (int i = 0; i < getModel().getColumnCount(); i++) {
+
+            TableColumnExt tableColumn = getColumnFactory().createAndConfigureTableColumn(getModel(), i);
+            cols[i] = tableColumn;
+            if (i > 0) {
+                tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        TableColumnExt column = (TableColumnExt) evt.getSource();
+                        if (evt.getPropertyName().equals("width")) {
+                            config.setProperty("WIDTH_COL_" + column.getModelIndex(), evt.getNewValue());
+                            config.save();
+                        } else if (evt.getPropertyName().equals("visible")) {
+                            config.setProperty("VISABLE_COL_" + column.getModelIndex(), evt.getNewValue());
+                            config.save();
+                        }
+                    }
+                });
+                tableColumn.setVisible(config.getBooleanProperty("VISABLE_COL_" + i, true));
+                tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + i, tableColumn.getWidth()));
+                if (tableColumn != null) {
+                    getColumnModel().addColumn(tableColumn);
+                }
+            } else {
+                tableColumn.setVisible(false);
+            }
+        }
     }
 
     public void actionPerformed(ActionEvent arg0) {

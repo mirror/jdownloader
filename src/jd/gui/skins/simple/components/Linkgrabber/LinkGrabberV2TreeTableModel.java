@@ -3,25 +3,21 @@ package jd.gui.skins.simple.components.Linkgrabber;
 import java.util.Vector;
 
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.tree.TreeModelSupport;
 import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 
 public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
 
-    public static final int COL_FILE = 0;
-
-    public static final int COL_SIZE = 1;
-
-    public static final int COL_HOSTER = 2;
-
-    public static final int COL_STATUS = 3;
+    public static final int COL_HIDDEN = 0;
+    public static final int COL_PACK_FILE = 1;
+    public static final int COL_SIZE = 2;
+    public static final int COL_HOSTER = 3;
+    public static final int COL_STATUS = 4;
 
     /** table column names */
-    static protected String[] COLUMN_NAMES = { JDLocale.L("gui.linkgrabber.header.treeandfiles", "Packages/Files"), JDLocale.L("gui.linkgrabber.header.size", "Size"), JDLocale.L("gui.linkgrabber.header.hoster", "Anbieter"), JDLocale.L("gui.linkgrabber.header.status", "Status") };
+    static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.linkgrabber.header.packagesfiles", "Pakete/Datein"), JDLocale.L("gui.treetable.header.size", "Größe"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status") };
 
     private LinkGrabberV2 owner;
 
@@ -82,8 +78,10 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
     @Override
     public Class<?> getColumnClass(int column) {
         switch (column) {
-        case COL_FILE:
+        case COL_HIDDEN:
             return String.class;
+        case COL_PACK_FILE:
+            return Object.class;
         case COL_SIZE:
             return String.class;
         case COL_HOSTER:
@@ -106,6 +104,13 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
         return COLUMN_NAMES[column];
     }
 
+    public static int getIDFormHeaderLabel(String label) {
+        for (int i = 0; i < COLUMN_NAMES.length; i++) {
+            if (COLUMN_NAMES[i].equals(label)) { return i; }
+        }
+        return -1;
+    }
+
     public int getIndexOfChild(Object parent, Object child) {
         int index = -1;
         if (parent instanceof String) {
@@ -115,7 +120,6 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
         } else if (parent instanceof DownloadLink) {
             index = -1;
         }
-
         return index;
     }
 
@@ -145,46 +149,29 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
      * What is shown in a cell column for a node.
      */
     public Object getValueAt(Object node, int column) {
-
         if (node instanceof DownloadLink) {
             DownloadLink downloadLink = (DownloadLink) node;
-            String status = "";
             switch (column) {
-            case COL_FILE:
-                return downloadLink.getName();
+            case COL_PACK_FILE:
+                return downloadLink;
             case COL_SIZE:
-                return downloadLink.getDownloadSize() > 0 ? JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) : "~";
+                return downloadLink;
             case COL_HOSTER:
-                return downloadLink.getPlugin().getHost();
+                return downloadLink;
             case COL_STATUS:
-                if (!downloadLink.isAvailabilityChecked()) {
-                    status = "availability unchecked!";
-                } else {
-                    if (downloadLink.isAvailable()) {
-                        status = "online";
-                    } else
-                        status = "offline";
-                }
-                if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
-                    status += " (Already in List)";
-                }
-                return status;
-            default:
-                return "";
+                return downloadLink;
             }
         } else if (node instanceof LinkGrabberV2FilePackage) {
             LinkGrabberV2FilePackage filePackage = (LinkGrabberV2FilePackage) node;
             switch (column) {
-            case COL_FILE:
-                return filePackage.getName();
+            case COL_PACK_FILE:
+                return filePackage;
             case COL_SIZE:
-                return "";
+                return filePackage;
             case COL_HOSTER:
-                return filePackage.getHoster();
+                return filePackage;
             case COL_STATUS:
-                return "";
-            default:
-                return "";
+                return filePackage;
             }
         } else if (node instanceof String) {
             return (column == 0) ? node.toString() : "";
