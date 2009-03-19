@@ -156,7 +156,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private int priority = 0;
 
-    private ImageIcon icon;
+    private transient ImageIcon icon;
 
     /**
      * Erzeugt einen neuen DownloadLink

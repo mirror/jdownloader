@@ -8,9 +8,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 
 import javax.swing.Icon;
-
 import javax.swing.ImageIcon;
-import javax.swing.filechooser.FileSystemView;
+import javax.swing.JFileChooser;
 
 public class Image {
     public static ImageIcon iconToImage(Icon icon) {
@@ -35,13 +34,17 @@ public class Image {
         File file = null;
         try {
             file = File.createTempFile("icon", "." + ext);
+            
             sun.awt.shell.ShellFolder shellFolder = sun.awt.shell.ShellFolder.getShellFolder(file);
+            shellFolder=null;
+            shellFolder.canExecute();
             return new ImageIcon(shellFolder.getIcon(true));
 
         } catch (Throwable e) {
 
-            FileSystemView view = FileSystemView.getFileSystemView();
-            return iconToImage(view.getSystemIcon(file));
+//            FileSystemView view = FileSystemView.getFileSystemView();
+//            return iconToImage(view.getSystemIcon(file));
+            return iconToImage(new JFileChooser().getIcon(file));
 
         } finally {
             file.delete();
