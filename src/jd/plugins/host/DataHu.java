@@ -60,7 +60,7 @@ public class DataHu extends PluginForHost {
 
         br.setFollowRedirects(true);
         getFileInformation(downloadLink);
-        String link = br.getRegex(Pattern.compile("window.location.href='(.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String link = br.getRegex(Pattern.compile("<span class=\"download_it\"><a href=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
 
         // int free = this.waitForFreeConnection(downloadLink);
 
