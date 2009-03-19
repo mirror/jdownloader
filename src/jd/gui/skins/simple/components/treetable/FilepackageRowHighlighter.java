@@ -5,17 +5,26 @@ import java.awt.Component;
 
 import javax.swing.tree.TreePath;
 
+import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdesktop.swingx.decorator.ColorHighlighter;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
 
-public abstract class FilepackageRowHighlighter extends ColorHighlighter {
+public abstract class FilepackageRowHighlighter extends DownloadLinkRowHighlighter {
 
-    public FilepackageRowHighlighter(final DownloadTreeTable table, Color cellBackground, Color cellForeground, Color selectedBackground, Color selectedForeground) {
-        super(cellBackground, cellForeground, selectedBackground, selectedForeground);
-        HighlightPredicate hp = new HighlightPredicate() {
+    public FilepackageRowHighlighter(DownloadTreeTable table, Color colora) {
+        super(table, colora);
+
+    }
+
+    public FilepackageRowHighlighter(DownloadTreeTable table, Color colora, Color colorb) {
+        super(table, colora, colorb);
+
+    }
+
+    protected HighlightPredicate getPredicate() {
+        return new HighlightPredicate() {
             public boolean isHighlighted(Component renderer, ComponentAdapter adapter) {
                 TreePath path = table.getPathForRow(adapter.row);
                 Object element;
@@ -24,13 +33,15 @@ public abstract class FilepackageRowHighlighter extends ColorHighlighter {
                     if (element instanceof FilePackage) { return doHighlight((FilePackage) element); }
                 }
 
-                     
                 return false;
             }
 
         };
-        this.setHighlightPredicate(hp);
     }
 
-    public abstract boolean doHighlight(FilePackage fp);
+    public boolean doHighlight(DownloadLink link) {
+        return false;
+    }
+
+    public abstract boolean doHighlight(FilePackage link);
 }

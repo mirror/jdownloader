@@ -71,8 +71,6 @@ import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2FilePackage;
-import jd.gui.skins.simple.info.PackageInfo;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
@@ -185,7 +183,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
         }
 
         this.setHighlighters(new Highlighter[] {});
-        setHighlighters(HighlighterFactory.createAlternateStriping(UIManager.getColor("Panel.background").brighter(), UIManager.getColor("Panel.background")));
+//        setHighlighters(HighlighterFactory.createAlternateStriping(UIManager.getColor("Panel.background").brighter(), UIManager.getColor("Panel.background")));
 
         // addHighlighter(new ColorHighlighter(HighlightPredicate.ALWAYS,
         // JDTheme.C("gui.color.downloadlist.row_package", "fffa7c"),
@@ -204,7 +202,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
         // return true;
         // }
         // });
-        addHighlighter(new PainterHighlighter(HighlightPredicate.IS_FOLDER, getGradientPainter(JDTheme.C("gui.color.downloadlist.row_package", "fffa7c"))));
+        addHighlighter(new PainterHighlighter(HighlightPredicate.IS_FOLDER, getFolderPainter()));
 
         // Highlighter extendPrefWidth = new AbstractHighlighter() {
         // @Override
@@ -241,16 +239,30 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
 
     }
 
+    public Painter getFolderPainter() {
+
+        int width = 100;
+        int height = 20;
+        Color col = JDTheme.C("gui.color.downloadlist.row_package", "fffa7c").darker();
+        Color col1 = new Color(col.getRed(), col.getGreen(), col.getBlue(), 220);
+        Color col2 = new Color(col.getRed(), col.getGreen(), col.getBlue(), 80);
+        Color col3 = new Color(col.getRed(), col.getGreen(), col.getBlue(), 20);
+        Color col4 = new Color(col.getRed(), col.getGreen(), col.getBlue(), 80);
+        Color col5 = new Color(col.getRed(), col.getGreen(), col.getBlue(), 220);
+        LinearGradientPaint gradientPaint = new LinearGradientPaint(new Point(1, 0), new Point(1, height), new float[] { 0.0f, 0.2f, 0.40f,0.7f, 1.0f }, new Color[] { col1, col2,col3, col4, col5 });
+
+        return new MattePainter(gradientPaint);
+
+    }
+
     /**
      * Link HIghlighters
      */
     private void addWaitHighlighter() {
-        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936");
-        Color foreground = Color.DARK_GRAY;
-        Color selectedBackground = background.darker();
-        Color selectedForground = foreground;
+        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936",100);
 
-        addHighlighter(new DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+
+        addHighlighter(new DownloadLinkRowHighlighter(this, background,background) {
             @Override
             public boolean doHighlight(DownloadLink dLink) {
                 return dLink.getLinkStatus().getRemainingWaittime() > 0 || dLink.getPlugin() == null || dLink.getPlugin().getRemainingHosterWaittime() > 0;
@@ -260,12 +272,10 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
     }
 
     private void addErrorHighlighter() {
-        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936");
-        Color foreground = Color.DARK_GRAY;
-        Color selectedBackground = background.darker();
-        Color selectedForground = foreground;
+        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936",120);
 
-        addHighlighter(new DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+
+        addHighlighter(new DownloadLinkRowHighlighter(this, background,background) {
             @Override
             public boolean doHighlight(DownloadLink link) {
                 return link.getLinkStatus().isFailed();
@@ -275,12 +285,10 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
     }
 
     private void addPostErrorHighlighter() {
-        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936");
-        Color foreground = Color.DARK_GRAY;
-        Color selectedBackground = background.darker();
-        Color selectedForground = foreground;
+        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936",120);
+ 
 
-        addHighlighter(new DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+        addHighlighter(new DownloadLinkRowHighlighter(this, background,background) {
             @Override
             public boolean doHighlight(DownloadLink link) {
                 return link.getLinkStatus().hasStatus(LinkStatus.ERROR_POST_PROCESS);
@@ -290,12 +298,9 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
     }
 
     private void addDisabledHighlighter() {
-        Color background = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad");
-        Color foreground = Color.DARK_GRAY;
-        Color selectedBackground = background.darker();
-        Color selectedForground = foreground;
-
-        addHighlighter(new DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+        Color background = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad",100);
+  
+        addHighlighter(new DownloadLinkRowHighlighter(this, background,background) {
             @Override
             public boolean doHighlight(DownloadLink link) {
                 return !link.isEnabled();
@@ -305,51 +310,24 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
     }
 
     private void addFinishedHighlighter() {
-        Color background = JDTheme.C("gui.color.downloadlist.row_link_done", "c4ffd2");
-        Color backGroundPackage = JDTheme.C("gui.color.downloadlist.row_package_done", "339933");
-        Color foreground = Color.BLACK;
-        Color selectedBackground = background.darker();
-        Color selectedForground = foreground;
-        HighlightPredicate o = new FilepackageRowHighlighter(this, backGroundPackage, foreground, selectedBackground, selectedForground) {
+        Color background = JDTheme.C("gui.color.downloadlist.row_link_done", "c4ffd2",80);
+        Color backGroundPackage = JDTheme.C("gui.color.downloadlist.row_package_done", "339933",80);
+
+        addHighlighter(new FilepackageRowHighlighter(this, backGroundPackage ,backGroundPackage) {
             @Override
             public boolean doHighlight(FilePackage fp) {
                 return fp.isFinished();
             }
-        }.getHighlightPredicate();
+        });
 
-        o = new DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+        addHighlighter(new DownloadLinkRowHighlighter(this, background,background) {
             @Override
             public boolean doHighlight(DownloadLink link) {
                 return link.getLinkStatus().hasStatus(LinkStatus.FINISHED);
             }
-        }.getHighlightPredicate();
-        addHighlighter(new PainterHighlighter(o, getGradientPainter(background)));
+        });
 
-        //        
-        // ((TableColumnExt) getColumns(true).get(3)).addHighlighter(new
-        // IconHighlighter(new HighlightPredicate() {
-        // public boolean isHighlighted(Component renderer, ComponentAdapter
-        // adapter) {
-        // TreePath path = getPathForRow(adapter.row);
-        // Object element;
-        // if (path != null) {
-        // element = path.getLastPathComponent();
-        // if (element instanceof DownloadLink) {
-        // DownloadLink link = (DownloadLink) element;
-        // // TableColumnExt ext = getColumnExt(adapter.column);
-        // // getColumns(true).get(adapter.column);
-        // if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && !new
-        // File(link.getFileOutput()).exists()) {
-        //
-        // return true; }
-        //
-        // }
-        // }
-        //
-        // return false;
-        // }
-        //
-        // }, JDTheme.II("gui.images.delete", 16, 16)));
+
 
     }
 
@@ -357,21 +335,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
         return cellRenderer;
         // if (col >= 1) { return cellRenderer; }
         // return super.getCellRenderer(row, col);
-
-    }
-
-    public Painter getGradientPainter(Color color1) {
-
-        int width = 100;
-        int height = 20;
-        Color color2;
-        color1 = new Color(color1.getRed(), color1.getGreen(), color1.getBlue(), 40);
-        color2 = new Color(color1.getRed(), color1.getGreen(), color1.getBlue(), 200);
-        LinearGradientPaint gradientPaint = new LinearGradientPaint(1, 0, 1, height, new float[] { 0.0f, 1.0f }, new Color[] { color1, color2 });
-
-        MattePainter mattePainter = new MattePainter(gradientPaint);
-
-        return mattePainter;
 
     }
 

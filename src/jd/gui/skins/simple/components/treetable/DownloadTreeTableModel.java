@@ -31,20 +31,19 @@ import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 
 public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
-    public static final int COL_FILE = 2;
-
-    public static final int COL_HOSTER = 3;
+  
+    public static final int COL_HOSTER = 2;
 
     /** index of tree column */
     public static final int COL_HIDDEN = 0;
     public static final int COL_PART = 1;
 
-    public static final int COL_PROGRESS = 5;
+    public static final int COL_PROGRESS = 4;
 
-    public static final int COL_STATUS = 4;
+    public static final int COL_STATUS = 3;
 
     /** table column names */
-    static protected String[] COLUMN_NAMES = {"hidden", JDLocale.L("gui.treetable.header_1.tree", "Pakete"), JDLocale.L("gui.treetable.header_2.files", "Dateien"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
+    static protected String[] COLUMN_NAMES = {"hidden", JDLocale.L("gui.treetable.header_1.tree", "F"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
 
     private DownloadLinksTreeTablePanel owner;
 
@@ -120,8 +119,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             return String.class;
         case COL_PART:
             return Object.class;
-        case COL_FILE:
-            return String.class;
+  
         case COL_HOSTER:
             return String.class;
         case COL_STATUS:
@@ -196,8 +194,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
 //                    int id = downloadLink.getPartByName();
 //                    return JDLocale.L("gui.treetable.part.label", "Datei") + " " + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0"));
 //                }
-            case COL_FILE:
-                return downloadLink;
+    
             case COL_HOSTER:
                 return downloadLink;
             case COL_STATUS:
@@ -210,8 +207,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             switch (column) {
             case COL_PART:
                 return filePackage;
-            case COL_FILE:
-                return filePackage;
+       
             case COL_HOSTER:
                 return filePackage;
             case COL_STATUS:

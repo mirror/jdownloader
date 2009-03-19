@@ -43,6 +43,7 @@ public class PackageInfo extends JPanel {
         this.fp = fp;
         if (this.fp != null) {
             //fp.getUpdateBroadcaster().addUpdateListener(this);
+            txtName.setIcon(fp.getDownloadLinks().get(0).getIcon(48, 48));
             txtName.setText(fp.getName());
             brwSaveTo.setText(fp.getDownloadDirectory());
         }

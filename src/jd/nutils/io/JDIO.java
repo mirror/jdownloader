@@ -34,8 +34,11 @@ import java.io.OutputStreamWriter;
 import java.nio.channels.FileChannel;
 import java.util.Vector;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.filechooser.FileSystemView;
 
 import jd.nutils.JDHash;
 
@@ -302,7 +305,31 @@ public class JDIO {
      */
     public static String getFileExtension(File ret) {
         if (ret == null) { return null; }
-        String str = ret.getAbsolutePath();
+        return getFileExtension(ret.getAbsolutePath());
+
+    }
+
+    public static Icon getFileIcon(String ext) {
+
+        File file = null;
+        try {
+            file = File.createTempFile("icon", "." + ext);
+            sun.awt.shell.ShellFolder shellFolder = sun.awt.shell.ShellFolder.getShellFolder(file);
+            return new ImageIcon(shellFolder.getIcon(true));
+
+        } catch (Throwable e) {
+
+            FileSystemView view = FileSystemView.getFileSystemView();
+            return view.getSystemIcon(file);
+
+        } finally {
+            file.delete();
+        }
+
+    }
+
+    public static String getFileExtension(String str) {
+        if (str == null) { return null; }
 
         int i3 = str.lastIndexOf(".");
 

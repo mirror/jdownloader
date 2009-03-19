@@ -18,6 +18,7 @@ package jd.gui.skins.simple.components.treetable;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Image;
 import java.text.DecimalFormat;
 
 import javax.swing.BorderFactory;
@@ -26,6 +27,7 @@ import javax.swing.JTable;
 import javax.swing.border.Border;
 
 import jd.gui.skins.simple.SimpleGUI;
+import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -77,11 +79,11 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
 
     private String strSecondsAbrv;
 
-    private String strParts;
+
 
     private TableColumnExt col;
 
-    private String strFile;
+
 
     private Border leftGap;
 
@@ -91,17 +93,14 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
 
         icon_link = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.link")));
 
-      
         icon_fp_open = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.package_closed")));
 
         icon_fp_closed = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.package_opened")));
 
-  
-
         table = downloadTreeTable;
         leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
         progress = new JDProgressBar();
- 
+
         progress.setStringPainted(true);
         progress.setOpaque(true);
         initLocale();
@@ -113,10 +112,9 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
         strFilePackageStatusFinished = JDLocale.L("gui.filepackage.finished", "[finished]");
         this.strDownloadLinkActive = JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
         this.strETA = JDLocale.L("gui.eta", "ETA");
-        strPluginError = null;
-        strSecondsAbrv = null;
-        this.strParts = JDLocale.L("gui.treetable.parts", "Teil(e)");
-        strFile = null;
+        strPluginError = JDLocale.L("gui.treetable.error.plugin", "Plugin error");
+        strSecondsAbrv = JDLocale.L("gui.treetable.seconds", "sec");   
+      
     }
 
     @Override
@@ -124,13 +122,17 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
         hasFocus = false;
         column = this.table.getColumn(column).getModelIndex();
         if (value instanceof FilePackage) {
-            return getFilePackageCell(table, value, isSelected, hasFocus, row, column);
+            co = getFilePackageCell(table, value, isSelected, hasFocus, row, column);
 
         } else if (value instanceof DownloadLink) {
-            return getDownloadLinkCell(table, value, isSelected, hasFocus, row, column);
+            co = getDownloadLinkCell(table, value, isSelected, hasFocus, row, column);
+            if (!((DownloadLink) value).isEnabled()) {
+                co.setEnabled(false);
+            }
         } else {
-            return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         }
+        return co;
 
     }
 
@@ -141,8 +143,11 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             clearSB();
-            ((JRendererLabel) co).setIcon(icon_link);
-            ((JRendererLabel) co).setText(strFile);
+            
+            
+      
+            ((JRendererLabel) co).setIcon(dLink.getIcon());
+            ((JRendererLabel) co).setText(dLink.getName());
             ((JRendererLabel) co).setBorder(leftGap);
 
             return co;
@@ -157,9 +162,7 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
 
             return co;
 
-        case DownloadTreeTableModel.COL_FILE:
-            value=dLink.getName();
-            break;
+   
         case DownloadTreeTableModel.COL_PROGRESS:
 
             if (dLink.getPlugin() == null) {
@@ -283,12 +286,7 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
 
             break;
 
-        case DownloadTreeTableModel.COL_FILE:
-
-            clearSB();
-            sb.append(fp.getDownloadLinks().size()).append(' ').append(strParts);
-            value = sb.toString();
-            break;
+ 
         case DownloadTreeTableModel.COL_PROGRESS:
 
             if (fp.isFinished()) {

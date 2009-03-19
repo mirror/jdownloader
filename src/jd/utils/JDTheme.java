@@ -81,6 +81,12 @@ public class JDTheme {
         return new Color(Integer.parseInt(JDTheme.V(key, def), 16));
     }
 
+    public static Color C(String key, String def, int alpha) {
+
+        String hex = JDTheme.V(key, def);
+        return new Color(Integer.parseInt(hex.substring(0, 2), 16), Integer.parseInt(hex.substring(2, 4), 16), Integer.parseInt(hex.substring(4), 16), alpha);
+    }
+
     /**
      * Gibt ein Image zum key zurück
      * 

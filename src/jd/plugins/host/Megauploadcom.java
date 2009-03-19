@@ -569,40 +569,5 @@ public class Megauploadcom extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), CAPTCHA_MODE, captchmodes, JDLocale.L("plugins.host.megaupload.captchamode.title", "Captcha mode:")).setDefaultValue(JDLocale.L("plugins.host.megaupload.captchamode_auto", "auto")));
     }
 
-    public static void main(String[] args) throws IOException {
-        int i = 0;
-        HashMap<String, File> map = new HashMap<String, File>();
-        File dir = JDUtilities.getResourceFile("caps/megaupload.com/captchas/");
-        for (File f : dir.listFiles()) {
-
-            map.put(JDHash.getMD5(f), f);
-        }
-        int ii = 0;
-        while (true) {
-            i++;
-            Browser br = new Browser();
-            br.setCookie("http://megaupload.com", "l", "en");
-            br.getPage("http://www.megaupload.com/?d=ML38NV20");
-            Form form = br.getForm(0);
-
-            String captcha = form.getRegex("Enter this.*?src=\"(.*?gencap.*?)\"").getMatch(0);
-
-            br.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
-            URLConnectionAdapter con = br.openGetConnection(captcha);
-            File file;
-            Browser.download(file = JDUtilities.getResourceFile("caps/megaupload.com/captchas/caps_" + System.currentTimeMillis() + ".png"), con);
-
-            String hash = JDHash.getMD5(file);
-
-            if (map.containsKey(hash)) {
-                ii++;
-
-                System.out.println("Rem " + ii);
-                file.delete();
-            } else {
-                map.put(hash, file);
-            }
-
-        }
-    }
+   
 }

@@ -39,7 +39,7 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
     private DownloadTreeTable internalTreeTable;
 
-    private PackageInfo PackageInfo;
+    private PackageInfo packageInfo;
 
     private JXCollapsiblePane collapsepane;
 
@@ -47,17 +47,17 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
         super(parent, new BorderLayout());
         internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(this), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
-        PackageInfo = new PackageInfo();
+        packageInfo = new PackageInfo();
         collapsepane = new JXCollapsiblePane();
         collapsepane.setCollapsed(true);
 
-        collapsepane.add(PackageInfo);
+        collapsepane.add(packageInfo);
         this.add(collapsepane, BorderLayout.SOUTH);
         this.add(scrollPane);
     }
 
     public void showFilePackageInfo(FilePackage fp) {
-        PackageInfo.setPackage(fp);
+        packageInfo.setPackage(fp);
         collapsepane.setCollapsed(false);
     }
 

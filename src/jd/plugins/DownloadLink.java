@@ -24,6 +24,9 @@ import java.net.UnknownHostException;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.controlling.SingleDownloadController;
@@ -152,6 +155,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private String sha1Hash;
 
     private int priority = 0;
+
+    private ImageIcon icon;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -1048,5 +1053,21 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public String getSha1Hash() {
         return sha1Hash;
+    }
+    /**
+     * ermittel das icon zur datei . ACHTUNG UNCACHED
+     * @return
+     */
+    public ImageIcon getIcon(int width,int height) {
+     return JDUtilities.getScaledImageIcon((ImageIcon) JDIO.getFileIcon(JDIO.getFileExtension(getFileOutput())), width, height);
+    
+    }
+    /**
+     * ermittel das icon zur datei 
+     * @return
+     */  
+    public ImageIcon getIcon() {
+        if (icon == null) icon = JDUtilities.getScaledImageIcon((ImageIcon) JDIO.getFileIcon(JDIO.getFileExtension(getFileOutput())), 16, 16);
+        return icon;
     }
 }

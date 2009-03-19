@@ -67,8 +67,10 @@ import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
+import javax.swing.filechooser.FileSystemView;
 
 import jd.CPluginWrapper;
 import jd.HostPluginWrapper;
@@ -1422,5 +1424,7 @@ public class JDUtilities {
         return ret.toString();
 
     }
+
+ 
 
 }

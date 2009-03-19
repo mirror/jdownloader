@@ -16,12 +16,12 @@
 
 package jd.captcha.specials;
 
+import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.HashMap;
 
 import javax.imageio.ImageIO;
 
@@ -31,6 +31,10 @@ import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.UTILITIES;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
+import jd.parser.html.Form;
 import jd.utils.JDUtilities;
 
 /**
@@ -126,17 +130,27 @@ public class MegaUpload {
         return org;
     }
 
-    public static void saveBoders(Captcha captcha) {
+ public static void saveBoders(File file) throws IOException {
+        
+        String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
+        String hoster = "megaupload.com";
+      
+        JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
+         BufferedImage captchaImage = ImageIO.read(file);
+         BasicWindow.showImage(captchaImage);
+    
+        Captcha captcha = Captcha.getCaptcha(captchaImage, jac);
+        BasicWindow.showImage(captcha.getImage(1));
         int[][] grid = new int[captcha.getWidth()][captcha.getHeight()];
         for (int x = 0; x < captcha.getWidth(); x++) {
             for (int y = 0; y < captcha.getHeight(); y++) {
                 int avg = captcha.getAverage(x, y, 3, 3);
                 double dif = Math.min(UTILITIES.getColorDifference(avg, 0), UTILITIES.getColorDifference(avg, 0xffffff));
 
-                if (dif > 0.0) {
+                if (dif > 43.0) {
                     grid[x][y] = 0;
                 } else {
-                    grid[x][y] = 0xffffff;
+                    grid[x][y] = captcha.grid[x][y];
                 }
 
             }
@@ -144,8 +158,10 @@ public class MegaUpload {
         captcha.setGrid(grid);
         try {
             BasicWindow.showImage(captcha.getImage(1));
-            File file;
-            ImageIO.write((RenderedImage) captcha.getImage(1), "png", file = JDUtilities.getResourceFile("caps/mu/" + System.currentTimeMillis() + ".png"));
+            File file2;
+            file = JDUtilities.getResourceFile("caps/mu/borders/" + System.currentTimeMillis() + ".png");
+            file.mkdirs();
+            ImageIO.write((RenderedImage) captcha.getImage(1), "png", file);
 
             System.out.println(file);
         } catch (IOException e1) {
@@ -154,46 +170,85 @@ public class MegaUpload {
         }
     }
 
-    public static void main(String args[]) {
-        String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
+    public static void main(String args[]) throws IOException {
+        
+    
+            int i = 0;
+            HashMap<String, File> map = new HashMap<String, File>();
+            File dir = JDUtilities.getResourceFile("caps/megaupload.com/captchas/");
+            for (File f : dir.listFiles()) {
 
-        String hoster = "megaupload.com";
+                map.put(JDHash.getMD5(f), f);
+            }
+            int ii = 0;
+            while (true) {
+                i++;
+                Browser br = new Browser();
+                br.setCookie("http://megaupload.com", "l", "en");
+                br.getPage("http://www.megaupload.com/?d=ML38NV20");
+                Form form = br.getForm(0);
 
-        JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
+                String captcha = form.getRegex("Enter this.*?src=\"(.*?gencap.*?)\"").getMatch(0);
 
-        LinkedList<Letter> letterdb = jac.letterDB;
-        LinkedList<Letter> newlb = new LinkedList<Letter>();
-        for (Iterator<Letter> it1 = letterdb.iterator(); it1.hasNext();) {
-            Letter l = it1.next();
-            boolean foundinNew = false;
-            for (Iterator<Letter> it = newlb.iterator(); it.hasNext();) {
-                Letter n = it.next();
-                if (n == l) continue;
-                if (l.getDecodedValue().equalsIgnoreCase(n.getDecodedValue())) {
+                br.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
+                URLConnectionAdapter con = br.openGetConnection(captcha);
+                File file;
+                Browser.download(file = JDUtilities.getResourceFile("caps/megaupload.com/captchas/caps_" + System.currentTimeMillis() + ".png"), con);
 
-                    LetterComperator lc = new LetterComperator(l, n);
-                    lc.setOwner(jac);
-                    lc.run();
-                    double vp = lc.getValityPercent();
+                String hash = JDHash.getMD5(file);
 
-                    if (vp < 1.0) {
-                        foundinNew = true;
-                        BasicWindow.showImage(l.getImage(), vp + "");
-                        BasicWindow.showImage(n.getImage(), vp + "");
-                        break;
-                    }
+                if (map.containsKey(hash)) {
+                    ii++;
 
+                    System.out.println("Rem " + ii);
+                    file.delete();
+                } else {
+                    map.put(hash, file);
+                    
+                    saveBoders(file);
                 }
 
             }
-            if (!foundinNew) {
-                newlb.add(l);
-            }
-
-        }
-
-        jac.letterDB = newlb;
-        jac.saveMTHFile();
+        
+//        String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
+//    
+//        String hoster = "megaupload.com";
+//
+//        JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
+//
+//        LinkedList<Letter> letterdb = jac.letterDB;
+//        LinkedList<Letter> newlb = new LinkedList<Letter>();
+//        for (Iterator<Letter> it1 = letterdb.iterator(); it1.hasNext();) {
+//            Letter l = it1.next();
+//            boolean foundinNew = false;
+//            for (Iterator<Letter> it = newlb.iterator(); it.hasNext();) {
+//                Letter n = it.next();
+//                if (n == l) continue;
+//                if (l.getDecodedValue().equalsIgnoreCase(n.getDecodedValue())) {
+//
+//                    LetterComperator lc = new LetterComperator(l, n);
+//                    lc.setOwner(jac);
+//                    lc.run();
+//                    double vp = lc.getValityPercent();
+//
+//                    if (vp < 1.0) {
+//                        foundinNew = true;
+//                        BasicWindow.showImage(l.getImage(), vp + "");
+//                        BasicWindow.showImage(n.getImage(), vp + "");
+//                        break;
+//                    }
+//
+//                }
+//
+//            }
+//            if (!foundinNew) {
+//                newlb.add(l);
+//            }
+//
+//        }
+//
+//        jac.letterDB = newlb;
+//        jac.saveMTHFile();
 
     }
 

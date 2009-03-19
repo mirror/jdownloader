@@ -55,11 +55,13 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.Box;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -929,6 +931,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
     }
+
+
 
     // public void showConfig() {
     // if (guiConfig.getBooleanProperty(PARAM_SHOW_FENGSHUI, true) == false) {
