@@ -35,6 +35,8 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 
+import net.miginfocom.swing.MigLayout;
+
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -219,19 +221,20 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     }
 
     private void initGUI() {
-        int n = 5;
-        this.setLayout(new BorderLayout(n, n));
+        this.setLayout(new MigLayout("insets 0", "[left, grow]15px[]", ""));
 
         cmboInput = new JComboBox(files);
-        cmboInput.setEditable(editable);
+//        cmboInput.setEditable(editable);
         cmboInput.addActionListener(this);
         if (cmboInput.getItemCount() > 0) cmboInput.setSelectedIndex(0);
 
         btnBrowse = new JButton(JDLocale.L("gui.btn_select", "Auswählen"));
         btnBrowse.addActionListener(this);
 
-        this.add(cmboInput, BorderLayout.CENTER);
-        this.add(btnBrowse, BorderLayout.EAST);
+        this.add(cmboInput, "grow");
+        this.add(btnBrowse, "wrap");
+//        this.add(new JComboBox());
+        
     }
 
     /**

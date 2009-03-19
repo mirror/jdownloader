@@ -68,7 +68,7 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
         txtName.setAutoSelect(true);
 
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
-        brwSaveTo.setEditable(true);
+        brwSaveTo.setEditable(false);
         brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
 
         brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
