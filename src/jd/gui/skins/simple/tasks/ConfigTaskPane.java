@@ -125,7 +125,7 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
 
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
-            if (ContentPanel.PANEL.getRightPanel() instanceof ConfigPanel) {
+            if (ContentPanel.PANEL != null && ContentPanel.PANEL.getRightPanel() instanceof ConfigPanel) {
                 if (((ConfigPanel) ContentPanel.PANEL.getRightPanel()).hasChanges() != PropertyType.NONE) {
                     this.changes = true;
                     System.out.println("CHANGES !");
