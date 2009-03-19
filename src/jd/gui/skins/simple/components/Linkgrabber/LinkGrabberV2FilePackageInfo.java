@@ -103,6 +103,9 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
         extendedPanel.add(chbUseSubdirectory, "wrap");
 
         tabbedPane.add(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Extended"), extendedPanel);
+
+        this.setLayout(new MigLayout("", "[grow]", "[]"));
+        this.add(tabbedPane, "grow");
     }
 
     public void UpdateEvent(UpdateEvent event) {
