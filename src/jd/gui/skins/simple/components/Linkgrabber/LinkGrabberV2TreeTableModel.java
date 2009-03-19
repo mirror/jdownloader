@@ -19,7 +19,7 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
     /** table column names */
     static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.linkgrabber.header.packagesfiles", "Pakete/Datein"), JDLocale.L("gui.treetable.header.size", "Größe"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status") };
 
-    private LinkGrabberV2 owner;
+    private LinkGrabberV2Panel owner;
 
     /**
      * Creates a {@link ProjectsTreeTableModel}
@@ -30,7 +30,7 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
      * @param aList
      *            the ProjectList to start out with.
      */
-    public LinkGrabberV2TreeTableModel(LinkGrabberV2 treeTable) {
+    public LinkGrabberV2TreeTableModel(LinkGrabberV2Panel treeTable) {
         super("root");
         owner = treeTable;
     }

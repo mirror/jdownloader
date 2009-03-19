@@ -7,19 +7,11 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
-import jd.config.Configuration;
-import jd.config.SubConfiguration;
-import jd.gui.skins.simple.components.ComboBrowseFile;
-import jd.gui.skins.simple.components.JDFileChooser;
-import jd.gui.skins.simple.components.JDTextField;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2FilePackage;
-import jd.gui.skins.simple.components.Linkgrabber.UpdateEvent;
-import jd.gui.skins.simple.components.Linkgrabber.UpdateListener;
+import jd.plugins.FilePackage;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class PackageInfo extends JPanel implements UpdateListener {
+public class PackageInfo extends JPanel {
 
     private static final long serialVersionUID = 5410296068527460629L;
 
@@ -37,28 +29,26 @@ public class PackageInfo extends JPanel implements UpdateListener {
     
     private JTabbedPane tabbedPane;
 
-    private JPanel simplePanel, extendedPanel;
-
-    private boolean isRemoved = false;
+    private JPanel simplePanel, extendedPanel;    
     
-    private LinkGrabberV2FilePackage fp = null;
+    private FilePackage fp = null;
 
-    public PackageInfo(SubConfiguration guiConfig) {
+    public PackageInfo() {
         buildGui();
         fp = null;
     }
 
-    public void setPackage(LinkGrabberV2FilePackage fp) {
-        if (this.fp != null) this.fp.getUpdateBroadcaster().removeUpdateListener(this);
+    public void setPackage(FilePackage fp) {
+        //if (this.fp != null) this.fp.getUpdateBroadcaster().removeUpdateListener(this);
         this.fp = fp;
         if (this.fp != null) {
-            fp.getUpdateBroadcaster().addUpdateListener(this);
+            //fp.getUpdateBroadcaster().addUpdateListener(this);
             txtName.setText(fp.getName());
             brwSaveTo.setText(fp.getDownloadDirectory());
         }
     }
 
-    public LinkGrabberV2FilePackage getPackage() {
+    public FilePackage getPackage() {
         return fp;
     }
 
@@ -68,8 +58,8 @@ public class PackageInfo extends JPanel implements UpdateListener {
         simplePanel = new JPanel();
         simplePanel.setLayout(new MigLayout("", "[]10px[grow, left]", "[][]"));
         
-        txtName = new JLabel(fp.getName());
-        brwSaveTo = new JLabel(fp.getDownloadDirectory());
+        txtName = new JLabel();
+        brwSaveTo = new JLabel();
 
         simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
         simplePanel.add(txtName, "growx, wrap");
@@ -82,8 +72,8 @@ public class PackageInfo extends JPanel implements UpdateListener {
         
         extendedPanel.setLayout(new MigLayout("", "[]10px[grow][right]", "[][]"));
       
-        txtPassword = new JLabel(fp.getPassword());
-        txtComment = new JLabel(fp.getComment());
+        txtPassword = new JLabel();
+        txtComment = new JLabel();
         
         chbExtract = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
         chbExtract.setSelected(true);
@@ -105,14 +95,14 @@ public class PackageInfo extends JPanel implements UpdateListener {
         this.add(tabbedPane, "grow");
     }
 
-    public void UpdateEvent(UpdateEvent event) {
-        if (event.getSource() instanceof LinkGrabberV2FilePackage && this.fp != null && event.getSource() == fp && event.getID() == UpdateEvent.EMPTY_EVENT) {
-            fp.getUpdateBroadcaster().removeUpdateListener(this);
-            fp = null;
-        } else if (event.getSource() instanceof LinkGrabberV2FilePackage && this.fp != null && event.getSource() == fp && event.getID() == UpdateEvent.UPDATE_EVENT) {
-            txtName.setText(fp.getName());
-            brwSaveTo.setText(fp.getDownloadDirectory());
-        }
-    }
+//    public void UpdateEvent(UpdateEvent event) {
+//        if (event.getSource() instanceof LinkGrabberV2FilePackage && this.fp != null && event.getSource() == fp && event.getID() == UpdateEvent.EMPTY_EVENT) {
+//            //fp.getUpdateBroadcaster().removeUpdateListener(this);
+//            fp = null;
+//        } else if (event.getSource() instanceof LinkGrabberV2FilePackage && this.fp != null && event.getSource() == fp && event.getID() == UpdateEvent.UPDATE_EVENT) {
+//            txtName.setText(fp.getName());
+//            brwSaveTo.setText(fp.getDownloadDirectory());
+//        }
+//    }
 
 }

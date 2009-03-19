@@ -40,7 +40,7 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
 
     private LinkGrabberV2FilePackage fp = null;
 
-    public LinkGrabberV2FilePackageInfo(SubConfiguration guiConfig) {
+    public LinkGrabberV2FilePackageInfo() {
         buildGui();
         fp = null;
     }

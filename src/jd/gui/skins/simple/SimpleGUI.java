@@ -108,7 +108,7 @@ import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2Panel;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.ConfigPanelAddons;
@@ -614,7 +614,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     private JFrame frame;
 
-    private LinkGrabberV2 linkGrabber;
+    private LinkGrabberV2Panel linkGrabber;
 
     /**
      * Komponente, die alle Downloads anzeigt
@@ -1026,7 +1026,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         });
         taskPane.add(dlTskPane);
 
-        linkGrabber = new LinkGrabberV2(this);
+        linkGrabber = new LinkGrabberV2Panel(this);
         LinkGrabberTaskPane lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add"));
         lgTaskPane.addActionListener(linkGrabber);
         lgTaskPane.addActionListener(new ActionListener() {

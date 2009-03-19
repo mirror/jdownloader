@@ -26,7 +26,7 @@ import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 
-public class LinkGrabberV2 extends JTabbedPanel implements ActionListener, UpdateListener {
+public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, UpdateListener {
 
     private static final long serialVersionUID = 1607433619381447389L;
     protected static Vector<LinkGrabberV2FilePackage> packages = new Vector<LinkGrabberV2FilePackage>();
@@ -46,7 +46,7 @@ public class LinkGrabberV2 extends JTabbedPanel implements ActionListener, Updat
     private ProgressController pc;
     private JXCollapsiblePane collapsepane;
     private LinkGrabberV2FilePackageInfo FilePackageInfo;
-    public LinkGrabberV2(SimpleGUI parent) {
+    public LinkGrabberV2Panel(SimpleGUI parent) {
         super(new BorderLayout());
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
@@ -56,7 +56,7 @@ public class LinkGrabberV2 extends JTabbedPanel implements ActionListener, Updat
         // scrollPane.setPreferredSize(new Dimension(800, 450));
         this.add(scrollPane);
 
-        FilePackageInfo = new LinkGrabberV2FilePackageInfo(guiConfig);
+        FilePackageInfo = new LinkGrabberV2FilePackageInfo();
         collapsepane = new JXCollapsiblePane();
         collapsepane.setCollapsed(true);
 

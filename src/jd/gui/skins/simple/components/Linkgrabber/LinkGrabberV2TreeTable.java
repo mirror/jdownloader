@@ -66,7 +66,7 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListene
     public int mouseOverColumn;
     private boolean update = true;
     private boolean update2 = true;
-    private LinkGrabberV2 linkgrabber;
+    private LinkGrabberV2Panel linkgrabber;
     private LinkGrabberV2TreeTableRenderer cellRenderer;
     private TableColumnExt[] cols;
 
@@ -74,7 +74,7 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListene
 
     public static final String PROPERTY_SELECTED = "lg_selected";
 
-    public LinkGrabberV2TreeTable(LinkGrabberV2TreeTableModel treeModel, LinkGrabberV2 linkgrabber) {
+    public LinkGrabberV2TreeTable(LinkGrabberV2TreeTableModel treeModel, LinkGrabberV2Panel linkgrabber) {
         super(treeModel);
         this.linkgrabber = linkgrabber;
         JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
@@ -327,6 +327,7 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListene
     }
 
     private void addOnlineHighlighter() {
+        /* TODO: andre farbe auswählen */
         Color background = JDTheme.C("gui.color.linkgrabber.online", "00ff00");
         Color foreground = Color.DARK_GRAY;
         Color selectedBackground = background.darker();
@@ -344,6 +345,7 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListene
     }
 
     private void addOfflineHighlighter() {
+        /* TODO: andre farbe auswählen */
         Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff0000");
         Color foreground = Color.DARK_GRAY;
         Color selectedBackground = background.darker();
@@ -361,6 +363,7 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListene
     }
 
     private void addExistsHighlighter() {
+        /* TODO: andre farbe auswählen */
         Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff7f00");
         Color foreground = Color.DARK_GRAY;
         Color selectedBackground = background.darker();
@@ -376,6 +379,7 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListene
     }
 
     private void addUncheckedHighlighter() {
+        /* TODO: andre farbe auswählen */
         Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff7f00");
         Color foreground = Color.DARK_GRAY;
         Color selectedBackground = background.darker();

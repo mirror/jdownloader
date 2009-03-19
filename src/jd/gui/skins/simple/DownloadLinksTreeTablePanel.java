@@ -21,9 +21,14 @@ import java.util.Vector;
 
 import javax.swing.JScrollPane;
 
+import org.jdesktop.swingx.JXCollapsiblePane;
+
 import jd.event.ControlEvent;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2FilePackage;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2FilePackageInfo;
 import jd.gui.skins.simple.components.treetable.DownloadTreeTable;
 import jd.gui.skins.simple.components.treetable.DownloadTreeTableModel;
+import jd.gui.skins.simple.info.PackageInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
@@ -34,12 +39,30 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
     private DownloadTreeTable internalTreeTable;
 
+    private PackageInfo PackageInfo;
+
+    private JXCollapsiblePane collapsepane;
+
     public DownloadLinksTreeTablePanel(SimpleGUI parent) {
         super(parent, new BorderLayout());
-        internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(this));
+        internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(this), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
-        //scrollPane.setPreferredSize(new Dimension(800, 450));
+        PackageInfo = new PackageInfo();
+        collapsepane = new JXCollapsiblePane();
+        collapsepane.setCollapsed(true);
+
+        collapsepane.add(PackageInfo);
+        this.add(collapsepane, BorderLayout.SOUTH);
         this.add(scrollPane);
+    }
+
+    public void showFilePackageInfo(FilePackage fp) {
+        PackageInfo.setPackage(fp);
+        collapsepane.setCollapsed(false);
+    }
+
+    public void hideFilePackageInfo() {
+        collapsepane.setCollapsed(true);
     }
 
     @Override
@@ -60,16 +83,16 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
         JDUtilities.getController().removeDownloadLinks(links);
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
     }
-    
+
     public long countSelectedLinks() {
-    	Vector<DownloadLink> links = internalTreeTable.getSelectedDownloadLinks();
+        Vector<DownloadLink> links = internalTreeTable.getSelectedDownloadLinks();
         Vector<FilePackage> fps = internalTreeTable.getSelectedFilePackages();
         for (FilePackage filePackage : fps) {
             links.addAll(filePackage.getDownloadLinks());
         }
         return links.size();
     }
-    
+
     public long countSelectedPackages() {
         Vector<FilePackage> fps = internalTreeTable.getSelectedFilePackages();
         return fps.size();
@@ -78,12 +101,12 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
     @Override
     public void onDisplay() {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void onHide() {
         // TODO Auto-generated method stub
-        
+
     }
 }

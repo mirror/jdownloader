@@ -65,12 +65,14 @@ import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.DownloadInfo;
+import jd.gui.skins.simple.DownloadLinksTreeTablePanel;
 import jd.gui.skins.simple.DownloadLinksView;
 import jd.gui.skins.simple.JDAction;
-import jd.gui.skins.simple.PackageInfo;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2FilePackage;
+import jd.gui.skins.simple.info.PackageInfo;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
@@ -139,9 +141,11 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
 
     private TableColumnExt[] cols;
 
-    public DownloadTreeTable(DownloadTreeTableModel treeModel) {
-        super(treeModel);
+    private DownloadLinksTreeTablePanel panel;
 
+    public DownloadTreeTable(DownloadTreeTableModel treeModel, DownloadLinksTreeTablePanel panel) {
+        super(treeModel);
+        this.panel = panel;
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         cellRenderer = new TreeTableRenderer(this);
 
@@ -381,11 +385,11 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
         }
 
         final SubConfiguration config = JDUtilities.getSubConfig("gui");
-cols=new TableColumnExt[getModel().getColumnCount()];
+        cols = new TableColumnExt[getModel().getColumnCount()];
         for (int i = 0; i < getModel().getColumnCount(); i++) {
 
             TableColumnExt tableColumn = getColumnFactory().createAndConfigureTableColumn(getModel(), i);
-            cols[i]=tableColumn;
+            cols[i] = tableColumn;
             if (i > 0) {
                 tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent evt) {
@@ -567,7 +571,7 @@ cols=new TableColumnExt[getModel().getColumnCount()];
             break;
         case TreeTableAction.PACKAGE_INFO:
             fp = (FilePackage) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("package");
-            new PackageInfo(SimpleGUI.CURRENTGUI.getFrame(), fp);
+            // new PackageInfo(SimpleGUI.CURRENTGUI.getFrame(), fp);
 
             break;
         case TreeTableAction.PACKAGE_EDIT_DIR:
@@ -936,8 +940,9 @@ cols=new TableColumnExt[getModel().getColumnCount()];
             Object obj = path.getLastPathComponent();
             if (obj instanceof DownloadLink) {
                 new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), (DownloadLink) obj);
-            } else if (obj instanceof FilePackage && columnAtPoint(e.getPoint()) > 0) {
-                new PackageInfo(SimpleGUI.CURRENTGUI.getFrame(), (FilePackage) obj);
+                panel.hideFilePackageInfo();
+            } else if (obj instanceof FilePackage) {
+                panel.showFilePackageInfo((FilePackage) obj);
             }
         }
     }
