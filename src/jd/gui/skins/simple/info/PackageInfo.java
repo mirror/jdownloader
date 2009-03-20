@@ -7,6 +7,7 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
+import jd.gui.skins.simple.components.JDTextField;
 import jd.plugins.FilePackage;
 import jd.utils.JDLocale;
 import net.miginfocom.swing.MigLayout;
@@ -15,13 +16,13 @@ public class PackageInfo extends JPanel {
 
     private static final long serialVersionUID = 5410296068527460629L;
 
-    private JLabel brwSaveTo;
+    private JDTextField brwSaveTo;
 
-    private JLabel txtComment;
+    private JDTextField txtComment;
 
-    private JLabel txtName;
+    private JDTextField txtName;
 
-    private JLabel txtPassword;
+    private JDTextField txtPassword;
 
     private JCheckBox chbExtract;
 
@@ -43,9 +44,10 @@ public class PackageInfo extends JPanel {
         this.fp = fp;
         if (this.fp != null) {
             //fp.getUpdateBroadcaster().addUpdateListener(this);
-            txtName.setIcon(fp.getDownloadLinks().get(0).getIcon(48, 48));
             txtName.setText(fp.getName());
             brwSaveTo.setText(fp.getDownloadDirectory());
+            txtPassword.setText(fp.getPassword());
+            txtComment.setText(fp.getComment());
         }
     }
 
@@ -59,8 +61,10 @@ public class PackageInfo extends JPanel {
         simplePanel = new JPanel();
         simplePanel.setLayout(new MigLayout("", "[]10px[grow, left]", "[][]"));
         
-        txtName = new JLabel();
-        brwSaveTo = new JLabel();
+        txtName = new JDTextField();
+        txtName.setEnabled(false);
+        brwSaveTo = new JDTextField();
+        brwSaveTo.setEnabled(false);
 
         simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
         simplePanel.add(txtName, "growx, wrap");
@@ -73,8 +77,10 @@ public class PackageInfo extends JPanel {
         
         extendedPanel.setLayout(new MigLayout("", "[]10px[grow][right]", "[][]"));
       
-        txtPassword = new JLabel();
-        txtComment = new JLabel();
+        txtPassword = new JDTextField();
+        txtPassword.setEnabled(false);
+        txtComment = new JDTextField();
+        txtComment.setEnabled(false);
         
         chbExtract = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
         chbExtract.setSelected(true);
@@ -82,14 +88,16 @@ public class PackageInfo extends JPanel {
         chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
 
         cbPrio = new JComboBox(new Integer[] { 4, 3, 2, 1, 0, -1, -2, -3, -4});
-                
+        cbPrio.setSelectedIndex(4);
+        
         extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
         extendedPanel.add(txtPassword, "growx");
-        extendedPanel.add(chbExtract, "wrap");
+        extendedPanel.add(new JLabel(JDLocale.L("gui.table.contextmenu.priority", "Priorität")));
+        extendedPanel.add(cbPrio, "wrap");
+        
         extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
         extendedPanel.add(txtComment, "grow");
-        extendedPanel.add(cbPrio, "wrap");
-
+        
         tabbedPane.add(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Extended"), extendedPanel);
 
         this.setLayout(new MigLayout("", "[grow]", "[]"));
