@@ -95,7 +95,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     public static ConversionMode DisplayDialog(ArrayList<ConversionMode> displaymodes, String name, CryptedLink link) throws InterruptedException {
-        link.getProgressController().setStatusText(SimpleGUI.WAITING_USER_IO);
+        link.getProgressController().setStatusText(JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
         JDUtilities.acquireUserIO_Semaphore();
         ConversionMode temp = ConvertDialog.DisplayDialog(displaymodes, name);
         JDUtilities.releaseUserIO_Semaphore();
