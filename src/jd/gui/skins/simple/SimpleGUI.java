@@ -271,7 +271,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 } else if (p == JDUtilities.getConfiguration() && event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
                     chbPremium.setSelected(p.getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
                 } else if (event.getID() == ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED) {
-//                    btnStartStop.setIcon(new ImageIcon(JDImage.getImage(getStartStopDownloadImage())));
+                    // btnStartStop.setIcon(new
+                    // ImageIcon(JDImage.getImage(getStartStopDownloadImage
+                    // ())));
                     // btnPause.setIcon(new
                     // ImageIcon(JDUtilities.getImage(getPauseImage())));
                 }
@@ -600,10 +602,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     /**
      * Ein Togglebutton zum Starten / Stoppen der Downloads
      */
-//    public JButton btnStartStop;
-
+    // public JButton btnStartStop;
     // private JDAction doReconnect;
-
     Dropper dragNDrop;
 
     /**
@@ -787,7 +787,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             logger.finer("Clipboard");
             ClipboardHandler.getClipboard().toggleActivation();
             break;
-       
+
         case JDAction.APP_SAVE_DLC:
             JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
             fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
@@ -940,13 +940,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public synchronized void addLinksToGrabber(Vector<DownloadLink> links) {
         logger.info("GRAB");
-
         DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
-
         logger.info("add to grabber");
         linkGrabber.addLinks(linkList);
+        taskPane.add(1, lgTaskPane);
+        taskPane.switcher(lgTaskPane);
         contentPanel.display(linkGrabber);
-        this.taskPane.switcher(lgTaskPane);
         dragNDrop.setText(JDLocale.L("gui.droptarget.grabbed", "Grabbed:") + " " + linkList.length + " (" + links.size() + ")");
     }
 
@@ -1034,7 +1033,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         taskPane.add(dlTskPane);
 
         linkGrabber = new LinkGrabberV2Panel(this);
-
         lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber"));
         lgTaskPane.addActionListener(linkGrabber);
         lgTaskPane.setEnabled(false);
@@ -1046,7 +1044,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 }
             }
         });
-        taskPane.add(lgTaskPane);
 
         ConfigTaskPane cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration"));
         cfgTskPane.addActionListener(new ActionListener() {
@@ -1184,7 +1181,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     } catch (InterruptedException e) {
                     }
                     if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, false)) {
-                       JDUtilities.getController().startDownloads();
+                        JDUtilities.getController().startDownloads();
                     }
 
                     break;
@@ -1213,10 +1210,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
                 case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                     logger.info("ALL FINISHED");
-//                    btnStartStop.setEnabled(true);
+                    // btnStartStop.setEnabled(true);
                     // btnPause.setEnabled(false);
                     // btnPause.setSelected(false);
-//                    btnStartStop.setIcon(new ImageIcon(JDImage.getImage(getStartStopDownloadImage())));
+                    // btnStartStop.setIcon(new
+                    // ImageIcon(JDImage.getImage(getStartStopDownloadImage
+                    // ())));
                     // btnPause.setIcon(new
                     // ImageIcon(JDUtilities.getImage(getPauseImage())));
 
@@ -1252,17 +1251,21 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     // it cannot handle this
 
                     if (speedmeter != null) speedmeter.start();
-//                    btnStartStop.setEnabled(true);
+                    // btnStartStop.setEnabled(true);
                     // btnPause.setEnabled(true);
-//                    btnStartStop.setIcon(new ImageIcon(JDImage.getImage(getStartStopDownloadImage())));
+                    // btnStartStop.setIcon(new
+                    // ImageIcon(JDImage.getImage(getStartStopDownloadImage
+                    // ())));
                     // btnPause.setIcon(new
                     // ImageIcon(JDUtilities.getImage(getPauseImage())));
                     break;
                 case ControlEvent.CONTROL_DOWNLOAD_STOP:
                     if (speedmeter != null) speedmeter.stop();
-//                    btnStartStop.setEnabled(true);
+                    // btnStartStop.setEnabled(true);
                     // btnPause.setEnabled(true);
-//                    btnStartStop.setIcon(new ImageIcon(JDImage.getImage(getStartStopDownloadImage())));
+                    // btnStartStop.setIcon(new
+                    // ImageIcon(JDImage.getImage(getStartStopDownloadImage
+                    // ())));
                     // btnPause.setIcon(new
                     // ImageIcon(JDUtilities.getImage(getPauseImage())));
                     break;
@@ -1432,8 +1435,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     // return JDTheme.V("gui.images.stop_after");
     // }
     // }
-
-
 
     /**
      * Die Aktionen werden initialisiert
@@ -1823,8 +1824,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         pop.setLocation(JDUtilities.getCenterOfComponent(parent, pop));
         pop.setVisible(true);
     }
-
-
 
     public void toggleDnD() {
         if (dragNDrop.isVisible()) {

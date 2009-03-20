@@ -618,8 +618,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             } catch (UnknownHostException e) {
                 available = false;
                 break;
-            } catch (PluginException e) {
-                e.printStackTrace();
+            } catch (PluginException e) {                
                 e.fillLinkStatus(this.getLinkStatus());
                 logger.severe("Hoster Plugin Version: " + getPlugin().getVersion());
                 break;

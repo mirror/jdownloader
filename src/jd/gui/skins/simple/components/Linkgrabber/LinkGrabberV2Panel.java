@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -18,9 +20,11 @@ import jd.event.UIEvent;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -31,6 +35,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     private static final long serialVersionUID = 1607433619381447389L;
     protected static Vector<LinkGrabberV2FilePackage> packages = new Vector<LinkGrabberV2FilePackage>();
     public static final String PROPERTY_ONLINE_CHECK = "DO_ONLINE_CHECK_V2";
+    public static final String PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
 
     private Vector<DownloadLink> totalLinkList = new Vector<DownloadLink>();
     private Vector<DownloadLink> waitingList = new Vector<DownloadLink>();
@@ -46,6 +51,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     private ProgressController pc;
     private JXCollapsiblePane collapsepane;
     private LinkGrabberV2FilePackageInfo FilePackageInfo;
+
     public LinkGrabberV2Panel(SimpleGUI parent) {
         super(new BorderLayout());
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
@@ -53,13 +59,10 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         internalTreeTable = new LinkGrabberV2TreeTable(new LinkGrabberV2TreeTableModel(this), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
-        // scrollPane.setPreferredSize(new Dimension(800, 450));
         this.add(scrollPane);
-
         FilePackageInfo = new LinkGrabberV2FilePackageInfo();
         collapsepane = new JXCollapsiblePane();
         collapsepane.setCollapsed(true);
-
         collapsepane.add(FilePackageInfo);
         this.add(collapsepane, BorderLayout.SOUTH);
     }
@@ -69,7 +72,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         collapsepane.setCollapsed(false);
     }
 
-    public void hideFilePackageInfo() {        
+    public void hideFilePackageInfo() {
         collapsepane.setCollapsed(true);
     }
 
@@ -176,41 +179,92 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         return false;
     }
 
-    private synchronized void startLinkGatherer() {
+    private void startLinkGatherer() {
         if (gatherer != null && gatherer.isAlive()) { return; }
         gatherer = new Thread() {
             public void run() {
+                if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) return;
                 pc = new ProgressController("onlinecheck");
                 pc.setRange(0);
-                Vector<DownloadLink> links = new Vector<DownloadLink>();
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                }
-                if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) return;
                 while (waitingList.size() != 0) {
+                    while (waitingList.size() > 0) {
+                        HashMap<String, ArrayList<DownloadLink>> map = new HashMap<String, ArrayList<DownloadLink>>();
+                        for (Iterator<DownloadLink> it = waitingList.iterator(); it.hasNext();) {
+                            pc.addToMax(1);
+                            DownloadLink l = it.next();
+                            it.remove();
+                            ArrayList<DownloadLink> localList = map.get(l.getPlugin().getHost());
+                            if (localList == null) {
+                                localList = new ArrayList<DownloadLink>();
+                                map.put(l.getPlugin().getHost(), localList);
+                            }
+                            localList.add(l);
+                        }
+                        ArrayList<DownloadLink> hosterList;
+                        for (Iterator<ArrayList<DownloadLink>> it = map.values().iterator(); it.hasNext();) {
+                            hosterList = it.next();
+                            DownloadLink link = hosterList.get(0);
+                            boolean ret = ((PluginForHost) link.getPlugin()).checkLinks(hosterList.toArray(new DownloadLink[] {}));
+                            if (!ret) {
+                                for (int i = 0; i < hosterList.size(); i++) {
+                                    link = hosterList.get(i);
+                                    link.isAvailable();
+                                    pc.increase(1);
+                                    attachToPackagesSecondStage(link);
+                                    fireTableChanged(1, null);
+                                }
+                            } else {
+                                for (int i = 0; i < hosterList.size(); i++) {
+                                    link = hosterList.get(i);
+                                    pc.increase(1);
+                                    attachToPackagesSecondStage(link);
+                                    fireTableChanged(1, null);
+                                }
+                            }
+                        }
+                    }
                     try {
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {
-                    }
-                    long size = waitingList.size() - 1;
-                    pc.addToMax(size);
-                    for (int i = waitingList.size() - 1; i >= 0; i--) {
-                        links.add(waitingList.remove(i));
-                    }
-                    for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
-                        pc.increase(1);
-                        DownloadLink l = it.next();
-                        it.remove();
-                        l.isAvailable();
-                        attachToPackagesSecondStage(l);
-                        fireTableChanged(1, null);
                     }
                 }
                 pc.finalize();
             }
         };
         gatherer.start();
+    }
+
+    private String getNameMatch(String name, String pattern) {
+        String match = new Regex(name, pattern).getMatch(0);
+        if (match != null) return match;
+        return name;
+    }
+
+    private String cleanFileName(String name) {
+        /** remove rar extensions */
+
+        name = getNameMatch(name, "(.*)\\.part[0]*[1].rar$");
+        name = getNameMatch(name, "(.*)\\.part[0-9]+.rar$");
+        name = getNameMatch(name, "(.*)\\.rar$");
+
+        name = getNameMatch(name, "(.*)\\.r\\d+$");
+
+        /**
+         * remove 7zip and hjmerge extensions
+         */
+
+        name = getNameMatch(name, "(?is).*\\.7z\\.[\\d]+$");
+        name = getNameMatch(name, "(.*)\\.a.$");
+
+        name = getNameMatch(name, "(.*)\\.[\\d]+($|\\.(7z|rar|divx|avi|xvid|bz2|doc|gz|jpg|jpeg|m4a|mdf|mkv|mp3|mp4|mpg|mpeg|pdf|wma|wmv|xcf|zip|jar|swf|class|bmp|cue|bin|dll|cab|png|ico|exe|gif|iso|flv|cso)$)");
+
+        int lastPoint = name.lastIndexOf(".");
+        if (lastPoint <= 0) return name;
+        String extension = name.substring(name.length() - lastPoint + 1);
+        if (extension.length() > 0 && extension.length() < 6) {
+            name = name.substring(0, lastPoint);
+        }
+        return JDUtilities.removeEndingPoints(name);
     }
 
     private synchronized void attachToPackagesSecondStage(DownloadLink link) {
@@ -220,7 +274,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
             packageName = link.getFilePackage().getName();
         } else {
             autoPackage = true;
-            packageName = removeExtension(link.getName());
+            packageName = cleanFileName(link.getName());
         }
         synchronized (packages) {
             int bestSim = 0;
@@ -243,23 +297,6 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         }
     }
 
-    private String removeExtension(String a) {
-        if (a == null) { return a; }
-        a = a.replaceAll("\\.part([0-9]+)", "");
-        a = a.replaceAll("\\.html", "");
-        a = a.replaceAll("\\.htm", "");
-
-        int i = a.lastIndexOf(".");
-        String ret;
-        if (i <= 1 || a.length() - i > 5) {
-            ret = a.trim();
-        } else {
-            ret = a.substring(0, i).trim();
-        }
-
-        return JDUtilities.removeEndingPoints(ret);
-    }
-
     private int comparepackages(String a, String b) {
 
         int c = 0;
@@ -269,7 +306,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
             }
         }
         if (Math.min(a.length(), b.length()) == 0) { return 0; }
-        return c * 100 / b.length();
+        return c * 100 / Math.min(a.length(), b.length());
     }
 
     @Override

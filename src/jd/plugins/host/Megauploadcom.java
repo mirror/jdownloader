@@ -303,15 +303,19 @@ public class Megauploadcom extends PluginForHost {
                     int d = Integer.parseInt(string.substring(2, string.indexOf('=')));
                     String name = queryQ.get("n");
                     DownloadLink downloadLink = urls[d];
-                    downloadLink.setAvailable(false);
                     if (name != null) {
-
                         downloadLink.setFinalFileName(name);
                         downloadLink.setDownloadSize(Long.parseLong(queryQ.get("s")));
                         downloadLink.setDupecheckAllowed(true);
                         downloadLink.setAvailable(true);
+                    } else {
+                        /*
+                         * damit der linkgrabber nicht die kryptischen ?d=
+                         * anzeigt
+                         */
+                        downloadLink.setName(DownloadLink.UNKNOWN_FILE_NAME);
+                        downloadLink.setAvailable(false);
                     }
-                  
                 } catch (Exception e) {
                 }
             }
@@ -569,5 +573,4 @@ public class Megauploadcom extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), CAPTCHA_MODE, captchmodes, JDLocale.L("plugins.host.megaupload.captchamode.title", "Captcha mode:")).setDefaultValue(JDLocale.L("plugins.host.megaupload.captchamode_auto", "auto")));
     }
 
-   
 }

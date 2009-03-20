@@ -166,7 +166,7 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListene
     }
 
     public void updateSelectionAndExpandStatus() {
-        System.out.println("update selecetion");
+        //System.out.println("update selecetion");
         update2 = false;
         int i = 0;
         while (getPathForRow(i) != null) {
@@ -191,7 +191,7 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements ActionListene
 
     public void valueChanged(TreeSelectionEvent e) {
         TreePath[] paths = e.getPaths();
-        System.out.println("" + update);
+        //System.out.println("" + update);
         if (update == false || update2 == false) return;
         for (TreePath path : paths) {
             if (e.isAddedPath(path)) {

@@ -1232,14 +1232,17 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
     // mAutoPackage = new
     // JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.autopackage",
     // "Auto. Pakete"));
-    // mAutoPackage.setSelected(guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE,
+    //mAutoPackage.setSelected(guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE
+    // ,
     // true));
     // mAutoPackage.addActionListener(this);
     //
     // mStartAfterAdding = new
-    // JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.startafteradding",
+    //JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.startafteradding"
+    // ,
     // "Automatischer Downloadstart"));
-    // mStartAfterAdding.setSelected(guiConfig.getBooleanProperty(PROPERTY_STARTAFTERADDING,
+    // mStartAfterAdding.setSelected(guiConfig.getBooleanProperty(
+    // PROPERTY_STARTAFTERADDING,
     // false));
     // mStartAfterAdding.addActionListener(this);
     //
@@ -1312,16 +1315,19 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
     // "Host Auswahl"));
     // menu.add(submenu);
     // mHostSelectionPackageOnly = new
-    // JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.hostSelectionPackageOnly",
+    // JCheckBoxMenuItem(JDLocale.L(
+    // "gui.linkgrabber.menu.hostSelectionPackageOnly",
     // "Nur aktuelles Paket"));
-    // mHostSelectionPackageOnly.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONPACKAGEONLY,
+    // mHostSelectionPackageOnly.setSelected(guiConfig.getBooleanProperty(
+    // PROPERTY_HOSTSELECTIONPACKAGEONLY,
     // false));
     // mHostSelectionPackageOnly.addActionListener(this);
     // submenu.add(mHostSelectionPackageOnly);
     // mHostSelectionRemove = new
     // JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.hostSelectionRemove",
     // "Restliche Links verwerfen"));
-    // mHostSelectionRemove.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONREMOVE,
+    // mHostSelectionRemove.setSelected(guiConfig.getBooleanProperty(
+    // PROPERTY_HOSTSELECTIONREMOVE,
     // true));
     // mHostSelectionRemove.addActionListener(this);
     // submenu.add(mHostSelectionRemove);
@@ -1931,44 +1937,39 @@ public class LinkGrabber extends JTabbedPanel implements ActionListener, DropTar
             }
         }
 
-        // // logger.finer("Auto package");
-        // int bestSim = 0;
-        // int bestIndex = -1;
-        // // logger.info("link: " + link.getName());
-        // for (int i = 0; i < tabList.size(); i++) {
-        //
-        // int sim = comparePackages(tabList.get(i).getPackageName(),
-        // packageName);
-        // if (sim > bestSim) {
-        // bestSim = sim;
-        // bestIndex = i;
-        // }
-        // }
-        //
-        // String g = null;
-        // try {
-        // g = new URL(link.getDownloadURL()).getQuery();
-        // } catch (MalformedURLException e) {
-        //
-        // }
-        // // logger.info("Best sym: "+bestSim);
-        // if ((bestSim <
-        // guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 99) &&
-        // !(!link.isAvailabilityChecked() && g != null)) || bestSim <= 0) {
-        //
-        // addLinkToTab(link, tabList.size());
-        // tabList.get(tabList.size() - 1).setPackageName(packageName);
-        // } else {
-        // // logger.info("Found package " +
-        // // tabList.get(bestIndex).getpackageName());
-        // String newPackageName = autoPackage ?
-        // JDUtilities.getSimString(tabList.get(bestIndex).getPackageName(),
-        // packageName) : packageName;
-        // tabList.get(bestIndex).setPackageName(newPackageName);
-        // onPackageNameChanged(tabList.get(bestIndex));
-        // addLinkToTab(link, bestIndex);
-        //
-        // }
+        // logger.finer("Auto package");
+        int bestSim = 0;
+        int bestIndex = -1;
+        // logger.info("link: " + link.getName());
+        for (int i = 0; i < tabList.size(); i++) {
+
+            int sim = comparePackages(tabList.get(i).getPackageName(), packageName);
+            if (sim > bestSim) {
+                bestSim = sim;
+                bestIndex = i;
+            }
+        }
+
+        String g = null;
+        try {
+            g = new URL(link.getDownloadURL()).getQuery();
+        } catch (MalformedURLException e) {
+
+        }
+        // logger.info("Best sym: "+bestSim);
+        if ((bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 99) && !(!link.isAvailabilityChecked() && g != null)) || bestSim <= 0) {
+
+            addLinkToTab(link, tabList.size());
+            tabList.get(tabList.size() - 1).setPackageName(packageName);
+        } else {
+            // logger.info("Found package " +
+            // tabList.get(bestIndex).getpackageName());
+            String newPackageName = autoPackage ? JDUtilities.getSimString(tabList.get(bestIndex).getPackageName(), packageName) : packageName;
+            tabList.get(bestIndex).setPackageName(newPackageName);
+            onPackageNameChanged(tabList.get(bestIndex));
+            addLinkToTab(link, bestIndex);
+
+        }
 
         // }
 

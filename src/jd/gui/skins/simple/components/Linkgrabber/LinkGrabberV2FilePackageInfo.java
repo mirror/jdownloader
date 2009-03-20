@@ -111,12 +111,9 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
     }
 
     public void UpdateEvent(UpdateEvent event) {
-        System.out.println(event);
         if (event.getSource() instanceof LinkGrabberV2FilePackage && this.fp != null && event.getSource() == fp && event.getID() == UpdateEvent.EMPTY_EVENT) {
-            System.out.println("Remove Listener from InfoPanel");
             fp.getUpdateBroadcaster().removeUpdateListener(this);
         } else if (event.getSource() instanceof LinkGrabberV2FilePackage && this.fp != null && event.getSource() == fp && event.getID() == UpdateEvent.UPDATE_EVENT) {
-            System.out.println("Update InfoPanel");
             txtName.setText(fp.getName());
             brwSaveTo.setText(fp.getDownloadDirectory());
         }

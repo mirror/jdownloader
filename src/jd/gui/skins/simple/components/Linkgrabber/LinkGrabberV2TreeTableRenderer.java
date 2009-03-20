@@ -47,17 +47,16 @@ public class LinkGrabberV2TreeTableRenderer extends DefaultTableRenderer impleme
     private String strUnchecked;
     private String strExists;
 
+    private ImageIcon imgFinished;
+
+    private ImageIcon imgFailed;
+
     public LinkGrabberV2TreeTableRenderer(LinkGrabberV2TreeTable linkgrabberTreeTable) {
-
-        icon_link = new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.link")));
-
-        icon_fp_open = new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.package_closed")));
-
-        icon_fp_closed = new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.package_opened")));
 
         table = linkgrabberTreeTable;
         leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
         initLocale();
+        initIcons();
     }
 
     private void initLocale() {
@@ -65,6 +64,17 @@ public class LinkGrabberV2TreeTableRenderer extends DefaultTableRenderer impleme
         strOffline = "offline";
         strExists = " (already in list)";
         strUnchecked = "unchecked";
+    }
+
+    private void initIcons() {
+        icon_link = JDTheme.II("gui.images.link", 16, 16);
+
+        icon_fp_open = JDTheme.II("gui.images.package_closed", 16, 16);
+
+        icon_fp_closed = JDTheme.II("gui.images.package_opened", 16, 16);
+        imgFinished = JDTheme.II("gui.images.selected", 16, 16);
+        imgFailed = JDTheme.II("gui.images.unselected", 16, 16);
+
     }
 
     @Override
@@ -86,7 +96,7 @@ public class LinkGrabberV2TreeTableRenderer extends DefaultTableRenderer impleme
         switch (column) {
         case LinkGrabberV2TreeTableModel.COL_PACK_FILE:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ((JRendererLabel) co).setIcon(icon_link);
+            ((JRendererLabel) co).setIcon(dLink.getIcon());
             ((JRendererLabel) co).setText(dLink.getName());
             ((JRendererLabel) co).setBorder(leftGap);
             return co;
@@ -97,21 +107,26 @@ public class LinkGrabberV2TreeTableRenderer extends DefaultTableRenderer impleme
             value = dLink.getPlugin().getHost();
             break;
         case LinkGrabberV2TreeTableModel.COL_STATUS:
+            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             clearSB();
             if (!dLink.isAvailabilityChecked()) {
+                ((JRendererLabel) co).setIcon(null);
                 sb.append(strUnchecked);
             } else {
                 if (dLink.isAvailable()) {
+                    ((JRendererLabel) co).setIcon(imgFinished);
                     sb.append(strOnline);
                 } else {
+                    ((JRendererLabel) co).setIcon(imgFailed);
                     sb.append(strOffline);
                 }
             }
             if (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
                 sb.append(strExists);
             }
-            value = sb.toString();
-            break;
+            ((JRendererLabel) co).setText(sb.toString());
+            ((JRendererLabel) co).setBorder(null);
+            return co;
         }
         co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         ((JRendererLabel) co).setBorder(null);
