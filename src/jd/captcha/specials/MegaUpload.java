@@ -158,14 +158,12 @@ public class MegaUpload {
         captcha.setGrid(grid);
         try {
             BasicWindow.showImage(captcha.getImage(1));
-            File file2;
             file = JDUtilities.getResourceFile("caps/mu/borders/" + System.currentTimeMillis() + ".png");
             file.mkdirs();
             ImageIO.write((RenderedImage) captcha.getImage(1), "png", file);
 
             System.out.println(file);
         } catch (IOException e1) {
-            // TODO Auto-generated catch block
             e1.printStackTrace();
         }
     }

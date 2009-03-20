@@ -21,8 +21,10 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.config.MenuItem;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 
 /**
  * Editor for jDownloader language files. Gets JDLocale.L() and JDLocale.LF()
@@ -33,19 +35,18 @@ import jd.utils.JDLocale;
  */
 public class LangFileEditor extends PluginOptional {
 
+    private LFETaskPane tp = null;
+
     public LangFileEditor(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
-            showGui();
-        }
-    }
-
-    private void showGui() {
-        // TODO: In SideBar einklinken
+        // if (e.getSource() instanceof MenuItem && ((MenuItem)
+        // e.getSource()).getActionID() == 0) {
+        // showGui();
+        // }
     }
 
     @Override
@@ -55,20 +56,25 @@ public class LangFileEditor extends PluginOptional {
 
     @Override
     public boolean initAddon() {
+        if (tp == null) tp = new LFETaskPane(getHost(), JDTheme.II("gui.images.jd_logo", 32, 32));
+        SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
         return true;
     }
 
     @Override
     public void onExit() {
+        SimpleGUI.CURRENTGUI.getTaskPane().remove(tp);
     }
 
     @Override
     public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-
-        menu.add(new MenuItem(MenuItem.NORMAL, getHost(), 0).setActionListener(this));
-
-        return menu;
+        // ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
+        //
+        // menu.add(new MenuItem(MenuItem.NORMAL, getHost(),
+        // 0).setActionListener(this));
+        //
+        // return menu;
+        return null;
     }
 
     @Override
