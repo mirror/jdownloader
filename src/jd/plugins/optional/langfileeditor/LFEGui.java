@@ -99,7 +99,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private ChartAPI_PIE keyChart;
     private ChartAPI_Entity entDone, entMissing, entOld;
     private JMenu mnuFile, mnuSVN, mnuKey, mnuEntries;
-    private JMenuItem mnuNew, mnuReload, mnuSave, mnuSaveAs, mnuClose;
+    private JMenuItem mnuNew, mnuReload, mnuSave, mnuSaveAs;// , mnuClose;
     private JMenuItem mnuSVNSettings, mnuSVNCheckOutNow;
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuPickDoneColor, mnuPickMissingColor, mnuPickOldColor, mnuShowDupes;
@@ -259,14 +259,16 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         mnuFile.add(mnuSaveAs = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.saveAs", "Save As")));
         mnuFile.addSeparator();
         mnuFile.add(mnuReload = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.reload", "Reload")));
-        mnuFile.addSeparator();
-        mnuFile.add(mnuClose = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.close", "Close")));
+        // mnuFile.addSeparator();
+        // mnuFile.add(mnuClose = new
+        // JMenuItem(JDLocale.L("plugins.optional.langfileeditor.close",
+        // "Close")));
 
         mnuNew.addActionListener(this);
         mnuSave.addActionListener(this);
         mnuSaveAs.addActionListener(this);
         mnuReload.addActionListener(this);
-        mnuClose.addActionListener(this);
+        // mnuClose.addActionListener(this);
 
         mnuSave.setEnabled(false);
         mnuSaveAs.setEnabled(false);
@@ -491,8 +493,8 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             }
 
         } else if (e.getSource() == mnuAdd) {
-            // TODO: umbauen
-            String[] result = TwoTextFieldDialog.showDialog((JFrame) null, JDLocale.L("plugins.optional.langfileeditor.addKey.title", "Add new key"), JDLocale.L("plugins.optional.langfileeditor.addKey.message1", "Type in the name of the key:"), JDLocale.L("plugins.optional.langfileeditor.addKey.message2", "Type in the translated message of the key:"), "", "");
+
+            String[] result = TwoTextFieldDialog.showDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("plugins.optional.langfileeditor.addKey.title", "Add new key"), JDLocale.L("plugins.optional.langfileeditor.addKey.message1", "Type in the name of the key:"), JDLocale.L("plugins.optional.langfileeditor.addKey.message2", "Type in the translated message of the key:"), "", "");
             if (result[0].equals("")) return;
             result[0] = result[0].toLowerCase();
             for (KeyInfo ki : data) {
@@ -623,8 +625,8 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             }
 
         } else if (e.getSource() == mnuShowDupes) {
-            // TODO
-            new DupeDialog((JFrame) null, dupes);
+
+            new DupeDialog(SimpleGUI.CURRENTGUI.getFrame(), dupes);
 
         } else if (e.getSource() == mnuTranslate || e.getSource() == mnuContextTranslate) {
 
@@ -645,8 +647,8 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 }
             }
 
-        } else if (e.getSource() == mnuClose) {
-            // TODO: aus SideBar ausklinken
+            // } else if (e.getSource() == mnuClose) {
+
             // this.setVisible(false);
             // this.dispose();
 
@@ -671,8 +673,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
             }, JDLocale.L("plugins.optional.langfileeditor.svn.checkOut", "CheckOut SVN now (This may take several seconds ...)")));
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SVN_UPDATE_ON_START, JDLocale.L("plugins.optional.langfileeditor.svn.checkOutOnStart", "CheckOut SVN on start")).setDefaultValue(false));
-            // TODO umbauen
-            SimpleGUI.showConfigDialog((JFrame) null, container);
+            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI.getFrame(), container);
 
         } else if (e.getSource() == mnuSVNCheckOutNow) {
 
@@ -785,7 +786,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     private void changed(boolean b) {
         if (b != changed) {
-            // TODO
+            // TODO: weglassen?
             if (b) {
                 // this.setTitle(JDLocale.L("plugins.optional.langfileeditor.title",
                 // "jDownloader - Language File Editor") + " [ * " +
@@ -878,9 +879,9 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         tableModel.fireTableRowsInserted(0, data.size() - 1);
         table.packAll();
         changed = false;
-        // TODO
+        // TODO: weglassen?
         // if (languageFile != null)
-        // this.sectTitle(JDLocale.L("plugins.optional.langfileeditor.title",
+        // this.setTitle(JDLocale.L("plugins.optional.langfileeditor.title",
         // "jDownloader - Language File Editor") + " [" +
         // languageFile.getAbsolutePath() + "]");
 

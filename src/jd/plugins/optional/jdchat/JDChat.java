@@ -900,16 +900,14 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         frame = new JTabbedPanel(new BorderLayout()) {
 
+            private static final long serialVersionUID = 2138710083573682339L;
+
             @Override
             public void onDisplay() {
-                // TODO Auto-generated method stub
-
             }
 
             @Override
             public void onHide() {
-                // TODO Auto-generated method stub
-
             }
 
         };
@@ -1459,8 +1457,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     class JDChatTaskPane extends TaskPanel implements ActionListener {
 
-        public static final int ACTION_SHOW_PANEL = 1;
-        public static final int ACTION_ADD_ALL = 100;
+        private static final long serialVersionUID = -3605903829655094565L;
 
         public JDChatTaskPane(String string, ImageIcon ii) {
             super(string, ii, "jdchataddon");
@@ -1470,14 +1467,12 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
 
         private void initGUI() {
-            JScrollPane sp;
-            this.add(sp=new JScrollPane(right));
-            sp.setMaximumSize(new Dimension(300,300));
+            JScrollPane sp = new JScrollPane(right);
+            sp.setMaximumSize(new Dimension(300, 300));
+            this.add(sp);
         }
 
         public void actionPerformed(ActionEvent e) {
-            // TODO Auto-generated method stub
-
         }
 
     }
