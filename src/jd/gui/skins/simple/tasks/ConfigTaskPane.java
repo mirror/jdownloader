@@ -44,7 +44,7 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
 
     public ConfigTaskPane(String string, ImageIcon ii) {
         super(string, ii, "config");
-        this.setLayout(new MigLayout("ins 0, wrap 1", "[fill]"));
+        this.setLayout(new MigLayout("ins 0, wrap 1", "[fill]","[]0[]0[]0[]0[]0[]0[]0[]0[]"));
         JDUtilities.getController().addControlListener(this);
         initGUI();
     }

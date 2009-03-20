@@ -25,7 +25,7 @@ public class PremiumTaskPane extends TaskPanel implements ControlListener, Actio
 
     public PremiumTaskPane(String string, ImageIcon ii) {
         super(string, ii, "premium");
-        this.setLayout(new MigLayout("ins 0, wrap 1", "[fill]"));
+        this.setLayout(new MigLayout("ins 0, wrap 1", "[fill]","[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0"));
         JDUtilities.getController().addControlListener(this);
         initGUI();
     }

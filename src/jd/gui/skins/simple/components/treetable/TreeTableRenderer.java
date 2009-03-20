@@ -143,12 +143,11 @@ this.strWaitIO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user i
             co = getDownloadLinkCell(table, value, isSelected, hasFocus, row, column);
             if (!((DownloadLink) value).isEnabled()) {
                 co.setEnabled(false);
-            } else {
-                co.setEnabled(true);
-            }
+            } 
         } else {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         }
+        co.setEnabled(true);
         return co;
 
     }

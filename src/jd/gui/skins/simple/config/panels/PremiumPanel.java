@@ -206,7 +206,7 @@ public class PremiumPanel extends JPanel {
             panel.add(btnCheck = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")), "w pref:pref:pref, split 2");
             btnCheck.addActionListener(this);
 
-            panel.add(btnDelete = new JButton(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.exit"), -1, 14)));
+            panel.add(btnDelete = new JButton(JDTheme.II("gui.images.exit", 14, 14)));
             btnDelete.addActionListener(this);
 
             panel.add(new JSeparator(), "w 30:push, growx, pushx");

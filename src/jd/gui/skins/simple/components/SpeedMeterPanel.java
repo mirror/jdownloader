@@ -53,15 +53,12 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
 
         }
 
-        this.setVisible(false);
+       this.setVisible(false);
         JDUtilities.getController().addControlListener(this);
 
     }
 
-    public Dimension getPreferredSize() {
-        if (!UIManager.getLookAndFeel().getName().equals("Nimbus") && !UIManager.getLookAndFeel().getName().equals("gtk")) { return super.getPreferredSize(); }
-        return new Dimension(300, 45);
-    }
+
 
     public void start() {
         if (th != null) return;
@@ -94,7 +91,7 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
             th.interrupt();
             th = null;
         }
-        fadeOut();
+      fadeOut();
 
     }
 
