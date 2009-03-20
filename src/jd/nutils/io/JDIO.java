@@ -34,11 +34,8 @@ import java.io.OutputStreamWriter;
 import java.nio.channels.FileChannel;
 import java.util.Vector;
 
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.filechooser.FileSystemView;
 
 import jd.nutils.JDHash;
 

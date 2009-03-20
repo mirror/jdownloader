@@ -21,17 +21,15 @@ import java.util.Vector;
 
 import javax.swing.JScrollPane;
 
-import org.jdesktop.swingx.JXCollapsiblePane;
-
 import jd.event.ControlEvent;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2FilePackage;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2FilePackageInfo;
 import jd.gui.skins.simple.components.treetable.DownloadTreeTable;
 import jd.gui.skins.simple.components.treetable.DownloadTreeTableModel;
 import jd.gui.skins.simple.info.PackageInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
+
+import org.jdesktop.swingx.JXCollapsiblePane;
 
 public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 

@@ -15,7 +15,7 @@ public class jd implements EntryPoint {
      * This is the entry point method.
      */
     public void onModuleLoad() {
-        JDImage img = new JDImage("http://code.google.com/webtoolkit/logo-185x175.png");
+        Image img = new Image("http://code.google.com/webtoolkit/logo-185x175.png");
         Button button = new Button("Click me");
 
         // We can add style names

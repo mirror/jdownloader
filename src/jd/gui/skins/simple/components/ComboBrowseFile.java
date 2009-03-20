@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple.components;
 
-import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -35,10 +34,9 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 
-import net.miginfocom.swing.MigLayout;
-
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 class ComboBrowseFileEditor implements TableCellEditor, ActionListener {
 

@@ -34,7 +34,7 @@ public class AddatHu extends PluginForHost {
     public String getAGBLink() {
         return "http://www.addat.hu/";
     }
-    
+
     @Override
     public String getCoder() {
         return "TnS";
@@ -42,7 +42,6 @@ public class AddatHu extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
@@ -51,35 +50,34 @@ public class AddatHu extends PluginForHost {
         downloadLink.setDownloadSize(length);
         downloadLink.setName(dat[0].trim());
         return true;
-
     }
 
     @Override
     public String getVersion() {
-
-        return getVersion("$Revision: 4893 $");
+        return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
         br.setFollowRedirects(true);
         getFileInformation(downloadLink);
         String link = br.getRegex(Pattern.compile("<a href=\"(.*)\"><img border=\"0\" src=\"/images/letoltes_btn.jpg\"></a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         br.openDownload(downloadLink, link, true, 1).startDownload();
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
 
+    @Override
     public int getMaxConnections() {
         return 1;
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
-
     }
 
     @Override

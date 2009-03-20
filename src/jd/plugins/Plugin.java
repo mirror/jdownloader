@@ -36,7 +36,6 @@ import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.ConvertDialog;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.Browser;
 import jd.http.Encoding;

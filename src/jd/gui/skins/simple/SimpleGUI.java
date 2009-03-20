@@ -89,7 +89,6 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.ClipboardHandler;
-import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;

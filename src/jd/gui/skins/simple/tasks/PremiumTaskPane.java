@@ -8,8 +8,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JSeparator;
 
-import net.miginfocom.swing.MigLayout;
-
 import jd.HostPluginWrapper;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -17,6 +15,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class PremiumTaskPane extends TaskPanel implements ControlListener, ActionListener {
     private static final long serialVersionUID = -373653036070545536L;

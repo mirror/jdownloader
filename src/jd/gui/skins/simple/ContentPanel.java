@@ -1,10 +1,5 @@
 package jd.gui.skins.simple;
 
-import java.util.ArrayList;
-
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXPanel;

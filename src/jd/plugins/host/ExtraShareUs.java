@@ -34,15 +34,14 @@ public class ExtraShareUs extends PluginForHost {
     public String getAGBLink() {
         return "http://www.extrashare.us/rules.php";
     }
-    
+
     @Override
     public String getCoder() {
         return "TnS";
     }
-    
+
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
@@ -55,30 +54,30 @@ public class ExtraShareUs extends PluginForHost {
 
     @Override
     public String getVersion() {
-
-        return getVersion("$Revision: 4893 $");
+        return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
         br.setFollowRedirects(true);
         getFileInformation(downloadLink);
         String link = br.getRegex(Pattern.compile("document.location=\"(.*)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
         br.openDownload(downloadLink, link, true, 1).startDownload();
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
 
+    @Override
     public int getMaxConnections() {
         return 1;
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
-
     }
 
     @Override

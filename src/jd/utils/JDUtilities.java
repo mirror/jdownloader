@@ -26,7 +26,6 @@ import java.awt.Insets;
 import java.awt.MediaTracker;
 import java.awt.Point;
 import java.awt.Toolkit;
-import java.awt.image.BufferedImage;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;

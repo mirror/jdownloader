@@ -87,8 +87,6 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXPanel;
-
 public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener {
 
     private static final String WRAP_BETWEEN_ROWS = ", wrap 10!";

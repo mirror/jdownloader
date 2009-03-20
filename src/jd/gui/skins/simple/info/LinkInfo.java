@@ -5,9 +5,7 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
-import javax.swing.SwingConstants;
 
-import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDTextField;
 import jd.plugins.FilePackage;
 import jd.utils.JDLocale;
