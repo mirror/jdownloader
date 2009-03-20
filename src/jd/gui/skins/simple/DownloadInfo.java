@@ -40,6 +40,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.config.SubConfiguration;
+import jd.nutils.JDImage;
 import jd.plugins.DownloadLink;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
@@ -75,7 +76,7 @@ public class DownloadInfo extends JFrame implements ChangeListener {
         downloadLink = dLink;
         setLayout(new BorderLayout(2, 2));
         setTitle(JDLocale.L("gui.linkinfo.title", "Link Information:") + " " + downloadLink.getName());
-        setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.link")));
+        setIconImage(JDImage.getImage(JDTheme.V("gui.images.link")));
         setResizable(true);
         setAlwaysOnTop(true);
 

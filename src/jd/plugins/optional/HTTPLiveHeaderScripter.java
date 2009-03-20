@@ -65,6 +65,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
+import jd.nutils.JDImage;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -435,7 +436,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         });
 
         // !!! Eclipse Clear Console Icon
-        ImageIcon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.exit")));
+        ImageIcon imageIcon = new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.exit")));
         imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(16, -1, Image.SCALE_SMOOTH));
         JButton reset = new JButton(imageIcon);
         reset.setBorder(null);
@@ -453,7 +454,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         });
         searchField.setText(text);
         // !!! Lupen-Icon
-        Icon icon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.update_manager")));
+        Icon icon = new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.update_manager")));
         JPanel p = new JPanel(new BorderLayout(5, 5));
         p.add(searchField, BorderLayout.CENTER);
         p.add(reset, BorderLayout.EAST);

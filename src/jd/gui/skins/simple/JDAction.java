@@ -27,8 +27,8 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.KeyStroke;
 
+import jd.nutils.JDImage;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * Alle Interaktionen (Knöpfe, Shortcuts) sollten über diese JDAction
@@ -47,13 +47,13 @@ public class JDAction extends AbstractAction {
     public static final int APP_LOAD_DLC = 23;
     public static final int APP_LOG = 17;
     public static final int APP_BACKUP = 241;
-    public static final int APP_PAUSE_DOWNLOADS = 22;
-    public static final int APP_RECONNECT = 19;
+//    public static final int APP_PAUSE_DOWNLOADS = 22;
+//    public static final int APP_RECONNECT = 19;
     public static final int APP_SAVE_DLC = 24;
-    public static final int APP_SHOW_LOG = 11;
+//    public static final int APP_SHOW_LOG = 11;
     public static final int APP_START_STOP_DOWNLOADS = 10;
     public static final int APP_STOP_DOWNLOADS = 12;
-    public static final int APP_UPDATE = 20;
+//    public static final int APP_UPDATE = 20;
 
     public static final int ITEMS_ADD = 7;
     public static final int ITEMS_DISABLE = 5;
@@ -106,7 +106,7 @@ public class JDAction extends AbstractAction {
         this.actionID = actionID;
         this.actionListener = actionListener;
 
-        Image image = JDUtilities.getImage(iconName);
+        Image image = JDImage.getImage(iconName);
         if (image != null) {
             ImageIcon icon = new ImageIcon(image);
             putValue(Action.SMALL_ICON, icon);

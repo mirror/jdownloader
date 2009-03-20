@@ -18,6 +18,7 @@ package jd.utils;
 
 import java.awt.Color;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Vector;
@@ -26,6 +27,7 @@ import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 
 import jd.http.Encoding;
+import jd.nutils.JDImage;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -39,6 +41,8 @@ public class JDTheme {
     private static Logger logger = JDUtilities.getLogger();
 
     public static String THEME_DIR = "jd/themes/";
+
+    private static String currentTheme;
 
     public static Vector<String> getThemeIDs() {
         File dir = JDUtilities.getResourceFile(THEME_DIR);
@@ -56,13 +60,13 @@ public class JDTheme {
             logger.severe("Use setTheme() first!");
             setTheme("default");
         }
-
+        logger.info("Key  found: " + key + " (" + def + ")");
         if (data.containsKey(key)) return Encoding.UTF8Decode(data.get(key));
-        // logger.info("Key not found: " + key + " (" + def + ")");
+        logger.info("Key not found: " + key + " (" + def + ")");
 
         if (defaultData.containsKey(key)) {
             def = Encoding.UTF8Decode(defaultData.get(key));
-            // logger.finer("Use default Value: " + def);
+            logger.finer("Use default Value: " + def);
         }
         if (def == null) def = key;
         data.put(key, def);
@@ -94,7 +98,7 @@ public class JDTheme {
      * @return
      */
     public static Image I(String key) {
-        return JDUtilities.getImage(JDTheme.V(key));
+        return JDImage.getImage(JDTheme.V(key));
     }
 
     /**
@@ -106,7 +110,7 @@ public class JDTheme {
      * @return
      */
     public static Image I(String key, int width, int height) {
-        return JDUtilities.getImage(JDTheme.V(key)).getScaledInstance(width, height, Image.SCALE_SMOOTH);
+        return JDImage.getImage(JDTheme.V(key)).getScaledInstance(width, height, Image.SCALE_SMOOTH);
     }
 
     /**
@@ -116,7 +120,8 @@ public class JDTheme {
      * @return
      */
     public static ImageIcon II(String key) {
-        return new ImageIcon(JDUtilities.getImage(JDTheme.V(key)));
+        return II(key, 32, 32);
+
     }
 
     /**
@@ -128,7 +133,30 @@ public class JDTheme {
      * @return
      */
     public static ImageIcon II(String key, int width, int height) {
-        return new ImageIcon(JDUtilities.getImage(JDTheme.V(key)).getScaledInstance(width, height, Image.SCALE_SMOOTH));
+        try {
+            return new ImageIcon(getImage(V(key), width, height));
+        } catch (Exception e) {
+            logger.severe("image not found: " + key + "(" + V(key) + "_" + width + "_" + height);
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static Image getImage(String string, int width, int height) {
+        BufferedImage img = JDImage.getImage(string + "_" + width + "_" + height);
+        if (img != null) return img;
+        try {
+            logger.warning("Unscaled image: " + string + "_" + width + "_" + height);
+            return JDImage.getScaledImage(JDImage.getImage(string), width, height);
+        } catch (Exception e) {
+            logger.severe("Could not find image: " + string);
+        }
+        return null;
+    }
+
+    public static String getTheme() {
+        if(currentTheme==null)return "default";
+        return currentTheme;
     }
 
     public static void setTheme(String themeID) {
@@ -138,6 +166,7 @@ public class JDTheme {
             logger.severe("Theme " + themeID + " not installed");
             return;
         }
+        currentTheme = themeID;
         data = new HashMap<String, String>();
         String str = JDIO.getLocalFile(file);
         String[] lines = Regex.getLines(str);

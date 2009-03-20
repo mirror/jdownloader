@@ -7,6 +7,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.border.Border;
 
+import jd.nutils.JDImage;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;
@@ -48,11 +49,11 @@ public class LinkGrabberV2TreeTableRenderer extends DefaultTableRenderer impleme
 
     public LinkGrabberV2TreeTableRenderer(LinkGrabberV2TreeTable linkgrabberTreeTable) {
 
-        icon_link = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.link")));
+        icon_link = new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.link")));
 
-        icon_fp_open = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.package_closed")));
+        icon_fp_open = new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.package_closed")));
 
-        icon_fp_closed = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.package_opened")));
+        icon_fp_closed = new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.package_opened")));
 
         table = linkgrabberTreeTable;
         leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);

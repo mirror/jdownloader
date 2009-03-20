@@ -16,6 +16,7 @@
 
 package jd.plugins;
 
+import java.awt.Image;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -32,10 +33,12 @@ import jd.controlling.SingleDownloadController;
 import jd.controlling.SpeedMeter;
 import jd.event.ControlEvent;
 import jd.http.Encoding;
-import jd.nutils.Image;
+import jd.nutils.JDImage;
+import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 /**
@@ -1054,20 +1057,32 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public String getSha1Hash() {
         return sha1Hash;
     }
+
     /**
      * ermittel das icon zur datei . ACHTUNG UNCACHED
+     * 
      * @return
      */
-    public ImageIcon getIcon(int width,int height) {
-     return JDUtilities.getScaledImageIcon(Image.getFileIcon(JDIO.getFileExtension(getFileOutput())), width, height);
-    
+    public ImageIcon getUnscaledIcon() {
+        return JDImage.getFileIcon(JDIO.getFileExtension(getFileOutput()));
+
     }
+
     /**
-     * ermittel das icon zur datei 
+     * ermittel das icon zur datei
+     * 
      * @return
-     */  
+     */
     public ImageIcon getIcon() {
-        if (icon == null) icon =JDUtilities.getScaledImageIcon(Image.getFileIcon(JDIO.getFileExtension(getFileOutput())), 16, 16);
+        if (icon == null) {
+            if (OSDetector.isLinux()) {
+                Image image = JDTheme.getImage(JDTheme.getTheme() + "/mime/" + JDIO.getFileExtension(this.getName()), 16, 16);
+                icon = new ImageIcon(image);
+            } else {
+                icon = JDImage.getScaledImageIcon(JDImage.getFileIcon(JDIO.getFileExtension(getFileOutput())), 16, 16);
+
+            }
+        }
         return icon;
     }
 }

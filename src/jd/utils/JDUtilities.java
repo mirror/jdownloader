@@ -26,6 +26,7 @@ import java.awt.Insets;
 import java.awt.MediaTracker;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
@@ -67,10 +68,8 @@ import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
-import javax.swing.filechooser.FileSystemView;
 
 import jd.CPluginWrapper;
 import jd.HostPluginWrapper;
@@ -84,7 +83,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.JDProxy;
@@ -118,10 +116,6 @@ public class JDUtilities {
      */
     private static JDController controller = null;
 
-    /**
-     * Alle verfügbaren Bilder werden hier gespeichert
-     */
-    private static HashMap<String, Image> images = new HashMap<String, Image>();
 
     /**
      * Versionsstring der Applikation
@@ -230,8 +224,9 @@ public class JDUtilities {
      *            Das hinzuzufügende Bild
      */
     public static void addImage(String imageName, Image image) {
-        Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
-        images.put(imageName, image);
+//        get
+//        Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
+//        images.put(imageName, image);
     }
 
     /**
@@ -482,7 +477,7 @@ public class JDUtilities {
     }
 
     public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC, CryptedLink link) throws InterruptedException {
-        link.getProgressController().setStatusText(SimpleGUI.WAITING_USER_IO);
+        link.getProgressController().setStatusText(JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
         String code = getCaptcha(plugin, method, file, forceJAC);
         link.getProgressController().setStatusText(null);
         return code;
@@ -516,14 +511,14 @@ public class JDUtilities {
     }
 
     public static String getUserInput(String message, CryptedLink link) throws InterruptedException {
-        link.getProgressController().setStatusText(SimpleGUI.WAITING_USER_IO);
+        link.getProgressController().setStatusText(JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
         String password = getUserInput(message);
         link.getProgressController().setStatusText(null);
         return password;
     }
 
     public static String getUserInput(String message, String defaultmessage, CryptedLink link) throws InterruptedException {
-        link.getProgressController().setStatusText(SimpleGUI.WAITING_USER_IO);
+        link.getProgressController().setStatusText(JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
         String password = getUserInput(message, defaultmessage);
         link.getProgressController().setStatusText(null);
         return password;
@@ -741,23 +736,6 @@ public class JDUtilities {
     public static UIInterface getGUI() {
         if (JDUtilities.getController() == null) return null;
         return JDUtilities.getController().getUiInterface();
-    }
-
-    /**
-     * Liefert aus der Map der geladenen Bilder ein Element zurück
-     * 
-     * @param imageName
-     *            Name des Bildes das zurückgeliefert werden soll
-     * @return Das gewünschte Bild oder null, falls es nicht gefunden werden
-     *         kann
-     */
-    public static Image getImage(String imageName) {
-        if (!images.containsKey(imageName)) {
-            Image newImage = Toolkit.getDefaultToolkit().getImage(getResourceURL("jd/img/" + imageName + ".png"));
-            images.put(imageName, newImage);
-            return newImage;
-        }
-        return images.get(imageName);
     }
 
     public static ImageIcon getImageIcon(String imageName) {
@@ -1160,17 +1138,7 @@ public class JDUtilities {
 
     }
 
-    public static ImageIcon getScaledImageIcon(Image image, int width, int height) {
-        return new ImageIcon(image.getScaledInstance(width, height, Image.SCALE_SMOOTH));
-    }
 
-    public static ImageIcon getScaledImageIcon(ImageIcon icon, int width, int height) {
-        return JDUtilities.getScaledImageIcon(icon.getImage(), width, height);
-    }
-
-    public static ImageIcon getScaledImageIcon(String imageName, int width, int height) {
-        return JDUtilities.getScaledImageIcon(JDUtilities.getImage(imageName), width, height);
-    }
 
     public synchronized static SubConfiguration getSubConfig(String name) {
         if (SUBCONFIG_LOCK) {

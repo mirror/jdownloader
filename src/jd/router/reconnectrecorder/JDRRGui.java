@@ -41,6 +41,7 @@ import jd.config.Configuration;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.nutils.JDImage;
 import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -227,9 +228,9 @@ public class JDRRGui extends JDialog implements ActionListener {
 
             public RRStatus() {
                 status = 0;
-                imageProgress = JDUtilities.getImage(JDTheme.V("gui.images.reconnect"));
-                imageBad = JDUtilities.getImage(JDTheme.V("gui.images.reconnect_bad"));
-                imageGood = JDUtilities.getImage(JDTheme.V("gui.images.reconnect_ok"));
+                imageProgress = JDImage.getImage(JDTheme.V("gui.images.reconnect"));
+                imageBad = JDImage.getImage(JDTheme.V("gui.images.reconnect_bad"));
+                imageGood = JDImage.getImage(JDTheme.V("gui.images.reconnect_ok"));
                 setPreferredSize(new Dimension(32, 32));
             }
 

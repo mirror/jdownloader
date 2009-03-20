@@ -41,6 +41,7 @@ import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
@@ -140,7 +141,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     private void initGUI() {
-        trayIcon = new TrayIcon(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
+        trayIcon = new TrayIcon(JDImage.getImage(JDTheme.V("gui.images.jd_logo")));
         trayIcon.setImageAutoSize(true);
         trayIcon.addActionListener(this);
         trayIcon.addMouseListener(this);

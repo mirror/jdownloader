@@ -34,6 +34,7 @@ import jd.config.MenuItem;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
+import jd.nutils.JDImage;
 import jd.parser.Regex;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDLocale;
@@ -729,7 +730,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public final ImageIcon getHosterIcon() {
-        Image image = JDUtilities.getImage("hostericons/" + getHost());
+        Image image = JDImage.getImage("hostericons/" + getHost());
         if (image != null) return new ImageIcon(image);
         return null;
     }

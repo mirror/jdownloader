@@ -71,7 +71,7 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         controllers = new ArrayList<ProgressController>();
         JDUtilities.getController().addControlListener(this);
         this.addMouseListener(this);
-
+this.setVisible(false);
         // PanelUI uid = this.getUI();
         // org.jvnet.substance.swingx.SubstanceTaskPaneUI.
         // this.setUI(new UI());

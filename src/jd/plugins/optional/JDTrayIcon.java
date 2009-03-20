@@ -54,6 +54,7 @@ import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
@@ -322,7 +323,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
         popupMenu.addSeparator();
         exit = createMenuItem(JDLocale.L("gui.btn_exit", "Exit"));
 
-        trayIcon = new TrayIcon(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
+        trayIcon = new TrayIcon(JDImage.getImage(JDTheme.V("gui.images.jd_logo")));
         trayIcon.setImageAutoSize(true);
 
         trayParent = new JWindow();

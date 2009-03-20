@@ -50,6 +50,7 @@ import jd.gui.skins.simple.components.JHelpDialog;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Encoding;
+import jd.nutils.JDImage;
 import jd.nutils.io.JDIO;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -142,7 +143,7 @@ public class LogDialog extends JFrame implements ActionListener {
      */
     public LogDialog(JFrame owner, Logger logger) {
 
-        this.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.terminal")));
+        this.setIconImage(JDImage.getImage(JDTheme.V("gui.images.terminal")));
         this.setTitle(JDLocale.L("gui.logDialog.title", "jDownloader Logausgabe"));
         this.setLayout(new GridBagLayout());
         this.setName("LOGDIALOG");

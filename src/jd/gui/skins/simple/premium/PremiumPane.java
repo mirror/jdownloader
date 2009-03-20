@@ -98,7 +98,7 @@ public class PremiumPane extends JTabbedPanel {
             h.setTitle("Accountinformation for " + acc.getUser());
             h.setIconPosition(JXHeader.IconPosition.LEFT);
             h.setFont(new Font(null, 0, 22));
-            h.setIcon(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.config.tip"), 28, 28));
+            h.setIcon(JDTheme.II("gui.images.config.tip", 28, 28));
             cp.add(h, "growx, spanx");
 
             if (ai.getValidUntil() > -1) {
@@ -198,7 +198,7 @@ public class PremiumPane extends JTabbedPanel {
             panel.add(btnCheck = new JXButton(JDLocale.L("plugins.config.premium.information.show", "Show Information")), "w pref:pref:pref, split 2");
             btnCheck.addActionListener(this);
 
-            panel.add(btnDelete = new JXButton(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.delete"), -1, 14)));
+            panel.add(btnDelete = new JXButton(JDTheme.II("gui.images.delete", 14, 14)));
             btnDelete.addActionListener(this);
 
             panel.add(new JSeparator(), "w 30:push, growx, pushx");

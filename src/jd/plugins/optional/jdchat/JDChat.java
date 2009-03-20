@@ -26,8 +26,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -36,8 +34,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -54,9 +52,10 @@ import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.skins.simple.LocationListener;
+import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.simple.tasks.TaskPanel;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
@@ -64,6 +63,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 import org.schwering.irc.lib.IRCConnection;
 import org.schwering.irc.lib.IRCUser;
@@ -114,7 +114,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private boolean changed;
 
     private IRCConnection conn;
-    private JFrame frame;
+    private JTabbedPanel frame;
     private long lastAction;
     private String lastCommand;
     private boolean loggedIn;
@@ -676,9 +676,9 @@ public class JDChat extends PluginOptional implements ControlListener {
             public void run() {
                 if (changed) {
 
-                    if (!frame.isActive() && conn != null && msg2.contains(conn.getNick())) {
+                    if (!SimpleGUI.CURRENTGUI.getFrame().isActive() && conn != null && msg2.contains(conn.getNick())) {
                         JDSounds.PT("sound.gui.selectPackage");
-                        frame.toFront();
+                        SimpleGUI.CURRENTGUI.getFrame().toFront();
                     }
 
                     textArea.setText(STYLE + "<ul>" + sb.toString() + "</ul>");
@@ -722,7 +722,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         if (e.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
 
             if (e.getSource() == Interaction.INTERACTION_AFTER_RECONNECT) {
-                if (frame.isActive() && !nickaway) {
+                if (SimpleGUI.CURRENTGUI.getFrame().isActive() && !nickaway) {
                     initIRC();
                 } else {
                     addToText(null, STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
@@ -898,12 +898,22 @@ public class JDChat extends PluginOptional implements ControlListener {
     @SuppressWarnings("unchecked")
     private void initGUI() {
 
-        frame = new JFrame();
-        frame.setTitle(JDLocale.L("plugins.optional.jdChat.gui.title", "JD Chat"));
-        frame.setIconImage(JDTheme.I("gui.images.config.network_local"));
-        frame.setPreferredSize(new Dimension(1000, 600));
-        frame.setName("JDCHAT");
-        frame.addWindowListener(new LocationListener());
+        frame = new JTabbedPanel(new BorderLayout()) {
+
+            @Override
+            public void onDisplay() {
+                // TODO Auto-generated method stub
+
+            }
+
+            @Override
+            public void onHide() {
+                // TODO Auto-generated method stub
+
+            }
+
+        };
+
         frame.setLayout(new BorderLayout());
         top = new JLabel();
         textArea = new JTextPane();
@@ -929,33 +939,6 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
 
         };
-        frame.addWindowListener(new WindowListener() {
-
-            public void windowActivated(WindowEvent e) {
-            }
-
-            public void windowClosed(WindowEvent e) {
-            }
-
-            public void windowClosing(WindowEvent e) {
-                if (conn != null || conn.isConnected()) {
-                    conn.close();
-                }
-            }
-
-            public void windowDeactivated(WindowEvent e) {
-            }
-
-            public void windowDeiconified(WindowEvent e) {
-            }
-
-            public void windowIconified(WindowEvent e) {
-            }
-
-            public void windowOpened(WindowEvent e) {
-            }
-
-        });
 
         right = new JTextPane();
         right.setContentType("text/html");
@@ -1056,10 +1039,9 @@ public class JDChat extends PluginOptional implements ControlListener {
         lang.setSelectedItem(this.getPluginConfig().getStringProperty("CHANNEL_LNG", "english"));
         textArea.setContentType("text/html");
         textArea.setEditable(false);
-        frame.setResizable(true);
 
         frame.add(top, BorderLayout.NORTH);
-        frame.add(new JScrollPane(right), BorderLayout.EAST);
+        // frame.add(new JScrollPane(right), BorderLayout.EAST);
         frame.add(scrollPane, BorderLayout.CENTER);
         JPanel south = new JPanel();
         south.setLayout(new BorderLayout());
@@ -1090,6 +1072,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     private void initIRC() {
+
         NAMES.clear();
         for (int i = 0; i < 20; i++) {
             String host = subConfig.getStringProperty(HOST, "irc.freenode.net");
@@ -1357,6 +1340,18 @@ public class JDChat extends PluginOptional implements ControlListener {
         if (b) {
 
             initGUI();
+            final JDChatTaskPane tp = new JDChatTaskPane(JDLocale.L("plugins.optional.jdChat.gui.title", "JD Chat"), JDTheme.II("gui.images.config.tip"));
+            SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
+            tp.addActionListener(new ActionListener() {
+
+                public void actionPerformed(ActionEvent e) {
+                    SimpleGUI.CURRENTGUI.getContentPane().display(frame);
+                    SimpleGUI.CURRENTGUI.getTaskPane().switcher(tp);
+                }
+
+            });
+            SimpleGUI.CURRENTGUI.getContentPane().display(frame);
+            SimpleGUI.CURRENTGUI.getTaskPane().switcher(tp);
             JDUtilities.getController().addControlListener(this);
             new Thread() {
                 public void run() {
@@ -1366,8 +1361,9 @@ public class JDChat extends PluginOptional implements ControlListener {
             }.start();
         } else {
             if (frame != null) {
-                frame.setVisible(false);
-                frame.dispose();
+                // frame.setVisible(false);
+                // TODO
+                // frame.dispose();
             }
 
         }
@@ -1407,7 +1403,8 @@ public class JDChat extends PluginOptional implements ControlListener {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 top.setText(msg);
-                frame.setTitle(getHost() + " : " + msg);
+
+                SimpleGUI.CURRENTGUI.statusBarHandler.changeTxt(getHost() + " : " + msg, 10000, true);
                 // frame.pack();
             }
         });
@@ -1453,10 +1450,35 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         EventQueue.invokeLater(new Runnable() {
             public void run() {
-                if(right!=null)                right.setText(USERLIST_STYLE + sb);
+                if (right != null) right.setText(USERLIST_STYLE + sb);
                 // frame.pack();
             }
         });
+
+    }
+
+    class JDChatTaskPane extends TaskPanel implements ActionListener {
+
+        public static final int ACTION_SHOW_PANEL = 1;
+        public static final int ACTION_ADD_ALL = 100;
+
+        public JDChatTaskPane(String string, ImageIcon ii) {
+            super(string, ii, "jdchataddon");
+            this.setLayout(new MigLayout("ins 5, wrap 1", "[grow,fill]"));
+
+            initGUI();
+        }
+
+        private void initGUI() {
+            JScrollPane sp;
+            this.add(sp=new JScrollPane(right));
+            sp.setMaximumSize(new Dimension(300,300));
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            // TODO Auto-generated method stub
+
+        }
 
     }
 

@@ -50,6 +50,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.http.Encoding;
+import jd.nutils.JDImage;
 import jd.router.FindRouterIP;
 import jd.router.GetRouterInfo;
 import jd.router.RouterInfoCollector;
@@ -173,7 +174,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
             });
 
             // !!! Eclipse Clear Console Icon
-            ImageIcon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.exit")));
+            ImageIcon imageIcon = new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.exit")));
             imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(16, -1, Image.SCALE_SMOOTH));
             JButton reset = new JButton(imageIcon);
 
@@ -192,7 +193,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
             });
             searchField.setText(text);
             // !!! Lupen-Icon
-            Icon icon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.update_manager")));
+            Icon icon = new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.update_manager")));
             JPanel p = new JPanel(new BorderLayout(5, 5));
             p.add(searchField, BorderLayout.CENTER);
             p.add(reset, BorderLayout.EAST);

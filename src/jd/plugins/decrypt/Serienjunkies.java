@@ -65,6 +65,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDImage;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -1274,7 +1275,7 @@ class SerienjunkiesSJTable extends JDialog {
         this.dls = DownloadLinks;
         m_data = new SerienjunkiesTM(dls);
         setModal(true);
-        m_title = new JLabel(JDLocale.L("plugin.serienjunkies.manager.dllinks", "Unerwünschte Links einfach löschen"), new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.config.infoFile"))), SwingConstants.LEFT);
+        m_title = new JLabel(JDLocale.L("plugin.serienjunkies.manager.dllinks", "Unerwünschte Links einfach löschen"), new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.config.infoFile"))), SwingConstants.LEFT);
         getContentPane().add(m_title, BorderLayout.NORTH);
 
         m_table = new JTable();

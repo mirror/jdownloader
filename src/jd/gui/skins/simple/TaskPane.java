@@ -1,20 +1,25 @@
 package jd.gui.skins.simple;
 
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
+import javax.swing.BorderFactory;
+
 import jd.gui.skins.simple.tasks.TaskPanel;
+import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXTaskPaneContainer;
+import org.jdesktop.swingx.JXPanel;
 
-public class TaskPane extends JXTaskPaneContainer implements ActionListener {
+public class TaskPane extends JXPanel implements ActionListener {
     private ArrayList<TaskPanel> panels;
     private TaskPanel lastSource;
 
     public TaskPane() {
         panels = new ArrayList<TaskPanel>();
-
+        this.setLayout(new MigLayout("ins 5, wrap 1", "[fill,grow]"));
+        this.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1,Color.GRAY));
     }
 
     public void add(TaskPanel panel) {
@@ -23,7 +28,7 @@ public class TaskPane extends JXTaskPaneContainer implements ActionListener {
             panel.addActionListener(this);
             panels.add(panel);
             lastSource = panel;
-            switcher();
+            switcher(null);
         }
 
     }
@@ -35,19 +40,24 @@ public class TaskPane extends JXTaskPaneContainer implements ActionListener {
 
             if (source != lastSource) {
                 lastSource = source;
-                switcher();
+                switcher(null);
             }
         }
 
     }
 
-    private void switcher() {
+    public void switcher(TaskPanel src) {
+        if (src != null) lastSource = src;
+
         for (TaskPanel p : panels) {
             if (p != lastSource) {
+                p.setSpecial(false);
                 p.setCollapsed(true);
             } else {
+                p.setSpecial(true);
                 p.setCollapsed(false);
             }
         }
     }
+
 }

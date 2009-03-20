@@ -77,6 +77,7 @@ import jd.gui.skins.simple.components.ConfirmCheckBoxDialog;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.http.Encoding;
+import jd.nutils.JDImage;
 import jd.plugins.PluginForHost;
 import jd.router.GetRouterInfo;
 import jd.router.RInfo;
@@ -346,7 +347,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
                         });
 
                         // Eclipse Clear Console Icon should be used
-                        ImageIcon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.exit")));
+                        ImageIcon imageIcon = new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.exit")));
                         imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(16, -1, Image.SCALE_SMOOTH));
                         JButton reset = new JButton(imageIcon);
                         reset.setBorder(null);
@@ -364,7 +365,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
                         });
                         searchField.setText(text);
                         // !!! Lupen-Icon should be used
-                        Icon icon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.update_manager")));
+                        Icon icon = new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.update_manager")));
                         JPanel p = new JPanel(new BorderLayout(5, 5));
                         p.add(searchField, BorderLayout.CENTER);
                         p.add(reset, BorderLayout.EAST);
@@ -428,7 +429,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
             panel.add(new JSeparator(), "gapleft 10, spanx, pushx, growx");
             panel.add(new JSeparator(), "span 3, pushx, growx");
 
-            JLabel tip = new JLabel(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.config.tip"), 16, 16));
+            JLabel tip = new JLabel(JDTheme.II("gui.images.config.tip", 16, 16));
             tip.setToolTipText(help);
             panel.add(tip, GAPLEFT + "w pref!" + WRAP);
         } catch (MalformedURLException e) {
@@ -525,7 +526,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
         this.setLayout(new MigLayout(DEBUG + "ins 20", "[right, pref!]0[grow,fill]0[]"));
         routerIp = config.getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
         Reconnectmethode = config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null);
-        addSeparator(panel, JDLocale.L("gui.config.general.name", "Allgemein"), JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.configuration"), 32, 32), JDLocale.L("gui.fengshuiconfig.general.tooltip", "<html>You can set the Downloadpath and the language here"));
+        addSeparator(panel, JDLocale.L("gui.config.general.name", "Allgemein"), JDTheme.II("gui.images.configuration", 32, 32), JDLocale.L("gui.fengshuiconfig.general.tooltip", "<html>You can set the Downloadpath and the language here"));
 
         languages = new JComboBox(JDLocale.getLocaleIDs().toArray(new String[] {}));
         languages.setSelectedItem(JDUtilities.getSubConfig(JDLocale.CONFIG).getProperty(JDLocale.LOCALE_ID, Locale.getDefault()));
@@ -541,13 +542,13 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
         btnPremium = new JButton(JDLocale.L("gui.config.fengshui.settings", "Settings"));
         btnPremium.addActionListener(this);
 
-        addSeparator(panel, JDLocale.L("gui.config.plugin.host.name", "Host Plugins"), JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.next"), 32, 32), JDLocale.L("gui.fengshuiconfig.plugin.host.tooltip", "<html>If you have a Premium Account for a hoster you can enter you login<br> password here and JD will use them automatically henceforth<br> if you download files with that hoster"));
+        addSeparator(panel, JDLocale.L("gui.config.plugin.host.name", "Host Plugins"), JDTheme.II("gui.images.next", 32, 32), JDLocale.L("gui.fengshuiconfig.plugin.host.tooltip", "<html>If you have a Premium Account for a hoster you can enter you login<br> password here and JD will use them automatically henceforth<br> if you download files with that hoster"));
         addComponents(panel, JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"), btnPremium, GAPLEFT + GAPRIGHT + ", w pref!, wrap" + PUSHGAP);
 
         JLinkButton label;
         try {
             String titl = JDLocale.L("gui.config.reconnect.name", "Reconnect");
-            label = new JLinkButton("<html><u><b  color=\"#006400\">" + titl, JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.reconnect"), 32, 32), new URL(wikiurl + (titl.replaceAll("\\s", "_"))));
+            label = new JLinkButton("<html><u><b  color=\"#006400\">" + titl, JDTheme.II("gui.images.reconnect", 32, 32), new URL(wikiurl + (titl.replaceAll("\\s", "_"))));
 
             label.setIconTextGap(8);
             label.setBorder(null);
@@ -560,7 +561,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
             else
                 progresspanel.add(new JSeparator());
 
-            JLabel tip = new JLabel(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.config.tip"), 16, 16));
+            JLabel tip = new JLabel(JDTheme.II("gui.images.config.tip", 16, 16));
             tip.setToolTipText(JDLocale.L("gui.fengshuiconfig.reconnect.tooltip", "<html>Somtimes you need to change your ip via reconnect, to skip the waittime!"));
             panel.add(tip, GAPLEFT + "w pref!" + WRAP);
         } catch (MalformedURLException e) {

@@ -47,6 +47,7 @@ import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.nutils.JDImage;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
@@ -623,7 +624,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
         frame = new JFrame();
         frame.setTitle(JDLocale.L("plugins.optional.newsfeeds.getLatestSubscribedDownloads", "Get latest subscribed Downloads"));
-        frame.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
+        frame.setIconImage(JDImage.getImage(JDTheme.V("gui.images.jd_logo")));
         frame.setPreferredSize(new Dimension(300, 200));
         frame.setName("ADDON_NEWSFEED_3");
         frame.addWindowListener(new LocationListener());
@@ -669,7 +670,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
         frame = new JFrame();
         frame.setTitle(JDLocale.L("plugins.optional.newsfeeds.manageDownloadSubscriptions", "Manage Download Subscriptions"));
-        frame.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
+        frame.setIconImage(JDImage.getImage(JDTheme.V("gui.images.jd_logo")));
         frame.setPreferredSize(new Dimension(300, 200));
         frame.setName("ADDON_NEWSFEED_2");
         frame.addWindowListener(new LocationListener());
@@ -715,7 +716,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
         frame = new JFrame();
         frame.setTitle(JDLocale.L("plugins.optional.newsfeeds.manageFeeds", "Manage Feeds"));
-        frame.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
+        frame.setIconImage(JDImage.getImage(JDTheme.V("gui.images.jd_logo")));
         frame.setPreferredSize(new Dimension(700, 500));
         frame.setName("ADDON_NEWSFEED_1");
         frame.addWindowListener(new LocationListener());

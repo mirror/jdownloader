@@ -1,5 +1,10 @@
 package jd.gui.skins.simple;
 
+import java.util.ArrayList;
+
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXPanel;
@@ -10,6 +15,7 @@ public class ContentPanel extends JXPanel {
      */
     private static final long serialVersionUID = 1606909731977454208L;
     private JTabbedPanel rightPanel = null;
+
     public static ContentPanel PANEL;
 
     public ContentPanel() {
@@ -29,10 +35,13 @@ public class ContentPanel extends JXPanel {
         rightPanel.onDisplay();
         this.revalidate();
         this.repaint();
+      
     }
 
     public JTabbedPanel getRightPanel() {
         return rightPanel;
     }
+
+  
 
 }

@@ -22,11 +22,13 @@ import java.awt.Image;
 import java.text.DecimalFormat;
 
 import javax.swing.BorderFactory;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.border.Border;
 
 import jd.gui.skins.simple.SimpleGUI;
+import jd.nutils.JDImage;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -79,32 +81,44 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
 
     private String strSecondsAbrv;
 
-
-
     private TableColumnExt col;
 
-
-
     private Border leftGap;
+
+    private Icon imgFinished;
+
+    private ImageIcon imgFailed;
+
+    private String strWaitIO;
+
+    private Icon imgExtract;
 
     private static Color COL_PROGRESS_ERROR = new Color(0xCC3300);
 
     TreeTableRenderer(DownloadTreeTable downloadTreeTable) {
 
-        icon_link = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.link")));
-
-        icon_fp_open = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.package_closed")));
-
-        icon_fp_closed = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.package_opened")));
-
+       initIcons();
+       initLocale();
         table = downloadTreeTable;
         leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
         progress = new JDProgressBar();
 
         progress.setStringPainted(true);
         progress.setOpaque(true);
-        initLocale();
+      
+   
+    }
 
+    private void initIcons() {
+        icon_link = JDTheme.II("gui.images.link",16,16);
+
+        icon_fp_open = JDTheme.II("gui.images.package_closed",16,16);
+
+        icon_fp_closed = JDTheme.II("gui.images.package_opened",16,16);
+        imgFinished = JDTheme.II("gui.images.selected", 16, 16);
+        imgFailed = JDTheme.II("gui.images.unselected", 16, 16);
+        imgExtract= JDTheme.II("gui.images.update_manager", 16, 16);
+        
     }
 
     private void initLocale() {
@@ -113,8 +127,9 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
         this.strDownloadLinkActive = JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
         this.strETA = JDLocale.L("gui.eta", "ETA");
         strPluginError = JDLocale.L("gui.treetable.error.plugin", "Plugin error");
-        strSecondsAbrv = JDLocale.L("gui.treetable.seconds", "sec");   
-      
+        strSecondsAbrv = JDLocale.L("gui.treetable.seconds", "sec");
+this.strWaitIO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input");
+
     }
 
     @Override
@@ -128,6 +143,8 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
             co = getDownloadLinkCell(table, value, isSelected, hasFocus, row, column);
             if (!((DownloadLink) value).isEnabled()) {
                 co.setEnabled(false);
+            } else {
+                co.setEnabled(true);
             }
         } else {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -143,9 +160,7 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             clearSB();
-            
-            
-      
+
             ((JRendererLabel) co).setIcon(dLink.getIcon());
             ((JRendererLabel) co).setText(dLink.getName());
             ((JRendererLabel) co).setBorder(leftGap);
@@ -162,7 +177,6 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
 
             return co;
 
-   
         case DownloadTreeTableModel.COL_PROGRESS:
 
             if (dLink.getPlugin() == null) {
@@ -181,7 +195,7 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
                 col = this.table.getCols()[column];
                 if (col.getWidth() < 40) {
 
-                } else if (col.getWidth() < 150) {
+                } else if (col.getWidth() < 170) {
                     progress.setString(dLink.getPluginProgress().getPercent() + "%");
 
                 } else {
@@ -199,7 +213,7 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
                 col = ((TableColumnExt) table.getColumnModel().getColumn(column));
                 if (col.getWidth() < 60) {
 
-                } else if (col.getWidth() < 150) {
+                } else if (col.getWidth() < 170) {
                     sb.append(c.format(10000 * progress.getPercentComplete() / 100.0)).append('%');
 
                 } else {
@@ -215,7 +229,7 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
                         col = this.table.getCols()[column];
                         if (col.getWidth() < 40) {
 
-                        } else if (col.getWidth() < 150) {
+                        } else if (col.getWidth() < 170) {
                             progress.setString("- 100% -");
 
                         } else {
@@ -228,13 +242,13 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
                 } else {
 
                     if (dLink.getLinkStatus().hasStatus(LinkStatus.WAITING_USERIO)) {
-                        progress.setString(SimpleGUI.WAITING_USER_IO);
+                        progress.setString(strWaitIO);
                     } else {
                         this.clearSB();
                         col = this.table.getCols()[column];
                         if (col.getWidth() < 60) {
 
-                        } else if (col.getWidth() < 150) {
+                        } else if (col.getWidth() < 170) {
                             sb.append(c.format(dLink.getPercent() / 100.0)).append('%');
 
                         } else {
@@ -257,10 +271,22 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
 
         case DownloadTreeTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (dLink.getPluginProgress()!=null&&dLink.getPluginProgress().getPercent()>0.0&&dLink.getPluginProgress().getPercent()<100.0) {
+                ((JRendererLabel) co).setIcon(imgExtract);
+                ((JRendererLabel) co).setText(dLink.getLinkStatus().getStatusString());
+            } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                ((JRendererLabel) co).setIcon(imgFinished);
+                ((JRendererLabel) co).setText("");
+            } else if (dLink.getLinkStatus().isFailed()) {
+                ((JRendererLabel) co).setIcon(imgFailed);
+                ((JRendererLabel) co).setText("");
 
-            ((JRendererLabel) co).setIcon(null);
+            } else {
+                ((JRendererLabel) co).setText(dLink.getLinkStatus().getStatusString());
+                ((JRendererLabel) co).setIcon(null);
+            }
 
-            ((JRendererLabel) co).setText(dLink.getLinkStatus().getStatusString());
+        
             ((JRendererLabel) co).setBorder(null);
 
             return co;
@@ -286,7 +312,6 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
 
             break;
 
- 
         case DownloadTreeTableModel.COL_PROGRESS:
 
             if (fp.isFinished()) {
@@ -296,7 +321,7 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
                 col = this.table.getCols()[column];
                 if (col.getWidth() < 40) {
 
-                } else if (col.getWidth() < 150) {
+                } else if (col.getWidth() < 170) {
                     progress.setString("- 100% -");
 
                 } else {
@@ -309,7 +334,7 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
                 col = this.table.getCols()[column];
                 if (col.getWidth() < 40) {
 
-                } else if (col.getWidth() < 150) {
+                } else if (col.getWidth() < 170) {
                     sb.append(c.format(fp.getPercent())).append('%');
 
                 } else {

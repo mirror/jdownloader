@@ -36,6 +36,7 @@ import javax.swing.JLabel;
 import javax.swing.JTextPane;
 import javax.swing.WindowConstants;
 
+import jd.nutils.JDImage;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -131,7 +132,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
         htmlArea.setOpaque(false);
         htmlArea.requestFocusInWindow();
         setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-        Icon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.config.tip")));
+        Icon imageIcon = new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.config.tip")));
 
         JDUtilities.addToGridBag(this, new JLabel(imageIcon), 0, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
 
