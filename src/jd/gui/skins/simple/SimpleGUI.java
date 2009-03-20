@@ -1374,6 +1374,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         final Object lock = new Object();
         GuiRunnable run;
         EventQueue.invokeLater(run = new GuiRunnable() {
+            private static final long serialVersionUID = 8726498576488124702L;
+
             public void run() {
 
                 put("dialog", new CaptchaDialog(frame, plugin, captchaAddress, def));

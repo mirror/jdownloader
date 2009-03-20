@@ -19,12 +19,15 @@ package jd.plugins.optional.langfileeditor;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
+import jd.Main;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
+import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 
 /**
  * Editor for jDownloader language files. Gets JDLocale.L() and JDLocale.LF()
@@ -56,14 +59,30 @@ public class LangFileEditor extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        if (tp == null) tp = new LFETaskPane(getHost(), JDTheme.II("gui.images.jd_logo", 32, 32));
-        SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
+        if (SimpleGUI.CURRENTGUI == null) {
+            JDUtilities.getController().addControlListener(this);
+        } else {
+            if (tp == null) tp = new LFETaskPane(getHost(), JDTheme.II("gui.images.jd_logo", 32, 32));
+            SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
+        }
         return true;
+    }
+
+    @Override
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
+            if (tp == null) tp = new LFETaskPane(getHost(), JDTheme.II("gui.images.jd_logo", 32, 32));
+            SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
+            JDUtilities.getController().removeControlListener(this);
+            return;
+        }
+        super.controlEvent(event);
     }
 
     @Override
     public void onExit() {
         SimpleGUI.CURRENTGUI.getTaskPane().remove(tp);
+        JDUtilities.getController().removeControlListener(this);
     }
 
     @Override

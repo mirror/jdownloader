@@ -13,6 +13,8 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXPanel;
 
 public class TaskPane extends JXPanel implements ActionListener {
+
+    private static final long serialVersionUID = 2484591650508276173L;
     private ArrayList<TaskPanel> panels;
     private TaskPanel lastSource;
 
@@ -30,11 +32,9 @@ public class TaskPane extends JXPanel implements ActionListener {
             lastSource = panel;
             switcher(null);
         }
-
     }
 
     public void actionPerformed(ActionEvent e) {
-
         if (e.getSource() instanceof TaskPanel) {
             TaskPanel source = ((TaskPanel) e.getSource());
 
@@ -43,7 +43,6 @@ public class TaskPane extends JXPanel implements ActionListener {
                 switcher(null);
             }
         }
-
     }
 
     public void switcher(TaskPanel src) {
