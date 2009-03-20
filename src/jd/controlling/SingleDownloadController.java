@@ -290,13 +290,13 @@ public class SingleDownloadController extends Thread {
 
         downloadLink2.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos", "TOS haven't been accepted."));
 
-        JDUtilities.acquireUserIO_Semaphore();
+        JDUtilities.acquireUserIOSemaphore();
         if (!plugin.isAGBChecked()) {
             new AgbDialog(downloadLink2, 30);
         } else {
             downloadLink2.getLinkStatus().reset();
         }
-        JDUtilities.releaseUserIO_Semaphore();
+        JDUtilities.releaseUserIOSemaphore();
 
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 

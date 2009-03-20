@@ -187,7 +187,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
         if (this.isClickNLoadEnabled() && OPEN_CLICK_N_LOAD >= 0 && OPEN_CLICK_N_LOAD <= 25) {
             try {
-                JDUtilities.acquireUserIO_Semaphore();
+                JDUtilities.acquireUserIOSemaphore();
             } catch (InterruptedException e1) {
                 return;
             }
@@ -216,7 +216,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 OPEN_CLICK_N_LOAD = -1;
 
             }
-            JDUtilities.releaseUserIO_Semaphore();
+            JDUtilities.releaseUserIOSemaphore();
         }
 
     }

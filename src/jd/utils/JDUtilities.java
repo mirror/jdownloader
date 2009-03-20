@@ -200,7 +200,7 @@ public class JDUtilities {
         return result;
     }
 
-    public static void acquireUserIO_Semaphore() throws InterruptedException {
+    public static void acquireUserIOSemaphore() throws InterruptedException {
         try {
             userio_sem.acquire();
         } catch (InterruptedException e) {
@@ -210,7 +210,7 @@ public class JDUtilities {
         }
     }
 
-    public static void releaseUserIO_Semaphore() {
+    public static void releaseUserIOSemaphore() {
         userio_sem.drainPermits();
         userio_sem.release(1);
     }
@@ -525,19 +525,19 @@ public class JDUtilities {
     }
 
     public static String getUserInput(String message) throws InterruptedException {
-        acquireUserIO_Semaphore();
+        acquireUserIOSemaphore();
         if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
         String password = JDUtilities.getGUI().getInputFromUser(message, null);
-        releaseUserIO_Semaphore();
+        releaseUserIOSemaphore();
         return password;
     }
 
     public static String getUserInput(String message, String defaultmessage) throws InterruptedException {
-        acquireUserIO_Semaphore();
+        acquireUserIOSemaphore();
         if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
         if (defaultmessage == null) defaultmessage = "";
         String password = JDUtilities.getGUI().getInputFromUser(message, defaultmessage);
-        releaseUserIO_Semaphore();
+        releaseUserIOSemaphore();
         return password;
     }
 
@@ -612,9 +612,9 @@ public class JDUtilities {
             JDUtilities.getLogger().info("worst letter: " + vp);
             if (plugin.useUserinputIfCaptchaUnknown() && vp > (double) JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)) {
                 plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
-                acquireUserIO_Semaphore();
+                acquireUserIOSemaphore();
                 code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
-                releaseUserIO_Semaphore();
+                releaseUserIOSemaphore();
             } else {
                 return captchaCode;
             }
@@ -624,10 +624,10 @@ public class JDUtilities {
         }
 
         else {
-            acquireUserIO_Semaphore();
+            acquireUserIOSemaphore();
             plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
             String code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, null);
-            releaseUserIO_Semaphore();
+            releaseUserIOSemaphore();
             return code;
         }
     }

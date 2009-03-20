@@ -61,10 +61,10 @@ public class ProtectorIT extends PluginForDecrypt {
                 File file = this.getLocalCaptchaFile(this);
                 Form form = br.getForm(0);
                 Browser.download(file, br.cloneBrowser().openGetConnection("http://" + br.getHost() + br.getRegex("<input type=\"image\" src=\"\\.([^\"]*)\" name=\"captcha\" alt=\"Captcha\">").getMatch(0)));
-                JDUtilities.acquireUserIO_Semaphore();
+                JDUtilities.acquireUserIOSemaphore();
                 ClickPositionDialog d = new ClickPositionDialog(SimpleGUI.CURRENTGUI.getFrame(), file, "Captcha", "", 20, null);
                 if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
-                JDUtilities.releaseUserIO_Semaphore();
+                JDUtilities.releaseUserIOSemaphore();
                 Point p = d.result;
                 form.remove("captcha");
                 form.put("captcha.x", p.x + "");

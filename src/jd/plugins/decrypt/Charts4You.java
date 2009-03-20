@@ -52,9 +52,9 @@ public class Charts4You extends PluginForDecrypt {
         String pass = br.getRegex(Pattern.compile("Passwort.*?</td>.*?<input type=\"text\" value=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         Form form = br.getForm(2);
         Browser.download(file, br.cloneBrowser().openGetConnection("captcha/imagecreate.php"));
-        JDUtilities.acquireUserIO_Semaphore();
+        JDUtilities.acquireUserIOSemaphore();
         ClickPositionDialog d = new ClickPositionDialog(SimpleGUI.CURRENTGUI.getFrame(), file, "Captcha", JDLocale.L("plugins.decrypt.charts4you.captcha", "Please click on the Circle with a gap"), 20, null);
-        JDUtilities.releaseUserIO_Semaphore();
+        JDUtilities.releaseUserIOSemaphore();
         if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
         Point p = d.result;
         form.remove("x");
