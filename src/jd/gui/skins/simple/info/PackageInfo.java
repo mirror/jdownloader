@@ -100,7 +100,7 @@ public class PackageInfo extends JPanel {
         
         tabbedPane.add(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Extended"), extendedPanel);
 
-        this.setLayout(new MigLayout("insets 8 16 8 16", "[grow,right]", "[8px]0px[grow]"));
+        this.setLayout(new MigLayout("insets 8 10 8 10", "[grow,right]", "[8px]0px[grow]"));
         this.add(new JLabel("x"), "wrap");
         this.add(tabbedPane, "grow");
     }
