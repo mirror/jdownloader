@@ -100,14 +100,14 @@ public class EgoshareCom extends PluginForHost {
         url = Context.toString(result);
         Context.exit();
 
-        /* 15 seks warten */
-        sleep(15000, downloadLink);
+        /* 5 seks warten */
+        sleep(5000, downloadLink);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         dl = br.openDownload(downloadLink, url);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dl.startDownload();
     }

@@ -44,10 +44,17 @@ public class FilezzzCom extends PluginForHost {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
-        if (br.containsHTML("not found!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        this.sleep(2000l, downloadLink);
+        /* refresh page */
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("not found!")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<font size=6>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0));
         String downloadSize = (br.getRegex(Pattern.compile("file size (.*?)\\)", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (downloadName == null || downloadSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadName == null || downloadSize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(downloadName.trim());
         downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
         return true;
@@ -62,18 +69,13 @@ public class FilezzzCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
-        this.sleep(4000l, downloadLink);
-        /* Seite aktualisieren */
-        br.getPage(downloadLink.getDownloadURL());
         /* Link holen */
-        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href='(http://open\\.filezzz\\.com/.*?)'>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
-        dl = br.openDownload(downloadLink, linkurl, true, -2);
-        URLConnectionAdapter con = dl.getConnection();
-        if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(.*?filezzz.com/.*?)\">click here to file Save As.*?</a><br>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        System.out.println("LINK " + linkurl);
+        if (linkurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
+        dl = br.openDownload(downloadLink, linkurl, true, -2);
         dl.startDownload();
     }
 

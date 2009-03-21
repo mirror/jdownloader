@@ -26,11 +26,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-public class FourShareCom extends PluginForHost {
+public class FourSharedCom extends PluginForHost {
 
     private static int COUNTER = 0;
 
-    public FourShareCom(PluginWrapper wrapper) {
+    public FourSharedCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
