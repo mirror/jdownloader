@@ -43,14 +43,13 @@ public class SavefileCom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        br.setDebug(true);
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
         String downloadSize = null;
         br.getPage(url);
         if (!br.containsHTML("File not found")) {
-            downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("Filename: (.*?)	<br /> ", Pattern.CASE_INSENSITIVE)).getMatch(0));
-            downloadSize = (br.getRegex(Pattern.compile("Filesize: (.*?)	<br />", Pattern.CASE_INSENSITIVE)).getMatch(0));
+            downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("Filename:\\s(.*?)\\s+<br />", Pattern.CASE_INSENSITIVE)).getMatch(0));
+            downloadSize = (br.getRegex(Pattern.compile("Filesize:\\s(.*?)\\s+<br />", Pattern.CASE_INSENSITIVE)).getMatch(0));
             if (!(downloadName == null || downloadSize == null)) {
                 downloadLink.setName(downloadName);
                 downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
@@ -71,17 +70,16 @@ public class SavefileCom extends PluginForHost {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
         /* Link holen */
-        String[] ids = br.getRegex(Pattern.compile("ShowDownloadDialog\\('([0-9]+)', '([0-9a-zA-Z]+)'\\);", Pattern.CASE_INSENSITIVE)).getRow(0);
-        String fileID = ids[0];
-        String sessionID = ids[1];
+        br.setFollowRedirects(true);
+        String fileID = br.getRegex("savefile.com/files/(.*?)\"").getMatch(0);
+        String sessionID = br.getCookie("http://savefile.com", "PHPSESSID");
         if (fileID == null || sessionID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-
-        br.getPage("http://www.savefile.com/downloadmax/" + fileID + "?PHPSESSID=" + sessionID);
-        String linkurl = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(.*?)\">Download file now", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        br.getPage("http://www.savefile.com/downloadmin/" + fileID);
+        String linkurl = br.getRegex("try\\s+<a href=\"(.*?)\"").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         /* Datei herunterladen */
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, linkurl, true, 0);
+        dl = br.openDownload(downloadLink, linkurl, true, -10);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() == 416) {
             // HTTP/1.1 416 Requested Range Not Satisfiable
