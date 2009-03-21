@@ -44,13 +44,14 @@ public class ArchivTo extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         try {
+            br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
             br.clearCookies(getHost());
             String page = br.getPage(downloadLink.getDownloadURL());
 
-            downloadLink.setName(new Regex(page, "<td width=.*?>Original\\-Dateiname</td>.*? <a href=\"(.*?)\" style=.*?>(.*?)</a>").getMatch(1));
-            downloadLink.setMD5Hash(new Regex(page, "<td width=.*?>MD5 Code</td>.*?<td width=.*?>: ([a-f0-9]+?)</td>").getMatch(0));
-            downloadLink.setDownloadSize(Long.parseLong(new Regex(page, "<td width=.*?>Dateigr.*?</td>.*?<td width=.*?>: (\\d+?) Bytes \\(.*?\\)</td>").getMatch(0)));
+            downloadLink.setName(new Regex(page, "<a href=\".*?archiv.*?\" style=\"Color.*?\">(.*?)</a></td></tr>").getMatch(0));
+            downloadLink.setMD5Hash(new Regex(page, "<td width=\"23%\">MD5 Code</td>\\s*<td width=\"77%\">: ([0-9a-z]*?)</td>").getMatch(0));
+            downloadLink.setDownloadSize(Long.parseLong(new Regex(page, "<td width=.*?>Dateigröße</td>\\s*<td width=.*?>: (\\d+?) Bytes \\(.*\\)</td>").getMatch(0)));
 
             return true;
         } catch (Exception e) {
@@ -76,7 +77,7 @@ public class ArchivTo extends PluginForHost {
             return;
         }
 
-        Request request = br.createGetRequest("http://archiv.to/" + Encoding.htmlDecode(new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("<a href=\"\\./(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+        Request request = br.createGetRequest("http://archiv.to/" + Encoding.htmlDecode(new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("<a href=\"http://ww\\.archiv\\.to/(Get.*?)\" style=", Pattern.CASE_INSENSITIVE)).getMatch(0)));
 
         dl = new RAFDownload(this, downloadLink, request);
         dl.startDownload();

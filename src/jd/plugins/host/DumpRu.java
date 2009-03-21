@@ -13,16 +13,14 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.host;
 
+import java.util.regex.Pattern;
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class DumpRu extends PluginForHost {
 
@@ -39,9 +37,8 @@ public class DumpRu extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             setBrowserExclusive();
-
+            br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
-
             // File not found
             if (br.containsHTML("Запрошенный файл не обнаружен")) {
                 logger.warning("File not found");
@@ -49,11 +46,14 @@ public class DumpRu extends PluginForHost {
             }
 
             // Filesize
-            String size = br.getRegex("Размер: <span class=\"comment\">(.*?)</span>").getMatch(0);
-            downloadLink.setDownloadSize(Regex.getSize(size.replaceAll("Кб", "KB").replaceAll("Mб", "MB")));
+
+//            String size = br.getRegex(Pattern.compile("<span class=\"comment\">(.*&nbsp;.*)</span><br>")).getMatch(0);
+//            size = size.replaceAll("Кб", "KB").replaceAll("Mб", "MB"); <<< does NOT WORK ...
+//            System.out.println(size);
+//            downloadLink.setDownloadSize(Regex.getSize(size.replaceAll("Кб", "KB").replaceAll("Mб", "MB")));
 
             // Filename
-            String name = br.getRegex("<span class=\"name_of_file\">(.*?)</span>").getMatch(0).trim();
+            String name = br.getRegex("name_of_file\">\\s(.*?)</span>").getMatch(0).trim();
             downloadLink.setName(name);
 
             return true;
@@ -70,8 +70,12 @@ public class DumpRu extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        dl = RAFDownload.download(downloadLink, br.createFormRequest(br.getForm(1)));
+        if (!getFileInformation(downloadLink)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.submitForm(br.getForm(1));
+        String link = br.getRegex(Pattern.compile("<a href=\"(http://.*?dump\\.ru/file_download/.*?)\">")).getMatch(0);
+        dl = br.openDownload(downloadLink,link);
         dl.startDownload();
     }
 
