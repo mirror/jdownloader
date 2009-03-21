@@ -42,8 +42,8 @@ public class YourFilesBiz extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("<td align=left width=20%><b>Dateiname:</b></td>[\\s]*?<td align=left width=80%>(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("<td align=left><b>Dateigr.*?e:</b></td>.*?<td align=left>(.*?)</td>").getMatch(0);
+        String filename = br.getRegex("Dateiname:</b></td>[\\s]*?<td[^>]*>(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("Dateigr.*?e:</b></td>\\s+<td[^>]*>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
@@ -58,7 +58,7 @@ public class YourFilesBiz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String url = br.getRegex(Pattern.compile("return false;}document.location=\"(.*?)\"'", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String url = br.getRegex(Pattern.compile("document.location=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, url);
         URLConnectionAdapter con = dl.getConnection();
