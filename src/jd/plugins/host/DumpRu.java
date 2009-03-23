@@ -16,6 +16,7 @@
 package jd.plugins.host;
 
 import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;

@@ -18,7 +18,6 @@ package jd.gui.skins.simple.components.treetable;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Image;
 import java.text.DecimalFormat;
 
 import javax.swing.BorderFactory;
@@ -27,9 +26,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.border.Border;
 
-import jd.gui.skins.simple.SimpleGUI;
-import jd.nutils.JDImage;
-import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
