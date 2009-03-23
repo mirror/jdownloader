@@ -27,11 +27,11 @@ public class PackageInfo extends JPanel {
     private JCheckBox chbExtract;
 
     private JComboBox cbPrio;
-    
+
     private JTabbedPane tabbedPane;
 
-    private JPanel simplePanel, extendedPanel;    
-    
+    private JPanel simplePanel, extendedPanel;
+
     private FilePackage fp = null;
 
     public PackageInfo() {
@@ -40,14 +40,14 @@ public class PackageInfo extends JPanel {
     }
 
     public void setPackage(FilePackage fp) {
-        //if (this.fp != null) this.fp.getUpdateBroadcaster().removeUpdateListener(this);
         this.fp = fp;
         if (this.fp != null) {
-            //fp.getUpdateBroadcaster().addUpdateListener(this);
             txtName.setText(fp.getName());
             brwSaveTo.setText(fp.getDownloadDirectory());
             txtPassword.setText(fp.getPassword());
             txtComment.setText(fp.getComment());
+            chbExtract.setSelected(fp.isExtractAfterDownload());
+            // cbPrio.setSelectedItem()
         }
     }
 
@@ -60,7 +60,7 @@ public class PackageInfo extends JPanel {
 
         simplePanel = new JPanel();
         simplePanel.setLayout(new MigLayout("", "[]10px[grow, left]", "[][]"));
-        
+
         txtName = new JDTextField();
         txtName.setEnabled(false);
         brwSaveTo = new JDTextField();
@@ -74,45 +74,35 @@ public class PackageInfo extends JPanel {
         tabbedPane.add(JDLocale.L("gui.linkgrabber.packagetab.toggleview1", "Simple"), simplePanel);
 
         extendedPanel = new JPanel();
-        
+
         extendedPanel.setLayout(new MigLayout("", "[]10px[grow][right]", "[][]"));
-      
+
         txtPassword = new JDTextField();
         txtPassword.setEnabled(false);
         txtComment = new JDTextField();
         txtComment.setEnabled(false);
-        
+
         chbExtract = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
         chbExtract.setSelected(true);
         chbExtract.setEnabled(false);
         chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
 
-        cbPrio = new JComboBox(new Integer[] { 4, 3, 2, 1, 0, -1, -2, -3, -4});
+        cbPrio = new JComboBox(new Integer[] { 4, 3, 2, 1, 0, -1, -2, -3, -4 });
         cbPrio.setSelectedIndex(4);
-        
+
         extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
         extendedPanel.add(txtPassword, "growx");
         extendedPanel.add(new JLabel(JDLocale.L("gui.table.contextmenu.priority", "Priorität")));
         extendedPanel.add(cbPrio, "wrap");
-        
+
         extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
         extendedPanel.add(txtComment, "grow");
-        
+
         tabbedPane.add(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Extended"), extendedPanel);
 
         this.setLayout(new MigLayout("insets 8 10 8 10", "[grow,right]", "[8px]0px[grow]"));
         this.add(new JLabel("x"), "wrap");
         this.add(tabbedPane, "grow");
     }
-
-//    public void UpdateEvent(UpdateEvent event) {
-//        if (event.getSource() instanceof LinkGrabberV2FilePackage && this.fp != null && event.getSource() == fp && event.getID() == UpdateEvent.EMPTY_EVENT) {
-//            //fp.getUpdateBroadcaster().removeUpdateListener(this);
-//            fp = null;
-//        } else if (event.getSource() instanceof LinkGrabberV2FilePackage && this.fp != null && event.getSource() == fp && event.getID() == UpdateEvent.UPDATE_EVENT) {
-//            txtName.setText(fp.getName());
-//            brwSaveTo.setText(fp.getDownloadDirectory());
-//        }
-//    }
 
 }

@@ -89,6 +89,7 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.ClipboardHandler;
+import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -545,7 +546,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     // private JDAction actionConfig;
 
-    // private JDAction actionDnD;
+    private JDAction actionDnD;
 
     private JDAction actionExit;
 
@@ -555,16 +556,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionOptionalConfig;
 
-    private JDAction actionItemsAdd;
+    // private JDAction actionItemsAdd;
 
     // private JDAction actionItemsBottom;
 
     private JDAction actionItemsDelete;
-    //
+
     // private JDAction actionItemsDown;
-    //
+
     // private JDAction actionItemsTop;
-    //
+
     // private JDAction actionItemsUp;
 
     private JDAction actionAddLinks;
@@ -587,7 +588,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     // private JDAction actionStartStopDownload;
 
-    private JDAction actionUpdate;
+    // private JDAction actionUpdate;
 
     private JDAction actionWiki;
 
@@ -966,15 +967,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * @param configConstructorObjects
      * @return
      */
-    @SuppressWarnings("unchecked")
-    private JTabbedPanel loadPanel(Class class1, Object[] configConstructorObjects) {
+    private JTabbedPanel loadPanel(Class<?> class1, Object[] configConstructorObjects) {
         JTabbedPanel ret = panelMap.get(class1);
         if (ret == null || ret instanceof PremiumPane) {
-            Class[] classes = new Class[configConstructorObjects.length];
+            Class<?>[] classes = new Class[configConstructorObjects.length];
             for (int i = 0; i < configConstructorObjects.length; i++)
                 classes[i] = configConstructorObjects[i].getClass();
 
-            Constructor con;
+            Constructor<?> con;
             try {
                 con = class1.getConstructor(classes);
 
@@ -1019,7 +1019,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     break;
                 case DownloadTaskPane.ACTION_STARTSTOP:
 
-                    if (JDUtilities.getController().getDownloadStatus() == JDUtilities.getController().DOWNLOAD_RUNNING) {
+                    if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
                         JDUtilities.getController().stopDownloads();
                     } else {
                         JDUtilities.getController().startDownloads();
@@ -1274,14 +1274,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         });
     }
 
-    private JButton createMenuButton(JDAction action) {
-        JButton bt = new JButton(action);
-        bt.setFocusPainted(false);
-        bt.setBorderPainted(false);
-        bt.setOpaque(false);
-        bt.setText(null);
-        return bt;
-    }
+    // private JButton createMenuButton(JDAction action) {
+    // JButton bt = new JButton(action);
+    // bt.setFocusPainted(false);
+    // bt.setBorderPainted(false);
+    // bt.setOpaque(false);
+    // bt.setText(null);
+    // return bt;
+    // }
 
     public void displayMiniWarning(final String shortWarn, final String toolTip, final int showtime) {
         if (shortWarn == null) {
@@ -1403,21 +1403,23 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return inputDialog.getInputText();
     }
 
-    private String getClipBoardImage() {
-        if (ClipboardHandler.getClipboard().isEnabled()) {
-            return JDTheme.V("gui.images.clipboardon");
-        } else {
-            return JDTheme.V("gui.images.clipboardoff");
-        }
-    }
+    // private String getClipBoardImage() {
+    // if (ClipboardHandler.getClipboard().isEnabled()) {
+    // return JDTheme.V("gui.images.clipboardon");
+    // } else {
+    // return JDTheme.V("gui.images.clipboardoff");
+    // }
+    // }
 
-    private String getDoReconnectImage() {
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
-            return JDTheme.V("gui.images.reconnect_ok");
-        } else {
-            return JDTheme.V("gui.images.reconnect_bad");
-        }
-    }
+    // private String getDoReconnectImage() {
+    // if
+    // (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT,
+    // false)) {
+    // return JDTheme.V("gui.images.reconnect_ok");
+    // } else {
+    // return JDTheme.V("gui.images.reconnect_bad");
+    // }
+    // }
 
     public JFrame getFrame() {
         return frame;
@@ -1445,12 +1447,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // JDAction.APP_START_STOP_DOWNLOADS);
         // actionPause = new JDAction(this, getPauseImage(), "action.pause",
         // JDAction.APP_PAUSE_DOWNLOADS);
-        actionItemsAdd = new JDAction(this, JDTheme.V("gui.images.add"), "action.add", JDAction.ITEMS_ADD);
+        // actionItemsAdd = new JDAction(this, JDTheme.V("gui.images.add"),
+        // "action.add", JDAction.ITEMS_ADD);
         actionAddLinks = new JDAction(this, JDTheme.V("gui.images.add"), "action.add", JDAction.ITEMS_ADD);
         actionRemoveLinks = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.links", JDAction.ITEMS_REMOVE_LINKS);
         actionRemovePackages = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.packages", JDAction.ITEMS_REMOVE_PACKAGES);
-        // actionDnD = new JDAction(this, JDTheme.V("gui.images.clipboard"),
-        // "action.dnd", JDAction.ITEMS_DND);
+        actionDnD = new JDAction(this, JDTheme.V("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
         actionOptionalConfig = new JDAction(this, JDTheme.V("gui.images.config.packagemanager"), "action.optconfig", JDAction.APP_OPEN_OPT_CONFIG);
         actionLoadDLC = new JDAction(this, JDTheme.V("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
         actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
@@ -1519,8 +1521,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menFile.add(SimpleGUI.createMenuItem(actionExit));
 
         // menExtra.add(SimpleGUI.createMenuItem(actionConfig));
-        menExtra.addSeparator();
-        // menExtra.add(SimpleGUI.createMenuItem(actionDnD));
+        // menExtra.addSeparator();
+        menExtra.add(SimpleGUI.createMenuItem(actionDnD));
 
         menHelp.add(menViewLog);
         menHelp.add(createBackup);

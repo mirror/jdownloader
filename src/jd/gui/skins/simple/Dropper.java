@@ -18,12 +18,9 @@ package jd.gui.skins.simple;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 
 import javax.swing.JDialog;
 import javax.swing.JLabel;
-import javax.swing.WindowConstants;
 
 import jd.event.UIListener;
 import jd.gui.skins.simple.components.DragNDrop;
@@ -36,7 +33,7 @@ import jd.utils.JDUtilities;
  * 
  * @author Tom
  */
-public class Dropper extends JDialog implements WindowListener {
+public class Dropper extends JDialog {
 
     private static final long serialVersionUID = 8764525546298642601L;
 
@@ -48,12 +45,11 @@ public class Dropper extends JDialog implements WindowListener {
         super();
         setModal(false);
         setLayout(new GridBagLayout());
-        addWindowListener(this);
         target = new DragNDrop();
         label = new JLabel(JDLocale.L("gui.droptarget.label", "Ziehe Links auf mich!"));
         JDUtilities.addToGridBag(this, target, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.NORTH);
         JDUtilities.addToGridBag(this, label, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTH);
-        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         setSize(50, 70);
         setResizable(false);
         setUndecorated(false);
@@ -93,25 +89,4 @@ public class Dropper extends JDialog implements WindowListener {
         pack();
     }
 
-    public void windowActivated(WindowEvent e) {
-    }
-
-    public void windowClosed(WindowEvent e) {
-    }
-
-    public void windowClosing(WindowEvent e) {
-        setVisible(false);
-    }
-
-    public void windowDeactivated(WindowEvent e) {
-    }
-
-    public void windowDeiconified(WindowEvent e) {
-    }
-
-    public void windowIconified(WindowEvent e) {
-    }
-
-    public void windowOpened(WindowEvent e) {
-    }
 }
