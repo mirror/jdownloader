@@ -334,13 +334,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
 
-    public static final String PARAM_DISABLE_TREETABLE_TOOLTIPPS = "DISABLE_TREETABLE_TOOLTIPPS";
-
     public static final String PARAM_JAC_LOG = "JAC_DOLOG";
 
     public static final String PARAM_SHOW_SPLASH = "SHOW_SPLASH";
-
-    public static final String PARAM_SHOW_FENGSHUI = "SHOW_FENGSHUI";
 
     public static final String PARAM_START_DOWNLOADS_AFTER_START = "START_DOWNLOADS_AFTER_START";
 

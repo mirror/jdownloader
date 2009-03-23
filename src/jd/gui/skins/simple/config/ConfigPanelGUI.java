@@ -94,12 +94,10 @@ public class ConfigPanelGUI extends ConfigPanel {
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGUI.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDLocale.L("gui.config.gui.show_speed_graph_window", "Speedmeter Time period (sec)"), 10, 60 * 60 * 12));
         ce.setDefaultValue(60);
         ce.setEnabledCondidtion(cond, "==", true);
-        
+
         // Links Tab
         ConfigContainer links = new ConfigContainer(this, JDLocale.L("gui.config.gui.container.tab", "Downloadlinks"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, links));
-
-    
 
         links.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, LinkGrabber.PROPERTY_ONLINE_CHECK, JDLocale.L("gui.config.gui.linkgrabber.onlinecheck", "Linkgrabber:Linkstatus überprüfen(Verfügbarkeit)")));
         ce.setDefaultValue(true);
@@ -119,9 +117,6 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setDefaultValue(true);
 
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")));
-        ce.setDefaultValue(false);
-
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_DISABLE_TREETABLE_TOOLTIPPS, JDLocale.L("gui.config.gui.disabletooltipps", "ToolTipps der DownloadListe abschalten")));
         ce.setDefaultValue(false);
 
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGUI.PARAM_NUM_PREMIUM_CONFIG_FIELDS, JDLocale.L("gui.config.gui.premiumconfigfilednum", "How many Premiumaccount fields should be displayed"), 1, 10));
@@ -243,9 +238,10 @@ public class ConfigPanelGUI extends ConfigPanel {
         cep.save();
         subConfig.save();
     }
+
     public PropertyType hasChanges() {
-      
-        return PropertyType.getMax(super.hasChanges(),cep.hasChanges());
+
+        return PropertyType.getMax(super.hasChanges(), cep.hasChanges());
     }
 
 }

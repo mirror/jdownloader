@@ -42,7 +42,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.PackageManager;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.update.PackageData;
 import jd.update.WebUpdater;
@@ -245,10 +244,7 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
         bpanel.add(btnReset);
 
         ConfigContainer container = new ConfigContainer(this);
-
-        if (!SimpleGUI.CURRENTGUI.getGuiConfig().getBooleanProperty(SimpleGUI.PARAM_SHOW_FENGSHUI, true)) {
-            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, WebUpdater.getConfig("JDU"), "SUPPORT_JD", JDLocale.L("gui.config.packagemanager.supportJD", "Support JD by downloading pumped-up-addons")).setDefaultValue(true).setInstantHelp(JDLocale.L("gui.config.packagemanager.supportJD.instanthelp", "http://wiki.jdownloader.org/index.php?title=Addon-Manager")));
-        }
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, WebUpdater.getConfig("JDU"), "SUPPORT_JD", JDLocale.L("gui.config.packagemanager.supportJD", "Support JD by downloading pumped-up-addons")).setDefaultValue(true).setInstantHelp(JDLocale.L("gui.config.packagemanager.supportJD.instanthelp", "http://wiki.jdownloader.org/index.php?title=Addon-Manager")));
         this.add(cep = new ConfigEntriesPanel(container), BorderLayout.NORTH);
         cep.addPropertyChangeListener(this);
         this.add(scrollpane);
