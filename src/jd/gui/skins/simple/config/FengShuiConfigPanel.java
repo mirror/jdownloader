@@ -89,15 +89,14 @@ import net.miginfocom.swing.MigLayout;
 
 public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener {
 
+    private static final long serialVersionUID = 1715405893428812995L;
     private static final String WRAP_BETWEEN_ROWS = ", wrap 10!";
     private static final String WRAP = ", wrap 20";
-    private static final long serialVersionUID = 1715405893428812995L;
     private static final String GAPLEFT = "gapleft 10!, ";
     private static final String GAPRIGHT = "gapright 26!, ";
     private static final String PUSHGAP = " :70";
-    private static FengShuiConfigPanel instance;
 
-    private JButton btnRR, btnMore, btnApply, btnCancel, btnPremium, btnAutoConfig, btnSelectRouter, btnTestReconnect;
+    private JButton btnRR, btnApply, btnCancel, btnPremium, btnAutoConfig, btnSelectRouter, btnTestReconnect;
     private JComboBox languages;
     private SubConfiguration guiConfig = null;
     private Configuration config = JDUtilities.getConfiguration();
@@ -120,20 +119,12 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         this.setName("FENGSHUICONFIG");
 
-        JPanel panel = getPanel();
-
+        initPanel();
     }
 
     public void actionPerformed(ActionEvent e) {
-
-        if (e.getSource() == btnMore) {
+        if (e.getSource() == btnApply) {
             save();
-
-            SimpleGUI.CURRENTGUI.getGuiConfig().setProperty(SimpleGUI.PARAM_SHOW_FENGSHUI, false);
-            // SimpleGUI.CURRENTGUI.showConfig();
-        } else if (e.getSource() == btnApply) {
-            save();
-
         } else if (e.getSource() == btnRR) {
             JDRRGui jd = new JDRRGui(SimpleGUI.CURRENTGUI.getFrame(), ip.getText());
             jd.setModal(true);
@@ -273,7 +264,6 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
                                 try {
                                     th.wait(15000);
                                 } catch (InterruptedException e1) {
-                                    // TODO Auto-generated catch block
                                     e1.printStackTrace();
                                 }
                             }
@@ -295,7 +285,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
 
                         JPanel panel = new JPanel(new BorderLayout(10, 10));
                         final DefaultListModel defaultListModel = new DefaultListModel();
-                        final String text = JDLocale.L("gui.config.fengshui.searchroutermodel","Search Router Model");
+                        final String text = JDLocale.L("gui.config.fengshui.searchroutermodel", "Search Router Model");
                         final JTextField searchField = new JTextField();
                         searchField.setForeground(Color.lightGray);
                         final JList list = new JList(defaultListModel);
@@ -367,7 +357,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
                         JPanel p = new JPanel(new BorderLayout(5, 5));
                         p.add(searchField, BorderLayout.CENTER);
                         p.add(reset, BorderLayout.EAST);
-                        JLabel example = new JLabel(JDLocale.L("gui.config.fengshui.example","Example:")+ "3Com ADSL");
+                        JLabel example = new JLabel(JDLocale.L("gui.config.fengshui.example", "Example:") + "3Com ADSL");
                         example.setForeground(Color.gray);
                         p.add(example, BorderLayout.SOUTH);
                         for (String element : d) {
@@ -519,7 +509,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
 
     private static final String DEBUG = "";
 
-    private JPanel getPanel() {
+    private JPanel initPanel() {
         panel = this;
         this.setLayout(new MigLayout(DEBUG + "ins 20", "[right, pref!]0[grow,fill]0[]"));
         routerIp = config.getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
@@ -602,8 +592,6 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
 
         JPanel bpanel = new JPanel(new MigLayout(DEBUG));
         bpanel.add(new JSeparator(), "spanx, pushx, growx");
-        bpanel.add(btnMore = new JButton(JDLocale.L("gui.config.fengshui.expertview", "expert view")), "tag help2");
-        btnMore.addActionListener(this);
         bpanel.add(btnApply = new JButton(JDLocale.L("gui.btn_save", "save")), "w pref!, tag apply");
         btnApply.addActionListener(this);
         bpanel.add(btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "cancel")), "w pref!, tag cancel, wrap");
@@ -719,22 +707,11 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
 
     }
 
-    public static FengShuiConfigPanel getInstance() {
-        if (instance == null)
-            instance = new FengShuiConfigPanel();
-        else if (instance.isVisible() == false) instance = new FengShuiConfigPanel();
-        return instance;
-    }
-
     @Override
     public void onDisplay() {
-        // TODO Auto-generated method stub
-        
     }
 
     @Override
     public void onHide() {
-        // TODO Auto-generated method stub
-        
     }
 }
