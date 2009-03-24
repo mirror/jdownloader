@@ -31,6 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class BluehostTo extends PluginForHost {
@@ -61,6 +62,7 @@ public class BluehostTo extends PluginForHost {
         }
     }
 
+    @Override
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -83,6 +85,7 @@ public class BluehostTo extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         this.setBrowserExclusive();
         getFileInformation(downloadLink);
@@ -115,23 +118,16 @@ public class BluehostTo extends PluginForHost {
         // Zeit bis free download möglich
         String page = br.getPage("http://bluehost.to/fileinfo/urls=" + downloadLink.getDownloadURL());
         String[] dat = page.split("\\, ");
-        if (Integer.parseInt(dat[4]) > 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, Integer.parseInt(dat[4]) * 1000l);
+        int time = Integer.parseInt(dat[4]);
+        if (time > 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugin.bluehostto.time", "It's not between 0 and 10 o'clock!"), time * 1000l);
 
         br.getPage(downloadLink.getDownloadURL());
         String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"1\\; URL=(.*?)\" />").getMatch(0);
         br.getPage(redirect);
-        Form[] forms = br.getForms();
-
-        // br.cloneBrowser().getPage("http://bluehost.to/style.css");
-        // br.cloneBrowser().getPage(
-        // "http://bluehost.to/css/autosuggest_inquisitor.css");
-
-        Form dlForm = forms[1];
         br.clearCookies("bluehost.to");
-        br.submitForm(dlForm);
+        br.submitForm(br.getForm(1));
         br.getPage(downloadLink.getDownloadURL());
-        forms = br.getForms();
-        br.openDownload(downloadLink, forms[1]);
+        br.openDownload(downloadLink, br.getForm(1));
         dl.startDownload();
     }
 
@@ -141,53 +137,50 @@ public class BluehostTo extends PluginForHost {
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
-        if (urls == null) { return false; }
-    
-            try {
+        if (urls == null) return false;
 
-                logger.finest("Checked Links with one request: " + urls.length);
-                StringBuilder sb = new StringBuilder();
-                sb.append("urls=");
-                for (int i = 0; i < urls.length; i++) {
-                    sb.append(urls[i].getDownloadURL());
-                    sb.append(',');
-                }
-                this.setBrowserExclusive();
-                br.forceDebug(true);
-                br.setCookie("http://bluehost.to", "bluehost_lang", "DE");
-                br.postPage("http://bluehost.to/fileinfo/multi",sb.toString());
+        try {
 
-                String[] lines = Regex.getLines(br + "");
-
-                for (int i = 0; i < urls.length; i++) {
-                    String[] dat = lines[i].split("\\, ");
-                    try {
-                        urls[i].setMD5Hash(dat[5].trim());
-                        urls[i].setFinalFileName(dat[0]);
-                        urls[i].setDupecheckAllowed(true);
-                        urls[i].setDownloadSize(Long.parseLong(dat[2]));
-                        urls[i].setAvailable(true);
-                    } catch (Exception e) {
-                        urls[i].setAvailable(false);
-                    }
-                }
-
-            } catch (Exception e) {
-                System.gc();
-                e.printStackTrace();
-                return false;
+            logger.finest("Checked Links with one request: " + urls.length);
+            StringBuilder sb = new StringBuilder();
+            sb.append("urls=");
+            for (int i = 0; i < urls.length; i++) {
+                sb.append(urls[i].getDownloadURL());
+                sb.append(',');
             }
-      
+            this.setBrowserExclusive();
+            br.forceDebug(true);
+            br.setCookie("http://bluehost.to", "bluehost_lang", "DE");
+            br.postPage("http://bluehost.to/fileinfo/multi", sb.toString());
+
+            String[] lines = Regex.getLines(br + "");
+
+            for (int i = 0; i < urls.length; i++) {
+                String[] dat = lines[i].split("\\, ");
+                try {
+                    urls[i].setMD5Hash(dat[5].trim());
+                    urls[i].setFinalFileName(dat[0]);
+                    urls[i].setDupecheckAllowed(true);
+                    urls[i].setDownloadSize(Long.parseLong(dat[2]));
+                    urls[i].setAvailable(true);
+                } catch (Exception e) {
+                    urls[i].setAvailable(false);
+                }
+            }
+
+        } catch (Exception e) {
+            System.gc();
+            e.printStackTrace();
+            return false;
+        }
+
         return true;
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         correctUrl(downloadLink);
-        // String page;
-        // dateiname, dateihash, dateisize, dateidownloads, zeit bis
-        // happyhour
-        //
+        // dateiname, dateihash, dateisize, dateidownloads, zeit bis HH
         this.setBrowserExclusive();
         br.setCookie("http://bluehost.to", "bluehost_lang", "DE");
         String page = br.getPage("http://bluehost.to/fileinfo/urls=" + downloadLink.getDownloadURL());
@@ -214,6 +207,7 @@ public class BluehostTo extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
