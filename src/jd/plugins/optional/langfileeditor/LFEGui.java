@@ -313,9 +313,10 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         mnuColorizeOld.setSelected(colorizeOld);
         mnuColorizeDone.setSelected(colorizeDone);
 
-        mnuColorizeMissing.setIcon(JDTheme.II((mnuColorizeMissing.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
-        mnuColorizeOld.setIcon(JDTheme.II((mnuColorizeOld.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
-        mnuColorizeDone.setIcon(JDTheme.II((mnuColorizeDone.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
+        int n = 12;
+        mnuColorizeMissing.setIcon(JDTheme.II((mnuColorizeMissing.isSelected()) ? "gui.images.selected" : "gui.images.unselected", n, n));
+        mnuColorizeOld.setIcon(JDTheme.II((mnuColorizeOld.isSelected()) ? "gui.images.selected" : "gui.images.unselected", n, n));
+        mnuColorizeDone.setIcon(JDTheme.II((mnuColorizeDone.isSelected()) ? "gui.images.selected" : "gui.images.unselected", n, n));
 
         mnuColorizeMissing.addActionListener(this);
         mnuPickMissingColor.addActionListener(this);
@@ -767,18 +768,18 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     }
 
     private void changed(boolean b) {
-        if (b != changed) {
-            // TODO: weglassen?
-            if (b) {
-                // this.setTitle(JDLocale.L("plugins.optional.langfileeditor.title",
-                // "jDownloader - Language File Editor") + " [ * " +
-                // languageFile.getAbsolutePath() + "]");
-            } else {
-                // this.setTitle(JDLocale.L("plugins.optional.langfileeditor.title",
-                // "jDownloader - Language File Editor") + " [" +
-                // languageFile.getAbsolutePath() + "]");
-            }
-        }
+        // TODO: weglassen?
+        // if (b != changed) {
+        // if (b) {
+        // this.setTitle(JDLocale.L("plugins.optional.langfileeditor.title",
+        // "jDownloader - Language File Editor") + " [ * " +
+        // languageFile.getAbsolutePath() + "]");
+        // } else {
+        // this.setTitle(JDLocale.L("plugins.optional.langfileeditor.title",
+        // "jDownloader - Language File Editor") + " [" +
+        // languageFile.getAbsolutePath() + "]");
+        // }
+        // }
         changed = b;
     }
 
@@ -822,7 +823,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         String value, key, language;
         KeyInfo keyInfo;
         for (Entry<String, String> entry : sourceEntries.entrySet()) {
-
             key = entry.getKey();
             keyInfo = new KeyInfo(key, entry.getValue(), fileEntries.remove(key));
             data.add(keyInfo);
@@ -843,7 +843,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         }
 
         for (Entry<String, String> entry : fileEntries.entrySet()) {
-
             key = entry.getKey();
             value = null;
 
@@ -922,7 +921,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             for (File file : directory.listFiles()) {
                 if (file.isDirectory()) {
                     files.addAll(getSourceFiles(file));
-                } else if (file.getName().matches(".*\\.java$")) {
+                } else if (file.getName().toLowerCase().endsWith(".java")) {
                     files.add(file);
                 }
             }

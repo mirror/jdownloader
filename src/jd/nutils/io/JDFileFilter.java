@@ -47,7 +47,7 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
      *            Beschreibung vom FileFilter oder null, wenn der Defaultname
      *            (Containerfiles) genommen werden soll
      * @param extension
-     *            Zu akzeptierende Dateiendung (mit Punkt)
+     *            Zu akzeptierende Dateiendungen (mit Punkt und mit | getrennt)
      * @param acceptDirectories
      *            Sollen Verzeichnisse akzeptiert werden?
      */
