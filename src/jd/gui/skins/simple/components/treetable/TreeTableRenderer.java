@@ -93,39 +93,34 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
 
     TreeTableRenderer(DownloadTreeTable downloadTreeTable) {
 
-       initIcons();
-       initLocale();
+        initIcons();
+        initLocale();
         table = downloadTreeTable;
         leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
         progress = new JDProgressBar();
 
         progress.setStringPainted(true);
         progress.setOpaque(true);
-      
-   
+
     }
 
     private void initIcons() {
-        icon_link = JDTheme.II("gui.images.link",16,16);
-
-        icon_fp_open = JDTheme.II("gui.images.package_closed",16,16);
-
-        icon_fp_closed = JDTheme.II("gui.images.package_opened",16,16);
+        icon_link = JDTheme.II("gui.images.link", 16, 16);
+        icon_fp_open = JDTheme.II("gui.images.package_closed", 16, 16);
+        icon_fp_closed = JDTheme.II("gui.images.package_opened", 16, 16);
         imgFinished = JDTheme.II("gui.images.selected", 16, 16);
         imgFailed = JDTheme.II("gui.images.unselected", 16, 16);
-        imgExtract= JDTheme.II("gui.images.update_manager", 16, 16);
-        
+        imgExtract = JDTheme.II("gui.images.update_manager", 16, 16);
     }
 
     private void initLocale() {
-        this.strPluginDisabled = JDLocale.L("gui.downloadlink.plugindisabled", "[Plugin disabled]");
+        strPluginDisabled = JDLocale.L("gui.downloadlink.plugindisabled", "[Plugin disabled]");
         strFilePackageStatusFinished = JDLocale.L("gui.filepackage.finished", "[finished]");
-        this.strDownloadLinkActive = JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
-        this.strETA = JDLocale.L("gui.eta", "ETA");
+        strDownloadLinkActive = JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
+        strETA = JDLocale.L("gui.eta", "ETA");
         strPluginError = JDLocale.L("gui.treetable.error.plugin", "Plugin error");
         strSecondsAbrv = JDLocale.L("gui.treetable.seconds", "sec");
-this.strWaitIO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input");
-
+        strWaitIO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input");
     }
 
     @Override
@@ -139,7 +134,7 @@ this.strWaitIO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user i
             co = getDownloadLinkCell(table, value, isSelected, hasFocus, row, column);
             if (!((DownloadLink) value).isEnabled()) {
                 co.setEnabled(false);
-            } 
+            }
         } else {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         }
@@ -266,7 +261,7 @@ this.strWaitIO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user i
 
         case DownloadTreeTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            if (dLink.getPluginProgress()!=null&&dLink.getPluginProgress().getPercent()>0.0&&dLink.getPluginProgress().getPercent()<100.0) {
+            if (dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
                 ((JRendererLabel) co).setIcon(imgExtract);
                 ((JRendererLabel) co).setText(dLink.getLinkStatus().getStatusString());
             } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
@@ -281,7 +276,6 @@ this.strWaitIO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user i
                 ((JRendererLabel) co).setIcon(null);
             }
 
-        
             ((JRendererLabel) co).setBorder(null);
 
             return co;
@@ -352,7 +346,7 @@ this.strWaitIO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user i
                 ((JRendererLabel) co).setText(sb.toString());
             } else if (fp.getLinksInProgress() > 0) {
                 clearSB();
-                sb.append(fp.getLinksInProgress()).append('/').append(fp.size()).append(strDownloadLinkActive);
+                sb.append(fp.getLinksInProgress()).append('/').append(fp.size()).append(' ').append(strDownloadLinkActive);
                 ((JRendererLabel) co).setText(sb.toString());
             } else {
                 ((JRendererLabel) co).setText("");
@@ -367,17 +361,14 @@ this.strWaitIO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user i
 
     private void clearSB() {
         sb.delete(0, sb.capacity() - 1);
-
     }
 
     public Painter getPainter() {
-        // TODO Auto-generated method stub
         return painter;
     }
 
     public void setPainter(Painter painter) {
         this.painter = painter;
-
     }
 
 }

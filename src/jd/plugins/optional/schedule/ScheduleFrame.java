@@ -72,10 +72,10 @@ public class ScheduleFrame extends JPanel implements ActionListener {
         start.setBorderPainted(false);
         start.setFocusPainted(false);
 
-        maxdls = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 10, 1));
+        maxdls = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
         maxdls.setBorder(BorderFactory.createEmptyBorder());
 
-        maxspeed = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED), 0, 50000, 50));
+        maxspeed = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED), 0, Integer.MAX_VALUE, 50));
         maxspeed.setBorder(BorderFactory.createEmptyBorder());
 
         time = new JSpinner(date_model);
@@ -152,9 +152,7 @@ public class ScheduleFrame extends JPanel implements ActionListener {
             } else {
                 status.setText(JDLocale.L("addons.schedule.menu.p_time", " Select positive time!"));
             }
-        }
-
-        if (e.getSource() == t) {
+        } else if (e.getSource() == t) {
 
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, maxspeed.getValue());
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls.getValue());
@@ -189,7 +187,11 @@ public class ScheduleFrame extends JPanel implements ActionListener {
 
     }
 
-    // Berechnen der TimerZeit
+    /**
+     * Berechnen der TimerZeit
+     * 
+     * @return
+     */
     private int parseTime() {
         long startTime = Calendar.getInstance().getTime().getTime();
         long endTime = date_model.getDate().getTime();

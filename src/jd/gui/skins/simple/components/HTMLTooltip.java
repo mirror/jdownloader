@@ -24,7 +24,6 @@ import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map.Entry;
 
 import javax.swing.BorderFactory;
@@ -115,14 +114,10 @@ public class HTMLTooltip extends JWindow implements MouseListener, HyperlinkList
         sb.append("<style>");
         sb.append("\r\n");
 
-        Entry<String, HashMap<String, String>> next;
-        Entry<String, String> prop;
-        for (Iterator<Entry<String, HashMap<String, String>>> it = styles.entrySet().iterator(); it.hasNext();) {
-            next = it.next();
+        for (Entry<String, HashMap<String, String>> next : styles.entrySet()) {
             sb.append(next.getKey() + "{");
             sb.append("\r\n");
-            for (Iterator<Entry<String, String>> it2 = next.getValue().entrySet().iterator(); it2.hasNext();) {
-                prop = it2.next();
+            for (Entry<String, String> prop : next.getValue().entrySet()) {
                 sb.append(prop.getKey() + ":" + prop.getValue() + ";");
                 sb.append("\r\n");
             }
@@ -143,9 +138,7 @@ public class HTMLTooltip extends JWindow implements MouseListener, HyperlinkList
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
             try {
                 JLinkButton.openURL(e.getURL());
-
             } catch (Exception e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
         }
