@@ -789,15 +789,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
             fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
             fc.setDialogTitle(JDLocale.L("gui.filechooser.savelistasdlc", "Save list in DLC file"));
-            fc.showSaveDialog(frame);
-            File ret = fc.getSelectedFile();
-            if (ret == null) { return; }
-            if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("dlc")) {
-
-                ret = new File(ret.getAbsolutePath() + ".dlc");
-            }
-            if (ret != null) {
-                fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_LINKS, ret));
+            if (fc.showSaveDialog(frame) == JDFileChooser.APPROVE_OPTION) {
+                File ret = fc.getSelectedFile();
+                if (ret == null) return;
+                if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("dlc")) {
+                    ret = new File(ret.getAbsolutePath() + ".dlc");
+                }
+                if (ret != null) {
+                    fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_LINKS, ret));
+                }
             }
             break;
         case JDAction.APP_LOAD_DLC:
@@ -805,9 +805,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             fc.setDialogTitle(JDLocale.L("gui.filechooser.loaddlc", "Load DLC file"));
             fc.setFileFilter(new JDFileFilter(null, ".dlc|.rsdf|.ccf|.linkbackup", true));
             if (fc.showOpenDialog(frame) == JDFileChooser.APPROVE_OPTION) {
-                ret = fc.getSelectedFile();
-                if (ret != null) {
-                    fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_LINKS, ret));
+                File ret2 = fc.getSelectedFile();
+                if (ret2 != null) {
+                    fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_LINKS, ret2));
                 }
             }
             break;
