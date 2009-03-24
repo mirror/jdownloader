@@ -38,7 +38,6 @@ import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
-import jd.utils.JDTheme;
 
 public class Schedule extends PluginOptional {
 
@@ -84,12 +83,6 @@ public class Schedule extends PluginOptional {
 
         dialog.setTitle(JDLocale.L("addons.schedule.name", "Schedule"));
         dialog.setModal(true);
-        /* to prevent a NoSuchMethodError */
-        try {
-            dialog.setIconImage(JDTheme.I("gui.images.jd_logo"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         dialog.setSize(450, 300);
         dialog.setResizable(false);
         dialog.setLocation(300, 300);

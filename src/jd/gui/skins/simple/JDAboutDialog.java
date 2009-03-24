@@ -37,7 +37,6 @@ import javax.swing.table.TableColumn;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Browser;
 import jd.utils.JDLocale;
-import jd.utils.JDTheme;
 
 import org.jdesktop.swingx.JXTitledSeparator;
 
@@ -112,7 +111,6 @@ public class JDAboutDialog extends JDialog {
         p.setPreferredSize(new Dimension(800, 600));
 
         setResizable(false);
-        setIconImage(JDTheme.I("gui.images.jd_logo"));
         setModal(true);
         setTitle(JDLocale.L("gui.dialog.about.title", "About JDownloader"));
         setContentPane(p);
