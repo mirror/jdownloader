@@ -102,14 +102,13 @@ public class HTMLTooltip extends JWindow implements MouseListener, HyperlinkList
     }
 
     public void destroy() {
-        if (!isVisible()) { return; }
+        if (!isVisible()) return;
         setVisible(false);
         dispose();
-
     }
 
     public String getCSSString() {
-        if (styles == null) { return ""; }
+        if (styles == null) return "";
         StringBuilder sb = new StringBuilder();
         sb.append("<style>");
         sb.append("\r\n");
@@ -128,10 +127,6 @@ public class HTMLTooltip extends JWindow implements MouseListener, HyperlinkList
         sb.append("</style>");
 
         return sb.toString();
-    }
-
-    public HashMap<String, HashMap<String, String>> getStyles() {
-        return styles;
     }
 
     public void hyperlinkUpdate(HyperlinkEvent e) {

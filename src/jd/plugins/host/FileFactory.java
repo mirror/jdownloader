@@ -35,6 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class FileFactory extends PluginForHost {
@@ -72,11 +73,11 @@ public class FileFactory extends PluginForHost {
         } catch (IOException e) {
             e.printStackTrace();
             if (e.getMessage() != null && e.getMessage().contains("502")) {
-                logger.severe("Filefactory returned BAd gateway.");
+                logger.severe("Filefactory returned Bad gateway.");
                 Thread.sleep(1000);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (e.getMessage() != null && e.getMessage().contains("503")) {
-                logger.severe("Filefactory returned BAd gateway.");
+                logger.severe("Filefactory returned Bad gateway.");
                 Thread.sleep(1000);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
@@ -122,7 +123,7 @@ public class FileFactory extends PluginForHost {
                     }
                 }
             try {
-                parameter.getLinkStatus().setStatusText("JAC running");
+                parameter.getLinkStatus().setStatusText(JDLocale.L("plugin.filefactory.jac.running", "JAC running"));
                 parameter.requestGuiUpdate();
                 captchaCode = Plugin.getCaptchaCode(captchaFile, this, parameter);
             } catch (Exception e) {
@@ -130,14 +131,14 @@ public class FileFactory extends PluginForHost {
             }
             captchaCode = captchaCode.replaceAll("\\-", "");
             if (captchaCode.length() < 4) continue;
-            parameter.getLinkStatus().setStatusText("JAntiCaptcha: " + captchaCode);
+            parameter.getLinkStatus().setStatusText(JDLocale.LF("plugin.filefactory.jac.returned", "JAntiCaptcha: %s", captchaCode));
             parameter.requestGuiUpdate();
 
             if (captchaCode != null && captchaCode.length() == 4) break;
 
         }
         Thread.sleep(2000);
-        parameter.getLinkStatus().setStatusText("JAC send: " + captchaCode);
+        parameter.getLinkStatus().setStatusText(JDLocale.LF("plugin.filefactory.jac.send", "JAC send: %s", captchaCode));
         parameter.requestGuiUpdate();
         JDUtilities.getSubConfig("JAC").setProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, vp);
         Form captchaForm = br.getForm(1);

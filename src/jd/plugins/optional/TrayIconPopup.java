@@ -44,6 +44,7 @@ import javax.swing.event.ChangeListener;
 import jd.config.Configuration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
+import jd.event.UIEvent;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
@@ -330,7 +331,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             JDUtilities.getConfiguration().save();
             break;
         case TrayIconPopup.ACTION_UPDATE:
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_UPDATE, null));
+            simplegui.fireUIEvent(new UIEvent(simplegui, UIEvent.UI_INTERACT_UPDATE));
             break;
         case TrayIconPopup.ACTION_EXIT:
             JDUtilities.getController().exit();

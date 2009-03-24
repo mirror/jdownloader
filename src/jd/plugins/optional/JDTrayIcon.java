@@ -52,6 +52,7 @@ import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
+import jd.event.UIEvent;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.JDImage;
@@ -149,7 +150,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
         } else if (e.getSource() == stopafter) {
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_PAUSE_DOWNLOADS, null));
         } else if (e.getSource() == update) {
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_UPDATE, null));
+            simplegui.fireUIEvent(new UIEvent(simplegui, UIEvent.UI_INTERACT_UPDATE));
         } else if (e.getSource() == configuration) {
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
         } else if (e.getSource() == reconnect) {
@@ -530,18 +531,12 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
     }
 
     public void mouseClicked(MouseEvent arg0) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseEntered(MouseEvent arg0) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseExited(MouseEvent arg0) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mousePressed(MouseEvent arg0) {
@@ -551,11 +546,8 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
                 miniIt();
             }
         }
-
     }
 
     public void mouseReleased(MouseEvent arg0) {
-        // TODO Auto-generated method stub
-
     }
 }
