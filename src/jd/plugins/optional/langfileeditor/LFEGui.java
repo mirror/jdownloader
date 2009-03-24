@@ -89,7 +89,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private static final String PROPERTY_SVN_WORKING_COPY = "PROPERTY_SVN_WORKING_COPY";
     private static final String PROPERTY_SVN_UPDATE_ON_START = "PROPERTY_SVN_UPDATE_ON_START";
 
-    // private JFrame frame;
     private JXTable table;
     private MyTableModel tableModel;
     private File sourceFile, languageFile;
@@ -125,16 +124,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     }
 
     private void showGui() {
-        // frame = new JFrame();
-        // frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        // frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title",
-        // "jDownloader - Language File Editor"));
-        // frame.setIconImage(JDTheme.I("gui.images.jd_logo"));
-        // frame.setMinimumSize(new Dimension(800, 500));
-        // frame.setPreferredSize(new Dimension(1200, 700));
-        // frame.setName("LANGFILEEDIT");
-        // frame.addWindowListener(new LocationListener());
-
         colorizeDone = subConfig.getBooleanProperty(PROPERTY_COLORIZE_DONE, false);
         colorizeMissing = subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, true);
         colorizeOld = subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false);
@@ -207,13 +196,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         main.setBorder(new EmptyBorder(10, 10, 10, 10));
         main.add(top, BorderLayout.PAGE_START);
         main.add(new JScrollPane(table));
-
-        // frame.setContentPane(main);
-        // frame.setJMenuBar(buildMenu());
-        // frame.setResizable(true);
-        // frame.pack();
-        // SimpleGUI.restoreWindow(null, frame);
-        // frame.setVisible(true);
 
         this.setLayout(new BorderLayout());
         this.add(buildMenu(), BorderLayout.PAGE_START);
@@ -1235,6 +1217,9 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     @Override
     public void onHide() {
+        if (changed && JOptionPane.showConfirmDialog(this, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+            saveLanguageFile(languageFile);
+        }
     }
 
 }

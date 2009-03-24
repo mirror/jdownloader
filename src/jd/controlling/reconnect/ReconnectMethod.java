@@ -126,9 +126,4 @@ public abstract class ReconnectMethod {
         return config;
     }
 
-    @Deprecated
-    public void resetMethod() {
-        retries = 0;
-    }
-
 }
