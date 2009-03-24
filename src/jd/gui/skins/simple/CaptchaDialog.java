@@ -135,7 +135,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
         ImageIcon imageIcon = new ImageIcon(file.getAbsolutePath());
 
         if (plugin != null && plugin.getCaptchaDetectionID() != Plugin.CAPTCHA_USER_INPUT && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false) && JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), plugin.getHost())) {
-            setTitle(JDLocale.L("gui.captchaWindow.title", "jAntiCaptcha aktiv!"));
+            setTitle(JDLocale.L("gui.captchaWindow.title", "jAntiCaptcha active!"));
             final String host = plugin.getHost();
             jacThread = new Thread("JAC") {
                 @Override
@@ -160,8 +160,8 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
                         }
                         textField.setText(code);
                     } else {
-                        textField.setText(JDLocale.L("gui.captchaWindow.askForInput", "Bitte eingeben!"));
-                        setTitle(JDLocale.L("gui.captchaWindow.title_error", "jAntiCaptcha Fehler. Bitte Code eingeben!"));
+                        textField.setText(JDLocale.L("gui.captchaWindow.askForInput", "Please enter..."));
+                        setTitle(JDLocale.L("gui.captchaWindow.title_error", "jAntiCaptcha Error. Please enter proper code!"));
 
                     }
 
@@ -187,7 +187,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
                     while (--c >= 0) {
                         if (!isVisible()) return;
                         if (countdownThread == null) return;
-                        setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Bitte eingeben!") + " [" + JDUtilities.formatSeconds(c) + "]");
+                        setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Please enter...") + " [" + JDUtilities.formatSeconds(c) + "]");
                         if (c <= 3) JDSounds.P("sound.captcha.onCaptchaInputEmergency");
 
                         try {
@@ -208,7 +208,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
             if (JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20) != 0) {
                 countdownThread.start();
             } else {
-                setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Bitte eingeben!"));
+                setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Please enter..."));
             }
 
         }
@@ -222,7 +222,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
         btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
         btnOK.addActionListener(this);
 
-        btnBAD = new JButton(JDLocale.L("gui.btn_cancel", "CANCEL"));
+        btnBAD = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
         btnBAD.addActionListener(this);
 
         this.getRootPane().setDefaultButton(btnOK);
@@ -235,7 +235,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
 
         if (plugin != null && plugin.getLastCaptcha() != null && plugin.getLastCaptcha().getLetterComperators() != null) {
             JPanel p = new JPanel();
-            p.add(new JLabel("Current Captcha: "));
+            p.add(new JLabel(JDLocale.L("gui.captchawindow.currentcaptcha","Current Captcha")+": "));
             JDUtilities.addToGridBag(this, p, 0, 2, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 
         }
@@ -287,7 +287,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
             countdownThread.interrupt();
         }
         countdownThread = null;
-        setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Bitte eingeben!"));
+        setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Please enter..."));
     }
 
     public void keyReleased(KeyEvent e) {
