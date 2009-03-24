@@ -18,7 +18,6 @@ package jd.plugins.optional.schedule;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
@@ -26,6 +25,7 @@ import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Vector;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
@@ -84,7 +84,12 @@ public class Schedule extends PluginOptional {
 
         dialog.setTitle(JDLocale.L("addons.schedule.name", "Schedule"));
         dialog.setModal(true);
-        dialog.setIconImage(JDTheme.I("gui.images.jd_logo"));
+        /* to prevent a NoSuchMethodError */
+        try {
+            dialog.setIconImage(JDTheme.I("gui.images.jd_logo"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         dialog.setSize(450, 300);
         dialog.setResizable(false);
         dialog.setLocation(300, 300);
@@ -112,13 +117,14 @@ public class Schedule extends PluginOptional {
         buttons.add(add);
         buttons.add(remove);
 
-        menu = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
-        menu.add(list);
-        menu.add(buttons);
+        menu = new JPanel(new BorderLayout(5, 5));
+        menu.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        menu.add(list, BorderLayout.CENTER);
+        menu.add(buttons, BorderLayout.EAST);
 
         aPanel = new JPanel(new BorderLayout(0, 0));
 
-        panel = new JPanel(new BorderLayout());
+        panel = new JPanel(new BorderLayout(5, 5));
         panel.add(menu, BorderLayout.NORTH);
         panel.add(aPanel, BorderLayout.CENTER);
 
