@@ -214,7 +214,28 @@ this.setVisible(false);
         	cancel.setMaximumSize(new Dimension(16, 16));
         	cancel.setForeground(new Color(255,0,0));
         	cancel.setVisible(true);
-            
+        	cancel.addMouseListener(new MouseListener() {
+
+    			public void mouseClicked(MouseEvent arg0) {
+    				// TODO Auto-generated method stub
+    			}
+
+    			public void mouseEntered(MouseEvent arg0) {
+    				cancel.setIcon(imgCloseMouseOver);
+    			}
+
+    			public void mouseExited(MouseEvent arg0) {
+    				cancel.setIcon(imgClose);
+    			}
+
+    			public void mousePressed(MouseEvent arg0) {
+    				// TODO Auto-generated method stub
+    			}
+
+    			public void mouseReleased(MouseEvent arg0) {
+    				// TODO Auto-generated method stub
+    			}});
+        	
             this.setLayout(new MigLayout("ins 0", "[18!]0[grow,fill]", "16!"));
             this.add(label = new JLabel(), "sizegroup labels, width 100%");
             this.add(bar = new JProgressBar(), "sizegroup bars, width 100%");
