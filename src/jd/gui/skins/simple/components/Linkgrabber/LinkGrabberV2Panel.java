@@ -1,14 +1,22 @@
 package jd.gui.skins.simple.components.Linkgrabber;
 
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.AbstractButton;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
@@ -53,10 +61,16 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     private LinkGrabberV2FilePackageInfo FilePackageInfo;
 
     private UpdateBroadcaster upc = new UpdateBroadcaster();
-
+    
+    final AbstractButton close = new JButton();
+    final Timer timer = new Timer();
+    final TimerTask task;
+    final ImageIcon imgCloseMouseOver = new ImageIcon(JDUtilities.getResourceFile("/jd/img/button_close_mouseover.png").getAbsolutePath());
+    final ImageIcon imgClose = new ImageIcon(JDUtilities.getResourceFile("/jd/img/button_close.png").getAbsolutePath());
+    
     public LinkGrabberV2Panel(SimpleGUI parent) {
         super(new MigLayout());
-        PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
+    	PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         internalTreeTable = new LinkGrabberV2TreeTable(new LinkGrabberV2TreeTableModel(this), this);
@@ -66,38 +80,58 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         collapsepane = new JXCollapsiblePane();
         collapsepane.setCollapsed(true);
         collapsepane.add(FilePackageInfo);
-        this.add(collapsepane, "cell 0 1, width 100%");
+        this.add(collapsepane, "cell 0 1, width 100%, id pane");
+        
+        task = new TimerTask() {
+        	public void run() {
+        		if (collapsepane.isCollapsed() == false) close.repaint();
+        	}
+        };
+        timer.scheduleAtFixedRate(task, 0, 1000);
+        
+        close.setIcon(imgClose);
+        close.setMaximumSize(new Dimension(16, 16));
+        close.setForeground(new Color(255,0,0));
+        close.setVisible(false);
 
-        JButton bla = new JButton("ausfahren");
-        bla.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent arg0) {
-                collapsepane.setCollapsed(false);
-                collapsepane.setVisible(true);
-            }
-        });
-        this.add(bla, "cell 0 2");
+        close.addMouseListener(new MouseListener() {
 
-        JButton bla2 = new JButton("einfahren");
-        bla.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent arg0) {
-                collapsepane.setCollapsed(true);
-                collapsepane.setVisible(false);
-            }
-        });
-        this.add(bla2, "cell 0 2");
-    }
+			public void mouseClicked(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+			}
 
-    public UpdateBroadcaster getUpdateBroadcaster() {
-        return upc;
+			public void mouseEntered(MouseEvent arg0) {
+				close.setIcon(imgCloseMouseOver);
+			}
+
+			public void mouseExited(MouseEvent arg0) {
+				close.setIcon(imgClose);
+			}
+
+			public void mousePressed(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				hideFilePackageInfo();
+			}
+
+			public void mouseReleased(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+			}});
+        this.add(close, "id close, pos (pane.w-(close.w/2)) (pane.y+(close.h/2))");
     }
 
     public void showFilePackageInfo(LinkGrabberV2FilePackage fp) {
-        FilePackageInfo.setPackage(fp);
+        FilePackageInfo.setPackage(fp);        
         collapsepane.setCollapsed(false);
+        close.setVisible(true);
     }
 
     public void hideFilePackageInfo() {
         collapsepane.setCollapsed(true);
+        close.setVisible(false);
+    }  
+
+    public UpdateBroadcaster getUpdateBroadcaster() {
+    	return upc;
     }
 
     public Vector<LinkGrabberV2FilePackage> getPackages() {
