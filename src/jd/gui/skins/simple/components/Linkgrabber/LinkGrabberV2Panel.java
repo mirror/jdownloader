@@ -55,10 +55,12 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     private JXCollapsiblePane collapsepane;
     private LinkGrabberV2FilePackageInfo FilePackageInfo;
 
+    private UpdateBroadcaster upc = new UpdateBroadcaster();
+
     public LinkGrabberV2Panel(SimpleGUI parent) {
-        //super(new BorderLayout());
+        // super(new BorderLayout());
         super(new MigLayout());
-    	PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
+        PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         internalTreeTable = new LinkGrabberV2TreeTable(new LinkGrabberV2TreeTableModel(this), this);
@@ -69,32 +71,38 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         collapsepane.setCollapsed(true);
         collapsepane.add(FilePackageInfo);
         this.add(collapsepane, "cell 0 1, width 100%");
-        
+
         JButton bla = new JButton("ausfahren");
-        bla.addActionListener(new ActionListener() { 
-			public void actionPerformed(ActionEvent arg0) {
-				collapsepane.setCollapsed(false);
-				collapsepane.setVisible(true);
-			}});
+        bla.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                collapsepane.setCollapsed(false);
+                collapsepane.setVisible(true);
+            }
+        });
         this.add(bla, "cell 0 2");
-        
+
         JButton bla2 = new JButton("einfahren");
-        bla.addActionListener(new ActionListener() { 
-			public void actionPerformed(ActionEvent arg0) {
-				collapsepane.setCollapsed(true);
-				collapsepane.setVisible(false);
-			}});
+        bla.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                collapsepane.setCollapsed(true);
+                collapsepane.setVisible(false);
+            }
+        });
         this.add(bla2, "cell 0 2");
     }
 
+    public UpdateBroadcaster getUpdateBroadcaster() {
+        return upc;
+    }
+
     public void showFilePackageInfo(LinkGrabberV2FilePackage fp) {
-        FilePackageInfo.setPackage(fp);        
+        FilePackageInfo.setPackage(fp);
         collapsepane.setCollapsed(false);
     }
 
     public void hideFilePackageInfo() {
         collapsepane.setCollapsed(true);
-    }   
+    }
 
     public Vector<LinkGrabberV2FilePackage> getPackages() {
         return packages;
@@ -130,6 +138,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         waitingList.add(element);
         checkAlreadyinList(element);
         attachToPackagesFirstStage(element);
+        upc.fireUpdateEvent(UpdateEvent.UPDATE_EVENT);
     }
 
     private void attachToPackagesFirstStage(DownloadLink link) {
@@ -343,6 +352,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                     this.hideFilePackageInfo();
                 }
                 packages.remove(event.getSource());
+                if (packages.size() == 0) upc.fireUpdateEvent(UpdateEvent.EMPTY_EVENT);
             }
         }
 
@@ -362,6 +372,14 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                 fireTableChanged(1, null);
                 return;
             }
+            if (arg0.getID() == LinkGrabberV2TreeTableAction.CLEAR) {
+                Vector<LinkGrabberV2FilePackage> all = new Vector<LinkGrabberV2FilePackage>(packages);
+                for (LinkGrabberV2FilePackage fp : all) {
+                    fp.setDownloadLinks(new Vector<DownloadLink>());
+                }
+                fireTableChanged(1, null);
+                return;
+            }
         }
     }
 
@@ -369,6 +387,17 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         for (int i = 0; i < all.size(); ++i) {
             confirmPackage(all.get(i), null);
         }
+    }
+
+    private void addToDownloadDirs(String downloadDirectory, String packageName) {
+        if (packageName.length() < 5 || downloadDirectory.equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory())) return;
+        getDownloadDirList().add(new String[] { downloadDirectory, packageName });
+        guiConfig.save();
+    }
+
+    @SuppressWarnings("unchecked")
+    private ArrayList<String[]> getDownloadDirList() {
+        return ((ArrayList<String[]>) guiConfig.getProperty("DOWNLOADDIR_LIST", new ArrayList<String[]>()));
     }
 
     private void confirmPackage(LinkGrabberV2FilePackage fpv2, String host) {
@@ -380,11 +409,10 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         fp.setName(fpv2.getName());
         fp.setComment(fpv2.getComment());
         fp.setPassword(fpv2.getPassword());
-        // fp.setExtractAfterDownload(fpv2.isExtract());
-        // addToDownloadDirs(fpv2.getDownloadDirectory(), fpv2.getName());
+        fp.setExtractAfterDownload(fpv2.isExtractAfterDownload());
+        addToDownloadDirs(fpv2.getDownloadDirectory(), fpv2.getName());
 
-        // if (fpv2.useSubdirectory()) {
-        if (true) {
+        if (fpv2.useSubDir()) {
             File file = new File(new File(fpv2.getDownloadDirectory()), fp.getName());
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, false)) {
                 if (!file.exists()) file.mkdirs();

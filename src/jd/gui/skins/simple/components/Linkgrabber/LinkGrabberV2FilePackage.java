@@ -3,6 +3,8 @@ package jd.gui.skins.simple.components.Linkgrabber;
 import java.util.LinkedList;
 import java.util.Vector;
 
+import jd.OptionalPluginWrapper;
+import jd.config.Configuration;
 import jd.config.Property;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.nutils.io.JDIO;
@@ -19,20 +21,44 @@ public class LinkGrabberV2FilePackage extends Property {
     private ComboBrowseFile brwSaveTo;
     private String downloadDirectory;
     private Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
-    private String name = null;
+    private String name = "";
     private boolean extractAfterDownload = true;
-    private String comment = null;
-    private String password = null;
+    private boolean useSubDir = true;
+    private String comment = "";
+    private String password = "";
+    private long size = -1;
 
     private UpdateBroadcaster upc = new UpdateBroadcaster();
+    private long lastSizeCalc = 0;
+    private String dlpassword = "";
 
     public LinkGrabberV2FilePackage() {
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
+        name = JDUtilities.removeEndingPoints(JDLocale.L("controller.packages.defaultname", "various"));
+        useSubDir = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false);
+        for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
+            if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
+                extractAfterDownload = wrapper.getPluginConfig().getBooleanProperty("ACTIVATED", true);
+            }
+        }
     }
 
     public LinkGrabberV2FilePackage(String name, UpdateListener listener) {
         this(name);
         upc.addUpdateListener(listener);
+    }
+
+    public synchronized long getDownloadSize() {
+        if (System.currentTimeMillis() - lastSizeCalc < 5000) return size;
+        long newsize = 0;
+        synchronized (downloadLinks) {
+            for (DownloadLink element : downloadLinks) {
+                newsize += element.getDownloadSize();
+            }
+        }
+        lastSizeCalc = System.currentTimeMillis();
+        size = newsize;
+        return size;
     }
 
     public UpdateBroadcaster getUpdateBroadcaster() {
@@ -41,6 +67,15 @@ public class LinkGrabberV2FilePackage extends Property {
 
     public String getDownloadDirectory() {
         return downloadDirectory;
+    }
+
+    public void setUseSubDir(boolean b) {
+        useSubDir = b;
+        upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.UPDATE_EVENT));
+    }
+
+    public boolean useSubDir() {
+        return useSubDir;
     }
 
     public void setDownloadDirectory(String dir) {
@@ -54,7 +89,6 @@ public class LinkGrabberV2FilePackage extends Property {
     }
 
     public String getName() {
-        if (name == null) return "various";
         return name;
     }
 
@@ -65,6 +99,48 @@ public class LinkGrabberV2FilePackage extends Property {
     public void add(DownloadLink link) {
         if (!downloadLinks.contains(link)) {
             downloadLinks.add(link);
+            updateData();
+        }
+    }
+
+    public void updateData() {
+        synchronized (downloadLinks) {
+            String password = getPassword();
+            StringBuilder comment = new StringBuilder(getComment());
+
+            String[] pws = JDUtilities.passwordStringToArray(password);
+            Vector<String> pwList = new Vector<String>();
+            for (String element : pws) {
+                pwList.add(element);
+            }
+
+            Vector<String> dlpwList = new Vector<String>();
+
+            for (DownloadLink element : downloadLinks) {
+                pws = JDUtilities.passwordStringToArray(element.getSourcePluginPassword());
+
+                String dlpw = element.getStringProperty("pass", null);
+                if (dlpw != null && !dlpwList.contains(dlpw)) dlpwList.add(dlpw);
+                for (String element2 : pws) {
+                    if (pwList.indexOf(element2) < 0) {
+                        pwList.add(element2);
+                    }
+                }
+
+                String newComment = element.getSourcePluginComment();
+                if (newComment != null && comment.indexOf(newComment) < 0) {
+                    comment.append("|");
+                    comment.append(newComment);
+                }
+            }
+
+            String cmt = comment.toString();
+            if (cmt.startsWith("|")) {
+                cmt = cmt.substring(1);
+            }
+            setComment(cmt);
+            setPassword(JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()])));
+            setDLPassword(JDUtilities.passwordArrayToString(dlpwList.toArray(new String[dlpwList.size()])));
         }
     }
 
@@ -73,6 +149,7 @@ public class LinkGrabberV2FilePackage extends Property {
             downloadLinks.remove(link);
         }
         downloadLinks.add(index, link);
+        updateData();
     }
 
     public void addAll(Vector<DownloadLink> links) {
@@ -87,6 +164,7 @@ public class LinkGrabberV2FilePackage extends Property {
 
     public void setExtractAfterDownload(boolean extractAfterDownload) {
         this.extractAfterDownload = extractAfterDownload;
+        upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.UPDATE_EVENT));
     }
 
     public void addAllAt(Vector<DownloadLink> links, int index) {
@@ -108,11 +186,15 @@ public class LinkGrabberV2FilePackage extends Property {
     }
 
     public String getPassword() {
-        return password == null ? "" : password;
+        return password;
+    }
+
+    public String getDLPassword() {
+        return dlpassword;
     }
 
     public String getComment() {
-        return comment == null ? "" : comment;
+        return comment;
     }
 
     /**
@@ -120,7 +202,7 @@ public class LinkGrabberV2FilePackage extends Property {
      *         (archivpasswort)
      */
     public boolean hasPassword() {
-        return password != null && password.length() > 0;
+        return password.length() > 0;
     }
 
     public int indexOf(DownloadLink link) {
@@ -134,22 +216,33 @@ public class LinkGrabberV2FilePackage extends Property {
     public boolean remove(DownloadLink link) {
         boolean ret = downloadLinks.remove(link);
         if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
+        updateData();
         return ret;
     }
 
     public DownloadLink remove(int index) {
         DownloadLink link = downloadLinks.remove(index);
         if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
+        updateData();
         return link;
     }
 
     public void setComment(String comment) {
+        if (comment == null) comment = "";
         this.comment = comment;
+        upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.UPDATE_EVENT));
+    }
+
+    public void setDLPassword(String pass) {
+        if (pass == null) pass = "";
+        this.dlpassword = pass;
+        upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.UPDATE_EVENT));
     }
 
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
-        this.downloadLinks = new Vector<DownloadLink>(downloadLinks);        
+        this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
         if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
+        updateData();
     }
 
     public void setName(String name) {
@@ -161,7 +254,9 @@ public class LinkGrabberV2FilePackage extends Property {
     }
 
     public void setPassword(String password) {
+        if (password == null) password = "";
         this.password = password;
+        upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.UPDATE_EVENT));
     }
 
     public int size() {

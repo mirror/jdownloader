@@ -143,7 +143,7 @@ public class LinkGrabberV2TreeTableRenderer extends DefaultTableRenderer impleme
             ((JRendererLabel) co).setBorder(null);
             return co;
         case LinkGrabberV2TreeTableModel.COL_SIZE:
-            value = "";
+            value = fp.getDownloadSize() > 0 ? JDUtilities.formatBytesToMB(fp.getDownloadSize()) : "~";
             break;
         case LinkGrabberV2TreeTableModel.COL_HOSTER:
             value = fp.getHoster();

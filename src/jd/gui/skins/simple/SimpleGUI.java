@@ -944,7 +944,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
         logger.info("add to grabber");
         linkGrabber.addLinks(linkList);
-        taskPane.add(1, lgTaskPane);
         taskPane.switcher(lgTaskPane);
         contentPanel.display(linkGrabber);
         dragNDrop.setText(JDLocale.L("gui.droptarget.grabbed", "Grabbed:") + " " + linkList.length + " (" + links.size() + ")");
@@ -1035,7 +1034,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         linkGrabber = new LinkGrabberV2Panel(this);
         lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber"));
         lgTaskPane.addActionListener(linkGrabber);
-        lgTaskPane.setEnabled(false);
+        linkGrabber.getUpdateBroadcaster().addUpdateListener(lgTaskPane);
         lgTaskPane.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 System.out.println(e.getActionCommand());
@@ -1044,6 +1043,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 }
             }
         });
+        taskPane.add(lgTaskPane);
 
         ConfigTaskPane cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration"));
         cfgTskPane.addActionListener(new ActionListener() {

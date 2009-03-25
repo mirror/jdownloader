@@ -10,7 +10,6 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JDTextField;
@@ -29,7 +28,7 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
     private JDTextField txtName;
 
     private JDTextField txtPassword;
-    
+
     private JDTextField dlPassword;
 
     private JCheckBox chbExtract;
@@ -52,9 +51,18 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
         this.fp = fp;
         if (this.fp != null) {
             fp.getUpdateBroadcaster().addUpdateListener(this);
-            txtName.setText(fp.getName());
-            brwSaveTo.setText(fp.getDownloadDirectory());
+            update();
         }
+    }
+
+    private void update() {
+        if (fp == null) return;
+        txtName.setText(fp.getName());
+        txtComment.setText(fp.getComment());
+        txtPassword.setText(fp.getPassword());
+        brwSaveTo.setText(fp.getDownloadDirectory());
+        chbExtract.setSelected(fp.isExtractAfterDownload());
+        chbUseSubdirectory.setSelected(fp.useSubDir());
     }
 
     public LinkGrabberV2FilePackage getPackage() {
@@ -78,17 +86,22 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
         brwSaveTo.addActionListener(this);
 
         txtPassword = new JDTextField();
+        txtPassword.addActionListener(this);
         txtComment = new JDTextField();
+        txtComment.addActionListener(this);
 
         chbExtract = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
         chbExtract.setSelected(true);
         chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
+        chbExtract.addActionListener(this);
 
         chbUseSubdirectory = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.useSubdirectory", "Use Subdirectory"));
         chbUseSubdirectory.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
         chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
-        
+        chbUseSubdirectory.addActionListener(this);
+
         dlPassword = new JDTextField();
+        dlPassword.setEditable(false);
 
         simplePanel.setLayout(new MigLayout("", "[]10px[grow]", "[][]"));
 
@@ -119,12 +132,18 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
 
     public void UpdateEvent(UpdateEvent event) {
         if (this.fp == null) return;
-        if (event.getSource() instanceof LinkGrabberV2FilePackage && event.getSource() == fp && event.getID() == UpdateEvent.EMPTY_EVENT) {
+        if (!(event.getSource() instanceof LinkGrabberV2FilePackage)) return;
+        if (event.getSource() != fp) return;
+        switch (event.getID()) {
+        case UpdateEvent.EMPTY_EVENT:
             fp.getUpdateBroadcaster().removeUpdateListener(this);
             fp = null;
-        } else if (event.getSource() instanceof LinkGrabberV2FilePackage && event.getSource() == fp && event.getID() == UpdateEvent.UPDATE_EVENT) {
-            txtName.setText(fp.getName());
-            brwSaveTo.setText(fp.getDownloadDirectory());
+            break;
+        case UpdateEvent.UPDATE_EVENT:
+            update();
+            break;
+        default:
+            break;
         }
     }
 
@@ -132,6 +151,10 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
         if (fp == null) return;
         if (e.getSource() == txtName) fp.setName(txtName.getText());
         if (e.getSource() == brwSaveTo) fp.setDownloadDirectory(brwSaveTo.getText());
+        if (e.getSource() == txtComment) fp.setComment(txtComment.getText());
+        if (e.getSource() == txtPassword) fp.setPassword(txtPassword.getText());
+        if (e.getSource() == chbExtract) fp.setExtractAfterDownload(chbExtract.isSelected());
+        if (e.getSource() == chbUseSubdirectory) fp.setUseSubDir(chbUseSubdirectory.isSelected());
     }
 
 }
