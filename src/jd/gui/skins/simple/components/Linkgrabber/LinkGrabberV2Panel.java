@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import javax.swing.AbstractButton;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
@@ -25,6 +26,7 @@ import jd.controlling.ProgressController;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.treetable.TreeTableAction;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -43,7 +45,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     protected static Vector<LinkGrabberV2FilePackage> packages = new Vector<LinkGrabberV2FilePackage>();
     public static final String PROPERTY_ONLINE_CHECK = "DO_ONLINE_CHECK_V2";
     public static final String PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
-    
+
     private Vector<DownloadLink> waitingList = new Vector<DownloadLink>();
 
     private LinkGrabberV2TreeTable internalTreeTable;
@@ -59,14 +61,14 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     private LinkGrabberV2FilePackageInfo FilePackageInfo;
 
     private UpdateBroadcaster upc = new UpdateBroadcaster();
-    
+
     final AbstractButton close = new JButton();
     final ImageIcon imgCloseMouseOver = new ImageIcon(JDUtilities.getResourceFile("/jd/img/button_close_mouseover.png").getAbsolutePath());
     final ImageIcon imgClose = new ImageIcon(JDUtilities.getResourceFile("/jd/img/button_close.png").getAbsolutePath());
-    
+
     public LinkGrabberV2Panel(SimpleGUI parent) {
         super(new MigLayout());
-    	PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
+        PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         internalTreeTable = new LinkGrabberV2TreeTable(new LinkGrabberV2TreeTableModel(this), this);
@@ -76,41 +78,42 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         collapsepane = new JXCollapsiblePane();
         collapsepane.setCollapsed(true);
         collapsepane.add(FilePackageInfo);
-        
+
         this.add(close, "id close, pos (pane.w-(close.w/2)) (pane.y+(close.h/2))");
         this.add(collapsepane, "cell 0 1, width 100%, id pane");
-        
+
         close.setIcon(imgClose);
         close.setMaximumSize(new Dimension(16, 16));
-        close.setForeground(new Color(255,0,0));
+        close.setForeground(new Color(255, 0, 0));
         close.setVisible(false);
 
         close.addMouseListener(new MouseListener() {
 
-			public void mouseClicked(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-			}
+            public void mouseClicked(MouseEvent arg0) {
+                // TODO Auto-generated method stub
+            }
 
-			public void mouseEntered(MouseEvent arg0) {
-				close.setIcon(imgCloseMouseOver);
-			}
+            public void mouseEntered(MouseEvent arg0) {
+                close.setIcon(imgCloseMouseOver);
+            }
 
-			public void mouseExited(MouseEvent arg0) {
-				close.setIcon(imgClose);
-			}
+            public void mouseExited(MouseEvent arg0) {
+                close.setIcon(imgClose);
+            }
 
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				hideFilePackageInfo();
-			}
+            public void mousePressed(MouseEvent arg0) {
+                // TODO Auto-generated method stub
+                hideFilePackageInfo();
+            }
 
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-			}});
+            public void mouseReleased(MouseEvent arg0) {
+                // TODO Auto-generated method stub
+            }
+        });
     }
 
     public void showFilePackageInfo(LinkGrabberV2FilePackage fp) {
-        FilePackageInfo.setPackage(fp);        
+        FilePackageInfo.setPackage(fp);
         collapsepane.setCollapsed(false);
         close.setVisible(true);
     }
@@ -118,10 +121,10 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     public void hideFilePackageInfo() {
         collapsepane.setCollapsed(true);
         close.setVisible(false);
-    }  
+    }
 
     public UpdateBroadcaster getUpdateBroadcaster() {
-    	return upc;
+        return upc;
     }
 
     public Vector<LinkGrabberV2FilePackage> getPackages() {
@@ -146,14 +149,14 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
 
     public synchronized void addLinks(DownloadLink[] linkList) {
         for (DownloadLink element : linkList) {
-            //if (isDupe(element)) continue;//nocheinbauen
+            // if (isDupe(element)) continue;//nocheinbauen
             addToWaitingList(element);
         }
         fireTableChanged(1, null);
         startLinkGatherer();
     }
 
-    public synchronized void addToWaitingList(DownloadLink element) {        
+    public synchronized void addToWaitingList(DownloadLink element) {
         waitingList.add(element);
         checkAlreadyinList(element);
         attachToPackagesFirstStage(element);
@@ -219,6 +222,14 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         }
     }
 
+    private void removeFromPackages(DownloadLink link) {
+        if (link == null) return;
+        synchronized (packages) {
+            LinkGrabberV2FilePackage fptmp = getFPwithLink(link);
+            if (fptmp != null) fptmp.remove(link);
+        }
+    }
+
     private void stopLinkGatherer() {
         if (gatherer != null && gatherer.isAlive()) {
             gatherer.interrupt();
@@ -229,52 +240,68 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         if (gatherer != null && gatherer.isAlive()) { return; }
         gatherer = new Thread() {
             public void run() {
-                if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) return;
-                pc = new ProgressController("onlinecheck");
-                pc.setRange(0);
-                while (waitingList.size() != 0) {
-                    while (waitingList.size() > 0) {
-                        HashMap<String, ArrayList<DownloadLink>> map = new HashMap<String, ArrayList<DownloadLink>>();
-                        for (Iterator<DownloadLink> it = waitingList.iterator(); it.hasNext();) {
-                            pc.addToMax(1);
-                            DownloadLink l = it.next();
-                            it.remove();
-                            ArrayList<DownloadLink> localList = map.get(l.getPlugin().getHost());
-                            if (localList == null) {
-                                localList = new ArrayList<DownloadLink>();
-                                map.put(l.getPlugin().getHost(), localList);
+                if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) {
+                    while (waitingList.size() != 0) {
+                        while (waitingList.size() > 0) {
+                            for (Iterator<DownloadLink> it = waitingList.iterator(); it.hasNext();) {
+                                DownloadLink l = it.next();
+                                it.remove();
+                                attachToPackagesSecondStage(l);
+                                fireTableChanged(1, null);
                             }
-                            localList.add(l);
-                        }
-                        ArrayList<DownloadLink> hosterList;
-                        for (Iterator<ArrayList<DownloadLink>> it = map.values().iterator(); it.hasNext();) {
-                            hosterList = it.next();
-                            DownloadLink link = hosterList.get(0);
-                            boolean ret = ((PluginForHost) link.getPlugin()).checkLinks(hosterList.toArray(new DownloadLink[] {}));
-                            if (!ret) {
-                                for (int i = 0; i < hosterList.size(); i++) {
-                                    link = hosterList.get(i);
-                                    link.isAvailable();
-                                    pc.increase(1);
-                                    attachToPackagesSecondStage(link);
-                                    fireTableChanged(1, null);
-                                }
-                            } else {
-                                for (int i = 0; i < hosterList.size(); i++) {
-                                    link = hosterList.get(i);
-                                    pc.increase(1);
-                                    attachToPackagesSecondStage(link);
-                                    fireTableChanged(1, null);
-                                }
+                            try {
+                                Thread.sleep(2000);
+                            } catch (InterruptedException e) {
                             }
                         }
                     }
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException e) {
+                } else {
+                    pc = new ProgressController("onlinecheck");
+                    pc.setRange(0);
+                    while (waitingList.size() != 0) {
+                        while (waitingList.size() > 0) {
+                            HashMap<String, ArrayList<DownloadLink>> map = new HashMap<String, ArrayList<DownloadLink>>();
+                            for (Iterator<DownloadLink> it = waitingList.iterator(); it.hasNext();) {
+                                pc.addToMax(1);
+                                DownloadLink l = it.next();
+                                it.remove();
+                                ArrayList<DownloadLink> localList = map.get(l.getPlugin().getHost());
+                                if (localList == null) {
+                                    localList = new ArrayList<DownloadLink>();
+                                    map.put(l.getPlugin().getHost(), localList);
+                                }
+                                localList.add(l);
+                            }
+                            ArrayList<DownloadLink> hosterList;
+                            for (Iterator<ArrayList<DownloadLink>> it = map.values().iterator(); it.hasNext();) {
+                                hosterList = it.next();
+                                DownloadLink link = hosterList.get(0);
+                                boolean ret = ((PluginForHost) link.getPlugin()).checkLinks(hosterList.toArray(new DownloadLink[] {}));
+                                if (!ret) {
+                                    for (int i = 0; i < hosterList.size(); i++) {
+                                        link = hosterList.get(i);
+                                        link.isAvailable();
+                                        pc.increase(1);
+                                        attachToPackagesSecondStage(link);
+                                        fireTableChanged(1, null);
+                                    }
+                                } else {
+                                    for (int i = 0; i < hosterList.size(); i++) {
+                                        link = hosterList.get(i);
+                                        pc.increase(1);
+                                        attachToPackagesSecondStage(link);
+                                        fireTableChanged(1, null);
+                                    }
+                                }
+                            }
+                        }
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException e) {
+                        }
                     }
+                    pc.finalize();
                 }
-                pc.finalize();
             }
         };
         gatherer.start();
@@ -375,29 +402,79 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
 
     }
 
+    @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent arg0) {
+        Vector<LinkGrabberV2FilePackage> selected_packages = new Vector<LinkGrabberV2FilePackage>();
+        Vector<DownloadLink> selected_links = new Vector<DownloadLink>();
+        int prio = 0;
+        String pw = "";
+        HashMap<String, Object> prop = new HashMap<String, Object>();
         if (arg0.getSource() instanceof LinkGrabberTaskPane) {
-            if (arg0.getID() == LinkGrabberV2TreeTableAction.ADD_ALL) {
-                Vector<LinkGrabberV2FilePackage> all = new Vector<LinkGrabberV2FilePackage>(packages);
-                confirmPackages(all);
-                fireTableChanged(1, null);
-                return;
+            switch (arg0.getID()) {
+            case LinkGrabberV2TreeTableAction.ADD_ALL:
+            case LinkGrabberV2TreeTableAction.CLEAR:
+                selected_packages = new Vector<LinkGrabberV2FilePackage>(packages);
+                break;
+            case LinkGrabberV2TreeTableAction.ADD_SELECTED:
+                selected_packages = new Vector<LinkGrabberV2FilePackage>(this.internalTreeTable.getSelectedFilePackages());
+                break;
             }
-            if (arg0.getID() == LinkGrabberV2TreeTableAction.ADD_SELECTED) {
-                Vector<LinkGrabberV2FilePackage> selected = new Vector<LinkGrabberV2FilePackage>(this.internalTreeTable.getSelectedFilePackages());
-                confirmPackages(selected);
-                fireTableChanged(1, null);
-                return;
+        } else if (arg0.getSource() instanceof JMenuItem) {
+            switch (arg0.getID()) {
+            case LinkGrabberV2TreeTableAction.DOWNLOAD_PRIO:
+                prop = (HashMap<String, Object>) ((TreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("infos");
+                selected_links = (Vector<DownloadLink>) prop.get("downloadlinks");
+                break;
+            case LinkGrabberV2TreeTableAction.DELETE:
+            case LinkGrabberV2TreeTableAction.SET_PW:
+            case LinkGrabberV2TreeTableAction.NEW_PACKAGE:
+                selected_links = (Vector<DownloadLink>) ((LinkGrabberV2TreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("links");
+                break;
             }
-            if (arg0.getID() == LinkGrabberV2TreeTableAction.CLEAR) {
-                stopLinkGatherer();
-                Vector<LinkGrabberV2FilePackage> all = new Vector<LinkGrabberV2FilePackage>(packages);
-                for (LinkGrabberV2FilePackage fp : all) {
-                    fp.setDownloadLinks(new Vector<DownloadLink>());
+        }
+        switch (arg0.getID()) {
+        case LinkGrabberV2TreeTableAction.NEW_PACKAGE:
+            LinkGrabberV2FilePackage parentFP = this.getFPwithLink(selected_links.get(0));
+            String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), parentFP.getName());            
+            if (name != null) {
+                LinkGrabberV2FilePackage nfp = new LinkGrabberV2FilePackage(name, this);                
+                for (DownloadLink link : selected_links) {
+                    removeFromPackages(link);
+                    addToPackages(nfp, link);
                 }
                 fireTableChanged(1, null);
-                return;
             }
+            return;
+        case LinkGrabberV2TreeTableAction.SET_PW:
+            pw = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.setpw.message", "Set download password"), null);
+            for (int i = 0; i < selected_links.size(); i++) {
+                selected_links.elementAt(i).setProperty("pass", pw);
+            }
+            return;
+        case LinkGrabberV2TreeTableAction.ADD_ALL:
+        case LinkGrabberV2TreeTableAction.ADD_SELECTED:
+            confirmPackages(selected_packages);
+            fireTableChanged(1, null);
+            return;
+        case LinkGrabberV2TreeTableAction.DELETE:
+            for (DownloadLink link : selected_links) {
+                removeFromPackages(link);
+            }
+            fireTableChanged(1, null);
+            return;
+        case LinkGrabberV2TreeTableAction.CLEAR:
+            stopLinkGatherer();
+            for (LinkGrabberV2FilePackage fp : selected_packages) {
+                fp.setDownloadLinks(new Vector<DownloadLink>());
+            }
+            fireTableChanged(1, null);
+            return;
+        case LinkGrabberV2TreeTableAction.DOWNLOAD_PRIO:
+            prio = (Integer) prop.get("prio");
+            for (int i = 0; i < selected_links.size(); i++) {
+                selected_links.elementAt(i).setPriority(prio);
+            }
+            return;
         }
     }
 
@@ -459,7 +536,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                     boolean avail = true;
                     if (link.isAvailabilityChecked()) avail = link.isAvailable();
                     link.getLinkStatus().reset();
-                    if (!avail) link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);                    
+                    if (!avail) link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     linkListHost.add(link);
                     link.setFilePackage(fp);
                     ++files;

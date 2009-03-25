@@ -1453,7 +1453,6 @@ public class JDController implements ControlListener, UIListener {
         if (links == null || links.size() == 0) { return; }
         Iterator<DownloadLink> iterator = links.iterator();
         while (iterator.hasNext()) {
-
             removeDownloadLink(iterator.next());
         }
 

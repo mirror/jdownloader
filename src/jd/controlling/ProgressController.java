@@ -61,7 +61,7 @@ public class ProgressController {
     public ProgressController(String name, long max) {
         id = idCounter++;
         this.max = max;
-        statusText = "init " + name;
+        statusText = name;
         currentValue = 0;
         finished = false;
         progresscolor = null;
@@ -106,7 +106,7 @@ public class ProgressController {
         }
         finished = true;
         currentValue = max;
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
+        if (JDUtilities.getController() != null) JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
     }
 
     public void fireChanges() {
