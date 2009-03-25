@@ -10,8 +10,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -63,8 +61,6 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     private UpdateBroadcaster upc = new UpdateBroadcaster();
     
     final AbstractButton close = new JButton();
-    final Timer timer = new Timer();
-    final TimerTask task;
     final ImageIcon imgCloseMouseOver = new ImageIcon(JDUtilities.getResourceFile("/jd/img/button_close_mouseover.png").getAbsolutePath());
     final ImageIcon imgClose = new ImageIcon(JDUtilities.getResourceFile("/jd/img/button_close.png").getAbsolutePath());
     
@@ -80,14 +76,9 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         collapsepane = new JXCollapsiblePane();
         collapsepane.setCollapsed(true);
         collapsepane.add(FilePackageInfo);
-        this.add(collapsepane, "cell 0 1, width 100%, id pane");
         
-        task = new TimerTask() {
-        	public void run() {
-        		if (collapsepane.isCollapsed() == false) close.repaint();
-        	}
-        };
-        timer.scheduleAtFixedRate(task, 0, 1000);
+        this.add(close, "id close, pos (pane.w-(close.w/2)) (pane.y+(close.h/2))");
+        this.add(collapsepane, "cell 0 1, width 100%, id pane");
         
         close.setIcon(imgClose);
         close.setMaximumSize(new Dimension(16, 16));
@@ -116,7 +107,6 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
 			public void mouseReleased(MouseEvent arg0) {
 				// TODO Auto-generated method stub
 			}});
-        this.add(close, "id close, pos (pane.w-(close.w/2)) (pane.y+(close.h/2))");
     }
 
     public void showFilePackageInfo(LinkGrabberV2FilePackage fp) {
