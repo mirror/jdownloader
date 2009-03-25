@@ -706,6 +706,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // DND
         dragNDrop = new Dropper();
         dragNDrop.addUIListener(this);
+        ClipboardHandler.getClipboard();/*
+                                         * hier wird aktuell der clipboard
+                                         * handler aktiviert
+                                         */
         // Ruft jede sekunde ein UpdateEvent auf
 
         /*
@@ -1409,7 +1413,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     // private String getDoReconnectImage() {
     // if
-    // (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT,
+    // (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.
+    // PARAM_DISABLE_RECONNECT,
     // false)) {
     // return JDTheme.V("gui.images.reconnect_ok");
     // } else {
