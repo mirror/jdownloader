@@ -1,6 +1,5 @@
 package jd.gui.skins.simple.components.Linkgrabber;
 
-import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -28,7 +27,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
@@ -39,8 +37,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     protected static Vector<LinkGrabberV2FilePackage> packages = new Vector<LinkGrabberV2FilePackage>();
     public static final String PROPERTY_ONLINE_CHECK = "DO_ONLINE_CHECK_V2";
     public static final String PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
-
-    private Vector<DownloadLink> totalLinkList = new Vector<DownloadLink>();
+    
     private Vector<DownloadLink> waitingList = new Vector<DownloadLink>();
 
     private LinkGrabberV2TreeTable internalTreeTable;
@@ -58,7 +55,6 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     private UpdateBroadcaster upc = new UpdateBroadcaster();
 
     public LinkGrabberV2Panel(SimpleGUI parent) {
-        // super(new BorderLayout());
         super(new MigLayout());
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
@@ -126,15 +122,14 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
 
     public synchronized void addLinks(DownloadLink[] linkList) {
         for (DownloadLink element : linkList) {
-            if (isDupe(element)) continue;
+            //if (isDupe(element)) continue;//nocheinbauen
             addToWaitingList(element);
         }
         fireTableChanged(1, null);
         startLinkGatherer();
     }
 
-    public synchronized void addToWaitingList(DownloadLink element) {
-        totalLinkList.add(element);
+    public synchronized void addToWaitingList(DownloadLink element) {        
         waitingList.add(element);
         checkAlreadyinList(element);
         attachToPackagesFirstStage(element);
@@ -200,12 +195,10 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         }
     }
 
-    private boolean isDupe(DownloadLink link) {
-        if (link.getBooleanProperty("ALLOW_DUPE", false)) return false;
-        for (DownloadLink l : totalLinkList) {
-            if (l.getDownloadURL().trim().equalsIgnoreCase(link.getDownloadURL().trim())) { return true; }
+    private void stopLinkGatherer() {
+        if (gatherer != null && gatherer.isAlive()) {
+            gatherer.interrupt();
         }
-        return false;
     }
 
     private void startLinkGatherer() {
@@ -373,6 +366,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                 return;
             }
             if (arg0.getID() == LinkGrabberV2TreeTableAction.CLEAR) {
+                stopLinkGatherer();
                 Vector<LinkGrabberV2FilePackage> all = new Vector<LinkGrabberV2FilePackage>(packages);
                 for (LinkGrabberV2FilePackage fp : all) {
                     fp.setDownloadLinks(new Vector<DownloadLink>());
@@ -441,8 +435,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                     boolean avail = true;
                     if (link.isAvailabilityChecked()) avail = link.isAvailable();
                     link.getLinkStatus().reset();
-                    if (!avail) link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    totalLinkList.remove(link);
+                    if (!avail) link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);                    
                     linkListHost.add(link);
                     link.setFilePackage(fp);
                     ++files;

@@ -101,24 +101,26 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
         if (event.getID() == UpdateEvent.EMPTY_EVENT) {
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
-                    remove(sep);
-                    removeButton(lg_add_all);
-                    removeButton(lg_add_selected);
                     removeButton(lg_clear);
+                    removeButton(lg_add_selected);
+                    removeButton(lg_add_all);
+                    remove(sep);
+                    revalidate();
+                    lg_buttons_visible = false;
                 }
             });
-            lg_buttons_visible = false;
         }
         if (event.getID() == UpdateEvent.UPDATE_EVENT && lg_buttons_visible == false) {
+            lg_buttons_visible = true;
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     add(sep, 2);
                     lg_add_all = addButton(createButton(JDLocale.L("gui.linkgrabberv2.lg.addall", "Add all packages"), JDTheme.II("gui.images.add", 16, 16)), 3);
                     lg_add_selected = addButton(createButton(JDLocale.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)"), JDTheme.II("gui.images.add", 16, 16)), 4);
                     lg_clear = addButton(createButton(JDLocale.L("gui.linkgrabberv2.lg.clear", "Clear List"), JDTheme.II("gui.images.delete", 16, 16)), 5);
+                    revalidate();
                 }
             });
-            lg_buttons_visible = true;
         }
     }
 }
