@@ -107,7 +107,8 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
         extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
         extendedPanel.add(txtComment, "grow");
         extendedPanel.add(chbUseSubdirectory, "wrap");
-        extendedPanel.add(new JLabel("Download Passwort"));
+        extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.dlpassword", "Download Passwort")));
+
         extendedPanel.add(dlPassword, "growx");
 
         tabbedPane.add(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Extended"), extendedPanel);
