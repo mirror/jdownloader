@@ -68,13 +68,13 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     }
 
     public void showFilePackageInfo(LinkGrabberV2FilePackage fp) {
-        FilePackageInfo.setPackage(fp);
+        FilePackageInfo.setPackage(fp);        
         collapsepane.setCollapsed(false);
     }
 
     public void hideFilePackageInfo() {
         collapsepane.setCollapsed(true);
-    }
+    }   
 
     public Vector<LinkGrabberV2FilePackage> getPackages() {
         return packages;

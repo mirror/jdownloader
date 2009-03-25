@@ -66,6 +66,10 @@ public class ClipboardHandler extends Thread implements ControlListener {
         INSTANCE = this;
         // logger = JDUtilities.getLogger();
         JDUtilities.getController().addControlListener(this);
+        this.enabled = true; /*
+                              * only temporarily until toggle button available
+                              * again
+                              */
         this.setName("ClipboardHandler");
     }
 

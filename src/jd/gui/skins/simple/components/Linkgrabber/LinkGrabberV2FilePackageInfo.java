@@ -118,19 +118,20 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
     }
 
     public void UpdateEvent(UpdateEvent event) {
-        if (event.getSource() instanceof LinkGrabberV2FilePackage && this.fp != null && event.getSource() == fp && event.getID() == UpdateEvent.EMPTY_EVENT) {
+        if (this.fp == null) return;
+        if (event.getSource() instanceof LinkGrabberV2FilePackage && event.getSource() == fp && event.getID() == UpdateEvent.EMPTY_EVENT) {
             fp.getUpdateBroadcaster().removeUpdateListener(this);
-        } else if (event.getSource() instanceof LinkGrabberV2FilePackage && this.fp != null && event.getSource() == fp && event.getID() == UpdateEvent.UPDATE_EVENT) {
+            fp = null;
+        } else if (event.getSource() instanceof LinkGrabberV2FilePackage && event.getSource() == fp && event.getID() == UpdateEvent.UPDATE_EVENT) {
             txtName.setText(fp.getName());
             brwSaveTo.setText(fp.getDownloadDirectory());
         }
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (fp != null) {
-            if (e.getSource() == txtName) fp.setName(txtName.getText());
-            if (e.getSource() == brwSaveTo) fp.setDownloadDirectory(brwSaveTo.getText());
-        }
+        if (fp == null) return;
+        if (e.getSource() == txtName) fp.setName(txtName.getText());
+        if (e.getSource() == brwSaveTo) fp.setDownloadDirectory(brwSaveTo.getText());
     }
 
 }
