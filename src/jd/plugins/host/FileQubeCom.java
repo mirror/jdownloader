@@ -25,25 +25,26 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-public class FileFrontCom extends PluginForHost {
+public class FileQubeCom extends PluginForHost {
 
-    public FileFrontCom(PluginWrapper wrapper) {
+    public FileQubeCom(PluginWrapper wrapper) {
         super(wrapper);
         //this.setStartIntervall(5000l);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://aup.legal.filefront.com/";
+        return "http://www.fileqube.com/terms.html";
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Error 404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Filename</th>\\s+<td[^>]*>(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("Size</th>\\s+<td[^>]*>(.*?)\\s\\(").getMatch(0);
+        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h1\\sclass=\"orange\">(.*?)</h1>").getMatch(0);
+        String filesize = br.getRegex("id=.fileSize.>(.*?)</strong>").getMatch(0);
         br.toString();
         //System.out.println(filename+" "+filesize);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -60,10 +61,7 @@ public class FileFrontCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String nextpageurl = br.getRegex("POST\\sDOWNLOAD\\sPAGE.\\s-->\\s+<a href=\"(.*?)\"").getMatch(0);
-        if (nextpageurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        br.getPage(nextpageurl);
-        String linkurl = br.getRegex("it\\sdoesn.t,\\s<a href=\"(.*?)\"").getMatch(0);
+        String linkurl = br.getRegex("Copy file</strong></a></span>\\s+<span[^>]*><a href=\"(.*?)\"").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, linkurl, false, 1);
