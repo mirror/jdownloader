@@ -16,6 +16,8 @@
 
 package jd.gui.skins.simple;
 
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -25,6 +27,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
+import javax.swing.AbstractButton;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.JSeparator;
@@ -195,6 +200,9 @@ this.setVisible(false);
         private static final long serialVersionUID = 2676301394570621548L;
         private JLabel label;
         private JProgressBar bar;
+        private AbstractButton cancel = new JButton();
+        final ImageIcon imgCloseMouseOver = new ImageIcon(JDUtilities.getResourceFile("/jd/img/button_close_mouseover.png").getAbsolutePath());
+        final ImageIcon imgClose = new ImageIcon(JDUtilities.getResourceFile("/jd/img/button_close.png").getAbsolutePath());
         private boolean attached = false;
 
         public void setAttached(boolean attached) {
@@ -202,9 +210,15 @@ this.setVisible(false);
         }
 
         public ProgressEntry() {
+        	cancel.setIcon(imgClose);
+        	cancel.setMaximumSize(new Dimension(16, 16));
+        	cancel.setForeground(new Color(255,0,0));
+        	cancel.setVisible(true);
+            
             this.setLayout(new MigLayout("ins 0", "[18!]0[grow,fill]", "16!"));
-            this.add(label = new JLabel(), "sizegroup labels");
-            this.add(bar = new JProgressBar(), "wrap,sizegroup bars");
+            this.add(label = new JLabel(), "sizegroup labels, width 100%");
+            this.add(bar = new JProgressBar(), "sizegroup bars, width 100%");
+            this.add(cancel, "sizegroup cancel, gap 5px, wrap");
             this.add(new JSeparator(), "span");
         }
 
