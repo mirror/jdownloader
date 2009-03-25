@@ -382,6 +382,7 @@ gui.linkgrabber.packagetab.lbl.comment = Comment
 gui.linkgrabber.packagetab.lbl.name = Packagename
 gui.linkgrabber.packagetab.lbl.password = Archive password
 gui.linkgrabber.packagetab.lbl.saveto = Save to
+gui.linkgrabber.packagetab.lbl.dlpassword = Download Password
 gui.linkgrabber.packagetab.table.column.host = Host
 gui.linkgrabber.packagetab.table.column.id = *
 gui.linkgrabber.packagetab.table.column.info = Info

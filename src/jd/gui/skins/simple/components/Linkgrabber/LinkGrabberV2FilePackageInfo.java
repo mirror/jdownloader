@@ -29,6 +29,8 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
     private JDTextField txtName;
 
     private JDTextField txtPassword;
+    
+    private JDTextField dlPassword;
 
     private JCheckBox chbExtract;
 
@@ -85,6 +87,8 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
         chbUseSubdirectory = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.useSubdirectory", "Use Subdirectory"));
         chbUseSubdirectory.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
         chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
+        
+        dlPassword = new JDTextField();
 
         simplePanel.setLayout(new MigLayout("", "[]10px[grow]", "[][]"));
 
@@ -103,6 +107,8 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
         extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
         extendedPanel.add(txtComment, "grow");
         extendedPanel.add(chbUseSubdirectory, "wrap");
+        extendedPanel.add(new JLabel("Download Passwort"));
+        extendedPanel.add(dlPassword, "growx");
 
         tabbedPane.add(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Extended"), extendedPanel);
 

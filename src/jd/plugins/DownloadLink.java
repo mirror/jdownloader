@@ -1074,7 +1074,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public ImageIcon getIcon() {
         if (icon == null) {
-            if (OSDetector.isLinux()) {
+            if (OSDetector.isLinux() || OSDetector.isMac()) {
                 try {
                     Image image = JDTheme.getImage(JDTheme.getTheme() + "/mime/" + JDIO.getFileExtension(this.getName()), 16, 16);
                     icon = new ImageIcon(image);

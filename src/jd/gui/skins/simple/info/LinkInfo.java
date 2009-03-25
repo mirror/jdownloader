@@ -68,6 +68,8 @@ public class LinkInfo extends JPanel {
         simplePanel.add(txtName, "growx, wrap");
         simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
         simplePanel.add(brwSaveTo, "growx");
+        simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
+        simplePanel.add(txtPassword, "growx");
 
         tabbedPane.add(JDLocale.L("gui.linkgrabber.packagetab.toggleview1", "Simple"), simplePanel);
 
