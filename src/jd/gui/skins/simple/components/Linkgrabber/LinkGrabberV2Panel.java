@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
@@ -27,6 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+
+import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 
@@ -53,18 +56,35 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     private LinkGrabberV2FilePackageInfo FilePackageInfo;
 
     public LinkGrabberV2Panel(SimpleGUI parent) {
-        super(new BorderLayout());
-        PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
+        //super(new BorderLayout());
+        super(new MigLayout());
+    	PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         internalTreeTable = new LinkGrabberV2TreeTable(new LinkGrabberV2TreeTableModel(this), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
-        this.add(scrollPane);
+        this.add(scrollPane, "cell 0 0, width 100%, height 100%");
         FilePackageInfo = new LinkGrabberV2FilePackageInfo();
         collapsepane = new JXCollapsiblePane();
         collapsepane.setCollapsed(true);
         collapsepane.add(FilePackageInfo);
-        this.add(collapsepane, BorderLayout.SOUTH);
+        this.add(collapsepane, "cell 0 1, width 100%");
+        
+        JButton bla = new JButton("ausfahren");
+        bla.addActionListener(new ActionListener() { 
+			public void actionPerformed(ActionEvent arg0) {
+				collapsepane.setCollapsed(false);
+				collapsepane.setVisible(true);
+			}});
+        this.add(bla, "cell 0 2");
+        
+        JButton bla2 = new JButton("einfahren");
+        bla.addActionListener(new ActionListener() { 
+			public void actionPerformed(ActionEvent arg0) {
+				collapsepane.setCollapsed(true);
+				collapsepane.setVisible(false);
+			}});
+        this.add(bla2, "cell 0 2");
     }
 
     public void showFilePackageInfo(LinkGrabberV2FilePackage fp) {
