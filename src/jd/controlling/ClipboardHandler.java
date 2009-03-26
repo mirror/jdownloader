@@ -53,7 +53,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
      */
     private DistributeData distributeData = null;
 
-    private boolean enabled = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
+    private boolean enabled = false;
 
     private String olddata;
 
@@ -66,10 +66,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
         INSTANCE = this;
         // logger = JDUtilities.getLogger();
         JDUtilities.getController().addControlListener(this);
-        this.enabled = true; /*
-                              * only temporarily until toggle button available
-                              * again
-                              */
+        this.enabled = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
         this.setName("ClipboardHandler");
     }
 
@@ -82,7 +79,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
      * 
      * @return true/false
      */
-    public boolean isEnabled() {        
+    public boolean isEnabled() {
         return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
     }
 

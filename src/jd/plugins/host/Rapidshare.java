@@ -204,9 +204,44 @@ public class Rapidshare extends PluginForHost {
      * kann das über diese Funktion gemacht werden.
      */
     @Override
-
     public boolean checkLinks(DownloadLink[] urls) {
-        logger.finest("Check " + urls.length + " links");
+        if (urls == null || urls.length == 0) { return false; }
+        logger.finest("OnlineCheck: " + urls.length + " links");
+        try {
+            StringBuilder idlist = new StringBuilder();
+            StringBuilder namelist = new StringBuilder();
+            Vector<DownloadLink> links = new Vector<DownloadLink>();
+            int size = 0;
+            for (DownloadLink u : urls) {
+                if (size > 3000) {
+                    logger.finest("OnlineCheck: SplitCheck " + links.size() + "/" + urls.length + " links");
+                    if (!checkLinksIntern(links.toArray(new DownloadLink[] {}))) return false;
+                    links = new Vector<DownloadLink>();
+                    idlist = new StringBuilder();
+                    namelist = new StringBuilder();
+                }
+                correctURL(u);
+                idlist.append("," + getID(u.getDownloadURL()));
+                namelist.append("," + getName(u.getDownloadURL()));
+                links.add(u);
+                size = ("http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1").length();
+            }
+            if (links.size() != 0) {
+                if (links.size() != urls.length) {
+                    logger.finest("OnlineCheck: SplitCheck " + links.size() + "/" + urls.length + " links");
+                } else {
+                    logger.finest("OnlineCheck: Check " + urls.length + " links");
+                }
+                if (!checkLinksIntern(links.toArray(new DownloadLink[] {}))) return false;
+            }
+        } catch (Exception e) {
+            System.gc();
+            return false;
+        }
+        return true;
+    }
+
+    public boolean checkLinksIntern(DownloadLink[] urls) {
         try {
             if (urls == null) { return false; }
 
@@ -232,7 +267,6 @@ public class Rapidshare extends PluginForHost {
                 } else {
                     u.setAvailable(true);
                 }
-
                 i++;
             }
             return true;

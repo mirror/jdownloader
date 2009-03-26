@@ -100,8 +100,10 @@ public class LinkGrabberV2FilePackage extends Property {
     }
 
     public void add(DownloadLink link) {
-        if (!downloadLinks.contains(link)) {
-            downloadLinks.add(link);
+        synchronized (downloadLinks) {
+            if (!downloadLinks.contains(link)) {
+                downloadLinks.add(link);
+            }
         }
     }
 
@@ -147,15 +149,19 @@ public class LinkGrabberV2FilePackage extends Property {
     }
 
     public void add(int index, DownloadLink link) {
-        if (downloadLinks.contains(link)) {
-            downloadLinks.remove(link);
+        synchronized (downloadLinks) {
+            if (downloadLinks.contains(link)) {
+                downloadLinks.remove(link);
+            }
+            downloadLinks.add(index, link);
         }
-        downloadLinks.add(index, link);
     }
 
     public void addAll(Vector<DownloadLink> links) {
-        for (int i = 0; i < links.size(); i++) {
-            add(links.get(i));
+        synchronized (downloadLinks) {
+            for (int i = 0; i < links.size(); i++) {
+                add(links.get(i));
+            }
         }
     }
 
@@ -175,15 +181,21 @@ public class LinkGrabberV2FilePackage extends Property {
     }
 
     public boolean contains(DownloadLink link) {
-        return downloadLinks.contains(link);
+        synchronized (downloadLinks) {
+            return downloadLinks.contains(link);
+        }
     }
 
     public DownloadLink get(int index) {
-        return downloadLinks.get(index);
+        synchronized (downloadLinks) {
+            return downloadLinks.get(index);
+        }
     }
 
     public Vector<DownloadLink> getDownloadLinks() {
-        return downloadLinks;
+        synchronized (downloadLinks) {
+            return downloadLinks;
+        }
     }
 
     public String getPassword() {
@@ -201,32 +213,20 @@ public class LinkGrabberV2FilePackage extends Property {
         return comment;
     }
 
-    /**
-     * @return true/false, je nachdem ob ein Passwort festgelegt wurde
-     *         (archivpasswort)
-     */
-    public boolean hasPassword() {
-        return password.length() > 0;
-    }
-
-    public int indexOf(DownloadLink link) {
-        return downloadLinks.indexOf(link);
-    }
-
-    public DownloadLink lastElement() {
-        return downloadLinks.lastElement();
-    }
-
     public boolean remove(DownloadLink link) {
-        boolean ret = downloadLinks.remove(link);
-        if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
-        return ret;
+        synchronized (downloadLinks) {
+            boolean ret = downloadLinks.remove(link);
+            if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
+            return ret;
+        }
     }
 
     public DownloadLink remove(int index) {
-        DownloadLink link = downloadLinks.remove(index);
-        if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
-        return link;
+        synchronized (downloadLinks) {
+            DownloadLink link = downloadLinks.remove(index);
+            if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
+            return link;
+        }
     }
 
     public void setComment(String comment) {
@@ -242,8 +242,10 @@ public class LinkGrabberV2FilePackage extends Property {
     }
 
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
-        this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
-        if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
+        synchronized (downloadLinks) {
+            this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
+            if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
+        }
     }
 
     public void setName(String name) {
@@ -261,7 +263,9 @@ public class LinkGrabberV2FilePackage extends Property {
     }
 
     public int size() {
-        return downloadLinks.size();
+        synchronized (downloadLinks) {
+            return downloadLinks.size();
+        }
     }
 
     public void sort(final int col) {
