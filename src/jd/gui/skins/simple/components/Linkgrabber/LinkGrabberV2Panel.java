@@ -26,7 +26,7 @@ import jd.controlling.ProgressController;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.treetable.TreeTableAction;
+import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -85,7 +85,6 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         close.setIcon(imgClose);
         close.setMaximumSize(new Dimension(16, 16));
         close.setForeground(new Color(255, 0, 0));
-        close.setVisible(false);
 
         close.addMouseListener(new MouseListener() {
 
@@ -115,12 +114,10 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     public void showFilePackageInfo(LinkGrabberV2FilePackage fp) {
         FilePackageInfo.setPackage(fp);
         collapsepane.setCollapsed(false);
-        close.setVisible(true);
     }
 
     public void hideFilePackageInfo() {
         collapsepane.setCollapsed(true);
-        close.setVisible(false);
     }
 
     public UpdateBroadcaster getUpdateBroadcaster() {
@@ -149,7 +146,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
 
     public synchronized void addLinks(DownloadLink[] linkList) {
         for (DownloadLink element : linkList) {
-            // if (isDupe(element)) continue;//nocheinbauen
+            if (isDupe(element)) continue;
             addToWaitingList(element);
         }
         fireTableChanged(1, null);
@@ -210,6 +207,23 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                 if (fp.contains(link)) return fp;
             }
             return null;
+        }
+    }
+
+    private boolean isDupe(DownloadLink link) {
+        synchronized (packages) {
+            if (link == null) return false;
+            if (link.getBooleanProperty("ALLOW_DUPE", false)) return false;
+            LinkGrabberV2FilePackage fp = null;
+            DownloadLink dl = null;
+            for (Iterator<LinkGrabberV2FilePackage> it = packages.iterator(); it.hasNext();) {
+                fp = it.next();
+                for (Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator(); it2.hasNext();) {
+                    dl = it2.next();
+                    if (dl.getDownloadURL().trim().equalsIgnoreCase(link.getDownloadURL().trim())) return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -275,6 +289,19 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                             ArrayList<DownloadLink> hosterList;
                             for (Iterator<ArrayList<DownloadLink>> it = map.values().iterator(); it.hasNext();) {
                                 hosterList = it.next();
+                                for (int i = hosterList.size() - 1; i >= 0; i--) {
+                                    /*
+                                     * decrypter können online status ebenfalls
+                                     * setzen, daher nicht extra nochma prüfen
+                                     */
+                                    DownloadLink link = hosterList.get(i);
+                                    if (link.isAvailabilityChecked()) {
+                                        hosterList.remove(i);
+                                    }
+                                    pc.increase(1);
+                                    attachToPackagesSecondStage(link);
+                                    fireTableChanged(1, null);
+                                }
                                 DownloadLink link = hosterList.get(0);
                                 boolean ret = ((PluginForHost) link.getPlugin()).checkLinks(hosterList.toArray(new DownloadLink[] {}));
                                 if (!ret) {
@@ -409,6 +436,9 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         int prio = 0;
         String pw = "";
         HashMap<String, Object> prop = new HashMap<String, Object>();
+        LinkGrabberV2FilePackage fp;
+        JDFileChooser fc;
+        int col = 0;
         if (arg0.getSource() instanceof LinkGrabberTaskPane) {
             switch (arg0.getID()) {
             case LinkGrabberV2TreeTableAction.ADD_ALL:
@@ -421,8 +451,17 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
             }
         } else if (arg0.getSource() instanceof JMenuItem) {
             switch (arg0.getID()) {
+            case LinkGrabberV2TreeTableAction.ADD_ALL:
+                selected_packages = new Vector<LinkGrabberV2FilePackage>(packages);
+                break;
+            case LinkGrabberV2TreeTableAction.ADD_SELECTED:
+            case LinkGrabberV2TreeTableAction.PACKAGE_EDIT_DIR:
+            case LinkGrabberV2TreeTableAction.PACKAGE_SORT:
+                col = (Integer) ((LinkGrabberV2TreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("col");
+                selected_packages = new Vector<LinkGrabberV2FilePackage>(this.internalTreeTable.getSelectedFilePackages());
+                break;
             case LinkGrabberV2TreeTableAction.DOWNLOAD_PRIO:
-                prop = (HashMap<String, Object>) ((TreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("infos");
+                prop = (HashMap<String, Object>) ((LinkGrabberV2TreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("infos");
                 selected_links = (Vector<DownloadLink>) prop.get("downloadlinks");
                 break;
             case LinkGrabberV2TreeTableAction.DELETE:
@@ -433,11 +472,30 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
             }
         }
         switch (arg0.getID()) {
+        case LinkGrabberV2TreeTableAction.PACKAGE_SORT:
+            for (LinkGrabberV2FilePackage fp2 : selected_packages) {
+                fp2.sort(col);
+            }
+            fireTableChanged(1, null);
+            break;
+        case LinkGrabberV2TreeTableAction.PACKAGE_EDIT_DIR:
+            fc = new JDFileChooser();
+            fc.setApproveButtonText(JDLocale.L("gui.btn_ok", "OK"));
+            fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
+            fc.setCurrentDirectory(new File(selected_packages.get(0).getDownloadDirectory()));
+            if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) {
+                if (fc.getSelectedFile() != null) {
+                    for (LinkGrabberV2FilePackage fp2 : selected_packages) {
+                        fp2.setDownloadDirectory(fc.getSelectedFile().getAbsolutePath());
+                    }
+                }
+            }
+            break;
         case LinkGrabberV2TreeTableAction.NEW_PACKAGE:
-            LinkGrabberV2FilePackage parentFP = this.getFPwithLink(selected_links.get(0));
-            String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), parentFP.getName());            
+            fp = this.getFPwithLink(selected_links.get(0));
+            String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
             if (name != null) {
-                LinkGrabberV2FilePackage nfp = new LinkGrabberV2FilePackage(name, this);                
+                LinkGrabberV2FilePackage nfp = new LinkGrabberV2FilePackage(name, this);
                 for (DownloadLink link : selected_links) {
                     removeFromPackages(link);
                     addToPackages(nfp, link);
@@ -448,7 +506,9 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         case LinkGrabberV2TreeTableAction.SET_PW:
             pw = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.setpw.message", "Set download password"), null);
             for (int i = 0; i < selected_links.size(); i++) {
+                fp = this.getFPwithLink(selected_links.elementAt(i));
                 selected_links.elementAt(i).setProperty("pass", pw);
+                if (fp != null) fp.getUpdateBroadcaster().fireUpdateEvent(new UpdateEvent(fp, UpdateEvent.UPDATE_EVENT));
             }
             return;
         case LinkGrabberV2TreeTableAction.ADD_ALL:
@@ -464,8 +524,8 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
             return;
         case LinkGrabberV2TreeTableAction.CLEAR:
             stopLinkGatherer();
-            for (LinkGrabberV2FilePackage fp : selected_packages) {
-                fp.setDownloadLinks(new Vector<DownloadLink>());
+            for (LinkGrabberV2FilePackage fp2 : selected_packages) {
+                fp2.setDownloadLinks(new Vector<DownloadLink>());
             }
             fireTableChanged(1, null);
             return;

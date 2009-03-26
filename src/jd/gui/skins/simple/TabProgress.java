@@ -76,7 +76,7 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         controllers = new ArrayList<ProgressController>();
         JDUtilities.getController().addControlListener(this);
         this.addMouseListener(this);
-this.setVisible(false);
+        this.setVisible(false);
         // PanelUI uid = this.getUI();
         // org.jvnet.substance.swingx.SubstanceTaskPaneUI.
         // this.setUI(new UI());
@@ -148,7 +148,8 @@ this.setVisible(false);
     protected void update() {
 
         // 
-      //  this.setCollapsed(JDUtilities.getSubConfig("gui").getBooleanProperty(TabProgress.COLLAPSED, false));
+        // this.setCollapsed(JDUtilities.getSubConfig("gui").getBooleanProperty(
+        // TabProgress.COLLAPSED, false));
 
         for (int i = 0; i < Math.min(controllers.size(), MAX_BARS); i++) {
             if (!lines[i].isAttached()) {
@@ -170,7 +171,9 @@ this.setVisible(false);
             }
 
         }
-        if (controllers.size() == 0){ this.setVisible(false);}else{
+        if (controllers.size() == 0) {
+            this.setVisible(false);
+        } else {
             this.setVisible(true);
         }
         this.setTitle(JDLocale.LF("gui.progresspane.title", "%s modules running", controllers.size()));
@@ -210,36 +213,42 @@ this.setVisible(false);
         }
 
         public ProgressEntry() {
-        	cancel.setIcon(imgClose);
-        	cancel.setMaximumSize(new Dimension(16, 16));
-        	cancel.setForeground(new Color(255,0,0));
-        	cancel.setVisible(true);
-        	cancel.addMouseListener(new MouseListener() {
+            cancel.setIcon(imgClose);
+            cancel.setMaximumSize(new Dimension(16, 16));
+            cancel.setForeground(new Color(255, 0, 0));
+            cancel.setVisible(true);
+            cancel.addMouseListener(new MouseListener() {
 
-    			public void mouseClicked(MouseEvent arg0) {
-    				// TODO Auto-generated method stub
-    			}
+                public void mouseClicked(MouseEvent arg0) {
+                    // TODO Auto-generated method stub
+                }
 
-    			public void mouseEntered(MouseEvent arg0) {
-    				cancel.setIcon(imgCloseMouseOver);
-    			}
+                public void mouseEntered(MouseEvent arg0) {
+                    cancel.setIcon(imgCloseMouseOver);
+                }
 
-    			public void mouseExited(MouseEvent arg0) {
-    				cancel.setIcon(imgClose);
-    			}
+                public void mouseExited(MouseEvent arg0) {
+                    cancel.setIcon(imgClose);
+                }
 
-    			public void mousePressed(MouseEvent arg0) {
-    				// TODO Auto-generated method stub
-    			}
+                public void mousePressed(MouseEvent arg0) {
+                    // TODO Auto-generated method stub
+                }
 
-    			public void mouseReleased(MouseEvent arg0) {
-    				// TODO Auto-generated method stub
-    			}});
-        	
+                public void mouseReleased(MouseEvent arg0) {
+                    // TODO Auto-generated method stub
+                }
+            });
+
             this.setLayout(new MigLayout("ins 0", "[18!]0[grow,fill]", "16!"));
             this.add(label = new JLabel(), "sizegroup labels, width 100%");
             this.add(bar = new JProgressBar(), "sizegroup bars, width 100%");
             this.add(cancel, "sizegroup cancel, gap 5px, wrap");
+            cancel.setVisible(false);/*
+                                      * TODO: cancel soll einen callback
+                                      * aufrufen welchen dann die funktion
+                                      * abbricht
+                                      */
             this.add(new JSeparator(), "span");
         }
 

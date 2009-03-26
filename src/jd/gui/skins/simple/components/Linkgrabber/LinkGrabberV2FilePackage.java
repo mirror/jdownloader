@@ -1,5 +1,7 @@
 package jd.gui.skins.simple.components.Linkgrabber;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Vector;
 
@@ -31,6 +33,7 @@ public class LinkGrabberV2FilePackage extends Property {
     private UpdateBroadcaster upc = new UpdateBroadcaster();
     private long lastSizeCalc = 0;
     private String dlpassword = "";
+    private boolean lastSort = false;
 
     public LinkGrabberV2FilePackage() {
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
@@ -99,14 +102,13 @@ public class LinkGrabberV2FilePackage extends Property {
     public void add(DownloadLink link) {
         if (!downloadLinks.contains(link)) {
             downloadLinks.add(link);
-            updateData();
         }
     }
 
     public void updateData() {
         synchronized (downloadLinks) {
-            String password = getPassword();
-            StringBuilder comment = new StringBuilder(getComment());
+            String password = this.password;
+            StringBuilder comment = new StringBuilder(this.comment);
 
             String[] pws = JDUtilities.passwordStringToArray(password);
             Vector<String> pwList = new Vector<String>();
@@ -138,9 +140,9 @@ public class LinkGrabberV2FilePackage extends Property {
             if (cmt.startsWith("|")) {
                 cmt = cmt.substring(1);
             }
-            setComment(cmt);
-            setPassword(JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()])));
-            setDLPassword(JDUtilities.passwordArrayToString(dlpwList.toArray(new String[dlpwList.size()])));
+            this.comment = cmt;
+            this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
+            this.dlpassword = JDUtilities.passwordArrayToString(dlpwList.toArray(new String[dlpwList.size()]));
         }
     }
 
@@ -149,7 +151,6 @@ public class LinkGrabberV2FilePackage extends Property {
             downloadLinks.remove(link);
         }
         downloadLinks.add(index, link);
-        updateData();
     }
 
     public void addAll(Vector<DownloadLink> links) {
@@ -186,14 +187,17 @@ public class LinkGrabberV2FilePackage extends Property {
     }
 
     public String getPassword() {
+        updateData();
         return password;
     }
 
     public String getDLPassword() {
+        updateData();
         return dlpassword;
     }
 
     public String getComment() {
+        updateData();
         return comment;
     }
 
@@ -216,14 +220,12 @@ public class LinkGrabberV2FilePackage extends Property {
     public boolean remove(DownloadLink link) {
         boolean ret = downloadLinks.remove(link);
         if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
-        updateData();
         return ret;
     }
 
     public DownloadLink remove(int index) {
         DownloadLink link = downloadLinks.remove(index);
         if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
-        updateData();
         return link;
     }
 
@@ -242,7 +244,6 @@ public class LinkGrabberV2FilePackage extends Property {
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
         this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
         if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
-        updateData();
     }
 
     public void setName(String name) {
@@ -261,6 +262,39 @@ public class LinkGrabberV2FilePackage extends Property {
 
     public int size() {
         return downloadLinks.size();
+    }
+
+    public void sort(final int col) {
+        if (!(col >= 1 && col <= 3)) return;
+        lastSort = !lastSort;
+        synchronized (downloadLinks) {
+
+            Collections.sort(downloadLinks, new Comparator<DownloadLink>() {
+
+                public int compare(DownloadLink a, DownloadLink b) {
+                    if (a.getName().endsWith(".sfv")) { return -1; }
+                    if (b.getName().endsWith(".sfv")) { return 1; }
+                    DownloadLink aa = a;
+                    DownloadLink bb = b;
+                    if (lastSort) {
+                        aa = b;
+                        bb = a;
+                    }
+                    switch (col) {
+                    case 1:
+                        return aa.getName().compareToIgnoreCase(bb.getName());
+                    case 2:
+                        return aa.getDownloadSize() > bb.getDownloadSize() ? 1 : -1;
+                    case 3:
+                        return aa.getHost().compareToIgnoreCase(bb.getHost());
+                    default:
+                        return -1;
+                    }
+
+                }
+
+            });
+        }
     }
 
     public String getHoster() {

@@ -75,6 +75,10 @@ public class HTTPAllgemein extends PluginForHost {
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("httpviajd://", "http://"));
         String basicauth = removeBasicAuthfromURL(downloadLink);
         if (basicauth == null) basicauth = (String) downloadLink.getProperty("basicauth", null);
+        if (basicauth == null) {
+            basicauth = (String) downloadLink.getProperty("pass", null);
+            if (basicauth != null) basicauth = "Basic " + Encoding.Base64Encode(basicauth);
+        }
         if (basicauth != null) {
             br.getHeaders().put("Authorization", basicauth);
         }
@@ -94,6 +98,7 @@ public class HTTPAllgemein extends PluginForHost {
                 if (urlConnection.getResponseCode() == 401) {
                     urlConnection.disconnect();
                     downloadLink.setProperty("basicauth", null);
+                    downloadLink.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "BasicAuth is needed!");
                 } else {
                     downloadLink.setProperty("basicauth", basicauth);

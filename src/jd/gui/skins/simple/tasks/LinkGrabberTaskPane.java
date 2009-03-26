@@ -8,6 +8,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JSeparator;
 
+import jd.config.Configuration;
+import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.JDAction;
@@ -27,6 +29,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
     private JButton lg_add_all;
     private JButton lg_add_selected;
     private JButton lg_clear;
+    private JButton panel_clipboard;
     private JSeparator sep = new JSeparator();
     private SimpleGUI simplegui;
     boolean lg_buttons_visible = false;
@@ -43,6 +46,17 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
     private void initGUI() {
         this.panel_add_links = addButton(this.createButton(JDLocale.L("gui.linkgrabberv2.addlinks", "Add Links"), JDTheme.II("gui.images.add", 16, 16)));
         this.panel_add_containers = addButton(this.createButton(JDLocale.L("gui.linkgrabberv2.addcontainers", "Add Containers"), JDTheme.II("gui.images.load", 16, 16)));
+        add(new JSeparator());
+        this.panel_clipboard = addButton(this.createButton(JDLocale.L("gui.linkgrabberv2.clipboard", "Clipboard Watching"), JDTheme.II(getClipBoardImage(), 16, 16)));
+
+    }
+
+    private String getClipBoardImage() {
+        if (ClipboardHandler.getClipboard().isEnabled()) {
+            return JDTheme.V("gui.images.clipboardon");
+        } else {
+            return JDTheme.V("gui.images.clipboardoff");
+        }
     }
 
     private JButton addButton(JButton bt) {
@@ -79,6 +93,10 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_LOAD_DLC, null));
             return;
         }
+        if (e.getSource() == panel_clipboard) {
+            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
+            return;
+        }
         if (e.getSource() == lg_add_all) {
             this.broadcastEvent(new ActionEvent(this, LinkGrabberV2TreeTableAction.ADD_ALL, ((JButton) e.getSource()).getName()));
             return;
@@ -94,7 +112,13 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
     }
 
     public void controlEvent(ControlEvent event) {
-
+        if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED && event.getParameter() instanceof String && ((String) event.getParameter()).equalsIgnoreCase(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE)) {
+            EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    panel_clipboard.setIcon(JDTheme.II(getClipBoardImage(), 16, 16));
+                }
+            });
+        }
     }
 
     public synchronized void UpdateEvent(final UpdateEvent event) {

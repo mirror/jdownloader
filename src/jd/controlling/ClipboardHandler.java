@@ -82,7 +82,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
      * 
      * @return true/false
      */
-    public boolean isEnabled() {
+    public boolean isEnabled() {        
         return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
     }
 

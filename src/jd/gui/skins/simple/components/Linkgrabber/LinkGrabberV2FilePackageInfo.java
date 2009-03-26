@@ -41,12 +41,18 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
 
     private LinkGrabberV2FilePackage fp = null;
 
+    private boolean notifyUpdate = true;
+
     public LinkGrabberV2FilePackageInfo() {
         buildGui();
         fp = null;
     }
 
     public void setPackage(LinkGrabberV2FilePackage fp) {
+        if (this.fp != null && this.fp == fp) {
+            update();
+            return;
+        }
         if (this.fp != null) this.fp.getUpdateBroadcaster().removeUpdateListener(this);
         this.fp = fp;
         if (this.fp != null) {
@@ -57,12 +63,20 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
 
     private void update() {
         if (fp == null) return;
+        notifyUpdate = false; /*
+                               * wichtig: die set funktionen lösen eine action
+                               * aus , welche ansonsten wiederum ein updatevent
+                               * aufrufen würden
+                               */
         txtName.setText(fp.getName());
         txtComment.setText(fp.getComment());
         txtPassword.setText(fp.getPassword());
+        dlPassword.setText(fp.getDLPassword());
         brwSaveTo.setText(fp.getDownloadDirectory());
         chbExtract.setSelected(fp.isExtractAfterDownload());
         chbUseSubdirectory.setSelected(fp.useSubDir());
+        revalidate();/* neuzeichnen */
+        notifyUpdate = true;
     }
 
     public LinkGrabberV2FilePackage getPackage() {
@@ -148,7 +162,7 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (fp == null) return;
+        if (fp == null || !notifyUpdate) return;
         if (e.getSource() == txtName) fp.setName(txtName.getText());
         if (e.getSource() == brwSaveTo) fp.setDownloadDirectory(brwSaveTo.getText());
         if (e.getSource() == txtComment) fp.setComment(txtComment.getText());

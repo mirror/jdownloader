@@ -564,13 +564,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     // private JDAction actionItemsUp;
 
-    private JDAction actionAddLinks;
+    
 
     private JDAction actionRemoveLinks;
 
-    private JDAction actionRemovePackages;
-
-    private JDAction actionLoadDLC;
+    private JDAction actionRemovePackages;   
 
     private JDAction actionLog;
 
@@ -1449,13 +1447,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // actionPause = new JDAction(this, getPauseImage(), "action.pause",
         // JDAction.APP_PAUSE_DOWNLOADS);
         // actionItemsAdd = new JDAction(this, JDTheme.V("gui.images.add"),
-        // "action.add", JDAction.ITEMS_ADD);
-        actionAddLinks = new JDAction(this, JDTheme.V("gui.images.add"), "action.add", JDAction.ITEMS_ADD);
+        // "action.add", JDAction.ITEMS_ADD);        
         actionRemoveLinks = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.links", JDAction.ITEMS_REMOVE_LINKS);
         actionRemovePackages = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.packages", JDAction.ITEMS_REMOVE_PACKAGES);
         actionDnD = new JDAction(this, JDTheme.V("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
-        actionOptionalConfig = new JDAction(this, JDTheme.V("gui.images.config.packagemanager"), "action.optconfig", JDAction.APP_OPEN_OPT_CONFIG);
-        actionLoadDLC = new JDAction(this, JDTheme.V("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
+        actionOptionalConfig = new JDAction(this, JDTheme.V("gui.images.config.packagemanager"), "action.optconfig", JDAction.APP_OPEN_OPT_CONFIG);        
         actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
         actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
         actionRestart = new JDAction(this, JDTheme.V("gui.images.exit"), "action.restart", JDAction.APP_RESTART);
@@ -1503,12 +1499,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         createBackup = SimpleGUI.createMenuItem(actionBackup);
 
         // Adds the menus from the Addons
-        createOptionalPluginsMenuEntries();
-
-        JMenu menAdd = createMenu(JDLocale.L("gui.menu.add", "Add"), "gui.images.add");
-        menAdd.add(SimpleGUI.createMenuItem(actionAddLinks));
-        menAdd.add(SimpleGUI.createMenuItem(actionLoadDLC));
-        menFile.add(menAdd);
+        createOptionalPluginsMenuEntries();        
+        
         JMenu menRemove = createMenu(JDLocale.L("gui.menu.remove", "Remove"), "gui.images.delete");
         menRemove.add(SimpleGUI.createMenuItem(actionItemsDelete));
         menRemove.addSeparator();

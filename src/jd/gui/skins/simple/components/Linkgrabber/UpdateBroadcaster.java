@@ -15,6 +15,9 @@ public class UpdateBroadcaster {
 
     public void addUpdateListener(UpdateListener listener) {
         synchronized (callList) {
+            synchronized (removeList) {
+                if (removeList.contains(listener)) removeList.remove(listener);
+            }
             if (!callList.contains(listener)) callList.add(listener);
         }
     }
