@@ -7,7 +7,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.border.Border;
 
-import jd.nutils.JDImage;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;

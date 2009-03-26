@@ -1,11 +1,7 @@
 package jd.gui.skins.simple.components.Linkgrabber;
 
-import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,8 +10,6 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.AbstractButton;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
@@ -26,8 +20,8 @@ import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.JTabbedPanel;
-import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.JCancelButton;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
 import jd.parser.Regex;
@@ -65,9 +59,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
 
     private UpdateBroadcaster upc = new UpdateBroadcaster();
 
-    final AbstractButton close = new JButton();
-    final ImageIcon imgCloseMouseOver = new ImageIcon(JDUtilities.getResourceFile("/jd/img/button_close_mouseover.png").getAbsolutePath());
-    final ImageIcon imgClose = new ImageIcon(JDUtilities.getResourceFile("/jd/img/button_close.png").getAbsolutePath());
+    private final AbstractButton close = new JCancelButton();
 
     public LinkGrabberV2Panel(SimpleGUI parent) {
         super(new MigLayout());
@@ -84,34 +76,6 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
 
         this.add(close, "id close, pos (pane.w-(close.w/2)) (pane.y+(close.h/2))");
         this.add(collapsepane, "cell 0 1, width 100%, id pane");
-
-        close.setIcon(imgClose);
-        close.setMaximumSize(new Dimension(16, 16));
-        close.setForeground(new Color(255, 0, 0));
-
-        close.addMouseListener(new MouseListener() {
-
-            public void mouseClicked(MouseEvent arg0) {
-                // TODO Auto-generated method stub
-            }
-
-            public void mouseEntered(MouseEvent arg0) {
-                close.setIcon(imgCloseMouseOver);
-            }
-
-            public void mouseExited(MouseEvent arg0) {
-                close.setIcon(imgClose);
-            }
-
-            public void mousePressed(MouseEvent arg0) {
-                // TODO Auto-generated method stub
-                hideFilePackageInfo();
-            }
-
-            public void mouseReleased(MouseEvent arg0) {
-                // TODO Auto-generated method stub
-            }
-        });
     }
 
     public void showFilePackageInfo(LinkGrabberV2FilePackage fp) {

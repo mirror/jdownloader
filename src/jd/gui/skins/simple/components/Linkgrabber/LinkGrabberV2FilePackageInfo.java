@@ -163,12 +163,19 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
 
     public void actionPerformed(ActionEvent e) {
         if (fp == null || !notifyUpdate) return;
-        if (e.getSource() == txtName) fp.setName(txtName.getText());
-        if (e.getSource() == brwSaveTo) fp.setDownloadDirectory(brwSaveTo.getText());
-        if (e.getSource() == txtComment) fp.setComment(txtComment.getText());
-        if (e.getSource() == txtPassword) fp.setPassword(txtPassword.getText());
-        if (e.getSource() == chbExtract) fp.setExtractAfterDownload(chbExtract.isSelected());
-        if (e.getSource() == chbUseSubdirectory) fp.setUseSubDir(chbUseSubdirectory.isSelected());
+        if (e.getSource() == txtName) {
+            fp.setName(txtName.getText());
+        } else if (e.getSource() == brwSaveTo) {
+            fp.setDownloadDirectory(brwSaveTo.getText());
+        } else if (e.getSource() == txtComment) {
+            fp.setComment(txtComment.getText());
+        } else if (e.getSource() == txtPassword) {
+            fp.setPassword(txtPassword.getText());
+        } else if (e.getSource() == chbExtract) {
+            fp.setExtractAfterDownload(chbExtract.isSelected());
+        } else if (e.getSource() == chbUseSubdirectory) {
+            fp.setUseSubDir(chbUseSubdirectory.isSelected());
+        }
     }
 
 }

@@ -4,7 +4,9 @@ import java.awt.Color;
 import java.awt.Component;
 
 import javax.swing.tree.TreePath;
+
 import jd.plugins.DownloadLink;
+
 import org.jdesktop.swingx.decorator.ColorHighlighter;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
 import org.jdesktop.swingx.decorator.HighlightPredicate;

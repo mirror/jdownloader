@@ -16,8 +16,6 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -28,8 +26,6 @@ import java.util.Collections;
 import java.util.Comparator;
 
 import javax.swing.AbstractButton;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.JSeparator;
@@ -37,6 +33,7 @@ import javax.swing.JSeparator;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.skins.simple.components.JCancelButton;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
@@ -63,7 +60,6 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
     /**
      * Hier werden alle Fortschritte der Plugins gespeichert
      */
-
     private ArrayList<ProgressController> controllers;
 
     private ProgressEntry[] lines;
@@ -71,18 +67,14 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
     /**
      * Die Tabelle für die Pluginaktivitäten
      */
-
     public TabProgress() {
         controllers = new ArrayList<ProgressController>();
         JDUtilities.getController().addControlListener(this);
         this.addMouseListener(this);
         this.setVisible(false);
-        // PanelUI uid = this.getUI();
-        // org.jvnet.substance.swingx.SubstanceTaskPaneUI.
-        // this.setUI(new UI());
         lines = new ProgressEntry[MAX_BARS];
         this.setCollapsed(JDUtilities.getSubConfig("gui").getBooleanProperty(TabProgress.COLLAPSED, false));
-        setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
+        this.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
         this.setTitle(JDLocale.LF("gui.progresspane.title", "%s modules running", 0));
         initGUI();
     }
@@ -90,20 +82,15 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
     private void initGUI() {
         for (int i = 0; i < MAX_BARS; i++) {
             lines[i] = new ProgressEntry();
-
         }
-
     }
 
     public void actionPerformed(ActionEvent e) {
         setVisible(false);
-
     }
 
     private synchronized void addController(ProgressController source) {
-
         controllers.add(0, source);
-
     }
 
     private synchronized boolean hasController(ProgressController source) {
@@ -111,14 +98,7 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
     }
 
     private synchronized void removeController(ProgressController source) {
-        int index = controllers.indexOf(source);
-
-        if (index >= 0) {
-
-            controllers.remove(source);
-
-        }
-
+        controllers.remove(source);
     }
 
     public void controlEvent(ControlEvent event) {
@@ -126,7 +106,7 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
             ProgressController source = (ProgressController) event.getSource();
             try {
                 if (source.isFinished()) {
-                    this.removeController(source);
+                    removeController(source);
                     return;
                 }
                 if (!hasController(source)) {
@@ -146,11 +126,6 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
     }
 
     protected void update() {
-
-        // 
-        // this.setCollapsed(JDUtilities.getSubConfig("gui").getBooleanProperty(
-        // TabProgress.COLLAPSED, false));
-
         for (int i = 0; i < Math.min(controllers.size(), MAX_BARS); i++) {
             if (!lines[i].isAttached()) {
                 this.add(lines[i], "height 20!");
@@ -159,12 +134,12 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
             } else {
                 System.out.println("OK " + i);
             }
-            lines[i].update(this.controllers.get(i));
+            lines[i].update(controllers.get(i));
 
         }
         for (int i = Math.max(0, Math.min(controllers.size(), MAX_BARS)); i < MAX_BARS; i++) {
             if (lines[i].isAttached()) {
-                this.remove(this.lines[i]);
+                this.remove(lines[i]);
                 System.out.println("GONE " + i);
 
                 lines[i].setAttached(false);
@@ -188,24 +163,19 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         Collections.sort(controllers, new Comparator<ProgressController>() {
 
             public int compare(ProgressController o1, ProgressController o2) {
-
                 if (o1.getPercent() == o2.getPercent()) return 0;
                 return o1.getPercent() < o2.getPercent() ? 1 : -1;
             }
-        });
 
+        });
     }
 
-    class ProgressEntry extends JXPanel {
-        /**
-         * 
-         */
+    private class ProgressEntry extends JXPanel {
+
         private static final long serialVersionUID = 2676301394570621548L;
         private JLabel label;
         private JProgressBar bar;
-        private AbstractButton cancel = new JButton();
-        final ImageIcon imgCloseMouseOver = new ImageIcon(JDUtilities.getResourceFile("/jd/img/button_close_mouseover.png").getAbsolutePath());
-        final ImageIcon imgClose = new ImageIcon(JDUtilities.getResourceFile("/jd/img/button_close.png").getAbsolutePath());
+        private AbstractButton cancel = new JCancelButton();
         private boolean attached = false;
 
         public void setAttached(boolean attached) {
@@ -213,122 +183,43 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         }
 
         public ProgressEntry() {
-            cancel.setIcon(imgClose);
-            cancel.setMaximumSize(new Dimension(16, 16));
-            cancel.setForeground(new Color(255, 0, 0));
-            cancel.setVisible(true);
-            cancel.addMouseListener(new MouseListener() {
-
-                public void mouseClicked(MouseEvent arg0) {
-                    // TODO Auto-generated method stub
-                }
-
-                public void mouseEntered(MouseEvent arg0) {
-                    cancel.setIcon(imgCloseMouseOver);
-                }
-
-                public void mouseExited(MouseEvent arg0) {
-                    cancel.setIcon(imgClose);
-                }
-
-                public void mousePressed(MouseEvent arg0) {
-                    // TODO Auto-generated method stub
-                }
-
-                public void mouseReleased(MouseEvent arg0) {
-                    // TODO Auto-generated method stub
-                }
-            });
-
             this.setLayout(new MigLayout("ins 0", "[18!]0[grow,fill]", "16!"));
             this.add(label = new JLabel(), "sizegroup labels, width 100%");
             this.add(bar = new JProgressBar(), "sizegroup bars, width 100%");
             this.add(cancel, "sizegroup cancel, gap 5px, wrap");
-            cancel.setVisible(false);/*
-                                      * TODO: cancel soll einen callback
-                                      * aufrufen welchen dann die funktion
-                                      * abbricht
-                                      */
+            /*
+             * TODO: cancel soll einen callback aufrufen welchen dann die
+             * funktion abbricht
+             */
+            cancel.setVisible(false);
             this.add(new JSeparator(), "span");
         }
 
         public boolean isAttached() {
-            // TODO Auto-generated method stub
             return attached;
         }
 
         public void update(ProgressController controller) {
-
             label.setIcon(controller.getIcon());
             bar.setMaximum((int) controller.getMax());
             bar.setValue((int) controller.getValue());
             bar.setStringPainted(true);
             bar.setString(controller.getStatusText());
-
             bar.setBackground(controller.getColor());
-
-            // if (controller.getColor() != null)
-            // bar.setForeground(controller.getColor());
-
         }
+
     }
 
-    // public static void main(String[] args) {
-    // SwingUtilities.invokeLater(new Runnable() {
-    // public void run() {
-    // JFrame f = new JFrame("Test Oriented Collapsible Pane");
-    //
-    // f.add(new JLabel("Press Ctrl+F or Ctrl+G to collapse panes."),
-    // BorderLayout.NORTH);
-    //
-    // JTree tree1 = new JTree();
-    // tree1.setBorder(BorderFactory.createEtchedBorder());
-    // f.add(tree1);
-    //
-    // JXCollapsiblePane pane = new JXCollapsiblePane();
-    // pane.setCollapsed(true);
-    // JTree tree2 = new JTree();
-    // tree2.setBorder(BorderFactory.createEtchedBorder());
-    // pane.add(tree2);
-    // f.add(pane, BorderLayout.SOUTH);
-    //
-    // pane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.
-    // getKeyStroke("ctrl F"), JXCollapsiblePane.TOGGLE_ACTION);
-    //
-    // pane = new JXCollapsiblePane();
-    // JTree tree3 = new JTree();
-    // pane.add(tree3);
-    // tree3.setBorder(BorderFactory.createEtchedBorder());
-    // f.add(pane, BorderLayout.WEST);
-    //
-    // pane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.
-    // getKeyStroke("ctrl G"), JXCollapsiblePane.TOGGLE_ACTION);
-    //
-    // f.setSize(640, 480);
-    // f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    // f.setVisible(true);
-    // }
-    // });
-    // }
-
     public void mouseClicked(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseEntered(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseExited(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mousePressed(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseReleased(MouseEvent e) {
