@@ -24,7 +24,7 @@ import org.jdesktop.swingx.renderer.PainterAware;
 /**
  * Diese Klasse skaliert die Werte der JProgressbar auf Integer ranges herunter
  */
-public class JDProgressBar extends JProgressBar implements PainterAware{
+public class JDProgressBar extends JProgressBar implements PainterAware {
 
     private static final long serialVersionUID = 7787146508749392032L;
 
@@ -53,13 +53,11 @@ public class JDProgressBar extends JProgressBar implements PainterAware{
     }
 
     public Painter getPainter() {
-        // TODO Auto-generated method stub
         return painter;
     }
 
     public void setPainter(Painter painter) {
-      this.painter=painter;
-        
+        this.painter = painter;
     }
 
 }

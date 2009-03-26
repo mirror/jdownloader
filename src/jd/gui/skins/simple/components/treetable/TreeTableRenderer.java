@@ -187,7 +187,6 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
 
                 } else if (col.getWidth() < 170) {
                     progress.setString(dLink.getPluginProgress().getPercent() + "%");
-
                 } else {
                     progress.setString(dLink.getPluginProgress().getPercent() + "%");
                 }
@@ -199,16 +198,14 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
                 progress.setForeground(COL_PROGRESS_ERROR);
                 progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
-                this.clearSB();
+                clearSB();
                 col = ((TableColumnExt) table.getColumnModel().getColumn(column));
                 if (col.getWidth() < 60) {
 
                 } else if (col.getWidth() < 170) {
                     sb.append(c.format(10000 * progress.getPercentComplete() / 100.0)).append('%');
-
                 } else {
                     sb.append(c.format(10000 * progress.getPercentComplete() / 100.0)).append("% (").append(progress.getValue() / 1000).append('/').append(progress.getMaximum() / 1000).append(strSecondsAbrv).append(')');
-
                 }
                 progress.setString(sb.toString());
 
@@ -216,15 +213,16 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
             } else if (dLink.getDownloadCurrent() > 0) {
                 if (!dLink.getLinkStatus().isPluginActive()) {
                     if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                        clearSB();
                         col = this.table.getCols()[column];
                         if (col.getWidth() < 40) {
 
                         } else if (col.getWidth() < 170) {
-                            progress.setString("- 100% -");
-
+                            sb.append("100%");
                         } else {
-                            progress.setString("- 100% -");
+                            sb.append("100% (").append(JDUtilities.formatBytesToMB(dLink.getDownloadCurrent())).append('/').append(JDUtilities.formatBytesToMB(Math.max(1, dLink.getDownloadSize()))).append(')');
                         }
+                        progress.setString(sb.toString());
 
                     } else {
                         progress.setString("");
@@ -234,16 +232,14 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
                     if (dLink.getLinkStatus().hasStatus(LinkStatus.WAITING_USERIO)) {
                         progress.setString(strWaitIO);
                     } else {
-                        this.clearSB();
+                        clearSB();
                         col = this.table.getCols()[column];
                         if (col.getWidth() < 60) {
 
                         } else if (col.getWidth() < 170) {
                             sb.append(c.format(dLink.getPercent() / 100.0)).append('%');
-
                         } else {
                             sb.append(c.format(dLink.getPercent() / 100.0)).append("% (").append(JDUtilities.formatBytesToMB(dLink.getDownloadCurrent())).append('/').append(JDUtilities.formatBytesToMB(Math.max(1, dLink.getDownloadSize()))).append(')');
-
                         }
                         progress.setString(sb.toString());
                     }
@@ -270,7 +266,6 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
             } else if (dLink.getLinkStatus().isFailed()) {
                 ((JRendererLabel) co).setIcon(imgFailed);
                 ((JRendererLabel) co).setText("");
-
             } else {
                 ((JRendererLabel) co).setText(dLink.getLinkStatus().getStatusString());
                 ((JRendererLabel) co).setIcon(null);
@@ -306,16 +301,16 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
             if (fp.isFinished()) {
                 progress.setMaximum(100);
                 progress.setValue(100);
-
+                clearSB();
                 col = this.table.getCols()[column];
                 if (col.getWidth() < 40) {
 
                 } else if (col.getWidth() < 170) {
-                    progress.setString("- 100% -");
-
+                    sb.append("100%");
                 } else {
-                    progress.setString("- 100% -");
+                    sb.append("100% (").append(JDUtilities.formatKbReadable(progress.getValue())).append('/').append(JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize()))).append(')');
                 }
+                progress.setString(sb.toString());
             } else {
                 progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
                 progress.setValue(fp.getTotalKBLoaded());
@@ -325,10 +320,8 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
 
                 } else if (col.getWidth() < 170) {
                     sb.append(c.format(fp.getPercent())).append('%');
-
                 } else {
                     sb.append(c.format(fp.getPercent())).append("% (").append(JDUtilities.formatKbReadable(progress.getValue())).append('/').append(JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize()))).append(')');
-
                 }
                 progress.setString(sb.toString());
             }

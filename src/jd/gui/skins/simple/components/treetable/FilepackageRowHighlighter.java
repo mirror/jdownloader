@@ -15,12 +15,10 @@ public abstract class FilepackageRowHighlighter extends DownloadLinkRowHighlight
 
     public FilepackageRowHighlighter(DownloadTreeTable table, Color colora) {
         super(table, colora);
-
     }
 
     public FilepackageRowHighlighter(DownloadTreeTable table, Color colora, Color colorb) {
         super(table, colora, colorb);
-
     }
 
     protected HighlightPredicate getPredicate() {
@@ -32,10 +30,8 @@ public abstract class FilepackageRowHighlighter extends DownloadLinkRowHighlight
                     element = path.getLastPathComponent();
                     if (element instanceof FilePackage) { return doHighlight((FilePackage) element); }
                 }
-
                 return false;
             }
-
         };
     }
 
