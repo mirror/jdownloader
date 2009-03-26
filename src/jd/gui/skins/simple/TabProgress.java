@@ -183,10 +183,10 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         }
 
         public ProgressEntry() {
-            this.setLayout(new MigLayout("ins 0", "[18!]0[grow,fill]", "16!"));
-            this.add(label = new JLabel(), "sizegroup labels, width 100%");
-            this.add(bar = new JProgressBar(), "sizegroup bars, width 100%");
-            this.add(cancel, "sizegroup cancel, gap 5px, wrap");
+            this.setLayout(new MigLayout("ins 0", "[18!]0![grow,fill]5![16!]", "16!"));
+            this.add(label = new JLabel(), "sizegroup labels");
+            this.add(bar = new JProgressBar(), "sizegroup bars, growx");
+            this.add(cancel, "sizegroup cancel, wrap");
             /*
              * TODO: cancel soll einen callback aufrufen welchen dann die
              * funktion abbricht
