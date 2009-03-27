@@ -38,7 +38,9 @@ public class Jobber {
     private Integer jobsFinished = 0;
 
     public int getJobsFinished() {
-        return jobsFinished;
+        synchronized (jobsFinished) {
+            return jobsFinished;
+        }
     }
 
     private Integer jobsStarted = 0;

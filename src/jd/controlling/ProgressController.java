@@ -142,7 +142,7 @@ public class ProgressController {
         return currentValue;
     }
 
-    public void increase(long i) {
+    public synchronized void increase(long i) {
         setStatus(currentValue + i);
     }
 

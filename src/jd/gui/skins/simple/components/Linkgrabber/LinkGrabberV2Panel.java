@@ -24,6 +24,8 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JCancelButton;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
+import jd.nutils.jobber.JDRunnable;
+import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -267,13 +269,24 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                                 localList = new Vector<DownloadLink>();
                                 map.put(l.getPlugin().getHost(), localList);
                             }
-                            if (l.getPlugin().getHost().contains("rapid")) localList.add(l);
+                            localList.add(l);
                         }
+                        Jobber checkJobbers = new Jobber(4);
                         Vector<DownloadLink> hosterList;
                         for (Iterator<Vector<DownloadLink>> it = map.values().iterator(); it.hasNext();) {
                             hosterList = it.next();
-                            checkHosterList(hosterList);
+                            CheckThread cthread = new CheckThread(hosterList);
+                            checkJobbers.add(cthread);
                         }
+                        int todo = checkJobbers.getJobsAdded();
+                        checkJobbers.start();
+                        while (checkJobbers.getJobsFinished() != todo) {
+                            try {
+                                Thread.sleep(200);
+                            } catch (InterruptedException e) {
+                            }
+                        }
+                        checkJobbers.stop();
                     }
                     try {
                         Thread.sleep(2000);
@@ -610,6 +623,23 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         if (JDUtilities.getController().hasDownloadLinkURL(link.getDownloadURL())) {
             link.getLinkStatus().setErrorMessage("Already in Downloadlist");
             link.getLinkStatus().addStatus(LinkStatus.ERROR_ALREADYEXISTS);
+        }
+    }
+
+    class CheckThread extends Thread implements JDRunnable {
+        private Vector<DownloadLink> links = null;
+
+        public CheckThread(Vector<DownloadLink> links) {
+            this.links = links;
+        }
+
+        public void run() {
+            if (links == null || links.size() == 0) return;
+            checkHosterList(links);
+        }
+
+        public void go() throws Exception {
+            run();
         }
     }
 }
