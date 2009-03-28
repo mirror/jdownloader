@@ -38,11 +38,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
-public class Filer extends PluginForHost {
+public class FilerNet extends PluginForHost {
 
     private static final Pattern PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);
 
-    public Filer(PluginWrapper wrapper) {
+    public FilerNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://filer.net/premium");
     }

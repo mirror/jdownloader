@@ -497,6 +497,7 @@ public class JDInit {
         new DecryptPluginWrapper("jamendo.com", "JamendoCom", "http://[\\w\\.]*?jamendo\\.com/.?.?/?(album/\\d+|artist/.+)");
         new DecryptPluginWrapper("fdnlinks.com", "FDNLinksCom", "http://[\\w\\.]*?fdnlinks\\.com/link/[a-zA-Z0-9]+");
         new DecryptPluginWrapper("sprezer.com", "SprezerCom", "http://[\\w\\.]*?sprezer\\.com/file-.+");
+        new DecryptPluginWrapper("sharebase.to folder", "ShareBaseToFolder", "http://[\\w\\.]*?sharebase\\.to/ordner/.+");
 
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
