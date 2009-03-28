@@ -35,6 +35,10 @@ public class Jobber {
         return jobsAdded;
     }
 
+    public void setDebug(boolean b) {
+        debug = b;
+    }
+
     private Integer jobsFinished = 0;
 
     public int getJobsFinished() {
@@ -115,12 +119,24 @@ public class Jobber {
      */
     public void stop() {
         this.running = false;
-        for (Worker w : workerList) {
-            if (w != null) w.interrupt();
+        synchronized (workerList) {
+            for (Worker w : workerList) {
+                if (w != null) {
+                    w.interrupt();
+                }
+            }
+        }
+        while (true) {
+            if (this.currentlyRunningWorker == 0) break;
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {               
+            }
         }
     }
 
     private JDRunnable getNextJDRunnable() {
+        if (!this.isAlive()) return null;
         synchronized (jobList) {
             if (jobList.size() == 0) return null;
             return jobList.removeFirst();

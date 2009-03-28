@@ -10,19 +10,20 @@ import javax.swing.JSeparator;
 
 import jd.config.Configuration;
 import jd.controlling.ClipboardHandler;
+import jd.controlling.EventSystem.JDEvent;
+import jd.controlling.EventSystem.JDListener;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2Event;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2TreeTableAction;
-import jd.gui.skins.simple.components.Linkgrabber.UpdateEvent;
-import jd.gui.skins.simple.components.Linkgrabber.UpdateListener;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, ControlListener, UpdateListener {
+public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, ControlListener, JDListener {
 
     private JButton panel_add_links;
     private JButton panel_add_containers;
@@ -120,9 +121,9 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
             });
         }
     }
-
-    public synchronized void UpdateEvent(final UpdateEvent event) {
-        if (event.getID() == UpdateEvent.EMPTY_EVENT) {
+    public void recieveJDEvent(JDEvent event) {
+        if (!(event instanceof LinkGrabberV2Event)) return;
+        if (event.getID() == LinkGrabberV2Event.EMPTY_EVENT) {
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     removeButton(lg_clear);
@@ -134,7 +135,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
                 }
             });
         }
-        if (event.getID() == UpdateEvent.UPDATE_EVENT && lg_buttons_visible == false) {
+        if (event.getID() == LinkGrabberV2Event.UPDATE_EVENT && lg_buttons_visible == false) {
             lg_buttons_visible = true;
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
@@ -146,5 +147,6 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
                 }
             });
         }
+
     }
 }

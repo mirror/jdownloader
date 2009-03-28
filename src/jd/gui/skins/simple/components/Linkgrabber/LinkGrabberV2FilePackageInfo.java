@@ -10,6 +10,8 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
 import jd.config.Configuration;
+import jd.controlling.EventSystem.JDEvent;
+import jd.controlling.EventSystem.JDListener;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JDTextField;
@@ -17,7 +19,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListener, ActionListener {
+public class LinkGrabberV2FilePackageInfo extends JPanel implements JDListener, ActionListener {
 
     private static final long serialVersionUID = 5410296068527460629L;
 
@@ -53,10 +55,10 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
             update();
             return;
         }
-        if (this.fp != null) this.fp.getUpdateBroadcaster().removeUpdateListener(this);
+        if (this.fp != null) this.fp.getJDBroadcaster().removeJDListener(this);
         this.fp = fp;
         if (this.fp != null) {
-            fp.getUpdateBroadcaster().addUpdateListener(this);
+            fp.getJDBroadcaster().addJDListener(this);
             update();
         }
     }
@@ -144,21 +146,8 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
         this.add(tabbedPane, "grow");
     }
 
-    public void UpdateEvent(UpdateEvent event) {
-        if (this.fp == null) return;
-        if (!(event.getSource() instanceof LinkGrabberV2FilePackage)) return;
-        if (event.getSource() != fp) return;
-        switch (event.getID()) {
-        case UpdateEvent.EMPTY_EVENT:
-            fp.getUpdateBroadcaster().removeUpdateListener(this);
-            fp = null;
-            break;
-        case UpdateEvent.UPDATE_EVENT:
-            update();
-            break;
-        default:
-            break;
-        }
+    public void UpdateEvent(LinkGrabberV2FilePackageEvent event) {
+
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -175,6 +164,24 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements UpdateListen
             fp.setExtractAfterDownload(chbExtract.isSelected());
         } else if (e.getSource() == chbUseSubdirectory) {
             fp.setUseSubDir(chbUseSubdirectory.isSelected());
+        }
+    }
+
+    public void recieveJDEvent(JDEvent event) {
+        if (!(event instanceof LinkGrabberV2FilePackageEvent)) return;
+        if (this.fp == null) return;
+        if (!(event.getSource() instanceof LinkGrabberV2FilePackage)) return;
+        if (event.getSource() != fp) return;
+        switch (event.getID()) {
+        case LinkGrabberV2FilePackageEvent.EMPTY_EVENT:
+            fp.getJDBroadcaster().removeJDListener(this);
+            fp = null;
+            break;
+        case LinkGrabberV2FilePackageEvent.UPDATE_EVENT:
+            update();
+            break;
+        default:
+            break;
         }
     }
 

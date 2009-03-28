@@ -8,6 +8,8 @@ import java.util.Vector;
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.Property;
+import jd.controlling.EventSystem.JDBroadcaster;
+import jd.controlling.EventSystem.JDListener;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
@@ -30,7 +32,7 @@ public class LinkGrabberV2FilePackage extends Property {
     private String password = "";
     private long size = -1;
 
-    private UpdateBroadcaster upc = new UpdateBroadcaster();
+    private JDBroadcaster jdb = new JDBroadcaster();
     private long lastSizeCalc = 0;
     private String dlpassword = "";
     private boolean lastSort = false;
@@ -46,9 +48,9 @@ public class LinkGrabberV2FilePackage extends Property {
         }
     }
 
-    public LinkGrabberV2FilePackage(String name, UpdateListener listener) {
+    public LinkGrabberV2FilePackage(String name, JDListener listener) {
         this(name);
-        upc.addUpdateListener(listener);
+        jdb.addJDListener(listener);
     }
 
     public synchronized long getDownloadSize() {
@@ -64,8 +66,8 @@ public class LinkGrabberV2FilePackage extends Property {
         return size;
     }
 
-    public UpdateBroadcaster getUpdateBroadcaster() {
-        return upc;
+    public JDBroadcaster getJDBroadcaster() {
+        return jdb;
     }
 
     public String getDownloadDirectory() {
@@ -74,7 +76,7 @@ public class LinkGrabberV2FilePackage extends Property {
 
     public void setUseSubDir(boolean b) {
         useSubDir = b;
-        upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.UPDATE_EVENT));
+        jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
     }
 
     public boolean useSubDir() {
@@ -83,7 +85,7 @@ public class LinkGrabberV2FilePackage extends Property {
 
     public void setDownloadDirectory(String dir) {
         downloadDirectory = dir;
-        upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.UPDATE_EVENT));
+        jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
     }
 
     public LinkGrabberV2FilePackage(String name) {
@@ -171,7 +173,7 @@ public class LinkGrabberV2FilePackage extends Property {
 
     public void setExtractAfterDownload(boolean extractAfterDownload) {
         this.extractAfterDownload = extractAfterDownload;
-        upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.UPDATE_EVENT));
+        jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
     }
 
     public void addAllAt(Vector<DownloadLink> links, int index) {
@@ -216,7 +218,7 @@ public class LinkGrabberV2FilePackage extends Property {
     public boolean remove(DownloadLink link) {
         synchronized (downloadLinks) {
             boolean ret = downloadLinks.remove(link);
-            if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
+            if (downloadLinks.size() == 0) jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.EMPTY_EVENT));
             return ret;
         }
     }
@@ -224,7 +226,7 @@ public class LinkGrabberV2FilePackage extends Property {
     public DownloadLink remove(int index) {
         synchronized (downloadLinks) {
             DownloadLink link = downloadLinks.remove(index);
-            if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
+            if (downloadLinks.size() == 0) jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.EMPTY_EVENT));
             return link;
         }
     }
@@ -232,19 +234,19 @@ public class LinkGrabberV2FilePackage extends Property {
     public void setComment(String comment) {
         if (comment == null) comment = "";
         this.comment = comment;
-        upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.UPDATE_EVENT));
+        jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
     }
 
     public void setDLPassword(String pass) {
         if (pass == null) pass = "";
         this.dlpassword = pass;
-        upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.UPDATE_EVENT));
+        jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
     }
 
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
         synchronized (downloadLinks) {
             this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
-            if (downloadLinks.size() == 0) upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.EMPTY_EVENT));
+            if (downloadLinks.size() == 0) jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.EMPTY_EVENT));
         }
     }
 
@@ -253,13 +255,13 @@ public class LinkGrabberV2FilePackage extends Property {
             this.name = JDUtilities.removeEndingPoints(JDLocale.L("controller.packages.defaultname", "various"));
         } else
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
-        upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.UPDATE_EVENT));
+        jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
     }
 
     public void setPassword(String password) {
         if (password == null) password = "";
         this.password = password;
-        upc.fireUpdateEvent(new UpdateEvent(this, UpdateEvent.UPDATE_EVENT));
+        jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
     }
 
     public int size() {

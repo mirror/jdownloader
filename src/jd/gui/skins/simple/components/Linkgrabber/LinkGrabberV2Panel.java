@@ -1,5 +1,6 @@
 package jd.gui.skins.simple.components.Linkgrabber;
 
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -18,6 +19,10 @@ import javax.swing.Timer;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.controlling.ProgressControllerEvent;
+import jd.controlling.EventSystem.JDBroadcaster;
+import jd.controlling.EventSystem.JDEvent;
+import jd.controlling.EventSystem.JDListener;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
@@ -37,7 +42,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 
-public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, UpdateListener {
+public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, JDListener {
 
     private static final long serialVersionUID = 1607433619381447389L;
     protected static Vector<LinkGrabberV2FilePackage> packages = new Vector<LinkGrabberV2FilePackage>();
@@ -52,6 +57,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
 
     private SubConfiguration guiConfig;
     private Thread gatherer;
+    private boolean gatherer_running = false;
     private String PACKAGENAME_UNSORTED;
     private String PACKAGENAME_UNCHECKED;
     private ProgressController pc;
@@ -59,8 +65,8 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     private LinkGrabberV2FilePackageInfo FilePackageInfo;
     private Timer gathertimer;
 
-    private UpdateBroadcaster upc = new UpdateBroadcaster();
-
+    private JDBroadcaster jdb = new JDBroadcaster();
+    private Jobber checkJobbers = new Jobber(4);
     private final AbstractButton close = new JCancelButton();
 
     public LinkGrabberV2Panel(SimpleGUI parent) {
@@ -75,7 +81,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         collapsepane = new JXCollapsiblePane();
         collapsepane.setCollapsed(true);
         collapsepane.add(FilePackageInfo);
-
+        close.addActionListener(this);
         this.add(close, "id close, pos (pane.w-(close.w/2)) (pane.y+(close.h/2))");
         this.add(collapsepane, "cell 0 1, width 100%, id pane");
     }
@@ -89,8 +95,8 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         collapsepane.setCollapsed(true);
     }
 
-    public UpdateBroadcaster getUpdateBroadcaster() {
-        return upc;
+    public JDBroadcaster getJDBroadcaster() {
+        return jdb;
     }
 
     public Vector<LinkGrabberV2FilePackage> getPackages() {
@@ -135,7 +141,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         waitingList.add(element);
         checkAlreadyinList(element);
         attachToPackagesFirstStage(element);
-        upc.fireUpdateEvent(UpdateEvent.UPDATE_EVENT);
+        jdb.fireJDEvent(new LinkGrabberV2Event(this, LinkGrabberV2Event.UPDATE_EVENT));
     }
 
     private void attachToPackagesFirstStage(DownloadLink link) {
@@ -226,6 +232,14 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
 
     private void stopLinkGatherer() {
         if (gatherer != null && gatherer.isAlive()) {
+            gatherer_running = false;
+            EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    pc.setStatusText(pc.getStatusText() + ": Aborted");
+                    pc.finalize(5000l);
+                }
+            });
+            checkJobbers.stop();
             gatherer.interrupt();
         }
     }
@@ -235,9 +249,11 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         gatherer = new Thread() {
             public void run() {
                 setName("LinkGrabber");
+                gatherer_running = true;
                 String statusstring = "onlinecheck";
                 if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) statusstring = "linkgrabber";
                 pc = new ProgressController(statusstring);
+                pc.addJDListener(LinkGrabberV2Panel.this);
                 pc.setRange(0);
                 while (waitingList.size() != 0) {
                     Vector<DownloadLink> currentList = new Vector<DownloadLink>();
@@ -271,7 +287,8 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                             }
                             localList.add(l);
                         }
-                        Jobber checkJobbers = new Jobber(4);
+                        checkJobbers = new Jobber(1);
+                        checkJobbers.setDebug(true);
                         Vector<DownloadLink> hosterList;
                         for (Iterator<Vector<DownloadLink>> it = map.values().iterator(); it.hasNext();) {
                             hosterList = it.next();
@@ -284,6 +301,9 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                             try {
                                 Thread.sleep(200);
                             } catch (InterruptedException e) {
+                                checkJobbers.stop();
+                                pc.finalize();
+                                return;
                             }
                         }
                         checkJobbers.stop();
@@ -291,6 +311,8 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                     try {
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {
+                        pc.finalize();
+                        return;
                     }
                 }
                 pc.finalize();
@@ -317,7 +339,9 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
             boolean ret = ((PluginForHost) link.getPlugin()).checkLinks(hosterList.toArray(new DownloadLink[] {}));
             if (!ret) {
                 for (int i = 0; i < hosterList.size(); i++) {
+                    System.out.println("test nächsten link");
                     link = hosterList.get(i);
+                    if (!gatherer_running) return;
                     link.isAvailable();
                 }
             }
@@ -327,6 +351,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
 
     private synchronized void afterLinkGrabber(Vector<DownloadLink> links) {
         for (DownloadLink link : links) {
+            if (!gatherer_running) break;
             attachToPackagesSecondStage(link);
         }
         pc.increase(links.size());
@@ -414,22 +439,12 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
 
     }
 
-    public void UpdateEvent(UpdateEvent event) {
-        synchronized (packages) {
-            if (event.getSource() instanceof LinkGrabberV2FilePackage && event.getID() == UpdateEvent.EMPTY_EVENT) {
-                ((LinkGrabberV2FilePackage) event.getSource()).getUpdateBroadcaster().removeUpdateListener(this);
-                if (FilePackageInfo.getPackage() == ((LinkGrabberV2FilePackage) event.getSource()) || FilePackageInfo.getPackage() == null) {
-                    this.hideFilePackageInfo();
-                }
-                packages.remove(event.getSource());
-                if (packages.size() == 0) upc.fireUpdateEvent(UpdateEvent.EMPTY_EVENT);
-            }
-        }
-
-    }
-
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent arg0) {
+        if (arg0.getSource() == this.close) {
+            this.hideFilePackageInfo();
+            return;
+        }
         if (arg0.getSource() == this.gathertimer) {
             gathertimer.stop();
             gathertimer.removeActionListener(this);
@@ -519,7 +534,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
             for (int i = 0; i < selected_links.size(); i++) {
                 fp = this.getFPwithLink(selected_links.elementAt(i));
                 selected_links.elementAt(i).setProperty("pass", pw);
-                if (fp != null) fp.getUpdateBroadcaster().fireUpdateEvent(new UpdateEvent(fp, UpdateEvent.UPDATE_EVENT));
+                if (fp != null) fp.getJDBroadcaster().fireJDEvent(new LinkGrabberV2FilePackageEvent(fp, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
             }
             return;
         case LinkGrabberV2TreeTableAction.ADD_ALL:
@@ -626,7 +641,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         }
     }
 
-    class CheckThread extends Thread implements JDRunnable {
+    class CheckThread implements JDRunnable {
         private Vector<DownloadLink> links = null;
 
         public CheckThread(Vector<DownloadLink> links) {
@@ -641,5 +656,23 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         public void go() throws Exception {
             run();
         }
+    }
+
+    public void recieveJDEvent(JDEvent event) {
+        if (event instanceof ProgressControllerEvent) {
+            this.stopLinkGatherer();
+            return;
+        }
+        if (event instanceof LinkGrabberV2FilePackageEvent && event.getID() == LinkGrabberV2FilePackageEvent.EMPTY_EVENT) {
+            synchronized (packages) {
+                ((LinkGrabberV2FilePackage) event.getSource()).getJDBroadcaster().removeJDListener(this);
+                if (FilePackageInfo.getPackage() == ((LinkGrabberV2FilePackage) event.getSource()) || FilePackageInfo.getPackage() == null) {
+                    this.hideFilePackageInfo();
+                }
+                packages.remove(event.getSource());
+                if (packages.size() == 0) jdb.fireJDEvent(new LinkGrabberV2Event(this, LinkGrabberV2Event.EMPTY_EVENT));
+            }
+        }
+
     }
 }

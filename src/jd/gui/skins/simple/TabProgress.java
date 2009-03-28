@@ -129,10 +129,10 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         for (int i = 0; i < Math.min(controllers.size(), MAX_BARS); i++) {
             if (!lines[i].isAttached()) {
                 this.add(lines[i], "height 20!");
-                System.out.println("ATTACH " + i);
+                // System.out.println("ATTACH " + i);
                 lines[i].setAttached(true);
             } else {
-                System.out.println("OK " + i);
+                // System.out.println("OK " + i);
             }
             lines[i].update(controllers.get(i));
 
@@ -140,7 +140,7 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         for (int i = Math.max(0, Math.min(controllers.size(), MAX_BARS)); i < MAX_BARS; i++) {
             if (lines[i].isAttached()) {
                 this.remove(lines[i]);
-                System.out.println("GONE " + i);
+                // System.out.println("GONE " + i);
 
                 lines[i].setAttached(false);
             }
@@ -170,13 +170,14 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         });
     }
 
-    private class ProgressEntry extends JXPanel {
+    private class ProgressEntry extends JXPanel implements ActionListener {
 
         private static final long serialVersionUID = 2676301394570621548L;
         private JLabel label;
         private JProgressBar bar;
         private AbstractButton cancel = new JCancelButton();
         private boolean attached = false;
+        private ProgressController controller = null;
 
         public void setAttached(boolean attached) {
             this.attached = attached;
@@ -187,11 +188,8 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
             this.add(label = new JLabel(), "sizegroup labels");
             this.add(bar = new JProgressBar(), "sizegroup bars, growx");
             this.add(cancel, "sizegroup cancel, wrap");
-            /*
-             * TODO: cancel soll einen callback aufrufen welchen dann die
-             * funktion abbricht
-             */
             cancel.setVisible(false);
+            cancel.addActionListener(this);
             this.add(new JSeparator(), "span");
         }
 
@@ -200,12 +198,20 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         }
 
         public void update(ProgressController controller) {
+            this.controller = controller;
+            cancel.setVisible(controller.isCancelVisible());
             label.setIcon(controller.getIcon());
             bar.setMaximum((int) controller.getMax());
             bar.setValue((int) controller.getValue());
             bar.setStringPainted(true);
             bar.setString(controller.getStatusText());
             bar.setBackground(controller.getColor());
+        }
+
+        public void actionPerformed(ActionEvent arg0) {
+            if (arg0.getSource() == this.cancel) {
+                if (controller != null) controller.fireCancelAction();
+            }
         }
 
     }

@@ -20,6 +20,7 @@ import java.awt.Color;
 
 import javax.swing.Icon;
 
+import jd.controlling.EventSystem.JDBroadcaster;
 import jd.event.ControlEvent;
 import jd.utils.JDUtilities;
 
@@ -30,7 +31,7 @@ import jd.utils.JDUtilities;
  * 
  * @author JD-Team
  */
-public class ProgressController {
+public class ProgressController extends JDBroadcaster {
 
     private static int idCounter = 0;
     private long currentValue;
@@ -44,7 +45,7 @@ public class ProgressController {
     private String statusText;
     private Color progresscolor;
 
-    public Icon icon = null;
+    public Icon icon = null;   
 
     public Icon getIcon() {
         return icon;
@@ -56,6 +57,10 @@ public class ProgressController {
 
     public ProgressController(String name) {
         this(name, 100l);
+    }
+
+    public boolean isCancelVisible() {
+        return hasJDListener();
     }
 
     public ProgressController(String name, long max) {
@@ -99,7 +104,6 @@ public class ProgressController {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-
             }
             timer -= 1000;
             this.increase(1000l);
@@ -151,7 +155,6 @@ public class ProgressController {
     }
 
     public void setRange(long max) {
-
         this.max = max;
         setStatus(currentValue);
     }
@@ -182,4 +185,7 @@ public class ProgressController {
         return "ProgressController " + id;
     }
 
+    public void fireCancelAction() {
+        this.fireJDEvent(new ProgressControllerEvent(this,ProgressControllerEvent.CANCEL));
+    }
 }
