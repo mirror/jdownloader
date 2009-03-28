@@ -17,6 +17,7 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -41,15 +42,20 @@ public class YourFilesBiz extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
+        br.setFollowRedirects(true);
+        setLangToEn();
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("Dateiname:</b></td>[\\s]*?<td[^>]*>(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("Dateigr.*?e:</b></td>\\s+<td[^>]*>(.*?)</td>").getMatch(0);
+        String filename = br.getRegex("<b>File name:</b></td>\\s+<td align=left width=[0-9]+%>(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("File size:</b></td>\\s+<td align=left>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
         return true;
     }
-
+    public void setLangToEn() throws IOException
+    {
+        br.setCookie("http://yourfiles.to/" , "yab_mylang" , "en");
+    }
     @Override
     public String getVersion() {
         return getVersion("$Revision$");
@@ -58,7 +64,7 @@ public class YourFilesBiz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String url = br.getRegex(Pattern.compile("document.location=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String url = br.getRegex(Pattern.compile("document.location=\"(http.*?yourfiles.*?)\"'>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, url);
         URLConnectionAdapter con = dl.getConnection();

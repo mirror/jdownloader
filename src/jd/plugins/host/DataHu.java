@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.host;
 
 import java.io.IOException;
@@ -22,6 +21,8 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 public class DataHu extends PluginForHost {
@@ -37,10 +38,9 @@ public class DataHu extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-        br.getPage(downloadLink.getDownloadURL());
+        System.out.println(br.getPage(downloadLink.getDownloadURL()));
         String[] dat = br.getRegex("<div class=\"download_filename\">(.*?)<\\/div>.*\\:(.*?)<div class=\"download_not_start\">").getRow(0);
         long length = Regex.getSize(dat[1].trim());
         downloadLink.setDownloadSize(length);
@@ -57,13 +57,15 @@ public class DataHu extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
         br.setFollowRedirects(true);
         getFileInformation(downloadLink);
-        String link = br.getRegex(Pattern.compile("<span class=\"download_it\"><a href=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
 
-        // int free = this.waitForFreeConnection(downloadLink);
-
+        if (br.containsHTML("A let.*?shez v.*?rnod kell:")) {
+            long wait = (Long.parseLong(br.getRegex(Pattern.compile("<div id=\"counter\" class=\"countdown\">([0-9]+)</div>")).getMatch(0)) * 1000);
+            sleep(wait, downloadLink);
+        }
+        br.getPage(downloadLink.getDownloadURL());
+        String link = br.getRegex(Pattern.compile("download_it\"><a href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
         br.openDownload(downloadLink, link, true, 1).startDownload();
 
     }
