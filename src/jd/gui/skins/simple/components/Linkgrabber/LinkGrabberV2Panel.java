@@ -287,7 +287,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                             }
                             localList.add(l);
                         }
-                        checkJobbers = new Jobber(1);
+                        checkJobbers = new Jobber(4);
                         checkJobbers.setDebug(true);
                         Vector<DownloadLink> hosterList;
                         for (Iterator<Vector<DownloadLink>> it = map.values().iterator(); it.hasNext();) {

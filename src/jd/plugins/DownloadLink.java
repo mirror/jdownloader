@@ -618,9 +618,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             } catch (UnknownHostException e) {
                 available = false;
                 break;
-            } catch (PluginException e) {                
+            } catch (PluginException e) {
                 e.fillLinkStatus(this.getLinkStatus());
-                logger.severe("Hoster Plugin Version: " + getPlugin().getVersion());
+                // logger.severe("Hoster Plugin Version: " +
+                // getPlugin().getVersion());
                 break;
             } catch (IOException e) {
                 if (e.getMessage().contains("code: 500")) {
@@ -634,13 +635,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                     }
                     continue;
                 } else {
-                    logger.severe("Hoster Plugin Version: " + getPlugin().getVersion());
-                    e.printStackTrace();
+                    // logger.severe("Hoster Plugin Version: " +
+                    // getPlugin().getVersion());
+                    // e.printStackTrace();
                     break;
                 }
             } catch (Exception e) {
-                logger.severe("Hoster Plugin Version: " + getPlugin().getVersion());
-                e.printStackTrace();
+                // logger.severe("Hoster Plugin Version: " +
+                // getPlugin().getVersion());
+                // e.printStackTrace();
                 available = false;
                 break;
             }
