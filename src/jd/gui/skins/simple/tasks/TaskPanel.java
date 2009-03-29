@@ -5,12 +5,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.event.EventListenerList;
 
+import jd.gui.skins.simple.DownloadLinksTreeTablePanel;
+import jd.gui.skins.simple.SingletonPanel;
 import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.JXTaskPane;
@@ -25,6 +28,8 @@ public class TaskPanel extends JXTaskPane implements MouseListener {
     private String panelID = "taskpanel";
     private boolean status;
 
+    private ArrayList<SingletonPanel> panels;
+
     public TaskPanel(String string, ImageIcon ii, String pid) {
         this.setTitle(string);
         this.setIcon(ii);
@@ -33,6 +38,7 @@ public class TaskPanel extends JXTaskPane implements MouseListener {
         this.setPanelID(pid);
         this.setCollapsed(JDUtilities.getSubConfig("gui").getBooleanProperty(getPanelID() + "_collapsed", false));
         status = this.isCollapsed();
+        this.panels=new ArrayList<SingletonPanel>();
     }
 
     /**
@@ -42,6 +48,7 @@ public class TaskPanel extends JXTaskPane implements MouseListener {
      *            the <code>ActionListener</code> to be added
      */
     public void addActionListener(ActionListener l) {
+        listenerList.remove(ActionListener.class, l);
         listenerList.add(ActionListener.class, l);
     }
 
@@ -55,7 +62,12 @@ public class TaskPanel extends JXTaskPane implements MouseListener {
         listenerList.remove(ActionListener.class, l);
 
     }
-
+    public void addPanel(SingletonPanel singletonPanel) {
+        panels.add(singletonPanel);
+        singletonPanel.setTaskPanel(this);
+     
+        
+    }
     public void broadcastEvent(ActionEvent e) {
 
         for (ActionListener listener : (ActionListener[]) this.listenerList.getListeners(ActionListener.class)) {

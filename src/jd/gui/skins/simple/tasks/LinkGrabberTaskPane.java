@@ -47,6 +47,14 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
     private void initGUI() {
         this.panel_add_links = addButton(this.createButton(JDLocale.L("gui.linkgrabberv2.addlinks", "Add Links"), JDTheme.II("gui.images.add", 16, 16)));
         this.panel_add_containers = addButton(this.createButton(JDLocale.L("gui.linkgrabberv2.addcontainers", "Add Containers"), JDTheme.II("gui.images.load", 16, 16)));
+        add(sep, 2);
+        lg_add_all = addButton(createButton(JDLocale.L("gui.linkgrabberv2.lg.addall", "Add all packages"), JDTheme.II("gui.images.add_all", 16, 16)), 3);
+        lg_add_selected = addButton(createButton(JDLocale.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)"), JDTheme.II("gui.images.add_package", 16, 16)), 4);
+        lg_clear = addButton(createButton(JDLocale.L("gui.linkgrabberv2.lg.clear", "Clear List"), JDTheme.II("gui.images.clear", 16, 16)), 5);
+        lg_add_all.setEnabled(false);
+        lg_add_selected.setEnabled(false);
+        lg_clear.setEnabled(false);
+        
         add(new JSeparator());
         this.panel_clipboard = addButton(this.createButton(JDLocale.L("gui.linkgrabberv2.clipboard", "Clipboard Watching"), JDTheme.II(getClipBoardImage(), 16, 16)));
 
@@ -126,10 +134,9 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
         if (event.getID() == LinkGrabberV2Event.EMPTY_EVENT) {
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
-                    removeButton(lg_clear);
-                    removeButton(lg_add_selected);
-                    removeButton(lg_add_all);
-                    remove(sep);
+                    lg_add_all.setEnabled(false);
+                    lg_add_selected.setEnabled(false);
+                    lg_clear.setEnabled(false);
                     revalidate();
                     lg_buttons_visible = false;
                 }
@@ -139,11 +146,10 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
             lg_buttons_visible = true;
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
-                    add(sep, 2);
-                    lg_add_all = addButton(createButton(JDLocale.L("gui.linkgrabberv2.lg.addall", "Add all packages"), JDTheme.II("gui.images.add", 16, 16)), 3);
-                    lg_add_selected = addButton(createButton(JDLocale.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)"), JDTheme.II("gui.images.add", 16, 16)), 4);
-                    lg_clear = addButton(createButton(JDLocale.L("gui.linkgrabberv2.lg.clear", "Clear List"), JDTheme.II("gui.images.delete", 16, 16)), 5);
-                    revalidate();
+                    lg_add_all.setEnabled(true);
+                    lg_add_selected.setEnabled(true);
+                    lg_clear.setEnabled(true);
+                  
                 }
             });
         }

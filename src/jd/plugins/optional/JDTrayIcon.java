@@ -125,7 +125,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
     private JMenuItem speed5;
     private JMenu speeds;
     private JMenuItem startstop;
-    private JMenuItem stopafter;
+  
     private JLabel toolLabel;
     private JWindow toolParent;
     private TrayIcon trayIcon;
@@ -147,40 +147,36 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
         } else if (e.getSource() == dnd) {
             simplegui.actionPerformed(new ActionEvent(this, JDAction.ITEMS_DND, null));
-        } else if (e.getSource() == stopafter) {
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_PAUSE_DOWNLOADS, null));
         } else if (e.getSource() == update) {
             simplegui.fireUIEvent(new UIEvent(simplegui, UIEvent.UI_INTERACT_UPDATE));
-        } else if (e.getSource() == configuration) {
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
-        } else if (e.getSource() == reconnect) {
+       } else if (e.getSource() == reconnect) {
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
             JDUtilities.getConfiguration().save();
         } else if (e.getSource() == speed1) {
             int speed = getPluginConfig().getIntegerProperty("SPEED1", 100);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
-            simplegui.setSpeedStatusBar(speed);
+//            simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed2) {
             int speed = getPluginConfig().getIntegerProperty("SPEED2", 200);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
-            simplegui.setSpeedStatusBar(speed);
+//            simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed3) {
             int speed = getPluginConfig().getIntegerProperty("SPEED3", 300);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
-            simplegui.setSpeedStatusBar(speed);
+//            simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed4) {
             int speed = getPluginConfig().getIntegerProperty("SPEED4", 400);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
-            simplegui.setSpeedStatusBar(speed);
+//            simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed5) {
             int speed = getPluginConfig().getIntegerProperty("SPEED5", 500);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
-            simplegui.setSpeedStatusBar(speed);
+//            simplegui.setSpeedStatusBar(speed);
         }
     }
 
@@ -278,8 +274,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
         configuration = createMenuItem(JDLocale.L("plugins.optional.trayIcon.configuration", "Configuration"));
         popupMenu.addSeparator();
         startstop = createMenuItem(JDLocale.L("plugins.optional.trayIcon.startorstop", "Start/Stop"));
-        stopafter = createMenuItem(JDLocale.L("plugins.optional.trayIcon.stopafter", "Stop after this Download"));
-
+       
         speeds = new JMenu(JDLocale.L("plugins.optional.trayIcon.setspeeds", "Speeds"));
         popupMenu.add(speeds);
 

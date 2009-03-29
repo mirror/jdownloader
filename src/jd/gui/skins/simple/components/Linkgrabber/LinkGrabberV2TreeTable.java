@@ -1,7 +1,7 @@
 package jd.gui.skins.simple.components.Linkgrabber;
 
 import java.awt.Color;
-import java.awt.LinearGradientPaint;
+import java.awt.Component;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -29,6 +29,8 @@ import javax.swing.tree.TreePath;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.treetable.DownloadLinkRowHighlighter;
+import jd.gui.skins.simple.components.treetable.DownloadTreeTable;
 import jd.gui.skins.simple.components.treetable.JColumnControlButton;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -37,12 +39,11 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.JXTreeTable;
+import org.jdesktop.swingx.decorator.ComponentAdapter;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.Highlighter;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.jdesktop.swingx.decorator.PainterHighlighter;
-import org.jdesktop.swingx.painter.MattePainter;
-import org.jdesktop.swingx.painter.Painter;
 import org.jdesktop.swingx.table.TableColumnExt;
 import org.jdesktop.swingx.tree.TreeModelSupport;
 
@@ -84,12 +85,16 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
         addMouseMotionListener(this);
         UIManager.put("Table.focusCellHighlightBorder", null);
         setHighlighters(new Highlighter[] {});
-        setHighlighters(HighlighterFactory.createAlternateStriping(UIManager.getColor("Panel.background").brighter(), UIManager.getColor("Panel.background")));
+        //setHighlighters(HighlighterFactory.createAlternateStriping(UIManager.getColor("Panel.background").brighter(), UIManager.getColor("Panel.background").darker()));
+        //new PainterHighlighter(HighlightPredicate.IS_FOLDER, DownloadTreeTable.getFolderPainter());
+         addPackageHighlighter();
         addOfflineHighlighter();
         addOnlineHighlighter();
+      
+        // addPackageOfflineHighlighter();
         addExistsHighlighter();
         addUncheckedHighlighter();
-        addHighlighter(new PainterHighlighter(HighlightPredicate.IS_FOLDER, getGradientPainter(JDTheme.C("gui.color.linkgrabber.row_package", "fffa7c"))));
+
     }
 
     public TableCellRenderer getCellRenderer(int row, int col) {
@@ -276,25 +281,24 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
         return prioPopup;
     }
 
-    @SuppressWarnings("unchecked")
-    public Painter getGradientPainter(Color color1) {
-        int height = 20;
-        Color color2;
-        color1 = new Color(color1.getRed(), color1.getGreen(), color1.getBlue(), 40);
-        color2 = new Color(color1.getRed(), color1.getGreen(), color1.getBlue(), 200);
-        LinearGradientPaint gradientPaint = new LinearGradientPaint(1, 0, 1, height, new float[] { 0.0f, 1.0f }, new Color[] { color1, color2 });
-        MattePainter mattePainter = new MattePainter(gradientPaint);
-        return mattePainter;
-    }
+    // @SuppressWarnings("unchecked")
+    // public Painter getGradientPainter() {
+    // // int height = 20;
+    // // Color color2;
+    // // color1 = new Color(color1.getRed(), color1.getGreen(),
+    // color1.getBlue(), 40);
+    // // color2 = new Color(color1.getRed(), color1.getGreen(),
+    // color1.getBlue(), 200);
+    // // LinearGradientPaint gradientPaint = new LinearGradientPaint(1, 0, 1,
+    // height, new float[] { 0.0f, 1.0f }, new Color[] { color1, color2 });
+    // // MattePainter mattePainter = new MattePainter(gradientPaint);
+    // return new MattePainter(new Color(0xff, 0xfa, 0x7c, 255));
+    // }
 
     private void addOnlineHighlighter() {
-        /* TODO: andre farbe auswählen */
-        Color background = JDTheme.C("gui.color.linkgrabber.online", "00ff00");
-        Color foreground = Color.DARK_GRAY;
-        Color selectedBackground = background.darker();
-        Color selectedForground = foreground;
+        Color background = JDTheme.C("gui.color.linkgrabber.online", "c4ffd2", 120);
 
-        addHighlighter(new LinkGrabberV2DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+        addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
             @Override
             public boolean doHighlight(DownloadLink link) {
                 if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return false;
@@ -305,14 +309,32 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
 
     }
 
+
+
+    private void addPackageHighlighter() {
+        Color background = JDTheme.C("gui.color.linkgrabber.package_online", "c4ffd2", 20);
+
+        addHighlighter(new PainterHighlighter(new HighlightPredicate() {
+
+            public boolean isHighlighted(Component renderer, ComponentAdapter adapter) {
+                TreePath path = LinkGrabberV2TreeTable.this.getPathForRow(adapter.row);
+                Object element;
+                if (path != null) {
+                    element = path.getLastPathComponent();
+                    if (element instanceof LinkGrabberV2FilePackage) { return true; }
+                }
+                return false;
+            }
+
+        }, DownloadTreeTable.getFolderPainter()));
+
+    }
+
     private void addOfflineHighlighter() {
         /* TODO: andre farbe auswählen */
-        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff0000");
-        Color foreground = Color.DARK_GRAY;
-        Color selectedBackground = background.darker();
-        Color selectedForground = foreground;
+        Color background = JDTheme.C("gui.color.linkgrabber.error_post", "ff0000", 120);
 
-        addHighlighter(new LinkGrabberV2DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+        addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
             @Override
             public boolean doHighlight(DownloadLink link) {
                 if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return false;
@@ -325,34 +347,35 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
 
     private void addExistsHighlighter() {
         /* TODO: andre farbe auswählen */
-        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff7f00");
-        Color foreground = Color.DARK_GRAY;
-        Color selectedBackground = background.darker();
-        Color selectedForground = foreground;
 
-        addHighlighter(new LinkGrabberV2DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
+        Color background = JDTheme.C("gui.color.linkgrabber.error_exists", "ff7f00", 120);
+
+        addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
             @Override
             public boolean doHighlight(DownloadLink link) {
                 if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return true;
                 return false;
             }
         });
+
     }
 
     private void addUncheckedHighlighter() {
-        /* TODO: andre farbe auswählen */
-        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff7f00");
-        Color foreground = Color.DARK_GRAY;
-        Color selectedBackground = background.darker();
-        Color selectedForground = foreground;
-
-        addHighlighter(new LinkGrabberV2DownloadLinkRowHighlighter(this, background, foreground, selectedBackground, selectedForground) {
-            @Override
-            public boolean doHighlight(DownloadLink link) {
-                if (!link.isAvailabilityChecked()) return true;
-                return false;
-            }
-        });
+        // /* TODO: andre farbe auswählen */
+        // Color background = JDTheme.C("gui.color.linkgrabber.error_post",
+        // "ff7f00");
+        // Color foreground = Color.DARK_GRAY;
+        // Color selectedBackground = background.darker();
+        // Color selectedForground = foreground;
+        //
+        // addHighlighter(new LinkGrabberV2DownloadLinkRowHighlighter(this,
+        // background, foreground, selectedBackground, selectedForground) {
+        // @Override
+        // public boolean doHighlight(DownloadLink link) {
+        // if (!link.isAvailabilityChecked()) return true;
+        // return false;
+        // }
+        // });
 
     }
 

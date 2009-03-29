@@ -21,6 +21,7 @@ import java.awt.Component;
 import java.awt.LinearGradientPaint;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.MultipleGradientPaint.CycleMethod;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -44,6 +45,7 @@ import javax.swing.DropMode;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.JProgressBar;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -71,6 +73,7 @@ import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.nutils.Colors;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
@@ -89,6 +92,9 @@ import org.jdesktop.swingx.painter.MattePainter;
 import org.jdesktop.swingx.painter.Painter;
 import org.jdesktop.swingx.table.TableColumnExt;
 import org.jdesktop.swingx.tree.TreeModelSupport;
+import org.jvnet.substance.api.ComponentState;
+import org.jvnet.substance.api.SubstanceColorScheme;
+import org.jvnet.substance.utils.SubstanceColorSchemeUtilities;
 
 public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandListener, TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener, KeyListener {
 
@@ -174,7 +180,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
         }
 
         this.setHighlighters(new Highlighter[] {});
-        // setHighlighters(HighlighterFactory.createAlternateStriping(UIManager.getColor("Panel.background").brighter(),
+        // setHighlighters(HighlighterFactory.createAlternateStriping(UIManager.
+        // getColor("Panel.background").brighter(),
         // UIManager.getColor("Panel.background")));
 
         // addHighlighter(new ColorHighlighter(HighlightPredicate.ALWAYS,
@@ -217,32 +224,31 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
          * PainterHighlighter. Without modding the TreeTable code, it seems
          * unpossible to fix this.
          */
-        if (JDUtilities.getJavaVersion() >= 1.6) {
 
-        } else {
-            /**
-             * Set here colors if java version is below 1.6 and substance cannot
-             * be used
-             */
-            // addHighlighter(new
-            // ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, Color.GRAY,
-            // Color.BLACK));
-        }
+        /**
+         * Set here colors if java version is below 1.6 and substance cannot be
+         * used
+         */
+        // addHighlighter(new
+        // ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, Color.GRAY,
+        // Color.BLACK));
 
     }
 
-    public Painter getFolderPainter() {
+    public static Painter getFolderPainter() {
 
-        int height = 20;
-        Color col = JDTheme.C("gui.color.downloadlist.row_package", "fffa7c").darker();
-        Color col1 = new Color(col.getRed(), col.getGreen(), col.getBlue(), 220);
-        Color col2 = new Color(col.getRed(), col.getGreen(), col.getBlue(), 80);
-        Color col3 = new Color(col.getRed(), col.getGreen(), col.getBlue(), 20);
-        Color col4 = new Color(col.getRed(), col.getGreen(), col.getBlue(), 80);
-        Color col5 = new Color(col.getRed(), col.getGreen(), col.getBlue(), 220);
-        LinearGradientPaint gradientPaint = new LinearGradientPaint(new Point(1, 0), new Point(1, height), new float[] { 0.0f, 0.2f, 0.40f, 0.7f, 1.0f }, new Color[] { col1, col2, col3, col4, col5 });
+        if (JDUtilities.getJavaVersion() >= 1.6 ) {
 
-        return new MattePainter(gradientPaint);
+            int height = 20;
+            JProgressBar progressBar = new JProgressBar();
+            SubstanceColorScheme colorScheme = SubstanceColorSchemeUtilities.getColorScheme(progressBar, progressBar.isEnabled() ? ComponentState.SELECTED : ComponentState.DISABLED_UNSELECTED);
+            Color[] colors = new Color[] { Colors.getColor(colorScheme.getUltraLightColor(), 50), Colors.getColor(colorScheme.getLightColor(),50), Colors.getColor(colorScheme.getMidColor(),50), Colors.getColor(colorScheme.getUltraLightColor(),50) };
+            LinearGradientPaint paint = new LinearGradientPaint(0, 0, 0, height, new float[] { 0.0f, 0.4f, 0.5f, 1.0f }, colors, CycleMethod.REPEAT);
+            return new MattePainter(paint);
+
+        } else {
+            return new MattePainter(JDTheme.C("gui.color.downloadlist.package", "4c4c4c", 150));
+        }
 
     }
 

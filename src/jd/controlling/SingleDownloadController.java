@@ -16,6 +16,7 @@
 
 package jd.controlling;
 
+import java.awt.EventQueue;
 import java.io.File;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -28,6 +29,8 @@ import jd.controlling.interaction.PackageManager;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.AgbDialog;
+import jd.gui.skins.simple.CaptchaDialog;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -292,7 +295,8 @@ public class SingleDownloadController extends Thread {
 
         JDUtilities.acquireUserIOSemaphore();
         if (!plugin.isAGBChecked()) {
-            new AgbDialog(downloadLink2, 30);
+            showAGBDialog(downloadLink2);
+            
         } else {
             downloadLink2.getLinkStatus().reset();
         }
@@ -300,6 +304,38 @@ public class SingleDownloadController extends Thread {
 
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
+    }
+/**
+ * blockiert EDT sicher bis der Dialog bestätigt wurde
+ * @param downloadLink2
+ */
+    private void showAGBDialog(final DownloadLink downloadLink2) {
+        final Object lock = new Object();
+ 
+        EventQueue.invokeLater(new GuiRunnable() {
+     
+
+          
+            private static final long serialVersionUID = 1L;
+
+            public void run() {
+                new AgbDialog(downloadLink2, 30);
+       
+                synchronized (lock) {
+                    lock.notify();
+                }
+            }
+        });
+
+        synchronized (lock) {
+            try {
+                lock.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+  
+        
     }
 
     /**

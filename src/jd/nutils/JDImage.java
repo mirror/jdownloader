@@ -59,7 +59,7 @@ public class JDImage {
             return iconToImage(new JFileChooser().getIcon(file));
 
         } finally {
-            file.delete();
+            if(file!=null)            file.delete();
         }
 
     }

@@ -25,6 +25,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.border.Border;
+import javax.swing.plaf.ProgressBarUI;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -101,7 +102,8 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
 
         progress.setStringPainted(true);
         progress.setOpaque(true);
-
+       ProgressBarUI ui = progress.getUI();
+    
     }
 
     private void initIcons() {

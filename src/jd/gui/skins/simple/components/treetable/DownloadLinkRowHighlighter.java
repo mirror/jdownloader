@@ -8,6 +8,7 @@ import javax.swing.tree.TreePath;
 
 import jd.plugins.DownloadLink;
 
+import org.jdesktop.swingx.JXTreeTable;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.PainterHighlighter;
@@ -16,14 +17,14 @@ import org.jdesktop.swingx.painter.Painter;
 
 public abstract class DownloadLinkRowHighlighter extends PainterHighlighter {
 
-    protected DownloadTreeTable table;
+    protected JXTreeTable table;
 
-    public DownloadLinkRowHighlighter(DownloadTreeTable table, Color colora) {
+    public DownloadLinkRowHighlighter(JXTreeTable table, Color colora) {
         this(table, new Color(colora.getRed(), colora.getGreen(), colora.getBlue(), 40), new Color(colora.getRed(), colora.getGreen(), colora.getBlue(), 200));
 
     }
 
-    public DownloadLinkRowHighlighter(DownloadTreeTable table, Color colora, Color colorb) {
+    public DownloadLinkRowHighlighter(JXTreeTable table, Color colora, Color colorb) {
         super();
 
         this.setPainter(getGradientPainter(colora, colorb));

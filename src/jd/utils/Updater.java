@@ -89,8 +89,8 @@ public class Updater {
             System.out.println("STATUS: update svn");
             upd.updateSource();
         }
-        System.out.println("STATUS: move plugins");
-        upd.movePlugins(getCFG("plugins_dir"));
+//        System.out.println("STATUS: move plugins");
+//        upd.movePlugins(getCFG("plugins_dir"));
         System.out.println("STATUS: FINISHED");
         ArrayList<File> list = upd.getFileList();
 

@@ -926,6 +926,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
             updatePartID();
         }
+        this.setIcon(null);
+    }
+
+    private void setIcon(ImageIcon icon) {
+        this.icon = icon;
+
     }
 
     public DownloadLink setSourcePluginComment(String sourcePluginComment) {
