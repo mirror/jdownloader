@@ -29,46 +29,36 @@ gui.images.selected= default/button_ok
 gui.images.warning=default/warning
 gui.images.link=default/mime/mime-empty
 gui.images.package_closed=default/folder_blue
+gui.images.package_error=default/folder_blue_error
 gui.images.package_opened=default/folder_tar
 gui.images.jd_logo = jd_logo
 gui.images.reconnect=default/reconnect
 gui.images.download=default/download_manager
-
-
-gui.images.clipboard=default/editpaste
+gui.images.add_all=default/add_all
+gui.images.add_package=default/add_package
+gui.images.clear=default/trashcan_empty-alt
+gui.images.clipboardon=default/editpaste
+gui.images.clipboardoff=default/clipboard_off
 gui.images.taskpanes.download=default/download_manager
 gui.images.taskpanes.linkgrabber=default/add
+
 gui.images.taskpanes.configuration=default/artscontrol
 gui.images.taskpanes.premium=default/host
+#colors
+gui.color.statusbar.maxspeedhighlight=ff0c03
+gui.color.htmlTooltip_background=94baff
+gui.color.htmlTooltip_border=000000
 
-
-#Colors
-gui.color.downloadlist.font = 000000
-
-gui.color.downloadlist.row_a = EEEEEE
-gui.color.downloadlist.row_b = FFFFFF
-gui.color.downloadlist.row_selected = 7a98b9
-gui.color.downloadlist.row_selected_border = 7a98b9
-gui.color.downloadlist.row_package = AAAAAA
-gui.color.downloadlist.row_link_done = 7cd622
-gui.color.downloadlist.row_link_error = a40604
-gui.color.downloadlist.row_link_disabled = BBBBBB
-gui.color.downloadlist.grid = FFFFFF
-
-gui.color.downloadlist.package_progress = 94baff
-gui.color.downloadlist.progress_error = a40604
-gui.color.downloadlist.progress_done = 7cd622
-gui.color.downloadlist.progress_inactive = BBBBBB
-gui.color.downloadlist.progress_active = 94baff
-
-gui.color.downloadlist.package_progress_font_a = 000000
-gui.color.downloadlist.progress_error_font_a = 000000
-gui.color.downloadlist.progress_done_font_a = 000000
-gui.color.downloadlist.progress_inactive_font_a = 000000
-gui.color.downloadlist.progress_active_font_a = 000000
-
-gui.color.downloadlist.package_progress_font_b = 000000
-gui.color.downloadlist.progress_error_font_b = 000000
-gui.color.downloadlist.progress_done_font_b = 000000
-gui.color.downloadlist.progress_inactive_font_b = 000000
-gui.color.downloadlist.progress_active_font_b = 000000
+#Note: All these colors are about 50% transparent.
+gui.color.downloadlist.error_post=ff9936
+gui.color.downloadlist.row_link_disabled=adadad
+gui.color.downloadlist.row_link_done=c4ffd2
+gui.color.downloadlist.row_package_done=339933
+gui.color.linkgrabber.online=c4ffd2
+gui.color.linkgrabber.error_post=ff9936
+gui.color.linkgrabber.error_exists=ff9936
+gui.color.linkgrabber.package_offline=ff9936
+gui.color.linkgrabber.package_online=c4ffd2
+#Note: These colors are only for java <1.5
+gui.color.downloadlist.package=4c4c4c
+gui.color.linkgrabber.package=4c4c4c
