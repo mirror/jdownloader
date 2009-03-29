@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dialog;
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -61,6 +62,7 @@ import jd.config.ConfigEntry;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -683,7 +685,10 @@ public class Serienjunkies extends PluginForDecrypt {
         br = getBrowser();
         ArrayList<DownloadLink> ar = decryptItMain(param);
         if (ar.size() > 1) {
+            
             SerienjunkiesSJTable sjt = new SerienjunkiesSJTable(SimpleGUI.CURRENTGUI.getFrame(), ar);
+            
+            
             ar = sjt.dls;
         }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -1022,82 +1027,105 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private void sCatDialog() {
         if (scatChecked || useScat[1] == saveScat) return;
-        new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
 
-            private static final long serialVersionUID = -5144850223169000644L;
+        final Object lock = new Object();
+        GuiRunnable run;
+        EventQueue.invokeLater(run = new GuiRunnable() {
+            private static final long serialVersionUID = 8726498576488124702L;
 
-            void init() {
-                setLayout(new BorderLayout());
-                setModal(true);
-                setTitle(JDLocale.L("plugins.SerienJunkies.CatDialog.title", "SerienJunkies ::CAT::"));
-                setAlwaysOnTop(true);
-                JPanel panel = new JPanel(new GridBagLayout());
-                final class meth {
-                    public String name;
+            public void run() {
 
-                    public int var;
+                new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
 
-                    public meth(String name, int var) {
-                        this.name = name;
-                        this.var = var;
+                    private static final long serialVersionUID = -5144850223169000644L;
+
+                    void init() {
+                        setLayout(new BorderLayout());
+                        setModal(true);
+                        setTitle(JDLocale.L("plugins.SerienJunkies.CatDialog.title", "SerienJunkies ::CAT::"));
+                        setAlwaysOnTop(true);
+                        JPanel panel = new JPanel(new GridBagLayout());
+                        final class meth {
+                            public String name;
+
+                            public int var;
+
+                            public meth(String name, int var) {
+                                this.name = name;
+                                this.var = var;
+                            }
+
+                            public String toString() {
+                                return name;
+                            }
+                        }
+                        addWindowListener(new WindowListener() {
+
+                            public void windowActivated(WindowEvent e) {
+                            }
+
+                            public void windowClosed(WindowEvent e) {
+                            }
+
+                            public void windowClosing(WindowEvent e) {
+                                useScat = new int[] { ((meth) methods.getSelectedItem()).var, 0 };
+                                dispose();
+                            }
+
+                            public void windowDeactivated(WindowEvent e) {
+                            }
+
+                            public void windowDeiconified(WindowEvent e) {
+                            }
+
+                            public void windowIconified(WindowEvent e) {
+                            }
+
+                            public void windowOpened(WindowEvent e) {
+                            }
+                        });
+                        meth[] meths = new meth[3];
+                        meths[0] = new meth("Kategorie nicht hinzufügen", sCatNoThing);
+                        meths[1] = new meth("Alle Serien in dieser Kategorie hinzufügen", sCatGrabb);
+                        meths[2] = new meth("Den neusten Download dieser Kategorie hinzufügen", sCatNewestDownload);
+                        methods = new JComboBox(meths);
+                        checkScat = new JCheckBox("Einstellungen für diese Sitzung beibehalten?", true);
+                        Insets insets = new Insets(0, 0, 0, 0);
+                        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("plugins.SerienJunkies.CatDialog.action", "Wählen sie eine Aktion aus:")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                        JDUtilities.addToGridBag(panel, methods, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                        JDUtilities.addToGridBag(panel, checkScat, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                        JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+                        btnOK.addActionListener(new ActionListener() {
+
+                            public void actionPerformed(ActionEvent e) {
+                                useScat = new int[] { ((meth) methods.getSelectedItem()).var, checkScat.isSelected() ? saveScat : 0 };
+                                dispose();
+                            }
+
+                        });
+                        JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                        add(panel, BorderLayout.CENTER);
+                        pack();
+                        setLocation(JDUtilities.getCenterOfComponent(null, this));
+                        setVisible(true);
                     }
 
-                    public String toString() {
-                        return name;
-                    }
+                }.init();
+
+                synchronized (lock) {
+                    lock.notify();
                 }
-                addWindowListener(new WindowListener() {
-
-                    public void windowActivated(WindowEvent e) {
-                    }
-
-                    public void windowClosed(WindowEvent e) {
-                    }
-
-                    public void windowClosing(WindowEvent e) {
-                        useScat = new int[] { ((meth) methods.getSelectedItem()).var, 0 };
-                        dispose();
-                    }
-
-                    public void windowDeactivated(WindowEvent e) {
-                    }
-
-                    public void windowDeiconified(WindowEvent e) {
-                    }
-
-                    public void windowIconified(WindowEvent e) {
-                    }
-
-                    public void windowOpened(WindowEvent e) {
-                    }
-                });
-                meth[] meths = new meth[3];
-                meths[0] = new meth("Kategorie nicht hinzufügen", sCatNoThing);
-                meths[1] = new meth("Alle Serien in dieser Kategorie hinzufügen", sCatGrabb);
-                meths[2] = new meth("Den neusten Download dieser Kategorie hinzufügen", sCatNewestDownload);
-                methods = new JComboBox(meths);
-                checkScat = new JCheckBox("Einstellungen für diese Sitzung beibehalten?", true);
-                Insets insets = new Insets(0, 0, 0, 0);
-                JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("plugins.SerienJunkies.CatDialog.action", "Wählen sie eine Aktion aus:")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-                JDUtilities.addToGridBag(panel, methods, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-                JDUtilities.addToGridBag(panel, checkScat, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-                JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
-                btnOK.addActionListener(new ActionListener() {
-
-                    public void actionPerformed(ActionEvent e) {
-                        useScat = new int[] { ((meth) methods.getSelectedItem()).var, checkScat.isSelected() ? saveScat : 0 };
-                        dispose();
-                    }
-
-                });
-                JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-                add(panel, BorderLayout.CENTER);
-                pack();
-                setLocation(JDUtilities.getCenterOfComponent(null, this));
-                setVisible(true);
             }
+        });
 
-        }.init();
+        synchronized (lock) {
+            try {
+                lock.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        // return ((CaptchaDialog) run.get("dialog")).getCaptchaText();
     }
 
     private void setConfigElements() {

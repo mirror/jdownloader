@@ -45,7 +45,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -56,9 +55,6 @@ import java.util.logging.Logger;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -66,25 +62,15 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JSeparator;
-import javax.swing.JSpinner;
 import javax.swing.JTextField;
-import javax.swing.KeyStroke;
-import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.MenuEvent;
-import javax.swing.event.MenuListener;
 
 import jd.JDInit;
-import jd.OptionalPluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.Configuration;
-import jd.config.MenuItem;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
@@ -92,7 +78,6 @@ import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
@@ -125,6 +110,7 @@ import jd.gui.skins.simple.tasks.ConfigTaskPane;
 import jd.gui.skins.simple.tasks.DownloadTaskPane;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
 import jd.gui.skins.simple.tasks.PremiumTaskPane;
+import jd.gui.skins.simple.tasks.TaskPanel;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDFileFilter;
@@ -164,163 +150,194 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
     }
 
-//    /**
-//     * Diese Klasse realisiert eine StatusBar
-//     * 
-//     * @author astaldo
-//     */
-//    private class StatusBar extends JPanel implements ChangeListener, ControlListener {
-//        /**
-//         * serialVersionUID
-//         */
-//        private static final long serialVersionUID = 3676496738341246846L;
-//
-////        private JCheckBox chbPremium;
-//
-////        private JLabel lblMessage;
-//
-////        private JLabel lblSimu;
-//
-////        private JLabel lblSpeed;
-//
-////        protected JSpinner spMax;
-//
-////        protected JSpinner spMaxDls;
-//
-//        public StatusBar() {
-//            setLayout(new BorderLayout());
-//
-//            JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-//            JPanel panel = new JPanel(new BorderLayout(0, 0));
-//            add(panel, BorderLayout.WEST);
-//            add(right, BorderLayout.EAST);
-//
-//            // TODO: Please replace with proper Icon that catches the users eye.
-//            // Icon could even change in case of a warning or error.
-//            // gruener Haken - everything ok
-//            // oranges Warnschild - ohoh
-//            // roter Kreis - we are roally f#$%cked!
-//            ImageIcon statusIcon = JDTheme.II("gui.images.jd_logo", 16, 16);
-//
-//            lblMessage = new JLabel(JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
-//            lblMessage.setIcon(statusIcon);
-//            statusBarHandler = new LabelHandler(lblMessage, JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
-//
-//            chbPremium = new JCheckBox(JDLocale.L("gui.statusbar.premium", "Premium"));
-//            chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
-//            chbPremium.setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium", "Aus/An schalten des Premiumdownloads"));
-//            chbPremium.addChangeListener(this);
-//            JDUtilities.getController().addControlListener(this);
-//            lblSpeed = new JLabel(JDLocale.L("gui.statusbar.speed", "Max. Speed"));
-//            lblSimu = new JLabel(JDLocale.L("gui.statusbar.sim_ownloads", "Max.Dls."));
-//
-//            spMax = new JSpinner();
-//            spMax.setModel(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
-//            spMax.setPreferredSize(new Dimension(60, 20));
-//            spMax.setToolTipText(JDLocale.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen(kb/s) [0:unendlich]"));
-//            spMax.addChangeListener(this);
-//            colorizeSpinnerSpeed();
-//
-//            spMaxDls = new JSpinner();
-//            spMaxDls.setModel(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
-//            spMaxDls.setPreferredSize(new Dimension(60, 20));
-//            spMaxDls.setToolTipText(JDLocale.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
-//            spMaxDls.addChangeListener(this);
-//
-//            panel.add(lblMessage);
-//            right.add(chbPremium);
-//            addItem(true, right, bundle(lblSimu, spMaxDls));
-//            addItem(true, right, bundle(lblSpeed, spMax));
-//        }
-//
-//        void addItem(boolean seperator, JComponent where, Component component) {
-//            int n = 10;
-//            Dimension d = new Dimension(n, 0);
-//            JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
-//            separator.setPreferredSize(new Dimension(n, n));
-//            where.add(new Box.Filler(d, d, d));
-//            if (seperator) where.add(separator);
-//            where.add(component);
-//        }
-//
-//        private Component bundle(Component c1, Component c2) {
-//            JPanel panel = new JPanel(new BorderLayout(2, 0));
-//            panel.add(c1, BorderLayout.WEST);
-//            panel.add(c2, BorderLayout.EAST);
-//            return panel;
-//        }
-//
-//        private void colorizeSpinnerSpeed() {
-//            /* färbt den spinner ein, falls speedbegrenzung aktiv */
-//            JSpinner.DefaultEditor spMaxEditor = (JSpinner.DefaultEditor) spMax.getEditor();
-//            if ((Integer) spMax.getValue() > 0) {
-//                lblSpeed.setForeground(JDTheme.C("gui.color.statusbar.maxspeedhighlight", "ff0c03"));
-//                spMaxEditor.getTextField().setForeground(Color.red);
-//            } else {
-//                lblSpeed.setForeground(Color.black);
-//                spMaxEditor.getTextField().setForeground(Color.black);
-//            }
-//        }
-//
-//        public void controlEvent(ControlEvent event) {
-//            if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
-//                Property p = (Property) event.getSource();
-//                if (spMax != null && event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
-//                    setSpinnerSpeed(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
-//                } else if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN)) {
-//                    spMaxDls.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
-//                } else if (p == JDUtilities.getConfiguration() && event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
-//                    chbPremium.setSelected(p.getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
-//                } else if (event.getID() == ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED) {
-//                    // btnStartStop.setIcon(new
-//                    // ImageIcon(JDImage.getImage(getStartStopDownloadImage
-//                    // ())));
-//                    // btnPause.setIcon(new
-//                    // ImageIcon(JDUtilities.getImage(getPauseImage())));
-//                }
-//            }
-//        }
-//
-//        /**
-//         * Setzt die Downloadgeschwindigkeit
-//         * 
-//         * @param speed
-//         *            bytes pro sekunde
-//         */
-//        public void setSpeed(int speed) {
-//            if (speed <= 0) {
-//                lblSpeed.setText(JDLocale.L("gui.statusbar.speed", "Max. Speed"));
-//            } else {
-//                lblSpeed.setText("(" + JDUtilities.formatKbReadable(speed / 1024) + "/s)");
-//            }
-//        }
-//
-//        public void setSpinnerSpeed(Integer speed) {
-//            spMax.setValue(speed);
-//            colorizeSpinnerSpeed();
-//        }
-//
-//        public void stateChanged(ChangeEvent e) {
-//
-//            if (e.getSource() == spMax) {
-//                colorizeSpinnerSpeed();
-//                SubConfiguration subConfig = JDUtilities.getSubConfig("DOWNLOAD");
-//                subConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, (Integer) spMax.getValue());
-//                subConfig.save();
-//
-//            } else if (e.getSource() == spMaxDls) {
-//                SubConfiguration subConfig = JDUtilities.getSubConfig("DOWNLOAD");
-//                subConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, (Integer) spMaxDls.getValue());
-//                subConfig.save();
-//
-//            } else if (e.getSource() == chbPremium) {
-//                if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) != chbPremium.isSelected()) {
-//                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, chbPremium.isSelected());
-//                    JDUtilities.getConfiguration().save();
-//                }
-//            }
-//        }
-//    }
+    // /**
+    // * Diese Klasse realisiert eine StatusBar
+    // *
+    // * @author astaldo
+    // */
+    // private class StatusBar extends JPanel implements ChangeListener,
+    // ControlListener {
+    // /**
+    // * serialVersionUID
+    // */
+    // private static final long serialVersionUID = 3676496738341246846L;
+    //
+    // // private JCheckBox chbPremium;
+    //
+    // // private JLabel lblMessage;
+    //
+    // // private JLabel lblSimu;
+    //
+    // // private JLabel lblSpeed;
+    //
+    // // protected JSpinner spMax;
+    //
+    // // protected JSpinner spMaxDls;
+    //
+    // public StatusBar() {
+    // setLayout(new BorderLayout());
+    //
+    // JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+    // JPanel panel = new JPanel(new BorderLayout(0, 0));
+    // add(panel, BorderLayout.WEST);
+    // add(right, BorderLayout.EAST);
+    //
+    // // TODO: Please replace with proper Icon that catches the users eye.
+    // // Icon could even change in case of a warning or error.
+    // // gruener Haken - everything ok
+    // // oranges Warnschild - ohoh
+    // // roter Kreis - we are roally f#$%cked!
+    // ImageIcon statusIcon = JDTheme.II("gui.images.jd_logo", 16, 16);
+    //
+    // lblMessage = new JLabel(JDLocale.L("sys.message.welcome",
+    // "Welcome to JDownloader"));
+    // lblMessage.setIcon(statusIcon);
+    // statusBarHandler = new LabelHandler(lblMessage,
+    // JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
+    //
+    // chbPremium = new JCheckBox(JDLocale.L("gui.statusbar.premium",
+    // "Premium"));
+    // chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(
+    // Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
+    // chbPremium.setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium",
+    // "Aus/An schalten des Premiumdownloads"));
+    // chbPremium.addChangeListener(this);
+    // JDUtilities.getController().addControlListener(this);
+    // lblSpeed = new JLabel(JDLocale.L("gui.statusbar.speed", "Max. Speed"));
+    // lblSimu = new JLabel(JDLocale.L("gui.statusbar.sim_ownloads",
+    // "Max.Dls."));
+    //
+    // spMax = new JSpinner();
+    // spMax.setModel(new
+    // SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD")
+    // .getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0,
+    // Integer.MAX_VALUE, 50));
+    // spMax.setPreferredSize(new Dimension(60, 20));
+    // spMax.setToolTipText(JDLocale.L("gui.tooltip.statusbar.speedlimiter",
+    // "Geschwindigkeitsbegrenzung festlegen(kb/s) [0:unendlich]"));
+    // spMax.addChangeListener(this);
+    // colorizeSpinnerSpeed();
+    //
+    // spMaxDls = new JSpinner();
+    // spMaxDls.setModel(new
+    // SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD"
+    // ).getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1,
+    // 20, 1));
+    // spMaxDls.setPreferredSize(new Dimension(60, 20));
+    // spMaxDls.setToolTipText(JDLocale.L(
+    // "gui.tooltip.statusbar.simultan_downloads",
+    // "Max. gleichzeitige Downloads"));
+    // spMaxDls.addChangeListener(this);
+    //
+    // panel.add(lblMessage);
+    // right.add(chbPremium);
+    // addItem(true, right, bundle(lblSimu, spMaxDls));
+    // addItem(true, right, bundle(lblSpeed, spMax));
+    // }
+    //
+    // void addItem(boolean seperator, JComponent where, Component component) {
+    // int n = 10;
+    // Dimension d = new Dimension(n, 0);
+    // JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
+    // separator.setPreferredSize(new Dimension(n, n));
+    // where.add(new Box.Filler(d, d, d));
+    // if (seperator) where.add(separator);
+    // where.add(component);
+    // }
+    //
+    // private Component bundle(Component c1, Component c2) {
+    // JPanel panel = new JPanel(new BorderLayout(2, 0));
+    // panel.add(c1, BorderLayout.WEST);
+    // panel.add(c2, BorderLayout.EAST);
+    // return panel;
+    // }
+    //
+    // private void colorizeSpinnerSpeed() {
+    // /* färbt den spinner ein, falls speedbegrenzung aktiv */
+    // JSpinner.DefaultEditor spMaxEditor = (JSpinner.DefaultEditor)
+    // spMax.getEditor();
+    // if ((Integer) spMax.getValue() > 0) {
+    // lblSpeed.setForeground(JDTheme.C("gui.color.statusbar.maxspeedhighlight",
+    // "ff0c03"));
+    // spMaxEditor.getTextField().setForeground(Color.red);
+    // } else {
+    // lblSpeed.setForeground(Color.black);
+    // spMaxEditor.getTextField().setForeground(Color.black);
+    // }
+    // }
+    //
+    // public void controlEvent(ControlEvent event) {
+    // if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
+    // Property p = (Property) event.getSource();
+    // if (spMax != null &&
+    // event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
+    //setSpinnerSpeed(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED
+    // , 0));
+    // } else if
+    // (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN))
+    // {
+    // spMaxDls.setValue(p.getIntegerProperty(Configuration.
+    // PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
+    // } else if (p == JDUtilities.getConfiguration() &&
+    // event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
+    // chbPremium.setSelected(p.getBooleanProperty(Configuration.
+    // PARAM_USE_GLOBAL_PREMIUM, true));
+    // } else if (event.getID() == ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED)
+    // {
+    // // btnStartStop.setIcon(new
+    // // ImageIcon(JDImage.getImage(getStartStopDownloadImage
+    // // ())));
+    // // btnPause.setIcon(new
+    // // ImageIcon(JDUtilities.getImage(getPauseImage())));
+    // }
+    // }
+    // }
+    //
+    // /**
+    // * Setzt die Downloadgeschwindigkeit
+    // *
+    // * @param speed
+    // * bytes pro sekunde
+    // */
+    // public void setSpeed(int speed) {
+    // if (speed <= 0) {
+    // lblSpeed.setText(JDLocale.L("gui.statusbar.speed", "Max. Speed"));
+    // } else {
+    // lblSpeed.setText("(" + JDUtilities.formatKbReadable(speed / 1024) +
+    // "/s)");
+    // }
+    // }
+    //
+    // public void setSpinnerSpeed(Integer speed) {
+    // spMax.setValue(speed);
+    // colorizeSpinnerSpeed();
+    // }
+    //
+    // public void stateChanged(ChangeEvent e) {
+    //
+    // if (e.getSource() == spMax) {
+    // colorizeSpinnerSpeed();
+    // SubConfiguration subConfig = JDUtilities.getSubConfig("DOWNLOAD");
+    // subConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, (Integer)
+    // spMax.getValue());
+    // subConfig.save();
+    //
+    // } else if (e.getSource() == spMaxDls) {
+    // SubConfiguration subConfig = JDUtilities.getSubConfig("DOWNLOAD");
+    // subConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,
+    // (Integer) spMaxDls.getValue());
+    // subConfig.save();
+    //
+    // } else if (e.getSource() == chbPremium) {
+    // if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.
+    // PARAM_USE_GLOBAL_PREMIUM, true) != chbPremium.isSelected()) {
+    // JDUtilities.getConfiguration().setProperty(Configuration.
+    // PARAM_USE_GLOBAL_PREMIUM, chbPremium.isSelected());
+    // JDUtilities.getConfiguration().save();
+    // }
+    // }
+    // }
+    // }
 
     public static SimpleGUI CURRENTGUI = null;
 
@@ -365,9 +382,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String PARAM_SHOW_SPEEDMETER_WINDOWSIZE = "PARAM_SHOW_SPEEDMETER_WINDOWSIZE";
 
-
-
-
     private static JMenu createMenu(String iconname, String ressourceName) {
         JMenu menu = new JMenu(iconname);
         ImageIcon icon = JDTheme.II(ressourceName, 16, 16);
@@ -377,7 +391,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return menu;
     }
 
-   
     public static Dimension getLastDimension(Component child, String key) {
         if (key == null) {
             key = child.getName();
@@ -489,11 +502,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     // private JDAction actionItemsUp;
 
-    
-
     private JDAction actionRemoveLinks;
 
-    private JDAction actionRemovePackages;   
+    private JDAction actionRemovePackages;
 
     private JDAction actionLog;
 
@@ -566,8 +577,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     private TabProgress progressBar;
 
-
-//    public LabelHandler statusBarHandler;
+    // public LabelHandler statusBarHandler;
 
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
@@ -631,7 +641,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                                          */
         // Ruft jede sekunde ein UpdateEvent auf
 
-     
         new Thread("guiworker") {
             public void run() {
                 while (true) {
@@ -660,12 +669,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void actionPerformed(ActionEvent e) {
         JDSounds.PT("sound.gui.clickToolbar");
         switch (e.getID()) {
-//        case JDAction.ITEMS_MOVE_UP:
-//        case JDAction.ITEMS_MOVE_DOWN:
-//        case JDAction.ITEMS_MOVE_TOP:
-//        case JDAction.ITEMS_MOVE_BOTTOM:
-//            linkListPane.moveSelectedItems(e.getID());
-//            break;
+        // case JDAction.ITEMS_MOVE_UP:
+        // case JDAction.ITEMS_MOVE_DOWN:
+        // case JDAction.ITEMS_MOVE_TOP:
+        // case JDAction.ITEMS_MOVE_BOTTOM:
+        // linkListPane.moveSelectedItems(e.getID());
+        // break;
         case JDAction.APP_ALLOW_RECONNECT:
             logger.finer("Allow Reconnect");
             boolean checked = !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
@@ -911,6 +920,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private void buildUI() {
         CURRENTGUI = this;
         linkListPane = new DownloadLinksTreeTablePanel(this);
+        contentPanel = new ContentPanel();
+        contentPanel = new ContentPanel();
+
         taskPane = new TaskPane();
         taskPane.setBackgroundPainter(null);
 
@@ -921,9 +933,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             public void actionPerformed(ActionEvent e) {
                 System.out.println(e.getActionCommand());
                 switch (e.getID()) {
-                case DownloadTaskPane.ACTION_CLICK:
+                case DownloadTaskPane.ACTION_TOGGLE:
 
-                    contentPanel.display(linkListPane);
+                    contentPanel.display(dlTskPane.getPanel(0));
                     break;
                 case DownloadTaskPane.ACTION_STARTSTOP:
 
@@ -943,22 +955,46 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         linkGrabber = new LinkGrabberV2Panel(this);
         lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber"));
         lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
-      
+
         linkGrabber.getJDBroadcaster().addJDListener(lgTaskPane);
         lgTaskPane.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 System.out.println(e.getActionCommand());
-                
+                switch (e.getID()) {
+                case DownloadTaskPane.ACTION_TOGGLE:
+
+                    contentPanel.display(((TaskPanel) e.getSource()).getPanel(0));
+                    break;
+                }
             }
         });
         taskPane.add(lgTaskPane);
-        lgTaskPane.addPanel(new SingletonPanel(FengShuiConfigPanel.class, new Object(){}));
+
         ConfigTaskPane cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration"));
+        cfgTskPane.addPanel(new SingletonPanel(FengShuiConfigPanel.class, new Object[] {}));
+        Object[] configConstructorObjects = new Object[] { JDUtilities.getConfiguration() };
+
+        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_ADDONS, new SingletonPanel(ConfigPanelAddons.class, configConstructorObjects));
+        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_CAPTCHA, new SingletonPanel(ConfigPanelCaptcha.class, configConstructorObjects));
+
+        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_DECRYPT, new SingletonPanel(ConfigPanelPluginForDecrypt.class, configConstructorObjects));
+
+        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_DOWNLOAD, new SingletonPanel(ConfigPanelDownload.class, configConstructorObjects));
+        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_EVENTMANAGER, new SingletonPanel(ConfigPanelEventmanager.class, configConstructorObjects));
+        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GENERAL, new SingletonPanel(ConfigPanelGeneral.class, configConstructorObjects));
+        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GUI, new SingletonPanel(ConfigPanelGUI.class, configConstructorObjects));
+        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_HOST, new SingletonPanel(ConfigPanelPluginForHost.class, configConstructorObjects));
+        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_RECONNECT, new SingletonPanel(ConfigPanelReconnect.class, configConstructorObjects));
+
         cfgTskPane.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                Object[] configConstructorObjects = new Object[] { JDUtilities.getConfiguration() };
+
                 switch (e.getID()) {
+                case DownloadTaskPane.ACTION_TOGGLE:
+
+                    contentPanel.display(((TaskPanel) e.getSource()).getPanel(0));
+                    break;
                 case ConfigTaskPane.ACTION_SAVE:
                     boolean restart = false;
                     for (Iterator<JTabbedPanel> it = panelMap.values().iterator(); it.hasNext();) {
@@ -966,9 +1002,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                         if (next instanceof ConfigPanel) {
                             if (((ConfigPanel) next).hasChanges() == PropertyType.NEEDS_RESTART) restart = true;
                             ((ConfigPanel) next).save();
-
                         }
-
                     }
                     if (restart) {
                         if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDLocale.L("gui.config.save.restart.title", "JDownloader restart requested"))) {
@@ -977,41 +1011,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     }
                     break;
 
-             
                 case ConfigTaskPane.ACTION_ADDONS:
-                    contentPanel.display(loadPanel(ConfigPanelAddons.class, configConstructorObjects));
-
-                    break;
                 case ConfigTaskPane.ACTION_CAPTCHA:
-                    contentPanel.display(loadPanel(ConfigPanelCaptcha.class, configConstructorObjects));
-
-                    break;
                 case ConfigTaskPane.ACTION_DECRYPT:
-                    contentPanel.display(loadPanel(ConfigPanelPluginForDecrypt.class, configConstructorObjects));
-
-                    break;
                 case ConfigTaskPane.ACTION_DOWNLOAD:
-                    contentPanel.display(loadPanel(ConfigPanelDownload.class, configConstructorObjects));
-
-                    break;
                 case ConfigTaskPane.ACTION_EVENTMANAGER:
-                    contentPanel.display(loadPanel(ConfigPanelEventmanager.class, configConstructorObjects));
-
-                    break;
                 case ConfigTaskPane.ACTION_GENERAL:
-                    contentPanel.display(loadPanel(ConfigPanelGeneral.class, configConstructorObjects));
-                    break;
                 case ConfigTaskPane.ACTION_GUI:
-                    contentPanel.display(loadPanel(ConfigPanelGUI.class, configConstructorObjects));
-
-                    break;
                 case ConfigTaskPane.ACTION_HOST:
-                    contentPanel.display(loadPanel(ConfigPanelPluginForHost.class, configConstructorObjects));
-
-                    break;
                 case ConfigTaskPane.ACTION_RECONNECT:
-                    contentPanel.display(loadPanel(ConfigPanelReconnect.class, configConstructorObjects));
-
+                    contentPanel.display(((ConfigTaskPane) e.getSource()).getPanel(e.getID()));
                     break;
                 }
 
@@ -1031,7 +1040,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         taskPane.add(premTskPane);
         progressBar = new TabProgress();
-        contentPanel = new ContentPanel();
 
         contentPanel.display(linkListPane);
 
@@ -1041,7 +1049,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // taskPane.displayPanel(linkListPane);
         // taskPane.display(0);
 
-//        statusBar = new StatusBar();
+        // statusBar = new StatusBar();
 
         // btnStartStop = createMenuButton(actionStartStopDownload);
         // btnPause = createMenuButton(actionPause);
@@ -1066,7 +1074,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
         panel.add(progressBar, "span,hidemode 3");
         // progressBar.setBorder(BorderFactory.createLineBorder(Color.BLUE));
-//        panel.add(statusBar, "span");
+        // panel.add(statusBar, "span");
 
         // Einbindung des Log Dialogs
         logDialog = new LogDialog(frame, logger);
@@ -1094,7 +1102,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     logger.info("Plugin Aktiviert: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
                         logger.info("Interaction start. ");
-//                        statusBarHandler.changeTxt(JDLocale.L("gui.statusbar.interaction", "Interaction:") + " " + ((Interaction) event.getSource()).getInteractionName(), 10000, true);
+                        // statusBarHandler.changeTxt(JDLocale.L(
+                        // "gui.statusbar.interaction", "Interaction:") + " " +
+                        // ((Interaction)
+                        // event.getSource()).getInteractionName(), 10000,
+                        // true);
                         frame.setTitle(JDUtilities.JD_TITLE + " | " + JDLocale.L("gui.titleaddaction", "Action: ") + " " + ((Interaction) event.getSource()).getInteractionName());
                     }
                     break;
@@ -1107,7 +1119,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     if (event.getSource() instanceof Interaction) {
                         logger.info("Interaction zu Ende. Rest status");
                         if (Interaction.areInteractionsInProgress()) {
-//                            statusBarHandler.changeTxt(null, 0, false);
+                            // statusBarHandler.changeTxt(null, 0, false);
                             frame.setTitle(JDUtilities.getJDTitle());
                         }
                     }
@@ -1354,11 +1366,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // actionPause = new JDAction(this, getPauseImage(), "action.pause",
         // JDAction.APP_PAUSE_DOWNLOADS);
         // actionItemsAdd = new JDAction(this, JDTheme.V("gui.images.add"),
-        // "action.add", JDAction.ITEMS_ADD);        
+        // "action.add", JDAction.ITEMS_ADD);
         actionRemoveLinks = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.links", JDAction.ITEMS_REMOVE_LINKS);
         actionRemovePackages = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.packages", JDAction.ITEMS_REMOVE_PACKAGES);
         actionDnD = new JDAction(this, JDTheme.V("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
-        actionOptionalConfig = new JDAction(this, JDTheme.V("gui.images.config.packagemanager"), "action.optconfig", JDAction.APP_OPEN_OPT_CONFIG);        
+        actionOptionalConfig = new JDAction(this, JDTheme.V("gui.images.config.packagemanager"), "action.optconfig", JDAction.APP_OPEN_OPT_CONFIG);
         actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
         actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
         actionRestart = new JDAction(this, JDTheme.V("gui.images.exit"), "action.restart", JDAction.APP_RESTART);
@@ -1399,15 +1411,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void initMenuBar() {
         JMenu menFile = new JMenu(JDLocale.L("gui.menu.file", "File"));
         JMenu menExtra = new JMenu(JDLocale.L("gui.menu.extra", "Extras"));
-        menAddons = OptionalMenuMenu.getMenu(JDLocale.L("gui.menu.addons", "Addons"),actionOptionalConfig);
+        menAddons = OptionalMenuMenu.getMenu(JDLocale.L("gui.menu.addons", "Addons"), actionOptionalConfig);
         JMenu menHelp = new JMenu(JDLocale.L("gui.menu.plugins.help", "?"));
-       // createOptionalPluginsMenuEntries();    
+        // createOptionalPluginsMenuEntries();
         menViewLog = JDMenu.createMenuItem(actionLog);
         createBackup = JDMenu.createMenuItem(actionBackup);
 
         // Adds the menus from the Addons
-          
-        
+
         JMenu menRemove = createMenu(JDLocale.L("gui.menu.remove", "Remove"), "gui.images.delete");
         menRemove.add(JDMenu.createMenuItem(actionItemsDelete));
         menRemove.addSeparator();
@@ -1466,8 +1477,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     }
 
-    
-
     /**
      * Diese Funktion wird in einem 1000 ms interval aufgerufen und kann dazu
      * verwendet werden die GUI zu aktuelisieren
@@ -1475,7 +1484,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private void interval() {
 
         if (JDUtilities.getController() != null) {
-//            statusBar.setSpeed(JDUtilities.getController().getSpeedMeter());
+            // statusBar.setSpeed(JDUtilities.getController().getSpeedMeter());
         }
 
         frame.setTitle(JDUtilities.getJDTitle());
@@ -1563,10 +1572,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * 
      * @param speed
      */
-//    public void setSpeedStatusBar(Integer speed) {
-//        statusBar.setSpinnerSpeed(speed);
-//    }
-
+    // public void setSpeedStatusBar(Integer speed) {
+    // statusBar.setSpinnerSpeed(speed);
+    // }
     public boolean showConfirmDialog(String message) {
         // logger.info("ConfirmDialog");
         Object[] options = { JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No") };

@@ -70,6 +70,7 @@ import jd.gui.skins.simple.DownloadInfo;
 import jd.gui.skins.simple.DownloadLinksTreeTablePanel;
 import jd.gui.skins.simple.DownloadLinksView;
 import jd.gui.skins.simple.JDAction;
+import jd.gui.skins.simple.JDMenu;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -232,17 +233,16 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
         // addHighlighter(new
         // ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, Color.GRAY,
         // Color.BLACK));
-
     }
 
     public static Painter getFolderPainter() {
 
-        if (JDUtilities.getJavaVersion() >= 1.6 ) {
+        if (JDUtilities.getJavaVersion() >= 1.6) {
 
             int height = 20;
             JProgressBar progressBar = new JProgressBar();
             SubstanceColorScheme colorScheme = SubstanceColorSchemeUtilities.getColorScheme(progressBar, progressBar.isEnabled() ? ComponentState.SELECTED : ComponentState.DISABLED_UNSELECTED);
-            Color[] colors = new Color[] { Colors.getColor(colorScheme.getUltraLightColor(), 50), Colors.getColor(colorScheme.getLightColor(),50), Colors.getColor(colorScheme.getMidColor(),50), Colors.getColor(colorScheme.getUltraLightColor(),50) };
+            Color[] colors = new Color[] { Colors.getColor(colorScheme.getUltraLightColor(), 50), Colors.getColor(colorScheme.getLightColor(), 50), Colors.getColor(colorScheme.getMidColor(), 50), Colors.getColor(colorScheme.getUltraLightColor(), 50) };
             LinearGradientPaint paint = new LinearGradientPaint(0, 0, 0, height, new float[] { 0.0f, 0.4f, 0.5f, 1.0f }, colors, CycleMethod.REPEAT);
             return new MattePainter(paint);
 
@@ -961,7 +961,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
 
                 if (entries != null && entries.size() > 0) {
                     for (MenuItem next : entries) {
-                        JMenuItem mi = SimpleGUI.getJMenuItem(next);
+                        JMenuItem mi = JDMenu.getJMenuItem(next);
                         if (mi == null) {
                             pluginPopup.addSeparator();
                         } else {
@@ -1056,7 +1056,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
 
         if (entries != null && entries.size() > 0) {
             for (MenuItem next : entries) {
-                JMenuItem mi = SimpleGUI.getJMenuItem(next);
+                JMenuItem mi = JDMenu.getJMenuItem(next);
                 if (mi == null) {
                     pluginPopup.addSeparator();
                 } else {

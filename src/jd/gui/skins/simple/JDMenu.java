@@ -29,7 +29,7 @@ public class JDMenu extends JMenu {
         return menuItem;
     }
 
-    protected static JMenuItem getJMenuItem(final MenuItem mi) {
+    public static JMenuItem getJMenuItem(final MenuItem mi) {
         JMenuItem m;
         switch (mi.getID()) {
         case MenuItem.SEPARATOR:

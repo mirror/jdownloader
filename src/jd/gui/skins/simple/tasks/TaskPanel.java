@@ -5,6 +5,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 
 import javax.swing.Icon;
@@ -12,13 +14,14 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.event.EventListenerList;
 
-import jd.gui.skins.simple.DownloadLinksTreeTablePanel;
+import jd.config.SubConfiguration;
+import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SingletonPanel;
 import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.JXTaskPane;
 
-public class TaskPanel extends JXTaskPane implements MouseListener {
+public class TaskPanel extends JXTaskPane implements MouseListener, PropertyChangeListener {
 
     private static final long serialVersionUID = 2136414459422852581L;
 
@@ -26,9 +29,10 @@ public class TaskPanel extends JXTaskPane implements MouseListener {
     public static final int ACTION_CLICK = -2;
     protected EventListenerList listenerList;
     private String panelID = "taskpanel";
-    private boolean status;
 
     private ArrayList<SingletonPanel> panels;
+
+    private boolean pressed;
 
     public TaskPanel(String string, ImageIcon ii, String pid) {
         this.setTitle(string);
@@ -36,9 +40,10 @@ public class TaskPanel extends JXTaskPane implements MouseListener {
         this.addMouseListener(this);
         this.listenerList = new EventListenerList();
         this.setPanelID(pid);
+        this.addPropertyChangeListener(this);
         this.setCollapsed(JDUtilities.getSubConfig("gui").getBooleanProperty(getPanelID() + "_collapsed", false));
-        status = this.isCollapsed();
-        this.panels=new ArrayList<SingletonPanel>();
+
+        this.panels = new ArrayList<SingletonPanel>();
     }
 
     /**
@@ -62,12 +67,21 @@ public class TaskPanel extends JXTaskPane implements MouseListener {
         listenerList.remove(ActionListener.class, l);
 
     }
+
     public void addPanel(SingletonPanel singletonPanel) {
         panels.add(singletonPanel);
         singletonPanel.setTaskPanel(this);
-     
-        
+
     }
+
+    public void addPanelAt(int id, SingletonPanel singletonPanel) {
+        while (panels.size() <= id) {
+            panels.add(null);
+        }
+        panels.set(id, singletonPanel);
+
+    }
+
     public void broadcastEvent(ActionEvent e) {
 
         for (ActionListener listener : (ActionListener[]) this.listenerList.getListeners(ActionListener.class)) {
@@ -93,21 +107,22 @@ public class TaskPanel extends JXTaskPane implements MouseListener {
     }
 
     public void mouseExited(MouseEvent e) {
+        pressed=false;
     }
 
     public void mousePressed(MouseEvent e) {
+        this.pressed=true;
     }
 
     public void mouseReleased(MouseEvent e) {
-        if (this.isCollapsed() != status) {
 
-            broadcastEvent(new ActionEvent(this, ACTION_TOGGLE, "Toggle"));
-            status = this.isCollapsed();
-            JDUtilities.getSubConfig("gui").setProperty(getPanelID() + "_collapsed", this.isCollapsed());
-            JDUtilities.getSubConfig("gui").save();
-        }
         broadcastEvent(new ActionEvent(this, ACTION_CLICK, "Toggle"));
 
+    }
+
+    public JTabbedPanel getPanel(int i) {
+        // TODO Auto-generated method stub
+        return panels.get(i).getPanel();
     }
 
     public void setPanelID(String panelID) {
@@ -125,6 +140,18 @@ public class TaskPanel extends JXTaskPane implements MouseListener {
         bt.setCursor(Cursor.getPredefinedCursor(12));
 
         return bt;
+    }
+
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (evt.getPropertyName().equals("collapsed")) {
+            SubConfiguration cfg = JDUtilities.getSubConfig("gui");
+            if (pressed) {
+                broadcastEvent(new ActionEvent(this, ACTION_TOGGLE, "Toggle"));
+                cfg.setProperty(getPanelID() + "_collapsed", this.isCollapsed());
+                cfg.save();
+            }
+        }
+
     }
 
 }

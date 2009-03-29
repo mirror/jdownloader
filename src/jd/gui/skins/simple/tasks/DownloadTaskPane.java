@@ -12,6 +12,7 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.DownloadLinksTreeTablePanel;
+import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
 import jd.utils.JDLocale;
@@ -162,6 +163,8 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener, Contr
             }
         });
     }
+
+ 
 
    
 

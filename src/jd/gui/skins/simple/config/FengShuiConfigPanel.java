@@ -69,6 +69,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
+import jd.gui.skins.simple.JDMenu;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.Progressor;
 import jd.gui.skins.simple.SimpleGUI;
@@ -165,7 +166,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
                                     JMenuItem c;
                                     m.removeAll();
                                     for (MenuItem menuItem : helpplugin.createMenuitems()) {
-                                        c = SimpleGUI.getJMenuItem(menuItem);
+                                        c = JDMenu.getJMenuItem(menuItem);
                                         if (c == null) {
                                             m.addSeparator();
                                         } else {

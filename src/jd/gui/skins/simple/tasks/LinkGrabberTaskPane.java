@@ -16,6 +16,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SingletonPanel;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2Event;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2TreeTableAction;
 import jd.utils.JDLocale;
@@ -155,4 +156,6 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
         }
 
     }
+
+ 
 }
