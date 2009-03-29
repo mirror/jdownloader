@@ -84,7 +84,7 @@ public class ShareBaseTo extends PluginForHost {
         String points = br.getRegex(Pattern.compile("<td>Premiumpunkte:</td>.*?<td><input.*cleanform.*value=\"([\\d\\.]+) Punkte\"></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         String expire = br.getRegex(Pattern.compile("<td>Premium bis:</td>.*?<td><input.*?cleanform.*? value=\"(.*?)\"></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         ai.setValidUntil(Regex.getMilliSeconds(expire, "dd.MM.yy / hh:mm", null));
-        ai.setPremiumPoints(Integer.parseInt(points.replaceAll("\\.", "")));
+        ai.setPremiumPoints(Long.parseLong(points.replaceAll("\\.", "")));
         return ai;
     }
 

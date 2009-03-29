@@ -222,7 +222,7 @@ public class FileFactory extends PluginForHost {
         String pThisMonth = br.getMatch("\\(Usable next month\\)</td>.*?<td.*?>(.*?)</td>").replaceAll("\\,", "");
         String pUsable = br.getMatch("Usable Accumulated Points</h2></td>.*?<td.*?><h2>(.*?)</h2></td>").replaceAll("\\,", "");
 
-        ai.setPremiumPoints(Integer.parseInt(pThisMonth) + Integer.parseInt(pUsable));
+        ai.setPremiumPoints(Long.parseLong(pThisMonth) + Long.parseLong(pUsable));
 
         br.getPage("http://www.filefactory.com/members/details/premium/usage/");
 

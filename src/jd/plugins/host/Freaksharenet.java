@@ -111,7 +111,7 @@ public class Freaksharenet extends PluginForHost {
             ai.setStatus("Logins incorrect");
             return ai;
         }
-        ai.setFilesNum(Integer.parseInt(dat[2]));
+        ai.setFilesNum(Long.parseLong(dat[2]));
         ai.setAccountBalance(dat[0]);
         ai.setUsedSpace(dat[3]);
         ai.setPremiumPoints(dat[1]);

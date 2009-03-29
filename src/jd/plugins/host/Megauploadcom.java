@@ -107,7 +107,7 @@ public class Megauploadcom extends PluginForHost {
             return ai;
         }
         String points = br.getRegex(Pattern.compile("<TD>Reward points available:</TD>.*?<TD><b>(\\d+)</b> ", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (points != null) ai.setPremiumPoints(Integer.parseInt(points));
+        if (points != null) ai.setPremiumPoints(Long.parseLong(points));
         ai.setValid(true);
         return ai;
     }

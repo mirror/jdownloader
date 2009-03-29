@@ -76,10 +76,10 @@ public class BluehostTo extends PluginForHost {
         ai.setTrafficLeft(Long.parseLong(trafficLeft.replaceAll("\\.", "")) * 1024 * 1024);
         ArrayList<String> matches = path.getMatches();
         try {
-            ai.setPremiumPoints(JDUtilities.filterInt(matches.get(0)));
+            ai.setPremiumPoints(JDUtilities.filterLong(matches.get(0)));
         } catch (Exception e) {
         }
-        ai.setAccountBalance((int) (Float.parseFloat(Encoding.filterString(matches.get(1), "1234567890.,").replaceAll("\\,", ".")) * 100.0));
+        ai.setAccountBalance((long) (Float.parseFloat(Encoding.filterString(matches.get(1), "1234567890.,").replaceAll("\\,", ".")) * 100.0));
         ai.setExpired(false);
         ai.setValidUntil(-1);
         return ai;

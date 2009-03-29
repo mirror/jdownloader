@@ -85,7 +85,7 @@ public class ShragleCom extends PluginForHost {
             ai.setValid(false);
             return ai;
         }
-        ai.setPremiumPoints(Integer.parseInt(accountinfos[2].trim()));
+        ai.setPremiumPoints(Long.parseLong(accountinfos[2].trim()));
         if (accountinfos[0].trim().equalsIgnoreCase("1")) {
             ai.setValid(false);
             ai.setStatus("No Premium Account");

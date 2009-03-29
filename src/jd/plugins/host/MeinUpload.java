@@ -155,7 +155,7 @@ public class MeinUpload extends PluginForHost {
         expire = expire.trim();
         String points = br.getRegex("<strong>Gesammelte Premium-Punkte:</strong> (\\d+)</td>").getMatch(0);
         ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy", Locale.UK));
-        ai.setPremiumPoints(Integer.parseInt(points));
+        ai.setPremiumPoints(Long.parseLong(points));
         return ai;
     }
 

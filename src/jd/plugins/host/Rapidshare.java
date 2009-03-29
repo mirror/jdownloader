@@ -994,11 +994,11 @@ public class Rapidshare extends PluginForHost {
 
         ai.setTrafficLeft((Long.parseLong(data.get("premkbleft")) / 1000) * 1024l * 1024l);
         ai.setTrafficMax(12 * 1024 * 1024 * 1024l);
-        ai.setFilesNum(Integer.parseInt(data.get("curfiles")));
-        ai.setPremiumPoints(Integer.parseInt(data.get("points")));
-        ai.setNewPremiumPoints(Integer.parseInt(data.get("prempoints")));
+        ai.setFilesNum(Long.parseLong(data.get("curfiles")));
+        ai.setPremiumPoints(Long.parseLong(data.get("points")));
+        ai.setNewPremiumPoints(Long.parseLong(data.get("prempoints")));
         ai.setUsedSpace(Long.parseLong(data.get("curspace")));
-        ai.setTrafficShareLeft((Integer.parseInt(data.get("bodkb")) / 1000) * 1024l * 1024l);
+        ai.setTrafficShareLeft((Long.parseLong(data.get("bodkb")) / 1000) * 1024l * 1024l);
 
         ai.setValidUntil(Long.parseLong(data.get("validuntil")) * 1000);
 

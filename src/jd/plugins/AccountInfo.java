@@ -30,10 +30,10 @@ public class AccountInfo extends Property {
     private long validUntil = -1;
     private long trafficLeft = -1;
     private long trafficMax = -1;
-    private int filesNum = -1;
-    private int premiumPoints = -1;
-    private int newPremiumPoints = -1;
-    private int accountBalance = -1;
+    private long filesNum = -1;
+    private long premiumPoints = -1;
+    private long newPremiumPoints = -1;
+    private long accountBalance = -1;
     private long usedSpace = -1;
     private long trafficShareLeft = -1;
     private boolean expired = false;
@@ -63,7 +63,7 @@ public class AccountInfo extends Property {
      * 
      * @return
      */
-    public int getAccountBalance() {
+    public long getAccountBalance() {
         return accountBalance;
     }
 
@@ -72,11 +72,11 @@ public class AccountInfo extends Property {
      * 
      * @return
      */
-    public int getFilesNum() {
+    public long getFilesNum() {
         return filesNum;
     }
 
-    public int getNewPremiumPoints() {
+    public long getNewPremiumPoints() {
         return newPremiumPoints;
     }
 
@@ -89,7 +89,7 @@ public class AccountInfo extends Property {
      * 
      * @return
      */
-    public int getPremiumPoints() {
+    public long getPremiumPoints() {
         return premiumPoints;
     }
 
@@ -163,12 +163,12 @@ public class AccountInfo extends Property {
         this.account = account;
     }
 
-    public void setAccountBalance(int parseInt) {
+    public void setAccountBalance(long parseInt) {
         this.accountBalance = parseInt;
     }
 
     public void setAccountBalance(String string) {
-        this.setAccountBalance((int) (Double.parseDouble(string) * 100));
+        this.setAccountBalance((long) (Double.parseDouble(string) * 100));
     }
 
     public void setExpired(boolean b) {
@@ -176,11 +176,11 @@ public class AccountInfo extends Property {
         if (b) this.setTrafficLeft(-1);
     }
 
-    public void setFilesNum(int parseInt) {
+    public void setFilesNum(long parseInt) {
         this.filesNum = parseInt;
     }
 
-    public void setNewPremiumPoints(int newPremiumPoints) {
+    public void setNewPremiumPoints(long newPremiumPoints) {
         this.newPremiumPoints = newPremiumPoints;
     }
 
@@ -188,7 +188,7 @@ public class AccountInfo extends Property {
         this.plugin = plugin;
     }
 
-    public void setPremiumPoints(int parseInt) {
+    public void setPremiumPoints(long parseInt) {
         this.premiumPoints = parseInt;
     }
 

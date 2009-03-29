@@ -100,8 +100,8 @@ public class Uploadedto extends PluginForHost {
         if (!isPremium()) {
             String balance = br.getMatch("Your bank balance is:</span> <span class=.*?>(.*?)</span>");
             String points = br.getMatch("Your point account is:</span>.*?<span class=.*?>(\\d*?)</span>");
-            ai.setAccountBalance((int) (Double.parseDouble(balance) * 100));
-            ai.setPremiumPoints(Integer.parseInt(points));
+            ai.setAccountBalance((long) (Double.parseDouble(balance) * 100));
+            ai.setPremiumPoints(Long.parseLong(points));
             ai.setValidUntil(System.currentTimeMillis() + (356 * 24 * 60 * 60 * 1000l));
             ai.setStatus("Accounttyp: Collectorsaccount");
         } else {
@@ -110,9 +110,9 @@ public class Uploadedto extends PluginForHost {
             String traffic = br.getMatch("Traffic left: </span><span class=.*?>(.*?)</span> ");
             String expire = br.getMatch("Valid until: </span> <span class=.*?>(.*?)</span>");
             ai.setValidUntil(Regex.getMilliSeconds(expire, "dd-MM-yyyy hh:mm", null));
-            ai.setAccountBalance((int) (Double.parseDouble(balance) * 100));
+            ai.setAccountBalance((long) (Double.parseDouble(balance) * 100));
             ai.setTrafficLeft(Regex.getSize(traffic));
-            ai.setPremiumPoints(Integer.parseInt(points));
+            ai.setPremiumPoints(Long.parseLong(points));
         }
         return ai;
     }
