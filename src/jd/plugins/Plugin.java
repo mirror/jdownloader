@@ -59,8 +59,6 @@ public abstract class Plugin implements ActionListener {
 
     public static final int CAPTCHA_USER_INPUT = 1;
 
-    public static SubConfiguration CONFIGS = null;
-
     private boolean acceptOnlyURIs = true;
     /**
      * Ein Logger, um Meldungen darzustellen

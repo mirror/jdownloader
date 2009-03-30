@@ -16,6 +16,7 @@
 
 package jd.plugins.optional;
 
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
 
@@ -98,12 +99,9 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     }
 
     public void initConfig() {
-        String[] keys = new String[Replacer.KEYS.length];
-        for (int i = 0; i < Replacer.KEYS.length; i++) {
-            keys[i] = "%" + Replacer.KEYS[i][0] + "%" + "   (" + Replacer.KEYS[i][1] + ")";
-        }
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, "VARS", Replacer.getKeyList(), JDLocale.L("plugins.optional.infoFileWriter.variables", "Available variables")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, "VARS", keys, JDLocale.L("plugins.optional.infoFileWriter.variables", "Available variables")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("plugins.optional.infoFileWriter.insertKey", "Insert selected Key")));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_FILENAME, JDLocale.L("plugins.optional.infoFileWriter.filename", "Filename:")).setDefaultValue(FILENAME_DEFAULT));
 
@@ -111,11 +109,16 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     }
 
     @Override
+    public void actionPerformed(ActionEvent e) {
+        // TODO: Einbauen =)
+    }
+
+    @Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
     }
 
-    protected boolean write(Object arg) {
+    private boolean write(Object arg) {
 
         String content = subConfig.getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT);
         String filename = subConfig.getStringProperty(PARAM_FILENAME, FILENAME_DEFAULT);

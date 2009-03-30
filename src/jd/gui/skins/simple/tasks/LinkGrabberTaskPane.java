@@ -25,6 +25,7 @@ import net.miginfocom.swing.MigLayout;
 
 public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, ControlListener, JDListener {
 
+    private static final long serialVersionUID = -7720749076951577192L;
     private JButton panel_add_links;
     private JButton panel_add_containers;
     private JButton lg_add_all;
@@ -54,7 +55,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
         lg_add_all.setEnabled(false);
         lg_add_selected.setEnabled(false);
         lg_clear.setEnabled(false);
-        
+
         add(new JSeparator());
         this.panel_clipboard = addButton(this.createButton(JDLocale.L("gui.linkgrabberv2.clipboard", "Clipboard Watching"), JDTheme.II(getClipBoardImage(), 16, 16)));
 
@@ -81,17 +82,6 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
         add(bt, "alignx leading", pos);
         return bt;
     }
-
-    private void removeButton(JButton bt) {
-        if (bt == null) return;
-        bt.removeActionListener(this);
-        remove(bt);
-    }
-
-    /**
-     * 
-     */
-    private static final long serialVersionUID = -7720749076951577192L;
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == panel_add_links) {
@@ -129,6 +119,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
             });
         }
     }
+
     public void recieveJDEvent(JDEvent event) {
         if (!(event instanceof LinkGrabberV2Event)) return;
         if (event.getID() == LinkGrabberV2Event.EMPTY_EVENT) {
@@ -149,12 +140,11 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
                     lg_add_all.setEnabled(true);
                     lg_add_selected.setEnabled(true);
                     lg_clear.setEnabled(true);
-                  
+
                 }
             });
         }
 
     }
 
- 
 }

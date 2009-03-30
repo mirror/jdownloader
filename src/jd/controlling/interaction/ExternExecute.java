@@ -68,12 +68,7 @@ public class ExternExecute extends Interaction implements Serializable, ActionLi
     public void initConfig() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("interaction.externExecute.test", "Programm aufrufen")));
 
-        String[] keys = new String[Replacer.KEYS.length];
-        for (int i = 0; i < Replacer.KEYS.length; i++) {
-            keys[i] = "%" + Replacer.KEYS[i][0] + "%" + "   (" + Replacer.KEYS[i][1] + ")";
-        }
-
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this, "VARS", keys, JDLocale.L("interaction.externExecute.variables", "Available variables")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this, "VARS", Replacer.getKeyList(), JDLocale.L("interaction.externExecute.variables", "Available variables")));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, PROPERTY_DISABLED, JDLocale.L("interaction.externExecute.disable", "Event deaktiviert")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, this, PROPERTY_COMMAND, JDLocale.L("interaction.externExecute.cmd", "Befehl (absolute Pfade verwenden)")));

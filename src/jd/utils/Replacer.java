@@ -23,13 +23,42 @@ import jd.controlling.JDController;
 import jd.plugins.DownloadLink;
 
 /**
- * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern
- * werte einzusetzen
+ * Diese Klasse stellt Methoden zur Verfügung um in einen String mit
+ * Platzhaltern werte einzusetzen
  */
 public class Replacer {
 
-    public static String[][] KEYS = new String[][] { new String[] { "LAST_FINISHED_PACKAGE.PASSWORD", "Last finished package: Password" }, new String[] { "LAST_FINISHED_PACKAGE.FILELIST", "Last finished package: Filelist" }, new String[] { "LAST_FINISHED_PACKAGE.PACKAGENAME", "Last finished package: Packagename" }, new String[] { "LAST_FINISHED_PACKAGE.COMMENT", "Last finished package: Comment" }, new String[] { "LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY", "Last finished package: Download Directory" }, new String[] { "LAST_FINISHED_FILE.DOWNLOAD_PATH", "Last finished File: Filepath" }, new String[] { "LAST_FINISHED_FILE.INFOSTRING", "Last finished File: Plugin given informationstring" }, new String[] { "LAST_FINISHED_FILE.HOST", "Last finished File: Hoster" }, new String[] { "LAST_FINISHED_FILE.NAME", "Last finished File: Filename" },
-            new String[] { "LAST_FINISHED_FILE.FILESIZE", "Last finished File: Filesize" }, new String[] { "LAST_FINISHED_FILE.AVAILABLE", "Last finished File: is Available (Yes,No)" }, new String[] { "SYSTEM.IP", "Current IP Address" }, new String[] { "SYSTEM.DATE", "Current Date" }, new String[] { "SYSTEM.TIME", "Current Time" }, new String[] { "SYSTEM.JAVA_VERSION", "Used Java Version" }, new String[] { "JD.REVISION", "jDownloader: Revision/Version" }, new String[] { "JD.HOME_DIR", "jDownloader: Homedirectory/Installdirectory" } };
+    private static Vector<String[]> KEYS = null;
+
+    public static String[] getKeyList() {
+        if (KEYS == null) Replacer.initKeys();
+        String[] keys = new String[KEYS.size()];
+        for (int i = 0; i < KEYS.size(); i++) {
+            keys[i] = "%" + KEYS.get(i)[0] + "%" + "   (" + KEYS.get(i)[1] + ")";
+        }
+        return keys;
+    }
+
+    private static void initKeys() {
+        KEYS = new Vector<String[]>();
+        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.PASSWORD", JDLocale.L("replacer.password", "Last finished package: Password") });
+        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.FILELIST", JDLocale.L("replacer.filelist", "Last finished package: Filelist") });
+        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.PACKAGENAME", JDLocale.L("replacer.packagename", "Last finished package: Packagename") });
+        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.COMMENT", JDLocale.L("replacer.comment", "Last finished package: Comment") });
+        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY", JDLocale.L("replacer.downloaddirectory", "Last finished package: Download Directory") });
+        KEYS.add(new String[] { "LAST_FINISHED_FILE.DOWNLOAD_PATH", JDLocale.L("replacer.filepath", "Last finished File: Filepath") });
+        KEYS.add(new String[] { "LAST_FINISHED_FILE.INFOSTRING", JDLocale.L("replacer.informationstring", "Last finished File: Plugin given informationstring") });
+        KEYS.add(new String[] { "LAST_FINISHED_FILE.HOST", JDLocale.L("replacer.hoster", "Last finished File: Hoster") });
+        KEYS.add(new String[] { "LAST_FINISHED_FILE.NAME", JDLocale.L("replacer.filename", "Last finished File: Filename") });
+        KEYS.add(new String[] { "LAST_FINISHED_FILE.FILESIZE", JDLocale.L("replacer.filesize", "Last finished File: Filesize") });
+        KEYS.add(new String[] { "LAST_FINISHED_FILE.AVAILABLE", JDLocale.L("replacer.available", "Last finished File: is Available (Yes,No)") });
+        KEYS.add(new String[] { "SYSTEM.IP", JDLocale.L("replacer.ipaddress", "Current IP Address") });
+        KEYS.add(new String[] { "SYSTEM.DATE", JDLocale.L("replacer.date", "Current Date") });
+        KEYS.add(new String[] { "SYSTEM.TIME", JDLocale.L("replacer.time", "Current Time") });
+        KEYS.add(new String[] { "SYSTEM.JAVA_VERSION", JDLocale.L("replacer.javaversion", "Used Java Version") });
+        KEYS.add(new String[] { "JD.REVISION", JDLocale.L("replacer.jdversion", "jDownloader: Revision/Version") });
+        KEYS.add(new String[] { "JD.HOME_DIR", JDLocale.L("replacer.jdhomedirectory", "jDownloader: Homedirectory/Installdirectory") });
+    }
 
     public static String getReplacement(String key) {
         JDController controller = JDUtilities.getController();
@@ -116,6 +145,7 @@ public class Replacer {
 
     public static String insertVariables(String str) {
         if (str == null) return "";
+        if (KEYS == null) Replacer.initKeys();
         for (String[] element : KEYS) {
             if (str.indexOf("%" + element[0] + "%") >= 0) {
                 JDUtilities.getLogger().finer("%" + element[0] + "%" + " --> *****");
