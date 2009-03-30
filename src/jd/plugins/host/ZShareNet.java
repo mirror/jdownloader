@@ -39,15 +39,19 @@ public class ZShareNet extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             br.setCookiesExclusive(true);
+            br.setFollowRedirects(true);
             br.clearCookies(getHost());
             br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
+            if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String[] fileInfo = br.getRegex("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">(.*?)</font></td>").getRow(0);
+            if (fileInfo[0] == null || fileInfo[1] == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setName(fileInfo[0]);
             downloadLink.setDownloadSize(Regex.getSize(fileInfo[1].replaceAll(",", "")));
             // Datei ist noch verfuegbar
             return true;
         } catch (Exception e) {
         }
+        downloadLink.setAvailable(false);
         return false;
     }
 
