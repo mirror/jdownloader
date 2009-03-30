@@ -21,8 +21,6 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 public class DataHu extends PluginForHost {
@@ -46,12 +44,10 @@ public class DataHu extends PluginForHost {
         downloadLink.setDownloadSize(length);
         downloadLink.setName(dat[0].trim());
         return true;
-
     }
 
     @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
@@ -70,17 +66,19 @@ public class DataHu extends PluginForHost {
 
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
 
+    @Override
     public int getMaxConnections() {
         return 1;
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
-
     }
 
     @Override

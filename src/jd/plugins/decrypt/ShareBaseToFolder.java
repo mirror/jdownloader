@@ -45,7 +45,7 @@ public class ShareBaseToFolder extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4525 $");
+        return getVersion("$Revision$");
     }
 
 }

@@ -685,10 +685,9 @@ public class Serienjunkies extends PluginForDecrypt {
         br = getBrowser();
         ArrayList<DownloadLink> ar = decryptItMain(param);
         if (ar.size() > 1) {
-            
+
             SerienjunkiesSJTable sjt = new SerienjunkiesSJTable(SimpleGUI.CURRENTGUI.getFrame(), ar);
-            
-            
+
             ar = sjt.dls;
         }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -1029,8 +1028,7 @@ public class Serienjunkies extends PluginForDecrypt {
         if (scatChecked || useScat[1] == saveScat) return;
 
         final Object lock = new Object();
-        GuiRunnable run;
-        EventQueue.invokeLater(run = new GuiRunnable() {
+        EventQueue.invokeLater(new GuiRunnable() {
             private static final long serialVersionUID = 8726498576488124702L;
 
             public void run() {

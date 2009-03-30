@@ -29,7 +29,6 @@ import jd.controlling.interaction.PackageManager;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.AgbDialog;
-import jd.gui.skins.simple.CaptchaDialog;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;

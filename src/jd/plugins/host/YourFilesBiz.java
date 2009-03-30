@@ -17,7 +17,6 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -52,10 +51,11 @@ public class YourFilesBiz extends PluginForHost {
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
         return true;
     }
-    public void setLangToEn() throws IOException
-    {
-        br.setCookie("http://yourfiles.to/" , "yab_mylang" , "en");
+
+    public void setLangToEn() throws IOException {
+        br.setCookie("http://yourfiles.to/", "yab_mylang", "en");
     }
+
     @Override
     public String getVersion() {
         return getVersion("$Revision$");
@@ -75,6 +75,7 @@ public class YourFilesBiz extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
