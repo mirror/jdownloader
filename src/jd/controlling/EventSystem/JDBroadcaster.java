@@ -29,7 +29,7 @@ public class JDBroadcaster {
     public void fireJDEvent(JDEvent event) {
         synchronized (callList) {
             for (int i = callList.size() - 1; i >= 0; i--) {
-                callList.get(i).recieveJDEvent(event);
+                callList.get(i).receiveJDEvent(event);
             }
             synchronized (removeList) {
                 callList.removeAll(removeList);

@@ -167,7 +167,7 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements JDListener, 
         }
     }
 
-    public void recieveJDEvent(JDEvent event) {
+    public void receiveJDEvent(JDEvent event) {
         if (!(event instanceof LinkGrabberV2FilePackageEvent)) return;
         if (this.fp == null) return;
         if (!(event.getSource() instanceof LinkGrabberV2FilePackage)) return;

@@ -120,7 +120,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
         }
     }
 
-    public void recieveJDEvent(JDEvent event) {
+    public void receiveJDEvent(JDEvent event) {
         if (!(event instanceof LinkGrabberV2Event)) return;
         if (event.getID() == LinkGrabberV2Event.EMPTY_EVENT) {
             EventQueue.invokeLater(new Runnable() {
