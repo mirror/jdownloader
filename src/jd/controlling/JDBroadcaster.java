@@ -1,7 +1,5 @@
 package jd.controlling;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.EventListener;
@@ -14,24 +12,6 @@ public class JDBroadcaster<T extends EventListener> {
     public JDBroadcaster() {
         listener = new ArrayList<T>();
         methodMap = new HashMap<String, Method>();
-    }
-
-    public static void main(String args[]) {
-        JDBroadcaster<ActionListener> bc = new JDBroadcaster<ActionListener>();
-        ActionListener l;
-        bc.add(l = new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                // TODO Auto-generated method stub
-            }
-        });
-        long g = System.currentTimeMillis();
-        for (int i = 0; i < 1000000; i++) {
-            bc.fire("actionPerformed", new ActionEvent(bc, 0, "testcommand"));
-        }
-        System.out.println(System.currentTimeMillis() - g);
-        bc.removeListener(l);
-        ArrayList<ActionListener> ls = bc.getListener();
-        System.out.println("listeners left: "+ls.size());
     }
 
     public Method getMethod(Class<? extends EventListener> class1, String methodName, Class<?>... classes) throws SecurityException, NoSuchMethodException {
@@ -77,7 +57,6 @@ public class JDBroadcaster<T extends EventListener> {
         synchronized (listener) {
             this.listener.remove(l);
         }
-
     }
 
     public void add(T listener) {
@@ -87,9 +66,7 @@ public class JDBroadcaster<T extends EventListener> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public ArrayList<T> getListener() {
         return listener;
-
     }
 }

@@ -1,5 +1,5 @@
 $translater$ = Fabxr3
-$version$ = JD.Fr.25.03.09
+$version$ = $Revision$
 addons.jdgrowlnotification.menu = Messages grognons
 addons.jdshutdown.menu = Quitter après les téléchargements complétés
 addons.jdshutdown.statusmessage.disabled = Le Système ne sera pas arrêté par JDownloader

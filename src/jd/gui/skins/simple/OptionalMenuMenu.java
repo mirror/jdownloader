@@ -13,20 +13,19 @@ import jd.config.MenuItem;
 import jd.utils.JDUtilities;
 
 public class OptionalMenuMenu extends JDMenu {
-  
 
+    private static final long serialVersionUID = 3811108697902787341L;
     private static OptionalMenuMenu menu;
     private JDAction actionOptionalConfig;
 
     public OptionalMenuMenu(String l, JDAction actionOptionalConfig) {
-       
         super(l);
-        this.actionOptionalConfig=actionOptionalConfig;
+        this.actionOptionalConfig = actionOptionalConfig;
     }
 
     public static JMenu getMenu(String l, JDAction actionOptionalConfig) {
-        if(menu!=null)throw new IllegalStateException("Singleton OptionalMenuMenu has already be instanced");
-        menu = new OptionalMenuMenu(l,actionOptionalConfig);
+        if (menu != null) throw new IllegalStateException("Singleton OptionalMenuMenu has already be instanced");
+        menu = new OptionalMenuMenu(l, actionOptionalConfig);
         menu.createOptionalPluginsMenuEntries();
         return menu;
     }
@@ -86,19 +85,23 @@ public class OptionalMenuMenu extends JDMenu {
                         c.setIcon(null);
                         c.setSelectedIcon(null);
                         c.setDisabledSelectedIcon(null);
-                        if (mi.getID() == MenuItem.TOGGLE)
+                        if (mi.getID() == MenuItem.TOGGLE) {
                             itemsToggle.add(c);
-                        else
+                        } else {
                             itemsPress.add(c);
+                        }
                         break;
                     }
                 }
-                for (JMenuItem jmi : itemsWithSubmenu)
+                for (JMenuItem jmi : itemsWithSubmenu) {
                     this.add(jmi);
-                for (JMenuItem jmi : itemsPress)
+                }
+                for (JMenuItem jmi : itemsPress) {
                     this.add(jmi);
-                for (JMenuItem jmi : itemsToggle)
+                }
+                for (JMenuItem jmi : itemsToggle) {
                     this.add(jmi);
+                }
             }
         }
         if (this.getItem(this.getItemCount() - 1) == null) {

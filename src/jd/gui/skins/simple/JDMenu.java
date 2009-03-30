@@ -10,9 +10,11 @@ import javax.swing.event.MenuListener;
 
 import jd.config.MenuItem;
 import jd.nutils.JDImage;
-import jd.utils.JDTheme;
 
 public class JDMenu extends JMenu {
+
+    private static final long serialVersionUID = 7827312050360423912L;
+
     public JDMenu(String l) {
         super(l);
     }
@@ -40,16 +42,8 @@ public class JDMenu extends JMenu {
             return m;
         case MenuItem.TOGGLE:
             JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(new JDMenuAction(mi));
-//            m2.setSelectedIcon(JDTheme.II("gui.images.selected",16,16));
-//            m2.setIcon(JDTheme.II("gui.images.unselected",16,16));
-//            m2.setDisabledIcon(JDTheme.II("gui.images.unselected",16,16));
-        m2.setSelected(mi.isSelected());
-//            if (mi.isSelected()) {
-//                m2.setIcon(JDTheme.II("gui.images.selected"));
-//            } else {
-//               
-//               
-//            }
+            m2.setSelected(mi.isSelected());
+
             if (mi.getAccelerator() != null) m2.setAccelerator(KeyStroke.getKeyStroke(mi.getAccelerator()));
             return m2;
         case MenuItem.CONTAINER:
