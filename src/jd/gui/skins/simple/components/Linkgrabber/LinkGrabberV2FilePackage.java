@@ -3,6 +3,7 @@ package jd.gui.skins.simple.components.Linkgrabber;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.Set;
 import java.util.Vector;
 
 import jd.OptionalPluginWrapper;
@@ -83,6 +84,17 @@ public class LinkGrabberV2FilePackage extends Property {
         return lastfail;
     }
 
+    public void keepHostersOnly(Set<String> hoster) {
+        Vector<DownloadLink> remove = new Vector<DownloadLink>();
+        synchronized (downloadLinks) {
+            for (DownloadLink dl : downloadLinks) {
+                if (!hoster.contains(dl.getPlugin().getHost())) remove.add(dl);
+            }
+            this.remove(remove);
+            countFailedLinks(true);
+        }
+    }
+
     public JDBroadcaster getJDBroadcaster() {
         return jdb;
     }
@@ -134,8 +146,16 @@ public class LinkGrabberV2FilePackage extends Property {
                     remove.add(dl);
                 }
             }
-            downloadLinks.removeAll(remove);
+            this.remove(remove);
             countFailedLinks(true);
+        }
+    }
+
+    public void remove(Vector<DownloadLink> links) {
+        synchronized (downloadLinks) {
+            for (DownloadLink dl : links) {
+                this.remove(dl);
+            }
         }
     }
 

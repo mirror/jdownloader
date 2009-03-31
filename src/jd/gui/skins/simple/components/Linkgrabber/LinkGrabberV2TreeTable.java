@@ -12,6 +12,7 @@ import java.beans.PropertyChangeListener;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.Vector;
 
 import javax.swing.JMenu;
@@ -93,7 +94,8 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
         // DownloadTreeTable.getFolderPainter());
         addPackageHighlighter();
         addOfflineHighlighter();
-        addOnlineHighlighter();
+        //addOnlineHighlighter();
+        addDisabledHighlighter();
 
         // addPackageOfflineHighlighter();
         addExistsHighlighter();
@@ -272,25 +274,21 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
             if (obj instanceof LinkGrabberV2FilePackage || obj instanceof DownloadLink) {
                 popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.linkgrabberv2.lg.addall", "Add all packages"), LinkGrabberV2TreeTableAction.ADD_ALL)));
                 popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.linkgrabberv2.lg.rmoffline", "Remove all Offline"), LinkGrabberV2TreeTableAction.DELETE_OFFLINE)));
+                popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", LinkGrabberV2TreeTableAction.DELETE, new Property("links", alllinks))));
                 if (sfp.size() > 0) popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)") + " (" + sfp.size() + ")", LinkGrabberV2TreeTableAction.ADD_SELECTED)));
                 popup.add(new JSeparator());
             }
             if (obj instanceof LinkGrabberV2FilePackage) {
-                popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", LinkGrabberV2TreeTableAction.DELETE, new Property("links", alllinks))));
-                popup.add(new JSeparator());
-                popup.add(buildpriomenu(alllinks));
-                popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + alllinks.size() + ")", LinkGrabberV2TreeTableAction.SET_PW, new Property("links", alllinks))));
                 popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern") + " (" + sfp.size() + ")", LinkGrabberV2TreeTableAction.EDIT_DIR)));
                 popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + this.getModel().getColumnName(col) + ")", LinkGrabberV2TreeTableAction.SORT, new Property("col", col))));
-            }
-            if (obj instanceof DownloadLink) {
-                popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.newpackage", "In neues Paket verschieben") + " (" + alllinks.size() + ")", LinkGrabberV2TreeTableAction.NEW_PACKAGE, new Property("links", alllinks))));
-                popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", LinkGrabberV2TreeTableAction.DELETE, new Property("links", alllinks))));
                 popup.add(new JSeparator());
-                popup.add(buildpriomenu(alllinks));
-                popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + alllinks.size() + ")", LinkGrabberV2TreeTableAction.SET_PW, new Property("links", alllinks))));
             }
             if (obj instanceof LinkGrabberV2FilePackage || obj instanceof DownloadLink) {
+                popup.add(buildpriomenu(alllinks));
+                Set<String> hoster = linkgrabber.getHosterList(alllinks);
+                popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.linkgrabberv2.onlyselectedhoster", "Keep only selected Hoster") + " (" + hoster.size() + ")", LinkGrabberV2TreeTableAction.SELECT_HOSTER, new Property("hoster", hoster))));
+                popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.newpackage", "In neues Paket verschieben") + " (" + alllinks.size() + ")", LinkGrabberV2TreeTableAction.NEW_PACKAGE, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + alllinks.size() + ")", LinkGrabberV2TreeTableAction.SET_PW, new Property("links", alllinks))));
                 popup.add(new JSeparator());
                 HashMap<String, Object> prop = new HashMap<String, Object>();
                 prop.put("links", alllinks);
@@ -352,8 +350,19 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
 
     }
 
+    private void addDisabledHighlighter() {
+        Color background = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100);
+
+        addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
+            @Override
+            public boolean doHighlight(DownloadLink link) {
+                return !link.isEnabled();
+            }
+        });
+
+    }
+
     private void addPackageHighlighter() {
-        Color background = JDTheme.C("gui.color.linkgrabber.package_online", "c4ffd2", 20);
 
         addHighlighter(new PainterHighlighter(new HighlightPredicate() {
 

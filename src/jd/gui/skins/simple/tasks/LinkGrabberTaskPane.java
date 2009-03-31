@@ -55,7 +55,6 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
         lg_add_all.setEnabled(false);
         lg_add_selected.setEnabled(false);
         lg_clear.setEnabled(false);
-
         add(new JSeparator());
         this.panel_clipboard = addButton(this.createButton(JDLocale.L("gui.linkgrabberv2.clipboard", "Clipboard Watching"), JDTheme.II(getClipBoardImage(), 16, 16)));
 

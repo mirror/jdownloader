@@ -19,7 +19,8 @@ public class LinkGrabberV2TreeTableAction extends AbstractAction {
     public static final int SET_PW = 201;
     public static final int ADD_ALL = 300;
     public static final int ADD_SELECTED = 301;
-    public static final int DE_ACTIVATE = 400;    
+    public static final int DE_ACTIVATE = 400;
+    public static final int SELECT_HOSTER = 500;
     public static final int DELETE = 999;
     public static final int DELETE_OFFLINE = 9991;
     public static final int CLEAR = 9999;
