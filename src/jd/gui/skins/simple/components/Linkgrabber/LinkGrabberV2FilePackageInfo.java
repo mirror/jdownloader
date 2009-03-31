@@ -70,13 +70,13 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements JDListener, 
                                * aus , welche ansonsten wiederum ein updatevent
                                * aufrufen würden
                                */
-        txtName.setText(fp.getName());
-        txtComment.setText(fp.getComment());
-        txtPassword.setText(fp.getPassword());
+        if (!txtName.isFocusOwner()) txtName.setText(fp.getName());
+        if (!txtComment.isFocusOwner()) txtComment.setText(fp.getComment());
+        if (!txtPassword.isFocusOwner()) txtPassword.setText(fp.getPassword());
         dlPassword.setText(fp.getDLPassword());
-        brwSaveTo.setText(fp.getDownloadDirectory());
-        chbExtract.setSelected(fp.isExtractAfterDownload());
-        chbUseSubdirectory.setSelected(fp.useSubDir());
+        if (!brwSaveTo.isFocusOwner()) brwSaveTo.setText(fp.getDownloadDirectory());
+        if (!chbExtract.isFocusOwner()) chbExtract.setSelected(fp.isExtractAfterDownload());
+        if (!chbUseSubdirectory.isFocusOwner()) chbUseSubdirectory.setSelected(fp.useSubDir());
         revalidate();/* neuzeichnen */
         notifyUpdate = true;
     }

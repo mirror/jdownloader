@@ -14,11 +14,9 @@ public class JColumnControlButton extends ColumnControlButton {
 
     private static final long serialVersionUID = 3234874733654121548L;
     private SubConfiguration config;
-    private JXTable tab;
 
     public JColumnControlButton(JXTable table) {
         super(table);
-        this.tab = table;
     }
 
     protected List<Action> getAdditionalActions() {

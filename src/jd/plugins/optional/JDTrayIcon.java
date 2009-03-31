@@ -111,7 +111,6 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
     }
 
     private JCheckBoxMenuItem clipboard;
-    private JMenuItem configuration;
     private int counter = 0;
 
     private JMenuItem exit;
@@ -270,7 +269,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
 
         popupMenu = new JPopupMenu();
         update = createMenuItem(JDLocale.L("plugins.optional.trayIcon.update", "Update"));
-        configuration = createMenuItem(JDLocale.L("plugins.optional.trayIcon.configuration", "Configuration"));
+        createMenuItem(JDLocale.L("plugins.optional.trayIcon.configuration", "Configuration"));
         popupMenu.addSeparator();
         startstop = createMenuItem(JDLocale.L("plugins.optional.trayIcon.startorstop", "Start/Stop"));
 

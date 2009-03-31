@@ -29,7 +29,7 @@ public class LinkInfo extends JPanel {
 
     private JTabbedPane tabbedPane;
 
-    private JPanel simplePanel, extendedPanel;
+    private JPanel simplePanel;
 
     private FilePackage fp = null;
 

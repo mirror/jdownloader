@@ -19,14 +19,11 @@ package jd.gui.skins.simple.components;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Image;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
-import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -91,7 +88,6 @@ public class DragNDrop extends JComponent implements DropTargetListener {
      * Wird aufgerufen sobald etwas gedropt wurde. Die Funktion liest den Inhalt
      * des Drops aus und benachrichtigt die Listener
      */
-    @SuppressWarnings("unchecked")
     public void drop(DropTargetDropEvent dtde) {
         /**
          * TODO

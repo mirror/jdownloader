@@ -30,9 +30,8 @@ import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
-import jd.event.UIEvent;
-import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2Panel;
 import jd.http.Encoding;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
@@ -108,7 +107,7 @@ public class JDSimpleWebserverRequestHandler {
             public void run() {
                 while (links.size() > 0 && JDWebinterface.gathererrunning == true) {
                     DownloadLink link = links.remove(0);
-                    if (!guiConfig.getBooleanProperty(LinkGrabber.PROPERTY_ONLINE_CHECK, true)) {
+                    if (!guiConfig.getBooleanProperty(LinkGrabberV2Panel.PROPERTY_ONLINE_CHECK, true)) {
                         addingLinkList.add(link);
                         try {
                             Thread.sleep(5);
@@ -240,7 +239,7 @@ public class JDSimpleWebserverRequestHandler {
                     bestIndex = i;
                 }
             }
-            if (bestSim <  99) {
+            if (bestSim < 99) {
 
                 FilePackage fp = new FilePackage();
                 fp.setName(packageName);
@@ -566,9 +565,9 @@ public class JDSimpleWebserverRequestHandler {
                 JDClose jdc = new JDClose();
 
             } else if (requestParameter.get("do").compareToIgnoreCase("start") == 0) {
-                JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_START_DOWNLOADS, null));
+                JDUtilities.getController().startDownloads();
             } else if (requestParameter.get("do").compareToIgnoreCase("stop") == 0) {
-                JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_STOP_DOWNLOADS, null));
+                JDUtilities.getController().stopDownloads();
             } else if (requestParameter.get("do").compareToIgnoreCase("restart") == 0) {
                 class JDRestart implements Runnable {
 

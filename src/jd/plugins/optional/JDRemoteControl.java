@@ -37,7 +37,6 @@ import jd.config.Property;
 import jd.controlling.DistributeData;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlListener;
-import jd.event.UIEvent;
 import jd.http.Encoding;
 import jd.nutils.httpserver.Handler;
 import jd.nutils.httpserver.HttpServer;

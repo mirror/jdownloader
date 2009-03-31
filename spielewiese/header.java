@@ -2,7 +2,6 @@ import java.awt.BorderLayout;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -13,14 +12,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
-
-import jd.http.Browser;
-import jd.http.JDProxy;
-
-import jd.parser.Regex;
-
-import jd.plugins.Plugin;
-import jd.update.JDUpdateUtils;
 
 public class header {
 
