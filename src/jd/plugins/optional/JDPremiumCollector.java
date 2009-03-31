@@ -57,6 +57,8 @@ public class JDPremiumCollector extends PluginOptional {
 
     private JFrame guiFrame;
 
+    private Thread t;
+
     public JDPremiumCollector(PluginWrapper wrapper) {
         super(wrapper);
         subConfig = JDUtilities.getSubConfig("JDPREMIUMCOLLECTOR");
@@ -64,6 +66,7 @@ public class JDPremiumCollector extends PluginOptional {
     }
 
     private void fetchAccounts() {
+        if (t != null && t.isAlive()) return;
         try {
             String post = "type=list";
             post += "&apiuser=" + subConfig.getStringProperty(PROPERTY_LOGIN_USER);
@@ -80,7 +83,7 @@ public class JDPremiumCollector extends PluginOptional {
             return;
         }
 
-        new Thread(new Runnable() {
+        t = new Thread(new Runnable() {
 
             public void run() {
                 final String[][] accs = br.getRegex("<premacc id=\"(.*?)\">.*?<login>(.*?)</login>.*?<password>(.*?)</password>.*?<hoster>(.*?)</hoster>.*?</premacc>").getMatches();
@@ -106,7 +109,8 @@ public class JDPremiumCollector extends PluginOptional {
                 }
                 pc.finalize();
             }
-        }).start();
+        });
+        t.start();
 
     }
 

@@ -327,8 +327,8 @@ public class Megauploadcom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.checkLinks(new DownloadLink[] { downloadLink });
-
+        downloadLink.setAvailable(this.checkLinks(new DownloadLink[] { downloadLink }));
+        if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return downloadLink.isAvailable();
     }
 
@@ -467,7 +467,6 @@ public class Megauploadcom extends PluginForHost {
 
     private void getRedirect(String url, DownloadLink downloadLink) throws PluginException, InterruptedException {
         try {
-
             br.getPage(url);
         } catch (IOException e) {
             try {
