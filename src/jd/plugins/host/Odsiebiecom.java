@@ -103,7 +103,7 @@ public class Odsiebiecom extends PluginForHost {
             int i = 0;
             while (capform != null) {
                 String adr = capform.getRegex("<img src=\"(.*?)\">").getMatch(0);
-                File file = br.getDownloadTemp(adr);
+                File file = br.cloneBrowser().getDownloadTemp(adr);
                 String code = Plugin.getCaptchaCode(file, this, downloadLink);
                 capform.getInputFieldByName("captcha").setValue(code);
                 br.setFollowRedirects(true);
@@ -114,7 +114,7 @@ public class Odsiebiecom extends PluginForHost {
             }
             br.setFollowRedirects(false);
             /* DownloadLink suchen */
-            steplink = br.getRegex("here\\s+to\\s+<a href=\"/download/(.*?)\"").getMatch(0);
+            steplink = br.getRegex("href=\"/download/(.*?)\"").getMatch(0);
             if (steplink == null) { throw new PluginException(LinkStatus.ERROR_RETRY); }
             downloadurl = "http://odsiebie.com/download/" + steplink;
             br.getPage(downloadurl);
