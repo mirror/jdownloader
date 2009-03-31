@@ -17,7 +17,7 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
     public static final int COL_STATUS = 4;
 
     /** table column names */
-    static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.linkgrabber.header.packagesfiles", "Pakete/Datein"), JDLocale.L("gui.treetable.header.size", "Größe"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status") };
+    static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.linkgrabber.header.packagesfiles", "Pakete/Dateien"), JDLocale.L("gui.treetable.header.size", "Größe"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status") };
 
     private LinkGrabberV2Panel owner;
 

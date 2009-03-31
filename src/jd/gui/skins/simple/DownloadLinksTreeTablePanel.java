@@ -68,10 +68,6 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
         internalTreeTable.fireTableChanged(id, param);
     }
 
-    public void moveSelectedItems(int id) {
-        internalTreeTable.moveSelectedItems(id);
-    }
-
     public void removeSelectedLinks() {
         Vector<DownloadLink> links = internalTreeTable.getSelectedDownloadLinks();
         Vector<FilePackage> fps = internalTreeTable.getSelectedFilePackages();
@@ -98,13 +94,9 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
     @Override
     public void onDisplay() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void onHide() {
-        // TODO Auto-generated method stub
-
     }
 }

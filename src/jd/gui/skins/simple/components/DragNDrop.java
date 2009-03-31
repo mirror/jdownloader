@@ -19,18 +19,19 @@ package jd.gui.skins.simple.components;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
-import java.util.Vector;
+import java.io.File;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javax.swing.JComponent;
 
-import jd.event.UIEvent;
-import jd.event.UIListener;
 import jd.nutils.JDImage;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -48,30 +49,11 @@ public class DragNDrop extends JComponent implements DropTargetListener {
 
     private Logger logger = JDUtilities.getLogger();
 
-    /**
-     * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
-     * Listener werden benachrichtigt, wenn mittels
-     * {@link #fireUIEvent(UIEvent)} ein Event losgeschickt wird.
-     */
-    public Vector<UIListener> uiListener = null;
-
     public DragNDrop() {
         new DropTarget(this, this);
-        uiListener = new Vector<UIListener>();
         image = JDImage.getImage(JDTheme.V("gui.images.clipboard"));
         if (image != null) {
             setPreferredSize(new Dimension(image.getWidth(null), image.getHeight(null)));
-        }
-    }
-
-    /**
-     * UI Add LIstener Funktion. Fügt einen Listener hinzu
-     * 
-     * @param listener
-     */
-    public void addUIListener(UIListener listener) {
-        synchronized (uiListener) {
-            uiListener.add(listener);
         }
     }
 
@@ -88,45 +70,30 @@ public class DragNDrop extends JComponent implements DropTargetListener {
      * Wird aufgerufen sobald etwas gedropt wurde. Die Funktion liest den Inhalt
      * des Drops aus und benachrichtigt die Listener
      */
+    @SuppressWarnings("unchecked")
     public void drop(DropTargetDropEvent dtde) {
-        /**
-         * TODO
-         */
-//        logger.info("Drag: DROP " + dtde.getDropAction() + " : " + dtde.getSourceActions() + " - " + dtde.getSource());
-//        try {
-//            Transferable tr = dtde.getTransferable();
-//            dtde.acceptDrop(dtde.getDropAction());
-//            if (dtde.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-//                String files = (String) tr.getTransferData(DataFlavor.stringFlavor);
-//                fireUIEvent(new UIEvent(this, UIEvent.UI_DRAG_AND_DROP, files));
-//            } else if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-//                List list = (List) tr.getTransferData(DataFlavor.javaFileListFlavor);
-//                for (int t = 0; t < list.size(); t++) {
-//                    fireUIEvent(new UIEvent(this, UIEvent.UI_DRAG_AND_DROP, list.get(t)));
-//                }
-//            } else {
-//                logger.info("Unsupported Drop-Type");
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        repaint();
+        logger.info("Drag: DROP " + dtde.getDropAction() + " : " + dtde.getSourceActions() + " - " + dtde.getSource());
+        try {
+            Transferable tr = dtde.getTransferable();
+            dtde.acceptDrop(dtde.getDropAction());
+            if (dtde.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+                String files = (String) tr.getTransferData(DataFlavor.stringFlavor);
+                JDUtilities.getController().distributeLinks(files);
+            } else if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                List list = (List) tr.getTransferData(DataFlavor.javaFileListFlavor);
+                for (int t = 0; t < list.size(); t++) {
+                    JDUtilities.getController().loadContainerFile((File) list.get(t));
+                }
+            } else {
+                logger.info("Unsupported Drop-Type");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        repaint();
     }
 
     public void dropActionChanged(DropTargetDragEvent dtde) {
-    }
-
-    /**
-     * Benachrichtigt alle Listener über ein Event
-     * 
-     * @param uiEvent
-     */
-    public void fireUIEvent(UIEvent uiEvent) {
-        synchronized (uiListener) {
-            for (UIListener lstn : uiListener) {
-                lstn.uiEvent(uiEvent);
-            }
-        }
     }
 
     /**
@@ -140,14 +107,4 @@ public class DragNDrop extends JComponent implements DropTargetListener {
         g.drawImage(image, 0, 0, null);
     }
 
-    /**
-     * UI Remove Listener Funktion. Entfernt einen Listener
-     * 
-     * @param listener
-     */
-    public void removeUIListener(UIListener listener) {
-        synchronized (uiListener) {
-            uiListener.remove(listener);
-        }
-    }
 }

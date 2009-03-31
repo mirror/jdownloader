@@ -22,7 +22,6 @@ import java.awt.GridBagLayout;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 
-import jd.event.UIListener;
 import jd.gui.skins.simple.components.DragNDrop;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -59,24 +58,6 @@ public class Dropper extends JDialog {
         setAlwaysOnTop(true);
 
         pack();
-    }
-
-    /**
-     * Deligiert den UILIstener zur Targetkomponente
-     * 
-     * @param listener
-     */
-    public void addUIListener(UIListener listener) {
-        target.addUIListener(listener);
-    }
-
-    /**
-     * Entfernt die Targetkomponente als Listener
-     * 
-     * @param listener
-     */
-    public void removeUIListener(UIListener listener) {
-        target.removeUIListener(listener);
     }
 
     /**
