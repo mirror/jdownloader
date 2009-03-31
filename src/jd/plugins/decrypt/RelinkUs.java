@@ -65,12 +65,12 @@ public class RelinkUs extends PluginForDecrypt {
         // , Pattern.CASE_INSENSITIVE)).getColumn(0);
         // }
         Form[] forms = br.getForms();
+
         progress.addToMax(forms.length);
         for (Form link : forms) {
             try {
                 br.submitForm(link);
-
-                String dl_link = br.getRegex(Pattern.compile("iframe .*? src=\"[\n\r]*?(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                String dl_link = br.getRegex(Pattern.compile("iframe .*? src=['\"][\n\r]*?(.*?)['\"]", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(dl_link)));
                 progress.increase(1);
             } catch (Exception e) {
@@ -81,11 +81,19 @@ public class RelinkUs extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public  ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+
         this.progress = progress;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
+        br.getHeaders().clear();
+        br.getHeaders().setDominant(true);
+        br.getHeaders().put("Host", "www.relink.us");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Encoding", "gzip,deflate");
+        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; U; Linux x86_64; de; rv:1.9.0.8) Gecko/2009032712 Ubuntu/8.04 (hardy) Firefox/3.0.8");
         String page = br.getPage(parameter);
         boolean okay = true;
         for (int i = 0; i < 4; i++) {
