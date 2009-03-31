@@ -1091,7 +1091,16 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                     icon = JDTheme.II("gui.images.link", 16, 16);
                 }
             } else {
-                icon = JDImage.getScaledImageIcon(JDImage.getFileIcon(JDIO.getFileExtension(getFileOutput())), 16, 16);
+                try {
+                    icon = JDImage.getScaledImageIcon(JDImage.getFileIcon(JDIO.getFileExtension(getFileOutput())), 16, 16);
+                } catch (Exception e) {
+                    try {
+                        Image image = JDTheme.getImage(JDTheme.getTheme() + "/mime/" + JDIO.getFileExtension(this.getName()), 16, 16);
+                        icon = new ImageIcon(image);
+                    } catch (Exception e2) {
+                        icon = JDTheme.II("gui.images.link", 16, 16);
+                    }
+                }
 
             }
         }

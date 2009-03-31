@@ -50,11 +50,12 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.WebUpdate;
 
 public class TrayIconPopup extends JWindow implements MouseListener, MouseMotionListener, ChangeListener {
 
     private static final int ACTION_ADD = 4;
-    private static final int ACTION_CONFIG = 6;
+
     private static final int ACTION_EXIT = 11;
     private static final int ACTION_LOAD = 0;
     private static final int ACTION_LOG = 7;
@@ -119,7 +120,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
 
         addMenuEntry(ACTION_ADD, JDTheme.II("gui.images.add"), JDLocale.L("plugins.trayicon.popup.menu.add", "Downloads hinzufügen"));
         addMenuEntry(ACTION_UPDATE, JDTheme.II("gui.images.update_manager"), JDLocale.L("plugins.trayicon.popup.menu.update", "JD aktualisieren"));
-        addMenuEntry(ACTION_CONFIG, JDTheme.II("gui.images.configuration"), JDLocale.L("plugins.trayicon.popup.menu.config", "Konfiguration"));
+//        addMenuEntry(ACTION_CONFIG, JDTheme.II("gui.images.configuration"), JDLocale.L("plugins.trayicon.popup.menu.config", "Konfiguration"));
         addMenuEntry(ACTION_LOG, JDTheme.II("gui.images.terminal"), JDLocale.L("plugins.trayicon.popup.menu.log", "Log anzeigen"));
         addMenuEntry(ACTION_RECONNECT, JDTheme.II("gui.images.reconnect"), JDLocale.L("plugins.trayicon.popup.menu.reconnect", "Reconnect durchführen"));
         addMenuEntry(ACTION_TOGGLE_CLIPBOARD, getClipBoardImage(), JDLocale.L("plugins.trayicon.popup.menu.toggleClipboard", "Zwischenablage an/aus"));
@@ -187,9 +188,9 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
 
     private ImageIcon getReconnectImage() {
         if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
-            return JDTheme.II("gui.images.reconnect_ok");
+            return JDTheme.II("gui.images.reconnect_on");
         } else {
-            return JDTheme.II("gui.images.reconnect_bad");
+            return JDTheme.II("gui.images.reconnect_off");
         }
     }
 
@@ -304,9 +305,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         case TrayIconPopup.ACTION_ADD:
             simplegui.actionPerformed(new ActionEvent(this, JDAction.ITEMS_ADD, null));
             break;
-        case TrayIconPopup.ACTION_CONFIG:
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
-            break;
+   
         case TrayIconPopup.ACTION_LOAD:
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_LOAD_DLC, null));
             break;
@@ -314,7 +313,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_LOG, null));
             break;
         case TrayIconPopup.ACTION_PAUSE:
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_PAUSE_DOWNLOADS, null));
+           JDUtilities.getController().pauseDownloads(true);
             break;
         case TrayIconPopup.ACTION_RECONNECT:
             simplegui.doReconnect();
@@ -331,7 +330,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             JDUtilities.getConfiguration().save();
             break;
         case TrayIconPopup.ACTION_UPDATE:
-            simplegui.fireUIEvent(new UIEvent(simplegui, UIEvent.UI_INTERACT_UPDATE));
+            new WebUpdate().doWebupdate(true);
             break;
         case TrayIconPopup.ACTION_EXIT:
             JDUtilities.getController().exit();

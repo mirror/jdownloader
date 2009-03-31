@@ -35,6 +35,7 @@ import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.Property;
 import jd.controlling.DistributeData;
+import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlListener;
 import jd.event.UIEvent;
 import jd.http.Encoding;
@@ -420,19 +421,20 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
             // Do Start Download
             else if (request.getRequestUrl().equals("/action/start")) {
-                JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_START_DOWNLOADS, null));
+                JDUtilities.getController().startDownloads();
+              
                 response.addContent("Downloads started");
             }
 
             // Do Pause Download
             else if (request.getRequestUrl().equals("/action/pause")) {
-                JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_PAUSE_DOWNLOADS, true));
+                JDUtilities.getController().pauseDownloads(true);
                 response.addContent("Downloads paused");
             }
 
             // Do Stop Download
             else if (request.getRequestUrl().equals("/action/stop")) {
-                JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_STOP_DOWNLOADS, null));
+                JDUtilities.getController().stopDownloads();
                 response.addContent("Downloads stopped");
             }
 
@@ -462,9 +464,14 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
-
-                JDUtilities.getController().uiEvent(new UIEvent(JDUtilities.getGUI(), UIEvent.UI_INTERACT_RECONNECT));
-
+                
+                if(JDUtilities.getController().stopDownloads()){
+                    Reconnecter.waitForNewIP(1);
+                    JDUtilities.getController().startDownloads();
+                }else{
+                    Reconnecter.waitForNewIP(1);
+                }
+              
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, tmp);
 
             }

@@ -29,11 +29,8 @@ import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
 import java.awt.dnd.DropTargetDragEvent;
-import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
-import java.awt.dnd.DropTargetListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -48,7 +45,6 @@ import java.text.DateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -77,6 +73,7 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
+import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.UIEvent;
 import jd.event.UIListener;
@@ -128,7 +125,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTitledSeparator;
 
-public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener, DropTargetListener {
+public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
 
     /**
      * Toggled das MenuItem fuer die Ansicht des Log Fensters
@@ -480,8 +477,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     // private JDAction actionConfig;
 
-    private JDAction actionDnD;
-
     private JDAction actionExit;
 
     private JDAction actionRestart;
@@ -535,8 +530,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     // public JButton btnStartStop;
     // private JDAction doReconnect;
-    Dropper dragNDrop;
-
     /**
      * Das Hauptfenster
      */
@@ -633,8 +626,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         frame.setExtendedState(guiConfig.getIntegerProperty("MAXIMIZED_STATE_OF_" + frame.getName(), JFrame.NORMAL));
         frame.setVisible(true);
         // DND
-        dragNDrop = new Dropper();
-        dragNDrop.addUIListener(this);
+
         ClipboardHandler.getClipboard();/*
                                          * hier wird aktuell der clipboard
                                          * handler aktiviert
@@ -717,7 +709,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     ret = new File(ret.getAbsolutePath() + ".dlc");
                 }
                 if (ret != null) {
-                    fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_LINKS, ret));
+
+                    JDUtilities.getController().saveDLC(ret);
                 }
             }
             break;
@@ -728,7 +721,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             if (fc.showOpenDialog(frame) == JDFileChooser.APPROVE_OPTION) {
                 File ret2 = fc.getSelectedFile();
                 if (ret2 != null) {
-                    fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_LINKS, ret2));
+                    JDUtilities.getController().loadContainerFile(ret2);
+
                 }
             }
             break;
@@ -736,12 +730,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         case JDAction.APP_EXIT:
             frame.setVisible(false);
             frame.dispose();
-            fireUIEvent(new UIEvent(this, UIEvent.UI_EXIT));
+            JDUtilities.getController().exit();
+
             break;
         case JDAction.APP_RESTART:
             frame.setVisible(false);
             frame.dispose();
-            fireUIEvent(new UIEvent(this, UIEvent.UI_RESTART));
+            JDUtilities.getController().restart();
             break;
         case JDAction.APP_LOG:
             logDialog.setVisible(!logDialog.isVisible());
@@ -799,9 +794,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 JDUtilities.getController().removeCompletedDownloadLinks();
             }
             break;
-        case JDAction.ITEMS_DND:
-            toggleDnD();
-            break;
+
         case JDAction.ABOUT:
             JDAboutDialog.showDialog();
             break;
@@ -816,7 +809,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
             String data = LinkInputDialog.showDialog(frame, cb.trim());
             if (data != null && data.length() > 0) {
-                fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, data));
+
+                JDUtilities.getController().distributeLinks(data);
             }
             break;
         case JDAction.HELP:
@@ -862,8 +856,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         logger.info("add to grabber");
         linkGrabber.addLinks(linkList);
         taskPane.switcher(lgTaskPane);
-        contentPanel.display(linkGrabber);
-        dragNDrop.setText(JDLocale.L("gui.droptarget.grabbed", "Grabbed:") + " " + linkList.length + " (" + links.size() + ")");
+
     }
 
     public TaskPane getTaskPane() {
@@ -1269,16 +1262,31 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void doReconnect() {
+        boolean restart = false;
         if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
             int confirm = JOptionPane.showConfirmDialog(frame, JDLocale.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"), "", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
                 boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
-                fireUIEvent(new UIEvent(this, UIEvent.UI_INTERACT_RECONNECT));
+
+                restart = JDUtilities.getController().stopDownloads();
+                if (Reconnecter.waitForNewIP(1)) {
+                    showMessageDialog(JDLocale.L("gui.reconnect.success", "Reconnect erfolgreich"));
+                } else {
+                    showMessageDialog(JDLocale.L("gui.reconnect.failed", "Reconnect fehlgeschlagen"));
+                }
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, tmp);
             }
         } else {
-            fireUIEvent(new UIEvent(this, UIEvent.UI_INTERACT_RECONNECT));
+            restart = JDUtilities.getController().stopDownloads();
+            if (Reconnecter.waitForNewIP(1)) {
+                showMessageDialog(JDLocale.L("gui.reconnect.success", "Reconnect erfolgreich"));
+            } else {
+                showMessageDialog(JDLocale.L("gui.reconnect.failed", "Reconnect fehlgeschlagen"));
+            }
+        }
+        if (restart) {
+            JDUtilities.getController().startDownloads();
         }
     }
 
@@ -1292,8 +1300,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public String getCaptchaCodeFromUser(final Plugin plugin, final File captchaAddress, final String def) {
         final Object lock = new Object();
-        GuiRunnable run;
-        EventQueue.invokeLater(run = new GuiRunnable() {
+        GuiRunnable run = new GuiRunnable() {
             private static final long serialVersionUID = 8726498576488124702L;
 
             public void run() {
@@ -1303,21 +1310,53 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     lock.notify();
                 }
             }
-        });
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            run.run();
+        } else {
+            EventQueue.invokeLater(run);
 
-        synchronized (lock) {
-            try {
-                lock.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            synchronized (lock) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
         return ((CaptchaDialog) run.get("dialog")).getCaptchaText();
     }
 
     public String getInputFromUser(final String message, final String def) {
-        InputDialog inputDialog = new InputDialog(frame, message, def);
-        return inputDialog.getInputText();
+
+        final Object lock = new Object();
+        GuiRunnable run = new GuiRunnable() {
+            private static final long serialVersionUID = 8726498576488124702L;
+
+            public void run() {
+                InputDialog inputDialog = new InputDialog(frame, message, def);
+
+                put("dialog", inputDialog.getInputText());
+                synchronized (lock) {
+                    lock.notify();
+                }
+            }
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            run.run();
+        } else {
+            EventQueue.invokeLater(run);
+
+            synchronized (lock) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return (String) run.get("dialog");
+
     }
 
     // private String getClipBoardImage() {
@@ -1369,7 +1408,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // "action.add", JDAction.ITEMS_ADD);
         actionRemoveLinks = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.links", JDAction.ITEMS_REMOVE_LINKS);
         actionRemovePackages = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.packages", JDAction.ITEMS_REMOVE_PACKAGES);
-        actionDnD = new JDAction(this, JDTheme.V("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
         actionOptionalConfig = new JDAction(this, JDTheme.V("gui.images.config.packagemanager"), "action.optconfig", JDAction.APP_OPEN_OPT_CONFIG);
         actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
         actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
@@ -1433,7 +1471,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         // menExtra.add(JDMenu.createMenuItem(actionConfig));
         // menExtra.addSeparator();
-        menExtra.add(JDMenu.createMenuItem(actionDnD));
 
         menHelp.add(menViewLog);
         menHelp.add(createBackup);
@@ -1494,15 +1531,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         synchronized (uiListener) {
             uiListener.remove(listener);
         }
-    }
-
-    /**
-     * Setzt den text im DropTargets
-     * 
-     * @param text
-     */
-    public void setDropTargetText(String text) {
-        dragNDrop.setText(text);
     }
 
     public void localize() {
@@ -1576,68 +1604,282 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     // statusBar.setSpinnerSpeed(speed);
     // }
     public boolean showConfirmDialog(String message) {
-        // logger.info("ConfirmDialog");
-        Object[] options = { JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No") };
-        int n = JOptionPane.showOptionDialog(frame, message, "", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-        return (n == 0);
+        return showConfirmDialog(message, "");
+
     }
 
-    public boolean showConfirmDialog(String message, String title) {
-        // logger.info("ConfirmDialog");
-        Object[] options = { JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No") };
-        int n = JOptionPane.showOptionDialog(frame, message, title, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-        return (n == 0);
-    }
+    public boolean showConfirmDialog(final String message, final String title) {
+        final Object lock = new Object();
+        GuiRunnable run = new GuiRunnable() {
+            private static final long serialVersionUID = 8726498576488124702L;
 
-    public boolean showCountdownConfirmDialog(String string, int sec) {
-        // logger.info("CountdownConfirmDialog");
-        return CountdownConfirmDialog.showCountdownConfirmDialog(frame, string, sec);
-    }
+            public void run() {
+                Object[] options = { JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No") };
+                int n = JOptionPane.showOptionDialog(frame, message, title, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
 
-    public int showHelpMessage(String title, String message, boolean toHTML, String url, String helpMsg, int sec) {
-        // logger.info("HelpMessageDialog");
-        if (toHTML) message = "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + message + "</font>";
-        try {
-            return JHelpDialog.showHelpMessage(frame, title, message, new URL(url), helpMsg, sec);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+                put("dialog", n == 0);
+                synchronized (lock) {
+                    lock.notify();
+                }
+            }
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            run.run();
+        } else {
+            EventQueue.invokeLater(run);
+
+            synchronized (lock) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         }
-        return -1;
+        return (Boolean) run.get("dialog");
     }
 
-    public boolean showHTMLDialog(String title, String htmlQuestion) {
-        // logger.info("HTMLDialog");
-        return HTMLDialog.showDialog(getFrame(), title, htmlQuestion);
+    public boolean showCountdownConfirmDialog(final String string, final int sec) {
+        final Object lock = new Object();
+        GuiRunnable run;
+        EventQueue.invokeLater(run = new GuiRunnable() {
+            private static final long serialVersionUID = 8726498576488124702L;
+
+            public void run() {
+
+                put("dialog", CountdownConfirmDialog.showCountdownConfirmDialog(frame, string, sec));
+                synchronized (lock) {
+                    lock.notify();
+                }
+            }
+        });
+
+        synchronized (lock) {
+            try {
+                lock.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        return (Boolean) run.get("dialog");
+
     }
 
-    public void showMessageDialog(String string) {
+    public int showHelpMessage(final String title, String message, final boolean toHTML, final String url, final String helpMsg, final int sec) {
+        // logger.info("HelpMessageDialog");
+
+        final String msg = toHTML ? "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + message + "</font>" : message;
+
+        final Object lock = new Object();
+        GuiRunnable run;
+        EventQueue.invokeLater(run = new GuiRunnable() {
+            private static final long serialVersionUID = 8726498576488124702L;
+
+            public void run() {
+                try {
+                    put("dialog", JHelpDialog.showHelpMessage(frame, title, msg, new URL(url), helpMsg, sec));
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                    put("dialog", -1);
+                }
+                synchronized (lock) {
+                    lock.notify();
+                }
+            }
+        });
+
+        synchronized (lock) {
+            try {
+                lock.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        return (Integer) run.get("dialog");
+
+    }
+
+    public boolean showHTMLDialog(final String title, final String htmlQuestion) {
+        final Object lock = new Object();
+        GuiRunnable run;
+        EventQueue.invokeLater(run = new GuiRunnable() {
+            private static final long serialVersionUID = 8726498576488124702L;
+
+            public void run() {
+
+                put("dialog", HTMLDialog.showDialog(getFrame(), title, htmlQuestion));
+                synchronized (lock) {
+                    lock.notify();
+                }
+            }
+        });
+
+        synchronized (lock) {
+            try {
+                lock.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        return (Boolean) run.get("dialog");
+
+    }
+
+    public void showMessageDialog(final String string) {
         // logger.info("MessageDialog");
-        JOptionPane.showMessageDialog(frame, string);
+
+        final Object lock = new Object();
+        GuiRunnable run = new GuiRunnable() {
+            private static final long serialVersionUID = 8726498576488124702L;
+
+            public void run() {
+
+                JOptionPane.showMessageDialog(frame, string);
+                synchronized (lock) {
+                    lock.notify();
+                }
+            }
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            run.run();
+        } else {
+            EventQueue.invokeLater(run);
+
+            synchronized (lock) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
     }
 
-    public String showTextAreaDialog(String title, String question, String def) {
-        // logger.info("TextAreaDialog");
-        return TextAreaDialog.showDialog(getFrame(), title, question, def);
+    public String showTextAreaDialog(final String title, final String question, final String def) {
+
+        final Object lock = new Object();
+        GuiRunnable run = new GuiRunnable() {
+            private static final long serialVersionUID = 8726498576488124702L;
+
+            public void run() {
+
+                put("dialog", TextAreaDialog.showDialog(getFrame(), title, question, def));
+                synchronized (lock) {
+                    lock.notify();
+                }
+            }
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            run.run();
+        } else {
+            EventQueue.invokeLater(run);
+
+            synchronized (lock) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return (String) run.get("dialog");
+
     }
 
-    public String showUserInputDialog(String string) {
-        // logger.info("UserInputDialog");
-        return JOptionPane.showInputDialog(frame, string);
+    public String showUserInputDialog(final String string) {
+
+        return showUserInputDialog(string, "");
     }
 
-    public String showUserInputDialog(String string, String def) {
-        // logger.info("UserInputDialog");
-        return JOptionPane.showInputDialog(frame, string, def);
+    public String showUserInputDialog(final String string, final String def) {
+        final Object lock = new Object();
+        GuiRunnable run = new GuiRunnable() {
+            private static final long serialVersionUID = 8726498576488124702L;
+
+            public void run() {
+
+                put("dialog", JOptionPane.showInputDialog(frame, string, def));
+                synchronized (lock) {
+                    lock.notify();
+                }
+            }
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            run.run();
+        } else {
+            EventQueue.invokeLater(run);
+
+            synchronized (lock) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return (String) run.get("dialog");
+
     }
 
-    public String[] showTextAreaDialog(String title, String questionOne, String questionTwo, String defaultOne, String defaultTwo) {
-        // logger.info("TextAreaDialog");
-        return TextAreaDialog.showDialog(getFrame(), title, questionOne, questionTwo, defaultOne, defaultTwo);
+    public String[] showTextAreaDialog(final String title, final String questionOne, final String questionTwo, final String defaultOne, final String defaultTwo) {
+        final Object lock = new Object();
+        GuiRunnable run = new GuiRunnable() {
+            private static final long serialVersionUID = 8726498576488124702L;
+
+            public void run() {
+
+                put("dialog", TextAreaDialog.showDialog(getFrame(), title, questionOne, questionTwo, defaultOne, defaultTwo));
+                synchronized (lock) {
+                    lock.notify();
+                }
+            }
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            run.run();
+        } else {
+            EventQueue.invokeLater(run);
+
+            synchronized (lock) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return (String[]) run.get("dialog");
+
     }
 
-    public String[] showTwoTextFieldDialog(String title, String questionOne, String questionTwo, String defaultOne, String defaultTwo) {
-        // logger.info("TextFieldDialog");
-        return TwoTextFieldDialog.showDialog(getFrame(), title, questionOne, questionTwo, defaultOne, defaultTwo);
+    public String[] showTwoTextFieldDialog(final String title, final String questionOne, final String questionTwo, final String defaultOne, final String defaultTwo) {
+        final Object lock = new Object();
+        GuiRunnable run = new GuiRunnable() {
+            private static final long serialVersionUID = 8726498576488124702L;
+
+            public void run() {
+
+                put("dialog", TwoTextFieldDialog.showDialog(getFrame(), title, questionOne, questionTwo, defaultOne, defaultTwo));
+                synchronized (lock) {
+                    lock.notify();
+                }
+            }
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            run.run();
+        } else {
+            EventQueue.invokeLater(run);
+
+            synchronized (lock) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return (String[]) run.get("dialog");
+
     }
 
     public static void showConfigDialog(Frame parent, ConfigContainer container) {
@@ -1661,27 +1903,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         pop.setVisible(true);
     }
 
-    public void toggleDnD() {
-        if (dragNDrop.isVisible()) {
-            dragNDrop.setVisible(false);
-        } else {
-            dragNDrop.setVisible(true);
-            dragNDrop.setText(JDLocale.L("gui.droptarget.label", "Ziehe Links auf mich!"));
-        }
-    }
-
-    public void uiEvent(UIEvent uiEvent) {
-        switch (uiEvent.getID()) {
-        case UIEvent.UI_DRAG_AND_DROP:
-            if (uiEvent.getParameter() instanceof String) {
-                fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, uiEvent.getParameter()));
-            } else {
-                fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_LINKS, uiEvent.getParameter()));
-            }
-            break;
-        }
-    }
-
     public void windowActivated(WindowEvent e) {
     }
 
@@ -1701,7 +1922,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     SimpleGUI.saveLastLocation(e.getComponent(), null);
                     SimpleGUI.saveLastDimension(e.getComponent(), null);
                     guiConfig.save();
-                    fireUIEvent(new UIEvent(this, UIEvent.UI_EXIT, null));
+                    JDUtilities.getController().exit();
+
                 }
             }
         } else {
@@ -1806,27 +2028,28 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void dragOver(DropTargetDragEvent dtde) {
     }
 
-    @SuppressWarnings("unchecked")
-    public void drop(DropTargetDropEvent dtde) {
-        logger.info("Drag: DROP " + dtde.getDropAction() + " : " + dtde.getSourceActions() + " - " + dtde.getSource());
-        try {
-            Transferable tr = dtde.getTransferable();
-            dtde.acceptDrop(dtde.getDropAction());
-            if (dtde.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-                String files = (String) tr.getTransferData(DataFlavor.stringFlavor);
-                fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, files));
-            } else if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                List list = (List) tr.getTransferData(DataFlavor.javaFileListFlavor);
-                for (int t = 0; t < list.size(); t++) {
-                    fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_LINKS, list.get(t)));
-                }
-            } else {
-                logger.info("Unsupported Drop-Type");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+    // @SuppressWarnings("unchecked")
+    // public void drop(DropTargetDropEvent dtde) {
+    // logger.info("Drag: DROP " + dtde.getDropAction() + " : " +
+    // dtde.getSourceActions() + " - " + dtde.getSource());
+    // try {
+    // Transferable tr = dtde.getTransferable();
+    // dtde.acceptDrop(dtde.getDropAction());
+    // if (dtde.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+    // String files = (String) tr.getTransferData(DataFlavor.stringFlavor);
+    // fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, files));
+    // } else if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+    // List list = (List) tr.getTransferData(DataFlavor.javaFileListFlavor);
+    // for (int t = 0; t < list.size(); t++) {
+    // fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_LINKS, list.get(t)));
+    // }
+    // } else {
+    // logger.info("Unsupported Drop-Type");
+    // }
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // }
+    // }
 
     public void dropActionChanged(DropTargetDragEvent dtde) {
     }

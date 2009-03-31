@@ -657,7 +657,8 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
             fp.setDownloadLinks(linkListHost);
             fpv2.setDownloadLinks(linkList);
         }
-        JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_PACKAGE_GRABBED, fp));
+        JDUtilities.getController().addPackage(fp);
+       
     }
 
     public void checkAlreadyinList(DownloadLink link) {

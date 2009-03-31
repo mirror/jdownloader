@@ -65,8 +65,10 @@ public class TaskPane extends JXPanel implements ActionListener {
     }
 
     public void switcher(TaskPanel src) {
-        if (src != null) lastSource = src;
-
+        if (src != null) {
+            lastSource = src;
+            src.broadcastEvent(new ActionEvent(src, TaskPanel.ACTION_TOGGLE, "Toggle"));
+        }
         for (TaskPanel p : panels) {
             if (p != lastSource) {
                 p.setSpecial(false);

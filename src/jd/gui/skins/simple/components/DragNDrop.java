@@ -93,25 +93,28 @@ public class DragNDrop extends JComponent implements DropTargetListener {
      */
     @SuppressWarnings("unchecked")
     public void drop(DropTargetDropEvent dtde) {
-        logger.info("Drag: DROP " + dtde.getDropAction() + " : " + dtde.getSourceActions() + " - " + dtde.getSource());
-        try {
-            Transferable tr = dtde.getTransferable();
-            dtde.acceptDrop(dtde.getDropAction());
-            if (dtde.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-                String files = (String) tr.getTransferData(DataFlavor.stringFlavor);
-                fireUIEvent(new UIEvent(this, UIEvent.UI_DRAG_AND_DROP, files));
-            } else if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                List list = (List) tr.getTransferData(DataFlavor.javaFileListFlavor);
-                for (int t = 0; t < list.size(); t++) {
-                    fireUIEvent(new UIEvent(this, UIEvent.UI_DRAG_AND_DROP, list.get(t)));
-                }
-            } else {
-                logger.info("Unsupported Drop-Type");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        repaint();
+        /**
+         * TODO
+         */
+//        logger.info("Drag: DROP " + dtde.getDropAction() + " : " + dtde.getSourceActions() + " - " + dtde.getSource());
+//        try {
+//            Transferable tr = dtde.getTransferable();
+//            dtde.acceptDrop(dtde.getDropAction());
+//            if (dtde.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+//                String files = (String) tr.getTransferData(DataFlavor.stringFlavor);
+//                fireUIEvent(new UIEvent(this, UIEvent.UI_DRAG_AND_DROP, files));
+//            } else if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+//                List list = (List) tr.getTransferData(DataFlavor.javaFileListFlavor);
+//                for (int t = 0; t < list.size(); t++) {
+//                    fireUIEvent(new UIEvent(this, UIEvent.UI_DRAG_AND_DROP, list.get(t)));
+//                }
+//            } else {
+//                logger.info("Unsupported Drop-Type");
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        repaint();
     }
 
     public void dropActionChanged(DropTargetDragEvent dtde) {

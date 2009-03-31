@@ -367,7 +367,7 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
                 return false;
             }
 
-        }, DownloadTreeTable.getFolderPainter()));
+        }, DownloadTreeTable.getFolderPainter(this)));
 
     }
 

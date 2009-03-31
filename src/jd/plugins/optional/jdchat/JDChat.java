@@ -1401,6 +1401,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 top.setText(msg);
+
             }
         });
 

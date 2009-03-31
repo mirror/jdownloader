@@ -23,14 +23,14 @@ public class OptionalMenuMenu extends JDMenu {
         this.actionOptionalConfig = actionOptionalConfig;
     }
 
-    public static JMenu getMenu(String l, JDAction actionOptionalConfig) {
-        if (menu != null) throw new IllegalStateException("Singleton OptionalMenuMenu has already be instanced");
+    public static OptionalMenuMenu getMenu(String l, JDAction actionOptionalConfig) {
+        if (menu != null)return menu;
         menu = new OptionalMenuMenu(l, actionOptionalConfig);
         menu.createOptionalPluginsMenuEntries();
         return menu;
     }
 
-    private void createOptionalPluginsMenuEntries() {
+    public void createOptionalPluginsMenuEntries() {
         Component temp = (getComponentCount() != 0) ? getComponent(0) : createMenuItem(this.actionOptionalConfig);
         removeAll();
         add(temp);

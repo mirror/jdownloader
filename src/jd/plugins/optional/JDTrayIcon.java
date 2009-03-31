@@ -52,7 +52,6 @@ import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
-import jd.event.UIEvent;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.JDImage;
@@ -61,6 +60,7 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.WebUpdate;
 
 public class JDTrayIcon extends PluginOptional implements WindowListener, MouseListener {
     public JDTrayIcon(PluginWrapper wrapper) {
@@ -113,7 +113,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
     private JCheckBoxMenuItem clipboard;
     private JMenuItem configuration;
     private int counter = 0;
-    private JMenuItem dnd;
+
     private JMenuItem exit;
     private TrayInfo trayInfo;
     private JPopupMenu popupMenu;
@@ -125,7 +125,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
     private JMenuItem speed5;
     private JMenu speeds;
     private JMenuItem startstop;
-  
+
     private JLabel toolLabel;
     private JWindow toolParent;
     private TrayIcon trayIcon;
@@ -145,38 +145,37 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
             JDUtilities.getController().toggleStartStop();
         } else if (e.getSource() == clipboard) {
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
-        } else if (e.getSource() == dnd) {
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.ITEMS_DND, null));
+
         } else if (e.getSource() == update) {
-            simplegui.fireUIEvent(new UIEvent(simplegui, UIEvent.UI_INTERACT_UPDATE));
-       } else if (e.getSource() == reconnect) {
+            new WebUpdate().doWebupdate(true);
+        } else if (e.getSource() == reconnect) {
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
             JDUtilities.getConfiguration().save();
         } else if (e.getSource() == speed1) {
             int speed = getPluginConfig().getIntegerProperty("SPEED1", 100);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
-//            simplegui.setSpeedStatusBar(speed);
+            // simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed2) {
             int speed = getPluginConfig().getIntegerProperty("SPEED2", 200);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
-//            simplegui.setSpeedStatusBar(speed);
+            // simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed3) {
             int speed = getPluginConfig().getIntegerProperty("SPEED3", 300);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
-//            simplegui.setSpeedStatusBar(speed);
+            // simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed4) {
             int speed = getPluginConfig().getIntegerProperty("SPEED4", 400);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
-//            simplegui.setSpeedStatusBar(speed);
+            // simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed5) {
             int speed = getPluginConfig().getIntegerProperty("SPEED5", 500);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
-//            simplegui.setSpeedStatusBar(speed);
+            // simplegui.setSpeedStatusBar(speed);
         }
     }
 
@@ -274,7 +273,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
         configuration = createMenuItem(JDLocale.L("plugins.optional.trayIcon.configuration", "Configuration"));
         popupMenu.addSeparator();
         startstop = createMenuItem(JDLocale.L("plugins.optional.trayIcon.startorstop", "Start/Stop"));
-       
+
         speeds = new JMenu(JDLocale.L("plugins.optional.trayIcon.setspeeds", "Speeds"));
         popupMenu.add(speeds);
 
@@ -305,7 +304,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
 
         popupMenu.addSeparator();
 
-        dnd = createMenuItem(JDLocale.L("plugins.optional.trayIcon.dnd", "Drag'n Drop"));
+   
 
         clipboard = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.trayIcon.clipboard", "Clipboard"), false);
         popupMenu.add(clipboard);

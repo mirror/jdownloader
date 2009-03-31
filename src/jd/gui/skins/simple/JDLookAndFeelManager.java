@@ -88,10 +88,10 @@ public class JDLookAndFeelManager implements Serializable {
                     String laf = new Regex(e.getName(), "org/jvnet/substance/skin/(.*?)LookAndFeel\\.class").getMatch(0);
                     if (laf != null) {
 
-                        UIManager.installLookAndFeel(laf.replace("Substance", "NEW: "), "org.jvnet.substance.skin." + laf + "LookAndFeel");
+                        UIManager.installLookAndFeel(laf, "org.jvnet.substance.skin." + laf + "LookAndFeel");
                     }
                 }
-
+           
             }
 
         } catch (Exception e) {

@@ -47,7 +47,7 @@ public class JDPremiumCollector extends PluginOptional {
     private static final String PROPERTY_LOGIN_USER = "PROPERTY_LOGIN_USER";
     private static final String PROPERTY_LOGIN_PASS = "PROPERTY_LOGIN_PASS";
 
-    private static final String PROPERTY_FETCHONSTARTUP = "PROPERTY_FETCHONSTARTUP";
+//    private static final String PROPERTY_FETCHONSTARTUP = "PROPERTY_FETCHONSTARTUP";
     private static final String PROPERTY_ACCOUNTS = "PROPERTY_ACCOUNTS";
     private static final String PROPERTY_ACCOUNTS2 = "PROPERTY_ACCOUNTS2";
     private static final String PROPERTY_OVERWRITE = "PROPERTY_OVERWRITE";
@@ -66,6 +66,7 @@ public class JDPremiumCollector extends PluginOptional {
             post += "&apiuser=" + subConfig.getStringProperty(PROPERTY_LOGIN_USER);
             post += "&apipassword=" + subConfig.getStringProperty(PROPERTY_LOGIN_PASS);
             br.postPage(subConfig.getStringProperty(PROPERTY_API_URL), post);
+          
         } catch (IOException e1) {
             e1.printStackTrace();
             JOptionPane.showMessageDialog(guiFrame, JDLocale.L("plugins.optional.premiumcollector.error.url", "Probably wrong URL! See log for more infos!"), JDLocale.L("plugins.optional.premiumcollector.error", "Error!"), JOptionPane.ERROR_MESSAGE);
@@ -155,6 +156,7 @@ public class JDPremiumCollector extends PluginOptional {
                         accountsFound += oldaccounts.size();
                     }
                 }
+
                 logger.info("totally : " + accountsFound + " accounts inserted");
             }
 
@@ -188,9 +190,9 @@ public class JDPremiumCollector extends PluginOptional {
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             guiFrame = SimpleGUI.CURRENTGUI.getFrame();
-            if (subConfig.getBooleanProperty(PROPERTY_FETCHONSTARTUP, false)) {
+//            if (subConfig.getBooleanProperty(PROPERTY_FETCHONSTARTUP, false)) {
                 fetchAccounts();
-            }
+//            }
             return;
         }
         super.controlEvent(event);
@@ -201,7 +203,7 @@ public class JDPremiumCollector extends PluginOptional {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_LOGIN_USER, JDLocale.L("plugins.optional.premiumcollector.username", "Username")).setDefaultValue("YOUR_USER"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_LOGIN_PASS, JDLocale.L("plugins.optional.premiumcollector.password", "Password")).setDefaultValue("YOUR_PASS"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_FETCHONSTARTUP, JDLocale.L("plugins.optional.premiumcollector.autoFetch", "Automatically fetch accounts on start-up")).setDefaultValue(true));
+//        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_FETCHONSTARTUP, JDLocale.L("plugins.optional.premiumcollector.autoFetch", "Automatically fetch accounts on start-up")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_ACCOUNTS, JDLocale.L("plugins.optional.premiumcollector.onlyValid", "Accept only valid and non-expired accounts")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_ACCOUNTS2, JDLocale.L("plugins.optional.premiumcollector.onlyValid2", "Remove invalid and expired accounts")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_OVERWRITE, JDLocale.L("plugins.optional.premiumcollector.overwrite", "Automatically overwrite accounts")).setDefaultValue(true));

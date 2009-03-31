@@ -32,13 +32,11 @@ import jd.Main;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
-import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.nutils.OSDetector;
@@ -54,7 +52,6 @@ import jd.update.FileUpdate;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.WebUpdate;
 
 /**
  * Im Controller wird das ganze App gesteuert. Evebnts werden deligiert.
@@ -352,8 +349,7 @@ public class JDController implements ControlListener, UIListener {
             for (int j = 0; j < links.get(i).size(); j++) {
                 links.get(i).get(j).setFilePackage(fp);
             }
-
-            JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_PACKAGE_GRABBED, fp));
+            this.addPackage(fp);
 
             try {
                 Thread.sleep(200);
@@ -1737,71 +1733,70 @@ public class JDController implements ControlListener, UIListener {
      */
     public void uiEvent(UIEvent uiEvent) {
 
-        switch (uiEvent.getActionID()) {
-        case UIEvent.UI_PAUSE_DOWNLOADS:
-
-            pauseDownloads((Boolean) uiEvent.getParameter());
-            break;
-        case UIEvent.UI_START_DOWNLOADS:
-            startDownloads();
-            break;
-        case UIEvent.UI_STOP_DOWNLOADS:
-            stopDownloads();
-            break;
-        case UIEvent.UI_LINKS_TO_PROCESS:
-            String data = (String) uiEvent.getParameter();
-            distributeData = new DistributeData(data);
-            distributeData.addControlListener(this);
-            distributeData.start();
-            break;
-        case UIEvent.UI_PACKAGE_GRABBED:
-            FilePackage fp;
-            try {
-                fp = (FilePackage) uiEvent.getParameter();
-            } catch (Exception e) {
-                e.printStackTrace();
-                return;
-            }
-            if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(LinkGrabber.PROPERTY_POSITION, 1) == 0 && uiEvent.getSource() instanceof LinkGrabber) {
-                addPackageAt(fp, 0);
-            } else {
-                addPackage(fp);
-            }
-            this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-            break;
-        case UIEvent.UI_SAVE_LINKS:
-            File file = (File) uiEvent.getParameter();
-            saveDLC(file);
-            break;
-        case UIEvent.UI_LOAD_LINKS:
-            file = (File) uiEvent.getParameter();
-            loadContainerFile(file);
-            break;
-        case UIEvent.UI_EXIT:
-            exit();
-            break;
-        case UIEvent.UI_RESTART:
-            restart();
-            break;
-        case UIEvent.UI_UPDATED_LINKLIST:
-            break;
-        case UIEvent.UI_INTERACT_RECONNECT:
-            if (getRunningDownloadNum() > 0) {
-                logger.info("Es laufen noch Downloads. Breche zum reconnect Downloads ab!");
-                stopDownloads();
-            }
-
-            if (Reconnecter.waitForNewIP(1)) {
-                uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.success", "Reconnect erfolgreich"));
-            } else {
-                uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.failed", "Reconnect fehlgeschlagen"));
-            }
-
-            break;
-        case UIEvent.UI_INTERACT_UPDATE:
-            new WebUpdate().doWebupdate(true);
-            break;
-        }
+        // case UIEvent.UI_LINKS_TO_PROCESS:
+        // String data = (String) uiEvent.getParameter();
+        // distributeData = new DistributeData(data);
+        // distributeData.addControlListener(this);
+        // distributeData.start();
+        // break;
+        // case UIEvent.UI_PACKAGE_GRABBED:
+        // FilePackage fp;
+        // try {
+        // fp = (FilePackage) uiEvent.getParameter();
+        // } catch (Exception e) {
+        // e.printStackTrace();
+        // return;
+        // }
+        // /**
+        // * TODO
+        // */
+        // // if
+        // (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty
+        // (LinkGrabber.PROPERTY_POSITION, 1) == 0 && uiEvent.getSource()
+        // instanceof LinkGrabber) {
+        // // addPackageAt(fp, 0);
+        // // } else {
+        // addPackage(fp);
+        // // }
+        // this.fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
+        // break;
+        // case UIEvent.UI_SAVE_LINKS:
+        // File file = (File) uiEvent.getParameter();
+        // saveDLC(file);
+        // break;
+        // case UIEvent.UI_LOAD_LINKS:
+        // file = (File) uiEvent.getParameter();
+        // loadContainerFile(file);
+        // break;
+        // case UIEvent.UI_EXIT:
+        // exit();
+        // break;
+        // case UIEvent.UI_RESTART:
+        // restart();
+        // break;
+        // case UIEvent.UI_UPDATED_LINKLIST:
+        // break;
+        // case UIEvent.UI_INTERACT_RECONNECT:
+        // if (getRunningDownloadNum() > 0) {
+        // logger.info(
+        // "Es laufen noch Downloads. Breche zum reconnect Downloads ab!");
+        // stopDownloads();
+        // }
+        //
+        // if (Reconnecter.waitForNewIP(1)) {
+        // uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.success",
+        // "Reconnect erfolgreich"));
+        // } else {
+        // uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.failed",
+        // "Reconnect fehlgeschlagen"));
+        // }
+        //
+        // break;
+        // case UIEvent.UI_INTERACT_UPDATE:
+        // new WebUpdate().doWebupdate(true);
+        // break;
+        // }
     }
 
     /**
@@ -1904,5 +1899,13 @@ public class JDController implements ControlListener, UIListener {
             e.printStackTrace();
         }
         return ret;
+    }
+
+    public void distributeLinks(String data) {
+      
+         distributeData = new DistributeData(data);
+         distributeData.addControlListener(this);
+         distributeData.start();
+        
     }
 }

@@ -27,73 +27,15 @@ public class UIEvent extends AWTEvent {
      */
     private static final long serialVersionUID = -5178146758475854235L;
 
-    /**
-     * DragAndDrop Event
-     */
-    public static final int UI_DRAG_AND_DROP = 12;
-    /**
-     * Die Anwendung soll geschlossen werden
-     */
-    public static final int UI_EXIT = 11;
-    /**
-     * Die Anwendung soll neugestartet werden
-     */
-    public static final int UI_RESTART = 111;
-    /**
-     * Ein Reconnect soll gemacht werden
-     */
-    public static final int UI_INTERACT_RECONNECT = 10;
-    /**
-     * Die Konfiguration soll gespeichtert werden
-     */
-    // public static final int UI_SAVE_CONFIG = 7;
-    /**
-     * Ein Update soll durchgeführt werden
-     */
-    public static final int UI_INTERACT_UPDATE = 9;
-    /**
-     * Es sollen Daten überprüft und ggf als DownloadLinks hinzugefügt werden
-     */
-    public static final int UI_LINKS_TO_PROCESS = 6;
-    /**
-     * Alle Links sollen geladen werden
-     */
-    public static final int UI_LOAD_LINKS = 4;
-    /**
-     * Der Linkgrabber hat Links zurückgegeben
-     */
-    public static final int UI_PACKAGE_GRABBED = 14;
-    /**
-     * Eine Containerdatei soll geladen werden
-     */
-    // public static final int UI_LOAD_CONTAINER = 15;
-    public static final int UI_PAUSE_DOWNLOADS = 16;
-    /**
-     * Alle Links sollen gespeichert werden
-     */
-    public static final int UI_SAVE_LINKS = 5;
-    /**
-     * Der Download sol gestartet werden
-     */
-    public static final int UI_START_DOWNLOADS = 2;
-    /**
-     * Der Download soll angehalten werden
-     */
-    public static final int UI_STOP_DOWNLOADS = 3;
-    /**
-     * Die DownloadLinks wurden verändert (zB in der Reihenfolge)
-     */
-    public static final int UI_UPDATED_LINKLIST = 1;
+
     private int actionID;
 
     private Object parameter;
-    private UIInterface uiInterface;
 
-    public UIEvent(Object uiInterface, int actionID, Object parameter) {
-        super(uiInterface, actionID);
-        if (uiInterface instanceof UIInterface) {
-            this.uiInterface = (UIInterface) uiInterface;
-        }
+
+    public UIEvent(Object source,int actionID, Object parameter) {
+        super(source,actionID);
+      
         this.actionID = actionID;
         this.parameter = parameter;
     }
@@ -110,8 +52,6 @@ public class UIEvent extends AWTEvent {
         return parameter;
     }
 
-    public UIInterface getUiInterface() {
-        return uiInterface;
-    }
+ 
 
 }

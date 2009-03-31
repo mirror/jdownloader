@@ -26,6 +26,7 @@ public class JDImage {
     public static HashMap<String, BufferedImage> imagesCache = new HashMap<String, BufferedImage>();
 
     public static ImageIcon iconToImage(Icon icon) {
+        if(icon==null)return null;
         if (icon instanceof ImageIcon && false) {
             return ((ImageIcon) icon);
         } else {
