@@ -13,12 +13,10 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-import org.jdesktop.swingx.painter.Painter;
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
-import org.jdesktop.swingx.renderer.PainterAware;
 
-public class LinkGrabberV2TreeTableRenderer extends DefaultTableRenderer implements PainterAware {
+public class LinkGrabberV2TreeTableRenderer extends DefaultTableRenderer {
 
     private static final long serialVersionUID = -3912572910439565199L;
 
@@ -34,13 +32,8 @@ public class LinkGrabberV2TreeTableRenderer extends DefaultTableRenderer impleme
 
     private ImageIcon icon_fp_open;
 
-    private ImageIcon icon_link;
-
     private StringBuilder sb = new StringBuilder();
-
     private Border leftGap;
-
-    private Painter painter;
 
     private String strOnline;
     private String strOffline;
@@ -69,14 +62,11 @@ public class LinkGrabberV2TreeTableRenderer extends DefaultTableRenderer impleme
     }
 
     private void initIcons() {
-        icon_link = JDTheme.II("gui.images.link", 16, 16);
-
         icon_fp_open = JDTheme.II("gui.images.package_closed", 16, 16);
-icon_fp_error=JDTheme.II("gui.images.package_error", 16, 16);
+        icon_fp_error = JDTheme.II("gui.images.package_error", 16, 16);
         icon_fp_closed = JDTheme.II("gui.images.package_opened", 16, 16);
         imgFinished = JDTheme.II("gui.images.selected", 16, 16);
         imgFailed = JDTheme.II("gui.images.unselected", 16, 16);
-
     }
 
     @Override
@@ -141,48 +131,24 @@ icon_fp_error=JDTheme.II("gui.images.package_error", 16, 16);
         case LinkGrabberV2TreeTableModel.COL_PACK_FILE:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             ((JRendererLabel) co).setText(fp.getName());
-            boolean failed=false;
-            for (DownloadLink dl : fp.getDownloadLinks()) {
-                if (dl.isAvailabilityChecked()) {
-                    if (!dl.isAvailable()||dl.getLinkStatus().isFailed()) {
-                        failed=true;
-                        break;
-                    } 
-                } 
-            }
-            if(failed){
+            if (fp.countFailedLinks(false) > 0) {
                 ((JRendererLabel) co).setIcon(icon_fp_error);
-                
-            }else{
+            } else {
                 ((JRendererLabel) co).setIcon(fp.getBooleanProperty(LinkGrabberV2TreeTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
-                   
             }
             ((JRendererLabel) co).setBorder(null);
             return co;
         case LinkGrabberV2TreeTableModel.COL_SIZE:
-            value = fp.getDownloadSize() > 0 ? JDUtilities.formatBytesToMB(fp.getDownloadSize()) : "~";
+            value = fp.getDownloadSize(false) > 0 ? JDUtilities.formatBytesToMB(fp.getDownloadSize(false)) : "~";
             break;
         case LinkGrabberV2TreeTableModel.COL_HOSTER:
             value = fp.getHoster();
             break;
         case LinkGrabberV2TreeTableModel.COL_STATUS:
-
-            int ok = 0;
-            int failedCount = 0;
-            int nc = 0;
-            for (DownloadLink dl : fp.getDownloadLinks()) {
-                if (dl.isAvailabilityChecked()) {
-                    if (dl.isAvailable()) {
-                        ok++;
-                    } else {
-                        failedCount++;
-                    }
-                } else {
-                    nc++;
-                }
-            }
+            int failedCount = fp.countFailedLinks(false);
+            int size = fp.size();
             if (failedCount > 0) {
-                value = JDLocale.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, ok + nc + failedCount));
+                value = JDLocale.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size));
             } else {
                 value = "";
             }
@@ -195,16 +161,6 @@ icon_fp_error=JDTheme.II("gui.images.package_error", 16, 16);
 
     private void clearSB() {
         sb.delete(0, sb.capacity() - 1);
-
-    }
-
-    public Painter getPainter() {
-        // TODO Auto-generated method stub
-        return painter;
-    }
-
-    public void setPainter(Painter painter) {
-        this.painter = painter;
 
     }
 

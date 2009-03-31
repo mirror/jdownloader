@@ -3,6 +3,7 @@ package jd.gui.skins.simple.components.Linkgrabber;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Point;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -82,14 +83,18 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
         addTreeExpansionListener(this);
         addMouseListener(this);
         addMouseMotionListener(this);
+        this.getTableHeader().addMouseListener(this);
         UIManager.put("Table.focusCellHighlightBorder", null);
         setHighlighters(new Highlighter[] {});
-        //setHighlighters(HighlighterFactory.createAlternateStriping(UIManager.getColor("Panel.background").brighter(), UIManager.getColor("Panel.background").darker()));
-        //new PainterHighlighter(HighlightPredicate.IS_FOLDER, DownloadTreeTable.getFolderPainter());
-         addPackageHighlighter();
+        // setHighlighters(HighlighterFactory.createAlternateStriping(UIManager.
+        // getColor("Panel.background").brighter(),
+        // UIManager.getColor("Panel.background").darker()));
+        // new PainterHighlighter(HighlightPredicate.IS_FOLDER,
+        // DownloadTreeTable.getFolderPainter());
+        addPackageHighlighter();
         addOfflineHighlighter();
         addOnlineHighlighter();
-      
+
         // addPackageOfflineHighlighter();
         addExistsHighlighter();
         addUncheckedHighlighter();
@@ -178,13 +183,29 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
         fp.setProperty(PROPERTY_EXPANDED, true);
     }
 
+    private int getRealcolumnAtPoint(int x) {
+        /*
+         * diese funktion gibt den echten columnindex zurück, da durch
+         * an/ausschalten dieser anders kann
+         */
+        int c = getColumnModel().getColumnIndexAtX(x);
+        if (c == -1) return -1;
+        return getColumnModel().getColumn(c).getModelIndex();
+    }
+
     public void mouseClicked(MouseEvent e) {
+        if (e.getSource() == this.getTableHeader()) {
+            int col = getRealcolumnAtPoint(e.getX());
+            LinkGrabberV2TreeTableAction test = new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.packagesort", "Paket sortieren"), LinkGrabberV2TreeTableAction.SORT_ALL, new Property("col", col));
+            test.actionPerformed(new ActionEvent(test, 0, ""));
+            return;
+        }
         Point point = e.getPoint();
         int row = rowAtPoint(point);
-        int col = columnAtPoint(point);
+        int col = getRealcolumnAtPoint(e.getX());
         if (getPathForRow(row) == null) { return; }
         Object obj = getPathForRow(row).getLastPathComponent();
-        if (col > 0) {
+        if (col > 1) {
             if (obj instanceof LinkGrabberV2FilePackage) {
                 linkgrabber.showFilePackageInfo((LinkGrabberV2FilePackage) obj);
             } else {
@@ -204,11 +225,13 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
     }
 
     public void mouseReleased(MouseEvent e) {
+        /* nicht auf headerclicks reagieren */
+        if (e.getSource() != this) return;
         TreePath path = getPathForLocation(e.getX(), e.getY());
         if (path == null) return;
-        int column = this.columnAtPoint(e.getPoint());
+        int column = getRealcolumnAtPoint(e.getX());
         if (path != null && path.getLastPathComponent() instanceof LinkGrabberV2FilePackage) {
-            if (column == 0) {
+            if (column == 1) {
                 if (e.getClickCount() >= neededclicks) {
                     LinkGrabberV2FilePackage fp = (LinkGrabberV2FilePackage) path.getLastPathComponent();
                     if (fp.getBooleanProperty(PROPERTY_EXPANDED, false)) {
@@ -222,9 +245,11 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
     }
 
     public void mousePressed(MouseEvent e) {
+        /* nicht auf headerclicks reagieren */
+        if (e.getSource() != this) return;
         Point point = e.getPoint();
         int row = rowAtPoint(point);
-        int col = columnAtPoint(point) + 1;
+        int col = getRealcolumnAtPoint(e.getX());
 
         if (!isRowSelected(row) && e.getButton() == MouseEvent.BUTTON3) {
             getTreeSelectionModel().clearSelection();
@@ -234,11 +259,19 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
 
             if (getPathForRow(row) == null) { return; }
             Vector<DownloadLink> alllinks = getAllSelectedDownloadLinks();
+            int links_enabled = 0;
+            for (DownloadLink next : alllinks) {
+                if (next.isEnabled()) {
+                    links_enabled++;
+                }
+            }
+            int links_disabled = alllinks.size() - links_enabled;
             Vector<LinkGrabberV2FilePackage> sfp = getSelectedFilePackages();
             Object obj = getPathForRow(row).getLastPathComponent();
             JPopupMenu popup = new JPopupMenu();
             if (obj instanceof LinkGrabberV2FilePackage || obj instanceof DownloadLink) {
                 popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.linkgrabberv2.lg.addall", "Add all packages"), LinkGrabberV2TreeTableAction.ADD_ALL)));
+                popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.linkgrabberv2.lg.rmoffline", "Remove all Offline"), LinkGrabberV2TreeTableAction.DELETE_OFFLINE)));
                 if (sfp.size() > 0) popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)") + " (" + sfp.size() + ")", LinkGrabberV2TreeTableAction.ADD_SELECTED)));
                 popup.add(new JSeparator());
             }
@@ -247,8 +280,8 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
                 popup.add(new JSeparator());
                 popup.add(buildpriomenu(alllinks));
                 popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + alllinks.size() + ")", LinkGrabberV2TreeTableAction.SET_PW, new Property("links", alllinks))));
-                popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern") + " (" + sfp.size() + ")", LinkGrabberV2TreeTableAction.PACKAGE_EDIT_DIR)));
-                if (col >= 1 && col <= 3) popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + this.getModel().getColumnName(col) + ")", LinkGrabberV2TreeTableAction.PACKAGE_SORT, new Property("col", col))));
+                popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern") + " (" + sfp.size() + ")", LinkGrabberV2TreeTableAction.EDIT_DIR)));
+                popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + this.getModel().getColumnName(col) + ")", LinkGrabberV2TreeTableAction.SORT, new Property("col", col))));
             }
             if (obj instanceof DownloadLink) {
                 popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.newpackage", "In neues Paket verschieben") + " (" + alllinks.size() + ")", LinkGrabberV2TreeTableAction.NEW_PACKAGE, new Property("links", alllinks))));
@@ -256,6 +289,17 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
                 popup.add(new JSeparator());
                 popup.add(buildpriomenu(alllinks));
                 popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + alllinks.size() + ")", LinkGrabberV2TreeTableAction.SET_PW, new Property("links", alllinks))));
+            }
+            if (obj instanceof LinkGrabberV2FilePackage || obj instanceof DownloadLink) {
+                popup.add(new JSeparator());
+                HashMap<String, Object> prop = new HashMap<String, Object>();
+                prop.put("links", alllinks);
+                prop.put("boolean", true);
+                if (links_disabled > 0) popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.enable", "aktivieren") + " (" + links_disabled + ")", LinkGrabberV2TreeTableAction.DE_ACTIVATE, new Property("infos", prop))));
+                prop = new HashMap<String, Object>();
+                prop.put("links", alllinks);
+                prop.put("boolean", false);
+                if (links_enabled > 0) popup.add(new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.disable", "deaktivieren") + " (" + links_enabled + ")", LinkGrabberV2TreeTableAction.DE_ACTIVATE, new Property("infos", prop))));
             }
             if (popup.getComponentCount() != 0) popup.show(this, point.x, point.y);
         }
@@ -269,7 +313,7 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
         HashMap<String, Object> prop = null;
         for (int i = 4; i >= -4; i--) {
             prop = new HashMap<String, Object>();
-            prop.put("downloadlinks", links);
+            prop.put("links", links);
             prop.put("prio", new Integer(i));
             prioPopup.add(tmp = new JMenuItem(new LinkGrabberV2TreeTableAction(linkgrabber, Integer.toString(i), LinkGrabberV2TreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
             if (prio != null && i == prio) {
@@ -307,8 +351,6 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
         });
 
     }
-
-
 
     private void addPackageHighlighter() {
         Color background = JDTheme.C("gui.color.linkgrabber.package_online", "c4ffd2", 20);

@@ -36,6 +36,8 @@ public class LinkGrabberV2FilePackage extends Property {
     private long lastSizeCalc = 0;
     private String dlpassword = "";
     private boolean lastSort = false;
+    private int lastfail = 0;
+    private long lastFailCount = 0;
 
     public LinkGrabberV2FilePackage() {
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
@@ -53,8 +55,8 @@ public class LinkGrabberV2FilePackage extends Property {
         jdb.addJDListener(listener);
     }
 
-    public synchronized long getDownloadSize() {
-        if (System.currentTimeMillis() - lastSizeCalc < 5000) return size;
+    public synchronized long getDownloadSize(boolean forceUpdate) {
+        if (!forceUpdate && System.currentTimeMillis() - lastSizeCalc < 5000) return size;
         long newsize = 0;
         synchronized (downloadLinks) {
             for (DownloadLink element : downloadLinks) {
@@ -64,6 +66,21 @@ public class LinkGrabberV2FilePackage extends Property {
         lastSizeCalc = System.currentTimeMillis();
         size = newsize;
         return size;
+    }
+
+    public synchronized int countFailedLinks(boolean forceUpdate) {
+        if (!forceUpdate && System.currentTimeMillis() - lastFailCount < 5000) return lastfail;
+        int newfail = 0;
+        synchronized (downloadLinks) {
+            for (DownloadLink dl : downloadLinks) {
+                if ((dl.isAvailabilityChecked() && !dl.isAvailable())) {
+                    newfail++;
+                }
+            }
+        }
+        lastFailCount = System.currentTimeMillis();
+        lastfail = newfail;
+        return lastfail;
     }
 
     public JDBroadcaster getJDBroadcaster() {
@@ -106,6 +123,19 @@ public class LinkGrabberV2FilePackage extends Property {
             if (!downloadLinks.contains(link)) {
                 downloadLinks.add(link);
             }
+        }
+    }
+
+    public void removeOffline() {
+        Vector<DownloadLink> remove = new Vector<DownloadLink>();
+        synchronized (downloadLinks) {
+            for (DownloadLink dl : downloadLinks) {
+                if ((dl.isAvailabilityChecked() && !dl.isAvailable())) {
+                    remove.add(dl);
+                }
+            }
+            downloadLinks.removeAll(remove);
+            countFailedLinks(true);
         }
     }
 
@@ -271,7 +301,6 @@ public class LinkGrabberV2FilePackage extends Property {
     }
 
     public void sort(final int col) {
-        if (!(col >= 1 && col <= 3)) return;
         lastSort = !lastSort;
         synchronized (downloadLinks) {
 
@@ -293,6 +322,11 @@ public class LinkGrabberV2FilePackage extends Property {
                         return aa.getDownloadSize() > bb.getDownloadSize() ? 1 : -1;
                     case 3:
                         return aa.getHost().compareToIgnoreCase(bb.getHost());
+                    case 4:
+                        if (aa.isAvailabilityChecked() && bb.isAvailabilityChecked()) {
+                            return (aa.isAvailable() && !bb.isAvailable()) ? 1 : -1;
+                        } else
+                            return -1;
                     default:
                         return -1;
                     }

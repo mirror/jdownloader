@@ -97,15 +97,15 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
             return;
         }
         if (e.getSource() == lg_add_all) {
-            this.broadcastEvent(new ActionEvent(this, LinkGrabberV2TreeTableAction.ADD_ALL, ((JButton) e.getSource()).getName()));
+            this.broadcastEvent(new ActionEvent(this, LinkGrabberV2TreeTableAction.ADD_ALL, null));
             return;
         }
         if (e.getSource() == lg_add_selected) {
-            this.broadcastEvent(new ActionEvent(this, LinkGrabberV2TreeTableAction.ADD_SELECTED, ((JButton) e.getSource()).getName()));
+            this.broadcastEvent(new ActionEvent(this, LinkGrabberV2TreeTableAction.ADD_SELECTED, null));
             return;
         }
         if (e.getSource() == lg_clear) {
-            this.broadcastEvent(new ActionEvent(this, LinkGrabberV2TreeTableAction.CLEAR, ((JButton) e.getSource()).getName()));
+            this.broadcastEvent(new ActionEvent(this, LinkGrabberV2TreeTableAction.CLEAR, null));
             return;
         }
     }
@@ -140,7 +140,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
                     lg_add_all.setEnabled(true);
                     lg_add_selected.setEnabled(true);
                     lg_clear.setEnabled(true);
-
+                    revalidate();
                 }
             });
         }
