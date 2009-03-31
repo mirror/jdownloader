@@ -219,9 +219,9 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     private void addToPackages(LinkGrabberV2FilePackage fp, DownloadLink link) {
         synchronized (packages) {
             LinkGrabberV2FilePackage fptmp = getFPwithLink(link);
-            if (fptmp != null) fptmp.remove(link);
             if (!packages.contains(fp)) packages.add(fp);
             fp.add(link);
+            if (fptmp != null) fptmp.remove(link);
         }
     }
 
@@ -586,6 +586,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                 for (int i = 0; i < selected_links.size(); i++) {
                     selected_links.get(i).setEnabled(b);
                 }
+                fireTableChanged(1, null);
                 return;
             case LinkGrabberV2TreeTableAction.ADD_ALL:
             case LinkGrabberV2TreeTableAction.ADD_SELECTED:
