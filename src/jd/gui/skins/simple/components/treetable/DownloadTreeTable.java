@@ -93,6 +93,7 @@ import org.jdesktop.swingx.painter.MattePainter;
 import org.jdesktop.swingx.painter.Painter;
 import org.jdesktop.swingx.table.TableColumnExt;
 import org.jdesktop.swingx.tree.TreeModelSupport;
+import org.jvnet.substance.SubstanceLookAndFeel;
 import org.jvnet.substance.api.ComponentState;
 import org.jvnet.substance.api.SubstanceColorScheme;
 import org.jvnet.substance.utils.SubstanceColorSchemeUtilities;
@@ -202,7 +203,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
         // return true;
         // }
         // });
-        addHighlighter(new PainterHighlighter(HighlightPredicate.IS_FOLDER, getFolderPainter()));
+        addHighlighter(new PainterHighlighter(HighlightPredicate.IS_FOLDER, getFolderPainter(this)));
 
         // Highlighter extendPrefWidth = new AbstractHighlighter() {
         // @Override
@@ -235,13 +236,13 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
         // Color.BLACK));
     }
 
-    public static Painter getFolderPainter() {
+    public static Painter getFolderPainter(JXTreeTable table) {
 
-        if (JDUtilities.getJavaVersion() >= 1.6) {
+        if (JDUtilities.getJavaVersion() >= 1.6 && UIManager.getLookAndFeel() instanceof SubstanceLookAndFeel) {
 
             int height = 20;
-            JProgressBar progressBar = new JProgressBar();
-            SubstanceColorScheme colorScheme = SubstanceColorSchemeUtilities.getColorScheme(progressBar, progressBar.isEnabled() ? ComponentState.SELECTED : ComponentState.DISABLED_UNSELECTED);
+//            JProgressBar progressBar = new JProgressBar();
+            SubstanceColorScheme colorScheme = SubstanceColorSchemeUtilities.getColorScheme(table, ComponentState.SELECTED);
             Color[] colors = new Color[] { Colors.getColor(colorScheme.getUltraLightColor(), 50), Colors.getColor(colorScheme.getLightColor(), 50), Colors.getColor(colorScheme.getMidColor(), 50), Colors.getColor(colorScheme.getUltraLightColor(), 50) };
             LinearGradientPaint paint = new LinearGradientPaint(0, 0, 0, height, new float[] { 0.0f, 0.4f, 0.5f, 1.0f }, colors, CycleMethod.REPEAT);
             return new MattePainter(paint);
