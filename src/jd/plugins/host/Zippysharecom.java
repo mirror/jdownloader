@@ -62,20 +62,10 @@ public class Zippysharecom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String[][] linkurls = new Regex(br, Pattern.compile("unescape\\('(.*?http%3A%2F%2Fwww.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatches();
-        if (linkurls == null || linkurls.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
-        URLConnectionAdapter con;
-        String downloadURL = null;
-        for (int i = 0; i < linkurls.length; i++) {
-            String url = new Regex(linkurls[i][0], Pattern.compile("(http%3A%2F%2Fwww.+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            downloadURL = Encoding.htmlDecode(url);
-            con = br.openGetConnection(downloadURL);
-            if (con.isContentDisposition()) {
-                con.disconnect();
-                break;
-            }
-            con.disconnect();
-        }
+        String linkurl = new Regex(br, Pattern.compile("'(http.*?www.*?zippyshare\\.com.*?)';", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        String downloadURL = Encoding.htmlDecode(linkurl);
+        sleep(10000l, downloadLink);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, downloadURL);
         dl.startDownload();
