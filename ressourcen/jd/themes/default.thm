@@ -41,9 +41,11 @@ gui.images.clipboardon=default/editpaste
 gui.images.clipboardoff=default/clipboard_off
 gui.images.taskpanes.download=default/download_manager
 gui.images.taskpanes.linkgrabber=default/add
-
+gui.images.config.infoFile=default/gajim
 gui.images.taskpanes.configuration=default/artscontrol
 gui.images.taskpanes.premium=default/host
+gui.images.reconnect_on=default/reconnect_on
+gui.images.reconnect_offdefault/reconnect_off
 #colors
 gui.color.statusbar.maxspeedhighlight=ff0c03
 gui.color.htmlTooltip_background=94baff
