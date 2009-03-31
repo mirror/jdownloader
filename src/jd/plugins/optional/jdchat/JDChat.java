@@ -1401,9 +1401,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 top.setText(msg);
-
-                SimpleGUI.CURRENTGUI.statusBarHandler.changeTxt(getHost() + " : " + msg, 10000, true);
-                // frame.pack();
             }
         });
 

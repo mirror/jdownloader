@@ -25,7 +25,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.border.Border;
-import javax.swing.plaf.ProgressBarUI;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -34,13 +33,11 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-import org.jdesktop.swingx.painter.Painter;
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
-import org.jdesktop.swingx.renderer.PainterAware;
 import org.jdesktop.swingx.table.TableColumnExt;
 
-public class TreeTableRenderer extends DefaultTableRenderer implements PainterAware {
+public class TreeTableRenderer extends DefaultTableRenderer {
 
     private static final long serialVersionUID = -3912572910439565199L;
 
@@ -60,11 +57,7 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
 
     private ImageIcon icon_fp_open;
 
-    private ImageIcon icon_link;
-
     private String strPluginDisabled;
-
-    private Painter painter;
 
     private String strFilePackageStatusFinished;
 
@@ -93,21 +86,16 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
     private static Color COL_PROGRESS_ERROR = new Color(0xCC3300);
 
     TreeTableRenderer(DownloadTreeTable downloadTreeTable) {
-
         initIcons();
         initLocale();
         table = downloadTreeTable;
         leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
         progress = new JDProgressBar();
-
         progress.setStringPainted(true);
         progress.setOpaque(true);
-       ProgressBarUI ui = progress.getUI();
-    
     }
 
     private void initIcons() {
-        icon_link = JDTheme.II("gui.images.link", 16, 16);
         icon_fp_open = JDTheme.II("gui.images.package_closed", 16, 16);
         icon_fp_closed = JDTheme.II("gui.images.package_opened", 16, 16);
         imgFinished = JDTheme.II("gui.images.selected", 16, 16);
@@ -357,13 +345,4 @@ public class TreeTableRenderer extends DefaultTableRenderer implements PainterAw
     private void clearSB() {
         sb.delete(0, sb.capacity() - 1);
     }
-
-    public Painter getPainter() {
-        return painter;
-    }
-
-    public void setPainter(Painter painter) {
-        this.painter = painter;
-    }
-
 }

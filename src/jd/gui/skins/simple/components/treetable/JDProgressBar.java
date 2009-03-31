@@ -18,19 +18,14 @@ package jd.gui.skins.simple.components.treetable;
 
 import javax.swing.JProgressBar;
 
-import org.jdesktop.swingx.painter.Painter;
-import org.jdesktop.swingx.renderer.PainterAware;
-
 /**
  * Diese Klasse skaliert die Werte der JProgressbar auf Integer ranges herunter
  */
-public class JDProgressBar extends JProgressBar implements PainterAware {
+public class JDProgressBar extends JProgressBar {
 
     private static final long serialVersionUID = 7787146508749392032L;
 
     private int faktor = 1;
-
-    private Painter painter;
 
     public void setMaximum(long value) {
         while ((value / faktor) >= Integer.MAX_VALUE) {
@@ -50,14 +45,6 @@ public class JDProgressBar extends JProgressBar implements PainterAware {
         faktor += 2;
         this.setValue(getValue() / 2);
         this.setMaximum(getMaximum() / 2);
-    }
-
-    public Painter getPainter() {
-        return painter;
-    }
-
-    public void setPainter(Painter painter) {
-        this.painter = painter;
     }
 
 }

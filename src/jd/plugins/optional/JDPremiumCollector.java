@@ -155,7 +155,6 @@ public class JDPremiumCollector extends PluginOptional {
                         accountsFound += oldaccounts.size();
                     }
                 }
-                SimpleGUI.CURRENTGUI.statusBarHandler.changeTxt(JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector") + ": " + JDLocale.LF("plugins.optional.premiumcollector.inserted", "Successfully inserted %s accounts!", accountsFound), 10000, true);
                 logger.info("totally : " + accountsFound + " accounts inserted");
             }
 
