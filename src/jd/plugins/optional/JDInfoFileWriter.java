@@ -129,12 +129,13 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         try {
             if (dest.createNewFile() && dest.canWrite()) {
                 JDIO.writeLocalFile(dest, content);
+                logger.severe("JDInfoFileWriter: info file " + dest.getAbsolutePath() + " successfully created");
             } else {
-                logger.severe("Can not write to: " + dest.getAbsolutePath());
+                logger.severe("JDInfoFileWriter: can not write to: " + dest.getAbsolutePath());
             }
         } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Can not write2 to: " + dest.getAbsolutePath());
+            logger.severe("JDInfoFileWriter: can not write to: " + dest.getAbsolutePath());
         }
     }
 }
