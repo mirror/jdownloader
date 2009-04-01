@@ -6,13 +6,10 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JToggleButton;
 
 import jd.gui.skins.simple.tasks.TaskPanel;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.JXPanel;
 
 public class TaskPane extends JXPanel implements ActionListener {
@@ -32,7 +29,6 @@ public class TaskPane extends JXPanel implements ActionListener {
         if (!panels.contains(panel)) {
             panel.addActionListener(this);
             panels.add(panel);
-           // lastSource = panel;
             switcher(null);
         }
     }
@@ -41,7 +37,6 @@ public class TaskPane extends JXPanel implements ActionListener {
         super.add(panel, index);
         if (!panels.contains(panel)) {
             panel.addActionListener(this);
-           // lastSource = panel;
             switcher(null);
         }
     }

@@ -1,6 +1,7 @@
 package jd.gui.skins.simple.tasks;
 
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -12,7 +13,6 @@ import javax.swing.JLabel;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -22,18 +22,19 @@ import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.jvnet.substance.SubstanceLookAndFeel;
 import org.jvnet.substance.api.ComponentState;
 import org.jvnet.substance.api.SubstanceColorScheme;
 import org.jvnet.substance.utils.SubstanceColorSchemeUtilities;
 
 public class GeneralPurposeTaskPanel extends TaskPanel implements ActionListener, ChangeListener, ControlListener {
 
+    private static final long serialVersionUID = 3880548380852933192L;
     private JCheckBox reconnect;
     private JCheckBox clipboard;
     private JCheckBox premium;
@@ -48,29 +49,25 @@ public class GeneralPurposeTaskPanel extends TaskPanel implements ActionListener
     public GeneralPurposeTaskPanel(String l, ImageIcon ii) {
         super(l, ii, "generalPurposeTaskPanel");
 
-        this.setCollapsed(false);
         this.initGui();
         JDUtilities.getController().addControlListener(this);
-
+        this.setCollapsed(false);
     }
 
     private Color[] getAlertColors() {
-        if (JDUtilities.getJavaVersion() >= 1.6 && UIManager.getLookAndFeel() instanceof SubstanceLookAndFeel) {
-
+        if (JDUtilities.getJavaVersion() >= 1.6 && SimpleGUI.isSubstance()) {
             SubstanceColorScheme colorScheme = SubstanceColorSchemeUtilities.getColorScheme(speedlimit, ComponentState.SELECTED);
             colorScheme = colorScheme.shift(Color.RED, 0.95, Color.RED, 0.95);
             return new Color[] { colorScheme.getFocusRingColor(), ((JSpinner.DefaultEditor) speedlimit.getEditor()).getTextField().getForeground() };
-
         } else {
             return new Color[] { Color.RED, Color.WHITE };
-
         }
     }
 
     private void initGui() {
         this.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow]5[70!,fill]", "[]0[]0[]0[]"));
         addButtonReconnect();
-       
+
         add(new JSeparator(), "spanx,gaptop 3");
         addCheckBoxReconnect();
         addCheckBoxClipBoard();
@@ -81,20 +78,18 @@ public class GeneralPurposeTaskPanel extends TaskPanel implements ActionListener
         addSpinnerSpeed();
         addSpinnerDownloads();
         addSpinnerChunks();
-
-      
-       
-
     }
+
+    @Override
     protected JButton addButton(JButton bt) {
         bt.addActionListener(this);
         bt.setHorizontalAlignment(JButton.LEFT);
         add(bt, "spanx,alignx leading,gaptop 2");
         return bt;
     }
+
     private void addButtonReconnect() {
         this.manReconnect = addButton(this.createButton(JDLocale.L(cfgNS + "reconnectnoew", "Reconnect Now!"), JDTheme.II("gui.images.config.reconnect", 16, 16)));
-
     }
 
     private void addSpinnerChunks() {
@@ -120,7 +115,6 @@ public class GeneralPurposeTaskPanel extends TaskPanel implements ActionListener
     }
 
     private void addSpinnerSpeed() {
-
         JLabel lbl;
         add(lbl = new JLabel(JDLocale.L(cfgNS + "speed", "Speedlimit")), GAP_LEFT);
         int value = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
@@ -147,55 +141,46 @@ public class GeneralPurposeTaskPanel extends TaskPanel implements ActionListener
         // speedlimit.setToolTipText(JDLocale.L(cfgNS + "tooltip.speedlimit",
         // "Limit the bandwith JDownloader uses to download"));
         // speedlimit.addChangeListener(this);
-        //       
-        //        
-
     }
 
     private void updateSpinnerSpeedColor() {
-
         JSpinner.DefaultEditor spMaxEditor = (JSpinner.DefaultEditor) speedlimit.getEditor();
         System.out.println("  " + speedlimit.getValue());
         if ((Integer) speedlimit.getValue() > 0) {
-
             spMaxEditor.getTextField().setForeground(speedColors[0]);
         } else {
-
             spMaxEditor.getTextField().setForeground(speedColors[1]);
         }
-
     }
 
     private void addCheckBoxPremium() {
-
         add(this.premium = new JCheckBox(JDLocale.L(cfgNS + "premium", "Enable Premium")), "spanx,alignx leading");
         premium.setToolTipText(JDLocale.L(cfgNS + "tooltip.premium", "Enable Premiumusage globaly"));
         premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
-
         premium.addChangeListener(this);
+        premium.setContentAreaFilled(false);
+        premium.setFocusPainted(false);
     }
 
     private void addCheckBoxClipBoard() {
-        Boolean enabled = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
-
         add(this.clipboard = new JCheckBox(JDLocale.L(cfgNS + "clipboard", "Observe Clipboard")), "spanx,alignx leading");
         clipboard.setToolTipText(JDLocale.L(cfgNS + "tooltip.clipboard", "Enable the clipboard observer to detect links you copied"));
-        clipboard.setSelected(enabled);
+        clipboard.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false));
         clipboard.addChangeListener(this);
+        clipboard.setContentAreaFilled(false);
+        clipboard.setFocusPainted(false);
     }
 
     private void addCheckBoxReconnect() {
-        Boolean value = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
         add(this.reconnect = new JCheckBox(JDLocale.L(cfgNS + "reconnect", "Auto. Reconnect")), "spanx,alignx leading");
         reconnect.setToolTipText(JDLocale.L(cfgNS + "tooltip.reconnect", "Enable automated Reconnect to avoid waitingtimes"));
-        reconnect.setSelected(!value);
+        reconnect.setSelected(!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
         reconnect.addChangeListener(this);
+        reconnect.setContentAreaFilled(false);
+        reconnect.setFocusPainted(false);
     }
 
-
-
     public void actionPerformed(ActionEvent e) {
-        // TODO Auto-generated method stub
 
     }
 

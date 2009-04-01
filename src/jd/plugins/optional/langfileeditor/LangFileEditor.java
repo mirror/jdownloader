@@ -48,10 +48,6 @@ public class LangFileEditor extends PluginOptional {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        // if (e.getSource() instanceof MenuItem && ((MenuItem)
-        // e.getSource()).getActionID() == 0) {
-        // showGui();
-        // }
     }
 
     @Override
@@ -64,37 +60,38 @@ public class LangFileEditor extends PluginOptional {
         if (SimpleGUI.CURRENTGUI == null) {
             JDUtilities.getController().addControlListener(this);
         } else {
-            if (tp == null) tp = new LFETaskPane(getHost(), JDTheme.II("gui.images.jd_logo", 32, 32));
-            SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
+            initLFE();
         }
         return true;
+    }
+
+    private void initLFE() {
+        final Object lock = new Object();
+        EventQueue.invokeLater(new GuiRunnable() {
+            private static final long serialVersionUID = 8726498576488124702L;
+
+            public void run() {
+                if (tp == null) tp = new LFETaskPane(getHost(), JDTheme.II("gui.images.jd_logo", 24, 24));
+                SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
+                synchronized (lock) {
+                    lock.notify();
+                }
+            }
+        });
+
+        synchronized (lock) {
+            try {
+                lock.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
-            final Object lock = new Object();
-            GuiRunnable run;
-            EventQueue.invokeLater(run = new GuiRunnable() {
-                private static final long serialVersionUID = 8726498576488124702L;
-
-                public void run() {
-                    if (tp == null) tp = new LFETaskPane(getHost(), JDTheme.II("gui.images.jd_logo", 24, 24));
-                    SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
-                    synchronized (lock) {
-                        lock.notify();
-                    }
-                }
-            });
-
-            synchronized (lock) {
-                try {
-                    lock.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-
+            initLFE();
             JDUtilities.getController().removeControlListener(this);
             return;
         }
@@ -109,12 +106,6 @@ public class LangFileEditor extends PluginOptional {
 
     @Override
     public ArrayList<MenuItem> createMenuitems() {
-        // ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        //
-        // menu.add(new MenuItem(MenuItem.NORMAL, getHost(),
-        // 0).setActionListener(this));
-        //
-        // return menu;
         return null;
     }
 

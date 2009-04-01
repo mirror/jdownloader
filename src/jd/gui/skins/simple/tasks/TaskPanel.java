@@ -4,6 +4,7 @@ import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.font.TextAttribute;
@@ -125,13 +126,10 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     }
 
     public void mouseReleased(MouseEvent e) {
-
         broadcastEvent(new ActionEvent(this, ACTION_CLICK, "Toggle"));
-
     }
 
     public JTabbedPanel getPanel(int i) {
-        // TODO Auto-generated method stub
         return panels.get(i).getPanel();
     }
 
@@ -145,29 +143,31 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
 
     public JButton createButton(String string, Icon i) {
         JButton bt = new JButton(string, i);
-        bt.setBorderPainted(false);
         bt.setContentAreaFilled(false);
         bt.setCursor(Cursor.getPredefinedCursor(12));
         bt.setFocusPainted(false);
         bt.setBorderPainted(false);
 
-        bt.addMouseListener(new java.awt.event.MouseAdapter() {
+        bt.addMouseListener(new MouseAdapter() {
 
             private Font originalFont;
 
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
+            @SuppressWarnings("unchecked")
+            @Override
+            public void mouseEntered(MouseEvent evt) {
                 JButton src = (JButton) evt.getSource();
-            
+
                 originalFont = src.getFont();
-                if(src.isEnabled()){
-                Map attributes = originalFont.getAttributes();
-                attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                src.setFont(originalFont.deriveFont(attributes));
+                if (src.isEnabled()) {
+                    Map attributes = originalFont.getAttributes();
+                    attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+                    src.setFont(originalFont.deriveFont(attributes));
                 }
 
             }
 
-            public void mouseExited(java.awt.event.MouseEvent evt) {
+            @Override
+            public void mouseExited(MouseEvent evt) {
                 JButton src = (JButton) evt.getSource();
                 src.setFont(originalFont);
             }
