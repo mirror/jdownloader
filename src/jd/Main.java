@@ -42,6 +42,7 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
 import jd.controlling.JDController;
+import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
@@ -517,6 +518,9 @@ public class Main {
         }
         new PackageManager().interact(this);
 
+        ProgressController p = new ProgressController("Tester");
+        
+        
         // loadFavs();
 
     }

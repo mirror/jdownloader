@@ -922,7 +922,7 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         CURRENTGUI = this;
         linkListPane = new DownloadLinksTreeTablePanel(this);
         contentPanel = new ContentPanel();
-        contentPanel = new ContentPanel();
+     
 
         taskPane = new TaskPane();
         // taskPane.setBackgroundPainter(null);
@@ -1065,39 +1065,40 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
 
         // TODO
 
-        JPanel panel = new JPanel(new MigLayout("ins 0,wrap 2", "[fill]0[fill,grow 100]", "[grow,fill]0[]0[]"));
+       
+//        JPanel ueberPanel = new JPanel(new BorderLayout());
+//        JPanel unterPanel = new JPanel(new BorderLayout());
+//        ueberPanel.add(toolBar, BorderLayout.NORTH);
+//        ueberPanel.add(unterPanel, BorderLayout.CENTER);
+//
+//        Tunes4 instance = Tunes4.getINSTANCE();
+//        toolBar.add(instance.getSwitchViewButton());
+//        toolBar.add(instance.getViewButton());
+//
+//        JXCollapsiblePane cpanel = Tunes4.getINSTANCE().getCardPane(); // new
+//                                                                       // JPanel
+//                                                                       // (new
+//                                                                       // BorderLayout
+//                                                                       // ());
+//        cpanel.setPreferredSize(new Dimension(640, 280));
+//        cpanel.setCollapsed(true);
+//        JPanel canvas = new JPanel();
+//        JScrollPane configView = new JScrollPane(canvas);
+//        for (int i = 0; i < 10; i++) {
+//            JLabel comp = new JLabel("Config " + (i + 1));
+//            comp.setPreferredSize(new Dimension(400, 400));
+//            canvas.add(comp);
+//        }
+//        configView.setPreferredSize(new Dimension(640, 280));
+//        cpanel.add(configView, "CD-shelf");
+//        Tunes4.getINSTANCE().showLastPanel();
+//
+//        unterPanel.add(cpanel, BorderLayout.NORTH);
+//        unterPanel.add(panel, BorderLayout.CENTER);
 
-        JPanel ueberPanel = new JPanel(new BorderLayout());
-        JPanel unterPanel = new JPanel(new BorderLayout());
-        ueberPanel.add(toolBar, BorderLayout.NORTH);
-        ueberPanel.add(unterPanel, BorderLayout.CENTER);
-
-        Tunes4 instance = Tunes4.getINSTANCE();
-        toolBar.add(instance.getSwitchViewButton());
-        toolBar.add(instance.getViewButton());
-
-        JXCollapsiblePane cpanel = Tunes4.getINSTANCE().getCardPane(); // new
-        // JPanel
-        // (new
-        // BorderLayout
-        // ());
-        cpanel.setPreferredSize(new Dimension(640, 280));
-        cpanel.setCollapsed(true);
-        JPanel canvas = new JPanel();
-        JScrollPane configView = new JScrollPane(canvas);
-        for (int i = 0; i < 10; i++) {
-            JLabel comp = new JLabel("Config " + (i + 1));
-            comp.setPreferredSize(new Dimension(400, 400));
-            canvas.add(comp);
-        }
-        configView.setPreferredSize(new Dimension(640, 280));
-        cpanel.add(configView, "CD-shelf");
-        Tunes4.getINSTANCE().showLastPanel();
-
-        unterPanel.add(cpanel, BorderLayout.NORTH);
-        unterPanel.add(panel, BorderLayout.CENTER);
 
         // frame.setContentPane(ueberPanel);
+        JPanel panel = new JPanel(new MigLayout("ins 0,wrap 2", "[fill]0[fill,grow 100]", "[grow,fill]0[]0[]"));
 
         frame.setContentPane(panel);
 
@@ -1105,7 +1106,7 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         GeneralPurposeTaskPanel generalPurposeTasks = new GeneralPurposeTaskPanel(JDLocale.L("gui.taskpanes.generalpurpose", "Quick Config"), JDTheme.II("gui.images.taskpanes.generalpurpose", 16, 16));
 
         // taskPane.setBorder(BorderFactory.createLineBorder(Color.RED));
-        panel.add(contentPanel, "spany");
+        panel.add(contentPanel,"spany 2");
         panel.add(generalPurposeTasks);
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
         panel.add(progressBar, "span,hidemode 3");

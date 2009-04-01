@@ -50,7 +50,9 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener, DropTargetListener {
 
@@ -64,7 +66,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         }
 
         public int getColumnCount() {
-            return 7;
+            return 6;
         }
 
         @Override
@@ -76,13 +78,12 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 return JDLocale.L("gui.column_host", "Host");
             case 2:
                 return JDLocale.L("gui.column_version", "Version");
+
             case 3:
-                return JDLocale.L("gui.column_coder", "Ersteller");
-            case 4:
                 return JDLocale.L("gui.column_agb", "AGB");
-            case 5:
+            case 4:
                 return JDLocale.L("gui.column_agbChecked", "akzeptieren");
-            case 6:
+            case 5:
                 return JDLocale.L("gui.column_usePlugin", "verwenden");
             }
             return super.getColumnName(column);
@@ -100,9 +101,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 return pluginsForHost.get(rowIndex).getHost();
             case 2:
                 return pluginsForHost.get(rowIndex).getVersion();
+
             case 3:
-                return pluginsForHost.get(rowIndex).getCoder();
-            case 4:
                 return new JLinkButton(new AbstractAction(JDLocale.L("gui.config.plugin.host.readAGB", "AGB")) {
 
                     private static final long serialVersionUID = 5915595466511261075L;
@@ -117,9 +117,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                     }
 
                 });
-            case 5:
+            case 4:
                 return pluginsForHost.get(rowIndex).isAGBChecked();
-            case 6:
+            case 5:
                 return pluginsForHost.get(rowIndex).usePlugin();
             }
             return null;
@@ -127,12 +127,12 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return columnIndex == 4 || columnIndex == 5 || columnIndex == 6;
+            return columnIndex == 3 || columnIndex == 4 || columnIndex == 5;
         }
 
         @Override
         public void setValueAt(Object value, int row, int col) {
-            if (col == 5) {
+            if (col == 4) {
                 if ((Boolean) value) {
                     String msg = JDLocale.LF("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!", pluginsForHost.get(row).getHost());
                     if (JOptionPane.showConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), msg) == JOptionPane.OK_OPTION) {
@@ -141,7 +141,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 } else {
                     pluginsForHost.get(row).setAGBChecked((Boolean) value);
                 }
-            } else if (col == 6) {
+            } else if (col == 5) {
                 pluginsForHost.get(row).setUsePlugin((Boolean) value);
             }
         }
@@ -259,29 +259,26 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 column.setPreferredWidth(60);
                 column.setMinWidth(60);
                 break;
+
             case 3:
-                column.setPreferredWidth(200);
-                break;
-            case 4:
                 column.setPreferredWidth(70);
                 column.setMaxWidth(70);
                 column.setMinWidth(70);
                 column.setCellRenderer(JLinkButton.getJLinkButtonRenderer());
                 column.setCellEditor(JLinkButton.getJLinkButtonEditor());
                 break;
-            case 5:
+            case 4:
                 column.setPreferredWidth(90);
                 column.setMaxWidth(90);
                 column.setMinWidth(90);
                 break;
-            case 6:
+            case 5:
                 column.setPreferredWidth(100);
                 break;
             }
         }
 
         JScrollPane scrollpane = new JScrollPane(table);
-        scrollpane.setPreferredSize(new Dimension(400, 200));
 
         btnEdit = new JButton(JDLocale.L("gui.btn_settings", "Einstellungen"));
         btnEdit.setEnabled(false);
@@ -294,10 +291,12 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         bpanel.add(btnEdit);
         bpanel.add(btnLoad);
-
-        this.add(new JLabel("<html><body align=\"justify\" color=\"red\"><b>" + JDLocale.L("gui.config.plugin.host.desc", "ACHTUNG!! Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB \r\n der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!")), BorderLayout.NORTH);
-        this.add(scrollpane);
-        this.add(bpanel, BorderLayout.SOUTH);
+        JLabel warning = new JLabel("<html><body align=\"justify\" color=\"black\" style='width:400px'><b>" + JDLocale.L("gui.config.plugin.host.desc", "Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB <br> der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!")+"</b></body></html>");
+        this.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow][fill]"));
+        this.add(new JLabel(JDTheme.II("gui.images.warning", 32, 32)),"gapleft 10");
+        this.add(warning,"gapright 10");
+        this.add(scrollpane,"spanx,height :900:,gapleft 10, gapright 10");
+        this.add(bpanel,"spanx,gapleft 10, gapright 10");
     }
 
     @Override

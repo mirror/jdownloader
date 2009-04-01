@@ -38,6 +38,8 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 
+import net.miginfocom.swing.MigLayout;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -159,7 +161,7 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
 
     @Override
     public void initPanel() {
-        this.setLayout(new BorderLayout());
+        this.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow][fill]"));
 
         packageData = new PackageManager().getPackageData();
         Collections.sort(packageData, new Comparator<PackageData>() {
@@ -245,10 +247,10 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
 
         ConfigContainer container = new ConfigContainer(this);
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, WebUpdater.getConfig("JDU"), "SUPPORT_JD", JDLocale.L("gui.config.packagemanager.supportJD", "Support JD by downloading pumped-up-addons")).setDefaultValue(true));
-        this.add(cep = new ConfigEntriesPanel(container), BorderLayout.NORTH);
+        this.add(cep = new ConfigEntriesPanel(container));
         cep.addPropertyChangeListener(this);
-        this.add(scrollpane);
-        this.add(bpanel, BorderLayout.SOUTH);
+        this.add(scrollpane,"spanx,height :900:,gapleft 10, gapright 10");
+        this.add(bpanel,"spanx,gapleft 10, gapright 10");
     }
 
     @Override

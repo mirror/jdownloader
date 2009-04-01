@@ -25,6 +25,7 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.interaction.PackageManager;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;
+import net.miginfocom.swing.MigLayout;
 
 /**
  * @author JD-Team
@@ -52,14 +53,17 @@ public class ConfigPanelAddons extends ConfigPanel {
     }
 
     public void initPanel() {
+        this.setLayout(new MigLayout("debug,ins 0","[fill,grow]"));
         container = new ConfigContainer(this);
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, new ConfigContainer(this, JDLocale.L("gui.config.addons.settings.tab", "Settings"))));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, new ConfigContainer(this, JDLocale.L("gui.config.addons.install.tab", "Installation & updates"))));
 
-        setLayout(new BorderLayout());
+   
 
-        add(cep = new ConfigEntriesPanel(container), BorderLayout.CENTER);
+        add(cep = new ConfigEntriesPanel(container));
+        cep.getSubPanels().get(0).setLayout(new MigLayout("ins 0","[fill,grow]"));
         cep.getSubPanels().get(0).add(sppo = new SubPanelPluginsOptional(configuration));
+        cep.getSubPanels().get(1).setLayout(new MigLayout("ins 0","[fill,grow]"));
         cep.getSubPanels().get(1).add(spr = new SubPanelRessources(configuration));
     }
 

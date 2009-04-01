@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -42,7 +43,9 @@ import jd.gui.skins.simple.OptionalMenuMenu;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 /**
  * @author JD-Team
@@ -121,7 +124,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
                     }
                 }
                 OptionalMenuMenu.getMenu(null, null).createOptionalPluginsMenuEntries();
-            
+
             }
         }
 
@@ -160,7 +163,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
     @Override
     public void initPanel() {
-        this.setLayout(new BorderLayout());
+        this.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow][fill]"));
 
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
@@ -188,7 +191,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         }
 
         JScrollPane scrollpane = new JScrollPane(table);
-        scrollpane.setPreferredSize(new Dimension(600, 300));
+      
 
         btnEdit = new JButton(JDLocale.L("gui.btn_settings", "Einstellungen"));
         btnEdit.setEnabled(false);
@@ -198,8 +201,11 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         bpanel.add(btnEdit);
         bpanel.add(new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help", "Hilfe"), JDLocale.L("gui.config.plugin.optional.link_help", "  http://jdownloader.org/page.php?id=122")));
 
-        this.add(scrollpane);
-        this.add(bpanel, BorderLayout.SOUTH);
+        this.add(scrollpane,"spanx,height :900:,gapleft 10, gapright 10");
+        this.add(bpanel,"spanx,gapleft 10, gapright 10");
+        
+    
+      
     }
 
     @Override
