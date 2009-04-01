@@ -142,7 +142,7 @@ public class PremiumPane extends JTabbedPanel {
             if (ai.getTrafficLeft() > -1) {
                 cp.add(new JLabel("Traffic left"), "newline, alignright, w 15%:pref, growx");
                 cp.add(getTextField(JDUtilities.formatBytesToMB(ai.getTrafficLeft())), "alignleft");
-                System.out.println(ai.getTrafficMax());
+                
                 ChartAPI_GOM freeTraffic = new ChartAPI_GOM("", 370, 120, cp.getBackground());
                 double procent = ((double)ai.getTrafficLeft()/(double)ai.getTrafficMax()*100);
                 freeTraffic.addEntity(new ChartAPI_Entity(JDUtilities.formatBytesToMB(ai.getTrafficLeft()) + " free", String.valueOf(procent), new Color(50, 200, 50)));
