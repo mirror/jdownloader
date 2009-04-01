@@ -256,7 +256,6 @@ public class PremiumPane extends JTabbedPanel {
         
         public void setNotValid(final String status) {
         	SwingUtilities.invokeLater(new Runnable() {
-				@Override
 				public void run() {
 					txtStatus.setText(status);
 		            chkEnable.setSelected(false);
@@ -308,7 +307,6 @@ public class PremiumPane extends JTabbedPanel {
     }
 
     private class ChartRefresh extends Thread {
-	    @Override
 	    public void run() {
 		    Long collectTraffic = new Long(0);
 		    freeTrafficChart.clear();
