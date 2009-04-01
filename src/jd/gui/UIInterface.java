@@ -60,7 +60,7 @@ public interface UIInterface extends ControlListener {
      * 
      * @param links
      */
-    public void addLinksToGrabber(Vector<DownloadLink> links);
+    public void addLinksToGrabber(Vector<DownloadLink> links,boolean hideGrabber);
 
     // /**
     // * Legt alle DownloadLinks fest

@@ -285,9 +285,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                 linksString += link + "\n";
             }
 
-            DistributeData distributeData = new DistributeData(linksString);
-            distributeData.addControlListener(JDUtilities.getController());
-            distributeData.start();
+            new DistributeData(linksString).start();
 
         } else if (e.getSource().equals(filterText)) {
 
@@ -364,9 +362,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             for (String link : links) {
                 linksString += link + "\n";
             }
-            DistributeData distributeData = new DistributeData(linksString);
-            distributeData.addControlListener(JDUtilities.getController());
-            distributeData.start();
+            new DistributeData(linksString).start();
         }
     }
 

@@ -32,7 +32,6 @@ import jd.config.Property;
 import jd.controlling.SingleDownloadController;
 import jd.controlling.SpeedMeter;
 import jd.event.ControlEvent;
-import jd.http.Encoding;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
@@ -113,8 +112,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     // Beschreibung des Downloads
     private String name;
-
-    private int partID = -1;
 
     // Das Plugin, das für diesen Download zuständig ist
     private transient PluginForHost plugin;
@@ -507,10 +504,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return getFinalFileName();
     }
 
-    public int getPartByName() {
-        return partID;
-    }
-
     /**
      * Liefert das Plugin zurück, daß diesen DownloadLink handhabt
      * 
@@ -857,7 +850,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setFilePackage(FilePackage filePackage) {
 
-        if (filePackage == this.filePackage && filePackage != null) {
+        if (filePackage != null && filePackage == this.filePackage) {
             if (!filePackage.contains(this)) {
                 filePackage.add(this);
             }
@@ -923,8 +916,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setName(String name) {
         if (name != null && name.length() > 0) {
-            this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
-            updatePartID();
+            this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));            
         }
         this.setIcon(null);
     }
@@ -956,8 +948,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public void setFinalFileName(String newfinalFileName) {
         setName(newfinalFileName);
         if (newfinalFileName != null && newfinalFileName.length() > 0) {
-            finalFileName = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(newfinalFileName));
-            updatePartID();
+            finalFileName = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(newfinalFileName));            
         } else {
             finalFileName = null;
         }
@@ -994,26 +985,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     @Override
     public String toString() {
         return getName() + "-> " + getFileOutput() + "(" + getHost() + ")";
-    }
-
-    private void updatePartID() {
-        String name = getName();
-        String ext;
-        int index;
-        partID = -1;
-        while (name.length() > 0) {
-            index = name.lastIndexOf(".");
-            if (index <= 0) {
-                index = name.length() - 1;
-            }
-            ext = name.substring(index + 1);
-            name = name.substring(0, index);
-            try {
-                partID = Integer.parseInt(Encoding.filterString(ext, "1234567890"));
-                break;
-            } catch (Exception e) {
-            }
-        }
     }
 
     /**

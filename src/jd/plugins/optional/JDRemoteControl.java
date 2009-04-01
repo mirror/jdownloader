@@ -421,7 +421,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             // Do Start Download
             else if (request.getRequestUrl().equals("/action/start")) {
                 JDUtilities.getController().startDownloads();
-              
+
                 response.addContent("Downloads started");
             }
 
@@ -463,14 +463,14 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
-                
-                if(JDUtilities.getController().stopDownloads()){
+
+                if (JDUtilities.getController().stopDownloads()) {
                     Reconnecter.waitForNewIP(1);
                     JDUtilities.getController().startDownloads();
-                }else{
+                } else {
                     Reconnecter.waitForNewIP(1);
                 }
-              
+
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, tmp);
 
             }
@@ -571,9 +571,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 // link = Encoding.htmlDecode(link);
                 // wegen leerzeichen etc, die ja in urls verändert werden...
 
-                DistributeData distributeData = new DistributeData(link, hidegrabber, startdl);
-                distributeData.addControlListener(JDUtilities.getController());
-                distributeData.start();
+                new DistributeData(link, hidegrabber, startdl).start();
                 response.addContent("Link(s) added. (" + link + ")");
             }
 
@@ -591,7 +589,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 String dlcfilestr = new Regex(request.getRequestUrl(), "[\\s\\S]*/action/save/container/([\\s\\S]+)").getMatch(0);
                 dlcfilestr = Encoding.htmlDecode(dlcfilestr);
                 // wegen leerzeichen etc, die ja in urls verändert werden...
-                JDUtilities.getController().saveDLC(new File(dlcfilestr));
+                JDUtilities.getController().saveDLC(new File(dlcfilestr), JDUtilities.getController().getDownloadLinks());
                 response.addContent("Container saved. (" + dlcfilestr + ")");
             }
 

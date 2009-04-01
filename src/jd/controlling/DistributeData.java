@@ -44,7 +44,7 @@ import jd.utils.JDUtilities;
  * 
  * @author astaldo
  */
-public class DistributeData extends ControlBroadcaster {
+public class DistributeData extends Thread {
     /**
      * Der Logger
      */
@@ -419,16 +419,16 @@ public class DistributeData extends ControlBroadcaster {
         Collections.sort(links);
 
         if (hideGrabber && startDownload) {
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER_START, links));
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER_START, links));
         } else if (hideGrabber) {
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER, links));
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER, links));
         } else if (startDownload) {
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
             if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
                 JDUtilities.getController().toggleStartStop();
             }
         } else {
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
         }
     }
 

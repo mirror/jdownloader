@@ -48,11 +48,6 @@ public class ClipboardHandler extends Thread implements ControlListener {
 
     // private Logger logger;
 
-    /**
-     * Der Thread, der den Inhalt der Zwischenablage verteilt
-     */
-    private DistributeData distributeData = null;
-
     private boolean enabled = false;
 
     private String olddata;
@@ -121,9 +116,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
                         if (!((String) clipboard.getData(element)).equals(olddata)) {
                             olddata = (String) clipboard.getData(element);
 
-                            distributeData = new DistributeData(olddata.trim(), true);
-                            distributeData.addControlListener(JDUtilities.getController());
-                            distributeData.start();
+                            new DistributeData(olddata.trim(), true).start();
                         }
                         break;
 

@@ -2,7 +2,7 @@ package jd.gui.skins.simple.components.Linkgrabber;
 
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
 
@@ -358,18 +358,13 @@ public class LinkGrabberV2FilePackage extends Property {
     }
 
     public String getHoster() {
-        LinkedList<DownloadLink> dLinks = new LinkedList<DownloadLink>(downloadLinks);
-        StringBuilder hoster = new StringBuilder();
-        String curHost;
-        while (!dLinks.isEmpty()) {
-            curHost = dLinks.removeFirst().getHost();
-            if (hoster.length() > 0) hoster.append(", ");
-            hoster.append(curHost);
-            for (int i = dLinks.size() - 1; i >= 0; --i) {
-                if (dLinks.get(i).getHost().equals(curHost)) dLinks.remove(i);
+        Set<String> hosterList = new HashSet<String>();
+        synchronized (downloadLinks) {
+            for (DownloadLink dl : downloadLinks) {
+                hosterList.add(dl.getHost());
             }
         }
-        return hoster.toString();
+        return hosterList.toString();
     }
 
 }

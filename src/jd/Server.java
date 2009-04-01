@@ -418,9 +418,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
         String linksToAddString = adder.toString().trim();
         if (!linksToAddString.equals("")) {
 
-            DistributeData distributeData = new DistributeData(linksToAddString, hideGrabber, startDownload);
-            distributeData.addControlListener(JDUtilities.getController());
-            distributeData.start();
+            new DistributeData(linksToAddString, hideGrabber, startDownload).start();
 
         } else if (startDownload) {
 

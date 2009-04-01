@@ -203,13 +203,6 @@ public abstract class Interaction extends Property implements Serializable {
      */
     public abstract void initConfig();
 
-    /**
-     * Initialisiert die Interaction beim JD start
-     */
-    @Deprecated
-    public void initInteraction() {
-        // Kann eigentlich entfernt werden, oder?
-    }
 
     /**
      * ruft die doInteraction Funktion auf. Und setzt das Ergebnis als callCode.

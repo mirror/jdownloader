@@ -20,8 +20,9 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.Set;
 import java.util.Vector;
 
 import jd.config.Property;
@@ -101,23 +102,29 @@ public class FilePackage extends Property implements Serializable {
      */
 
     public void add(DownloadLink link) {
-        if (!downloadLinks.contains(link)) {
-            downloadLinks.add(link);
+        synchronized (downloadLinks) {
+            if (!downloadLinks.contains(link)) {
+                downloadLinks.add(link);
+            }
+            link.setFilePackage(this);
         }
-        link.setFilePackage(this);
     }
 
     public void add(int index, DownloadLink link) {
-        link.setFilePackage(this);
-        if (downloadLinks.contains(link)) {
-            downloadLinks.remove(link);
+        synchronized (downloadLinks) {
+            if (downloadLinks.contains(link)) {
+                downloadLinks.remove(link);
+            }
+            downloadLinks.add(index, link);
+            link.setFilePackage(this);
         }
-        downloadLinks.add(index, link);
     }
 
     public void addAll(Vector<DownloadLink> links) {
-        for (int i = 0; i < links.size(); i++) {
-            add(links.get(i));
+        synchronized (downloadLinks) {
+            for (DownloadLink dl : links) {
+                add(dl);
+            }
         }
     }
 
@@ -130,17 +137,23 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public void addAllAt(Vector<DownloadLink> links, int index) {
-        for (int i = 0; i < links.size(); i++) {
-            add(index + i, links.get(i));
+        synchronized (downloadLinks) {
+            for (int i = 0; i < links.size(); i++) {
+                add(index + i, links.get(i));
+            }
         }
     }
 
     public boolean contains(DownloadLink link) {
-        return downloadLinks.contains(link);
+        synchronized (downloadLinks) {
+            return downloadLinks.contains(link);
+        }
     }
 
     public DownloadLink get(int index) {
-        return downloadLinks.get(index);
+        synchronized (downloadLinks) {
+            return downloadLinks.get(index);
+        }
     }
 
     /**
@@ -169,7 +182,9 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public Vector<DownloadLink> getDownloadLinks() {
-        return downloadLinks;
+        synchronized (downloadLinks) {
+            return downloadLinks;
+        }
     }
 
     /**
@@ -293,11 +308,9 @@ public class FilePackage extends Property implements Serializable {
 
     // Gibt die erste gefundene sfv datei im Paket zurück
     public DownloadLink getSFV() {
-        DownloadLink next;
         synchronized (downloadLinks) {
-            for (Iterator<DownloadLink> it = downloadLinks.iterator(); it.hasNext();) {
-                next = it.next();
-                if (next.getFileOutput().toLowerCase().endsWith(".sfv")) { return next; }
+            for (DownloadLink dl : downloadLinks) {
+                if (dl.getFileOutput().toLowerCase().endsWith(".sfv")) return dl;
             }
         }
         return null;
@@ -364,23 +377,48 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public int indexOf(DownloadLink link) {
-        return downloadLinks.indexOf(link);
+        synchronized (downloadLinks) {
+            return downloadLinks.indexOf(link);
+        }
+    }
+
+    public DownloadLink getLinkAfter(DownloadLink link) {
+        synchronized (downloadLinks) {
+            int index = indexOf(link);
+            if (index == -1 || index + 1 > downloadLinks.size() - 1) return null;
+            return get(index + 1);
+        }
+    }
+
+    public DownloadLink getLinkBefore(DownloadLink link) {
+        synchronized (downloadLinks) {
+            int index = indexOf(link);
+            if (index == -1 || index - 1 < 0) return null;
+            return get(index - 1);
+        }
     }
 
     public DownloadLink lastElement() {
-        return downloadLinks.lastElement();
+        synchronized (downloadLinks) {
+            return downloadLinks.lastElement();
+        }
     }
 
     public boolean remove(DownloadLink link) {
-        boolean ret = downloadLinks.remove(link);
-        if (ret) link.setFilePackage(null);
-        return ret;
+        synchronized (downloadLinks) {
+            boolean ret = downloadLinks.remove(link);
+            if (ret) link.setFilePackage(null);
+            return ret;
+        }
     }
 
     public DownloadLink remove(int index) {
-        DownloadLink link = downloadLinks.remove(index);
-        link.setFilePackage(null);
-        return link;
+        synchronized (downloadLinks) {
+            DownloadLink link = downloadLinks.remove(index);
+            if (link == null) return null;
+            link.setFilePackage(null);
+            return link;
+        }
     }
 
     public void setComment(String comment) {
@@ -392,7 +430,9 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
-        this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
+        synchronized (downloadLinks) {
+            this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
+        }
     }
 
     public void setName(String name) {
@@ -407,42 +447,19 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public int size() {
-        return downloadLinks.size();
+        synchronized (downloadLinks) {
+            return downloadLinks.size();
+        }
     }
 
     public String getHoster() {
-        LinkedList<DownloadLink> dLinks = new LinkedList<DownloadLink>(downloadLinks);
-        StringBuilder hoster = new StringBuilder();
-        String curHost;
-        while (!dLinks.isEmpty()) {
-            curHost = dLinks.removeFirst().getHost();
-            if (hoster.length() > 0) hoster.append(", ");
-            hoster.append(curHost);
-            for (int i = dLinks.size() - 1; i >= 0; --i) {
-                if (dLinks.get(i).getHost().equals(curHost)) dLinks.remove(i);
+        Set<String> hosterList = new HashSet<String>();
+        synchronized (downloadLinks) {
+            for (DownloadLink dl : downloadLinks) {
+                hosterList.add(dl.getHost());
             }
         }
-        return hoster.toString();
-    }
-
-    public Vector<String> getHosterWithCount() {
-        Vector<String> result = new Vector<String>();
-        LinkedList<DownloadLink> dLinks = new LinkedList<DownloadLink>(downloadLinks);
-        while (!dLinks.isEmpty()) {
-            result.add(removeFirstHost(dLinks));
-        }
-        return result;
-    }
-
-    private String removeFirstHost(LinkedList<DownloadLink> dLinks) {
-        String host = dLinks.removeFirst().getHost();
-        int count = 1;
-        for (int i = dLinks.size() - 1; i >= 0; --i) {
-            if (!dLinks.get(i).getHost().equals(host)) continue;
-            dLinks.remove(i);
-            ++count;
-        }
-        return host + " (" + count + ")";
+        return hosterList.toString();
     }
 
     public void sort(final String string) {
@@ -452,17 +469,14 @@ public class FilePackage extends Property implements Serializable {
             lastSort = string.equalsIgnoreCase("ASC");
         }
         synchronized (downloadLinks) {
-
             Collections.sort(downloadLinks, new Comparator<DownloadLink>() {
 
                 public int compare(DownloadLink a, DownloadLink b) {
                     if (a.getName().endsWith(".sfv")) { return -1; }
                     if (b.getName().endsWith(".sfv")) { return 1; }
                     if (lastSort) {
-
                         return a.getName().compareToIgnoreCase(b.getName());
                     } else {
-
                         return b.getName().compareToIgnoreCase(a.getName());
                     }
                 }

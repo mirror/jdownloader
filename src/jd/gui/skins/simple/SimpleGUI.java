@@ -718,7 +718,7 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
                 }
                 if (ret != null) {
 
-                    JDUtilities.getController().saveDLC(ret);
+                    JDUtilities.getController().saveDLC(ret, JDUtilities.getController().getDownloadLinks());
                 }
             }
             break;
@@ -858,7 +858,7 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
     // }
     // }
 
-    public synchronized void addLinksToGrabber(Vector<DownloadLink> links) {
+    public synchronized void addLinksToGrabber(Vector<DownloadLink> links, boolean hideGrabber) {
         logger.info("GRAB");
         DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
         logger.info("add to grabber");
@@ -1077,10 +1077,10 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         toolBar.add(instance.getViewButton());
 
         JXCollapsiblePane cpanel = Tunes4.getINSTANCE().getCardPane(); // new
-                                                                       // JPanel
-                                                                       // (new
-                                                                       // BorderLayout
-                                                                       // ());
+        // JPanel
+        // (new
+        // BorderLayout
+        // ());
         cpanel.setPreferredSize(new Dimension(640, 280));
         cpanel.setCollapsed(true);
         JPanel canvas = new JPanel();
