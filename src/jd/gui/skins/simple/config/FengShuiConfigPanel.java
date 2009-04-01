@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -66,7 +65,6 @@ import javax.swing.event.MenuListener;
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.MenuItem;
-import jd.config.SubConfiguration;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
@@ -98,9 +96,8 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
     private static final String GAPRIGHT = "gapright 26!, ";
     private static final String PUSHGAP = " :70";
 
-    private JButton btnRR, btnApply, btnPremium, btnAutoConfig, btnSelectRouter, btnTestReconnect;
+    private JButton btnRR, btnPremium, btnAutoConfig, btnSelectRouter, btnTestReconnect;
     private JComboBox languages;
-    private SubConfiguration guiConfig = null;
     private Configuration config = JDUtilities.getConfiguration();
     private BrowseFile downloadDirectory;
     private String ddir = null;
@@ -117,16 +114,13 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
 
     public FengShuiConfigPanel() {
         super();
-        guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         this.setName("FENGSHUICONFIG");
 
         initPanel();
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnApply) {
-            save();
-        } else if (e.getSource() == btnRR) {
+        if (e.getSource() == btnRR) {
             JDRRGui jd = new JDRRGui(SimpleGUI.CURRENTGUI.getFrame(), ip.getText());
             jd.setModal(true);
             jd.setVisible(true);
@@ -148,8 +142,6 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
                         JMenu item;
                         popup.add(item = new JMenu(helpplugin.getHost()));
                         item.setHorizontalTextPosition(JMenuItem.RIGHT);
-
-                        // m.setItems(helpplugin.createMenuitems());
 
                         if (item != null) {
                             popup.add(item);
@@ -426,7 +418,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
 
     }
 
-    public String getDownloadDirectory() {
+    private String getDownloadDirectory() {
         if (ddir == null) {
             ddir = config.getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
             if (ddir == null) ddir = JDUtilities.getResourceFile("downloads").getAbsolutePath();
@@ -502,15 +494,10 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
         progresspanel.remove(progress);
         progress.removeAll();
         progress = null;
-        // progresspanel.setLayout(new MigLayout("ins 32 22 15 22",
-        // "[right, pref!]0[right,grow,fill]0[]"));
 
-        progresspanel.invalidate();
+        progresspanel.add(new JSeparator(), "pushx, growx");
+        progresspanel.revalidate();
         progresspanel.repaint();
-
-        // progresspanel.add(new JSeparator());
-
-        progresspanel.validate();
     }
 
     private void initPanel() {
@@ -549,10 +536,10 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
         this.add(new JSeparator(), "gapleft 10, spanx, pushx, growx");
         progresspanel = new JPanel(new MigLayout("ins 0, aligny 49%", "fill, grow"));
         this.add(progresspanel, "pushx, span 3, growx");
-        if (routerIp == null || routerIp.matches("\\s*")) {
+        if (routerIp == null || routerIp.matches("^[\\s]*$")) {
             showProgressbar();
         } else {
-            progresspanel.add(new JSeparator());
+            progresspanel.add(new JSeparator(), "span 3, pushx, growx");
         }
 
         JLabel tip = new JLabel(JDTheme.II("gui.images.config.tip", 16, 16));
@@ -593,13 +580,6 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
         addComponents(JDLocale.L("gui.fengshuiconfig.testsettings", "Einstellungen testen") + ":", btnTestReconnect, GAPLEFT + ", w pref!, wrap" + PUSHGAP + ":push");
 
         getRouterIp();
-
-        JPanel bpanel = new JPanel(new MigLayout());
-        bpanel.add(new JSeparator(), "spanx, pushx, growx");
-        bpanel.add(btnApply = new JButton(JDLocale.L("gui.btn_save", "save")), "w pref!, tag apply");
-        btnApply.addActionListener(this);
-        this.add(bpanel, "dock south, spanx, pushx, growx");
-
     }
 
     private JComponent subpanel(JComponent c1, String l2, JComponent c2) {
@@ -610,26 +590,24 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
         return subpanel;
     }
 
-    public void getRouterIp() {
-
+    private void getRouterIp() {
         new Thread(new Runnable() {
 
             public void run() {
                 if (config.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) == ReconnectMethod.LIVEHEADER) {
                     boolean reachable = false;
-                    try {
-                        reachable = InetAddress.getByName(routerIp).isReachable(1500);
-                    } catch (UnknownHostException e) {
-                    } catch (IOException e) {
+                    if (routerIp != null && !routerIp.matches("^[\\s]*$")) {
+                        try {
+                            reachable = InetAddress.getByName(routerIp).isReachable(1500);
+                        } catch (IOException e) {
+                        }
                     }
 
-                    if (routerIp == null || routerIp.matches("[\\s]*") || !reachable) {
-                        // System.out.println(routerIp);
+                    if (routerIp == null || routerIp.matches("^[\\s]*$") || !reachable) {
                         InetAddress ia = new GetRouterInfo(prog).getAdress();
                         if (ia != null) ip.setText(ia.getHostName());
-
                     }
-                    if (Reconnectmethode == null || Reconnectmethode.matches("[\\s]*")) {
+                    if (Reconnectmethode == null || Reconnectmethode.matches("^[\\s]*$")) {
                         if (GetRouterInfo.isFritzbox(ip.getText())) {
                             String tit = JDLocale.L("gui.config.fengshui.fritzbox.title", "Fritz!Box erkannt");
                             if (GetRouterInfo.isUpnp(ip.getText(), "49000")) {
@@ -657,55 +635,43 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
                     }
                 }
             }
-        }).start();
 
+        }).start();
     }
 
-    public void save() {
-        boolean saveit = false;
-        boolean restart = false;
+    private boolean hasChanged() {
+        if (!languages.getSelectedItem().equals(JDUtilities.getSubConfig(JDLocale.CONFIG).getProperty(JDLocale.LOCALE_ID, Locale.getDefault()))) return true;
+        if (!downloadDirectory.getText().equals(getDownloadDirectory())) return true;
+        if (!ip.getText().equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_IP, ""))) return true;
+        if (!username.getText().equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_USER, ""))) return true;
+        if (!password.getText().equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_PASS, ""))) return true;
+        if (Reconnectmethode != null && !Reconnectmethode.equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null))) return true;
+        if (ReconnectmethodeClr != null && !ReconnectmethodeClr.equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, null))) return true;
+        if (routername.getText() != null && !routername.getText().equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, ""))) return true;
+        return false;
+    }
 
-        if (!JDUtilities.getSubConfig(JDLocale.CONFIG).getProperty(JDLocale.LOCALE_ID, Locale.getDefault()).equals(languages.getSelectedItem())) {
+    private boolean restartRequired() {
+        return !JDUtilities.getSubConfig(JDLocale.CONFIG).getProperty(JDLocale.LOCALE_ID, Locale.getDefault()).equals(languages.getSelectedItem());
+    }
 
-            JDUtilities.getSubConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, languages.getSelectedItem());
-            JDUtilities.getSubConfig(JDLocale.CONFIG).save();
-            guiConfig.save();
-            restart = JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.fengshuiconfig.languages.restartwarning", "you have to restart jDownloader to change the language, restart jDownloader now?"));
+    private void save() {
+        JDUtilities.getSubConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, languages.getSelectedItem());
+        JDUtilities.getSubConfig(JDLocale.CONFIG).save();
 
-        }
-        if (!downloadDirectory.getText().equals(getDownloadDirectory())) {
-            config.setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, downloadDirectory.getText());
-            saveit = true;
-        }
-        if (!ip.getText().matches("[\\s]*") && !ip.getText().equals(routerIp)) {
-            config.setProperty(Configuration.PARAM_HTTPSEND_IP, ip.getText());
-            saveit = true;
-        }
-        if (!username.getText().equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_USER, ""))) {
-            config.setProperty(Configuration.PARAM_HTTPSEND_USER, username.getText());
-            saveit = true;
-        }
-        if (!password.getText().equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_PASS, ""))) {
-            config.setProperty(Configuration.PARAM_HTTPSEND_PASS, password.getText());
-            saveit = true;
-        }
+        config.setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, downloadDirectory.getText());
+        config.setProperty(Configuration.PARAM_HTTPSEND_IP, ip.getText());
+        config.setProperty(Configuration.PARAM_HTTPSEND_USER, username.getText());
+        config.setProperty(Configuration.PARAM_HTTPSEND_PASS, password.getText());
         if (Reconnectmethode != null && !Reconnectmethode.equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null))) {
             config.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER);
             config.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, Reconnectmethode);
-            saveit = true;
-        }
-        if (ReconnectmethodeClr != null && !ReconnectmethodeClr.equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, null))) {
+        } else if (ReconnectmethodeClr != null && !ReconnectmethodeClr.equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, null))) {
             config.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.CLR);
             config.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, Reconnectmethode);
-            saveit = true;
         }
-        if (routername.getText() != null && !routername.getText().equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, ""))) {
-            config.setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, routername.getText());
-            saveit = true;
-        }
-        if (saveit) JDUtilities.getConfiguration().save();
-        if (restart) JDUtilities.restartJD();
-
+        config.setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, routername.getText());
+        config.save();
     }
 
     @Override
@@ -714,5 +680,15 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
 
     @Override
     public void onHide() {
+        if (hasChanged()) {
+            if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.save.doyourealywant", "Do you want to save your changes?"), JDLocale.L("gui.config.save.doyourealywant.title", "Changes"))) {
+                this.save();
+                if (restartRequired()) {
+                    if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDLocale.L("gui.config.save.restart.title", "JDownloader restart requested"))) {
+                        JDUtilities.restartJD();
+                    }
+                }
+            }
+        }
     }
 }
