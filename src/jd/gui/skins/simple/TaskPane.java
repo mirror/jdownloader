@@ -47,7 +47,7 @@ public class TaskPane extends JXPanel implements ActionListener {
             panel.removeActionListener(this);
             int index = panels.indexOf(panel);
             panels.remove(panel);
-            switcher(panels.get(index));
+            //switcher(panels.get(index));
         }
     }
 

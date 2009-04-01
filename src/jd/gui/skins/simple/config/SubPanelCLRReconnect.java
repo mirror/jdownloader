@@ -22,6 +22,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
+import javax.swing.JPanel;
+
+import net.miginfocom.swing.MigLayout;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -63,23 +66,33 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener 
     @Override
     public void initPanel() {
 
+    
+        
+        JPanel buttons = new JPanel();
+        buttons.setLayout(new MigLayout("ins 0, wrap 3")); 
+
+        // JDUtilities.addToGridBag(panel, btnSelectRouter, 0, 0, 1, 1, 0, 1,
+        // insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
         btnFindIP = new JButton(JDLocale.L("gui.config.liveHeader.btnFindIP", "Router IP ermitteln"));
         btnFindIP.addActionListener(this);
-        JDUtilities.addToGridBag(panel, btnFindIP, 2, 0, GridBagConstraints.REMAINDER, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
+        buttons.add(btnFindIP, "width 160!");
+  
+        panel.add(buttons, "spanx,gapleft 10");
         user = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_USER, JDLocale.L("gui.config.liveHeader.user", "Login User (->%%%user%%%)")));
         addGUIConfigEntry(user);
         pass = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, configuration, Configuration.PARAM_HTTPSEND_PASS, JDLocale.L("gui.config.liveHeader.password", "Login Passwort (->%%%pass%%%)")));
         addGUIConfigEntry(pass);
         ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDLocale.L("gui.config.liveHeader.routerIP", "RouterIP (->%%%routerip%%%)")));
         addGUIConfigEntry(ip);
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, RouterInfoCollector.PROPERTY_SHOW_ROUTERINFO_DIALOG, JDLocale.L("gui.config.reconnect.showupload", "Show ReconnectInfo Upload Window")).setDefaultValue(JDUtilities.getConfiguration().getBooleanProperty(RouterInfoCollector.PROPERTY_SHOW_ROUTERINFO_DIALOG, true))));
+  
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS_CLR, JDLocale.L("gui.config.liveHeader.script", "HTTP Script"))));
 
-        routerScript = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS_CLR, JDLocale.L("gui.config.clr.script", "CLR Script")).setInstantHelp("http://wiki.jdownloader.org/index.php?title=CLR"));
-        this.entries.add(routerScript);
+        // routerScript = new GUIConfigEntry();
+        // this.entries.add(routerScript);
 
-        add(panel, BorderLayout.NORTH);
-        add(routerScript, BorderLayout.CENTER);
+        add(panel);
+        // add(routerScript);
     }
 
     @Override

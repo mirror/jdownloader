@@ -82,7 +82,7 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, extended));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("interaction.simpleExecute.test", "Jetzt ausführen")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, this, PROPERTY_COMMAND, JDLocale.L("interaction.simpleExecute.cmd", "Befehl")).setInstantHelp(JDLocale.L("interaction.simpleExecute.helpLink", "http://jdownloader.org/page.php?id=119")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, this, PROPERTY_COMMAND, JDLocale.L("interaction.simpleExecute.cmd", "Befehl")));
 
         extended.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, this, PROPERTY_PARAMETER, JDLocale.L("interaction.simpleExecute.parameter", "Parameter (1 Parameter pro Zeile)")));
 

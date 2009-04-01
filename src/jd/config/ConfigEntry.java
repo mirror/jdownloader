@@ -66,7 +66,7 @@ public String toString(){
     private boolean enabled = true;
     private int end;
     private PropertyChangeListener guiListener;
-    private String instantHelp;
+//    private String instantHelp;
 
     private String label;
 
@@ -87,6 +87,8 @@ public String toString(){
     private int type;
 
     private PropertyType propertyType = PropertyType.NORMAL;
+
+    private String groupname;
 
     public PropertyType getPropertyType() {
         return propertyType;
@@ -288,9 +290,9 @@ public String toString(){
         return guiListener;
     }
 
-    public String getInstantHelp() {
-        return instantHelp;
-    }
+//    public String getInstantHelp() {
+//        return instantHelp;
+//    }
 
     public String getLabel() {
         return label;
@@ -443,11 +445,11 @@ public String toString(){
 
     }
 
-    public ConfigEntry setInstantHelp(String l) {
-        instantHelp = l;
-        return this;
-
-    }
+//    public ConfigEntry setInstantHelp(String l) {
+//        instantHelp = l;
+//        return this;
+//
+//    }
 
     public ConfigEntry setLabel(String label) {
         this.label = label;
@@ -503,5 +505,15 @@ public String toString(){
             }
         }
     }
+
+    public ConfigEntry setGroupName(String l) {
+        groupname=l;
+        return this;
+    }
+
+    public String getGroupname() {
+        return groupname;
+    }
+    
 
 }

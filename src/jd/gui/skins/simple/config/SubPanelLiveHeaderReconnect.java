@@ -45,6 +45,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import net.miginfocom.swing.MigLayout;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -245,32 +247,42 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
 
     @Override
     public void initPanel() {
-
+        JPanel buttons = new JPanel();
+        buttons.setLayout(new MigLayout("ins 0, wrap 3"));
         btnSelectRouter = new JButton(JDLocale.L("gui.config.liveHeader.selectRouter", "Router auswählen"));
         btnSelectRouter.addActionListener(this);
-        JDUtilities.addToGridBag(panel, btnSelectRouter, 0, 0, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        buttons.add(btnSelectRouter, "width 160!");
+
+        // JDUtilities.addToGridBag(panel, btnSelectRouter, 0, 0, 1, 1, 0, 1,
+        // insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
         btnFindIP = new JButton(JDLocale.L("gui.config.liveHeader.btnFindIP", "Router IP ermitteln"));
         btnFindIP.addActionListener(this);
-        JDUtilities.addToGridBag(panel, btnFindIP, 1, 0, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        buttons.add(btnFindIP, "width 160!");
+        // JDUtilities.addToGridBag(panel, btnFindIP, 1, 0, 1, 1, 0, 1, insets,
+        // GridBagConstraints.NONE, GridBagConstraints.WEST);
 
         btnAutoConfig = new JButton(JDLocale.L("gui.config.liveHeader.autoConfig", "Router automatisch setzten"));
         btnAutoConfig.addActionListener(this);
-        JDUtilities.addToGridBag(panel, btnAutoConfig, 2, 0, GridBagConstraints.REMAINDER, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
+        buttons.add(btnAutoConfig, "width 160!");
+        // JDUtilities.addToGridBag(panel, btnAutoConfig, 2, 0,
+        // GridBagConstraints.REMAINDER, 1, 0, 1, insets,
+        // GridBagConstraints.NONE, GridBagConstraints.WEST);
+        panel.add(buttons, "spanx,gapleft 10");
         user = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_USER, JDLocale.L("gui.config.liveHeader.user", "Login User (->%%%user%%%)")));
         addGUIConfigEntry(user);
         pass = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, configuration, Configuration.PARAM_HTTPSEND_PASS, JDLocale.L("gui.config.liveHeader.password", "Login Passwort (->%%%pass%%%)")));
         addGUIConfigEntry(pass);
         ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDLocale.L("gui.config.liveHeader.routerIP", "RouterIP (->%%%routerip%%%)")));
         addGUIConfigEntry(ip);
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, RouterInfoCollector.PROPERTY_SHOW_ROUTERINFO_DIALOG, JDLocale.L("gui.config.reconnect.showupload", "Show ReconnectInfo Upload Window")).setDefaultValue(JDUtilities.getConfiguration().getBooleanProperty(RouterInfoCollector.PROPERTY_SHOW_ROUTERINFO_DIALOG, true))));
+  
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.liveHeader.script", "HTTP Script"))));
 
-        routerScript = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.liveHeader.script", "HTTP Script")));
-        this.entries.add(routerScript);
+        // routerScript = new GUIConfigEntry();
+        // this.entries.add(routerScript);
 
-        add(panel, BorderLayout.NORTH);
-        add(routerScript, BorderLayout.CENTER);
+        add(panel);
+        // add(routerScript);
     }
 
     @Override

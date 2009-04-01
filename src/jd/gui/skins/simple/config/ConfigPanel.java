@@ -16,17 +16,12 @@
 
 package jd.gui.skins.simple.config;
 
-import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
 
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
@@ -34,6 +29,7 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public abstract class ConfigPanel extends JTabbedPanel {
 
@@ -41,23 +37,41 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
     protected Vector<GUIConfigEntry> entries = new Vector<GUIConfigEntry>();
 
-    protected Insets insets = new Insets(1, 5, 1, 5);
-
     protected Logger logger = JDUtilities.getLogger();
 
     protected JPanel panel;
+    private JSubPanel subPanel;
 
     public ConfigPanel() {
 
-        int n = 2;
-        setLayout(new BorderLayout(n, n));
-        setBorder(new EmptyBorder(n, n, n, n));
-        panel = new JPanel(new GridBagLayout());
+        panel = new JPanel();
+        this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
+        panel.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry) {
 
-        JDUtilities.addToGridBag(panel, entry, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
+        // JDUtilities.addToGridBag(panel, entry, GridBagConstraints.RELATIVE,
+        // GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0,
+        // insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
+        String subPanelName = entry.getConfigEntry().getGroupname();
+
+        if (subPanelName == null) {
+            panel.add(entry,"gapleft 10,gapright 10");
+            entries.add(entry);
+            subPanel=null;
+            return;
+        }
+
+        if (subPanel != null&&subPanel.getName().equals(subPanelName)) {
+            subPanel.add(entry);
+        } else {
+            subPanel = new JSubPanel(subPanelName);
+            subPanel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
+            subPanel.add(entry);
+            panel.add(subPanel,"gapleft 10,gapright 10");
+        }
+
         entries.add(entry);
 
     }
@@ -83,7 +97,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
     @Override
     public void onDisplay() {
-        System.out.println("Display " + this );
+        System.out.println("Display " + this);
         loadConfigEntries();
     }
 

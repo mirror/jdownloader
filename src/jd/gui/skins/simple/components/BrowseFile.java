@@ -29,6 +29,7 @@ import javax.swing.JTextField;
 
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class BrowseFile extends JPanel implements ActionListener {
 
@@ -142,16 +143,16 @@ public class BrowseFile extends JPanel implements ActionListener {
     }
 
     private void initGUI(int width) {
-        int n = 5;
-        setLayout(new BorderLayout(n, n));
-        txtInput = new JTextField(width);
+     
+        setLayout(new MigLayout("ins 0","[grow 100,fill,160:null:300]3[grow 30,fill,80!]"));
+        txtInput = new JTextField();
         txtInput.setEditable(editable);
         txtInput.addActionListener(this);
         btnBrowse = new JButton(JDLocale.L("gui.btn_select", "Browse"));
         btnBrowse.addActionListener(this);
 
-        add(txtInput, BorderLayout.CENTER);
-        add(btnBrowse, BorderLayout.EAST);
+        add(txtInput);
+        add(btnBrowse);
     }
 
     /**

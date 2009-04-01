@@ -22,6 +22,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
 
+import javax.swing.BorderFactory;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -35,6 +36,9 @@ import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
+
+import org.jdesktop.swingx.JXButton;
 
 public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 
@@ -106,7 +110,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 
     public void initPanel() {
         setupContainer();
-        setLayout(new BorderLayout());
+        setLayout(new MigLayout("ins 0,wrap 1","[grow,fill]"));
 
         this.add(cep = new ConfigEntriesPanel(container), BorderLayout.NORTH);
         tableModel = new InternalTableModel();
@@ -123,14 +127,17 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
             case 0:
                 column.setMaxWidth(80);
                 column.setPreferredWidth(50);
+             
+
                 break;
             case 1:
                 column.setPreferredWidth(600);
                 break;
             }
         }
-
-        this.add(new JScrollPane(table), BorderLayout.CENTER);
+        JScrollPane sp = new JScrollPane(table);
+        sp.setBorder(BorderFactory.createTitledBorder(JDLocale.L("gui.config.jac.table", "Available OCR Methods")));
+        this.add(sp,"height :900:,gapleft 10, gapright 10");
 
     }
 
@@ -170,10 +177,11 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
         ConfigEntry ce2;
 
         container = new ConfigContainer(this);
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.JAC_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.train.show_timeout", "Anzeigedauer des Eingabefensters"), 0, 600).setDefaultValue(20));
-        container.addEntry(ce1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CAPTCHA_JAC_DISABLE, JDLocale.L("gui.config.captcha.jac_disable", "Automatische Bilderkennung abschalten")).setDefaultValue(false));
-        container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(80));
-        ce2.setInstantHelp(JDLocale.L("gui.config.captcha.train.level.instanthelp", "http://jdownloader.org/wiki/index.php?title=Captchafenster_abschalten_%26_Anzeigeschwelle"));
+        container.addEntry(ce1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CAPTCHA_JAC_DISABLE, JDLocale.L("gui.config.captcha.jac_disable", "Automatische Bilderkennung abschalten")).setDefaultValue(false).setGroupName(JDLocale.L("gui.config.jac.options", "Input Settings")));
+        container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.JAC_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.train.show_timeout", "Anzeigedauer des Eingabefensters"), 0, 600).setDefaultValue(20).setGroupName(JDLocale.L("gui.config.jac.options", "Input Settings")));
+        ce2.setEnabledCondidtion(ce1, "==", false);
+        container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(95).setGroupName(JDLocale.L("gui.config.jac.options", "Input Settings")));
+
         ce2.setEnabledCondidtion(ce1, "==", false);
     }
 

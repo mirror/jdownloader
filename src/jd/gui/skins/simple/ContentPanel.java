@@ -25,7 +25,9 @@ public class ContentPanel extends JXPanel {
             rightPanel.onHide();
         }
         rightPanel = panel;
-
+if(rightPanel==null){
+   System.out.println("J");
+}
         this.add(rightPanel, "cell 0 0");
         rightPanel.onDisplay();
         this.revalidate();

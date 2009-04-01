@@ -24,6 +24,8 @@ import java.util.logging.Logger;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
+import net.miginfocom.swing.MigLayout;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
@@ -60,12 +62,14 @@ public class ConfigEntriesPanel extends ConfigPanel {
     @Override
     public void initPanel() {
         if (container.getContainerNum() == 0) {
+          
             Vector<ConfigEntry> entries = container.getEntries();
             for (ConfigEntry cfgEntry : entries) {
                 GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
                 if (ce != null) addGUIConfigEntry(ce);
             }
-            add(panel, BorderLayout.PAGE_START);
+            
+           add(panel);
         } else {
             subPanels = new Vector<ConfigEntriesPanel>();
             tabbedPane = new JTabbedPane();
@@ -90,7 +94,8 @@ public class ConfigEntriesPanel extends ConfigPanel {
             for (ConfigContainer cfg : container) {
                 addTabbedPanel(cfg.getTitle(), new ConfigEntriesPanel(cfg));
             }
-            add(tabbedPane, BorderLayout.CENTER);
+            this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
+            add(tabbedPane);
         }
 
     }
