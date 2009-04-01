@@ -112,6 +112,7 @@ public class Uploadedto extends PluginForHost {
             ai.setValidUntil(Regex.getMilliSeconds(expire, "dd-MM-yyyy hh:mm", null));
             ai.setAccountBalance((long) (Double.parseDouble(balance) * 100));
             ai.setTrafficLeft(Regex.getSize(traffic));
+            ai.setTrafficMax(50 * 1024 *1024 * 1024l);
             ai.setPremiumPoints(Long.parseLong(points));
         }
         return ai;

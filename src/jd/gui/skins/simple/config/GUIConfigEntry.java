@@ -363,8 +363,6 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
             return ((JDTextArea) input[0]).getText();
         case ConfigContainer.TYPE_CHECKBOX:
             return ((JCheckBox) input[0]).isSelected();
-        case ConfigContainer.TYPE_PREMIUMPANEL:
-            return ((PremiumPanel) input[0]).getAccounts();
         case ConfigContainer.TYPE_BUTTON:
             return null;
         case ConfigContainer.TYPE_COMBOBOX:
