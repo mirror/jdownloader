@@ -518,7 +518,7 @@ public class Main {
         }
         new PackageManager().interact(this);
 
-        ProgressController p = new ProgressController("Tester");
+  
         
         
         // loadFavs();

@@ -50,6 +50,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -683,12 +684,36 @@ public class Serienjunkies extends PluginForDecrypt {
         Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
         Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
         br = getBrowser();
-        ArrayList<DownloadLink> ar = decryptItMain(param);
-        if (ar.size() > 1) {
+        final ArrayList<DownloadLink> ar2 = decryptItMain(param);
+        ArrayList<DownloadLink> ar = ar2;
+        if (ar2.size() > 1) {
+            final Object lock = new Object();
+            GuiRunnable run = new GuiRunnable() {
+                private static final long serialVersionUID = 8726498576488124702L;
 
-            SerienjunkiesSJTable sjt = new SerienjunkiesSJTable(SimpleGUI.CURRENTGUI.getFrame(), ar);
+                public void run() {
+                    SerienjunkiesSJTable sjt = new SerienjunkiesSJTable(SimpleGUI.CURRENTGUI.getFrame(), ar2);
 
-            ar = sjt.dls;
+                    put("dialog", sjt.dls);
+                    synchronized (lock) {
+                        lock.notify();
+                    }
+                }
+            };
+            if (SwingUtilities.isEventDispatchThread()) {
+                run.run();
+            } else {
+                EventQueue.invokeLater(run);
+
+                synchronized (lock) {
+                    try {
+                        lock.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            ar = ((ArrayList<DownloadLink>) run.get("dialog"));
         }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         SerienjunkiesThread[] threads = new SerienjunkiesThread[ar.size()];
