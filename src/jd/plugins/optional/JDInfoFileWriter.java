@@ -67,7 +67,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
             // Nur Hostpluginevents auswerten
             DownloadLink lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
-                write(lastDownloadFinished);
+                writeInfoFile();
             }
         }
     }
@@ -101,7 +101,9 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     public void initConfig() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, "VARS", Replacer.getKeyList(), JDLocale.L("plugins.optional.infoFileWriter.variables", "Available variables")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("plugins.optional.infoFileWriter.insertKey", "Insert selected Key")));
+        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this,
+        // JDLocale.L("plugins.optional.infoFileWriter.insertKey",
+        // "Insert selected Key")));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_FILENAME, JDLocale.L("plugins.optional.infoFileWriter.filename", "Filename:")).setDefaultValue(FILENAME_DEFAULT));
 
@@ -118,30 +120,21 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         JDUtilities.getController().removeControlListener(this);
     }
 
-    private boolean write(Object arg) {
-
-        String content = subConfig.getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT);
-        String filename = subConfig.getStringProperty(PARAM_FILENAME, FILENAME_DEFAULT);
-
-        content = Replacer.insertVariables(content);
-
-        filename = Replacer.insertVariables(filename);
+    private void writeInfoFile() {
+        String content = Replacer.insertVariables(subConfig.getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT));
+        String filename = Replacer.insertVariables(subConfig.getStringProperty(PARAM_FILENAME, FILENAME_DEFAULT));
 
         File dest = new File(filename);
 
         try {
             if (dest.createNewFile() && dest.canWrite()) {
                 JDIO.writeLocalFile(dest, content);
-                return true;
             } else {
                 logger.severe("Can not write to: " + dest.getAbsolutePath());
-                return false;
             }
         } catch (Exception e) {
-
             e.printStackTrace();
             logger.severe("Can not write2 to: " + dest.getAbsolutePath());
-            return false;
         }
     }
 }

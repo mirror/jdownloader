@@ -92,7 +92,6 @@ import org.jdesktop.swingx.painter.MattePainter;
 import org.jdesktop.swingx.painter.Painter;
 import org.jdesktop.swingx.table.TableColumnExt;
 import org.jdesktop.swingx.tree.TreeModelSupport;
-import org.jvnet.substance.SubstanceLookAndFeel;
 import org.jvnet.substance.api.ComponentState;
 import org.jvnet.substance.api.SubstanceColorScheme;
 import org.jvnet.substance.utils.SubstanceColorSchemeUtilities;
