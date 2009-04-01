@@ -218,7 +218,7 @@ public class Schedule extends PluginOptional {
 
     @Override
     public String getCoder() {
-        return "Tudels";
+        return "JD-Team / Tudels";
     }
 
     @Override
