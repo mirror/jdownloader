@@ -45,12 +45,7 @@ public class PremiumTaskPane extends TaskPanel implements ControlListener, Actio
 
     }
 
-    private JButton addButton(JButton bt) {
-        bt.addActionListener(this);
-        bt.setHorizontalAlignment(JButton.LEFT);
-        add(bt, "alignx leading");
-        return bt;
-    }
+
 
     public void controlEvent(ControlEvent event) {
     }

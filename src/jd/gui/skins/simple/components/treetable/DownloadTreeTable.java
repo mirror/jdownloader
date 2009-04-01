@@ -237,7 +237,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
 
     public static Painter getFolderPainter(JXTreeTable table) {
 
-        if (JDUtilities.getJavaVersion() >= 1.6 && UIManager.getLookAndFeel() instanceof SubstanceLookAndFeel) {
+        if (JDUtilities.getJavaVersion() >= 1.6 && SimpleGUI.isSubstance()) {
 
             int height = 20;
 //            JProgressBar progressBar = new JProgressBar();

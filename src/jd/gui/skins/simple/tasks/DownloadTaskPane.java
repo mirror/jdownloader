@@ -40,7 +40,7 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener, Contr
     private void initGUI() {
         speedmeter = new SpeedMeterPanel();
         speedmeter.setPreferredSize(new Dimension(100, 30));
-        addButton(startStop = createButton(getStartStopText(), new ImageIcon(JDTheme.getImage(getStartStopDownloadImage(), 32, 32))));
+        addButton(startStop = createButton(getStartStopText(), new ImageIcon(JDTheme.getImage(getStartStopDownloadImage(), 16, 16))));
         if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPEEDMETER, true)) {
             add(speedmeter, "gaptop 10,hidemode 3");
         }
@@ -57,12 +57,6 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener, Contr
         }
     }
 
-    private JButton addButton(JButton bt) {
-        bt.addActionListener(this);
-        bt.setHorizontalAlignment(JButton.LEFT);
-        add(bt, "alignx leading");
-        return bt;
-    }
 
     public void actionPerformed(ActionEvent e) {
 

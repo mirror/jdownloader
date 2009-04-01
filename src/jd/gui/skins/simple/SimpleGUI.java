@@ -107,6 +107,7 @@ import jd.gui.skins.simple.config.FengShuiConfigPanel;
 import jd.gui.skins.simple.premium.PremiumPane;
 import jd.gui.skins.simple.tasks.ConfigTaskPane;
 import jd.gui.skins.simple.tasks.DownloadTaskPane;
+import jd.gui.skins.simple.tasks.GeneralPurposeTaskPanel;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
 import jd.gui.skins.simple.tasks.PremiumTaskPane;
 import jd.gui.skins.simple.tasks.TaskPanel;
@@ -127,6 +128,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.JXTitledSeparator;
+import org.jvnet.substance.SubstanceLookAndFeel;
 
 public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
 
@@ -923,9 +925,9 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         contentPanel = new ContentPanel();
 
         taskPane = new TaskPane();
-        taskPane.setBackgroundPainter(null);
+        // taskPane.setBackgroundPainter(null);
 
-        dlTskPane = new DownloadTaskPane(JDLocale.L("gui.taskpanes.download", "Download"), JDTheme.II("gui.images.taskpanes.download"));
+        dlTskPane = new DownloadTaskPane(JDLocale.L("gui.taskpanes.download", "Download"), JDTheme.II("gui.images.taskpanes.download", 24, 24));
         dlTskPane.addPanel(new SingletonPanel(linkListPane));
         dlTskPane.addActionListener(new ActionListener() {
 
@@ -952,7 +954,7 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         taskPane.add(dlTskPane);
 
         linkGrabber = new LinkGrabberV2Panel(this);
-        lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber"));
+        lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 24, 24));
         lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
         linkGrabber.getJDBroadcaster().addJDListener(lgTaskPane);
         lgTaskPane.addActionListener(linkGrabber);
@@ -969,7 +971,7 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         });
         taskPane.add(lgTaskPane);
 
-        ConfigTaskPane cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration"));
+        ConfigTaskPane cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 24, 24));
         cfgTskPane.addPanel(new SingletonPanel(FengShuiConfigPanel.class, new Object[] {}));
         Object[] configConstructorObjects = new Object[] { JDUtilities.getConfiguration() };
 
@@ -1028,7 +1030,7 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
 
         taskPane.add(cfgTskPane);
 
-        PremiumTaskPane premTskPane = new PremiumTaskPane(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"), JDTheme.II("gui.images.taskpanes.premium"));
+        PremiumTaskPane premTskPane = new PremiumTaskPane(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"), JDTheme.II("gui.images.taskpanes.premium", 24, 24));
         premTskPane.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (!(e.getSource() instanceof JButton)) return;
@@ -1069,35 +1071,42 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         JPanel unterPanel = new JPanel(new BorderLayout());
         ueberPanel.add(toolBar, BorderLayout.NORTH);
         ueberPanel.add(unterPanel, BorderLayout.CENTER);
-        
+
         Tunes4 instance = Tunes4.getINSTANCE();
         toolBar.add(instance.getSwitchViewButton());
         toolBar.add(instance.getViewButton());
-        
-        JXCollapsiblePane cpanel = Tunes4.getINSTANCE().getCardPane(); //new JPanel(new BorderLayout());
-        cpanel.setPreferredSize(new Dimension(640,280));
+
+        JXCollapsiblePane cpanel = Tunes4.getINSTANCE().getCardPane(); // new
+                                                                       // JPanel
+                                                                       // (new
+                                                                       // BorderLayout
+                                                                       // ());
+        cpanel.setPreferredSize(new Dimension(640, 280));
         cpanel.setCollapsed(true);
         JPanel canvas = new JPanel();
-        JScrollPane configView = new JScrollPane(canvas );
+        JScrollPane configView = new JScrollPane(canvas);
         for (int i = 0; i < 10; i++) {
-            JLabel comp = new JLabel("Config " + (i+1));
-            comp.setPreferredSize(new Dimension(400,400));
+            JLabel comp = new JLabel("Config " + (i + 1));
+            comp.setPreferredSize(new Dimension(400, 400));
             canvas.add(comp);
         }
-        configView.setPreferredSize(new Dimension(640,280));
+        configView.setPreferredSize(new Dimension(640, 280));
         cpanel.add(configView, "CD-shelf");
         Tunes4.getINSTANCE().showLastPanel();
-        
+
         unterPanel.add(cpanel, BorderLayout.NORTH);
         unterPanel.add(panel, BorderLayout.CENTER);
-        
-        frame.setContentPane(ueberPanel);
-        
+
+        // frame.setContentPane(ueberPanel);
+
         frame.setContentPane(panel);
 
         panel.add(taskPane);
+        GeneralPurposeTaskPanel generalPurposeTasks = new GeneralPurposeTaskPanel(JDLocale.L("gui.taskpanes.generalpurpose", "Quick Config"), JDTheme.II("gui.images.taskpanes.generalpurpose", 16, 16));
+
         // taskPane.setBorder(BorderFactory.createLineBorder(Color.RED));
-        panel.add(contentPanel);
+        panel.add(contentPanel, "spany");
+        panel.add(generalPurposeTasks);
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
         panel.add(progressBar, "span,hidemode 3");
         // progressBar.setBorder(BorderFactory.createLineBorder(Color.BLUE));
@@ -2090,6 +2099,11 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
     public ContentPanel getContentPane() {
         return this.contentPanel;
 
+    }
+
+    public static boolean isSubstance() {
+        // TODO Auto-generated method stub
+        return UIManager.getLookAndFeel() instanceof SubstanceLookAndFeel;
     }
 
 }

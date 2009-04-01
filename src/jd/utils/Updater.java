@@ -297,7 +297,7 @@ public class Updater {
         Subversion sv = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/ressourcen/");
         sv.export(svn);
         moveSrcToDif("jd/languages", "jd/languages");
-        moveSrcToDif("jd/captcha", "jd/captcha");
+//        moveSrcToDif("jd/captcha", "jd/captcha");
     }
 
     /**

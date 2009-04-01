@@ -49,9 +49,9 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
         this.panel_add_links = addButton(this.createButton(JDLocale.L("gui.linkgrabberv2.addlinks", "Add Links"), JDTheme.II("gui.images.add", 16, 16)));
         this.panel_add_containers = addButton(this.createButton(JDLocale.L("gui.linkgrabberv2.addcontainers", "Add Containers"), JDTheme.II("gui.images.load", 16, 16)));
         add(sep, 2);
-        lg_add_all = addButton(createButton(JDLocale.L("gui.linkgrabberv2.lg.addall", "Add all packages"), JDTheme.II("gui.images.add_all", 16, 16)), 3);
-        lg_add_selected = addButton(createButton(JDLocale.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)"), JDTheme.II("gui.images.add_package", 16, 16)), 4);
-        lg_clear = addButton(createButton(JDLocale.L("gui.linkgrabberv2.lg.clear", "Clear List"), JDTheme.II("gui.images.clear", 16, 16)), 5);
+        lg_add_all = addButton(createButton(JDLocale.L("gui.linkgrabberv2.lg.addall", "Add all packages"), JDTheme.II("gui.images.add_all", 16, 16)));
+        lg_add_selected = addButton(createButton(JDLocale.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)"), JDTheme.II("gui.images.add_package", 16, 16)));
+        lg_clear = addButton(createButton(JDLocale.L("gui.linkgrabberv2.lg.clear", "Clear List"), JDTheme.II("gui.images.clear", 16, 16)));
         lg_add_all.setEnabled(false);
         lg_add_selected.setEnabled(false);
         lg_clear.setEnabled(false);
@@ -68,19 +68,9 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
         }
     }
 
-    private JButton addButton(JButton bt) {
-        bt.addActionListener(this);
-        bt.setHorizontalAlignment(JButton.LEFT);
-        add(bt, "alignx leading");
-        return bt;
-    }
 
-    private JButton addButton(JButton bt, int pos) {
-        bt.addActionListener(this);
-        bt.setHorizontalAlignment(JButton.LEFT);
-        add(bt, "alignx leading", pos);
-        return bt;
-    }
+
+
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == panel_add_links) {

@@ -23,7 +23,7 @@ public class TaskPane extends JXPanel implements ActionListener {
 
     public TaskPane() {
         panels = new ArrayList<TaskPanel>();
-        this.setLayout(new MigLayout("ins 5, wrap 1", "[fill,grow]"));
+        this.setLayout(new MigLayout("ins 0, wrap 1", "[fill,grow]"));
         this.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Color.GRAY));
     }
 
@@ -32,7 +32,7 @@ public class TaskPane extends JXPanel implements ActionListener {
         if (!panels.contains(panel)) {
             panel.addActionListener(this);
             panels.add(panel);
-            lastSource = panel;
+           // lastSource = panel;
             switcher(null);
         }
     }
@@ -41,7 +41,7 @@ public class TaskPane extends JXPanel implements ActionListener {
         super.add(panel, index);
         if (!panels.contains(panel)) {
             panel.addActionListener(this);
-            lastSource = panel;
+           // lastSource = panel;
             switcher(null);
         }
     }

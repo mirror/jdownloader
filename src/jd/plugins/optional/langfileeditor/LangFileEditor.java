@@ -16,6 +16,7 @@
 
 package jd.plugins.optional.langfileeditor;
 
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -23,6 +24,7 @@ import jd.Main;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.event.ControlEvent;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
@@ -71,8 +73,28 @@ public class LangFileEditor extends PluginOptional {
     @Override
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
-            if (tp == null) tp = new LFETaskPane(getHost(), JDTheme.II("gui.images.jd_logo", 32, 32));
-            SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
+            final Object lock = new Object();
+            GuiRunnable run;
+            EventQueue.invokeLater(run = new GuiRunnable() {
+                private static final long serialVersionUID = 8726498576488124702L;
+
+                public void run() {
+                    if (tp == null) tp = new LFETaskPane(getHost(), JDTheme.II("gui.images.jd_logo", 24, 24));
+                    SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
+                    synchronized (lock) {
+                        lock.notify();
+                    }
+                }
+            });
+
+            synchronized (lock) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
             JDUtilities.getController().removeControlListener(this);
             return;
         }

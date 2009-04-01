@@ -66,12 +66,7 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
 
     }
 
-    private JButton addButton(JButton bt) {
-        bt.addActionListener(this);
-        bt.setHorizontalAlignment(JButton.LEFT);
-        add(bt, "alignx leading");
-        return bt;
-    }
+
 
     /**
      * 
