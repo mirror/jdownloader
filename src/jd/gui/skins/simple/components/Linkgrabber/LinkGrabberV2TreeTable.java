@@ -55,8 +55,6 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
      */
     private static final long serialVersionUID = 1L;
     private LinkGrabberV2TreeTableModel model;
-    public int mouseOverRow;
-    public int mouseOverColumn;
     private LinkGrabberV2Panel linkgrabber;
     private LinkGrabberV2TreeTableRenderer cellRenderer;
     private TableColumnExt[] cols;
@@ -94,7 +92,7 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
         // DownloadTreeTable.getFolderPainter());
         addPackageHighlighter();
         addOfflineHighlighter();
-        //addOnlineHighlighter();
+        // addOnlineHighlighter();
         addDisabledHighlighter();
 
         // addPackageOfflineHighlighter();
@@ -153,13 +151,9 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
     }
 
     public void mouseDragged(MouseEvent arg0) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseMoved(MouseEvent e) {
-        mouseOverRow = rowAtPoint(e.getPoint());
-        mouseOverColumn = columnAtPoint(e.getPoint());
     }
 
     public void updateSelectionAndExpandStatus() {
@@ -217,13 +211,9 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
     }
 
     public void mouseEntered(MouseEvent arg0) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseExited(MouseEvent arg0) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseReleased(MouseEvent e) {

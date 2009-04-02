@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple.components;
 
-import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -143,8 +142,8 @@ public class BrowseFile extends JPanel implements ActionListener {
     }
 
     private void initGUI(int width) {
-     
-        setLayout(new MigLayout("ins 0","[grow 100,fill,160:null:300]3[grow 30,fill,80!]"));
+
+        setLayout(new MigLayout("ins 0", "[grow 100,fill,160:null:300]3[grow 30,fill,80!]"));
         txtInput = new JTextField();
         txtInput.setEditable(editable);
         txtInput.addActionListener(this);

@@ -49,7 +49,6 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXButton;
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.JXHeader;
 import org.jdesktop.swingx.JXLabel;
@@ -69,8 +68,8 @@ public class PremiumPane extends JTabbedPanel {
     private JXCollapsiblePane cp;
     private ArrayList<AccountPanel> accs = new ArrayList<AccountPanel>();
     private AccountPanel lastOpenedPanel;
-    
-    JXHeader header = new JXHeader();
+
+    private JXHeader header = new JXHeader();
 
     private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 500, 100, this.getBackground());
 
@@ -83,7 +82,7 @@ public class PremiumPane extends JTabbedPanel {
         cp.setLayout(new MigLayout("ins 2", "[right]5[ left, grow, fill]"));
         cp.setBorder(new DropShadowBorder());
         cp.setCollapsed(true);
-        
+
         header.setIconPosition(JXHeader.IconPosition.LEFT);
         header.setFont(new Font(null, 0, 18));
         header.setIcon(JDTheme.II("gui.images.config.tip", 24, 24));
@@ -96,20 +95,19 @@ public class PremiumPane extends JTabbedPanel {
     private void showCollapseAccount(AccountPanel accp) {
         try {
             cp.setCollapsed(true);
-            
-            if(lastOpenedPanel != null)
-            	lastOpenedPanel.setHide();
-            
+
+            if (lastOpenedPanel != null) lastOpenedPanel.setHide();
+
             lastOpenedPanel = accp;
-            
+
             AccountInfo ai = host.getAccountInformation(accp.getAccount());
             cp.removeAll();
-            
-            if(!ai.isValid()) {
-            	accp.setNotValid(ai.getStatus());
-            	return;
+
+            if (!ai.isValid()) {
+                accp.setNotValid(ai.getStatus());
+                return;
             }
-            
+
             DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
 
             header.setTitle("Accountinformation for " + host.getHost() + " account: " + accp.getAccount().getUser());
@@ -142,9 +140,9 @@ public class PremiumPane extends JTabbedPanel {
             if (ai.getTrafficLeft() > -1) {
                 cp.add(new JLabel("Traffic left"), "newline, alignright, w 15%:pref, growx");
                 cp.add(getTextField(JDUtilities.formatBytesToMB(ai.getTrafficLeft())), "alignleft");
-                
+
                 ChartAPI_GOM freeTraffic = new ChartAPI_GOM("", 370, 120, cp.getBackground());
-                double procent = ((double)ai.getTrafficLeft()/(double)ai.getTrafficMax()*100);
+                double procent = ((double) ai.getTrafficLeft() / (double) ai.getTrafficMax() * 100);
                 freeTraffic.addEntity(new ChartAPI_Entity(JDUtilities.formatBytesToMB(ai.getTrafficLeft()) + " free", String.valueOf(procent), new Color(50, 200, 50)));
                 freeTraffic.fetchImage();
                 cp.add(freeTraffic, "newline, skip 1, alignright");
@@ -164,16 +162,16 @@ public class PremiumPane extends JTabbedPanel {
     private void showGlobalHostInformation() {
         cp.setCollapsed(true);
         cp.removeAll();
-        
+
         header.setTitle("Informations for " + host.getHost());
         cp.add(header, "growx, spanx");
-        
+
         cp.add(new JLabel("Accounts"), "newline, alignright, w 15%:pref");
         cp.add(getTextField(String.valueOf(host.getPremiumAccounts().size())), "alignleft");
-        
+
         cp.add(freeTrafficChart, "newline, alignleft, spanx, spany");
         new ChartRefresh().start();
-        
+
         cp.setCollapsed(false);
     }
 
@@ -181,7 +179,7 @@ public class PremiumPane extends JTabbedPanel {
         panel = new JPanel();
         panel.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, fill]0[right][90:pref, grow,fill]"));
         accs = new ArrayList<AccountPanel>();
-        
+
         for (int i = 0; i < host.getPremiumAccounts().size(); i++) {
             accs.add(new AccountPanel(panel, i + 1, this, host.getPremiumAccounts().get(i)));
         }
@@ -195,7 +193,7 @@ public class PremiumPane extends JTabbedPanel {
         sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         sp.getVerticalScrollBar().setUnitIncrement(80);
         sp.getVerticalScrollBar().setBlockIncrement(190);
-        
+
         showGlobalHostInformation();
     }
 
@@ -217,14 +215,14 @@ public class PremiumPane extends JTabbedPanel {
         }
 
         public void createPanel(JPanel panel, int nr) {
-        	chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
+            chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
             if (account.isEnabled()) {
                 chkEnable.setForeground(ACTIVE);
             } else {
                 chkEnable.setForeground(INACTIVE);
             }
-        	chkEnable.setSelected(account.isEnabled());
-        	
+            chkEnable.setSelected(account.isEnabled());
+
             panel.add(chkEnable, "alignleft, newline");
             chkEnable.addChangeListener(this);
 
@@ -246,27 +244,28 @@ public class PremiumPane extends JTabbedPanel {
             btnCheck.setEnabled(account.isEnabled());
             lblUsername.setEnabled(account.isEnabled());
         }
-        
+
         public void setHide() {
-        	btnCheck.setText("Show Information");
+            btnCheck.setText("Show Information");
         }
+
         public Account getAccount() {
-        	return account;
+            return account;
         }
-        
+
         public void setNotValid(final String status) {
-        	SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					txtStatus.setText(status);
-		            chkEnable.setSelected(false);
-		            chkEnable.setForeground(DISABLED);
-		            txtStatus.setEnabled(false);
-		            btnCheck.setEnabled(false);
-		            lblUsername.setEnabled(false);
-		            account.setEnabled(false);
-		            accvalid = false;
-				}
-        	});
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    txtStatus.setText(status);
+                    chkEnable.setSelected(false);
+                    chkEnable.setForeground(DISABLED);
+                    txtStatus.setEnabled(false);
+                    btnCheck.setEnabled(false);
+                    lblUsername.setEnabled(false);
+                    account.setEnabled(false);
+                    accvalid = false;
+                }
+            });
         }
 
         public void stateChanged(ChangeEvent e) {
@@ -307,43 +306,43 @@ public class PremiumPane extends JTabbedPanel {
     }
 
     private class ChartRefresh extends Thread {
-	    public void run() {
-		    Long collectTraffic = new Long(0);
-		    freeTrafficChart.clear();
-		    int accCounter = 0;
-		    Account acc;
-		    for (int i=0; i<host.getPremiumAccounts().size(); i++) {
-		    	acc = host.getPremiumAccounts().get(i);
-		    	if (acc!=null && acc.getUser().length() > 0 && acc.getPass().length() > 0) {
-				    try {
-					    accCounter++;
-					    AccountInfo ai = host.getAccountInformation(acc);
-					    Long tleft = new Long(ai.getTrafficLeft());
-					    if (tleft >= 0 && ai.isExpired() == false) {
-					    	freeTrafficChart.addEntity(new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", tleft, new Color(50, 255 - ((255 / (i + host.getPremiumAccounts().size())) * accCounter), 50)));
-					    	long rest = ai.getTrafficMax() - tleft;
-					    	if (rest > 0) collectTraffic = collectTraffic + rest;
-					    } else if(!ai.isValid()) {
-					    	for(AccountPanel accp : accs) {
-					    		if(acc.getUser().equals(accp.getAccount().getUser())) {
-					    			accp.setNotValid(ai.getStatus());
-					    		}
-					    	}
-					    } else {
-					    	for(AccountPanel accp : accs) {
-					    		if(acc.getUser().equals(accp.getAccount().getUser())) {
-					    			accp.setNotValid(JDLocale.L("plugins.config.premium.expired", "This Account is expired"));
-					    		}
-					    	}
-					    }
-				    } catch (Exception e) {}
-		    	 }
-		    }
-		    
-		    if (collectTraffic > 0)
-		    	freeTrafficChart.addEntity(new ChartAPI_Entity(JDLocale.L("plugins.config.premium.chartapi.maxTraffic", "Max. Traffic to collect") + " [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", collectTraffic, new Color(150, 150, 150)));
-		    freeTrafficChart.fetchImage();
-	    }
+        public void run() {
+            Long collectTraffic = new Long(0);
+            freeTrafficChart.clear();
+            int accCounter = 0;
+            Account acc;
+            for (int i = 0; i < host.getPremiumAccounts().size(); i++) {
+                acc = host.getPremiumAccounts().get(i);
+                if (acc != null && acc.getUser().length() > 0 && acc.getPass().length() > 0) {
+                    try {
+                        accCounter++;
+                        AccountInfo ai = host.getAccountInformation(acc);
+                        Long tleft = new Long(ai.getTrafficLeft());
+                        if (tleft >= 0 && ai.isExpired() == false) {
+                            freeTrafficChart.addEntity(new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", tleft, new Color(50, 255 - ((255 / (i + host.getPremiumAccounts().size())) * accCounter), 50)));
+                            long rest = ai.getTrafficMax() - tleft;
+                            if (rest > 0) collectTraffic = collectTraffic + rest;
+                        } else if (!ai.isValid()) {
+                            for (AccountPanel accp : accs) {
+                                if (acc.getUser().equals(accp.getAccount().getUser())) {
+                                    accp.setNotValid(ai.getStatus());
+                                }
+                            }
+                        } else {
+                            for (AccountPanel accp : accs) {
+                                if (acc.getUser().equals(accp.getAccount().getUser())) {
+                                    accp.setNotValid(JDLocale.L("plugins.config.premium.expired", "This Account is expired"));
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                    }
+                }
+            }
+
+            if (collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPI_Entity(JDLocale.L("plugins.config.premium.chartapi.maxTraffic", "Max. Traffic to collect") + " [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", collectTraffic, new Color(150, 150, 150)));
+            freeTrafficChart.fetchImage();
+        }
     }
 
     @Override

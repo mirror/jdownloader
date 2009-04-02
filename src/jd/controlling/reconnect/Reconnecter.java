@@ -26,7 +26,6 @@ import jd.controlling.interaction.Interaction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.router.RouterInfoCollector;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -124,7 +123,6 @@ public class Reconnecter {
         if (ipChangeSuccess) {
             Reconnecter.resetAllLinks();
             Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, controller);
-            RouterInfoCollector.showDialog();
         }
         IS_RECONNECTING = false;
         lastIPUpdate = System.currentTimeMillis();

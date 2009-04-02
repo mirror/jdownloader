@@ -42,7 +42,6 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
 import jd.controlling.JDController;
-import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
@@ -84,11 +83,7 @@ public class Main {
                     URLConnectionAdapter httpConnection;
                     httpConnection = br.openGetConnection(path);
 
-                    if (httpConnection.getLongContentLength() == -1 || httpConnection.getLongContentLength() == 0) {
-
-                    return "Could not download captcha image";
-
-                    }
+                    if (httpConnection.getLongContentLength() == -1 || httpConnection.getLongContentLength() == 0) return "Could not download captcha image";
 
                     String seperator = "/";
 
@@ -465,7 +460,6 @@ public class Main {
             try {
                 INIT_WAITER.wait();
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
@@ -479,7 +473,6 @@ public class Main {
         HashMap<String, String> head = new HashMap<String, String>();
         head.put("rev", JDUtilities.getRevision());
         JDUtilities.getConfiguration().setProperty("head", head);
-        // init.createQueueBackup();
 
         Properties pr = System.getProperties();
         TreeSet propKeys = new TreeSet(pr.keySet());
@@ -518,40 +511,6 @@ public class Main {
         }
         new PackageManager().interact(this);
 
-  
-        
-        
-        // loadFavs();
-
     }
 
-    // private void loadFavs() {
-    // for (HostPluginWrapper host : JDUtilities.getPluginsForHost()) {
-    //
-    // Browser br = new Browser();
-    // try {
-    // String page = br.getPage("http://" + host.getHost());
-    // String url = br.getRegex("href=.?(.*?favicon\\.ico)").getMatch(0);
-    // if(url==null)url="/favicon.ico";
-    // if(url!=null){
-    // File file;
-    // br.download(file=JDUtilities.getResourceFile("icons/"+
-    // host.getHost()+".ico"), "http://" + host.getHost()+"/"+url);
-    // List<BufferedImage> image = ICODecoder.read(file);
-    // for(BufferedImage i:image){
-    //                        
-    // ImageIO.write(i, "png", JDUtilities.getResourceFile("icons/"+
-    // host.getHost()+".png"));
-    //                        
-    // }
-    //                
-    // }
-    //               
-    // } catch (Exception e) {
-    // // TODO Auto-generated catch block
-    // e.printStackTrace();
-    // }
-    // }
-    //
-    // }
 }
