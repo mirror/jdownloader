@@ -14,13 +14,12 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.components.treetable;
+package jd.gui.skins.simple.components.DownloadView;
 
 import java.util.Vector;
 
 import javax.swing.tree.TreePath;
 
-import jd.gui.skins.simple.DownloadLinksTreeTablePanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDLocale;

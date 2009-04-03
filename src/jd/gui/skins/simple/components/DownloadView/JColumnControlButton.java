@@ -1,4 +1,4 @@
-package jd.gui.skins.simple.components.treetable;
+package jd.gui.skins.simple.components.DownloadView;
 
 import java.util.List;
 

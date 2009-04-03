@@ -68,6 +68,7 @@ import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
+import jd.gui.skins.simple.components.DownloadView.DownloadLinksTreeTablePanel;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2Panel;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;

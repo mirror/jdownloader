@@ -175,15 +175,19 @@ public class LinkCheck extends JDBroadcaster implements ActionListener, JDListen
     public void receiveJDEvent(JDEvent event) {
         if (event instanceof ProgressControllerEvent) {
             if (event.getSource() == this.pc) {
-                this.stopLinkCheck();
+                this.abortLinkCheck();
                 fireJDEvent(new LinkCheckEvent(this, LinkCheckEvent.ABORT));
                 return;
             }
         }
     }
 
-    public void stopLinkCheck() {
+    public void abortLinkCheck() {
         check_running = false;
+        if (checkTimer != null) {
+            checkTimer.stop();
+            checkTimer.removeActionListener(this);
+        }
         if (checkThread != null && checkThread.isAlive()) {
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
@@ -193,9 +197,9 @@ public class LinkCheck extends JDBroadcaster implements ActionListener, JDListen
             });
             checkJobbers.stop();
             checkThread.interrupt();
-            synchronized (LinksToCheck) {
-                LinksToCheck = new Vector<DownloadLink>();
-            }
+        }
+        synchronized (LinksToCheck) {
+            LinksToCheck = new Vector<DownloadLink>();
         }
     }
 

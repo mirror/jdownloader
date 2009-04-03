@@ -213,7 +213,6 @@ public class Jobber {
                     }
                 }
             }
-
             return jobList.size();
         }
 

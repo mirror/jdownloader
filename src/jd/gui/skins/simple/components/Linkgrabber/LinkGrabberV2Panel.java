@@ -630,7 +630,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     public void receiveJDEvent(JDEvent event) {
         if (event instanceof ProgressControllerEvent) {
             if (event.getSource() == this.pc) {
-                lc.stopLinkCheck();
+                lc.abortLinkCheck();
                 this.stopLinkGatherer();
                 return;
             }

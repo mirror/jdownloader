@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.components.treetable;
+package jd.gui.skins.simple.components.DownloadView;
 
 import java.awt.Color;
 import java.awt.Component;

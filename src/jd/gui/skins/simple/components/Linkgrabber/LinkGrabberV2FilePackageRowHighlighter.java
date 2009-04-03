@@ -5,7 +5,7 @@ import java.awt.Component;
 
 import javax.swing.tree.TreePath;
 
-import jd.gui.skins.simple.components.treetable.DownloadLinkRowHighlighter;
+import jd.gui.skins.simple.components.DownloadView.DownloadLinkRowHighlighter;
 import jd.plugins.DownloadLink;
 
 import org.jdesktop.swingx.JXTreeTable;

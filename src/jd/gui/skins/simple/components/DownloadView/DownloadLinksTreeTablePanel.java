@@ -14,22 +14,26 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple;
+package jd.gui.skins.simple.components.DownloadView;
 
-import java.awt.EventQueue;
-import java.awt.LayoutManager;
+import java.awt.BorderLayout;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.skins.simple.JTabbedPanel;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
 
-public abstract class DownloadLinksView extends JTabbedPanel implements ControlListener {
+import org.jdesktop.swingx.JXCollapsiblePane;
+
+public class DownloadLinksTreeTablePanel extends JTabbedPanel implements ControlListener {
 
     public final static int REFRESH_ALL_DATA_CHANGED = 1;
     public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;
@@ -43,14 +47,40 @@ public abstract class DownloadLinksView extends JTabbedPanel implements ControlL
      * Der Logger für Meldungen
      */
     protected Logger logger = JDUtilities.getLogger();
-    /**
-     * contains all packages we have downloadlinks for
-     */
-    private Vector<FilePackage> packages = new Vector<FilePackage>();
 
-    protected DownloadLinksView(SimpleGUI parent, LayoutManager layout) {
-        super(layout);
+    private DownloadTreeTable internalTreeTable;
+
+    
+    private Vector<FilePackage> packages = new Vector<FilePackage>();    
+
+    public DownloadLinksTreeTablePanel(SimpleGUI parent) {
+        super(new BorderLayout());
+        internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(this), this);
+        JScrollPane scrollPane = new JScrollPane(internalTreeTable);        
+        this.add(scrollPane);
         JDUtilities.getController().addControlListener(this);
+    }
+
+    
+    public synchronized void fireTableChanged(final int id, final Object param) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                synchronized (JDUtilities.getController().getPackages()) {
+                    internalTreeTable.fireTableChanged(id, param);
+                }
+            }
+        });
+    }
+    
+    @Override
+    public void onDisplay() {
+        internalTreeTable.removeKeyListener(internalTreeTable);
+        internalTreeTable.addKeyListener(internalTreeTable);
+    }
+
+    @Override
+    public void onHide() {
+        internalTreeTable.removeKeyListener(internalTreeTable);
     }
 
     public void controlEvent(final ControlEvent event) {
@@ -67,14 +97,12 @@ public abstract class DownloadLinksView extends JTabbedPanel implements ControlL
             break;
         case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
             if (event.getSource().getClass() == JDController.class) {
-                DownloadLinksView.this.setPackages(JDUtilities.getController().getPackages());
+                setPackages(JDUtilities.getController().getPackages());
             }
             fireTableChanged(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
             break;
         }
     }
-
-    abstract public void fireTableChanged(int id, Object object);
 
     public Vector<FilePackage> getPackages() {
         return packages;
@@ -83,5 +111,4 @@ public abstract class DownloadLinksView extends JTabbedPanel implements ControlL
     private void setPackages(Vector<FilePackage> packages) {
         this.packages = packages;
     }
-
 }

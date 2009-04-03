@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.components.treetable;
+package jd.gui.skins.simple.components.DownloadView;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -63,10 +63,6 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
-import jd.gui.skins.simple.DownloadInfo;
-import jd.gui.skins.simple.DownloadLinksTreeTablePanel;
-import jd.gui.skins.simple.DownloadLinksView;
-import jd.gui.skins.simple.MenuAction;
 import jd.gui.skins.simple.JDMenu;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
@@ -125,14 +121,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     private long updateTimer = 0;
 
-    private HashMap<DownloadLink, DownloadInfo> dlInfoWindows = new HashMap<DownloadLink, DownloadInfo>();
-
-    private long lastMouseClicked = 0;
-
-    private boolean usedoubleclick = true;
-
-    private boolean updatelock = false;
-
     private TableColumnExt[] cols;
 
     private DownloadLinksTreeTablePanel panel;
@@ -161,9 +149,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setColumnControlVisible(true);
-        this.setColumnControl(new JColumnControlButton(this));
-
-        usedoubleclick = guiConfig.getBooleanProperty(SimpleGuiConstants.PARAM_DCLICKPACKAGE, false);
+        this.setColumnControl(new JColumnControlButton(this));        
         setEditable(false);
         setAutoscrolls(false);
         addTreeExpansionListener(this);
@@ -388,16 +374,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 links.elementAt(i).setProperty("pass", pw);
             }
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
-            break;
-        case TreeTableAction.DOWNLOAD_INFO:
-            links = getSelectedDownloadLinks();
-            for (DownloadLink tmpLink : links) {
-                if (dlInfoWindows.get(tmpLink) == null) {
-                    dlInfoWindows.put(tmpLink, new DownloadInfo(SimpleGUI.CURRENTGUI, tmpLink));
-                } else {
-                    if (dlInfoWindows.get(tmpLink).isVisible() == false) dlInfoWindows.put(tmpLink, new DownloadInfo(SimpleGUI.CURRENTGUI, tmpLink));
-                }
-            }
             break;
         case TreeTableAction.DOWNLOAD_BROWSE_LINK:
             link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
@@ -666,7 +642,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
          * einzellnen DownloadLink haben. ArrayLists werden nicht ausgewertet.
          * in diesem Fall wird die komplette Tabelle neu gezeichnet.
          */
-        case DownloadLinksView.REFRESH_SPECIFIED_LINKS:
+        case DownloadLinksTreeTablePanel.REFRESH_SPECIFIED_LINKS:
             // logger.info("REFRESH SPECS COMPLETE");
             if (param instanceof DownloadLink) {
                 currentLink = (DownloadLink) param;
@@ -740,12 +716,12 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             }
 
             break;
-        case DownloadLinksView.REFRESH_ALL_DATA_CHANGED:
+        case DownloadLinksTreeTablePanel.REFRESH_ALL_DATA_CHANGED:
             logger.info("Updatecomplete");
             supporter.fireChildrenChanged(new TreePath(model.getRoot()), null, null);
 
             break;
-        case DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED:
+        case DownloadLinksTreeTablePanel.REFRESH_DATA_AND_STRUCTURE_CHANGED:
             logger.info("REFRESH GUI COMPLETE");
 
             supporter.fireTreeStructureChanged(new TreePath(model.getRoot()));
@@ -802,10 +778,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     void ignoreSelectionsAndExpansions(int i) {
         ignoreSelectionsAndExpansionsUntil = System.currentTimeMillis() + i;
-    }
-
-    void lastMouseClicked() {
-        lastMouseClicked = System.currentTimeMillis();
     }
 
     public void keyPressed(KeyEvent e) {
@@ -878,19 +850,13 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
     }
 
     public void mouseClicked(MouseEvent e) {
-        ignoreSelectionsAndExpansions(-100);
-        lastMouseClicked();
+        ignoreSelectionsAndExpansions(-100);        
 
         if (e.getButton() == MouseEvent.BUTTON1 && 2 == e.getClickCount()) {
             TreePath path = getPathForRow(rowAtPoint(e.getPoint()));
             if (path == null) return;
             Object obj = path.getLastPathComponent();
-            if (obj instanceof DownloadLink) {
-                new DownloadInfo(SimpleGUI.CURRENTGUI, (DownloadLink) obj);
-                panel.hideFilePackageInfo();
-            } else if (obj instanceof FilePackage) {
-                panel.showFilePackageInfo((FilePackage) obj);
-            }
+            
         }
     }
 
@@ -909,7 +875,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
     }
 
     public void mousePressed(MouseEvent e) {
-        ignoreSelectionsAndExpansions(-100);
+        if (e.getSource() != this) return;
+        
         // TODO: isPopupTrigger() funktioniert nicht
         // logger.info("Press"+e.isPopupTrigger() );
         Point point = e.getPoint();
@@ -966,8 +933,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 }
                 popup.add(packagePopup);
                 popup.add(pluginPopup);
-
-                popup.add(buildpriomenuDownloadLink((DownloadLink) obj));
+                
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TreeTableAction.DOWNLOAD_DOWNLOAD_DIR, new Property("downloadlink", obj))));
                 popup.add(tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.browseLink", "im Browser öffnen"), TreeTableAction.DOWNLOAD_BROWSE_LINK, new Property("downloadlink", obj))));
@@ -1006,39 +972,25 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             popup.show(this, point.x, point.y);
         }
     }
-
-    private JMenu buildpriomenuDownloadLink(DownloadLink link) {
+    
+    private JMenu buildpriomenu(Vector<DownloadLink> links) {
         JMenuItem tmp;
-        JMenu prioPopup = new JMenu(JDLocale.L("gui.table.contextmenu.priority", "Priority"));
-        int prio = link.getPriority();
+        JMenu prioPopup = new JMenu(JDLocale.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
+        Integer prio = null;
+        if (links.size() == 1) prio = links.get(0).getPriority();
         HashMap<String, Object> prop = null;
-        Vector<DownloadLink> links = getAllSelectedDownloadLinks();
         for (int i = 4; i >= -4; i--) {
             prop = new HashMap<String, Object>();
-            prop.put("downloadlinks", links);
+            prop.put("links", links);
             prop.put("prio", new Integer(i));
             prioPopup.add(tmp = new JMenuItem(new TreeTableAction(this, Integer.toString(i), TreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
-            if (i == prio) {
+            if (prio != null && i == prio) {
                 tmp.setEnabled(false);
             } else
                 tmp.setEnabled(true);
         }
         return prioPopup;
-    }
-
-    private JMenu buildpriomenuFilePackage(Vector<FilePackage> fps) {
-        JMenuItem tmp;
-        JMenu prioPopup = new JMenu(JDLocale.L("gui.table.contextmenu.priority", "Priority"));
-        HashMap<String, Object> prop = null;
-        for (int i = 4; i >= -4; i--) {
-            prop = new HashMap<String, Object>();
-            prop.put("packages", fps);
-            prop.put("prio", new Integer(i));
-            prioPopup.add(tmp = new JMenuItem(new TreeTableAction(this, Integer.toString(i), TreeTableAction.PACKAGE_PRIO, new Property("infos", prop))));
-            tmp.setEnabled(true);
-        }
-        return prioPopup;
-    }
+    }    
 
     private Vector<Component> createPackageMenu(FilePackage fp, Vector<FilePackage> fps) {
         Vector<Component> res = new Vector<Component>();
@@ -1075,8 +1027,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             }
         }
 
-        res.add(pluginPopup);
-        res.add(buildpriomenuFilePackage(fps));
+        res.add(pluginPopup);        
 
         res.add(new JSeparator());
         res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern"), TreeTableAction.PACKAGE_EDIT_DIR, new Property("package", fp))));
@@ -1212,9 +1163,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
      * Diese Methode setzt die gespeicherten Werte für die Selection und
      * Expansion
      */
-    public synchronized void updateSelectionAndExpandStatus() {
-        // logger.info("UPD");
-        updatelock = true;
+    public synchronized void updateSelectionAndExpandStatus() {             
         int i = 0;
         while (getPathForRow(i) != null) {
             if (getPathForRow(i).getLastPathComponent() instanceof DownloadLink) {
@@ -1232,8 +1181,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 }
             }
             i++;
-        }
-        updatelock = false;
+        }        
     }
 
     public void valueChanged(TreeSelectionEvent e) {
