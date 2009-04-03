@@ -34,6 +34,7 @@ import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
@@ -401,7 +402,8 @@ public class Main {
         LOGGER.info("Register plugins");
         init.init();
         init.loadImages();
-
+        JFrame.setDefaultLookAndFeelDecorated(true);
+        JDialog.setDefaultLookAndFeelDecorated(true);
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "Lade Konfiguration"));
 
         String old = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty("LOCALE", null);

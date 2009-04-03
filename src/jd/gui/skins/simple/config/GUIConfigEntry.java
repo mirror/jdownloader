@@ -304,6 +304,10 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
         this.firePropertyChange(getConfigEntry().getPropertyName(), null, getText());
     }
 
+    public JComponent[] getInput() {
+        return input;
+    }
+
     public void actionPerformed(ActionEvent e) {
         getConfigEntry().valueChanged(getText());
 

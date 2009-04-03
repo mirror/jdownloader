@@ -94,9 +94,12 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
     @Override
     public void onDisplay() {
+        internalTreeTable.removeKeyListener(internalTreeTable);
+        internalTreeTable.addKeyListener(internalTreeTable);
     }
 
     @Override
     public void onHide() {
+        internalTreeTable.removeKeyListener(internalTreeTable);
     }
 }

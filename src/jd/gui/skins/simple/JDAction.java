@@ -65,9 +65,9 @@ public class JDAction extends AbstractAction {
     public static final int ITEMS_MOVE_DOWN = 2;
     public static final int ITEMS_MOVE_TOP = 3;
     public static final int ITEMS_MOVE_UP = 1;
-    public static final int ITEMS_REMOVE = 8;
-    public static final int ITEMS_REMOVE_LINKS = 81;
-    public static final int ITEMS_REMOVE_PACKAGES = 82;
+//    public static final int ITEMS_REMOVE = 8;
+//    public static final int ITEMS_REMOVE_LINKS = 81;
+//    public static final int ITEMS_REMOVE_PACKAGES = 82;
 
     public static final int HELP = 29;
 

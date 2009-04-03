@@ -21,24 +21,26 @@ public class ContentPanel extends JXPanel {
     public void display(JTabbedPanel panel) {
         if (rightPanel != null) {
             this.remove(rightPanel);
-
+            rightPanel.setEnabled(false);
+            rightPanel.setVisible(false);
+       
             rightPanel.onHide();
         }
         rightPanel = panel;
-if(rightPanel==null){
-   System.out.println("J");
-}
+        if (rightPanel == null) {
+            System.out.println("J");
+        }
         this.add(rightPanel, "cell 0 0");
+        rightPanel.setEnabled(true);
+        rightPanel.setVisible(true);
         rightPanel.onDisplay();
         this.revalidate();
         this.repaint();
-      
+
     }
 
     public JTabbedPanel getRightPanel() {
         return rightPanel;
     }
-
-  
 
 }

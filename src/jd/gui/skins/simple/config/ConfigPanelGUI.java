@@ -19,16 +19,22 @@ package jd.gui.skins.simple.config;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Locale;
+
+import javax.swing.JComboBox;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.skins.simple.JDLookAndFeelManager;
-
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.nutils.OSDetector;
@@ -40,7 +46,7 @@ import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
-public class ConfigPanelGUI extends ConfigPanel {
+public class ConfigPanelGUI extends ConfigPanel   {
 
     private static final long serialVersionUID = 5474787504978441198L;
 
@@ -52,6 +58,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         super();
         subConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         initPanel();
+      
         load();
     }
 
@@ -69,7 +76,6 @@ public class ConfigPanelGUI extends ConfigPanel {
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getSubConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}), "").setGroupName(JDLocale.L("gui.config.gui.language", "Sprache")));
         ce.setDefaultValue(Locale.getDefault());
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-     
 
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")).setGroupName(JDLocale.L("gui.config.gui.view", "Look")));
         ce.setDefaultValue("default");
@@ -79,9 +85,8 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDLookAndFeelManager.PARAM_PLAF, JDLookAndFeelManager.getInstalledLookAndFeels(), JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroupName(JDLocale.L("gui.config.gui.view", "Look")));
         ce.setDefaultValue(JDLookAndFeelManager.getPlaf());
-        ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        
-        
+        // ce.setPropertyType(PropertyType.NEEDS_RESTART);
+        final ConfigEntry plaf = ce;
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_DCLICKPACKAGE, JDLocale.L("gui.config.gui.doubeclick", "Double click to expand/collapse Packages")).setGroupName(JDLocale.L("gui.config.gui.feel", "Feel")));
         ce.setDefaultValue(false);
 
@@ -105,21 +110,25 @@ public class ConfigPanelGUI extends ConfigPanel {
         ConfigContainer links = new ConfigContainer(this, JDLocale.L("gui.config.gui.container.tab", "Downloadlinks"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, links));
 
-//        links.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, LinkGrabber.PROPERTY_ONLINE_CHECK, JDLocale.L("gui.config.gui.linkgrabber.onlinecheck", "Linkgrabber:Linkstatus überprüfen(Verfügbarkeit)")));
-//        ce.setDefaultValue(true);
+        // links.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // subConfig, LinkGrabber.PROPERTY_ONLINE_CHECK,
+        // JDLocale.L("gui.config.gui.linkgrabber.onlinecheck",
+        // "Linkgrabber:Linkstatus überprüfen(Verfügbarkeit)")));
+        // ce.setDefaultValue(true);
 
         links.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER, JDLocale.L("gui.config.reloadContainer", "Heruntergeladene Container einlesen")));
         ce.setDefaultValue(true);
 
         links.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("GUI"), Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, JDLocale.L("gui.config.showContainerOnLoadInfo", "Detailierte Containerinformationen beim Öffnen anzeigen")));
         ce.setDefaultValue(false);
-//        ce.setInstantHelp(JDLocale.L("gui.config.showContainerOnLoadInfo.helpurl", "http://jdownloader.org/wiki/index.php?title=Konfiguration_der_Benutzeroberfl%C3%A4che"));
+        // ce.setInstantHelp(JDLocale.L(
+        // "gui.config.showContainerOnLoadInfo.helpurl",
+        // "http://jdownloader.org/wiki/index.php?title=Konfiguration_der_Benutzeroberfl%C3%A4che"
+        // ));
 
         // Extended Tab
         ConfigContainer ext = new ConfigContainer(this, JDLocale.L("gui.config.gui.ext", "Advanced"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
-
-  
 
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGUI.PARAM_NUM_PREMIUM_CONFIG_FIELDS, JDLocale.L("gui.config.gui.premiumconfigfilednum", "How many Premiumaccount fields should be displayed"), 1, 10));
         ce.setDefaultValue(5);
@@ -228,6 +237,40 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
         this.add(cep = new ConfigEntriesPanel(container));
+        ((JComboBox) ((GUIConfigEntry) plaf.getGuiListener()).getInput()[0]).addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                String plafName = ((JComboBox) e.getSource()).getSelectedItem().toString();
+                Object old = plaf.getPropertyInstance().getProperty(plaf.getPropertyName());
+          
+                plaf.getPropertyInstance().setProperty(plaf.getPropertyName(), plafName);
+                Runnable run = new Runnable() {
+
+                    public void run() {
+                        try {
+                            UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
+                         
+                            SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI.getFrame());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+                if (SwingUtilities.isEventDispatchThread()) {
+                    run.run();
+                } else {
+                    try {
+                        SwingUtilities.invokeAndWait(run);
+                    } catch (Exception e2) {
+
+                        e2.printStackTrace();
+                    }
+                }
+                plaf.getPropertyInstance().setProperty(plaf.getPropertyName(), old);
+             
+            }
+
+        });
     }
 
     @Override
@@ -239,11 +282,39 @@ public class ConfigPanelGUI extends ConfigPanel {
     public void save() {
         cep.save();
         subConfig.save();
+        updateLAF();
+        
+    }
+
+    private void updateLAF() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                public void run() {
+                    try {
+                        UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
+                        System.out.println("Set LAF " + JDLookAndFeelManager.getPlaf());                 
+                        SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI.getFrame());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
     }
 
     public PropertyType hasChanges() {
 
         return PropertyType.getMax(super.hasChanges(), cep.hasChanges());
     }
+
+    
 
 }

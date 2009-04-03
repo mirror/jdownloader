@@ -44,7 +44,6 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -58,7 +57,6 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.SwingConstants;
@@ -126,7 +124,6 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.JXTitledSeparator;
 import org.jvnet.substance.SubstanceLookAndFeel;
 
@@ -494,7 +491,7 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
 
     // private JDAction actionItemsBottom;
 
-    private JDAction actionItemsDelete;
+//    private JDAction actionItemsDelete;
 
     // private JDAction actionItemsDown;
 
@@ -502,9 +499,9 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
 
     // private JDAction actionItemsUp;
 
-    private JDAction actionRemoveLinks;
+//    private JDAction actionRemoveLinks;
 
-    private JDAction actionRemovePackages;
+//    private JDAction actionRemovePackages;
 
     private JDAction actionLog;
 
@@ -766,15 +763,15 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         // fireUIEvent(new UIEvent(this, UIEvent.UI_INTERACT_UPDATE));
         //
         // break;
-        case JDAction.ITEMS_REMOVE:
-            if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + linkListPane.countSelectedLinks() + " links in " + linkListPane.countSelectedPackages() + " packages)")) {
-                    linkListPane.removeSelectedLinks();
-                }
-            } else {
-                linkListPane.removeSelectedLinks();
-            }
-            break;
+//        case JDAction.ITEMS_REMOVE:
+//            if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+//                if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + linkListPane.countSelectedLinks() + " links in " + linkListPane.countSelectedPackages() + " packages)")) {
+//                    linkListPane.removeSelectedLinks();
+//                }
+//            } else {
+//                linkListPane.removeSelectedLinks();
+//            }
+//            break;
         case JDAction.APP_OPEN_OPT_CONFIG:
             SimpleGUI.showConfigDialog(frame, new ConfigPanelAddons(JDUtilities.getConfiguration()), false);
             JDUtilities.getConfiguration().save();
@@ -784,24 +781,24 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         // ConfigPanelPluginForHost(JDUtilities.getConfiguration()), false);
         // JDUtilities.getConfiguration().save();
         // break;
-        case JDAction.ITEMS_REMOVE_PACKAGES:
-            if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete_packages", "Remove completed packages?"))) {
-                    JDUtilities.getController().removeCompletedPackages();
-                }
-            } else {
-                JDUtilities.getController().removeCompletedPackages();
-            }
-            break;
-        case JDAction.ITEMS_REMOVE_LINKS:
-            if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete_downloadlinks", "Remove completed downloads?"))) {
-                    JDUtilities.getController().removeCompletedDownloadLinks();
-                }
-            } else {
-                JDUtilities.getController().removeCompletedDownloadLinks();
-            }
-            break;
+//        case JDAction.ITEMS_REMOVE_PACKAGES:
+//            if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+//                if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete_packages", "Remove completed packages?"))) {
+//                    JDUtilities.getController().removeCompletedPackages();
+//                }
+//            } else {
+//                JDUtilities.getController().removeCompletedPackages();
+//            }
+//            break;
+//        case JDAction.ITEMS_REMOVE_LINKS:
+//            if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+//                if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete_downloadlinks", "Remove completed downloads?"))) {
+//                    JDUtilities.getController().removeCompletedDownloadLinks();
+//                }
+//            } else {
+//                JDUtilities.getController().removeCompletedDownloadLinks();
+//            }
+//            break;
 
         case JDAction.ABOUT:
             JDAboutDialog.showDialog();
@@ -922,7 +919,6 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         CURRENTGUI = this;
         linkListPane = new DownloadLinksTreeTablePanel(this);
         contentPanel = new ContentPanel();
-     
 
         taskPane = new TaskPane();
         // taskPane.setBackgroundPainter(null);
@@ -998,13 +994,15 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
                     break;
                 case ConfigTaskPane.ACTION_SAVE:
                     boolean restart = false;
-                    for (Iterator<JTabbedPanel> it = panelMap.values().iterator(); it.hasNext();) {
-                        JTabbedPanel next = it.next();
-                        if (next instanceof ConfigPanel) {
-                            if (((ConfigPanel) next).hasChanges() == PropertyType.NEEDS_RESTART) restart = true;
-                            ((ConfigPanel) next).save();
+
+                    for (SingletonPanel panel : ((ConfigTaskPane) e.getSource()).getPanels()) {
+
+                        if (panel.getPanel() instanceof ConfigPanel) {
+                            if (((ConfigPanel) panel.getPanel()).hasChanges() == PropertyType.NEEDS_RESTART) restart = true;
+                            ((ConfigPanel) panel.getPanel()).save();
                         }
                     }
+
                     if (restart) {
                         if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDLocale.L("gui.config.save.restart.title", "JDownloader restart requested"))) {
                             JDUtilities.restartJD();
@@ -1065,37 +1063,35 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
 
         // TODO
 
-       
-//        JPanel ueberPanel = new JPanel(new BorderLayout());
-//        JPanel unterPanel = new JPanel(new BorderLayout());
-//        ueberPanel.add(toolBar, BorderLayout.NORTH);
-//        ueberPanel.add(unterPanel, BorderLayout.CENTER);
-//
-//        Tunes4 instance = Tunes4.getINSTANCE();
-//        toolBar.add(instance.getSwitchViewButton());
-//        toolBar.add(instance.getViewButton());
-//
-//        JXCollapsiblePane cpanel = Tunes4.getINSTANCE().getCardPane(); // new
-//                                                                       // JPanel
-//                                                                       // (new
-//                                                                       // BorderLayout
-//                                                                       // ());
-//        cpanel.setPreferredSize(new Dimension(640, 280));
-//        cpanel.setCollapsed(true);
-//        JPanel canvas = new JPanel();
-//        JScrollPane configView = new JScrollPane(canvas);
-//        for (int i = 0; i < 10; i++) {
-//            JLabel comp = new JLabel("Config " + (i + 1));
-//            comp.setPreferredSize(new Dimension(400, 400));
-//            canvas.add(comp);
-//        }
-//        configView.setPreferredSize(new Dimension(640, 280));
-//        cpanel.add(configView, "CD-shelf");
-//        Tunes4.getINSTANCE().showLastPanel();
-//
-//        unterPanel.add(cpanel, BorderLayout.NORTH);
-//        unterPanel.add(panel, BorderLayout.CENTER);
-
+        // JPanel ueberPanel = new JPanel(new BorderLayout());
+        // JPanel unterPanel = new JPanel(new BorderLayout());
+        // ueberPanel.add(toolBar, BorderLayout.NORTH);
+        // ueberPanel.add(unterPanel, BorderLayout.CENTER);
+        //
+        // Tunes4 instance = Tunes4.getINSTANCE();
+        // toolBar.add(instance.getSwitchViewButton());
+        // toolBar.add(instance.getViewButton());
+        //
+        // JXCollapsiblePane cpanel = Tunes4.getINSTANCE().getCardPane(); // new
+        // // JPanel
+        // // (new
+        // // BorderLayout
+        // // ());
+        // cpanel.setPreferredSize(new Dimension(640, 280));
+        // cpanel.setCollapsed(true);
+        // JPanel canvas = new JPanel();
+        // JScrollPane configView = new JScrollPane(canvas);
+        // for (int i = 0; i < 10; i++) {
+        // JLabel comp = new JLabel("Config " + (i + 1));
+        // comp.setPreferredSize(new Dimension(400, 400));
+        // canvas.add(comp);
+        // }
+        // configView.setPreferredSize(new Dimension(640, 280));
+        // cpanel.add(configView, "CD-shelf");
+        // Tunes4.getINSTANCE().showLastPanel();
+        //
+        // unterPanel.add(cpanel, BorderLayout.NORTH);
+        // unterPanel.add(panel, BorderLayout.CENTER);
 
         // frame.setContentPane(ueberPanel);
         JPanel panel = new JPanel(new MigLayout("ins 0,wrap 2", "[fill]0[fill,grow 100]", "[grow,fill]0[]0[]"));
@@ -1106,7 +1102,7 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         GeneralPurposeTaskPanel generalPurposeTasks = new GeneralPurposeTaskPanel(JDLocale.L("gui.taskpanes.generalpurpose", "Quick Config"), JDTheme.II("gui.images.taskpanes.generalpurpose", 16, 16));
 
         // taskPane.setBorder(BorderFactory.createLineBorder(Color.RED));
-        panel.add(contentPanel,"spany 2");
+        panel.add(contentPanel, "spany 2");
         panel.add(generalPurposeTasks);
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
         panel.add(progressBar, "span,hidemode 3");
@@ -1450,8 +1446,8 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         // JDAction.APP_PAUSE_DOWNLOADS);
         // actionItemsAdd = new JDAction(this, JDTheme.V("gui.images.add"),
         // "action.add", JDAction.ITEMS_ADD);
-        actionRemoveLinks = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.links", JDAction.ITEMS_REMOVE_LINKS);
-        actionRemovePackages = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.packages", JDAction.ITEMS_REMOVE_PACKAGES);
+//        actionRemoveLinks = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.links", JDAction.ITEMS_REMOVE_LINKS);
+//        actionRemovePackages = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.packages", JDAction.ITEMS_REMOVE_PACKAGES);
         actionOptionalConfig = new JDAction(this, JDTheme.V("gui.images.config.packagemanager"), "action.optconfig", JDAction.APP_OPEN_OPT_CONFIG);
         actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
         actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
@@ -1469,7 +1465,7 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         // actionUpdate = new JDAction(this,
         // JDTheme.V("gui.images.update_manager"), "action.update",
         // JDAction.APP_UPDATE);
-        actionItemsDelete = new JDAction(this, JDTheme.V("gui.images.delete"), "action.edit.items_remove", JDAction.ITEMS_REMOVE);
+//        actionItemsDelete = new JDAction(this, JDTheme.V("gui.images.delete"), "action.edit.items_remove", JDAction.ITEMS_REMOVE);
         // actionItemsTop = new JDAction(this, JDTheme.V("gui.images.go_top"),
         // "action.edit.items_top", JDAction.ITEMS_MOVE_TOP);
         // actionItemsUp = new JDAction(this, JDTheme.V("gui.images.top"),
@@ -1492,7 +1488,7 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
      */
     public void initMenuBar() {
         JMenu menFile = new JMenu(JDLocale.L("gui.menu.file", "File"));
-        JMenu menExtra = new JMenu(JDLocale.L("gui.menu.extra", "Extras"));
+//        JMenu menExtra = new JMenu(JDLocale.L("gui.menu.extra", "Extras"));
         menAddons = OptionalMenuMenu.getMenu(JDLocale.L("gui.menu.addons", "Addons"), actionOptionalConfig);
         JMenu menHelp = new JMenu(JDLocale.L("gui.menu.plugins.help", "?"));
         // createOptionalPluginsMenuEntries();
@@ -1501,13 +1497,13 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
 
         // Adds the menus from the Addons
 
-        JMenu menRemove = createMenu(JDLocale.L("gui.menu.remove", "Remove"), "gui.images.delete");
-        menRemove.add(JDMenu.createMenuItem(actionItemsDelete));
-        menRemove.addSeparator();
-        menRemove.add(JDMenu.createMenuItem(actionRemoveLinks));
-        menRemove.add(JDMenu.createMenuItem(actionRemovePackages));
-        menFile.add(menRemove);
-        menFile.addSeparator();
+//        JMenu menRemove = createMenu(JDLocale.L("gui.menu.remove", "Remove"), "gui.images.delete");
+//        menRemove.add(JDMenu.createMenuItem(actionItemsDelete));
+//        menRemove.addSeparator();
+//        menRemove.add(JDMenu.createMenuItem(actionRemoveLinks));
+//        menRemove.add(JDMenu.createMenuItem(actionRemovePackages));
+//        menFile.add(menRemove);
+//        menFile.addSeparator();
         menFile.add(JDMenu.createMenuItem(actionSaveDLC));
         menFile.addSeparator();
         menFile.add(JDMenu.createMenuItem(actionRestart));
@@ -1530,7 +1526,7 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
 
         int m = 0;
         JDUtilities.addToGridBag(menuBar, menFile, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(menuBar, menExtra, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(menuBar, menExtra, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(menuBar, menAddons, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(menuBar, menHelp, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(menuBar, new JLabel(""), m++, 0, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

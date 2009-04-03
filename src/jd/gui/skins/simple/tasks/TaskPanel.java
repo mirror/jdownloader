@@ -92,7 +92,10 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
         panels.set(id, singletonPanel);
 
     }
-
+    public ArrayList<SingletonPanel> getPanels() {
+        return panels;
+        
+    }
     public void broadcastEvent(ActionEvent e) {
 
         for (ActionListener listener : (ActionListener[]) this.listenerList.getListeners(ActionListener.class)) {
