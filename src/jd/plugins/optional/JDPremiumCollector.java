@@ -119,7 +119,7 @@ public class JDPremiumCollector extends PluginOptional {
             if (mi.getActionID() == 0) {
                 fetchAccounts();
             } else if (mi.getActionID() == 1) {
-                SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI.getFrame(), getConfig());
+                SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, getConfig());
             }
         }
     }
@@ -137,7 +137,7 @@ public class JDPremiumCollector extends PluginOptional {
 
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
-            guiFrame = SimpleGUI.CURRENTGUI.getFrame();
+            guiFrame = SimpleGUI.CURRENTGUI;
             fetchAccounts();
             JDUtilities.getController().removeControlListener(this);
             return;

@@ -296,7 +296,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 addContainersSwitch = false;
                 addPasswordsSwitch = false;
                 // extractSwitch = false;
-                JDUtilities.getGUI().setGUIStatus(UIInterface.WINDOW_STATUS_MINIMIZED);
+                JDUtilities.getGUI().setFrameStatus(UIInterface.WINDOW_STATUS_MINIMIZED);
 
                 logger.info(currentArg + " parameter");
 
@@ -307,7 +307,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 addPasswordsSwitch = false;
                 // extractSwitch = false;
                 logger.info(currentArg + " parameter");
-                JDUtilities.getGUI().setGUIStatus(UIInterface.WINDOW_STATUS_FOREGROUND);
+                JDUtilities.getGUI().setFrameStatus(UIInterface.WINDOW_STATUS_FOREGROUND);
 
             } else if (currentArg.equals("--hide") || currentArg.equals("-H")) {
 

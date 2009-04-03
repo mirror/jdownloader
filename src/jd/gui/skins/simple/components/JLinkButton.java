@@ -46,6 +46,7 @@ import javax.swing.table.TableCellRenderer;
 
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.Executer;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -179,11 +180,11 @@ public class JLinkButton extends JButton {
     }
 
     public static void openURL(URL url) throws Exception {
-        SubConfiguration cfg = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
-        if (cfg.getBooleanProperty(SimpleGUI.PARAM_CUSTOM_BROWSER_USE, false)) {
+        SubConfiguration cfg = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
+        if (cfg.getBooleanProperty(SimpleGuiConstants.PARAM_CUSTOM_BROWSER_USE, false)) {
 
-            Executer exec = new Executer(cfg.getStringProperty(SimpleGUI.PARAM_CUSTOM_BROWSER));
-            String params = cfg.getStringProperty(SimpleGUI.PARAM_CUSTOM_BROWSER_PARAM).replace("%url", url + "");
+            Executer exec = new Executer(cfg.getStringProperty(SimpleGuiConstants.PARAM_CUSTOM_BROWSER));
+            String params = cfg.getStringProperty(SimpleGuiConstants.PARAM_CUSTOM_BROWSER_PARAM).replace("%url", url + "");
             exec.addParameters(Regex.getLines(params));
             exec.start();
             exec.setWaitTimeout(1);
@@ -192,7 +193,7 @@ public class JLinkButton extends JButton {
         } else {
 
             if (url != null) {
-                String Browser = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_BROWSER, null);
+                String Browser = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_BROWSER, null);
                 if (Browser == null) {
                     BrowserLauncher launcher;
                     List<?> ar = null;
@@ -200,7 +201,7 @@ public class JLinkButton extends JButton {
                     launcher = new BrowserLauncher();
                     ar = launcher.getBrowserList();
 
-                    Object[] BrowserArray = (Object[]) JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getProperty(SimpleGUI.PARAM_BROWSER_VARS, null);
+                    Object[] BrowserArray = (Object[]) JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, null);
 
                     if (BrowserArray == null) {
                         if (ar.size() < 2) {
@@ -212,14 +213,14 @@ public class JLinkButton extends JButton {
                             }
                             BrowserArray[BrowserArray.length - 1] = "JavaBrowser";
                         }
-                        JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).setProperty(SimpleGUI.PARAM_BROWSER_VARS, BrowserArray);
-                        JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).setProperty(SimpleGUI.PARAM_BROWSER, BrowserArray[0]);
+                        JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, BrowserArray);
+                        JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty(SimpleGuiConstants.PARAM_BROWSER, BrowserArray[0]);
                         Browser = (String) BrowserArray[0];
-                        JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
+                        JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).save();
                     }
                 }
                 if (Browser.equals("JavaBrowser")) {
-                    DnDWebBrowser browser = new DnDWebBrowser(((SimpleGUI) JDUtilities.getGUI()).getFrame());
+                    DnDWebBrowser browser = new DnDWebBrowser(((SimpleGUI) JDUtilities.getGUI()));
                     browser.goTo(url);
                     browser.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
                     browser.setSize(800, 600);

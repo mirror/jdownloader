@@ -135,7 +135,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             if (col == 4) {
                 if ((Boolean) value) {
                     String msg = JDLocale.LF("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!", pluginsForHost.get(row).getHost());
-                    if (JOptionPane.showConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), msg) == JOptionPane.OK_OPTION) {
+                    if (JOptionPane.showConfirmDialog(SimpleGUI.CURRENTGUI, msg) == JOptionPane.OK_OPTION) {
                         pluginsForHost.get(row).setAGBChecked((Boolean) value);
                     }
                 } else {
@@ -202,7 +202,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     private void editEntry(HostPluginWrapper hpw) {
-        SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI.getFrame(), hpw.getPlugin().getConfig());
+        SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, hpw.getPlugin().getConfig());
     }
 
     private void editEntry() {

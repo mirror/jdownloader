@@ -27,8 +27,8 @@ public class LocationListener implements WindowListener {
 
     public void saveAll(Component src) {
         if (src != null) {
-            SimpleGUI.saveLastLocation(src, null);
-            SimpleGUI.saveLastDimension(src, null);
+            SimpleGuiUtils.saveLastLocation(src, null);
+            SimpleGuiUtils.saveLastDimension(src, null);
         }
     }
 

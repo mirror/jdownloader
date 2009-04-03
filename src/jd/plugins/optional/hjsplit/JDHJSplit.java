@@ -178,14 +178,14 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
             };
             fc.setFileFilter(ff);
-            if (fc.showOpenDialog(SimpleGUI.CURRENTGUI.getFrame()) == JDFileChooser.APPROVE_OPTION) {
+            if (fc.showOpenDialog(SimpleGUI.CURRENTGUI) == JDFileChooser.APPROVE_OPTION) {
                 File[] list = fc.getSelectedFiles();
                 if (list == null) return;
                 addFileList(list);
             }
             break;
         case 4:
-            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI.getFrame(), config);
+            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, config);
             break;
 
         case 1000:

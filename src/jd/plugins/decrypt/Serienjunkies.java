@@ -50,7 +50,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -687,33 +686,16 @@ public class Serienjunkies extends PluginForDecrypt {
         final ArrayList<DownloadLink> ar2 = decryptItMain(param);
         ArrayList<DownloadLink> ar = ar2;
         if (ar2.size() > 1) {
-            final Object lock = new Object();
-            GuiRunnable run = new GuiRunnable() {
-                private static final long serialVersionUID = 8726498576488124702L;
 
-                public void run() {
-                    SerienjunkiesSJTable sjt = new SerienjunkiesSJTable(SimpleGUI.CURRENTGUI.getFrame(), ar2);
+            ar = new GuiRunnable<ArrayList<DownloadLink>>() {
 
-                    put("dialog", sjt.dls);
-                    synchronized (lock) {
-                        lock.notify();
-                    }
+                public ArrayList<DownloadLink> runSave() {
+                    SerienjunkiesSJTable sjt = new SerienjunkiesSJTable(SimpleGUI.CURRENTGUI, ar2);
+
+                    return sjt.dls;
                 }
-            };
-            if (SwingUtilities.isEventDispatchThread()) {
-                run.run();
-            } else {
-                EventQueue.invokeLater(run);
+            }.getReturnValue();
 
-                synchronized (lock) {
-                    try {
-                        lock.wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            ar = ((ArrayList<DownloadLink>) run.get("dialog"));
         }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         SerienjunkiesThread[] threads = new SerienjunkiesThread[ar.size()];
@@ -1052,13 +1034,12 @@ public class Serienjunkies extends PluginForDecrypt {
     private void sCatDialog() {
         if (scatChecked || useScat[1] == saveScat) return;
 
-        final Object lock = new Object();
-        EventQueue.invokeLater(new GuiRunnable() {
+     new GuiRunnable<Object>() {
             private static final long serialVersionUID = 8726498576488124702L;
 
-            public void run() {
+            public Object runSave() {
 
-                new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
+                new Dialog(((SimpleGUI) JDUtilities.getGUI())) {
 
                     private static final long serialVersionUID = -5144850223169000644L;
 
@@ -1135,20 +1116,10 @@ public class Serienjunkies extends PluginForDecrypt {
 
                 }.init();
 
-                synchronized (lock) {
-                    lock.notify();
-                }
+            return null;
             }
-        });
+        }.waitForEDT();
 
-        synchronized (lock) {
-            try {
-                lock.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        // return ((CaptchaDialog) run.get("dialog")).getCaptchaText();
     }
 
     private void setConfigElements() {

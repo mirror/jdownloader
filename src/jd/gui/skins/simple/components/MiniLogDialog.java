@@ -30,7 +30,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.WindowConstants;
 
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiUtils;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -82,7 +82,7 @@ public class MiniLogDialog extends JFrame implements ActionListener {
         JDUtilities.addToGridBag(this, scrollPane, 0, 2, 4, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(this, btnOK, 3, 3, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-        SimpleGUI.restoreWindow(null, this);
+        SimpleGuiUtils.restoreWindow(null, this);
 
         pack();
 

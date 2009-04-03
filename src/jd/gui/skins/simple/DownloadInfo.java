@@ -72,7 +72,7 @@ public class DownloadInfo extends JFrame implements ChangeListener {
      */
     public DownloadInfo(JFrame frame, DownloadLink dLink) {
         super();
-        subConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+        subConfig = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
         downloadLink = dLink;
         setLayout(new BorderLayout(2, 2));
         setTitle(JDLocale.L("gui.linkinfo.title", "Link Information:") + " " + downloadLink.getName());

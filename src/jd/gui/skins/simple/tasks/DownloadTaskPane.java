@@ -11,7 +11,7 @@ import javax.swing.JButton;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -41,7 +41,7 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener, Contr
         speedmeter = new SpeedMeterPanel();
         speedmeter.setPreferredSize(new Dimension(100, 30));
         addButton(startStop = createButton(getStartStopText(), new ImageIcon(JDTheme.getImage(getStartStopDownloadImage(), 16, 16))));
-        if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPEEDMETER, true)) {
+        if (JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, true)) {
             add(speedmeter, "gaptop 10,hidemode 3");
         }
 

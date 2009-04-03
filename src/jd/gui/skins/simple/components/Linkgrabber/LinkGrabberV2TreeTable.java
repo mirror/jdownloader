@@ -30,7 +30,7 @@ import javax.swing.tree.TreePath;
 
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.treetable.DownloadLinkRowHighlighter;
 import jd.gui.skins.simple.components.treetable.DownloadTreeTable;
 import jd.gui.skins.simple.components.treetable.JColumnControlButton;
@@ -66,11 +66,11 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
     public LinkGrabberV2TreeTable(LinkGrabberV2TreeTableModel treeModel, LinkGrabberV2Panel linkgrabber) {
         super(treeModel);
         this.linkgrabber = linkgrabber;
-        JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+        JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
         cellRenderer = new LinkGrabberV2TreeTableRenderer(this);
         model = treeModel;
         createColumns();
-        if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_DCLICKPACKAGE, false)) neededclicks = 2;
+        if (JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DCLICKPACKAGE, false)) neededclicks = 2;
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);

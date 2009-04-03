@@ -47,7 +47,7 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.JDEventQueue;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.update.WebUpdater;
@@ -210,7 +210,7 @@ public class Main {
         splashScreen = null;
         INIT_WAITER = new Object();
         if (JDInitFlags.SHOW_SPLASH) {
-            if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)) {
+            if (JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPLASH, true)) {
 
                 EventQueue.invokeLater(new Runnable() {
                     public void run() {
@@ -406,11 +406,11 @@ public class Main {
         JDialog.setDefaultLookAndFeelDecorated(true);
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "Lade Konfiguration"));
 
-        String old = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty("LOCALE", null);
+        String old = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("LOCALE", null);
         if (old != null) {
             JDUtilities.getSubConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, old);
-            JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).setProperty("LOCALE", null);
-            JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
+            JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty("LOCALE", null);
+            JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).save();
             JDUtilities.getSubConfig(JDLocale.CONFIG).save();
         }
         if (init.loadConfiguration() == null) {
@@ -498,7 +498,7 @@ public class Main {
         // logger.info(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).
         // getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS,
         // false).toString());
-        if ((JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) && (JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) || level.equals(Level.ALL) || level.equals(Level.FINER) || level.equals(Level.FINE)) && !JDInitFlags.SWITCH_DEBUG && (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false))) {
+        if ((JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) && (JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) || level.equals(Level.ALL) || level.equals(Level.FINER) || level.equals(Level.FINE)) && !JDInitFlags.SWITCH_DEBUG && (!JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false))) {
             JDUtilities.getGUI().showHelpMessage(JDLocale.L("main.start.logwarning.title", "Logwarnung"), JDLocale.LF("main.start.logwarning.body", "ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet.", level.getName(), JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) ? JDLocale.L("main.status.active", "an") : JDLocale.L("main.status.inactive", "aus")), true, JDLocale.L("main.urls.faq", "http://jdownloader.org/faq.php?lng=deutsch"), null, 10);
         }
 

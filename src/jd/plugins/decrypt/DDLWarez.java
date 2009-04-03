@@ -150,7 +150,7 @@ public class DDLWarez extends PluginForDecrypt {
                                 ipf.setValue(captchaText);
                             else {
                                 String text = form.getHtmlCode().replaceAll("<.*?>", "").trim();
-                                CountdownConfirmDialog input = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), "DDL-Warez Human Verification", 10, true, null, CountdownConfirmDialog.STYLE_INPUTFIELD | CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, text, new Regex(Encoding.deepHtmlDecode(HTMLEntities.unhtmlAngleBrackets(text)), "[A-Za-z0-9_äÄöÖüÜß\\s\\,\\.]+[^A-Za-z0-9_äÄöÖüÜß\\,\\.]+\\s(\\S+)").getMatch(0));
+                                CountdownConfirmDialog input = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, "DDL-Warez Human Verification", 10, true, null, CountdownConfirmDialog.STYLE_INPUTFIELD | CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, text, new Regex(Encoding.deepHtmlDecode(HTMLEntities.unhtmlAngleBrackets(text)), "[A-Za-z0-9_äÄöÖüÜß\\s\\,\\.]+[^A-Za-z0-9_äÄöÖüÜß\\,\\.]+\\s(\\S+)").getMatch(0));
                                 if (input.result) {
                                     captchaText = input.input;
                                     ipf.setValue(captchaText);

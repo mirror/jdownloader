@@ -19,7 +19,6 @@ package jd.gui.skins.simple.config;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Locale;
 
@@ -32,10 +31,10 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDLookAndFeelManager;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.nutils.OSDetector;
 import jd.utils.JDLocale;
@@ -46,7 +45,7 @@ import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
-public class ConfigPanelGUI extends ConfigPanel   {
+public class ConfigPanelGUI extends ConfigPanel {
 
     private static final long serialVersionUID = 5474787504978441198L;
 
@@ -56,9 +55,9 @@ public class ConfigPanelGUI extends ConfigPanel   {
 
     public ConfigPanelGUI(Configuration configuration) {
         super();
-        subConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+        subConfig = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
         initPanel();
-      
+
         load();
     }
 
@@ -77,7 +76,7 @@ public class ConfigPanelGUI extends ConfigPanel   {
         ce.setDefaultValue(Locale.getDefault());
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")).setGroupName(JDLocale.L("gui.config.gui.view", "Look")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")).setGroupName(JDLocale.L("gui.config.gui.view", "Look")));
         ce.setDefaultValue("default");
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDSounds.PARAM_CURRENTTHEME, JDSounds.getSoundIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.soundTheme", "Soundtheme")).setGroupName(JDLocale.L("gui.config.gui.view", "Look")));
@@ -87,22 +86,22 @@ public class ConfigPanelGUI extends ConfigPanel   {
         ce.setDefaultValue(JDLookAndFeelManager.getPlaf());
         // ce.setPropertyType(PropertyType.NEEDS_RESTART);
         final ConfigEntry plaf = ce;
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_DCLICKPACKAGE, JDLocale.L("gui.config.gui.doubeclick", "Double click to expand/collapse Packages")).setGroupName(JDLocale.L("gui.config.gui.feel", "Feel")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_DCLICKPACKAGE, JDLocale.L("gui.config.gui.doubeclick", "Double click to expand/collapse Packages")).setGroupName(JDLocale.L("gui.config.gui.feel", "Feel")));
         ce.setDefaultValue(false);
 
-        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGUI.PARAM_INPUTTIMEOUT, JDLocale.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600).setDefaultValue(20).setGroupName(JDLocale.L("gui.config.gui.feel", "Feel")));
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")).setGroupName(JDLocale.L("gui.config.gui.feel", "Feel")));
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_INPUTTIMEOUT, JDLocale.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600).setDefaultValue(20).setGroupName(JDLocale.L("gui.config.gui.feel", "Feel")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")).setGroupName(JDLocale.L("gui.config.gui.feel", "Feel")));
         ce.setDefaultValue(true);
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")).setGroupName(JDLocale.L("gui.config.gui.feel", "Feel")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")).setGroupName(JDLocale.L("gui.config.gui.feel", "Feel")));
         ce.setDefaultValue(false);
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_SHOW_SPEEDMETER, JDLocale.L("gui.config.gui.show_speed_graph", "Display speedmeter graph")).setGroupName(JDLocale.L("gui.config.gui.speedmeter", "Speedmeter")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, JDLocale.L("gui.config.gui.show_speed_graph", "Display speedmeter graph")).setGroupName(JDLocale.L("gui.config.gui.speedmeter", "Speedmeter")));
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         ConfigEntry cond = ce;
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGUI.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDLocale.L("gui.config.gui.show_speed_graph_window", "Speedmeter Time period (sec)"), 10, 60 * 60 * 12).setGroupName(JDLocale.L("gui.config.gui.speedmeter", "Speedmeter")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDLocale.L("gui.config.gui.show_speed_graph_window", "Speedmeter Time period (sec)"), 10, 60 * 60 * 12).setGroupName(JDLocale.L("gui.config.gui.speedmeter", "Speedmeter")));
         ce.setDefaultValue(60);
         ce.setEnabledCondidtion(cond, "==", true);
 
@@ -130,7 +129,7 @@ public class ConfigPanelGUI extends ConfigPanel   {
         ConfigContainer ext = new ConfigContainer(this, JDLocale.L("gui.config.gui.ext", "Advanced"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
 
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGUI.PARAM_NUM_PREMIUM_CONFIG_FIELDS, JDLocale.L("gui.config.gui.premiumconfigfilednum", "How many Premiumaccount fields should be displayed"), 1, 10));
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_NUM_PREMIUM_CONFIG_FIELDS, JDLocale.L("gui.config.gui.premiumconfigfilednum", "How many Premiumaccount fields should be displayed"), 1, 10));
         ce.setDefaultValue(5);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, "FILE_REGISTER", JDLocale.L("gui.config.gui.reg_protocols", "Link ccf/dlc/rsdf to JDownloader")));
@@ -139,7 +138,7 @@ public class ConfigPanelGUI extends ConfigPanel   {
         if (!OSDetector.isWindows()) ce.setEnabled(false);
 
         // Browser Tab
-        Object[] browserArray = (Object[]) subConfig.getProperty(SimpleGUI.PARAM_BROWSER_VARS, null);
+        Object[] browserArray = (Object[]) subConfig.getProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, null);
         if (browserArray == null) {
             BrowserLauncher launcher;
             List<?> ar = null;
@@ -160,8 +159,8 @@ public class ConfigPanelGUI extends ConfigPanel   {
                 }
                 browserArray[browserArray.length - 1] = "JavaBrowser";
             }
-            subConfig.setProperty(SimpleGUI.PARAM_BROWSER_VARS, browserArray);
-            subConfig.setProperty(SimpleGUI.PARAM_BROWSER, browserArray[0]);
+            subConfig.setProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, browserArray);
+            subConfig.setProperty(SimpleGuiConstants.PARAM_BROWSER, browserArray[0]);
             subConfig.save();
         }
 
@@ -184,16 +183,16 @@ public class ConfigPanelGUI extends ConfigPanel   {
             }
         }, JDLocale.L("gui.config.gui.testbrowser", "Test browser")));
 
-        ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_CUSTOM_BROWSER_USE, JDLocale.L("gui.config.gui.use_custom_browser", "Use custom browser"));
+        ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_CUSTOM_BROWSER_USE, JDLocale.L("gui.config.gui.use_custom_browser", "Use custom browser"));
         conditionEntry.setDefaultValue(false);
 
-        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_BROWSER, browserArray, JDLocale.L("gui.config.gui.Browser", "Browser")));
+        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_BROWSER, browserArray, JDLocale.L("gui.config.gui.Browser", "Browser")));
         ce.setDefaultValue(browserArray[0]);
         ce.setEnabledCondidtion(conditionEntry, "==", false);
 
         browser.addEntry(conditionEntry);
 
-        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, SimpleGUI.PARAM_CUSTOM_BROWSER, JDLocale.L("gui.config.gui.custom_browser", "Browserpath")));
+        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, SimpleGuiConstants.PARAM_CUSTOM_BROWSER, JDLocale.L("gui.config.gui.custom_browser", "Browserpath")));
 
         String parameter = null;
         String path = null;
@@ -232,7 +231,7 @@ public class ConfigPanelGUI extends ConfigPanel   {
         ce.setDefaultValue(path);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
-        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, SimpleGUI.PARAM_CUSTOM_BROWSER_PARAM, JDLocale.L("gui.config.gui.custom_browser_param", "Parameter %url (one parameter per line)")));
+        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, SimpleGuiConstants.PARAM_CUSTOM_BROWSER_PARAM, JDLocale.L("gui.config.gui.custom_browser_param", "Parameter %url (one parameter per line)")));
         ce.setDefaultValue(parameter);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
@@ -242,32 +241,24 @@ public class ConfigPanelGUI extends ConfigPanel   {
             public void actionPerformed(ActionEvent e) {
                 String plafName = ((JComboBox) e.getSource()).getSelectedItem().toString();
                 Object old = plaf.getPropertyInstance().getProperty(plaf.getPropertyName());
-          
-                plaf.getPropertyInstance().setProperty(plaf.getPropertyName(), plafName);
-                Runnable run = new Runnable() {
 
-                    public void run() {
+                plaf.getPropertyInstance().setProperty(plaf.getPropertyName(), plafName);
+                new GuiRunnable<Object>() {
+
+                    public Object runSave() {
                         try {
                             UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
-                         
-                            SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI.getFrame());
+
+                            SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
+                        return null;
                     }
-                };
-                if (SwingUtilities.isEventDispatchThread()) {
-                    run.run();
-                } else {
-                    try {
-                        SwingUtilities.invokeAndWait(run);
-                    } catch (Exception e2) {
+                }.waitForEDT();
 
-                        e2.printStackTrace();
-                    }
-                }
                 plaf.getPropertyInstance().setProperty(plaf.getPropertyName(), old);
-             
+
             }
 
         });
@@ -283,38 +274,30 @@ public class ConfigPanelGUI extends ConfigPanel   {
         cep.save();
         subConfig.save();
         updateLAF();
-        
+
     }
 
     private void updateLAF() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
 
-                public void run() {
-                    try {
-                        UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
-                        System.out.println("Set LAF " + JDLookAndFeelManager.getPlaf());                 
-                        SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI.getFrame());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+        new GuiRunnable<Object>() {
+
+            public Object runSave() {
+                try {
+                    UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
+                    System.out.println("Set LAF " + JDLookAndFeelManager.getPlaf());
+                    SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            });
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        
+                return null;
+            }
+        }.waitForEDT();
+
     }
 
     public PropertyType hasChanges() {
 
         return PropertyType.getMax(super.hasChanges(), cep.hasChanges());
     }
-
-    
 
 }

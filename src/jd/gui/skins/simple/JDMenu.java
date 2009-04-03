@@ -19,7 +19,7 @@ public class JDMenu extends JMenu {
         super(l);
     }
 
-    protected static JMenuItem createMenuItem(JDAction action) {
+    protected static JMenuItem createMenuItem(MenuAction action) {
         JMenuItem menuItem = new JMenuItem(action);
         if (menuItem.getIcon() instanceof ImageIcon) {
             ImageIcon icon = (ImageIcon) menuItem.getIcon();

@@ -44,7 +44,7 @@ import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.gui.skins.simple.LocationListener;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiUtils;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.JDImage;
@@ -658,7 +658,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         frame.add(main);
         frame.setResizable(true);
         frame.pack();
-        SimpleGUI.restoreWindow(null, frame);
+        SimpleGuiUtils.restoreWindow(null, frame);
         frame.setVisible(true);
     }
 
@@ -704,7 +704,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         frame.add(main);
         frame.setResizable(true);
         frame.pack();
-        SimpleGUI.restoreWindow(null, frame);
+        SimpleGuiUtils.restoreWindow(null, frame);
         frame.setVisible(true);
     }
 
@@ -786,7 +786,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
         frame.setResizable(true);
         frame.pack();
-        SimpleGUI.restoreWindow(null, frame);
+        SimpleGuiUtils.restoreWindow(null, frame);
         frame.setVisible(true);
     }
 

@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.Vector;
 
 import jd.event.ControlListener;
+
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -60,16 +61,14 @@ public interface UIInterface extends ControlListener {
      */
     public void addLinksToGrabber(Vector<DownloadLink> links, boolean hideGrabber);
 
-    // /**
-    // * Legt alle DownloadLinks fest
-    // *
-    // * @param downloadLinks Alle DownloadLinks
-    // */
-    // public void setDownloadLinks(Vector<DownloadLink> downloadLinks);
 
     public void displayMiniWarning(String shortWarn, String longWarn, int showtime);
 
+
+
+
     /**
+
      * Der Benutzer soll den Captcha Code eintippen
      * 
      * @param plugin
@@ -78,13 +77,17 @@ public interface UIInterface extends ControlListener {
      *            Die Adresse des Captchas
      * @return Der erkannte Text
      */
-    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress, String def);
+    public String showCountdownCaptchaDialog(Plugin plugin, File captchaAddress, String def);
+
+
+
 
     /**
+
      * Minimiert die GUI. als ID können die GUI_STATUS_IDS aus UIInterface,*
      * verwendet werden
      */
-    public void setGUIStatus(int id);
+    public void setFrameStatus(int id);
 
     /**
      * Zeigt einen MessageDialog an
@@ -190,7 +193,7 @@ public interface UIInterface extends ControlListener {
      * @param def
      * @return
      */
-    public String getInputFromUser(String message, String def);
+    public String showCountdownUserInputDialog(String message, String def);
 
     /**
      * Zeigt die AccountInformationen an

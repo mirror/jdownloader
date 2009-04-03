@@ -16,7 +16,6 @@
 
 package jd.controlling;
 
-import java.awt.EventQueue;
 import java.io.File;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -153,7 +152,7 @@ public class SingleDownloadController extends Thread {
                 linkStatus.setValue(5 * 60 * 1000l);
             } catch (InterruptedException e) {
                 logger.severe("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
-        
+
                 linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             } catch (NullPointerException e) {
@@ -295,7 +294,7 @@ public class SingleDownloadController extends Thread {
         JDUtilities.acquireUserIOSemaphore();
         if (!plugin.isAGBChecked()) {
             showAGBDialog(downloadLink2);
-            
+
         } else {
             downloadLink2.getLinkStatus().reset();
         }
@@ -304,37 +303,22 @@ public class SingleDownloadController extends Thread {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
     }
-/**
- * blockiert EDT sicher bis der Dialog bestätigt wurde
- * @param downloadLink2
- */
+
+    /**
+     * blockiert EDT sicher bis der Dialog bestätigt wurde
+     * 
+     * @param downloadLink2
+     */
     private void showAGBDialog(final DownloadLink downloadLink2) {
-        final Object lock = new Object();
- 
-        EventQueue.invokeLater(new GuiRunnable() {
-     
+        new GuiRunnable<Object>() {
 
-          
-            private static final long serialVersionUID = 1L;
-
-            public void run() {
+            public Object runSave() {
                 new AgbDialog(downloadLink2, 30);
-       
-                synchronized (lock) {
-                    lock.notify();
-                }
-            }
-        });
+                return null;
 
-        synchronized (lock) {
-            try {
-                lock.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
-        }
-  
-        
+        }.waitForEDT();
+
     }
 
     /**

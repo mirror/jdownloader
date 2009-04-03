@@ -31,7 +31,7 @@ import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 
 import jd.gui.skins.simple.LocationListener;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiUtils;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -119,7 +119,7 @@ public class TwoTextFieldDialog extends JDialog implements ActionListener {
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         addWindowListener(new LocationListener());
 
-        SimpleGUI.restoreWindow(null, this);
+        SimpleGuiUtils.restoreWindow(null, this);
         setModal(true);
         setVisible(true);
     }

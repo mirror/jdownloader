@@ -477,7 +477,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         } else if (e.getSource() == mnuAdd) {
 
-            String[] result = TwoTextFieldDialog.showDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("plugins.optional.langfileeditor.addKey.title", "Add new key"), JDLocale.L("plugins.optional.langfileeditor.addKey.message1", "Type in the name of the key:"), JDLocale.L("plugins.optional.langfileeditor.addKey.message2", "Type in the translated message of the key:"), "", "");
+            String[] result = TwoTextFieldDialog.showDialog(SimpleGUI.CURRENTGUI, JDLocale.L("plugins.optional.langfileeditor.addKey.title", "Add new key"), JDLocale.L("plugins.optional.langfileeditor.addKey.message1", "Type in the name of the key:"), JDLocale.L("plugins.optional.langfileeditor.addKey.message2", "Type in the translated message of the key:"), "", "");
             if (result[0].equals("")) return;
             result[0] = result[0].toLowerCase();
             for (KeyInfo ki : data) {
@@ -609,7 +609,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         } else if (e.getSource() == mnuShowDupes) {
 
-            new DupeDialog(SimpleGUI.CURRENTGUI.getFrame(), dupes);
+            new DupeDialog(SimpleGUI.CURRENTGUI, dupes);
 
         } else if (e.getSource() == mnuTranslate || e.getSource() == mnuContextTranslate) {
 
@@ -656,7 +656,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
             }, JDLocale.L("plugins.optional.langfileeditor.svn.checkOut", "CheckOut SVN now (This may take several seconds ...)")));
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SVN_UPDATE_ON_START, JDLocale.L("plugins.optional.langfileeditor.svn.checkOutOnStart", "CheckOut SVN on start")).setDefaultValue(false));
-            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI.getFrame(), container);
+            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, container);
 
         } else if (e.getSource() == mnuSVNCheckOutNow) {
 

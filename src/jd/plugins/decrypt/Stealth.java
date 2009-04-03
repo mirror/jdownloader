@@ -116,7 +116,7 @@ public class Stealth extends PluginForDecrypt {
                     Form form = br.getForm(0);
                     Browser.download(file, br.cloneBrowser().openGetConnection("http://stealth.to/libs/crosshair.php"));
                     JDUtilities.acquireUserIOSemaphore();
-                    ClickPositionDialog d = new ClickPositionDialog(SimpleGUI.CURRENTGUI.getFrame(), file, "Captcha", JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"), 20, null);
+                    ClickPositionDialog d = new ClickPositionDialog(SimpleGUI.CURRENTGUI, file, "Captcha", JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"), 20, null);
                     if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
                     JDUtilities.releaseUserIOSemaphore();
                     Point p = d.result;

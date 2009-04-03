@@ -30,21 +30,13 @@ import javax.swing.KeyStroke;
 import jd.nutils.JDImage;
 import jd.utils.JDLocale;
 
-/**
- * Alle Interaktionen (Knöpfe, Shortcuts) sollten über diese JDAction
- * stattfinden
- * 
- * @author astaldo
- */
-public class JDAction extends AbstractAction {
 
-    public static final int APP_ALLOW_RECONNECT = 31;
-    public static final int APP_CLIPBOARD = 28;
-    // public static final int APP_CONFIGURATION = 18;
+public class MenuAction extends AbstractAction {
+
     public static final int APP_EXIT = 16;
     public static final int APP_RESTART = 161;
     public static final int APP_LOAD_CONTAINER = 15;
-    public static final int APP_LOAD_DLC = 23;
+//    public static final int APP_LOAD_DLC = 23;
     public static final int APP_LOG = 17;
     public static final int APP_BACKUP = 241;
 //    public static final int APP_PAUSE_DOWNLOADS = 22;
@@ -58,13 +50,13 @@ public class JDAction extends AbstractAction {
     public static final int ITEMS_ADD = 7;
     public static final int ITEMS_DISABLE = 5;
 
-    public static final int ITEMS_ENABLE = 6;
+//    public static final int ITEMS_ENABLE = 6;
     // public static final int EXPAND_ALL = 13;
     // public static final int COLLAPSE_ALL = 14;
-    public static final int ITEMS_MOVE_BOTTOM = 4;
-    public static final int ITEMS_MOVE_DOWN = 2;
-    public static final int ITEMS_MOVE_TOP = 3;
-    public static final int ITEMS_MOVE_UP = 1;
+//    public static final int ITEMS_MOVE_BOTTOM = 4;
+//    public static final int ITEMS_MOVE_DOWN = 2;
+//    public static final int ITEMS_MOVE_TOP = 3;
+//    public static final int ITEMS_MOVE_UP = 1;
 //    public static final int ITEMS_REMOVE = 8;
 //    public static final int ITEMS_REMOVE_LINKS = 81;
 //    public static final int ITEMS_REMOVE_PACKAGES = 82;
@@ -77,7 +69,7 @@ public class JDAction extends AbstractAction {
 
     public static final int CHANGES = 35;
 
-    public static final int APP_OPEN_OPT_CONFIG = 36;
+//    public static final int APP_OPEN_OPT_CONFIG = 36;
 
     // public static final int APP_OPEN_HOST_CONFIG = 37;
 
@@ -100,7 +92,7 @@ public class JDAction extends AbstractAction {
      * @param actionID
      *            ID dieser Aktion
      */
-    public JDAction(ActionListener actionListener, String iconName, String ressourceName, int actionID) {
+    public MenuAction(ActionListener actionListener, String iconName, String ressourceName, int actionID) {
         super();
         this.ressourceName = ressourceName;
         this.actionID = actionID;

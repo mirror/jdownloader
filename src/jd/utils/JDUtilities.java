@@ -526,7 +526,7 @@ public class JDUtilities {
     public static String getUserInput(String message) throws InterruptedException {
         acquireUserIOSemaphore();
         if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
-        String password = JDUtilities.getGUI().getInputFromUser(message, null);
+        String password = JDUtilities.getGUI().showCountdownUserInputDialog(message, null);
         releaseUserIOSemaphore();
         return password;
     }
@@ -535,7 +535,7 @@ public class JDUtilities {
         acquireUserIOSemaphore();
         if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
         if (defaultmessage == null) defaultmessage = "";
-        String password = JDUtilities.getGUI().getInputFromUser(message, defaultmessage);
+        String password = JDUtilities.getGUI().showCountdownUserInputDialog(message, defaultmessage);
         releaseUserIOSemaphore();
         return password;
     }

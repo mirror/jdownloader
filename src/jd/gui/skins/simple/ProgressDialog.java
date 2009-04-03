@@ -77,7 +77,7 @@ public class ProgressDialog extends Progressor implements ActionListener {
         if (cancel) {
             JDUtilities.addToGridBag(this, btnNOTOK, REL, REL, REM, 1, ok ? 0 : 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         }
-        setLocation(SimpleGUI.getLastLocation(owner, "DIALOGS", this));
+        setLocation(SimpleGuiUtils.getLastLocation(owner, "DIALOGS", this));
 
         pack();
 

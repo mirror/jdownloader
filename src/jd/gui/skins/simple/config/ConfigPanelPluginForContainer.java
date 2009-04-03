@@ -109,7 +109,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     }
 
     private void editEntry() {
-        SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI.getFrame(), pluginsForContainer.get(table.getSelectedRow()).getPlugin().getConfig());
+        SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, pluginsForContainer.get(table.getSelectedRow()).getPlugin().getConfig());
     }
 
     @Override

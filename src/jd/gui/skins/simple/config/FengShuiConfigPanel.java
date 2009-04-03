@@ -121,7 +121,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnRR) {
-            JDRRGui jd = new JDRRGui(SimpleGUI.CURRENTGUI.getFrame(), ip.getText());
+            JDRRGui jd = new JDRRGui(SimpleGUI.CURRENTGUI, ip.getText());
             jd.setModal(true);
             jd.setVisible(true);
             if (jd.saved) {
@@ -365,7 +365,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
                         panel.setBorder(new EmptyBorder(n, n, n, n));
 
                         JOptionPane op = new JOptionPane(panel, JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_CANCEL_OPTION, icon);
-                        JDialog dialog = op.createDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"));
+                        JDialog dialog = op.createDialog(SimpleGUI.CURRENTGUI, JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"));
                         dialog.add(op);
                         dialog.setModal(true);
                         dialog.setPreferredSize(new Dimension(400, 500));

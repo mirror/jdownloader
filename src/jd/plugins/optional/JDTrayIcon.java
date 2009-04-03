@@ -52,7 +52,7 @@ import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
-import jd.gui.skins.simple.JDAction;
+import jd.gui.skins.simple.MenuAction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
@@ -143,7 +143,11 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
         } else if (e.getSource() == startstop) {
             JDUtilities.getController().toggleStartStop();
         } else if (e.getSource() == clipboard) {
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
+            
+            /**
+             * TODO
+             */
+//            simplegui.actionPerformed(new ActionEvent(this, JDAction.MenuAction, null));
 
         } else if (e.getSource() == update) {
             new WebUpdate().doWebupdate(true);
@@ -229,8 +233,8 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
         }
         try {
             JDUtilities.getController().addControlListener(this);
-            if (SimpleGUI.CURRENTGUI != null && SimpleGUI.CURRENTGUI.getFrame() != null) {
-                guiFrame = SimpleGUI.CURRENTGUI.getFrame();
+            if (SimpleGUI.CURRENTGUI != null && SimpleGUI.CURRENTGUI != null) {
+                guiFrame = SimpleGUI.CURRENTGUI;
                 guiFrame.addWindowListener(this);
             }
             logger.info("Systemtray OK");
@@ -245,7 +249,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             logger.info("JDTrayIcon Init complete");
-            guiFrame = SimpleGUI.CURRENTGUI.getFrame();
+            guiFrame = SimpleGUI.CURRENTGUI;
             guiFrame.addWindowListener(this);
             return;
         }

@@ -207,7 +207,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         panel.add(npanel, BorderLayout.NORTH);
         if (config != null) panel.add(config);
 
-        ConfigurationPopup pop = new ConfigurationPopup(SimpleGUI.CURRENTGUI.getFrame(), config, panel);
+        ConfigurationPopup pop = new ConfigurationPopup(SimpleGUI.CURRENTGUI, config, panel);
         pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
         pop.setVisible(true);
     }

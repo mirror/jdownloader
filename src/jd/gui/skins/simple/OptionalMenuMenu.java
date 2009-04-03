@@ -16,14 +16,14 @@ public class OptionalMenuMenu extends JDMenu {
 
     private static final long serialVersionUID = 3811108697902787341L;
     private static OptionalMenuMenu menu;
-    private JDAction actionOptionalConfig;
+    private MenuAction actionOptionalConfig;
 
-    public OptionalMenuMenu(String l, JDAction actionOptionalConfig) {
+    public OptionalMenuMenu(String l, MenuAction actionOptionalConfig) {
         super(l);
         this.actionOptionalConfig = actionOptionalConfig;
     }
 
-    public static OptionalMenuMenu getMenu(String l, JDAction actionOptionalConfig) {
+    public static OptionalMenuMenu getMenu(String l, MenuAction actionOptionalConfig) {
         if (menu != null)return menu;
         menu = new OptionalMenuMenu(l, actionOptionalConfig);
         menu.createOptionalPluginsMenuEntries();

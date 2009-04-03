@@ -456,7 +456,7 @@ public class Rapidshare extends PluginForHost {
                 new Thread() {
                     @Override
                     public void run() {
-                        TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI.getFrame(), "Speedtest result", "Your speedtest results", passToThread);
+                        TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI, "Speedtest result", "Your speedtest results", passToThread);
                     }
                 }.start();
             }
@@ -680,7 +680,7 @@ public class Rapidshare extends PluginForHost {
                 final String passToThread = msg;
                 new Thread() {
                     public void run() {
-                        TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI.getFrame(), "Speedtest result", "Your speedtest results", passToThread);
+                        TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI, "Speedtest result", "Your speedtest results", passToThread);
 
                     }
                 }.start();

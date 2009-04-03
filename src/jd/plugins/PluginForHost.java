@@ -33,6 +33,7 @@ import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.parser.Regex;
@@ -130,7 +131,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {
-            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI.getFrame(), config);
+            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, config);
             return;
         }
 
@@ -215,11 +216,11 @@ public abstract class PluginForHost extends Plugin {
     public abstract String getAGBLink();
 
     protected void enablePremium(String url) {
-        this.enablePremium(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.PARAM_NUM_PREMIUM_CONFIG_FIELDS, 5), url);
+        this.enablePremium(JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getIntegerProperty(SimpleGuiConstants.PARAM_NUM_PREMIUM_CONFIG_FIELDS, 5), url);
     }
 
     protected void enablePremium() {
-        this.enablePremium(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.PARAM_NUM_PREMIUM_CONFIG_FIELDS, 5), null);
+        this.enablePremium(JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getIntegerProperty(SimpleGuiConstants.PARAM_NUM_PREMIUM_CONFIG_FIELDS, 5), null);
     }
 
     protected void enablePremium(int size, String url) {

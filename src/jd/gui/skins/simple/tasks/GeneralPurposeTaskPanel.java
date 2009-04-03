@@ -212,16 +212,15 @@ public class GeneralPurposeTaskPanel extends TaskPanel implements ActionListener
 
     public void controlEvent(final ControlEvent event) {
 
-        GuiRunnable run = new GuiRunnable() {
-            private static final long serialVersionUID = 8726498576488124702L;
-
-            public void run() {
+        new GuiRunnable<Object>() {
+    
+            public Object runSave() {
 
                 guiControl(event);
-
+return null;
             }
-        };
-        EventQueue.invokeLater(run);
+        }.start();
+      
     }
 
     private void guiControl(ControlEvent event) {

@@ -33,6 +33,7 @@ import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.JDLookAndFeelManager;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.OSDetector;
@@ -173,7 +174,7 @@ public class JDInit {
 
     public UIInterface initGUI(JDController controller) {
 
-        UIInterface uiInterface = new SimpleGUI();
+        UIInterface uiInterface = SimpleGUI.createGUI();
         controller.setUiInterface(uiInterface);
         controller.addControlListener(uiInterface);
         return uiInterface;
@@ -225,8 +226,8 @@ public class JDInit {
             Configuration configuration = (Configuration) obj;
             JDUtilities.setConfiguration(configuration);
             JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-            JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_THEME, "default"));
-            JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "noSounds"));
+            JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_THEME, "default"));
+            JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "noSounds"));
 
         } else {
 
@@ -245,8 +246,8 @@ public class JDInit {
             Configuration configuration = new Configuration();
             JDUtilities.setConfiguration(configuration);
             JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-            JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_THEME, "default"));
-            JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "noSounds"));
+            JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_THEME, "default"));
+            JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "noSounds"));
 
             JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", JDUtilities.getConfiguration());
             installerVisible = true;

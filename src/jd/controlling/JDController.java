@@ -542,7 +542,7 @@ public class JDController implements ControlListener, JDListener {
      * @return Text des Captchas
      */
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress, String def) {
-        String captchaCode = uiInterface.getCaptchaCodeFromUser(plugin, captchaAddress, def);
+        String captchaCode = uiInterface.showCountdownCaptchaDialog(plugin, captchaAddress, def);
         return captchaCode;
     }
 

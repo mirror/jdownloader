@@ -47,8 +47,8 @@ public class MacOSController extends Application {
         }
         
         public void handleReOpenApplication(ApplicationEvent e) {
-            if (SimpleGUI.CURRENTGUI.getFrame().isVisible() == false) {
-               SimpleGUI.CURRENTGUI.getFrame().setVisible(true);
+            if (SimpleGUI.CURRENTGUI.isVisible() == false) {
+               SimpleGUI.CURRENTGUI.setVisible(true);
             }
         }
 

@@ -81,7 +81,7 @@ public class RouterInfoCollector {
          * void run() { RouterInfoCollector ric = new RouterInfoCollector();
          * String xml = ric.toString(); if (xml != null && isValidReconnect()) {
          * CountdownConfirmDialog ccd = new
-         * CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(),
+         * CountdownConfirmDialog(SimpleGUI.CURRENTGUI,
          * JDLocale.L("routerinfocollector.dialog.title",
          * "Helfen sie die Routererkennung zu verbessern"), 30, true,
          * CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO |

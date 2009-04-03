@@ -52,7 +52,7 @@ public class InputDialog extends JDialog implements ActionListener, KeyListener 
 
     public InputDialog(final JFrame owner, final String title, final String def) {
         super(owner);
-        countdown = Math.max(2, JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.PARAM_INPUTTIMEOUT, 20));
+        countdown = Math.max(2, JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getIntegerProperty(SimpleGuiConstants.PARAM_INPUTTIMEOUT, 20));
         JDSounds.PT("sound.captcha.onCaptchaInput");
         this.setModal(true);
         this.setLayout(new GridBagLayout());
@@ -95,7 +95,7 @@ public class InputDialog extends JDialog implements ActionListener, KeyListener 
             }
 
         };
-        if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.PARAM_INPUTTIMEOUT, 20) != 0) {
+        if (JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getIntegerProperty(SimpleGuiConstants.PARAM_INPUTTIMEOUT, 20) != 0) {
             countdownThread.start();
         } else {
             if (title != null) setTitle(title);

@@ -30,7 +30,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2Panel;
 import jd.http.Encoding;
 import jd.nutils.jobber.JDRunnable;
@@ -59,7 +59,7 @@ public class JDSimpleWebserverRequestHandler {
     private static Jobber decryptJobbers;
 
     public JDSimpleWebserverRequestHandler(HashMap<String, String> headers, JDSimpleWebserverResponseCreator response) {
-        guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+        guiConfig = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
         this.response = response;
         this.headers = headers;
     }

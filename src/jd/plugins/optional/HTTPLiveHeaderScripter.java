@@ -61,7 +61,7 @@ import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.gui.skins.simple.LocationListener;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiUtils;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
@@ -518,7 +518,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         frame.add(scrollPane, BorderLayout.CENTER);
 
         frame.pack();
-        SimpleGUI.restoreWindow(null, frame);
+        SimpleGuiUtils.restoreWindow(null, frame);
         frame.setVisible(true);
     }
 

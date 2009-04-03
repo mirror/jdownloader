@@ -44,7 +44,7 @@ import javax.swing.event.ChangeListener;
 import jd.config.Configuration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
-import jd.gui.skins.simple.JDAction;
+import jd.gui.skins.simple.MenuAction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -295,34 +295,40 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     private void onAction(int row) {
         SimpleGUI simplegui = SimpleGUI.CURRENTGUI;
         if (row < 0) {
-            simplegui.getFrame().setVisible(!simplegui.getFrame().isVisible());
+            simplegui.setVisible(!simplegui.isVisible());
             return;
         }
         JDUtilities.getLogger().info(" ACTIOn " + entries.get(row));
         switch (entries.get(row)) {
 
         case TrayIconPopup.ACTION_ADD:
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.ITEMS_ADD, null));
+            simplegui.actionPerformed(new ActionEvent(this, MenuAction.ITEMS_ADD, null));
             break;
    
         case TrayIconPopup.ACTION_LOAD:
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_LOAD_DLC, null));
+            /**
+             * TODO
+             */
+//            simplegui.actionPerformed(new ActionEvent(this, MenuAction.APP_LOAD_DLC, null));
             break;
         case TrayIconPopup.ACTION_LOG:
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_LOG, null));
+            simplegui.actionPerformed(new ActionEvent(this, MenuAction.APP_LOG, null));
             break;
         case TrayIconPopup.ACTION_PAUSE:
            JDUtilities.getController().pauseDownloads(true);
             break;
         case TrayIconPopup.ACTION_RECONNECT:
-            simplegui.doReconnect();
+            simplegui.doManualReconnect();
             break;
         case TrayIconPopup.ACTION_START:
         case TrayIconPopup.ACTION_STOP:
             JDUtilities.getController().toggleStartStop();
             break;
         case TrayIconPopup.ACTION_TOGGLE_CLIPBOARD:
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
+            /**
+             * TODO
+             */
+//            simplegui.actionPerformed(new ActionEvent(this, JDAction.MenuAction, null));
             break;
         case TrayIconPopup.ACTION_TOGGLE_RECONNECT:
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));

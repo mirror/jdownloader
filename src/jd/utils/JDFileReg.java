@@ -18,7 +18,7 @@ package jd.utils;
 
 import java.io.File;
 
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.OSDetector;
 
 import com.ice.jni.registry.RegStringValue;
@@ -52,7 +52,7 @@ public class JDFileReg {
         // 6f3ad5e9971f92aa28eb01c2ac11f896
         // f19fbcb71e9682d307e331c04a45fd53
         try {
-            if (OSDetector.isWindows() && JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty("FILE_REGISTER", true)) {
+            if (OSDetector.isWindows() && JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty("FILE_REGISTER", true)) {
                 registerWinFileExt("jd");
                 registerWinFileExt("dlc");
                 registerWinFileExt("ccf");

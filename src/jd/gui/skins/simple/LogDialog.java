@@ -180,7 +180,7 @@ public class LogDialog extends JFrame implements ActionListener {
         this.setMaximumSize(new Dimension(800, 600));
         this.pack();
         this.setLocationRelativeTo(null);
-        SimpleGUI.restoreWindow(null, this);
+        SimpleGuiUtils.restoreWindow(null, this);
     }
 
     public void actionPerformed(ActionEvent e) {

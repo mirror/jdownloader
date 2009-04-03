@@ -14,7 +14,9 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.event.JDEvent;
 import jd.event.JDListener;
-import jd.gui.skins.simple.JDAction;
+
+import jd.gui.skins.simple.MenuAction;
+
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2Event;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2TreeTableAction;
@@ -74,15 +76,18 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Co
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == panel_add_links) {
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.ITEMS_ADD, null));
+            simplegui.actionPerformed(new ActionEvent(this, MenuAction.ITEMS_ADD, null));
             return;
         }
+        /**
+         * TODO
+         */
         if (e.getSource() == panel_add_containers) {
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_LOAD_DLC, null));
+//            simplegui.actionPerformed(new ActionEvent(this, MenuAction.APP_LOAD_DLC, null));
             return;
         }
         if (e.getSource() == panel_clipboard) {
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
+//            simplegui.actionPerformed(new ActionEvent(this, JDAction.MenuAction, null));
             return;
         }
         if (e.getSource() == lg_add_all) {

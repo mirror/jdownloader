@@ -38,6 +38,7 @@ import jd.config.MenuItem;
 import jd.controlling.DistributeData;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiUtils;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
@@ -179,7 +180,7 @@ public class StreamingShareTool extends PluginOptional {
     private void saveDLC(String text) {
         JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
         fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
-        fc.showSaveDialog(SimpleGUI.CURRENTGUI.getFrame());
+        fc.showSaveDialog(SimpleGUI.CURRENTGUI);
         File ret = fc.getSelectedFile();
         if (ret == null) { return; }
         String comment = JDUtilities.getGUI().showTextAreaDialog(JDLocale.L("plugins.optional.streamsharingtool.gui.comment.title", "Enter DLC-Comment:"), JDLocale.L("plugins.optional.streamsharingtool.gui.comment.question", "Please enter your desired DLC-Comment:"), JDLocale.L("plugins.optional.streamsharingtool.gui.comment.defaultcomment", "StreamingShare-DLC"));
@@ -245,7 +246,7 @@ public class StreamingShareTool extends PluginOptional {
         frame.add(scrollPane, BorderLayout.CENTER);
 
         frame.pack();
-        SimpleGUI.restoreWindow(null, frame);
+        SimpleGuiUtils.restoreWindow(null, frame);
         frame.setVisible(true);
     }
 

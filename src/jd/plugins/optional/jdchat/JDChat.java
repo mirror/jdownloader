@@ -54,6 +54,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiUtils;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.tasks.TaskPanel;
 import jd.nutils.io.JDIO;
@@ -676,9 +677,9 @@ public class JDChat extends PluginOptional implements ControlListener {
             public void run() {
                 if (changed) {
 
-                    if (!SimpleGUI.CURRENTGUI.getFrame().isActive() && conn != null && msg2.contains(conn.getNick())) {
+                    if (!SimpleGUI.CURRENTGUI.isActive() && conn != null && msg2.contains(conn.getNick())) {
                         JDSounds.PT("sound.gui.selectPackage");
-                        SimpleGUI.CURRENTGUI.getFrame().toFront();
+                        SimpleGUI.CURRENTGUI.toFront();
                     }
 
                     textArea.setText(STYLE + "<ul>" + sb.toString() + "</ul>");
@@ -722,7 +723,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         if (e.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
 
             if (e.getSource() == Interaction.INTERACTION_AFTER_RECONNECT) {
-                if (SimpleGUI.CURRENTGUI.getFrame().isActive() && !nickaway) {
+                if (SimpleGUI.CURRENTGUI.isActive() && !nickaway) {
                     initIRC();
                 } else {
                     addToText(null, STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
@@ -1064,7 +1065,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         textField.addMouseMotionListener(ml);
         right.addMouseMotionListener(ml);
         frame.setSize(new Dimension(800, 600));
-        SimpleGUI.restoreWindow(null, frame);
+        SimpleGuiUtils.restoreWindow(null, frame);
         frame.setVisible(true);
         startAwayObserver();
     }

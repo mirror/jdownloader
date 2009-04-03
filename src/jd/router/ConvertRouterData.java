@@ -144,14 +144,14 @@ public class ConvertRouterData {
     @SuppressWarnings("unchecked")
     private void saveTolist(Vector<String[]> list, File file) {
         if (file.exists()) {
-            list.addAll((Collection<? extends String[]>) JDIO.loadObject(((SimpleGUI) JDUtilities.getGUI()).getFrame(), file, true));
+            list.addAll((Collection<? extends String[]>) JDIO.loadObject(((SimpleGUI) JDUtilities.getGUI()), file, true));
             Collections.sort(list, new Comparator<String[]>() {
                 public int compare(String[] a, String[] b) {
                     return (a[0] + " " + a[1]).compareToIgnoreCase(b[0] + " " + b[1]);
                 }
             });
         }
-        JDIO.saveObject(((SimpleGUI) JDUtilities.getGUI()).getFrame(), list, file, null, null, true);
+        JDIO.saveObject(((SimpleGUI) JDUtilities.getGUI()), list, file, null, null, true);
     } /*
        * private static String replace(String arg) { return
        * arg.replaceAll("&amp;nbsp;", " ").replaceAll("&#13;", "\n"); }

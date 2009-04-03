@@ -16,7 +16,6 @@
 
 package jd.plugins.optional.langfileeditor;
 
-import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -66,26 +65,16 @@ public class LangFileEditor extends PluginOptional {
     }
 
     private void initLFE() {
-        final Object lock = new Object();
-        EventQueue.invokeLater(new GuiRunnable() {
+        new GuiRunnable<Object>() {
             private static final long serialVersionUID = 8726498576488124702L;
 
-            public void run() {
+            public Object runSave() {
                 if (tp == null) tp = new LFETaskPane(getHost(), JDTheme.II("gui.images.jd_logo", 24, 24));
                 SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
-                synchronized (lock) {
-                    lock.notify();
-                }
+                return null;
             }
-        });
+        }.start();
 
-        synchronized (lock) {
-            try {
-                lock.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     @Override

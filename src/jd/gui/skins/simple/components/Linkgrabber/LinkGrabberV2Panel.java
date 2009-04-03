@@ -28,6 +28,7 @@ import jd.event.JDEvent;
 import jd.event.JDListener;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JCancelButton;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
@@ -75,7 +76,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         super(new MigLayout("ins 0"));
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
-        guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+        guiConfig = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
         internalTreeTable = new LinkGrabberV2TreeTable(new LinkGrabberV2TreeTableModel(this), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
         this.add(scrollPane, "cell 0 0, width 100%, height 100%");
