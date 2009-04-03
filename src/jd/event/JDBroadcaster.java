@@ -1,4 +1,4 @@
-package jd.controlling.EventSystem;
+package jd.event;
 
 import java.util.Vector;
 

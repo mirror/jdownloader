@@ -1,4 +1,4 @@
-package jd.controlling.EventSystem;
+package jd.event;
 
 public abstract class JDEvent {
     

@@ -1,6 +1,6 @@
 package jd.gui.skins.simple.components.Linkgrabber;
 
-import jd.controlling.EventSystem.JDEvent;
+import jd.event.JDEvent;
 
 public class LinkGrabberV2FilePackageEvent extends JDEvent {
 

@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.Vector;
 
 import jd.config.Property;
+import jd.event.JDBroadcaster;
 import jd.nutils.io.JDIO;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -50,6 +51,13 @@ public class FilePackage extends Property implements Serializable {
 
     private Vector<DownloadLink> downloadLinks;
     private transient static FilePackage FP = null;
+
+    private transient JDBroadcaster bc = null;
+
+    public JDBroadcaster getJDBroadcaster() {
+        if (bc == null) bc = new JDBroadcaster();
+        return bc;
+    }
 
     public static FilePackage getDefaultFilePackage() {
         if (FP == null) FP = new FilePackage(JDLocale.L("controller.packages.defaultname", "various"));
@@ -404,20 +412,12 @@ public class FilePackage extends Property implements Serializable {
         }
     }
 
-    public boolean remove(DownloadLink link) {
+    public void remove(DownloadLink link) {
+        if (link == null) return;
         synchronized (downloadLinks) {
             boolean ret = downloadLinks.remove(link);
             if (ret) link.setFilePackage(null);
-            return ret;
-        }
-    }
-
-    public DownloadLink remove(int index) {
-        synchronized (downloadLinks) {
-            DownloadLink link = downloadLinks.remove(index);
-            if (link == null) return null;
-            link.setFilePackage(null);
-            return link;
+            if (downloadLinks.size() == 0) this.getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.EMPTY_EVENT));
         }
     }
 
@@ -432,6 +432,7 @@ public class FilePackage extends Property implements Serializable {
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
         synchronized (downloadLinks) {
             this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
+            if (downloadLinks.size() == 0) this.getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.EMPTY_EVENT));
         }
     }
 
@@ -450,6 +451,26 @@ public class FilePackage extends Property implements Serializable {
         synchronized (downloadLinks) {
             return downloadLinks.size();
         }
+    }
+
+    public void abortDownload() {
+        synchronized (downloadLinks) {
+            for (DownloadLink downloadLink : downloadLinks) {
+                downloadLink.setAborted(true);
+            }
+        }
+    }
+
+    public Vector<DownloadLink> getLinksWithStatus(int status) {
+        Vector<DownloadLink> ret = new Vector<DownloadLink>();
+        synchronized (downloadLinks) {
+            for (DownloadLink dl : downloadLinks) {
+                if (dl.getLinkStatus().hasStatus(status)) {
+                    ret.add(dl);
+                }
+            }
+        }
+        return ret;
     }
 
     public String getHoster() {

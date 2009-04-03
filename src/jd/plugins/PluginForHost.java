@@ -394,6 +394,10 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public boolean canResume(DownloadLink link) {
+        /*
+         * TODO: hier sollte resumefähigkeit geprüft werden und nicht ob der
+         * hoster premium accoutns hat
+         */
         return ignoreHosterWaittime(link) ? true : false;
     }
 

@@ -20,8 +20,8 @@ import java.awt.Color;
 
 import javax.swing.Icon;
 
-import jd.controlling.EventSystem.JDBroadcaster;
 import jd.event.ControlEvent;
+import jd.event.JDBroadcaster;
 import jd.utils.JDUtilities;
 
 /**

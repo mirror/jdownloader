@@ -23,9 +23,9 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
-import jd.controlling.EventSystem.JDBroadcaster;
-import jd.controlling.EventSystem.JDEvent;
-import jd.controlling.EventSystem.JDListener;
+import jd.event.JDBroadcaster;
+import jd.event.JDEvent;
+import jd.event.JDListener;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JCancelButton;
@@ -67,7 +67,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     private LinkGrabberV2FilePackageInfo FilePackageInfo;
     private Timer gathertimer;
 
-    private JDBroadcaster jdb = new JDBroadcaster();
+    private JDBroadcaster jdb = new jd.event.JDBroadcaster();
     private Jobber checkJobbers = new Jobber(4);
     private final AbstractButton close = new JCancelButton();
     private boolean lastSort = false;

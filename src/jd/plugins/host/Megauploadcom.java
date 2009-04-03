@@ -98,13 +98,16 @@ public class Megauploadcom extends PluginForHost {
             ai.setStatus("Free Membership");
             return ai;
         }
-        String days = br.getRegex("<TD><b>Premium</b>.*?\\((\\d+) days remaining - <a").getMatch(0);
-        if (days != null && !days.equalsIgnoreCase("Unlimited")) {
-            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 50 * 50 * 1000));
-        } else if (days == null || days.equals("0")) {
-            ai.setExpired(true);
-            ai.setValid(false);
-            return ai;
+        String type = br.getRegex(Pattern.compile("<TD>Account type:</TD>.*?<TD><b>(.*?)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (type != null && !type.contains("Lifetime")) {
+            String days = br.getRegex("<TD><b>Premium</b>.*?\\((\\d+) days remaining - <a").getMatch(0);
+            if (days != null && !days.equalsIgnoreCase("Unlimited")) {
+                ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 50 * 50 * 1000));
+            } else if (days == null || days.equals("0")) {
+                ai.setExpired(true);
+                ai.setValid(false);
+                return ai;
+            }
         }
         String points = br.getRegex(Pattern.compile("<TD>Reward points available:</TD>.*?<TD><b>(\\d+)</b> ", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) ai.setPremiumPoints(Long.parseLong(points));
@@ -223,7 +226,6 @@ public class Megauploadcom extends PluginForHost {
             br.setCookie("http://megaupload.com", "l", "en");
             br.getPage("http://megaupload.com/?c=login");
             br.postPage("http://megaupload.com/?c=login", "login=1&redir=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-
         }
         user = br.getCookie("http://megaupload.com", "user");
         br.setCookie("http://megaupload.com", "user", user);

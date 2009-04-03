@@ -10,8 +10,8 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
 import jd.config.Configuration;
-import jd.controlling.EventSystem.JDEvent;
-import jd.controlling.EventSystem.JDListener;
+import jd.event.JDEvent;
+import jd.event.JDListener;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JDTextField;

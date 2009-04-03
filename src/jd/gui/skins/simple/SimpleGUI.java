@@ -75,8 +75,6 @@ import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
-import jd.event.UIEvent;
-import jd.event.UIListener;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.ChartAPI_Entity;
 import jd.gui.skins.simple.components.ChartAPI_PIE;
@@ -574,13 +572,6 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
 
     // public LabelHandler statusBarHandler;
 
-    /**
-     * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
-     * Listener werden benachrichtigt, wenn mittels
-     * {@link #fireUIEvent(UIEvent)} ein Event losgeschickt wird.
-     */
-    public Vector<UIListener> uiListener = null;
-
     private JLabel warning;
 
     private Thread warningWorker;
@@ -606,7 +597,6 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         super();
         guiConfig = JDUtilities.getSubConfig(GUICONFIGNAME);
         JDLookAndFeelManager.setUIManager();
-        uiListener = new Vector<UIListener>();
         frame = new JFrame();
         menuBar = new JMenuBar();
         toolBar = new JToolBar();
@@ -866,12 +856,6 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
 
     public TaskPane getTaskPane() {
         return taskPane;
-    }
-
-    public void addUIListener(UIListener listener) {
-        synchronized (uiListener) {
-            uiListener.add(listener);
-        }
     }
 
     /***
@@ -1330,13 +1314,6 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         }
     }
 
-    public void fireUIEvent(UIEvent uiEvent) {
-        synchronized (uiListener) {
-            for (UIListener lstn : uiListener) {
-                lstn.uiEvent(uiEvent);
-            }
-        }
-    }
 
     public String getCaptchaCodeFromUser(final Plugin plugin, final File captchaAddress, final String def) {
         final Object lock = new Object();
@@ -1564,12 +1541,6 @@ public class SimpleGUI implements UIInterface, ActionListener, WindowListener {
         }
 
         frame.setTitle(JDUtilities.getJDTitle());
-    }
-
-    public void removeUIListener(UIListener listener) {
-        synchronized (uiListener) {
-            uiListener.remove(listener);
-        }
     }
 
     public void localize() {

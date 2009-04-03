@@ -20,6 +20,7 @@ import java.awt.BorderLayout;
 import java.util.Vector;
 
 import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.components.treetable.DownloadTreeTable;
@@ -64,32 +65,27 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
     }
 
     @Override
-    public synchronized void fireTableChanged(int id, Object param) {
-        internalTreeTable.fireTableChanged(id, param);
+    public synchronized void fireTableChanged(final int id, final Object param) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                synchronized (JDUtilities.getController().getPackages()) {
+                    internalTreeTable.fireTableChanged(id, param);
+                }
+            }
+        });
     }
 
     public void removeSelectedLinks() {
-        Vector<DownloadLink> links = internalTreeTable.getSelectedDownloadLinks();
-        Vector<FilePackage> fps = internalTreeTable.getSelectedFilePackages();
-        for (FilePackage filePackage : fps) {
-            links.addAll(filePackage.getDownloadLinks());
-        }
+        Vector<DownloadLink> links = internalTreeTable.getAllSelectedDownloadLinks();
         JDUtilities.getController().removeDownloadLinks(links);
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
     }
 
     public long countSelectedLinks() {
-        Vector<DownloadLink> links = internalTreeTable.getSelectedDownloadLinks();
-        Vector<FilePackage> fps = internalTreeTable.getSelectedFilePackages();
-        for (FilePackage filePackage : fps) {
-            links.addAll(filePackage.getDownloadLinks());
-        }
-        return links.size();
+        return internalTreeTable.getAllSelectedDownloadLinks().size();
     }
 
     public long countSelectedPackages() {
-        Vector<FilePackage> fps = internalTreeTable.getSelectedFilePackages();
-        return fps.size();
+        return internalTreeTable.getSelectedFilePackages().size();
     }
 
     @Override

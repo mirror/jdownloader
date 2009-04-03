@@ -10,10 +10,10 @@ import javax.swing.JSeparator;
 
 import jd.config.Configuration;
 import jd.controlling.ClipboardHandler;
-import jd.controlling.EventSystem.JDEvent;
-import jd.controlling.EventSystem.JDListener;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.event.JDEvent;
+import jd.event.JDListener;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2Event;

@@ -54,10 +54,8 @@ import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
-import javax.swing.event.TreeWillExpandListener;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
-import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
 
 import jd.config.MenuItem;
@@ -96,7 +94,7 @@ import org.jvnet.substance.api.ComponentState;
 import org.jvnet.substance.api.SubstanceColorScheme;
 import org.jvnet.substance.utils.SubstanceColorSchemeUtilities;
 
-public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandListener, TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener, KeyListener {
+public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener, KeyListener {
 
     public static final String PROPERTY_EXPANDED = "expanded";
 
@@ -168,8 +166,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
         setEditable(false);
         setAutoscrolls(false);
         addTreeExpansionListener(this);
-        addTreeSelectionListener(this);
-        addTreeWillExpandListener(this);
+        addTreeSelectionListener(this);        
         addMouseListener(this);
         addKeyListener(this);
         addMouseMotionListener(this);
@@ -239,7 +236,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
         if (JDUtilities.getJavaVersion() >= 1.6 && SimpleGUI.isSubstance()) {
 
             int height = 20;
-//            JProgressBar progressBar = new JProgressBar();
+            // JProgressBar progressBar = new JProgressBar();
             SubstanceColorScheme colorScheme = SubstanceColorSchemeUtilities.getColorScheme(table, ComponentState.SELECTED);
             Color[] colors = new Color[] { Colors.getColor(colorScheme.getUltraLightColor(), 50), Colors.getColor(colorScheme.getLightColor(), 50), Colors.getColor(colorScheme.getMidColor(), 50), Colors.getColor(colorScheme.getUltraLightColor(), 50) };
             LinearGradientPaint paint = new LinearGradientPaint(0, 0, 0, height, new float[] { 0.0f, 0.4f, 0.5f, 1.0f }, colors, CycleMethod.REPEAT);
@@ -324,9 +321,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
 
     public TableCellRenderer getCellRenderer(int row, int col) {
         return cellRenderer;
-        // if (col >= 1) { return cellRenderer; }
-        // return super.getCellRenderer(row, col);
-
     }
 
     private void createColumns() {
@@ -842,17 +836,13 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
                     for (FilePackage filePackage : fps) {
                         JDUtilities.getController().removePackage(filePackage);
                     }
-
                     JDUtilities.getController().removeDownloadLinks(links);
-                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
                 }
             } else {
                 for (FilePackage filePackage : fps) {
                     JDUtilities.getController().removePackage(filePackage);
                 }
-
                 JDUtilities.getController().removeDownloadLinks(links);
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
             }
 
         } else if (e.getKeyCode() == KeyEvent.VK_UP && e.isControlDown()) {
@@ -1266,16 +1256,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeWillExpandList
             }
         }
 
-    }
-
-    public void treeWillCollapse(TreeExpansionEvent arg0) throws ExpandVetoException {
-        if (updatelock) return;
-        if (this.usedoubleclick && System.currentTimeMillis() > lastMouseClicked + 200) throw new ExpandVetoException(arg0);
-    }
-
-    public void treeWillExpand(TreeExpansionEvent arg0) throws ExpandVetoException {
-        if (updatelock) return;
-        if (this.usedoubleclick && System.currentTimeMillis() > lastMouseClicked + 200) throw new ExpandVetoException(arg0);
     }
 
 }

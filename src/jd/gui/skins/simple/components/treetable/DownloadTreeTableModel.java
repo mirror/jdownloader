@@ -31,7 +31,6 @@ import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 
 public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
-  
     public static final int COL_HOSTER = 2;
 
     /** index of tree column */
@@ -43,7 +42,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
     public static final int COL_STATUS = 3;
 
     /** table column names */
-    static protected String[] COLUMN_NAMES = {"hidden", JDLocale.L("gui.treetable.header_1.tree", "F"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
+    static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.treetable.header_1.tree", "F"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
 
     private DownloadLinksTreeTablePanel owner;
 
@@ -119,7 +118,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             return String.class;
         case COL_PART:
             return Object.class;
-  
+
         case COL_HOSTER:
             return String.class;
         case COL_STATUS:
@@ -187,14 +186,6 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             switch (column) {
             case COL_PART:
                 return downloadLink;
-//                if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
-//                    PackageData pd = (PackageData) downloadLink.getProperty("JDU");
-//                    return JDLocale.L("gui.treetable.part.label_update", "Update") + " " + pd.getInstalledVersion() + " -> " + pd.getStringProperty("version");
-//                } else {
-//                    int id = downloadLink.getPartByName();
-//                    return JDLocale.L("gui.treetable.part.label", "Datei") + " " + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0"));
-//                }
-    
             case COL_HOSTER:
                 return downloadLink;
             case COL_STATUS:
@@ -207,7 +198,6 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             switch (column) {
             case COL_PART:
                 return filePackage;
-       
             case COL_HOSTER:
                 return filePackage;
             case COL_STATUS:

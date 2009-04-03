@@ -21,6 +21,8 @@ import java.awt.LayoutManager;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.SwingUtilities;
+
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -56,25 +58,20 @@ public abstract class DownloadLinksView extends JTabbedPanel implements ControlL
             logger.warning("event == null");
             return;
         }
-        // Moved the whole content of this method into a Runnable run by
-        // invokeLater(). Ensures that everything inside is executed on the EDT.
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                switch (event.getID()) {
-                case ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED:
-                    fireTableChanged(REFRESH_SPECIFIED_LINKS, event.getParameter());
-                    break;
-                case ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED:
-                    fireTableChanged(REFRESH_ALL_DATA_CHANGED, null);
-                    break;
-                case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
-                    if (event.getSource().getClass() == JDController.class) {
-                        DownloadLinksView.this.setPackages(JDUtilities.getController().getPackages());
-                    }
-                    fireTableChanged(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
-                }
+        switch (event.getID()) {
+        case ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED:
+            fireTableChanged(REFRESH_SPECIFIED_LINKS, event.getParameter());
+            break;
+        case ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED:
+            fireTableChanged(REFRESH_ALL_DATA_CHANGED, null);
+            break;
+        case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
+            if (event.getSource().getClass() == JDController.class) {
+                DownloadLinksView.this.setPackages(JDUtilities.getController().getPackages());
             }
-        });
+            fireTableChanged(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
+            break;
+        }
     }
 
     abstract public void fireTableChanged(int id, Object object);
