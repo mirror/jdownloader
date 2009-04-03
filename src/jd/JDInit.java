@@ -18,9 +18,6 @@ package jd;
 
 import java.awt.Toolkit;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,6 +26,7 @@ import javax.swing.JOptionPane;
 
 import jd.config.Configuration;
 import jd.controlling.JDController;
+import jd.controlling.JDDownloadController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;
@@ -39,8 +37,6 @@ import jd.http.Encoding;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.plugins.BackupLink;
-import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
@@ -126,50 +122,16 @@ public class JDInit {
         }).start();
     }
 
-    public synchronized static void createQueueBackup() {
-        Vector<DownloadLink> links = JDUtilities.getController().getDownloadLinks();
-        Iterator<DownloadLink> it = links.iterator();
-        ArrayList<BackupLink> ret = new ArrayList<BackupLink>();
-        while (it.hasNext()) {
-            DownloadLink next = it.next();
-            BackupLink bl;
-            if (next.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                bl = (new BackupLink(JDUtilities.getResourceFile(next.getContainerFile()), next.getContainerIndex(), next.getContainer()));
-
-            } else {
-                bl = (new BackupLink(next.getDownloadURL()));
-            }
-            bl.setProperty("downloaddirectory", next.getFilePackage().getDownloadDirectory());
-            bl.setProperty("packagename", next.getFilePackage().getName());
-            bl.setProperty("plugin", next.getPlugin().getClass().getSimpleName());
-            bl.setProperty("name", new File(next.getFileOutput()).getName());
-            bl.setProperty("properties", next.getProperties());
-            bl.setProperty("enabled", next.isEnabled());
-
-            ret.add(bl);
-        }
-        if (ret.size() == 0) return;
-        File file = JDUtilities.getResourceFile("backup/links.linkbackup");
-        if (file.exists()) {
-            File old = JDUtilities.getResourceFile("backup/links_" + file.lastModified() + ".linkbackup");
-
-            file.getParentFile().mkdirs();
-            if (file.exists()) {
-                file.renameTo(old);
-            }
-            file.delete();
-        } else {
-            file.getParentFile().mkdirs();
-        }
-        JDIO.saveObject(null, ret, file, "links.linkbackup", "linkbackup", false);
-    }
-
     public void init() {
         Browser.init();
     }
 
     public JDController initController() {
         return new JDController();
+    }
+
+    public JDDownloadController initDownloadController() {
+        return JDDownloadController.getDownloadController();
     }
 
     public UIInterface initGUI(JDController controller) {
@@ -298,10 +260,6 @@ public class JDInit {
         }
 
         return JDUtilities.getConfiguration();
-    }
-
-    public void loadDownloadQueue() {
-        JDUtilities.getController().initDownloadLinks();
     }
 
     /**

@@ -21,7 +21,7 @@ import jd.plugins.PluginForHost;
 
 public class LinkCheck extends JDBroadcaster implements ActionListener, JDListener {
 
-    private static LinkCheck INSTANCE = getLinkChecker();
+    private static LinkCheck INSTANCE = null;
     private Timer checkTimer = null;
     private Thread checkThread = null;
 

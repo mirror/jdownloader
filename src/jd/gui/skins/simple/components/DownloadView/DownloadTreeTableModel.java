@@ -43,8 +43,6 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
     /** table column names */
     static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.treetable.header_1.tree", "F"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
 
-    private DownloadLinksTreeTablePanel owner;
-
     /**
      * Creates a {@link ProjectsTreeTableModel}
      * 
@@ -54,9 +52,8 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
      * @param aList
      *            the ProjectList to start out with.
      */
-    public DownloadTreeTableModel(DownloadLinksTreeTablePanel treeTable) {
+    public DownloadTreeTableModel(DownloadLinksPanel treeTable) {
         super("root");
-        owner = treeTable;
     }
 
     public static int getIDFormHeaderLabel(String label) {
@@ -65,10 +62,6 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
         }
         return -1;
-    }
-
-    public boolean containesPackage(FilePackage fp) {
-        return owner.getPackages().contains(fp);
     }
 
     public Object getChild(Object parent, int index) {
@@ -172,7 +165,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
      *         Have to implement this:
      */
     public Vector<FilePackage> getPackages() {
-        return owner.getPackages();
+        return JDUtilities.getDownloadController().getPackges();
     }
 
     /**

@@ -105,7 +105,7 @@ public abstract class UnitTest {
 
         init.initGUI(controller);
         SimpleGUI.CURRENTGUI.setVisible(false);
-        init.loadDownloadQueue();
+        init.initDownloadController();
 
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
 

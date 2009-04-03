@@ -27,18 +27,18 @@ public class AccountInfo extends Property {
     private transient PluginForHost plugin;
     private Account account;
     private boolean valid = true;
-    private long validUntil = -1;
-    private long trafficLeft = -1;
-    private long trafficMax = -1;
-    private long filesNum = -1;
-    private long premiumPoints = -1;
-    private long newPremiumPoints = -1;
-    private long accountBalance = -1;
-    private long usedSpace = -1;
-    private long trafficShareLeft = -1;
-    private boolean expired = false;
-    private String status;
-    private long createTime;
+    private transient long validUntil = -1;
+    private transient long trafficLeft = -1;
+    private transient long trafficMax = -1;
+    private transient long filesNum = -1;
+    private transient long premiumPoints = -1;
+    private transient long newPremiumPoints = -1;
+    private transient long accountBalance = -1;
+    private transient long usedSpace = -1;
+    private transient long trafficShareLeft = -1;
+    private transient boolean expired = false;
+    private transient String status;
+    private transient long createTime;
 
     public AccountInfo(PluginForHost plugin, Account account) {
         this.plugin = plugin;

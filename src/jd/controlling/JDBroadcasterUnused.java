@@ -5,11 +5,11 @@ import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.HashMap;
 
-public class JDBroadcaster<T extends EventListener> {
+public class JDBroadcasterUnused<T extends EventListener> {
     private HashMap<String, Method> methodMap;
     private ArrayList<T> listener;
 
-    public JDBroadcaster() {
+    public JDBroadcasterUnused() {
         listener = new ArrayList<T>();
         methodMap = new HashMap<String, Method>();
     }

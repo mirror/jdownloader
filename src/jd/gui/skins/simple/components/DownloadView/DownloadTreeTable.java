@@ -117,15 +117,15 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     private Timer timer;
 
-    private HashMap<FilePackage, ArrayList<DownloadLink>> updatePackages;
+    private HashMap<FilePackage, ArrayList<DownloadLink>> updatePackages = new HashMap<FilePackage, ArrayList<DownloadLink>>();
 
     private long updateTimer = 0;
 
     private TableColumnExt[] cols;
 
-    private DownloadLinksTreeTablePanel panel;
+    private DownloadLinksPanel panel;
 
-    public DownloadTreeTable(DownloadTreeTableModel treeModel, DownloadLinksTreeTablePanel panel) {
+    public DownloadTreeTable(DownloadTreeTableModel treeModel, DownloadLinksPanel panel) {
         super(treeModel);
         this.panel = panel;
         guiConfig = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
@@ -149,11 +149,11 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setColumnControlVisible(true);
-        this.setColumnControl(new JColumnControlButton(this));        
+        this.setColumnControl(new JColumnControlButton(this));
         setEditable(false);
         setAutoscrolls(false);
         addTreeExpansionListener(this);
-        addTreeSelectionListener(this);        
+        addTreeSelectionListener(this);
         addMouseListener(this);
         addKeyListener(this);
         addMouseMotionListener(this);
@@ -395,12 +395,10 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
             if (!guiConfig.getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
                 if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + links.size() + ")")) {
-                    JDUtilities.getController().removeDownloadLinks(links);
-                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
+                    JDUtilities.getDownloadController().removeDownloadLinks(links);
                 }
             } else {
-                JDUtilities.getController().removeDownloadLinks(links);
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
+                JDUtilities.getDownloadController().removeDownloadLinks(links);
             }
             break;
         case TreeTableAction.DOWNLOAD_ENABLE:
@@ -451,7 +449,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             FilePackage parentFP = links.get(0).getFilePackage();
             String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), parentFP.getName());
             if (name != null) {
-                JDUtilities.getController().removeDownloadLinks(links);
+                JDUtilities.getDownloadController().removeDownloadLinks(links);
                 FilePackage nfp = new FilePackage();
                 nfp.setName(name);
                 nfp.setDownloadDirectory(parentFP.getDownloadDirectory());
@@ -461,7 +459,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 for (int i = 0; i < links.size(); i++) {
                     links.elementAt(i).setFilePackage(nfp);
                 }
-                JDUtilities.getController().addAllLinks(links);
+                JDUtilities.getDownloadController().addAllLinks(links);
             }
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
             break;
@@ -632,9 +630,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
     @SuppressWarnings("unchecked")
     public synchronized void fireTableChanged(int id, Object param) {
         TreeModelSupport supporter = getDownladTreeTableModel().getModelSupporter();
-        if (updatePackages == null) {
-            updatePackages = new HashMap<FilePackage, ArrayList<DownloadLink>>();
-        }
         switch (id) {
         /*
          * Es werden nur die Ãœbergebenen LinkPfade aktualisiert.
@@ -642,24 +637,12 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
          * einzellnen DownloadLink haben. ArrayLists werden nicht ausgewertet.
          * in diesem Fall wird die komplette Tabelle neu gezeichnet.
          */
-        case DownloadLinksTreeTablePanel.REFRESH_SPECIFIED_LINKS:
+        case DownloadLinksPanel.REFRESH_SPECIFIED_LINKS:
             // logger.info("REFRESH SPECS COMPLETE");
             if (param instanceof DownloadLink) {
                 currentLink = (DownloadLink) param;
                 // logger.info("Updatesingle "+currentLink);
-                if (updatePackages.containsKey(currentLink.getFilePackage())) {
-                    if (!updatePackages.get(currentLink.getFilePackage()).contains(currentLink)) {
-                        updatePackages.get(currentLink.getFilePackage()).add(currentLink);
-                    }
-                } else {
-                    ArrayList<DownloadLink> ar = new ArrayList<DownloadLink>();
-                    updatePackages.put(currentLink.getFilePackage(), ar);
-                    ar.add(currentLink);
-                }
-
-            } else if (param instanceof ArrayList) {
-                for (Iterator<DownloadLink> it = ((ArrayList<DownloadLink>) param).iterator(); it.hasNext();) {
-                    currentLink = it.next();
+                synchronized (updatePackages) {
                     if (updatePackages.containsKey(currentLink.getFilePackage())) {
                         if (!updatePackages.get(currentLink.getFilePackage()).contains(currentLink)) {
                             updatePackages.get(currentLink.getFilePackage()).add(currentLink);
@@ -670,61 +653,80 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                         ar.add(currentLink);
                     }
                 }
+            } else if (param instanceof ArrayList) {
+                for (Iterator<DownloadLink> it = ((ArrayList<DownloadLink>) param).iterator(); it.hasNext();) {
+                    currentLink = it.next();
+                    synchronized (updatePackages) {
+                        if (updatePackages.containsKey(currentLink.getFilePackage())) {
+                            if (!updatePackages.get(currentLink.getFilePackage()).contains(currentLink)) {
+                                updatePackages.get(currentLink.getFilePackage()).add(currentLink);
+                            }
+                        } else {
+                            ArrayList<DownloadLink> ar = new ArrayList<DownloadLink>();
+                            updatePackages.put(currentLink.getFilePackage(), ar);
+                            ar.add(currentLink);
+                        }
+                    }
+                }
             }
-            if (System.currentTimeMillis() - updateTimer > UPDATE_INTERVAL && updatePackages != null) {
+            if (System.currentTimeMillis() - updateTimer > UPDATE_INTERVAL && updatePackages.size() > 0) {
                 Entry<FilePackage, ArrayList<DownloadLink>> next;
                 DownloadLink next3;
+                synchronized (updatePackages) {
+                    synchronized (JDUtilities.getDownloadController().getPackges()) {
+                        for (Iterator<Entry<FilePackage, ArrayList<DownloadLink>>> it2 = updatePackages.entrySet().iterator(); it2.hasNext();) {
+                            next = it2.next();
+                            // logger.info("Refresh " + next.getKey() + " - " +
+                            // next.getValue().size());
 
-                for (Iterator<Entry<FilePackage, ArrayList<DownloadLink>>> it2 = updatePackages.entrySet().iterator(); it2.hasNext();) {
-                    next = it2.next();
-                    // logger.info("Refresh " + next.getKey() + " - " +
-                    // next.getValue().size());
+                            if (JDUtilities.getDownloadController().getPackges().contains(next.getKey())) continue;
+                            supporter.firePathChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }));
 
-                    if (!model.containesPackage(next.getKey())) {
-                        continue;
-                    }
-                    supporter.firePathChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }));
+                            if (next.getKey().getBooleanProperty(PROPERTY_EXPANDED, false)) {
 
-                    if (next.getKey().getBooleanProperty(PROPERTY_EXPANDED, false)) {
+                                int[] ind = new int[next.getValue().size()];
+                                Object[] objs = new Object[next.getValue().size()];
+                                int i = 0;
 
-                        int[] ind = new int[next.getValue().size()];
-                        Object[] objs = new Object[next.getValue().size()];
-                        int i = 0;
+                                for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext();) {
+                                    next3 = it3.next();
+                                    if (!next.getKey().contains(next3)) {
+                                        logger.warning("Dauniel bug");
+                                        continue;
+                                    }
+                                    ind[i] = next.getKey().indexOf(next3);
+                                    objs[i] = next3;
 
-                        for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext();) {
-                            next3 = it3.next();
-                            if (!next.getKey().contains(next3)) {
-                                logger.warning("Dauniel bug");
-                                continue;
+                                    i++;
+                                    // logger.info(" children: " + next3 + " - "
+                                    // +
+                                    // ind[i]);
+                                }
+
+                                if (i > 0) {
+                                    supporter.fireChildrenChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }), ind, objs);
+                                }
                             }
-                            ind[i] = next.getKey().indexOf(next3);
-                            objs[i] = next3;
 
-                            i++;
-                            // logger.info(" children: " + next3 + " - " +
-                            // ind[i]);
-                        }
-
-                        if (i > 0) {
-                            supporter.fireChildrenChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }), ind, objs);
                         }
                     }
-
                 }
-                updatePackages = null;
                 updateTimer = System.currentTimeMillis();
             }
 
             break;
-        case DownloadLinksTreeTablePanel.REFRESH_ALL_DATA_CHANGED:
+        case DownloadLinksPanel.REFRESH_ALL_DATA_CHANGED:
             logger.info("Updatecomplete");
-            supporter.fireChildrenChanged(new TreePath(model.getRoot()), null, null);
+            synchronized (JDUtilities.getDownloadController().getPackges()) {
+                supporter.fireChildrenChanged(new TreePath(model.getRoot()), null, null);
+            }
 
             break;
-        case DownloadLinksTreeTablePanel.REFRESH_DATA_AND_STRUCTURE_CHANGED:
+        case DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED:
             logger.info("REFRESH GUI COMPLETE");
-
-            supporter.fireTreeStructureChanged(new TreePath(model.getRoot()));
+            synchronized (JDUtilities.getDownloadController().getPackges()) {
+                supporter.fireTreeStructureChanged(new TreePath(model.getRoot()));
+            }
 
             ignoreSelectionsAndExpansions(500);
             updateSelectionAndExpandStatus();
@@ -807,15 +809,15 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDLocale.LF("gui.downloadlist.delete.size_package", "%s links in %s packages", links.size(), fps.size()) + ")")) {
                     // zuerst Pakete entfernen
                     for (FilePackage filePackage : fps) {
-                        JDUtilities.getController().removePackage(filePackage);
+                        JDUtilities.getDownloadController().removePackage(filePackage);
                     }
-                    JDUtilities.getController().removeDownloadLinks(links);
+                    JDUtilities.getDownloadController().removeDownloadLinks(links);
                 }
             } else {
                 for (FilePackage filePackage : fps) {
-                    JDUtilities.getController().removePackage(filePackage);
+                    JDUtilities.getDownloadController().removePackage(filePackage);
                 }
-                JDUtilities.getController().removeDownloadLinks(links);
+                JDUtilities.getDownloadController().removeDownloadLinks(links);
             }
 
         } else if (e.getKeyCode() == KeyEvent.VK_UP && e.isControlDown()) {
@@ -824,10 +826,10 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
              * TODO
              */
             if (e.isAltDown()) {
-//                moveSelectedItems(MenuAction.ITEMS_MOVE_TOP);
+                // moveSelectedItems(MenuAction.ITEMS_MOVE_TOP);
                 getSelectionModel().setSelectionInterval(0, 0);
             } else {
-//                moveSelectedItems(MenuAction.ITEMS_MOVE_UP);
+                // moveSelectedItems(MenuAction.ITEMS_MOVE_UP);
                 cur = Math.max(0, cur - 1);
                 getSelectionModel().setSelectionInterval(cur, cur);
             }
@@ -835,10 +837,10 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             int cur = getSelectedRow();
             int len = getVisibleRowCount();
             if (e.isAltDown()) {
-//                moveSelectedItems(MenuAction.ITEMS_MOVE_BOTTOM);
+                // moveSelectedItems(MenuAction.ITEMS_MOVE_BOTTOM);
                 getSelectionModel().setSelectionInterval(len, len);
             } else {
-//                moveSelectedItems(MenuAction.ITEMS_MOVE_DOWN);
+                // moveSelectedItems(MenuAction.ITEMS_MOVE_DOWN);
                 cur = Math.min(len, cur + 1);
                 getSelectionModel().setSelectionInterval(cur, cur);
             }
@@ -850,13 +852,11 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
     }
 
     public void mouseClicked(MouseEvent e) {
-        ignoreSelectionsAndExpansions(-100);        
+        ignoreSelectionsAndExpansions(-100);
 
         if (e.getButton() == MouseEvent.BUTTON1 && 2 == e.getClickCount()) {
             TreePath path = getPathForRow(rowAtPoint(e.getPoint()));
             if (path == null) return;
-            Object obj = path.getLastPathComponent();
-            
         }
     }
 
@@ -876,7 +876,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     public void mousePressed(MouseEvent e) {
         if (e.getSource() != this) return;
-        
+
         // TODO: isPopupTrigger() funktioniert nicht
         // logger.info("Press"+e.isPopupTrigger() );
         Point point = e.getPoint();
@@ -933,7 +933,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 }
                 popup.add(packagePopup);
                 popup.add(pluginPopup);
-                
+
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TreeTableAction.DOWNLOAD_DOWNLOAD_DIR, new Property("downloadlink", obj))));
                 popup.add(tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.browseLink", "im Browser öffnen"), TreeTableAction.DOWNLOAD_BROWSE_LINK, new Property("downloadlink", obj))));
@@ -972,7 +972,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             popup.show(this, point.x, point.y);
         }
     }
-    
+
     private JMenu buildpriomenu(Vector<DownloadLink> links) {
         JMenuItem tmp;
         JMenu prioPopup = new JMenu(JDLocale.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
@@ -990,7 +990,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 tmp.setEnabled(true);
         }
         return prioPopup;
-    }    
+    }
 
     private Vector<Component> createPackageMenu(FilePackage fp, Vector<FilePackage> fps) {
         Vector<Component> res = new Vector<Component>();
@@ -1027,7 +1027,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             }
         }
 
-        res.add(pluginPopup);        
+        res.add(pluginPopup);
 
         res.add(new JSeparator());
         res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern"), TreeTableAction.PACKAGE_EDIT_DIR, new Property("package", fp))));
@@ -1082,53 +1082,70 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         logger.info(links.size() + " - " + fps.size());
         if (links.size() >= fps.size()) {
             if (links.size() == 0) { return; }
-/**
- * TODO
- */
+            /**
+             * TODO
+             */
             switch (id) {
-//            case MenuAction.ITEMS_MOVE_BOTTOM:
-//                DownloadLink lastLink = JDUtilities.getController().getPackages().lastElement().getDownloadLinks().lastElement();
-//                JDUtilities.getController().moveLinks(links, lastLink, null);
-//                break;
-//            case MenuAction.ITEMS_MOVE_TOP:
-//                DownloadLink firstLink = JDUtilities.getController().getPackages().firstElement().getDownloadLinks().firstElement();
-//                JDUtilities.getController().moveLinks(links, null, firstLink);
-//                break;
-//            case MenuAction.ITEMS_MOVE_UP:
-//                DownloadLink before = JDUtilities.getController().getDownloadLinkBefore(links.get(0));
-//                JDUtilities.getController().moveLinks(links, null, before);
-//                break;
-//            case MenuAction.ITEMS_MOVE_DOWN:
-//                DownloadLink after = JDUtilities.getController().getDownloadLinkAfter(links.lastElement());
-//                JDUtilities.getController().moveLinks(links, after, null);
-//                break;
+            // case MenuAction.ITEMS_MOVE_BOTTOM:
+            // DownloadLink lastLink =
+            // JDUtilities.getController().getPackages().
+            // lastElement().getDownloadLinks().lastElement();
+            // JDUtilities.getController().moveLinks(links, lastLink, null);
+            // break;
+            // case MenuAction.ITEMS_MOVE_TOP:
+            // DownloadLink firstLink =
+            // JDUtilities.getController().getPackages()
+            // .firstElement().getDownloadLinks().firstElement();
+            // JDUtilities.getController().moveLinks(links, null, firstLink);
+            // break;
+            // case MenuAction.ITEMS_MOVE_UP:
+            // DownloadLink before =
+            // JDUtilities.getController().getDownloadLinkBefore(links.get(0));
+            // JDUtilities.getController().moveLinks(links, null, before);
+            // break;
+            // case MenuAction.ITEMS_MOVE_DOWN:
+            // DownloadLink after =
+            // JDUtilities.getController().getDownloadLinkAfter
+            // (links.lastElement());
+            // JDUtilities.getController().moveLinks(links, after, null);
+            // break;
             }
 
         } else {
 
             switch (id) {
-//            case MenuAction.ITEMS_MOVE_BOTTOM:
-//                FilePackage lastFilepackage = JDUtilities.getController().getPackages().lastElement();
-//                JDUtilities.getController().movePackages(fps, lastFilepackage, null);
-//                break;
-//            case MenuAction.ITEMS_MOVE_TOP:
-//                FilePackage firstPackage = JDUtilities.getController().getPackages().firstElement();
-//                JDUtilities.getController().movePackages(fps, null, firstPackage);
-//                break;
-//            case MenuAction.ITEMS_MOVE_UP:
-//                int i = JDUtilities.getController().getPackages().indexOf(fps.get(0));
-//                if (i <= 0) return;
-//
-//                FilePackage before = JDUtilities.getController().getPackages().get(i - 1);
-//                JDUtilities.getController().movePackages(fps, null, before);
-//                break;
-//            case MenuAction.ITEMS_MOVE_DOWN:
-//                i = JDUtilities.getController().getPackages().indexOf(fps.lastElement());
-//                if (i >= JDUtilities.getController().getPackages().size() - 1) return;
-//
-//                FilePackage after = JDUtilities.getController().getPackages().get(i + 1);
-//                JDUtilities.getController().movePackages(fps, after, null);
-//                break;
+            // case MenuAction.ITEMS_MOVE_BOTTOM:
+            // FilePackage lastFilepackage =
+            // JDUtilities.getController().getPackages().lastElement();
+            // JDUtilities.getController().movePackages(fps, lastFilepackage,
+            // null);
+            // break;
+            // case MenuAction.ITEMS_MOVE_TOP:
+            // FilePackage firstPackage =
+            // JDUtilities.getController().getPackages().firstElement();
+            // JDUtilities.getController().movePackages(fps, null,
+            // firstPackage);
+            // break;
+            // case MenuAction.ITEMS_MOVE_UP:
+            // int i =
+            // JDUtilities.getController().getPackages().indexOf(fps.get(0));
+            // if (i <= 0) return;
+            //
+            // FilePackage before =
+            // JDUtilities.getController().getPackages().get(i - 1);
+            // JDUtilities.getController().movePackages(fps, null, before);
+            // break;
+            // case MenuAction.ITEMS_MOVE_DOWN:
+            // i =
+            // JDUtilities.getController().getPackages().indexOf(fps.lastElement
+            // ());
+            // if (i >= JDUtilities.getController().getPackages().size() - 1)
+            // return;
+            //
+            // FilePackage after =
+            // JDUtilities.getController().getPackages().get(i + 1);
+            // JDUtilities.getController().movePackages(fps, after, null);
+            // break;
             }
 
         }
@@ -1163,7 +1180,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
      * Diese Methode setzt die gespeicherten Werte für die Selection und
      * Expansion
      */
-    public synchronized void updateSelectionAndExpandStatus() {             
+    public synchronized void updateSelectionAndExpandStatus() {
         int i = 0;
         while (getPathForRow(i) != null) {
             if (getPathForRow(i).getLastPathComponent() instanceof DownloadLink) {
@@ -1181,7 +1198,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 }
             }
             i++;
-        }        
+        }
     }
 
     public void valueChanged(TreeSelectionEvent e) {

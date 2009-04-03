@@ -589,7 +589,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 String dlcfilestr = new Regex(request.getRequestUrl(), "[\\s\\S]*/action/save/container/([\\s\\S]+)").getMatch(0);
                 dlcfilestr = Encoding.htmlDecode(dlcfilestr);
                 // wegen leerzeichen etc, die ja in urls verändert werden...
-                JDUtilities.getController().saveDLC(new File(dlcfilestr), JDUtilities.getController().getDownloadLinks());
+                JDUtilities.getController().saveDLC(new File(dlcfilestr), JDUtilities.getDownloadController().getAllDownloadLinks());
                 response.addContent("Container saved. (" + dlcfilestr + ")");
             }
 

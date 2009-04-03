@@ -1672,7 +1672,7 @@ abstract public class DownloadInterface {
 
     public static boolean preDownloadCheckFailed(DownloadLink link) {
         DownloadLink downloadLink = link;
-        DownloadLink block = JDUtilities.getController().getLinkThatBlocks(downloadLink);
+        DownloadLink block = JDUtilities.getDownloadController().getFirstLinkThatBlocks(downloadLink);
         LinkStatus linkstatus = link.getLinkStatus();
         if (block != null) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());

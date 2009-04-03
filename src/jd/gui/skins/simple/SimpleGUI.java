@@ -68,7 +68,7 @@ import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
-import jd.gui.skins.simple.components.DownloadView.DownloadLinksTreeTablePanel;
+import jd.gui.skins.simple.components.DownloadView.DownloadLinksPanel;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2Panel;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
@@ -121,7 +121,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     /**
      * Komponente, die alle Downloads anzeigt
      */
-    private DownloadLinksTreeTablePanel linkListPane;
+    private DownloadLinksPanel linkListPane;
 
     private LogDialog logDialog;
 
@@ -481,7 +481,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
      */
     private void buildUI() {
         CURRENTGUI = this;
-        linkListPane = new DownloadLinksTreeTablePanel(this);
+        linkListPane = new DownloadLinksPanel(this);
         contentPanel = new ContentPanel();
 
         taskPane = new TaskPane();

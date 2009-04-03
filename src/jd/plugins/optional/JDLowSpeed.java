@@ -181,7 +181,7 @@ public class JDLowSpeed extends PluginOptional {
                         if (JDUtilities.getController().getSpeedMeter() < maxspeed) {
                             int minspeed = subConfig.getIntegerProperty(PROPERTY_MINSPEED, 350) * 1024;
 
-                            Iterator<DownloadLink> ff = JDUtilities.getController().getDownloadLinks().iterator();
+                            Iterator<DownloadLink> ff = JDUtilities.getDownloadController().getAllDownloadLinks().iterator();
                             ArrayList<DownloadLink> dls = new ArrayList<DownloadLink>();
                             ArrayList<DownloadLink> dlsToCheck = new ArrayList<DownloadLink>();
                             while (ff.hasNext()) {

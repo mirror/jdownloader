@@ -60,7 +60,7 @@ import jd.utils.JDUtilities;
  * 
  */
 
-public class JDController implements ControlListener, JDListener {
+public class JDController implements ControlListener {
     private class EventSender extends Thread {
 
         protected static final long MAX_EVENT_TIME = 10000;
@@ -198,7 +198,6 @@ public class JDController implements ControlListener, JDListener {
      */
     private Logger logger = JDUtilities.getLogger();
 
-    private Vector<FilePackage> packages;
     /**
      * Schnittstelle zur Benutzeroberfläche
      */
@@ -214,18 +213,9 @@ public class JDController implements ControlListener, JDListener {
     private Integer StartStopSync = new Integer(0);
 
     public JDController() {
-        packages = new Vector<FilePackage>();
         downloadStatus = DOWNLOAD_NOT_RUNNING;
         eventSender = getEventSender();
         JDUtilities.setController(this);
-    }
-
-    public void addAllLinks(Vector<DownloadLink> links) {
-        synchronized (packages) {
-            for (DownloadLink dl : links) {
-                addLink(dl);
-            }
-        }
     }
 
     /**
@@ -241,58 +231,6 @@ public class JDController implements ControlListener, JDListener {
             }
             if (!controlListener.contains(listener)) controlListener.add(listener);
         }
-    }
-
-    public void addLink(DownloadLink link) {
-        int index;
-        synchronized (packages) {
-            if ((index = packages.indexOf(link.getFilePackage())) >= 0) {
-                packages.get(index).add(link);
-            } else {
-                packages.add(link.getFilePackage());
-                if (!link.getFilePackage().contains(link)) {
-                    link.getFilePackage().add(link);
-                }
-            }
-        }
-        ArrayList<DownloadLink> dl = new ArrayList<DownloadLink>();
-        dl.add(link);
-        fireControlEvent(ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS, dl);
-    }
-
-    public void addPackage(FilePackage fp) {
-        ArrayList<DownloadLink> dl = new ArrayList<DownloadLink>();
-        boolean added = false;
-        synchronized (packages) {
-            if (!packages.contains(fp)) {
-                added = true;
-                packages.add(fp);
-                dl.addAll(fp.getDownloadLinks());
-            }
-        }
-        if (added) fireControlEvent(ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS, dl);
-    }
-
-    public void addPackageAt(FilePackage fp, int index) {
-        ArrayList<DownloadLink> dl = new ArrayList<DownloadLink>();
-        synchronized (packages) {
-            if (packages.size() == 0) {
-                addPackage(fp);
-                return;
-            }
-            if (index > packages.size() - 1) {
-                index = packages.size() - 1;
-            }
-            if (index < 0) {
-                index = 0;
-            }
-            if (packages.contains(fp)) {
-                packages.remove(fp);
-            }
-            packages.add(index, fp);
-            dl.addAll(fp.getDownloadLinks());
-        }
-        fireControlEvent(ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS, dl);
     }
 
     /**
@@ -361,8 +299,6 @@ public class JDController implements ControlListener, JDListener {
                 }
                 link.getLinkStatus().setStatusText(null);
             }
-            Interaction.handleInteraction(Interaction.INTERACTION_LINKLIST_STRUCTURE_CHANGED, null);
-            saveDownloadLinks();
             break;
         case ControlEvent.CONTROL_LOG_OCCURED:
             if (fileLogger != null) {
@@ -398,18 +334,16 @@ public class JDController implements ControlListener, JDListener {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
 
                 if (JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 2) {
-                    removePackage(lastDownloadFinished.getFilePackage());
+                    JDUtilities.getDownloadController().removePackage(lastDownloadFinished.getFilePackage());
                     break;
                 }
             }
 
             // Prüfen ob der Link entfernt werden soll
             if (lastDownloadFinished.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 0) {
-                removeDownloadLink(lastDownloadFinished);
+                JDUtilities.getDownloadController().removeDownloadLink(lastDownloadFinished);
 
-            }
-
-            saveDownloadLinks();
+            }            
 
             break;
         case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
@@ -435,8 +369,7 @@ public class JDController implements ControlListener, JDListener {
             }
             break;
         case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
-            Interaction.handleInteraction(Interaction.INTERACTION_LINKLIST_STRUCTURE_CHANGED, null);
-            saveDownloadLinks();
+            Interaction.handleInteraction(Interaction.INTERACTION_LINKLIST_STRUCTURE_CHANGED, null);            
             break;
         }
 
@@ -471,7 +404,7 @@ public class JDController implements ControlListener, JDListener {
 
     public void prepareShutdown() {
         stopDownloads();
-        saveDownloadLinks();
+        JDUtilities.getDownloadController().saveDownloadLinks();
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
         Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
         JDUtilities.getDatabaseConnector().shutdownDatabase();
@@ -546,41 +479,6 @@ public class JDController implements ControlListener, JDListener {
         return captchaCode;
     }
 
-    public DownloadLink getDownloadLinkAfter(DownloadLink lastElement) {
-        synchronized (packages) {
-            for (FilePackage fp : packages) {
-                DownloadLink dl = fp.getLinkAfter(lastElement);
-                if (dl != null) return dl;
-            }
-        }
-        return null;
-    }
-
-    public DownloadLink getDownloadLinkBefore(DownloadLink lastElement) {
-        synchronized (packages) {
-            for (FilePackage fp : packages) {
-                DownloadLink dl = fp.getLinkBefore(lastElement);
-                if (dl != null) return dl;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Liefert alle DownloadLinks zurück
-     * 
-     * @return Alle DownloadLinks zurück
-     */
-    public Vector<DownloadLink> getDownloadLinks() {
-        Vector<DownloadLink> ret = new Vector<DownloadLink>();
-        synchronized (packages) {
-            for (FilePackage fp : packages) {
-                ret.addAll(fp.getDownloadLinks());
-            }
-        }
-        return ret;
-    }
-
     /**
      * Gibt den Status (ID) der downloads zurück
      * 
@@ -615,8 +513,8 @@ public class JDController implements ControlListener, JDListener {
     public int getForbiddenReconnectDownloadNum() {
         int ret = 0;
         DownloadLink nextDownloadLink;
-        synchronized (packages) {
-            for (FilePackage fp : packages) {
+        synchronized (JDUtilities.getDownloadController().getPackges()) {
+            for (FilePackage fp : JDUtilities.getDownloadController().getPackges()) {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
@@ -659,7 +557,7 @@ public class JDController implements ControlListener, JDListener {
      * @return
      */
     public Vector<FilePackage> getPackages() {
-        return packages;
+        return JDUtilities.getDownloadController().getPackges();
     }
 
     /**
@@ -670,8 +568,8 @@ public class JDController implements ControlListener, JDListener {
      */
     public int getRunningDownloadNum() {
         int ret = 0;
-        synchronized (packages) {
-            for (FilePackage fp : packages) {
+        synchronized (JDUtilities.getDownloadController().getPackges()) {
+            for (FilePackage fp : JDUtilities.getDownloadController().getPackges()) {
                 ret += (fp.getLinksWithStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS).size());
             }
         }
@@ -680,8 +578,8 @@ public class JDController implements ControlListener, JDListener {
 
     public int getRunningDownloadNumByHost(PluginForHost pluginForHost) {
         int ret = 0;
-        synchronized (packages) {
-            for (FilePackage fp : packages) {
+        synchronized (JDUtilities.getDownloadController().getPackges()) {
+            for (FilePackage fp : JDUtilities.getDownloadController().getPackges()) {
                 Vector<DownloadLink> links = fp.getLinksWithStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
                 for (DownloadLink dl : links) {
                     if (dl.getPlugin().getClass() == pluginForHost.getClass()) {
@@ -719,58 +617,6 @@ public class JDController implements ControlListener, JDListener {
         return watchdog;
     }
 
-    public boolean hasDownloadLinkURL(String url) {
-        if (url == null) return false;
-        url = url.trim();
-        synchronized (packages) {
-            for (DownloadLink dl : this.getDownloadLinks()) {
-                if (dl.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) continue;
-                if (dl.getDownloadURL() != null && dl.getDownloadURL().equalsIgnoreCase(url)) { return true; }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Lädt zum Start das erste Mal alle Links aus einer Datei
-     * 
-     * @return true/False je nach Erfolg
-     */
-    public boolean initDownloadLinks() {
-        try {
-            packages = loadDownloadLinks();
-        } catch (Exception e) {
-            JDUtilities.getLogger().severe("" + e.getStackTrace());
-            packages = null;
-        }
-        if (packages == null) {
-            packages = new Vector<FilePackage>();
-            this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-            File file = JDUtilities.getResourceFile("backup/links.linkbackup");
-            if (file.exists()) {
-                JDUtilities.getLogger().severe("Strange: No Linklist,Try to restore from backup file");
-                this.loadContainerFile(file);
-            }
-            return false;
-        } else if (packages.size() == 0 && Main.returnedfromUpdate()) {
-            this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-            File file = JDUtilities.getResourceFile("backup/links.linkbackup");
-            if (file.exists() && file.lastModified() >= System.currentTimeMillis() - 10 * 60 * 1000l) {
-                JDUtilities.getLogger().severe("Strange: Empty Linklist,Try to restore from backup file");
-                this.loadContainerFile(file);
-            }
-            return false;
-        }
-        for (FilePackage filePackage : packages) {
-            filePackage.getJDBroadcaster().addJDListener(this);
-            for (DownloadLink downloadLink : filePackage.getDownloadLinks()) {
-                downloadLink.setProperty(PROPERTY_SELECTED, false);
-            }
-        }
-        this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-        return true;
-    }
-
     public boolean isContainerFile(File file) {
         ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
         CPluginWrapper pContainer;
@@ -781,31 +627,140 @@ public class JDController implements ControlListener, JDListener {
         return false;
     }
 
-    public synchronized DownloadLink getLinkThatBlocks(DownloadLink link) {
-        synchronized (packages) {
-            for (DownloadLink nextDownloadLink : this.getDownloadLinks()) {
-                if (nextDownloadLink != link) {
-                    if ((nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
-                        if (new File(nextDownloadLink.getFileOutput()).exists()) {
-                            /*
-                             * fertige datei sollte auch auf der platte sein und
-                             * nicht nur als fertig in der liste
-                             */
-                            logger.info("Link owner: " + nextDownloadLink.getHost() + nextDownloadLink);
-                            return nextDownloadLink;
-                        }
+    public Vector<DownloadLink> getContainerLinks(final File file) {
+        ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
+        Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
+        PluginsC pContainer;
+        CPluginWrapper wrapper;
+        ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size());
+        logger.info("load Container: " + file);
+        for (int i = 0; i < pluginsForContainer.size(); i++) {
+            wrapper = pluginsForContainer.get(i);
+            progress.setStatusText("Containerplugin: " + wrapper.getHost());
+            if (wrapper.canHandle(file.getName())) {
+                // es muss jeweils eine neue plugininstanz erzeugt
+                // werden
+                pContainer = (PluginsC) wrapper.getNewPluginInstance();
+                try {
+                    progress.setSource(pContainer);
+                    pContainer.initContainer(file.getAbsolutePath());
+                    Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
+                    if (links == null || links.size() == 0) {
+                        logger.severe("Container Decryption failed (1)");
+                    } else {
+                        downloadLinks = links;
+                        break;
                     }
-                    if ((nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || nextDownloadLink.getLinkStatus().isPluginActive()) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
-                        if (nextDownloadLink.getFinalFileName() != null) {
-                            /* Dateiname muss fertig geholt sein */
-                            logger.info("Link owner: " + nextDownloadLink.getHost() + nextDownloadLink);
-                            return nextDownloadLink;
-                        }
-                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
+            progress.increase(1);
         }
-        return null;
+        progress.setStatusText(downloadLinks.size() + " links found");
+        progress.finalize();
+        return downloadLinks;
+    }
+
+    /**
+     * Schneidet alle Links aus und fügt sie zwischen before unc after ein. Alle
+     * 
+     * @param links
+     * @param before
+     * @param after
+     * @return
+     */
+    public boolean moveLinks(Vector<DownloadLink> links, DownloadLink before, DownloadLink after) {
+        if (links.contains(before) || links.contains(after)) { return false; }
+        if (before != null && after != null && before.getFilePackage() != after.getFilePackage()) { return false; }
+        if (before == null & after == null) { return false; }
+
+        JDUtilities.getDownloadController().removeDownloadLinks(links);
+
+        FilePackage dest = before == null ? after.getFilePackage() : before.getFilePackage();
+        if (dest == null) { return false; }
+        int pos = 0;
+        if (before != null) {
+            pos = dest.indexOf(before) + 1;
+        } else {
+            pos = dest.indexOf(after);
+        }
+
+        dest.addAllAt(links, pos);
+
+        // logger.info("II");
+        this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
+
+        return true;
+    }
+
+    public boolean movePackages(Vector<FilePackage> fps, FilePackage before, FilePackage after) {
+        if (after != null && fps.contains(after)) { return false; }
+        if (before != null && fps.contains(before)) { return false; }
+        if (before == null && after == null) { return false; }
+        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackges();
+        synchronized (packages) {
+            packages.removeAll(fps);
+            int pos = after == null ? packages.indexOf(before) + 1 : packages.indexOf(after);
+
+            packages.addAll(pos, fps);
+
+        }
+        this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
+
+        return true;
+    }
+
+    public void pauseDownloads(boolean value) {
+        if (watchdog == null) return;
+        watchdog.pause(value);
+    }
+
+    /**
+     * Emtfernt einen Listener
+     * 
+     * @param listener
+     *            Der zu entfernende Listener
+     */
+    public synchronized void removeControlListener(ControlListener listener) {
+        synchronized (removeList) {
+            if (!removeList.contains(listener)) removeList.add(listener);
+        }
+    }
+
+    public void requestDownloadLinkUpdate(DownloadLink link) {
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, link));
+    }
+
+    /**
+     * Setzt de Status aller Links zurück die nicht gerade geladen werden.
+     */
+    public void resetAllLinks() {
+        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackges();
+        synchronized (packages) {
+            ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
+            Iterator<FilePackage> iterator = packages.iterator();
+            FilePackage fp = null;
+            DownloadLink nextDownloadLink;
+            while (iterator.hasNext()) {
+                fp = iterator.next();
+                Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
+                while (it2.hasNext()) {
+                    nextDownloadLink = it2.next();
+                    if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
+                        nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
+                        nextDownloadLink.getLinkStatus().setStatusText("");
+                        nextDownloadLink.getLinkStatus().reset();
+                        // nextDownloadLink.setEndOfWaittime(0);
+                        ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
+                        al.add(nextDownloadLink);
+                    }
+
+                }
+            }
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, al));
+        }
+
     }
 
     public void loadContainerFile(final File file) {
@@ -882,266 +837,6 @@ public class JDController implements ControlListener, JDListener {
         }.start();
     }
 
-    public Vector<DownloadLink> getContainerLinks(final File file) {
-        ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
-        Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
-        PluginsC pContainer;
-        CPluginWrapper wrapper;
-        ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size());
-        logger.info("load Container: " + file);
-        for (int i = 0; i < pluginsForContainer.size(); i++) {
-            wrapper = pluginsForContainer.get(i);
-            progress.setStatusText("Containerplugin: " + wrapper.getHost());
-            if (wrapper.canHandle(file.getName())) {
-                // es muss jeweils eine neue plugininstanz erzeugt
-                // werden
-                pContainer = (PluginsC) wrapper.getNewPluginInstance();
-                try {
-                    progress.setSource(pContainer);
-                    pContainer.initContainer(file.getAbsolutePath());
-                    Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
-                    if (links == null || links.size() == 0) {
-                        logger.severe("Container Decryption failed (1)");
-                    } else {
-                        downloadLinks = links;
-                        break;
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            progress.increase(1);
-        }
-        progress.setStatusText(downloadLinks.size() + " links found");
-        progress.finalize();
-        return downloadLinks;
-    }
-
-    /**
-     * Lädt eine LinkListe
-     * 
-     * @param file
-     *            Die Datei, aus der die Links gelesen werden
-     * @return Ein neuer Vector mit den DownloadLinks
-     * @throws Exception
-     */
-    @SuppressWarnings("unchecked")
-    private Vector<FilePackage> loadDownloadLinks() throws Exception {
-        Object obj = JDUtilities.getDatabaseConnector().getLinks();
-        if (obj != null && obj instanceof Vector && (((Vector) obj).size() == 0 || ((Vector) obj).size() > 0 && ((Vector) obj).get(0) instanceof FilePackage)) {
-            Vector<FilePackage> packages = (Vector<FilePackage>) obj;
-            Iterator<FilePackage> iterator = packages.iterator();
-            DownloadLink localLink;
-            PluginForHost pluginForHost = null;
-            PluginsC pluginForContainer = null;
-            Iterator<DownloadLink> it;
-            FilePackage fp;
-            while (iterator.hasNext()) {
-                fp = iterator.next();
-                if (fp.getDownloadLinks().size() == 0) {
-                    iterator.remove();
-                    continue;
-                }
-                it = fp.getDownloadLinks().iterator();
-                while (it.hasNext()) {
-                    localLink = it.next();
-                    if (localLink.getLinkType() == DownloadLink.LINKTYPE_JDU && (localLink.getProperty("JDU") == null || !(localLink.getProperty("JDU") instanceof PackageData))) {
-                        iterator.remove();
-                        continue;
-                    }
-                    if (!localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        localLink.getLinkStatus().reset();
-                    }
-                    if (localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 1) {
-                        it.remove();
-                        if (fp.getDownloadLinks().size() == 0) {
-                            iterator.remove();
-                            continue;
-                        }
-                    } else {
-                        // Anhand des Hostnamens aus dem DownloadLink
-                        // wird ein passendes Plugin gesucht
-                        try {
-                            pluginForHost = JDUtilities.getNewPluginForHostInstanz(localLink.getHost());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        // Gibt es einen Names für ein Containerformat,
-                        // wird ein passendes Plugin gesucht
-                        try {
-                            if (localLink.getContainer() != null) {
-                                pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer(), localLink.getContainerFile());
-                                if (pluginForContainer == null) {
-                                    localLink.setEnabled(false);
-                                }
-                            }
-                        } catch (NullPointerException e) {
-                            e.printStackTrace();
-                        }
-                        if (pluginForHost != null) {
-                            localLink.setLoadedPlugin(pluginForHost);
-                        }
-                        if (pluginForContainer != null) {
-                            localLink.setLoadedPluginForContainer(pluginForContainer);
-                        }
-                        if (pluginForHost == null) {
-                            logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
-                        }
-                    }
-                }
-            }
-            return packages;
-        }
-        throw new Exception("Linklist incompatible");
-    }
-
-    /**
-     * Schneidet alle Links aus und fügt sie zwischen before unc after ein. Alle
-     * 
-     * @param links
-     * @param before
-     * @param after
-     * @return
-     */
-    public boolean moveLinks(Vector<DownloadLink> links, DownloadLink before, DownloadLink after) {
-        if (links.contains(before) || links.contains(after)) { return false; }
-        if (before != null && after != null && before.getFilePackage() != after.getFilePackage()) { return false; }
-        if (before == null & after == null) { return false; }
-
-        removeDownloadLinks(links);
-
-        FilePackage dest = before == null ? after.getFilePackage() : before.getFilePackage();
-        if (dest == null) { return false; }
-        int pos = 0;
-        if (before != null) {
-            pos = dest.indexOf(before) + 1;
-        } else {
-            pos = dest.indexOf(after);
-        }
-
-        dest.addAllAt(links, pos);
-
-        // logger.info("II");
-        this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-
-        return true;
-    }
-
-    public boolean movePackages(Vector<FilePackage> fps, FilePackage before, FilePackage after) {
-        if (after != null && fps.contains(after)) { return false; }
-        if (before != null && fps.contains(before)) { return false; }
-        if (before == null && after == null) { return false; }
-        synchronized (packages) {
-            packages.removeAll(fps);
-            int pos = after == null ? packages.indexOf(before) + 1 : packages.indexOf(after);
-
-            packages.addAll(pos, fps);
-
-        }
-        this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-
-        return true;
-    }
-
-    public void pauseDownloads(boolean value) {
-        if (watchdog == null) return;
-        watchdog.pause(value);
-    }
-
-    /**
-     * Emtfernt einen Listener
-     * 
-     * @param listener
-     *            Der zu entfernende Listener
-     */
-    public synchronized void removeControlListener(ControlListener listener) {
-        synchronized (removeList) {
-            if (!removeList.contains(listener)) removeList.add(listener);
-        }
-    }
-
-    public void removeDownloadLink(DownloadLink link) {
-        if (link == null) return;
-        Vector<DownloadLink> links = new Vector<DownloadLink>();
-        links.add(link);
-        this.removeDownloadLinks(links);
-    }
-
-    public void removeDownloadLinks(Vector<DownloadLink> links) {
-        if (links == null) return;
-        for (DownloadLink dl : links) {
-            dl.getFilePackage().remove(dl);
-        }
-        this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-    }
-
-    public void removePackage(FilePackage fp2) {
-        if (fp2 == null) return;
-        synchronized (packages) {
-            fp2.abortDownload();
-            fp2.getJDBroadcaster().removeJDListener(this);
-            packages.remove(fp2);
-            this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-            this.saveDownloadLinks();
-        }
-    }
-
-    public void removeCompletedPackages() {
-        Vector<FilePackage> packagestodelete = new Vector<FilePackage>();
-        synchronized (packages) {
-            for (FilePackage fp : packages) {
-                if (fp.getLinksWithStatus(LinkStatus.FINISHED).size() == fp.size()) packagestodelete.add(fp);
-            }
-        }
-        for (FilePackage fp : packagestodelete) {
-            removePackage(fp);
-        }
-    }
-
-    public void removeCompletedDownloadLinks() {
-        Vector<DownloadLink> downloadstodelete = new Vector<DownloadLink>();
-        synchronized (packages) {
-            for (FilePackage fp : packages) {
-                downloadstodelete.addAll(fp.getLinksWithStatus(LinkStatus.FINISHED));
-            }
-        }
-        this.removeDownloadLinks(downloadstodelete);
-    }
-
-    public void requestDownloadLinkUpdate(DownloadLink link) {
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, link));
-    }
-
-    /**
-     * Setzt de Status aller Links zurück die nicht gerade geladen werden.
-     */
-    public void resetAllLinks() {
-        synchronized (packages) {
-            ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
-            Iterator<FilePackage> iterator = packages.iterator();
-            FilePackage fp = null;
-            DownloadLink nextDownloadLink;
-            while (iterator.hasNext()) {
-                fp = iterator.next();
-                Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
-                while (it2.hasNext()) {
-                    nextDownloadLink = it2.next();
-                    if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
-                        nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
-                        nextDownloadLink.getLinkStatus().setStatusText("");
-                        nextDownloadLink.getLinkStatus().reset();
-                        // nextDownloadLink.setEndOfWaittime(0);
-                        ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
-                        al.add(nextDownloadLink);
-                    }
-
-                }
-            }
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, al));
-        }
-
-    }
-
     public void saveDLC(File file, Vector<DownloadLink> links) {
         String xml = JDUtilities.createContainerString(links, "dlc");
         String cipher = encryptDLC(xml);
@@ -1160,18 +855,6 @@ public class JDController implements ControlListener, JDListener {
         }
         logger.severe("Container creation failed");
         getUiInterface().showMessageDialog("Container encryption failed");
-    }
-
-    /**
-     * Speichert die Linksliste ab
-     * 
-     * @param file
-     *            Die Datei, in die die Links gespeichert werden sollen
-     */
-    public void saveDownloadLinks() {
-        synchronized (packages) {
-            JDUtilities.getDatabaseConnector().saveLinks(packages);
-        }
     }
 
     /**
@@ -1234,7 +917,7 @@ public class JDController implements ControlListener, JDListener {
 
                 watchdog.abort();
                 setDownloadStatus(DOWNLOAD_NOT_RUNNING);
-
+                Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackges();
                 synchronized (packages) {
                     for (FilePackage fp : packages) {
                         for (DownloadLink link : fp.getDownloadLinks()) {
@@ -1272,6 +955,7 @@ public class JDController implements ControlListener, JDListener {
      */
     public ArrayList<DownloadLink> getDownloadLinks(PluginForHost pluginForHost) {
         ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
+        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackges();
         synchronized (packages) {
             DownloadLink nextDownloadLink;
             for (FilePackage fp : packages) {
@@ -1287,6 +971,7 @@ public class JDController implements ControlListener, JDListener {
 
     public DownloadLink getDownloadLinkByFileOutput(File file, Integer Linkstatus) {
         // synchronized (packages) {
+        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackges();
         try {
             Iterator<FilePackage> iterator = packages.iterator();
             FilePackage fp = null;
@@ -1313,6 +998,7 @@ public class JDController implements ControlListener, JDListener {
 
     public ArrayList<DownloadLink> getDownloadLinksByNamePattern(String matcher) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackges();
         try {
             Iterator<FilePackage> iterator = packages.iterator();
             FilePackage fp = null;
@@ -1337,6 +1023,7 @@ public class JDController implements ControlListener, JDListener {
 
     public ArrayList<DownloadLink> getDownloadLinksByPathPattern(String matcher) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackges();
         try {
             Iterator<FilePackage> iterator = packages.iterator();
             FilePackage fp = null;
@@ -1363,15 +1050,4 @@ public class JDController implements ControlListener, JDListener {
         new DistributeData(data).start();
     }
 
-    public void receiveJDEvent(JDEvent event) {
-        if (event instanceof FilePackageEvent) {
-            if (!(event.getSource() instanceof FilePackage)) return;
-            switch (event.getID()) {
-            case FilePackageEvent.EMPTY_EVENT:
-                this.removePackage((FilePackage) event.getSource());
-                break;
-            }
-        }
-
-    }
 }

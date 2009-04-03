@@ -615,12 +615,12 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
             fp.setDownloadLinks(linkListHost);
             fpv2.setDownloadLinks(linkList);
         }
-        JDUtilities.getController().addPackage(fp);
+        JDUtilities.getDownloadController().addPackage(fp);
 
     }
 
     public void checkAlreadyinList(DownloadLink link) {
-        if (JDUtilities.getController().hasDownloadLinkURL(link.getDownloadURL())) {
+        if (JDUtilities.getDownloadController().getFirstDownloadLinkwithURL(link.getDownloadURL()) != null) {
             link.getLinkStatus().setErrorMessage("Already in Downloadlist");
             link.getLinkStatus().addStatus(LinkStatus.ERROR_ALREADYEXISTS);
         }

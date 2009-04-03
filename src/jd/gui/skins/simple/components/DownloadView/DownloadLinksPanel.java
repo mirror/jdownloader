@@ -23,25 +23,26 @@ import java.util.logging.Logger;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.JDController;
+import jd.controlling.JDDownloadControllerEvent;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.event.JDEvent;
+import jd.event.JDListener;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
 
-import org.jdesktop.swingx.JXCollapsiblePane;
+public class DownloadLinksPanel extends JTabbedPanel implements ControlListener, JDListener {
 
-public class DownloadLinksTreeTablePanel extends JTabbedPanel implements ControlListener {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -6029423913449902141L;
 
     public final static int REFRESH_ALL_DATA_CHANGED = 1;
     public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;
     public static final int REFRESH_SPECIFIED_LINKS = 2;
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 1L;
 
     /**
      * Der Logger für Meldungen
@@ -50,18 +51,17 @@ public class DownloadLinksTreeTablePanel extends JTabbedPanel implements Control
 
     private DownloadTreeTable internalTreeTable;
 
-    
-    private Vector<FilePackage> packages = new Vector<FilePackage>();    
+    private Vector<FilePackage> packages = new Vector<FilePackage>();
 
-    public DownloadLinksTreeTablePanel(SimpleGUI parent) {
+    public DownloadLinksPanel(SimpleGUI parent) {
         super(new BorderLayout());
         internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(this), this);
-        JScrollPane scrollPane = new JScrollPane(internalTreeTable);        
+        JScrollPane scrollPane = new JScrollPane(internalTreeTable);
         this.add(scrollPane);
         JDUtilities.getController().addControlListener(this);
+        JDUtilities.getDownloadController().addJDListener(this);
     }
 
-    
     public synchronized void fireTableChanged(final int id, final Object param) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -71,7 +71,7 @@ public class DownloadLinksTreeTablePanel extends JTabbedPanel implements Control
             }
         });
     }
-    
+
     @Override
     public void onDisplay() {
         internalTreeTable.removeKeyListener(internalTreeTable);
@@ -96,9 +96,6 @@ public class DownloadLinksTreeTablePanel extends JTabbedPanel implements Control
             fireTableChanged(REFRESH_ALL_DATA_CHANGED, null);
             break;
         case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
-            if (event.getSource().getClass() == JDController.class) {
-                setPackages(JDUtilities.getController().getPackages());
-            }
             fireTableChanged(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
             break;
         }
@@ -108,7 +105,19 @@ public class DownloadLinksTreeTablePanel extends JTabbedPanel implements Control
         return packages;
     }
 
-    private void setPackages(Vector<FilePackage> packages) {
-        this.packages = packages;
+    public void receiveJDEvent(JDEvent event) {
+        if (event instanceof JDDownloadControllerEvent) {
+            if (event.getSource() == JDUtilities.getDownloadController()) {
+                switch (event.getID()) {
+                case JDDownloadControllerEvent.REFRESH:
+                    fireTableChanged(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
+                    break;
+                case JDDownloadControllerEvent.UPDATE:
+                    fireTableChanged(REFRESH_ALL_DATA_CHANGED, null);
+                    break;
+                }
+
+            }
+        }
     }
 }

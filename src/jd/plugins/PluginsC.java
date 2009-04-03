@@ -207,12 +207,14 @@ public abstract class PluginsC extends Plugin {
         downloadLink.setProperty("k", k);
         return dlU.get(downloadLink.getContainerIndex());
     }
-/**
- * workaround and cortrection of a dlc bug
- * @param downloadLink
- */
+
+    /**
+     * workaround and cortrection of a dlc bug
+     * 
+     * @param downloadLink
+     */
     private void checkWorkaround(DownloadLink downloadLink) {
-        Vector<DownloadLink> links = JDUtilities.getController().getDownloadLinks();
+        Vector<DownloadLink> links = JDUtilities.getDownloadController().getAllDownloadLinks();
         ArrayList<DownloadLink> failed = new ArrayList<DownloadLink>();
         int biggestIndex = 0;
         for (DownloadLink l : links) {
@@ -221,7 +223,6 @@ public abstract class PluginsC extends Plugin {
                 biggestIndex = Math.max(biggestIndex, l.getContainerIndex());
             }
         }
-     
 
         if (biggestIndex >= dlU.size()) {
             ArrayList<DownloadLink> rename = new ArrayList<DownloadLink>();
@@ -233,7 +234,7 @@ public abstract class PluginsC extends Plugin {
                     ren += l.getFileOutput() + "<br>";
                 }
             }
-            
+
             if (JDUtilities.getGUI().showHTMLDialog("DLC Missmatch", "<b>JD discovered an error while downloading DLC links.</b> <br>The following files may have errors:<br>" + ren + "<br><u> Do you want JD to try to correct them?</u>")) {
                 int ffailed = 0;
                 ren = "";

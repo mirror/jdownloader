@@ -428,7 +428,7 @@ public class JDSimpleWebserverRequestHandler {
                                     }
                                     fp.add(link);
                                     link.setFilePackage(fp);
-                                    JDUtilities.getController().addLink(link);
+                                    JDUtilities.getDownloadController().addLink(link);
                                 }
                                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
@@ -500,8 +500,7 @@ public class JDSimpleWebserverRequestHandler {
                         if (dowhat.compareToIgnoreCase("remove") == 0) {
 
                             // entfernen
-                            JDUtilities.getController().removeDownloadLinks(links);
-                            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
+                            JDUtilities.getDownloadController().removeDownloadLinks(links);                            
                         }
                         if (dowhat.compareToIgnoreCase("abort") == 0) {
 

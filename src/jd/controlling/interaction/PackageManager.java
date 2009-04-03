@@ -121,8 +121,7 @@ public class PackageManager extends Interaction implements Serializable {
         }
         config.save();
         if (fp.size() > 0) {
-            if (!oldUpdatePackage) JDUtilities.getController().addPackageAt(fp, 0);
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
+            if (!oldUpdatePackage) JDUtilities.getDownloadController().addPackageAt(fp, 0);
         }
         return true;
     }
@@ -135,7 +134,7 @@ public class PackageManager extends Interaction implements Serializable {
             dat.setUpdating(false);
         }
         // Updatelink wurde vermutlich aus der Liste entfernt
-        if (!dat.isDownloaded() && dat.isUpdating() && !(JDUtilities.getController().hasDownloadLinkURL(dat.getStringProperty("url")) || JDUtilities.getController().hasDownloadLinkURL(dat.getStringProperty("light-url")))) {
+        if (!dat.isDownloaded() && dat.isUpdating() && !(JDUtilities.getDownloadController().getFirstDownloadLinkwithURL(dat.getStringProperty("url")) != null) || JDUtilities.getDownloadController().getFirstDownloadLinkwithURL(dat.getStringProperty("light-url")) != null) {
             logger.info("PM: validate restet2");
             dat.setUpdating(false);
         }
@@ -263,8 +262,7 @@ public class PackageManager extends Interaction implements Serializable {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                        JDUtilities.getController().removeDownloadLink(downloadLink);
-                        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
+                        JDUtilities.getDownloadController().removeDownloadLink(downloadLink);                      
                         boolean ch = false;
                         all: for (FilePackage fp : JDUtilities.getController().getPackages()) {
                             for (DownloadLink dLink : fp.getDownloadLinks()) {

@@ -80,12 +80,15 @@ import jd.config.Configuration;
 import jd.config.DatabaseConnector;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
+import jd.controlling.JDDownloadController;
+import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.JDProxy;
 import jd.nutils.Executer;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -114,7 +117,6 @@ public class JDUtilities {
      * Der DownloadController
      */
     private static JDController controller = null;
-
 
     /**
      * Versionsstring der Applikation
@@ -223,9 +225,9 @@ public class JDUtilities {
      *            Das hinzuzufügende Bild
      */
     public static void addImage(String imageName, Image image) {
-//        get
-//        Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
-//        images.put(imageName, image);
+        // get
+        // Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
+        // images.put(imageName, image);
     }
 
     /**
@@ -1137,8 +1139,6 @@ public class JDUtilities {
 
     }
 
-
-
     public synchronized static SubConfiguration getSubConfig(String name) {
         if (SUBCONFIG_LOCK) {
 
@@ -1270,6 +1270,10 @@ public class JDUtilities {
         controller = con;
     }
 
+    public static JDDownloadController getDownloadController() {
+        return JDDownloadController.getDownloadController();
+    }
+
     /**
      * Setzt das aktuelle woringdirectory für den filebrowser
      * 
@@ -1391,7 +1395,5 @@ public class JDUtilities {
         return ret.toString();
 
     }
-
- 
 
 }

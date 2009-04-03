@@ -939,8 +939,7 @@ public class Rapidshare extends PluginForHost {
                     dlink.getLinkStatus().setStatusText("Server: " + n.getKey());
 
                 }
-                JDUtilities.getController().addPackageAt(fp, 0);
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
+                JDUtilities.getDownloadController().addPackageAt(fp, 0);             
 
             }
 
