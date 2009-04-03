@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple.config;
 
-import java.awt.BorderLayout;
 import java.awt.ComponentOrientation;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -24,12 +23,11 @@ import java.util.logging.Logger;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
-import net.miginfocom.swing.MigLayout;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class ConfigEntriesPanel extends ConfigPanel {
 
@@ -62,14 +60,14 @@ public class ConfigEntriesPanel extends ConfigPanel {
     @Override
     public void initPanel() {
         if (container.getContainerNum() == 0) {
-          
+
             Vector<ConfigEntry> entries = container.getEntries();
             for (ConfigEntry cfgEntry : entries) {
                 GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
                 if (ce != null) addGUIConfigEntry(ce);
             }
-            
-           add(panel);
+
+            add(panel);
         } else {
             subPanels = new Vector<ConfigEntriesPanel>();
             tabbedPane = new JTabbedPane();
@@ -134,9 +132,5 @@ public class ConfigEntriesPanel extends ConfigPanel {
 
         saveConfigEntries();
     }
-
-
-
-   
 
 }

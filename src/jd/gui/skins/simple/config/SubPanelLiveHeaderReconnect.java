@@ -19,7 +19,6 @@ package jd.gui.skins.simple.config;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.GridBagConstraints;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -45,8 +44,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import net.miginfocom.swing.MigLayout;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -55,10 +52,10 @@ import jd.http.Encoding;
 import jd.nutils.JDImage;
 import jd.router.FindRouterIP;
 import jd.router.GetRouterInfo;
-import jd.router.RouterInfoCollector;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener {
 
@@ -275,7 +272,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
         addGUIConfigEntry(pass);
         ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDLocale.L("gui.config.liveHeader.routerIP", "RouterIP (->%%%routerip%%%)")));
         addGUIConfigEntry(ip);
-  
+
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.liveHeader.script", "HTTP Script"))));
 
         // routerScript = new GUIConfigEntry();

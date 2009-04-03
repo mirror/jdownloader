@@ -20,7 +20,6 @@ import java.io.File;
 import java.util.Vector;
 
 import jd.event.ControlListener;
-
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;

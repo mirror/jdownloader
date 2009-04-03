@@ -16,8 +16,6 @@
 
 package jd.gui.skins.simple.config;
 
-import java.awt.BorderLayout;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -53,17 +51,15 @@ public class ConfigPanelAddons extends ConfigPanel {
     }
 
     public void initPanel() {
-        this.setLayout(new MigLayout("debug,ins 0","[fill,grow]"));
+        this.setLayout(new MigLayout("ins 0", "[fill,grow]"));
         container = new ConfigContainer(this);
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, new ConfigContainer(this, JDLocale.L("gui.config.addons.settings.tab", "Settings"))));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, new ConfigContainer(this, JDLocale.L("gui.config.addons.install.tab", "Installation & updates"))));
 
-   
-
         add(cep = new ConfigEntriesPanel(container));
-        cep.getSubPanels().get(0).setLayout(new MigLayout("ins 0","[fill,grow]"));
+        cep.getSubPanels().get(0).setLayout(new MigLayout("ins 0", "[fill,grow]"));
         cep.getSubPanels().get(0).add(sppo = new SubPanelPluginsOptional(configuration));
-        cep.getSubPanels().get(1).setLayout(new MigLayout("ins 0","[fill,grow]"));
+        cep.getSubPanels().get(1).setLayout(new MigLayout("ins 0", "[fill,grow]"));
         cep.getSubPanels().get(1).add(spr = new SubPanelRessources(configuration));
     }
 

@@ -55,8 +55,6 @@ import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXPanel;
-import org.jdesktop.swingx.image.StackBlurFilter;
-import org.jdesktop.swingx.painter.AbstractPainter;
 
 /**
  * Diese Klasse fasst ein label / input Paar zusammen und macht das lesen und
@@ -367,6 +365,8 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
             return ((JDTextArea) input[0]).getText();
         case ConfigContainer.TYPE_CHECKBOX:
             return ((JCheckBox) input[0]).isSelected();
+        case ConfigContainer.TYPE_PREMIUMPANEL:
+            return ((PremiumPanel) input[0]).getAccounts();
         case ConfigContainer.TYPE_BUTTON:
             return null;
         case ConfigContainer.TYPE_COMBOBOX:
@@ -413,7 +413,6 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
             for (JComponent i : decoration) {
                 if (i != null) i.setEnabled(true);
             }
-         
 
         } else {
             for (JComponent i : input) {

@@ -21,12 +21,10 @@ import java.awt.event.ActionListener;
 import java.util.logging.LogRecord;
 
 import javax.swing.BorderFactory;
-import javax.swing.ComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JSeparator;
 import javax.swing.ScrollPaneConstants;
 
 import jd.config.ConfigContainer;
@@ -49,7 +47,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
 
     private static final long serialVersionUID = 3383448498625377495L;
 
-    private  String[] types ;
+    private String[] types;
 
     private JComboBox box;
 
@@ -71,7 +69,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
 
     public ConfigPanelReconnect(Configuration configuration) {
         super();
-        types=new String[] { JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), JDLocale.L("modules.reconnect.types.extern", "Extern"), JDLocale.L("modules.reconnect.types.batch", "Batch"), JDLocale.L("modules.reconnect.types.clr", "CLR Script") };
+        types = new String[] { JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), JDLocale.L("modules.reconnect.types.extern", "Extern"), JDLocale.L("modules.reconnect.types.batch", "Batch"), JDLocale.L("modules.reconnect.types.clr", "CLR Script") };
         this.configuration = configuration;
         initPanel();
         load();
@@ -135,7 +133,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
     @Override
     public void initPanel() {
         /* 0=LiveHeader, 1=Extern, 2=Batch,3=CLR */
-        panel.setLayout(new MigLayout("ins 0,wrap 3","[ fill][fill][grow 100,fill]","[]0[]0[]0[]0[]"));
+        panel.setLayout(new MigLayout("ins 0,wrap 3", "[ fill][fill][grow 100,fill]", "[]0[]0[]0[]0[]"));
         box = new JComboBox(types);
         box.setSelectedIndex(configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER));
         box.addActionListener(this);
@@ -143,22 +141,19 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         btn = new JButton(JDLocale.L("modules.reconnect.testreconnect", "Test Reconnect"));
         btn.addActionListener(this);
 
-    
-      
- 
-        panel.add(new JLabel(JDLocale.L("modules.reconnect.pleaseSelect", "Bitte Methode auswählen:")),"spanx 3,gapleft 13,gapbottom 3");
-        panel.add(box,"width 160!,gapleft 13,gapbottom 3");
-        panel.add(btn,"width 160!,wrap");
+        panel.add(new JLabel(JDLocale.L("modules.reconnect.pleaseSelect", "Bitte Methode auswählen:")), "spanx 3,gapleft 13,gapbottom 3");
+        panel.add(box, "width 160!,gapleft 13,gapbottom 3");
+        panel.add(btn, "width 160!,wrap");
         container = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
         container.setBorder(BorderFactory.createTitledBorder("Title"));
-        panel.add(container,"spanx,gapleft 10,gapright 10,gaptop 5");
+        panel.add(container, "spanx,gapleft 10,gapright 10,gaptop 5");
         ConfigContainer config = new ConfigContainer(this);
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_IPCHECKWAITTIME, JDLocale.L("reconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), 0, 600).setDefaultValue(5).setGroupName(JDLocale.L("reconnect.global", "Reconnect-IP-Control")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDLocale.L("reconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5).setGroupName(JDLocale.L("reconnect.global", "Reconnect-IP-Control")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDLocale.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20).setGroupName(JDLocale.L("reconnect.global", "Reconnect-IP-Control")));
         cep = new ConfigEntriesPanel(config);
 
-        panel.add(cep,"spanx 3, gaptop 5");
+        panel.add(cep, "spanx 3, gaptop 5");
         add(panel);
         // JDUtilities.addToGridBag(panel, cep, 0, 0, 5, 1, 0, 0, new Insets(0,
         // 0, 5, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
@@ -230,22 +225,22 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         switch (box.getSelectedIndex()) {
         case 0:
             lh = new SubPanelLiveHeaderReconnect(configuration, new HTTPLiveHeader());
-          
+
             container.add(lh);
             break;
         case 1:
             er = new ConfigEntriesPanel(new ExternReconnect().getConfig());
-            
+
             container.add(er);
             break;
         case 2:
             er = new ConfigEntriesPanel(new BatchReconnect().getConfig());
-          
+
             container.add(er);
             break;
         case 3:
             lhclr = new SubPanelCLRReconnect(configuration);
-           
+
             container.add(lhclr);
             break;
         }

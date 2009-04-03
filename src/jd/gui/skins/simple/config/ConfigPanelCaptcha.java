@@ -38,8 +38,6 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXButton;
-
 public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 
     private class InternalTableModel extends AbstractTableModel {
@@ -110,7 +108,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 
     public void initPanel() {
         setupContainer();
-        setLayout(new MigLayout("ins 0,wrap 1","[grow,fill]"));
+        setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]"));
 
         this.add(cep = new ConfigEntriesPanel(container), BorderLayout.NORTH);
         tableModel = new InternalTableModel();
@@ -127,7 +125,6 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
             case 0:
                 column.setMaxWidth(80);
                 column.setPreferredWidth(50);
-             
 
                 break;
             case 1:
@@ -137,7 +134,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
         }
         JScrollPane sp = new JScrollPane(table);
         sp.setBorder(BorderFactory.createTitledBorder(JDLocale.L("gui.config.jac.table", "Available OCR Methods")));
-        this.add(sp,"height :900:,gapleft 10, gapright 10");
+        this.add(sp, "height :900:,gapleft 10, gapright 10");
 
     }
 

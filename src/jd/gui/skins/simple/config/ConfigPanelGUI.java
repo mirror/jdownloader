@@ -25,7 +25,6 @@ import java.util.Locale;
 import javax.swing.JComboBox;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -246,7 +245,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                 plaf.getPropertyInstance().setProperty(plaf.getPropertyName(), plafName);
                 new Thread() {
                     public void run() {
-                    
+
                         new GuiRunnable<Object>() {
 
                             public Object runSave() {
@@ -256,8 +255,8 @@ public class ConfigPanelGUI extends ConfigPanel {
                                     } catch (Exception e1) {
                                         // TODO Auto-generated catch block
                                         e1.printStackTrace();
-                                    } 
-//                                    SimpleGUI.CURRENTGUI.updateDecoration();
+                                    }
+                                    // SimpleGUI.CURRENTGUI.updateDecoration();
                                     SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
                                 } catch (Exception e) {
                                     e.printStackTrace();
@@ -291,21 +290,21 @@ public class ConfigPanelGUI extends ConfigPanel {
     private void updateLAF() {
         new Thread() {
             public void run() {
-             
+
                 new GuiRunnable<Object>() {
-                  
+
                     public Object runSave() {
                         try {
                             try {
                                 UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
-//                                SimpleGUI.CURRENTGUI.updateDecoration();
+                                // SimpleGUI.CURRENTGUI.updateDecoration();
                             } catch (Exception e1) {
                                 // TODO Auto-generated catch block
                                 e1.printStackTrace();
-                            } 
+                            }
                             System.out.println("Set LAF " + JDLookAndFeelManager.getPlaf());
                             SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
-                          
+
                         } catch (Exception e) {
                             e.printStackTrace();
                         }

@@ -16,8 +16,6 @@
 
 package jd.gui.skins.simple.config;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -27,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -43,7 +40,6 @@ import jd.gui.skins.simple.OptionalMenuMenu;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.utils.JDLocale;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -191,7 +187,6 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         }
 
         JScrollPane scrollpane = new JScrollPane(table);
-      
 
         btnEdit = new JButton(JDLocale.L("gui.btn_settings", "Einstellungen"));
         btnEdit.setEnabled(false);
@@ -201,11 +196,9 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         bpanel.add(btnEdit);
         bpanel.add(new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help", "Hilfe"), JDLocale.L("gui.config.plugin.optional.link_help", "  http://jdownloader.org/page.php?id=122")));
 
-        this.add(scrollpane,"spanx,height :900:,gapleft 10, gapright 10");
-        this.add(bpanel,"spanx,gapleft 10, gapright 10");
-        
-    
-      
+        this.add(scrollpane, "spanx,height :900:,gapleft 10, gapright 10");
+        this.add(bpanel, "spanx,gapleft 10, gapright 10");
+
     }
 
     @Override

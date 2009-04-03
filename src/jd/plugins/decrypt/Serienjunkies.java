@@ -19,7 +19,6 @@ package jd.plugins.decrypt;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dialog;
-import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -1034,7 +1033,7 @@ public class Serienjunkies extends PluginForDecrypt {
     private void sCatDialog() {
         if (scatChecked || useScat[1] == saveScat) return;
 
-     new GuiRunnable<Object>() {
+        new GuiRunnable<Object>() {
             private static final long serialVersionUID = 8726498576488124702L;
 
             public Object runSave() {
@@ -1116,7 +1115,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
                 }.init();
 
-            return null;
+                return null;
             }
         }.waitForEDT();
 

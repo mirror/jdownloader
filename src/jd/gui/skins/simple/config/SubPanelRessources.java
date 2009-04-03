@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple.config;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -38,8 +37,6 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 
-import net.miginfocom.swing.MigLayout;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -48,6 +45,7 @@ import jd.gui.skins.simple.components.JLinkButton;
 import jd.update.PackageData;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;
+import net.miginfocom.swing.MigLayout;
 
 /**
  * @author JD-Team
@@ -249,8 +247,8 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, WebUpdater.getConfig("JDU"), "SUPPORT_JD", JDLocale.L("gui.config.packagemanager.supportJD", "Support JD by downloading pumped-up-addons")).setDefaultValue(true));
         this.add(cep = new ConfigEntriesPanel(container));
         cep.addPropertyChangeListener(this);
-        this.add(scrollpane,"spanx,height :900:,gapleft 10, gapright 10");
-        this.add(bpanel,"spanx,gapleft 10, gapright 10");
+        this.add(scrollpane, "spanx,height :900:,gapleft 10, gapright 10");
+        this.add(bpanel, "spanx,gapleft 10, gapright 10");
     }
 
     @Override

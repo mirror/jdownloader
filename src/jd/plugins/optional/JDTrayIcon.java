@@ -52,7 +52,6 @@ import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
-import jd.gui.skins.simple.MenuAction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
@@ -143,12 +142,12 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
         } else if (e.getSource() == startstop) {
             JDUtilities.getController().toggleStartStop();
         } else if (e.getSource() == clipboard) {
-            
+
             /**
              * TODO
              */
-//            simplegui.actionPerformed(new ActionEvent(this, JDAction.MenuAction, null));
-
+            // simplegui.actionPerformed(new ActionEvent(this,
+            // JDAction.MenuAction, null));
         } else if (e.getSource() == update) {
             new WebUpdate().doWebupdate(true);
         } else if (e.getSource() == reconnect) {
@@ -306,8 +305,6 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
         speeds.add(speed5);
 
         popupMenu.addSeparator();
-
-   
 
         clipboard = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.trayIcon.clipboard", "Clipboard"), false);
         popupMenu.add(clipboard);
