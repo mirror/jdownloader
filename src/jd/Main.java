@@ -402,8 +402,7 @@ public class Main {
         LOGGER.info("Register plugins");
         init.init();
         init.loadImages();
-        JFrame.setDefaultLookAndFeelDecorated(true);
-        JDialog.setDefaultLookAndFeelDecorated(true);
+    
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "Lade Konfiguration"));
 
         String old = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("LOCALE", null);
@@ -417,6 +416,8 @@ public class Main {
 
             JOptionPane.showMessageDialog(null, "JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
+        JFrame.setDefaultLookAndFeelDecorated(true);
+        JDialog.setDefaultLookAndFeelDecorated(true);
         if (JDInitFlags.SWITCH_DEBUG) {
             JDUtilities.getLogger().setLevel(Level.ALL);
         }
