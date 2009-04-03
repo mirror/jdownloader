@@ -31,13 +31,11 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JCancelButton;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
-import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
@@ -71,6 +69,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     private Jobber checkJobbers = new Jobber(4);
     private final AbstractButton close = new JCancelButton();
     private boolean lastSort = false;
+    private LinkCheck lc = LinkCheck.getLinkChecker();
 
     public LinkGrabberV2Panel(SimpleGUI parent) {
         super(new MigLayout("ins 0"));
@@ -87,6 +86,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         close.addActionListener(this);
         this.add(close, "id close, pos (pane.w-(close.w/2)) (pane.y+(close.h/2))");
         this.add(collapsepane, "cell 0 1, width 100%, id pane");
+        lc.addJDListener(this);
     }
 
     public void showFilePackageInfo(LinkGrabberV2FilePackage fp) {
@@ -253,67 +253,25 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
             public void run() {
                 setName("LinkGrabber");
                 gatherer_running = true;
-                String statusstring = "onlinecheck";
-                if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) statusstring = "linkgrabber";
-                pc = new ProgressController(statusstring);
+                pc = new ProgressController("LinkGrabber");
                 pc.addJDListener(LinkGrabberV2Panel.this);
                 pc.setRange(0);
-                while (waitingList.size() != 0) {
+                while (waitingList.size() > 0 || lc.isRunning()) {
                     Vector<DownloadLink> currentList = new Vector<DownloadLink>();
                     synchronized (waitingList) {
-                        /*
-                         * erstma aus der Waittinglist in verarbeitungsliste
-                         * übernehmen
-                         */
-                        for (int i = waitingList.size() - 1; i >= 0; i--) {
-                            currentList.add(waitingList.remove(i));
-                        }
+                        currentList = new Vector<DownloadLink>(waitingList);
                         pc.addToMax(currentList.size());
+                        waitingList.removeAll(currentList);
                     }
                     if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) {
                         /* kein online check, kein multithreaded nötig */
                         afterLinkGrabber(currentList);
                     } else {
-                        /* onlinecheck, multithreaded damit schneller */
-                        HashMap<String, Vector<DownloadLink>> map = new HashMap<String, Vector<DownloadLink>>();
-                        for (Iterator<DownloadLink> it = currentList.iterator(); it.hasNext();) {
-                            /*
-                             * aufteilung in hosterlisten, um schnellere checks
-                             * zu ermöglichen
-                             */
-                            DownloadLink l = it.next();
-                            it.remove();
-                            Vector<DownloadLink> localList = map.get(l.getPlugin().getHost());
-                            if (localList == null) {
-                                localList = new Vector<DownloadLink>();
-                                map.put(l.getPlugin().getHost(), localList);
-                            }
-                            localList.add(l);
-                        }
-                        checkJobbers = new Jobber(4);
-                        Vector<DownloadLink> hosterList;
-                        for (Iterator<Vector<DownloadLink>> it = map.values().iterator(); it.hasNext();) {
-                            hosterList = it.next();
-                            CheckThread cthread = new CheckThread(hosterList);
-                            checkJobbers.add(cthread);
-                        }
-                        int todo = checkJobbers.getJobsAdded();
-                        checkJobbers.start();
-                        while (checkJobbers.getJobsFinished() != todo) {
-                            try {
-                                Thread.sleep(200);
-                            } catch (InterruptedException e) {
-                                checkJobbers.stop();
-                                pc.finalize();
-                                return;
-                            }
-                        }
-                        checkJobbers.stop();
+                        lc.checkLinks(currentList);
                     }
                     try {
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {
-                        pc.finalize();
                         return;
                     }
                 }
@@ -321,33 +279,6 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
             }
         };
         gatherer.start();
-    }
-
-    private void checkHosterList(Vector<DownloadLink> hosterList) {
-        Vector<DownloadLink> links = new Vector<DownloadLink>();
-        for (int i = hosterList.size() - 1; i >= 0; i--) {
-            /*
-             * decrypter können online status ebenfalls setzen, daher nicht
-             * extra nochma prüfen
-             */
-            DownloadLink link = hosterList.get(i);
-            if (link.isAvailabilityChecked()) {
-                links.add(hosterList.remove(i));
-            }
-        }
-        afterLinkGrabber(links);
-        if (hosterList.size() != 0) {
-            DownloadLink link = hosterList.get(0);
-            boolean ret = ((PluginForHost) link.getPlugin()).checkLinks(hosterList.toArray(new DownloadLink[] {}));
-            if (!ret) {
-                for (int i = 0; i < hosterList.size(); i++) {
-                    link = hosterList.get(i);
-                    if (!gatherer_running) return;
-                    link.isAvailable();
-                }
-            }
-            afterLinkGrabber(hosterList);
-        }
     }
 
     private synchronized void afterLinkGrabber(Vector<DownloadLink> links) {
@@ -694,27 +625,14 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         }
     }
 
-    class CheckThread implements JDRunnable {
-        private Vector<DownloadLink> links = null;
-
-        public CheckThread(Vector<DownloadLink> links) {
-            this.links = links;
-        }
-
-        public void run() {
-            if (links == null || links.size() == 0) return;
-            checkHosterList(links);
-        }
-
-        public void go() throws Exception {
-            run();
-        }
-    }
-
+    @SuppressWarnings("unchecked")
     public void receiveJDEvent(JDEvent event) {
         if (event instanceof ProgressControllerEvent) {
-            this.stopLinkGatherer();
-            return;
+            if (event.getSource() == this.pc) {
+                lc.stopLinkCheck();
+                this.stopLinkGatherer();
+                return;
+            }
         }
         if (event instanceof LinkGrabberV2FilePackageEvent && event.getID() == LinkGrabberV2FilePackageEvent.EMPTY_EVENT) {
             synchronized (packages) {
@@ -724,6 +642,18 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                 }
                 packages.remove(event.getSource());
                 if (packages.size() == 0) jdb.fireJDEvent(new LinkGrabberV2Event(this, LinkGrabberV2Event.EMPTY_EVENT));
+            }
+        }
+        if (event.getSource() == lc) {
+            if (event instanceof LinkCheckEvent) {
+                switch (event.getID()) {
+                case LinkCheckEvent.AFTER_CHECK:
+                    afterLinkGrabber((Vector<DownloadLink>) event.getParameter());
+                    break;
+                case LinkCheckEvent.ABORT:
+                    stopLinkGatherer();
+                    break;
+                }
             }
         }
     }

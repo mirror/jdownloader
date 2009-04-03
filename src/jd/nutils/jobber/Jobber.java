@@ -119,6 +119,7 @@ public class Jobber {
      */
     public void stop() {
         this.running = false;
+        if (workerList == null) return;
         synchronized (workerList) {
             for (Worker w : workerList) {
                 if (w != null) {
@@ -130,7 +131,7 @@ public class Jobber {
             if (this.currentlyRunningWorker == 0) break;
             try {
                 Thread.sleep(200);
-            } catch (InterruptedException e) {               
+            } catch (InterruptedException e) {
             }
         }
     }
