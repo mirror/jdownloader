@@ -35,7 +35,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.PackageManager;
-import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Browser;

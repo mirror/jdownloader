@@ -28,14 +28,11 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import jd.CPluginWrapper;
-import jd.Main;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.event.JDEvent;
-import jd.event.JDListener;
 import jd.gui.UIInterface;
 import jd.http.Browser;
 import jd.nutils.OSDetector;
@@ -43,13 +40,11 @@ import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.FilePackageEvent;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.update.FileUpdate;
-import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -160,13 +155,6 @@ public class JDController implements ControlListener {
      * Der Controller wurd fertig initialisiert
      */
     public static final int INIT_STATUS_COMPLETE = 0;
-
-    private static final String PROPERTY_SELECTED = "selected";
-
-    /**
-     * Die Konfiguration
-     */
-    protected Configuration config = JDUtilities.getConfiguration();
 
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen

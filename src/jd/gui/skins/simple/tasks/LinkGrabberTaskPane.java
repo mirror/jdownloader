@@ -14,9 +14,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.event.JDEvent;
 import jd.event.JDListener;
-
 import jd.gui.skins.simple.MenuAction;
-
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2Event;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2TreeTableAction;

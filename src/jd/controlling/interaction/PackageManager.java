@@ -27,7 +27,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import jd.OptionalPluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
-import jd.event.ControlEvent;
 import jd.http.Browser;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;

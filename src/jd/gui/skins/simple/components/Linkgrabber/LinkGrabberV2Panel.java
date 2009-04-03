@@ -72,7 +72,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     private boolean lastSort = false;
     private LinkCheck lc = LinkCheck.getLinkChecker();
 
-    public LinkGrabberV2Panel(SimpleGUI parent) {
+    public LinkGrabberV2Panel() {
         super(new MigLayout("ins 0"));
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");

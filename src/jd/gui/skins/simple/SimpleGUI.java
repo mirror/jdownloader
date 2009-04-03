@@ -481,7 +481,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
      */
     private void buildUI() {
         CURRENTGUI = this;
-        linkListPane = new DownloadLinksPanel(this);
+        linkListPane = new DownloadLinksPanel();
         contentPanel = new ContentPanel();
 
         taskPane = new TaskPane();
@@ -513,7 +513,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         });
         taskPane.add(dlTskPane);
 
-        linkGrabber = new LinkGrabberV2Panel(this);
+        linkGrabber = new LinkGrabberV2Panel();
         lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 24, 24));
         lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
         linkGrabber.getJDBroadcaster().addJDListener(lgTaskPane);
@@ -824,13 +824,12 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     public String showCountdownUserInputDialog(final String message, final String def) {
 
-        final Object lock = new Object();
         GuiRunnable<String> run = new GuiRunnable<String>() {
 
             public String runSave() {
                 return new InputDialog(SimpleGUI.this, message, def).getInputText();
-
             }
+
         };
         return run.getReturnValue();
 

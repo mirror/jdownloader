@@ -123,11 +123,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     private TableColumnExt[] cols;
 
-    private DownloadLinksPanel panel;
-
-    public DownloadTreeTable(DownloadTreeTableModel treeModel, DownloadLinksPanel panel) {
+    public DownloadTreeTable(DownloadTreeTableModel treeModel) {
         super(treeModel);
-        this.panel = panel;
         guiConfig = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
         cellRenderer = new TreeTableRenderer(this);
 

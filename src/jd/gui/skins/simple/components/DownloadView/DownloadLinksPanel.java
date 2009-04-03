@@ -29,7 +29,6 @@ import jd.event.ControlListener;
 import jd.event.JDEvent;
 import jd.event.JDListener;
 import jd.gui.skins.simple.JTabbedPanel;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
 
@@ -53,9 +52,9 @@ public class DownloadLinksPanel extends JTabbedPanel implements ControlListener,
 
     private Vector<FilePackage> packages = new Vector<FilePackage>();
 
-    public DownloadLinksPanel(SimpleGUI parent) {
+    public DownloadLinksPanel() {
         super(new BorderLayout());
-        internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(this), this);
+        internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel());
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
         this.add(scrollPane);
         JDUtilities.getController().addControlListener(this);

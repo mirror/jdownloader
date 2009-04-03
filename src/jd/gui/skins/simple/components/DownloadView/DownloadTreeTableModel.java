@@ -52,7 +52,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
      * @param aList
      *            the ProjectList to start out with.
      */
-    public DownloadTreeTableModel(DownloadLinksPanel treeTable) {
+    public DownloadTreeTableModel() {
         super("root");
     }
 
