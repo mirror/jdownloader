@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple;
+package jd.gui;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,6 +27,7 @@ import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 
 import jd.config.SubConfiguration;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 

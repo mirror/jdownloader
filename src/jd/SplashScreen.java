@@ -22,7 +22,7 @@ import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-import jd.gui.skins.simple.JDLookAndFeelManager;
+import jd.gui.JDLookAndFeelManager;
 
 /**
  * <p>

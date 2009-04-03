@@ -166,7 +166,7 @@ public class WebUpdate implements ControlListener {
                             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
                                 CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI == null ? null : SimpleGUI.CURRENTGUI, JDLocale.LF("init.webupdate.auto.countdowndialog", "Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
                                 if (ccd.result) {
-
+                                   
                                     doUpdate();
                                 }
                             } else {

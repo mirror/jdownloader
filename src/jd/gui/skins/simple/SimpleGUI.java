@@ -27,23 +27,21 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRootPane;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.UIManager;
@@ -59,6 +57,7 @@ import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
+import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.ChartAPI_Entity;
 import jd.gui.skins.simple.components.ChartAPI_PIE;
@@ -89,7 +88,6 @@ import jd.gui.skins.simple.tasks.GeneralPurposeTaskPanel;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
 import jd.gui.skins.simple.tasks.PremiumTaskPane;
 import jd.gui.skins.simple.tasks.TaskPanel;
-import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -138,7 +136,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private TabProgress progressBar;
 
-
     private SpeedMeterPanel speedmeter;
 
     private TaskPane taskPane;
@@ -161,28 +158,29 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         SimpleGuiConstants.GUI_CONFIG = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
         JDLookAndFeelManager.setUIManager();
 
-
         menuBar = new JDMenuBar();
         toolBar = new JDToolBar();
 
         addWindowListener(this);
-        //setIconImage(JDTheme.II("gui.images.jd_logo"));
+        // setIconImage(JDTheme.II("gui.images.jd_logo"));
         ArrayList<Image> list = new ArrayList<Image>();
         Image img;
-        list.add(img=JDTheme.I("gui.images.jd_logo"));
-//        list.add((Image)JDImage.getScaledImage((BufferedImage)img, 32, 32));
-//        list.add((Image)JDImage.getScaledImage((BufferedImage)img, 16, 16));        
-//        list.add((Image)JDImage.getScaledImage((BufferedImage)img, 64, 64));
-//        list.add((Image)JDImage.getScaledImage((BufferedImage)img, 128, 128));
+        list.add(img = JDTheme.I("gui.images.jd_logo"));
+        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 32, 32));
+        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 16, 16));
+        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 64, 64));
+        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 128,
+        // 128));
         this.setIconImages(list);
         setTitle(JDUtilities.getJDTitle());
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         // initActions();
         // initMenuBar();
         initLocalisation();
-   
+
+        updateDecoration();
         buildUI();
-      
+
         setName("MAINFRAME");
         Dimension dim = SimpleGuiUtils.getLastDimension(this, null);
         if (dim == null) {
@@ -212,6 +210,16 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 }
             }
         }.start();
+    }
+
+    public void updateDecoration() {
+        if (UIManager.getLookAndFeel().getSupportsWindowDecorations()) {
+            setUndecorated(true);
+            getRootPane().setWindowDecorationStyle(JRootPane.FRAME);
+        } else {
+            setUndecorated(false);
+        }
+
     }
 
     /**
@@ -799,12 +807,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         }
     }
 
-
     /**
      * Displays a Captchainput Dialog
      */
     public String showCountdownCaptchaDialog(final Plugin plugin, final File captchaAddress, final String def) {
-
 
         GuiRunnable<String> run = new GuiRunnable<String>() {
             @Override
@@ -991,7 +997,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         setTitle(JDUtilities.getJDTitle());
     }
-
 
     public void initLocalisation() {
 

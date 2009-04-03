@@ -25,14 +25,15 @@ import java.util.Locale;
 import javax.swing.JComboBox;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.gui.JDLookAndFeelManager;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.JDLookAndFeelManager;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -240,24 +241,34 @@ public class ConfigPanelGUI extends ConfigPanel {
 
             public void actionPerformed(ActionEvent e) {
                 String plafName = ((JComboBox) e.getSource()).getSelectedItem().toString();
-                Object old = plaf.getPropertyInstance().getProperty(plaf.getPropertyName());
+                final Object old = plaf.getPropertyInstance().getProperty(plaf.getPropertyName());
 
                 plaf.getPropertyInstance().setProperty(plaf.getPropertyName(), plafName);
-                new GuiRunnable<Object>() {
+                new Thread() {
+                    public void run() {
+                    
+                        new GuiRunnable<Object>() {
 
-                    public Object runSave() {
-                        try {
-                            UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
-
-                            SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        return null;
+                            public Object runSave() {
+                                try {
+                                    try {
+                                        UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
+                                    } catch (Exception e1) {
+                                        // TODO Auto-generated catch block
+                                        e1.printStackTrace();
+                                    } 
+//                                    SimpleGUI.CURRENTGUI.updateDecoration();
+                                    SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                                return null;
+                            }
+                        }.waitForEDT();
+                        plaf.getPropertyInstance().setProperty(plaf.getPropertyName(), old);
                     }
-                }.waitForEDT();
-
-                plaf.getPropertyInstance().setProperty(plaf.getPropertyName(), old);
+                }.start();
+                // 
 
             }
 
@@ -278,20 +289,31 @@ public class ConfigPanelGUI extends ConfigPanel {
     }
 
     private void updateLAF() {
-
-        new GuiRunnable<Object>() {
-
-            public Object runSave() {
-                try {
-                    UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
-                    System.out.println("Set LAF " + JDLookAndFeelManager.getPlaf());
-                    SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return null;
+        new Thread() {
+            public void run() {
+             
+                new GuiRunnable<Object>() {
+                  
+                    public Object runSave() {
+                        try {
+                            try {
+                                UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
+//                                SimpleGUI.CURRENTGUI.updateDecoration();
+                            } catch (Exception e1) {
+                                // TODO Auto-generated catch block
+                                e1.printStackTrace();
+                            } 
+                            System.out.println("Set LAF " + JDLookAndFeelManager.getPlaf());
+                            SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
+                          
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        return null;
+                    }
+                }.waitForEDT();
             }
-        }.waitForEDT();
+        }.start();
 
     }
 
