@@ -19,7 +19,6 @@ package jd.gui.skins.simple.config;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.Frame;
 import java.awt.GridBagLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -27,6 +26,7 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -59,7 +59,7 @@ public class ConfigurationPopup extends JDialog implements ActionListener {
      * @param jpanel
      *            (Panel des eigentlichen Konfigfenster)
      */
-    public ConfigurationPopup(Frame parent, ConfigPanel panel, JPanel jpanel) {
+    public ConfigurationPopup(JFrame parent, ConfigPanel panel, JPanel jpanel) {
         super(parent);
         this.panel = panel;
 

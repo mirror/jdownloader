@@ -21,7 +21,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
-import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -1140,15 +1139,15 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     }
 
-    public static void showConfigDialog(Frame parent, ConfigContainer container) {
+    public static void showConfigDialog(JFrame parent, ConfigContainer container) {
         showConfigDialog(parent, container, false);
     }
 
-    public static void showConfigDialog(Frame parent, ConfigContainer container, boolean alwaysOnTop) {
+    public static void showConfigDialog(JFrame parent, ConfigContainer container, boolean alwaysOnTop) {
         showConfigDialog(parent, new ConfigEntriesPanel(container), alwaysOnTop);
     }
 
-    public static void showConfigDialog(Frame parent, ConfigPanel config, boolean alwaysOnTop) {
+    public static void showConfigDialog(JFrame parent, ConfigPanel config, boolean alwaysOnTop) {
         // logger.info("ConfigDialog");
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(new JPanel(), BorderLayout.NORTH);
