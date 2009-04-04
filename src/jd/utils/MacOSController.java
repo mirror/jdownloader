@@ -26,7 +26,7 @@ import com.apple.eawt.ApplicationEvent;
 public class MacOSController extends Application {
 
     public MacOSController() {
-        setEnabledPreferencesMenu(true);
+        // setEnabledPreferencesMenu(true);
         setEnabledAboutMenu(true);
         addApplicationListener(new Handler());
     }
@@ -42,13 +42,14 @@ public class MacOSController extends Application {
             JDAboutDialog.showDialog();
         }
 
-        public void handlePreferences(ApplicationEvent e) {
-//            SimpleGUI.CURRENTGUI.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
-        }
-        
+        // public void handlePreferences(ApplicationEvent e) {
+        // SimpleGUI.CURRENTGUI.actionPerformed(new ActionEvent(this,
+        // JDAction.APP_CONFIGURATION, null));
+        // }
+
         public void handleReOpenApplication(ApplicationEvent e) {
             if (SimpleGUI.CURRENTGUI.isVisible() == false) {
-               SimpleGUI.CURRENTGUI.setVisible(true);
+                SimpleGUI.CURRENTGUI.setVisible(true);
             }
         }
 

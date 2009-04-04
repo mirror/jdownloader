@@ -238,7 +238,7 @@ public class JDDownloadController extends JDBroadcaster implements JDListener {
         fireJDEvent(new JDDownloadControllerEvent(this, JDDownloadControllerEvent.REFRESH));
     }
 
-    public Vector<FilePackage> getPackges() {
+    public Vector<FilePackage> getPackages() {
         return packages;
     }
 

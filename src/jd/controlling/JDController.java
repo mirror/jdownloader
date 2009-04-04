@@ -331,7 +331,7 @@ public class JDController implements ControlListener {
             if (lastDownloadFinished.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 0) {
                 JDUtilities.getDownloadController().removeDownloadLink(lastDownloadFinished);
 
-            }            
+            }
 
             break;
         case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
@@ -357,7 +357,7 @@ public class JDController implements ControlListener {
             }
             break;
         case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
-            Interaction.handleInteraction(Interaction.INTERACTION_LINKLIST_STRUCTURE_CHANGED, null);            
+            Interaction.handleInteraction(Interaction.INTERACTION_LINKLIST_STRUCTURE_CHANGED, null);
             break;
         }
 
@@ -501,8 +501,8 @@ public class JDController implements ControlListener {
     public int getForbiddenReconnectDownloadNum() {
         int ret = 0;
         DownloadLink nextDownloadLink;
-        synchronized (JDUtilities.getDownloadController().getPackges()) {
-            for (FilePackage fp : JDUtilities.getDownloadController().getPackges()) {
+        synchronized (JDUtilities.getDownloadController().getPackages()) {
+            for (FilePackage fp : JDUtilities.getDownloadController().getPackages()) {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
@@ -545,7 +545,7 @@ public class JDController implements ControlListener {
      * @return
      */
     public Vector<FilePackage> getPackages() {
-        return JDUtilities.getDownloadController().getPackges();
+        return JDUtilities.getDownloadController().getPackages();
     }
 
     /**
@@ -556,8 +556,8 @@ public class JDController implements ControlListener {
      */
     public int getRunningDownloadNum() {
         int ret = 0;
-        synchronized (JDUtilities.getDownloadController().getPackges()) {
-            for (FilePackage fp : JDUtilities.getDownloadController().getPackges()) {
+        synchronized (JDUtilities.getDownloadController().getPackages()) {
+            for (FilePackage fp : JDUtilities.getDownloadController().getPackages()) {
                 ret += (fp.getLinksWithStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS).size());
             }
         }
@@ -566,8 +566,8 @@ public class JDController implements ControlListener {
 
     public int getRunningDownloadNumByHost(PluginForHost pluginForHost) {
         int ret = 0;
-        synchronized (JDUtilities.getDownloadController().getPackges()) {
-            for (FilePackage fp : JDUtilities.getDownloadController().getPackges()) {
+        synchronized (JDUtilities.getDownloadController().getPackages()) {
+            for (FilePackage fp : JDUtilities.getDownloadController().getPackages()) {
                 Vector<DownloadLink> links = fp.getLinksWithStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
                 for (DownloadLink dl : links) {
                     if (dl.getPlugin().getClass() == pluginForHost.getClass()) {
@@ -686,7 +686,7 @@ public class JDController implements ControlListener {
         if (after != null && fps.contains(after)) { return false; }
         if (before != null && fps.contains(before)) { return false; }
         if (before == null && after == null) { return false; }
-        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackges();
+        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
         synchronized (packages) {
             packages.removeAll(fps);
             int pos = after == null ? packages.indexOf(before) + 1 : packages.indexOf(after);
@@ -724,7 +724,7 @@ public class JDController implements ControlListener {
      * Setzt de Status aller Links zurück die nicht gerade geladen werden.
      */
     public void resetAllLinks() {
-        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackges();
+        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
         synchronized (packages) {
             ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
             Iterator<FilePackage> iterator = packages.iterator();
@@ -905,7 +905,7 @@ public class JDController implements ControlListener {
 
                 watchdog.abort();
                 setDownloadStatus(DOWNLOAD_NOT_RUNNING);
-                Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackges();
+                Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
                 synchronized (packages) {
                     for (FilePackage fp : packages) {
                         for (DownloadLink link : fp.getDownloadLinks()) {
@@ -943,7 +943,7 @@ public class JDController implements ControlListener {
      */
     public ArrayList<DownloadLink> getDownloadLinks(PluginForHost pluginForHost) {
         ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
-        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackges();
+        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
         synchronized (packages) {
             DownloadLink nextDownloadLink;
             for (FilePackage fp : packages) {
@@ -959,7 +959,7 @@ public class JDController implements ControlListener {
 
     public DownloadLink getDownloadLinkByFileOutput(File file, Integer Linkstatus) {
         // synchronized (packages) {
-        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackges();
+        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
         try {
             Iterator<FilePackage> iterator = packages.iterator();
             FilePackage fp = null;
@@ -986,7 +986,7 @@ public class JDController implements ControlListener {
 
     public ArrayList<DownloadLink> getDownloadLinksByNamePattern(String matcher) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackges();
+        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
         try {
             Iterator<FilePackage> iterator = packages.iterator();
             FilePackage fp = null;
@@ -1011,7 +1011,7 @@ public class JDController implements ControlListener {
 
     public ArrayList<DownloadLink> getDownloadLinksByPathPattern(String matcher) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackges();
+        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
         try {
             Iterator<FilePackage> iterator = packages.iterator();
             FilePackage fp = null;

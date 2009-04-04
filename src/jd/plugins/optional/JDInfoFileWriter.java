@@ -20,6 +20,8 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
 
+import javax.swing.JComboBox;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -28,6 +30,8 @@ import jd.config.SubConfiguration;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.skins.simple.components.JDTextArea;
+import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
@@ -47,6 +51,10 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     private static final String PARAM_INFO_STRING = "INFO_STRING";
 
     private static final long serialVersionUID = 7680205811276541375L;
+
+    private ConfigEntry cmbVars;
+
+    private ConfigEntry txtInfo;
 
     public static int getAddonInterfaceVersion() {
         return 2;
@@ -99,20 +107,21 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     }
 
     public void initConfig() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, "VARS", Replacer.getKeyList(), JDLocale.L("plugins.optional.infoFileWriter.variables", "Available variables")));
+        config.addEntry(cmbVars = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, "VARS", Replacer.getKeyList(), JDLocale.L("plugins.optional.infoFileWriter.variables", "Available variables")));
 
-        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this,
-        // JDLocale.L("plugins.optional.infoFileWriter.insertKey",
-        // "Insert selected Key")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("plugins.optional.infoFileWriter.insertKey", "Insert selected Key into the Content")));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_FILENAME, JDLocale.L("plugins.optional.infoFileWriter.filename", "Filename:")).setDefaultValue(FILENAME_DEFAULT));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_INFO_STRING, JDLocale.L("plugins.optional.infoFileWriter.content", "Content:")).setDefaultValue(INFO_STRING_DEFAULT));
+        config.addEntry(txtInfo = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_INFO_STRING, JDLocale.L("plugins.optional.infoFileWriter.content", "Content:")).setDefaultValue(INFO_STRING_DEFAULT));
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        // TODO: Einbauen =)
+        JComboBox cmb = ((JComboBox) ((GUIConfigEntry) cmbVars.getGuiListener()).getInput()[0]);
+        if (cmb.getSelectedIndex() < 0) return;
+        JDTextArea txt = ((JDTextArea) ((GUIConfigEntry) txtInfo.getGuiListener()).getInput()[0]);
+        txt.insert("%" + Replacer.getKey(cmb.getSelectedIndex()) + "%", txt.getCaretPosition());
     }
 
     @Override

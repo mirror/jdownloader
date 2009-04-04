@@ -39,6 +39,12 @@ public class Replacer {
         return keys;
     }
 
+    public static String getKey(int index) {
+        if (KEYS == null) Replacer.initKeys();
+        if (index >= KEYS.size()) return null;
+        return KEYS.get(index)[0];
+    }
+
     private static void initKeys() {
         KEYS = new Vector<String[]>();
         KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.PASSWORD", JDLocale.L("replacer.password", "Last finished package: Password") });

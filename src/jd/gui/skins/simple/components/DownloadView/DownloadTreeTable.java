@@ -670,13 +670,13 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 Entry<FilePackage, ArrayList<DownloadLink>> next;
                 DownloadLink next3;
                 synchronized (updatePackages) {
-                    synchronized (JDUtilities.getDownloadController().getPackges()) {
+                    synchronized (JDUtilities.getDownloadController().getPackages()) {
                         for (Iterator<Entry<FilePackage, ArrayList<DownloadLink>>> it2 = updatePackages.entrySet().iterator(); it2.hasNext();) {
                             next = it2.next();
                             // logger.info("Refresh " + next.getKey() + " - " +
                             // next.getValue().size());
 
-                            if (JDUtilities.getDownloadController().getPackges().contains(next.getKey())) continue;
+                            if (JDUtilities.getDownloadController().getPackages().contains(next.getKey())) continue;
                             supporter.firePathChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }));
 
                             if (next.getKey().getBooleanProperty(PROPERTY_EXPANDED, false)) {
@@ -714,14 +714,14 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             break;
         case DownloadLinksPanel.REFRESH_ALL_DATA_CHANGED:
             logger.info("Updatecomplete");
-            synchronized (JDUtilities.getDownloadController().getPackges()) {
+            synchronized (JDUtilities.getDownloadController().getPackages()) {
                 supporter.fireChildrenChanged(new TreePath(model.getRoot()), null, null);
             }
 
             break;
         case DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED:
             logger.info("REFRESH GUI COMPLETE");
-            synchronized (JDUtilities.getDownloadController().getPackges()) {
+            synchronized (JDUtilities.getDownloadController().getPackages()) {
                 supporter.fireTreeStructureChanged(new TreePath(model.getRoot()));
             }
 

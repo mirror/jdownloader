@@ -165,7 +165,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
      *         Have to implement this:
      */
     public Vector<FilePackage> getPackages() {
-        return JDUtilities.getDownloadController().getPackges();
+        return JDUtilities.getDownloadController().getPackages();
     }
 
     /**

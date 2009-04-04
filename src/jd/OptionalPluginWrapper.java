@@ -100,7 +100,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
                     return (PluginOptional) loadedPlugin;
                 }
             } catch (Exception e) {
-
+                e.printStackTrace();
                 logger.severe("Addon " + this.getClassName() + " is outdated and incompatible. Please update(Packagemanager) :" + e.getLocalizedMessage());
             }
 

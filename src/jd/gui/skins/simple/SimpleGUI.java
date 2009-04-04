@@ -43,7 +43,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.JTextField;
-import javax.swing.JToolBar;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
@@ -147,7 +146,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private LinkGrabberTaskPane lgTaskPane;
 
-    private JToolBar toolBar;
+    private JDToolBar toolBar;
 
     private JDMenuBar menuBar;
 

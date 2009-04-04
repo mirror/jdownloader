@@ -31,6 +31,10 @@ public class OptionalMenuMenu extends JDMenu {
     }
 
     public void createOptionalPluginsMenuEntries() {
+        /*
+         * TODO: fixen
+         */
+        if (true) return;
         Component temp = (getComponentCount() != 0) ? getComponent(0) : createMenuItem(this.actionOptionalConfig);
         removeAll();
         add(temp);
