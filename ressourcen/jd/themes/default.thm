@@ -1,52 +1,65 @@
 #Default Theme by Coalado
-gui.images.add = default/add
-gui.images.config.addons = default/attach
-gui.images.config.home = default/configuration
-gui.images.config.network_local = default/network
-gui.images.config.gui = default/colors
-gui.images.config.reconnect = default/reconnect
-gui.images.config.unrar = default/unpack
-gui.images.config.host = default/host
-gui.images.config.decrypt = default/encrypted
-gui.images.config.ocr = default/fonts
-gui.images.config.eventmanager = default/kalarm
-gui.images.config.packagemanager = default/file-manager
-gui.images.config.tip = default/gajim
+gui.images.add = default/list-add
+gui.images.config.addons = default/mail-attachment
+gui.images.config.home = default/applications-system
+gui.images.config.network_local = default/network-idle
+gui.images.config.gui = default/preferences-desktop-wallpaper
+gui.images.config.reconnect = default/view-refresh
+gui.images.config.host = default/internet-web-browser
 
-gui.images.configuration = default/artscontrol
-gui.images.delete = default/remove
-gui.images.find = default/search
-gui.images.load = default/folder_blue
-gui.images.next = default/start
-gui.images.save = default/save
-gui.images.stop = default/stop
-gui.images.terminal = default/easymoblog
-gui.images.update_manager = default/download_manager
-gui.images.help = default/cpomHelp
-gui.images.exit=default/exit
-gui.images.unselected=default/button_cancel
-gui.images.selected= default/button_ok
-gui.images.warning=default/warning
-gui.images.link=default/mime/mime-empty
-gui.images.package_closed=default/folder_blue
-gui.images.package_error=default/folder_blue_error
-gui.images.package_opened=default/folder_tar
-gui.images.jd_logo = jd_logo
-gui.images.reconnect=default/reconnect
-gui.images.download=default/download_manager
-gui.images.add_all=default/add_all
-gui.images.add_package=default/add_package
-gui.images.clear=default/trashcan_empty-alt
-gui.images.clipboardon=default/editpaste
-gui.images.clipboardoff=default/clipboard_off
-gui.images.taskpanes.download=default/download_manager
-gui.images.taskpanes.linkgrabber=default/add
-gui.images.config.infoFile=default/gajim
-gui.images.taskpanes.configuration=default/artscontrol
-gui.images.taskpanes.generalpurpose=default/FastDL
-gui.images.taskpanes.premium=default/host
-gui.images.reconnect_on=default/reconnect_on
-gui.images.reconnect_off=default/reconnect_off
+gui.images.config.ocr = default/format-text-italic
+gui.images.config.eventmanager = default/appointment-new
+gui.images.config.packagemanager = default/system-software-update
+gui.images.config.tip = default/dialog-information
+
+gui.images.configuration = default/preferences-desktop
+gui.images.delete = default/list-remove
+
+gui.images.load = default/document-open
+gui.images.next = default/media-playback-start
+gui.images.save = default/document-save
+gui.images.stop = default/media-playback-stop
+gui.images.terminal = default/utilities-terminal
+gui.images.update_manager = default/software-update-available
+gui.images.help = default/help-browser
+gui.images.exit=default/system-log-out
+gui.images.restart=default/go-jump
+gui.images.warning=default/dialog-warning
+gui.images.link=default/mime/text-x-generic-template
+gui.images.package_closed=default/document-open
+gui.images.package_error=default/document-open_error
+gui.images.package_opened=default/folder-visiting
+gui.images.jd_logo = jd_logo_64_64
+gui.images.jd_logo_16_16 = jd_logo_64_64
+gui.images.jd_logo_17_17 = jd_logo_64_64
+gui.images.jd_logo_32_32 = jd_logo_64_64
+
+gui.splash = splash
+
+gui.splash.languages=default/internet-web-browser
+gui.splash.settings=default/applications-system
+gui.splash.controller=default/preferences-desktop
+gui.splash.update=default/system-software-update
+gui.splash.plugins=default/mail-attachment
+gui.splash.screen=default/preferences-desktop-wallpaper
+gui.splash.dllist=default/media-playback-start
+gui.images.reconnect=default/view-refresh
+gui.images.download=default/software-update-available
+gui.images.add_all=default/folder-open_add
+gui.images.add_package=default/folder-open_add
+gui.images.clear=default/user-trash
+gui.images.clipboard=default/edit-paste
+gui.images.abort=default/emblem-unreadable
+gui.images.taskpanes.linkgrabber=default/system-search-add
+gui.images.taskpanes.configuration=default/applications-system
+gui.images.taskpanes.generalpurpose=default/go-bottom
+gui.images.taskpanes.premium=default/premium
+gui.images.break=default/media-playback-pause
+
+gui.images.selected=default/face-smile
+gui.images.unselected=default/face-sad
+
+
 #colors
 gui.color.statusbar.maxspeedhighlight=ff0c03
 gui.color.htmlTooltip_background=94baff
