@@ -22,7 +22,6 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -31,7 +30,6 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -128,10 +126,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         return logDialog;
     }
 
-    public void setLogDialog(LogDialog logDialog) {
-        this.logDialog = logDialog;
-    }
-
     private Logger logger = JDUtilities.getLogger();
 
     private TabProgress progressBar;
@@ -162,21 +156,12 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         toolBar = new JDToolBar();
 
         addWindowListener(this);
-        // setIconImage(JDTheme.II("gui.images.jd_logo"));
-        ArrayList<Image> list = new ArrayList<Image>();
-        Image img;
-        list.add(img = JDTheme.I("gui.images.jd_logo"));
-        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 32, 32));
-        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 16, 16));
-        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 64, 64));
-        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 128,
-        // 128));
-        this.setIconImages(list);
+        setIconImage(JDTheme.I("gui.images.jd_logo"));
         setTitle(JDUtilities.getJDTitle());
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         // initActions();
         // initMenuBar();
-        initLocalisation();
+        JDLocale.initLocalisation();
 
         updateDecoration();
         buildUI();
@@ -219,7 +204,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         } else {
             setUndecorated(false);
         }
-
     }
 
     /**
@@ -255,7 +239,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -990,49 +974,11 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
      */
     private void interval() {
 
-        if (JDUtilities.getController() != null) {
-            // statusBar.setSpeed(JDUtilities.getController().getSpeedMeter());
-        }
+        // if (JDUtilities.getController() != null) {
+        // statusBar.setSpeed(JDUtilities.getController().getSpeedMeter());
+        // }
 
         setTitle(JDUtilities.getJDTitle());
-    }
-
-    public void initLocalisation() {
-
-        UIManager.put("FileChooser.upFolderToolTipText", JDLocale.L("gui.filechooser.upFolderToolTipText", "Up one level"));
-        UIManager.put("FileChooser.filesOfTypeLabelText", JDLocale.L("gui.filechooser.filesOfTypeLabelText", "Files of type:"));
-        UIManager.put("FileChooser.lookInLabelText", JDLocale.L("gui.filechooser.lookInLabelText", "Look in:"));
-        UIManager.put("FileChooser.saveInLabelText", JDLocale.L("gui.filechooser.saveInLabelText", "Save in:"));
-        UIManager.put("FileChooser.fileNameLabelText", JDLocale.L("gui.filechooser.fileNameLabelText", "File name:"));
-        UIManager.put("FileChooser.homeFolderToolTipText", JDLocale.L("gui.filechooser.homeFolderToolTipText", "Home folder"));
-        UIManager.put("FileChooser.newFolderToolTipText", JDLocale.L("gui.filechooser.newFolderToolTipText", "Make a new folder"));
-        UIManager.put("FileChooser.listViewButtonToolTipText", JDLocale.L("gui.filechooser.listViewButtonToolTipText", "List view"));
-        UIManager.put("FileChooser.detailsViewButtonToolTipText", JDLocale.L("gui.filechooser.detailsViewButtonToolTipText", "Details"));
-        UIManager.put("FileChooser.saveButtonText", JDLocale.L("gui.filechooser.saveButtonText", "Save"));
-        UIManager.put("FileChooser.openButtonText", JDLocale.L("gui.filechooser.openButtonText", "Open"));
-        UIManager.put("FileChooser.cancelButtonText", JDLocale.L("gui.filechooser.cancelButtonText", "Cancel"));
-        UIManager.put("FileChooser.updateButtonText", JDLocale.L("gui.filechooser.updateButtonText", "Update"));
-        UIManager.put("FileChooser.helpButtonText", JDLocale.L("gui.filechooser.helpButtonText", "Help"));
-        UIManager.put("FileChooser.deleteButtonText", JDLocale.L("gui.filechooser.deleteButtonText", "Delete"));
-        UIManager.put("FileChooser.saveButtonToolTipText", JDLocale.L("gui.filechooser.saveButtonToolTipText", "Save"));
-        UIManager.put("FileChooser.openButtonToolTipText", JDLocale.L("gui.filechooser.openButtonToolTipText", "Open"));
-        UIManager.put("FileChooser.cancelButtonToolTipText", JDLocale.L("gui.filechooser.cancelButtonToolTipText", "Cancel"));
-        UIManager.put("FileChooser.updateButtonToolTipText", JDLocale.L("gui.filechooser.updateButtonToolTipText", "Update"));
-        UIManager.put("FileChooser.helpButtonToolTipText", JDLocale.L("gui.filechooser.helpButtonToolTipText", "Help"));
-        UIManager.put("FileChooser.deleteButtonToolTipText", JDLocale.L("gui.filechooser.deleteButtonToolTipText", "Delete"));
-        UIManager.put("FileChooser.openDialogTitleText", JDLocale.L("gui.filechooser.openWindowTitleText", "Open"));
-        UIManager.put("FileChooser.saveDialogTitleText", JDLocale.L("gui.filechooser.saveWindowTitleText", "Save"));
-        UIManager.put("FileChooser.acceptAllFileFilterText", JDLocale.L("gui.filechooser.acceptAllFileFilterText", "All files"));
-        UIManager.put("FileChooser.other.newFolder", JDLocale.L("gui.filechooser.other.newFoldert", "New folder"));
-        UIManager.put("FileChooser.other.newFolder.subsequent", JDLocale.L("gui.filechooser.other.newFolder.subsequent", "New folder {0}"));
-        UIManager.put("FileChooser.win32.newFolder", JDLocale.L("gui.filechooser.win32.newFolder", "New folder"));
-        UIManager.put("FileChooser.win32.newFolder.subsequent", JDLocale.L("gui.filechooser.win32.newFolder.subsequent", "New folder {0}"));
-        UIManager.put("FileChooser.pathLabelText", JDLocale.L("gui.filechooser.pathLabelText", "Path"));
-
-        UIManager.put("JXTable.column.packSelected", JDLocale.L("gui.treetable.packSelected", "Pack selected column"));
-        UIManager.put("JXTable.column.packAll", JDLocale.L("gui.treetable.packAll", "Pack all columns"));
-        UIManager.put("JXTable.column.horizontalScroll", JDLocale.L("gui.treetable.horizontalScroll", "Horizontal scroll"));
-
     }
 
     public void setFrameStatus(int id) {
@@ -1068,7 +1014,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     public boolean showConfirmDialog(final String message, final String title) {
 
         GuiRunnable<Boolean> run = new GuiRunnable<Boolean>() {
-            private static final long serialVersionUID = 8726498576488124702L;
 
             @Override
             public Boolean runSave() {
