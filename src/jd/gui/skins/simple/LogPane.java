@@ -17,7 +17,6 @@
 package jd.gui.skins.simple;
 
 import java.awt.EventQueue;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -26,15 +25,12 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.StreamHandler;
 
-import javax.swing.JButton;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -69,7 +65,7 @@ public class LogPane extends JTabbedPanel implements ActionListener {
             // Another example where some non-EDT Thread accesses calls a Swing
             // method. This is forbidden and might bring the whole app down.
             // more info:
-            //http://java.sun.com/products/jfc/tsc/articles/threads/threads1.html
+            // http://java.sun.com/products/jfc/tsc/articles/threads/threads1.html
             // and: http://en.wikipedia.org/wiki/Event_dispatching_thread
             if (logField != null) {
                 EventQueue.invokeLater(new Runnable() {
@@ -114,15 +110,6 @@ public class LogPane extends JTabbedPanel implements ActionListener {
     private static final long serialVersionUID = -5753733398829409112L;
 
     /**
-     * Knopf zum schliessen des Fensters
-     */
-    private JButton btnOK;
-
-    private JButton btnSave;
-
-    private JButton btnUpload;
-
-    /**
      * JTextField wo der Logger Output eingetragen wird
      */
     private JTextArea logField;
@@ -130,28 +117,21 @@ public class LogPane extends JTabbedPanel implements ActionListener {
     /**
      * Primary Constructor
      * 
-     * @param owner
-     *            The owning Frame
      * @param logger
      *            The connected Logger
      */
-    public LogPane(JFrame owner, Logger logger) {
-
-        this.setLayout(new GridBagLayout());
+    public LogPane(Logger logger) {
         this.setName("LOGDIALOG");
-
         this.setLayout(new MigLayout("ins 3", "[fill,grow]", "[fill,grow]"));
 
-        Handler streamHandler = new LogStreamHandler(new PrintStream(new LogStream()));
+        LogStreamHandler streamHandler = new LogStreamHandler(new PrintStream(new LogStream()));
         streamHandler.setLevel(Level.ALL);
         streamHandler.setFormatter(new LogFormatter());
         logger.addHandler(streamHandler);
 
         logField = new JTextArea(10, 60);
-        logField.setEditable(true);
 
         add(new JScrollPane(logField));
-        
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -208,7 +188,6 @@ public class LogPane extends JTabbedPanel implements ActionListener {
             break;
         }
 
-        
     }
 
     @Override
@@ -222,14 +201,14 @@ public class LogPane extends JTabbedPanel implements ActionListener {
 
     @Override
     public void onDisplay() {
-        // TODO Auto-generated method stub
-
+        /*
+         * enable autoscrolling by setting the caret to the last position
+         */
+        logField.setCaretPosition(logField.getText().length());
     }
 
     @Override
     public void onHide() {
-        // TODO Auto-generated method stub
-
     }
 
 }

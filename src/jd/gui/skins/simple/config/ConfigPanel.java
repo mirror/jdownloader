@@ -21,7 +21,6 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 
 import jd.config.ConfigEntry;
@@ -48,7 +47,8 @@ public abstract class ConfigPanel extends JTabbedPanel {
         panel = new JPanel();
         this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         panel.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
-//        this.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, this.getBackground().darker()));
+        // this.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1,
+        // this.getBackground().darker()));
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry) {

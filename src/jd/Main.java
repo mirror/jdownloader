@@ -212,7 +212,7 @@ public class Main {
         JDTheme.setTheme("default");
         if (JDInitFlags.SHOW_SPLASH) {
             if (JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPLASH, true)) {
-                new GuiRunnable() {
+                new GuiRunnable<Object>() {
 
                     @Override
                     public Object runSave() {

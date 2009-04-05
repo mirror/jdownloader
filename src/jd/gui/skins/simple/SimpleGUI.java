@@ -127,10 +127,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
      */
     private DownloadLinksPanel linkListPane;
 
- 
-
     public LogPane getLogDialog() {
-        return (LogPane)logPanel.getPanel();
+        return (LogPane) logPanel.getPanel();
     }
 
     private Logger logger = JDUtilities.getLogger();
@@ -159,11 +157,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private JDSeparator sep;
 
-    private LogTaskPane logTask;
-
     private SingletonPanel logPanel;
-
-    private LogPane ld;
 
     /**
      * Das Hauptfenster wird erstellt. Singleton. Use SimpleGUI.createGUI
@@ -192,7 +186,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         // setIconImage(JDTheme.II("gui.images.jd_logo"));
         ArrayList<Image> list = new ArrayList<Image>();
-        Image img;
+        // Image img;
         // list.add(JDImage.getImage("logo/logo_e_14"));
         // list.add(JDImage.getImage("logo/logo_e_15"));
         // list.add(JDImage.getImage("logo/logo_e_16"));
@@ -206,7 +200,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         list.add(JDImage.getImage("logo/logo_17_17"));
         list.add(JDImage.getImage("logo/logo_18_18"));
         list.add(JDImage.getImage("logo/logo_19_19"));
-        list.add(JDImage.getImage("logo/logo_20_20"));
         list.add(JDImage.getImage("logo/logo_20_20"));
 
         // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 32, 32));
@@ -308,7 +301,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -516,7 +509,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     // }
 
     public synchronized void addLinksToGrabber(final Vector<DownloadLink> links, final boolean hideGrabber) {
-        new GuiRunnable() {
+        new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
@@ -604,17 +597,14 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
         panel.add(progressBar, "spanx,hidemode 3");
         panel.add(this.statusBar, "spanx");
-     
 
     }
 
     private void addLogTask() {
 
-        logTask = new LogTaskPane(JDLocale.L("gui.taskpanes.log", "Log"), JDTheme.II("gui.images.terminal", 24, 24));
-  
-        logPanel=new SingletonPanel(new LogPane(this,logger));
-      //  logPanel=new SingletonPanel(LogDialog.class, new Object[]{this,logger});
+        LogTaskPane logTask = new LogTaskPane(JDLocale.L("gui.taskpanes.log", "Log"), JDTheme.II("gui.images.terminal", 24, 24));
 
+        logPanel = new SingletonPanel(new LogPane(logger));
         logTask.addPanel(logPanel);
         logTask.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

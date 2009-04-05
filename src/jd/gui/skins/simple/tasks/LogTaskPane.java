@@ -12,6 +12,7 @@ import net.miginfocom.swing.MigLayout;
 
 public class LogTaskPane extends TaskPanel implements ActionListener {
 
+    private static final long serialVersionUID = 1828963496367613790L;
     public static final int ACTION_SAVE = 1;
     public static final int ACTION_UPLOAD = 2;
     private JButton save;

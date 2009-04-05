@@ -1,5 +1,6 @@
 package jd.plugins.optional.langfileeditor;
 
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -9,8 +10,8 @@ import javax.swing.JButton;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SingletonPanel;
 import jd.gui.skins.simple.tasks.TaskPanel;
+import jd.nutils.JDImage;
 import jd.utils.JDLocale;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 public class LFETaskPane extends TaskPanel implements ActionListener {
@@ -18,8 +19,8 @@ public class LFETaskPane extends TaskPanel implements ActionListener {
     private static final long serialVersionUID = -5506038175097521342L;
     private JButton showGui;
 
-    public LFETaskPane(String string, ImageIcon ii) {
-        super(string, ii, "lfe");
+    public LFETaskPane(String string) {
+        super(string, new ImageIcon(JDImage.getImageIcon("logo/logo_18_18").getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH)), "lfe");
 
         initGUI();
     }
@@ -28,7 +29,7 @@ public class LFETaskPane extends TaskPanel implements ActionListener {
         this.setLayout(new MigLayout("ins 0, wrap 1", "[fill]"));
         this.addPanel(new SingletonPanel(LFEGui.class));
 
-        showGui = addButton(createButton(JDLocale.L("plugins.optional.langfileeditor.taskpane", "Show LFE"), JDTheme.II("gui.images.jd_logo", 16, 16)));
+        showGui = addButton(createButton(JDLocale.L("plugins.optional.langfileeditor.taskpane", "Show LFE"), JDImage.getImageIcon("logo/logo_16_16")));
     }
 
     public void actionPerformed(ActionEvent e) {

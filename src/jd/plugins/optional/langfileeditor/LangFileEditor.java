@@ -27,7 +27,6 @@ import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 /**
@@ -66,15 +65,15 @@ public class LangFileEditor extends PluginOptional {
 
     private void initLFE() {
         new GuiRunnable<Object>() {
-            private static final long serialVersionUID = 8726498576488124702L;
 
+            @Override
             public Object runSave() {
-                if (tp == null) tp = new LFETaskPane(getHost(), JDTheme.II("gui.images.jd_logo", 24, 24));
+                if (tp == null) tp = new LFETaskPane(getHost());
                 SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
                 return null;
             }
-        }.start();
 
+        }.start();
     }
 
     @Override
