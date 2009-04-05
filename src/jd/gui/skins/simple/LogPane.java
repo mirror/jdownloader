@@ -16,10 +16,7 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.EventQueue;
-import java.awt.FlowLayout;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -39,31 +36,28 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.WindowConstants;
-import javax.swing.border.EmptyBorder;
 
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JHelpDialog;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.TextAreaDialog;
+import jd.gui.skins.simple.tasks.LogTaskPane;
 import jd.http.Encoding;
-import jd.nutils.JDImage;
 import jd.nutils.io.JDIO;
 import jd.utils.JDLocale;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.LogFormatter;
 import jd.utils.Upload;
+import net.miginfocom.swing.MigLayout;
 
 /**
  * Ein Dialog, der Logger-Output anzeigen kann.
  * 
  * @author Tom
  */
-public class LogDialog extends JFrame implements ActionListener {
+public class LogPane extends JTabbedPanel implements ActionListener {
 
     /**
      * Ein OutputStream, der die Daten an das log field weiterleitet
@@ -141,13 +135,12 @@ public class LogDialog extends JFrame implements ActionListener {
      * @param logger
      *            The connected Logger
      */
-    public LogDialog(JFrame owner, Logger logger) {
+    public LogPane(JFrame owner, Logger logger) {
 
-        this.setIconImage(JDImage.getImage(JDTheme.V("gui.images.terminal")));
-        this.setTitle(JDLocale.L("gui.logDialog.title", "jDownloader Logausgabe"));
         this.setLayout(new GridBagLayout());
         this.setName("LOGDIALOG");
-        this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+
+        this.setLayout(new MigLayout("ins 3", "[fill,grow]", "[fill,grow]"));
 
         Handler streamHandler = new LogStreamHandler(new PrintStream(new LogStream()));
         streamHandler.setLevel(Level.ALL);
@@ -157,40 +150,31 @@ public class LogDialog extends JFrame implements ActionListener {
         logField = new JTextArea(10, 60);
         logField.setEditable(true);
 
-        this.addWindowListener(new LocationListener());
-
-        int n = 10;
-        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.CENTER, n, 0));
-        bpanel.add(btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK")));
-        bpanel.add(btnSave = new JButton(JDLocale.L("gui.btn_save", "Save")));
-        bpanel.add(btnUpload = new JButton(JDLocale.L("gui.logDialog.btn_uploadLog", "Upload Log")));
-
-        btnOK.addActionListener(this);
-        btnSave.addActionListener(this);
-        btnUpload.addActionListener(this);
-
-        JPanel panel = new JPanel(new BorderLayout(n, n));
-        panel.setBorder(new EmptyBorder(n, n, n, n));
-        panel.add(new JScrollPane(logField), BorderLayout.CENTER);
-        panel.add(bpanel, BorderLayout.SOUTH);
-
-        this.getRootPane().setDefaultButton(btnOK);
-        this.setContentPane(panel);
-        this.setPreferredSize(new Dimension(640, 480));
-        this.setMaximumSize(new Dimension(800, 600));
-        this.pack();
-        this.setLocationRelativeTo(null);
-        SimpleGuiUtils.restoreWindow(null, this);
+        add(new JScrollPane(logField));
+        
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnOK) {
-            dispose();
-        } else if (e.getSource() == btnUpload) {
+
+        switch (e.getID()) {
+        case LogTaskPane.ACTION_SAVE:
+            JFileChooser fc = new JFileChooser();
+            fc.setApproveButtonText(JDLocale.L("gui.btn_save", "Save"));
+            fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) {
+                File ret = fc.getSelectedFile();
+                if (ret != null) {
+                    String content = toString();
+                    JDIO.writeLocalFile(ret, content);
+                    JDUtilities.getLogger().info("Log saved to file: " + ret.getAbsolutePath());
+                }
+            }
+            break;
+        case LogTaskPane.ACTION_UPLOAD:
             Level level = JDUtilities.getLogger().getLevel();
             if (!level.equals(Level.ALL)) {
                 try {
-                    JHelpDialog.showHelpMessage(this, null, JDLocale.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), new URL("http://jdownloader.org/knowledge/wiki/support/create-a-jd-log"), null, 30);
+                    JHelpDialog.showHelpMessage(SimpleGUI.CURRENTGUI, null, JDLocale.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), new URL("http://jdownloader.org/knowledge/wiki/support/create-a-jd-log"), null, 30);
                 } catch (MalformedURLException e1) {
                     e1.printStackTrace();
                 }
@@ -199,7 +183,7 @@ public class LogDialog extends JFrame implements ActionListener {
             if (content == null || content.length() == 0) {
                 content = Encoding.UTF8Encode(logField.getText());
             }
-            content = TextAreaDialog.showDialog(this, JDLocale.L("gui.logdialog.edittitle", "Edit Log"), JDLocale.L("gui.logdialog.yourlog", "Hochgeladener Log: Editieren möglich!"), content);
+            content = TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI, JDLocale.L("gui.logdialog.edittitle", "Edit Log"), JDLocale.L("gui.logdialog.yourlog", "Hochgeladener Log: Editieren möglich!"), content);
 
             if (content == null || content.length() == 0) return;
 
@@ -221,19 +205,10 @@ public class LogDialog extends JFrame implements ActionListener {
                 JOptionPane.showMessageDialog(this, JDLocale.L("gui.logDialog.warning.uploadFailed", "Upload failed"));
             }
 
-        } else if (e.getSource() == btnSave) {
-            JFileChooser fc = new JFileChooser();
-            fc.setApproveButtonText(JDLocale.L("gui.btn_save", "Save"));
-            fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) {
-                File ret = fc.getSelectedFile();
-                if (ret != null) {
-                    String content = toString();
-                    JDIO.writeLocalFile(ret, content);
-                    JDUtilities.getLogger().info("Log saved to file: " + ret.getAbsolutePath());
-                }
-            }
+            break;
         }
+
+        
     }
 
     @Override
@@ -243,6 +218,18 @@ public class LogDialog extends JFrame implements ActionListener {
             content = logField.getText();
         }
         return content;
+    }
+
+    @Override
+    public void onDisplay() {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void onHide() {
+        // TODO Auto-generated method stub
+
     }
 
 }

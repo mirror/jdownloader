@@ -71,7 +71,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
         } else {
             subPanels = new Vector<ConfigEntriesPanel>();
             tabbedPane = new JTabbedPane();
-            this.setBorder(null);
+         
             tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
             tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
             tabbedPane.setTabPlacement(SwingConstants.TOP);
