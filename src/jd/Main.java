@@ -17,6 +17,7 @@
 
 package jd;
 
+import java.awt.AWTException;
 import java.awt.EventQueue;
 import java.awt.Image;
 import java.awt.MediaTracker;
@@ -45,7 +46,9 @@ import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDEventQueue;
+import jd.gui.skins.simple.JDToolBar;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -67,7 +70,6 @@ public class Main {
 
     private static Logger LOGGER;
     private static SplashScreen splashScreen;
-    private static Object INIT_WAITER;
 
     public static String getCaptcha(String path, String host) {
 
@@ -151,6 +153,7 @@ public class Main {
                 JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
             }
         }
+        System.out.println("JJJJ");
         preInitChecks();
 
         for (int i = 0; i < args.length; i++) {
@@ -207,49 +210,41 @@ public class Main {
 
         }
         splashScreen = null;
-        INIT_WAITER = new Object();
+        JDTheme.setTheme("default");
         if (JDInitFlags.SHOW_SPLASH) {
             if (JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPLASH, true)) {
+                new GuiRunnable() {
 
-                EventQueue.invokeLater(new Runnable() {
-                    public void run() {
+                    @Override
+                    public Object runSave() {
                         try {
-                            splashScreen = new SplashScreen(JDUtilities.getResourceFile("/jd/img/jddesigncp5.png").getAbsolutePath());
-                            splashScreen.setVisible(true);
-                            SplashScreenImages ssiImages = new SplashScreenImages(splashScreen.getImage());
-                            splashScreen.setSplashScreenImages(ssiImages);
-                            ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_languages.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_languages.png").getAbsolutePath()), 160, 60);
-                            ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_settings.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_settings2.png").getAbsolutePath()));
-                            ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_controller.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_controller.png").getAbsolutePath()));
-                            ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_update.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_update.png").getAbsolutePath()));
-                            ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_plugins.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_plugins.png").getAbsolutePath()));
-                            ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_screen.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_screen.png").getAbsolutePath()), -5);
-                            ssiImages.addEntry(ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_dllist.png").getAbsolutePath()), ssiImages.loadFile(JDUtilities.getResourceFile("/jd/img/button_dllist.png").getAbsolutePath()), 12);
+                            splashScreen = new SplashScreen(JDTheme.I("gui.splash"));
 
-                        } catch (Exception e) {
+                            splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.languages", 32, 32)));
+                            splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.settings", 32, 32)));
+                            splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.controller", 32, 32)));
+                            splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.update", 32, 32)));
+                            splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.plugins", 32, 32)));
+                            splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.screen", 32, 32)));
+                            splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.dllist", 32, 32)));
+                        } catch (IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        } catch (AWTException e) {
+                            // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
-                        synchronized (INIT_WAITER) {
-                            INIT_WAITER.notify();
-                        }
-
+                        return null;
                     }
-                });
-                /* Waits until splash is loaded */
-                try {
-                    synchronized (INIT_WAITER) {
-                        INIT_WAITER.wait();
-                    }
-                } catch (InterruptedException e) {
 
-                    e.printStackTrace();
-                }
+                }.waitForEDT();
+
             }
         }
         Interaction.initTriggers();
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadLanguage", "lade Sprachen"));
 
-        JDTheme.setTheme("default");
+       
         JDSounds.setSoundTheme("default");
 
         if (!JDInitFlags.SWITCH_NEW_INSTANCE && Main.tryConnectToServer(args)) {
@@ -371,8 +366,8 @@ public class Main {
         if (splashScreen == null) { return; }
 
         splashScreen.setNextImage();
-        splashScreen.setText(l);
-        splashScreen.setValue(splashScreen.getValue() + i);
+        // splashScreen.setText(l);
+        // splashScreen.setValue(splashScreen.getValue() + i);
 
     }
 
@@ -401,9 +396,9 @@ public class Main {
         LOGGER.info("Register plugins");
         init.init();
         init.loadImages();
-    
-        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "Lade Konfiguration"));
 
+        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "Lade Konfiguration"));
+     
         String old = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("LOCALE", null);
         if (old != null) {
             JDUtilities.getSubConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, old);
@@ -415,8 +410,10 @@ public class Main {
 
             JOptionPane.showMessageDialog(null, "JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
-//        JFrame.setDefaultLookAndFeelDecorated(true);
-//        JDialog.setDefaultLookAndFeelDecorated(true);
+        
+
+        // JFrame.setDefaultLookAndFeelDecorated(true);
+        // JDialog.setDefaultLookAndFeelDecorated(true);
         if (JDInitFlags.SWITCH_DEBUG) {
             JDUtilities.getLogger().setLevel(Level.ALL);
         }
@@ -447,24 +444,16 @@ public class Main {
         init.initPlugins();
 
         Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
+        new GuiRunnable() {
 
+            @Override
+            public Object runSave() {
                 init.initGUI(controller);
-                synchronized (INIT_WAITER) {
+                return null;
+            }
 
-                    INIT_WAITER.notify();
-                }
-            }
-        });
-        /* wait until gui is loaded */
-        synchronized (INIT_WAITER) {
-            try {
-                INIT_WAITER.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        }.waitForEDT();
+
         Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loaddownloadqueue", "Lade Downloadliste"));
         init.initDownloadController();
 

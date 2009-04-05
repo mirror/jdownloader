@@ -104,9 +104,9 @@ public class WebUpdate implements ControlListener {
             }
         }
         SubConfiguration cfg = WebUpdater.getConfig("WEBUPDATE");
-        cfg.setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false));
-        cfg.setProperty("PLAF", JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("PLAF"));
-        cfg.save();
+//        cfg.setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false));
+//        cfg.setProperty("PLAF", JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("PLAF"));
+//        cfg.save();
 
         logger.finer("Init Webupdater");
 

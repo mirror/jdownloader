@@ -968,17 +968,25 @@ public class JDUtilities {
 
             OutputStream os = new OutputStream() {
                 private StringBuilder buffer = new StringBuilder();
+//                private boolean edt=false;
 
                 public void write(int b) throws IOException {
                     if (b == 13 || b == 10) {
                         if (buffer.length() > 0) {
                             logger.severe(buffer.toString());
-                            if (buffer.indexOf("OutOfMemoryError") >= 0) {
-                                logger.finer("Restart");
-                                if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.messages.outofmemoryerror", "An error ocured!\r\nJDownloader is out of memory. Restart recommended.\r\nPlease report this bug!"))) {
-                                    JDUtilities.restartJD();
-                                }
-                            }
+//                            if (buffer.indexOf("OutOfMemoryError") >= 0) {
+//                                logger.finer("Restart");
+//                                if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.messages.outofmemoryerror", "An error ocured!\r\nJDownloader is out of memory. Restart recommended.\r\nPlease report this bug!"))) {
+//                                    JDUtilities.restartJD();
+//                                }
+//                            }
+//                            else if(buffer.indexOf("UiThreadingViolationException")>=0){
+//                              
+//                                edt=true;
+//                            }else if(edt&&buffer.indexOf("at jd.")>=0){
+//                              
+//                                edt=false;
+//                            }
                         }
                         buffer = new StringBuilder();
                     } else {

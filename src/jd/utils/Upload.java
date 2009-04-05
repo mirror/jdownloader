@@ -54,8 +54,7 @@ public class Upload {
 
     public static String toRapidshareComPremium(File file, String userid, String pass) {
         try {
-            Browser br = new Browser();
-            br.setDebug(true);
+            Browser br = new Browser();      
             String[] data = br.getPage("http://rapidshare.com/cgi-bin/upload.cgi?intsysdata=1").split("\\,");
             PostFormDataRequest r = (PostFormDataRequest) br.createPostFormDataRequest("http://rs" + data[0].trim() + "l3.rapidshare.com/cgi-bin/upload.cgi");
             r.addFormData(new FormData("toolmode2", "1"));

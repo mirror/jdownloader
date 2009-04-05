@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.http.Browser;
@@ -149,10 +150,23 @@ public class DDLWarez extends PluginForDecrypt {
                             if (captchaText != null)
                                 ipf.setValue(captchaText);
                             else {
-                                String text = form.getHtmlCode().replaceAll("<.*?>", "").trim();
-                                CountdownConfirmDialog input = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, "DDL-Warez Human Verification", 10, true, null, CountdownConfirmDialog.STYLE_INPUTFIELD | CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, text, new Regex(Encoding.deepHtmlDecode(HTMLEntities.unhtmlAngleBrackets(text)), "[A-Za-z0-9_äÄöÖüÜß\\s\\,\\.]+[^A-Za-z0-9_äÄöÖüÜß\\,\\.]+\\s(\\S+)").getMatch(0));
-                                if (input.result) {
-                                    captchaText = input.input;
+                                final String text = form.getHtmlCode().replaceAll("<.*?>", "").trim();
+                                String res = new GuiRunnable<String>() {
+
+                                    @Override
+                                    public String runSave() {
+                                        CountdownConfirmDialog input = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, "DDL-Warez Human Verification", 10, true, null, CountdownConfirmDialog.STYLE_INPUTFIELD | CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, text, new Regex(Encoding.deepHtmlDecode(HTMLEntities.unhtmlAngleBrackets(text)), "[A-Za-z0-9_äÄöÖüÜß\\s\\,\\.]+[^A-Za-z0-9_äÄöÖüÜß\\,\\.]+\\s(\\S+)").getMatch(0));
+                                        if (input.result) {
+                                            return input.input;
+                                        } else {
+                                            return null;
+                                        }
+                                    }
+
+                                }.getReturnValue();
+
+                                if (res != null) {
+                                    captchaText = res;
                                     ipf.setValue(captchaText);
                                 } else {
                                     throw new DecrypterException(DecrypterException.CAPTCHA);

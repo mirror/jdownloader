@@ -26,7 +26,7 @@ public class JDImage {
     public static HashMap<String, BufferedImage> imagesCache = new HashMap<String, BufferedImage>();
 
     public static ImageIcon iconToImage(Icon icon) {
-        if(icon==null)return null;
+        if (icon == null) return null;
         if (icon instanceof ImageIcon && false) {
             return ((ImageIcon) icon);
         } else {
@@ -60,7 +60,7 @@ public class JDImage {
             return iconToImage(new JFileChooser().getIcon(file));
 
         } finally {
-            if(file!=null)            file.delete();
+            if (file != null) file.delete();
         }
 
     }
@@ -76,19 +76,19 @@ public class JDImage {
     }
 
     public static Image getScaledImage(ImageIcon img, int width, int height) {
-        return getScaledImage( (BufferedImage)img.getImage(), width, height);
+        return getScaledImage((BufferedImage) img.getImage(), width, height);
 
     }
 
     public static Image getScaledImage(BufferedImage img, int width, int height) {
         // corrects the viewport
-        if(img==null)return null;
+        if (img == null) return null;
         double faktor = Math.min((double) img.getWidth() / width, (double) img.getHeight() / height);
         width = (int) (img.getWidth() / faktor);
         height = (int) (img.getHeight() / faktor);
         if (faktor == 1.0) return img;
         return img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-   
+
     }
 
     /**
@@ -118,5 +118,10 @@ public class JDImage {
             System.out.println(imageName);
         }
         return imagesCache.get(imageName);
+    }
+
+    public static ImageIcon getImageIcon(String string) {
+        // TODO Auto-generated method stub
+        return new ImageIcon(getImage(string));
     }
 }

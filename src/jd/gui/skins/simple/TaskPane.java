@@ -1,28 +1,47 @@
 package jd.gui.skins.simple;
 
+import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
 
 import jd.gui.skins.simple.tasks.TaskPanel;
+import jd.nutils.JDImage;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXPanel;
+import org.jdesktop.swingx.JXTaskPaneContainer;
 
-public class TaskPane extends JXPanel implements ActionListener {
+public class TaskPane extends JXTaskPaneContainer implements ActionListener  {
 
     private static final long serialVersionUID = 2484591650508276173L;
     private ArrayList<TaskPanel> panels;
     private TaskPanel lastSource;
 
+    private boolean overButton;
+
     public TaskPane() {
         panels = new ArrayList<TaskPanel>();
-        this.setLayout(new MigLayout("ins 0, wrap 1", "[fill,grow]"));
-        this.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Color.GRAY));
+        this.setLayout(new MigLayout("ins 2, wrap 1", "[fill,grow]", "[]2[]2[]2[]2[]2[]2[]2[]2[fill,grow]"));
+//        this.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.GRAY));
+        // add(new JLabel(JDImage.getImageIcon("default/enlarge_left")),
+        // "cell 0 7, dock east");
+      
+   
     }
+
+
 
     public void add(TaskPanel panel) {
         super.add(panel);
@@ -67,15 +86,17 @@ public class TaskPane extends JXPanel implements ActionListener {
             lastSource = src;
             src.broadcastEvent(new ActionEvent(src, TaskPanel.ACTION_TOGGLE, "Toggle"));
         }
+        boolean all = true;
         for (TaskPanel p : panels) {
             if (p != lastSource) {
                 p.setSpecial(false);
-                p.setCollapsed(true);
+                p.setDeligateCollapsed(true);
             } else {
                 p.setSpecial(true);
-                p.setCollapsed(false);
+                p.setDeligateCollapsed(false);
             }
         }
     }
 
+   
 }

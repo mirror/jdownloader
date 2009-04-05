@@ -1,7 +1,268 @@
 package jd.gui.skins.simple;
 
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
+import javax.swing.JMenu;
+import javax.swing.JSeparator;
+import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
-public class JDToolBar extends JToolBar {
+import jd.config.Configuration;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
+import jd.gui.skins.simple.components.SpeedMeterPanel;
+import jd.gui.skins.simple.startmenu.JDStartMenu;
+import jd.utils.JDLocale;
+import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
+public class JDToolBar extends JToolBar implements ControlListener {
+
+    private static final Object BUTTON_CONSTRAINTS = "gaptop 2";
+
+    private JButton playButton;
+    private JToggleButton pauseButton;
+    private JButton stopButton;
+    protected int pause = -1;
+    private JToggleButton clipboard;
+    private JToggleButton premium;
+    private JToggleButton reconnect;
+
+    private SpeedMeterPanel speedmeter;
+
+    public JDToolBar(boolean noTitlePane) {
+        super(JToolBar.HORIZONTAL);
+
+        setRollover(true);
+        JDUtilities.getController().addControlListener(this);
+        this.setFloatable(false);
+        this.setLayout(new MigLayout(" ins 0", "[][][][][][][][][][][][][][grow,fill]"));
+        if (noTitlePane) {
+
+            IconMenuBar mb = new IconMenuBar();
+            JMenu menu = new JMenu("");
+            // menu.setSize(50,50);
+
+            menu.setPreferredSize(mb.getMinimumSize());
+            menu.setMinimumSize(mb.getMinimumSize());
+            menu.setOpaque(false);
+            menu.setBackground(null);
+
+            JDStartMenu.createMenu(menu);
+            mb.add(menu);
+
+            add(mb, "gapright 15");
+
+        }
+        initController();
+        add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 5,gapright 5");
+        initQuickConfig();
+        addSpeedMeter();
+        setPause(false);
+
+    }
+
+    private void initQuickConfig() {
+        /* Clipboard */
+        add(clipboard = new JToggleButton(JDTheme.II("gui.images.clipboard_disabled", 24, 24)), BUTTON_CONSTRAINTS);
+        clipboard.setToolTipText(JDLocale.L("gui.menu.action.clipboard.desc", null));
+
+        clipboard.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        clipboard.addChangeListener(new ChangeListener() {
+
+            public void stateChanged(ChangeEvent e) {
+                if (clipboard.isSelected()) {
+                    clipboard.setIcon(JDTheme.II("gui.images.clipboard_enabled", 24, 24));
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true);
+                } else {
+                    clipboard.setIcon(JDTheme.II("gui.images.clipboard_disabled", 24, 24));
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
+
+                }
+                JDUtilities.getConfiguration().save();
+
+            }
+
+        });
+        clipboard.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
+        /* Premium */
+        add(premium = new JToggleButton(JDTheme.II("gui.images.premium_disabled", 24, 24)), BUTTON_CONSTRAINTS);
+        premium.setToolTipText(JDLocale.L("gui.menu.action.premium.desc", "Enable Premiumusage globaly"));
+
+        premium.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        premium.addChangeListener(new ChangeListener() {
+
+            public void stateChanged(ChangeEvent e) {
+                if (premium.isSelected()) {
+                    premium.setIcon(JDTheme.II("gui.images.premium_enabled", 24, 24));
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
+                } else {
+                    premium.setIcon(JDTheme.II("gui.images.premium_disabled", 24, 24));
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, false);
+
+                }
+                JDUtilities.getConfiguration().save();
+
+            }
+
+        });
+
+        premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
+        /* reconect */
+        add(reconnect = new JToggleButton(JDTheme.II("gui.images.reconnect_disabled", 24, 24)), BUTTON_CONSTRAINTS);
+
+        reconnect.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        reconnect.addChangeListener(new ChangeListener() {
+
+            public void stateChanged(ChangeEvent e) {
+                if (reconnect.isSelected()) {
+                    reconnect.setIcon(JDTheme.II("gui.images.reconnect_enabled", 24, 24));
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
+                } else {
+                    reconnect.setIcon(JDTheme.II("gui.images.reconnect_disabled", 24, 24));
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
+
+                }
+                JDUtilities.getConfiguration().save();
+
+            }
+
+        });
+        reconnect.setSelected(!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) {
+            reconnect.setEnabled(true);
+            reconnect.setToolTipText(JDLocale.L("gui.menu.action.doreconnect.desc", null));
+        } else {
+            reconnect.setEnabled(true);
+            reconnect.setToolTipText(JDLocale.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
+        }
+
+    }
+
+    private void initController() {
+        add(playButton = new JButton(JDTheme.II("gui.images.next", 24, 24)), BUTTON_CONSTRAINTS);
+        playButton.setToolTipText(JDLocale.L("gui.menu.action.start.desc", null));
+        playButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        playButton.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                JDUtilities.getController().startDownloads();
+                if (JDToolBar.this.pause > 0) {
+                    setPause(false);
+                }
+                pauseButton.setSelected(false);
+            }
+
+        });
+
+        add(pauseButton = new JToggleButton(JDTheme.II("gui.images.break", 24, 24)), BUTTON_CONSTRAINTS);
+        pauseButton.setToolTipText(JDLocale.L("gui.menu.action.break.desc", null));
+        pauseButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        pauseButton.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+
+                if (JDToolBar.this.pause >= 0) {
+                    setPause(false);
+
+                } else {
+                    setPause(true);
+
+                }
+
+            }
+
+        });
+        add(stopButton = new JButton(JDTheme.II("gui.images.stop", 24, 24)), BUTTON_CONSTRAINTS);
+        stopButton.setToolTipText(JDLocale.L("gui.menu.action.stop.desc", null));
+        stopButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        stopButton.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                if (JDToolBar.this.pause > 0) {
+                    setPause(false);
+                }
+
+                JDUtilities.getController().stopDownloads();
+            }
+
+        });
+        stopButton.setEnabled(false);
+        pauseButton.setEnabled(false);
+        playButton.setEnabled(true);
+
+    }
+
+    private void addSpeedMeter() {
+        speedmeter = new SpeedMeterPanel();
+        speedmeter.setPreferredSize(new Dimension(100, 30));
+        if (JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, true)) {
+            add(speedmeter, "cell 0 13,dock east,hidemode 3,height 30,width 30:200:300");
+        }
+
+    }
+
+    private void setPause(boolean b) {
+        if (b) {
+            pauseButton.setSelected(true);
+            JDToolBar.this.pause = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 1);
+
+        } else {
+            pauseButton.setSelected(false);
+            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, Math.max(JDToolBar.this.pause, 0));
+            JDToolBar.this.pause = -1;
+
+        }
+
+    }
+
+    public void controlEvent(final ControlEvent event) {
+        new GuiRunnable<Object>() {
+
+            @Override
+            public Object runSave() {
+                switch (event.getID()) {
+                case ControlEvent.CONTROL_DOWNLOAD_START:
+                    stopButton.setEnabled(true);
+                    pauseButton.setEnabled(true);
+                    playButton.setEnabled(false);
+                    if (speedmeter != null) {
+                        speedmeter.start();
+                    }
+                    break;
+                case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+                case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                    stopButton.setEnabled(false);
+                    pauseButton.setEnabled(false);
+                    playButton.setEnabled(true);
+                    if (speedmeter != null) speedmeter.stop();
+
+                    break;
+                case ControlEvent.CONTROL_JDPROPERTY_CHANGED:
+                    if (event.getParameter() == Configuration.PARAM_LATEST_RECONNECT_RESULT) {
+                        if (((Configuration) event.getSource()).getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) {
+                            reconnect.setEnabled(true);
+                            reconnect.setToolTipText(JDLocale.L("gui.menu.action.reconnect.desc", null));
+                        } else {
+                            reconnect.setEnabled(true);
+                            reconnect.setToolTipText(JDLocale.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
+                        }
+
+                    }
+
+                }
+                return null;
+            }
+
+        }.start();
+
+    }
 }

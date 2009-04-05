@@ -21,6 +21,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -29,19 +30,24 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
+import javax.swing.plaf.RootPaneUI;
+import javax.swing.plaf.metal.MetalRootPaneUI;
 
 import jd.config.ConfigContainer;
 import jd.config.Configuration;
@@ -81,10 +87,10 @@ import jd.gui.skins.simple.config.FengShuiConfigPanel;
 import jd.gui.skins.simple.premium.PremiumPane;
 import jd.gui.skins.simple.tasks.ConfigTaskPane;
 import jd.gui.skins.simple.tasks.DownloadTaskPane;
-import jd.gui.skins.simple.tasks.GeneralPurposeTaskPanel;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
 import jd.gui.skins.simple.tasks.PremiumTaskPane;
 import jd.gui.skins.simple.tasks.TaskPanel;
+import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -97,9 +103,11 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.JXFrame;
 import org.jdesktop.swingx.JXTitledSeparator;
 import org.jvnet.substance.SubstanceLookAndFeel;
+import org.jvnet.substance.SubstanceRootPaneUI;
 
 public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, WindowListener {
 
@@ -143,19 +151,66 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private JDMenuBar menuBar;
 
+    private JDStatusBar statusBar;
+
+    private boolean noTitlePane = false;
+
+    private JXCollapsiblePane leftcolPane;
+
+    private JDSeparator sep;
+
     /**
      * Das Hauptfenster wird erstellt. Singleton. Use SimpleGUI.createGUI
      */
     private SimpleGUI() {
-        super();
+        super("§test");
         SimpleGuiConstants.GUI_CONFIG = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
         JDLookAndFeelManager.setUIManager();
 
         menuBar = new JDMenuBar();
-        toolBar = new JDToolBar();
 
+        statusBar = new JDStatusBar();
+
+        RootPaneUI ui = this.getRootPane().getUI();
+
+        if (ui instanceof SubstanceRootPaneUI) {
+            this.getRootPane().setUI(new JDSubstanceUI());
+        }  else {
+            this.noTitlePane = true;
+
+        }
+        toolBar = new JDToolBar(noTitlePane);
+
+        System.out.println(ui);
         addWindowListener(this);
-        setIconImage(JDTheme.I("gui.images.jd_logo"));
+
+        // setIconImage(JDTheme.II("gui.images.jd_logo"));
+        ArrayList<Image> list = new ArrayList<Image>();
+        Image img;
+        // list.add(JDImage.getImage("logo/logo_e_14"));
+        // list.add(JDImage.getImage("logo/logo_e_15"));
+        // list.add(JDImage.getImage("logo/logo_e_16"));
+        // list.add(JDImage.getImage("logo/logo_e_17"));
+        // list.add(JDImage.getImage("logo/logo_e_18"));
+        // list.add(JDImage.getImage("logo/logo_e_19"));
+        // list.add(JDImage.getImage("logo/logo_e_20"));
+        list.add(JDImage.getImage("logo/logo_14_14"));
+        list.add(JDImage.getImage("logo/logo_15_15"));
+        list.add(JDImage.getImage("logo/logo_16_16"));
+        list.add(JDImage.getImage("logo/logo_17_17"));
+        list.add(JDImage.getImage("logo/logo_18_18"));
+        list.add(JDImage.getImage("logo/logo_19_19"));
+        list.add(JDImage.getImage("logo/logo_20_20"));
+        list.add(JDImage.getImage("logo/logo_20_20"));
+
+        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 32, 32));
+        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 16, 16));
+        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 64, 64));
+        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 128,
+        // 128));
+        this.setIconImages(list);
+
+        // this.setIconImage(JDImage.getImage("empty"));
         setTitle(JDUtilities.getJDTitle());
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         // initActions();
@@ -194,14 +249,20 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 }
             }
         }.start();
+
     }
 
     public void updateDecoration() {
+
         if (UIManager.getLookAndFeel().getSupportsWindowDecorations()) {
             setUndecorated(true);
             getRootPane().setWindowDecorationStyle(JRootPane.FRAME);
+            JFrame.setDefaultLookAndFeelDecorated(true);
+            JDialog.setDefaultLookAndFeelDecorated(true);
         } else {
             setUndecorated(false);
+            JFrame.setDefaultLookAndFeelDecorated(false);
+            JDialog.setDefaultLookAndFeelDecorated(false);
         }
     }
 
@@ -238,7 +299,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -470,6 +531,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // taskPane.setBackgroundPainter(null);
 
         dlTskPane = new DownloadTaskPane(JDLocale.L("gui.taskpanes.download", "Download"), JDTheme.II("gui.images.taskpanes.download", 24, 24));
+        // dlTskPane.add(toolBar);
+        // // toolBar.setFocusable(false);
+        // // toolBar.setBorderPainted(true);
+        // toolBar.setOpaque(false);
         dlTskPane.addPanel(new SingletonPanel(linkListPane));
         dlTskPane.addActionListener(new ActionListener() {
 
@@ -494,7 +559,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         });
         taskPane.add(dlTskPane);
-
+        // dlTskPane.setEnabled(false);
+        // taskPane.add(new
+        // JLabel(JDImage.getImageIcon("default/minimize_top")),
+        // "alignx center,wrap,gaptop 0");
         linkGrabber = new LinkGrabberV2Panel();
         lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 24, 24));
         lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
@@ -533,19 +601,20 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         cfgTskPane.addActionListener(new ActionListener() {
 
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(final ActionEvent e) {
 
                 switch (e.getID()) {
                 case DownloadTaskPane.ACTION_TOGGLE:
 
                     contentPanel.display(((TaskPanel) e.getSource()).getPanel(0));
+
                     break;
                 case ConfigTaskPane.ACTION_SAVE:
                     boolean restart = false;
 
                     for (SingletonPanel panel : ((ConfigTaskPane) e.getSource()).getPanels()) {
 
-                        if (panel.getPanel() instanceof ConfigPanel) {
+                        if (panel != null && panel.getPanel() != null && panel.getPanel() instanceof ConfigPanel) {
                             if (((ConfigPanel) panel.getPanel()).hasChanges() == PropertyType.NEEDS_RESTART) restart = true;
                             ((ConfigPanel) panel.getPanel()).save();
                         }
@@ -593,21 +662,51 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         taskPane.switcher(dlTskPane);
 
-        JPanel panel = new JPanel(new MigLayout("ins 0,wrap 2", "[fill]0[fill,grow 100]", "[grow,fill]0[]0[]"));
+        // JPanel panel = new JPanel(new MigLayout("ins 0,wrap 2",
+        // "[fill]0[fill,grow 100]", "[]0[grow,fill]0[]0[]0[]"));
+        //
+        // setContentPane(panel);
+        // panel.add(this.toolBar, "cell 0 0,spanx");
+        // panel.add(taskPane, "cell 0 1,aligny top");
+        // GeneralPurposeTaskPanel generalPurposeTasks = new
+        // GeneralPurposeTaskPanel(JDLocale.L("gui.taskpanes.generalpurpose",
+        // "Quick Config"), JDTheme.II("gui.images.taskpanes.generalpurpose",
+        // 16, 16));
+        //
+        // // taskPane.setBorder(BorderFactory.createLineBorder(Color.RED));
+        // panel.add(contentPanel, "cell 1 1,spany 2");
+        // panel.add(generalPurposeTasks, "cell 0 2");
+        // //
+        // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
+        // panel.add(progressBar, "cell 0 3,span,hidemode 3");
+        // panel.add(this.statusBar, "cell 0 4,spanx");
+        // logDialog = new LogDialog(this, logger);
+
+        JPanel panel = new JPanel(new MigLayout("ins 0,wrap 3", "[fill]0[shrink]0[fill,grow 100]", "[]0[grow,fill]0[]0[]0[]"));
 
         setContentPane(panel);
+        panel.add(this.toolBar, "spanx");
 
-        panel.add(taskPane);
-        GeneralPurposeTaskPanel generalPurposeTasks = new GeneralPurposeTaskPanel(JDLocale.L("gui.taskpanes.generalpurpose", "Quick Config"), JDTheme.II("gui.images.taskpanes.generalpurpose", 16, 16));
+        leftcolPane = new JDCollapsiblePane();
+        leftcolPane.add(new JScrollPane(taskPane));
 
-        // taskPane.setBorder(BorderFactory.createLineBorder(Color.RED));
-        panel.add(contentPanel, "spany 2");
-        panel.add(generalPurposeTasks);
+        panel.add(leftcolPane);
+        sep = new JDSeparator();
+
+        leftcolPane.addPropertyChangeListener(sep);
+        panel.add(sep, "gapright 2");
+
+        panel.add(contentPanel);
+        // panel.add(generalPurposeTasks, "cell 0 2");
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
-        panel.add(progressBar, "span,hidemode 3");
-
+        panel.add(progressBar, "spanx,hidemode 3");
+        panel.add(this.statusBar, "spanx");
         logDialog = new LogDialog(this, logger);
 
+    }
+
+    public JXCollapsiblePane getLeftcolPane() {
+        return leftcolPane;
     }
 
     public void controlEvent(final ControlEvent event) {
@@ -1289,6 +1388,23 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     public static boolean isSubstance() {
 
         return UIManager.getLookAndFeel() instanceof SubstanceLookAndFeel;
+    }
+
+    public void hideSideBar(boolean b) {
+        if (b) {
+            getLeftcolPane().setCollapsed(true);
+            this.contentPanel.display(linkListPane);
+
+        } else {
+            getLeftcolPane().setCollapsed(false);
+
+        }
+
+    }
+
+    public JTabbedPanel getDownloadPanel() {
+        // TODO Auto-generated method stub
+        return this.linkListPane;
     }
 
 }

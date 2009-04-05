@@ -132,8 +132,15 @@ public class Reconnecter {
     }
 
     public static boolean doReconnectIfRequested() {
-        if (RECONNECT_REQUESTS > 0) return Reconnecter.doReconnect();
-        return false;
+        boolean ret=false;
+        if (RECONNECT_REQUESTS > 0){
+            
+            ret=Reconnecter.doReconnect();
+            
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, ret);
+            JDUtilities.getConfiguration().save();
+        }
+        return ret;
     }
 
     public static boolean isGlobalDisabled() {

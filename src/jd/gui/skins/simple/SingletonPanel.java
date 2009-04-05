@@ -4,6 +4,8 @@ import java.awt.event.ActionListener;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+import javax.swing.SwingUtilities;
+
 import jd.gui.skins.simple.tasks.TaskPanel;
 
 public class SingletonPanel {
@@ -24,12 +26,17 @@ public class SingletonPanel {
 
     public JTabbedPanel getPanel() {
         if (panel == null) {
-            try {
-                createPanel();
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
+          
+        
+                    try {
+                       
+                        createPanel();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+
+           
         }
         if (taskPanel != null && panel instanceof ActionListener) {
             taskPanel.addActionListener((ActionListener) panel);
