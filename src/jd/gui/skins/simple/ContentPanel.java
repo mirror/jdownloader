@@ -1,9 +1,5 @@
 package jd.gui.skins.simple;
 
-import java.awt.Color;
-
-import javax.swing.BorderFactory;
-
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXPanel;
@@ -20,8 +16,7 @@ public class ContentPanel extends JXPanel {
     public ContentPanel() {
         PANEL = this;
         this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
-  
-        
+
     }
 
     public void display(JTabbedPanel panel) {
@@ -29,7 +24,7 @@ public class ContentPanel extends JXPanel {
             this.remove(rightPanel);
             rightPanel.setEnabled(false);
             rightPanel.setVisible(false);
-       
+
             rightPanel.onHide();
         }
         rightPanel = panel;

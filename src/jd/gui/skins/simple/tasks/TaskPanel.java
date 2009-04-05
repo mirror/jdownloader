@@ -16,12 +16,10 @@ import java.util.Map;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.SwingUtilities;
 import javax.swing.event.EventListenerList;
 
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.JTabbedPanel;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SingletonPanel;
 import jd.utils.JDUtilities;
 
@@ -52,12 +50,14 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     }
 
     public void setCollapsed(boolean collapsed) {
-       
+
         //        
     }
+
     public void setDeligateCollapsed(boolean collapsed) {
-        super.setCollapsed(collapsed);       
+        super.setCollapsed(collapsed);
     }
+
     protected JButton addButton(JButton bt) {
         bt.addActionListener(this);
         bt.setHorizontalAlignment(JButton.LEFT);
@@ -107,16 +107,16 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     }
 
     public void broadcastEvent(final ActionEvent e) {
-//        new Thread() {
-//            public void run() {
-//              
+        // new Thread() {
+        // public void run() {
+        //              
 
-                for (ActionListener listener : (ActionListener[]) listenerList.getListeners(ActionListener.class)) {
-                    listener.actionPerformed(e);
-                }
-            
-//            }
-//        }.start();
+        for (ActionListener listener : (ActionListener[]) listenerList.getListeners(ActionListener.class)) {
+            listener.actionPerformed(e);
+        }
+
+        // }
+        // }.start();
     }
 
     /**
@@ -146,7 +146,7 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
 
     public void mouseReleased(MouseEvent e) {
         super.setCollapsed(false);
-        
+
         broadcastEvent(new ActionEvent(this, ACTION_CLICK, "Toggle"));
     }
 

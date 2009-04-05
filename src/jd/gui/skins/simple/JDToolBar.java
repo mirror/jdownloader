@@ -25,6 +25,8 @@ import net.miginfocom.swing.MigLayout;
 
 public class JDToolBar extends JToolBar implements ControlListener {
 
+    private static final long serialVersionUID = 7533138014274040205L;
+
     private static final Object BUTTON_CONSTRAINTS = "gaptop 2";
 
     private JButton playButton;

@@ -8,10 +8,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JSeparator;
 
-import jd.config.Configuration;
 import jd.controlling.ClipboardHandler;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.event.JDEvent;
 import jd.event.JDListener;
 import jd.gui.skins.simple.MenuAction;
@@ -20,7 +17,6 @@ import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2Event;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2TreeTableAction;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, JDListener {
@@ -39,7 +35,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, JD
     public LinkGrabberTaskPane(String string, ImageIcon ii) {
         super(string, ii, "linkgrabber");
         this.setLayout(new MigLayout("ins 0, wrap 1", "[fill]"));
-       
+
         simplegui = SimpleGUI.CURRENTGUI;
         lg_buttons_visible = false;
         initGUI();
@@ -55,7 +51,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, JD
         lg_add_all.setEnabled(false);
         lg_add_selected.setEnabled(false);
         lg_clear.setEnabled(false);
-     
+
     }
 
     private String getClipBoardImage() {
@@ -66,10 +62,6 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, JD
         }
     }
 
-
-
-
-
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == panel_add_links) {
             simplegui.actionPerformed(new ActionEvent(this, MenuAction.ITEMS_ADD, null));
@@ -79,7 +71,8 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, JD
          * TODO
          */
         if (e.getSource() == panel_add_containers) {
-//            simplegui.actionPerformed(new ActionEvent(this, MenuAction.APP_LOAD_DLC, null));
+            // simplegui.actionPerformed(new ActionEvent(this,
+            // MenuAction.APP_LOAD_DLC, null));
             return;
         }
 
@@ -96,7 +89,6 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, JD
             return;
         }
     }
-
 
     public void receiveJDEvent(JDEvent event) {
         if (!(event instanceof LinkGrabberV2Event)) return;
