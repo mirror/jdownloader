@@ -52,6 +52,7 @@ public class Uploadedto extends PluginForHost {
      */
     private void correctURL(DownloadLink parameter) {
         String link = parameter.getDownloadURL();
+        link=link.replace("ul.to/", "uploaded.to/file/");
         link = link.replace("/?id=", "/file/");
         link = link.replace("?id=", "file/");
         link = link.replaceFirst("/\\?.*?&id=", "/file/");
