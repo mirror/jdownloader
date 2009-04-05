@@ -22,6 +22,7 @@ import jd.config.Configuration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class SpeedMeterPanel extends JPanel implements ControlListener, ActionListener {
@@ -52,12 +53,10 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
 
         }
 
-       this.setVisible(false);
+        this.setVisible(false);
         JDUtilities.getController().addControlListener(this);
 
     }
-
-
 
     public void start() {
         if (th != null) return;
@@ -90,7 +89,7 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
             th.interrupt();
             th = null;
         }
-      fadeOut();
+        fadeOut();
 
     }
 
@@ -119,29 +118,32 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
         for (int x = 0; x < cache.length; x++) {
             max = Math.max(cache[x], max);
         }
-        Polygon poly = new Polygon();
         int width = getWidth();
         int height = getHeight();
-        poly.addPoint(0, height);
+        if (limit != 1024) {
+            Polygon poly = new Polygon();
+     
+            poly.addPoint(0, height);
 
-        for (int x = 0; x < CAPACITY; x++) {
+            for (int x = 0; x < CAPACITY; x++) {
 
-            poly.addPoint((x * width) / (CAPACITY - 1), height - (int) (height * cache[id] * 0.9) / max);
-            id++;
-            id = id % cache.length;
+                poly.addPoint((x * width) / (CAPACITY - 1), height - (int) (height * cache[id] * 0.9) / max);
+                id++;
+                id = id % cache.length;
 
+            }
+            poly.addPoint(width, height);
+
+            ((Graphics2D) g).setPaint(new GradientPaint(width / 2, 0, col1, width / 2, height, col2.darker()));
+
+            // g2.draw(poly);
+            g2.fill(poly);
         }
-        poly.addPoint(width, height);
-
-        ((Graphics2D) g).setPaint(new GradientPaint(width / 2, 0, col1, width / 2, height, col2.darker()));
-
-        // g2.draw(poly);
-        g2.fill(poly);
         FontUIResource f = (FontUIResource) UIManager.getDefaults().get("Panel.font");
 
         g2.setFont(f);
 
-        String txt = JDUtilities.formatKbReadable(JDUtilities.getController().getSpeedMeter() / 1024) + "/s";
+        String txt = (limit == 1024 ? 0 : JDUtilities.formatKbReadable(JDUtilities.getController().getSpeedMeter() / 1024)) + "/s";
         FontMetrics fmetrics = g2.getFontMetrics();
 
         int len = fmetrics.stringWidth(txt);
@@ -151,18 +153,18 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
             g2.setColor(Color.RED);
             g2.drawLine(0, limitpx, width, limitpx);
             if (limitpx > height / 2) {
-                g2.drawString(JDUtilities.formatKbReadable(limit / 1024) + "/s", 5, limitpx - 4);
+                g2.drawString(limit == 1024 ? JDLocale.L("gui.speedmeter.pause", "pause") : JDUtilities.formatKbReadable(limit / 1024) + "/s", 5, limitpx - 4);
 
             } else {
-                g2.drawString(JDUtilities.formatKbReadable(limit / 1024) + "/s", 5, limitpx + 12);
+                g2.drawString(limit == 1024 ? JDLocale.L("gui.speedmeter.pause", "pause") : JDUtilities.formatKbReadable(limit / 1024) + "/s", 5, limitpx + 12);
 
             }
         }
-
+        if (limit != 1024) {
         g2.setColor(fontCol);
 
         g2.drawString(JDUtilities.formatKbReadable(JDUtilities.getController().getSpeedMeter() / 1024) + "/s", width - len - 5, 12);
-
+        }
         // int[] xPoints = { 30, 700, 400 };
         // int[] yPoints = { 30, 30, 600 };
         // Polygon imageTriangle = new Polygon(xPoints, yPoints, 3);
