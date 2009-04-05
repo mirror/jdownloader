@@ -50,6 +50,7 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
         setDeligateCollapsed(JDUtilities.getSubConfig("gui").getBooleanProperty(getPanelID() + "_collapsed", false));
         this.panels = new ArrayList<SingletonPanel>();
     }
+
     public void setCollapsed(boolean collapsed) {
        
         //        

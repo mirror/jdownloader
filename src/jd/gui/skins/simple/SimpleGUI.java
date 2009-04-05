@@ -47,7 +47,6 @@ import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import javax.swing.plaf.RootPaneUI;
-import javax.swing.plaf.metal.MetalRootPaneUI;
 
 import jd.config.ConfigContainer;
 import jd.config.Configuration;
@@ -175,7 +174,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         if (ui instanceof SubstanceRootPaneUI) {
             this.getRootPane().setUI(new JDSubstanceUI());
-        }  else {
+        } else {
             this.noTitlePane = true;
 
         }
@@ -229,6 +228,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         setLocation(SimpleGuiUtils.getLastLocation(null, null, this));
         pack();
         setExtendedState(SimpleGuiConstants.GUI_CONFIG.getIntegerProperty("MAXIMIZED_STATE_OF_" + this.getName(), JFrame.NORMAL));
+        this.getLeftcolPane().setAnimated(false);
+        this.hideSideBar(SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_SIDEBAR_COLLAPSED, false));
+        this.getLeftcolPane().setAnimated(true);
         setVisible(true);
 
         ClipboardHandler.getClipboard();
@@ -506,12 +508,21 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     // }
     // }
 
-    public synchronized void addLinksToGrabber(Vector<DownloadLink> links, boolean hideGrabber) {
-        logger.info("GRAB");
-        DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
-        logger.info("add to grabber");
-        linkGrabber.addLinks(linkList);
-        taskPane.switcher(lgTaskPane);
+    public synchronized void addLinksToGrabber(final Vector<DownloadLink> links, final boolean hideGrabber) {
+        new GuiRunnable(){
+
+            @Override
+            public Object runSave() {
+                logger.info("GRAB");
+                DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
+                logger.info("add to grabber");
+                linkGrabber.addLinks(linkList);
+                taskPane.switcher(lgTaskPane);
+                return null;
+            }
+            
+        }.start();
+      
 
     }
 
@@ -1391,6 +1402,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public void hideSideBar(boolean b) {
+        if(getLeftcolPane()==null||getLeftcolPane().isCollapsed()==b)return;
         if (b) {
             getLeftcolPane().setCollapsed(true);
             this.contentPanel.display(linkListPane);
@@ -1399,6 +1411,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             getLeftcolPane().setCollapsed(false);
 
         }
+
+        SimpleGuiConstants.GUI_CONFIG.setProperty(SimpleGuiConstants.PARAM_SIDEBAR_COLLAPSED, b);
+        SimpleGuiConstants.GUI_CONFIG.save();
 
     }
 

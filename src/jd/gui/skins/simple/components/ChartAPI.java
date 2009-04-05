@@ -20,7 +20,11 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
+import java.awt.image.FilteredImageSource;
+import java.awt.image.RGBImageFilter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
@@ -69,7 +73,7 @@ public abstract class ChartAPI extends JComponent {
     private int width;
     private int height;
     private Color backgroundColor;
-    private BufferedImage image;
+    private Image image;
     private PictureLoader loader;
     private String caption;
 
@@ -155,7 +159,7 @@ public abstract class ChartAPI extends JComponent {
             calc = 0.01;
         else if (calc < 0) calc = 0;
         String ret = String.valueOf(calc);
-        if(ret.length() > 16) ret = ret.substring(0, 16);
+        if (ret.length() > 16) ret = ret.substring(0, 16);
         return ret;
     }
 
@@ -164,8 +168,27 @@ public abstract class ChartAPI extends JComponent {
         loader.start();
     }
 
+    public class TransparentFilter extends RGBImageFilter {
+        private final int transparentRGB;
+        public TransparentFilter(Color color) {
+            this.transparentRGB = color.getRGB();
+        }
+        @Override
+        public int filterRGB(int x, int y, int rgb) {
+            if (rgb != transparentRGB) return rgb | 0xff000000;
+            return rgb & 0xffffff; 
+        }
+    }
+
     public void setImage(BufferedImage image) {
-        this.image = image;
+
+       
+        TransparentFilter filter = new TransparentFilter(this.backgroundColor);
+
+        FilteredImageSource filteredSrc = new FilteredImageSource(image.getSource(), filter);
+
+        this.image = Toolkit.getDefaultToolkit().createImage(filteredSrc);
+
         Dimension d = new Dimension(image.getWidth(), image.getHeight());
         setPreferredSize(d);
         revalidate();
@@ -175,8 +198,8 @@ public abstract class ChartAPI extends JComponent {
     public void paintComponent(Graphics g) {
         g.setFont(new Font("Arial", Font.BOLD, 12));
         if (image != null) {
-            int x = (getWidth() - image.getWidth()) / 2;
-            int y = (getHeight() - image.getHeight()) / 2;
+            int x = (getWidth() - image.getWidth(null)) / 2;
+            int y = (getHeight() - image.getHeight(null)) / 2;
             g.drawImage(image, x, y, this);
             g.drawString(caption, 0, 10);
             return;

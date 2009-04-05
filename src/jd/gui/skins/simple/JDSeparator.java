@@ -25,23 +25,23 @@ public class JDSeparator extends JXCollapsiblePane implements PropertyChangeList
 
         setLayout(new MigLayout("ins 0,wrap 1"));
 
-      
-        add(dlLIst = new JButton(JDTheme.II("gui.list", 5, 10)), "width 4!,gapright 1");
-
-        dlLIst.setToolTipText(JDLocale.L("gui.sidebar.splitbuttons.download.tooltip", "Switch to Downloadlist"));
-        dlLIst.setBorderPainted(false);
-        dlLIst.setOpaque(false);
-        dlLIst.setContentAreaFilled(false);
-        dlLIst.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        dlLIst.setFocusPainted(false);
-        dlLIst.setBorderPainted(false);
-        dlLIst.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                SimpleGUI.CURRENTGUI.getContentPane().display(SimpleGUI.CURRENTGUI.getDownloadPanel());
-            }
-
-        });
+//      
+//        add(dlLIst = new JButton(JDTheme.II("gui.list", 5, 10)), "width 4!,gapright 1");
+//
+//        dlLIst.setToolTipText(JDLocale.L("gui.sidebar.splitbuttons.download.tooltip", "Switch to Downloadlist"));
+//        dlLIst.setBorderPainted(false);
+//        dlLIst.setOpaque(false);
+//        dlLIst.setContentAreaFilled(false);
+//        dlLIst.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+//        dlLIst.setFocusPainted(false);
+//        dlLIst.setBorderPainted(false);
+//        dlLIst.addActionListener(new ActionListener() {
+//
+//            public void actionPerformed(ActionEvent e) {
+//                SimpleGUI.CURRENTGUI.getContentPane().display(SimpleGUI.CURRENTGUI.getDownloadPanel());
+//            }
+//
+//        });
 
         add(minimize = new JButton(JDTheme.II("gui.images.minimize.left", 5, 10)), "width 4!,gapright 1");
 
@@ -68,6 +68,7 @@ public class JDSeparator extends JXCollapsiblePane implements PropertyChangeList
         maximize.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         maximize.setFocusPainted(false);
         maximize.setBorderPainted(false);
+        maximize.setEnabled(false);
         maximize.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

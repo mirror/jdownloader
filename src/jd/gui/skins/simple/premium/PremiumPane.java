@@ -17,13 +17,14 @@
 package jd.gui.skins.simple.premium;
 
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -41,6 +42,7 @@ import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.components.ChartAPI_Entity;
 import jd.gui.skins.simple.components.ChartAPI_GOM;
 import jd.gui.skins.simple.components.ChartAPI_PIE;
+import jd.gui.skins.simple.tasks.TaskPanel;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
@@ -49,12 +51,26 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXCollapsiblePane;
-import org.jdesktop.swingx.JXHeader;
 import org.jdesktop.swingx.JXLabel;
-import org.jdesktop.swingx.border.DropShadowBorder;
 
 public class PremiumPane extends JTabbedPanel {
+    class PremiumDetailTaskPanel extends TaskPanel {
+
+        public PremiumDetailTaskPanel(String string, ImageIcon ii) {
+
+            super(string, ii, "premiumdetailpanel");
+            setLayout(new MigLayout("ins 2, wrap 3", "[fill]15[grow, fill][]", "[][][][][][][][][][][fill,grow]"));
+
+            this.setCollapsed(true);
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            // TODO Auto-generated method stub
+
+        }
+
+    }
+
     private static final long serialVersionUID = 6433012230610964105L;
 
     private JPanel panel;
@@ -62,30 +78,38 @@ public class PremiumPane extends JTabbedPanel {
     private static final Color ACTIVE = new Color(0x7cd622);
     private static final Color INACTIVE = new Color(0xa40604);
     private static final Color DISABLED = new Color(0xaff0000);
+
+    private static  Color FILTER_COLOR = new Color(0x00fffc);
     private static boolean premiumActivated = true;
     private PluginForHost host;
     private JScrollPane sp;
-    private JXCollapsiblePane cp;
+
     private ArrayList<AccountPanel> accs = new ArrayList<AccountPanel>();
     private AccountPanel lastOpenedPanel;
 
-    private JXHeader header = new JXHeader();
+    private ChartAPI_PIE freeTrafficChart;
+    private PremiumDetailTaskPanel details;
 
-    private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 500, 100, this.getBackground());
+    private JPanel chartContainer;
 
     public PremiumPane(String hostname) {
-        int n = 2;
-        setLayout(new MigLayout("ins 1", "[grow]"));
-        setBorder(new EmptyBorder(n, n, n, n));
+        
+        setLayout(new MigLayout("ins 3", "[grow]"));
+        
         this.host = JDUtilities.getPluginForHost(hostname);
-        cp = new JXCollapsiblePane();
-        cp.setLayout(new MigLayout("ins 2", "[right]5[ left, grow, fill]"));
-        cp.setBorder(new DropShadowBorder());
-        cp.setCollapsed(true);
 
-        header.setIconPosition(JXHeader.IconPosition.LEFT);
-        header.setFont(new Font(null, 0, 18));
-        header.setIcon(JDTheme.II("gui.images.config.tip", 24, 24));
+        details = new PremiumDetailTaskPanel("test", JDTheme.II("gui.images.config.tip", 24, 24));
+        FILTER_COLOR=details.getBackground();
+        freeTrafficChart = new ChartAPI_PIE("", 500, 100, FILTER_COLOR);
+       
+        this.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, this.getBackground().darker()));
+        
+        chartContainer = new JPanel(new MigLayout("ins 0"));
+
+        chartContainer.setOpaque(true);
+        chartContainer.add(freeTrafficChart, "alignx center");
+//        chartContainer.setBorder(BorderFactory.createEtchedBorder());
+
     }
 
     public void onHide() {
@@ -94,14 +118,14 @@ public class PremiumPane extends JTabbedPanel {
 
     private void showCollapseAccount(AccountPanel accp) {
         try {
-            cp.setCollapsed(true);
+            details.setCollapsed(true);
 
             if (lastOpenedPanel != null) lastOpenedPanel.setHide();
 
             lastOpenedPanel = accp;
 
             AccountInfo ai = host.getAccountInformation(accp.getAccount());
-            cp.removeAll();
+            details.removeAll();
 
             if (!ai.isValid()) {
                 accp.setNotValid(ai.getStatus());
@@ -109,45 +133,48 @@ public class PremiumPane extends JTabbedPanel {
             }
 
             DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
-
-            header.setTitle("Accountinformation for " + host.getHost() + " account: " + accp.getAccount().getUser());
-            cp.add(header, "growx, spanx");
+            ChartAPI_GOM freeTraffic = new ChartAPI_GOM("", 200, 100, FILTER_COLOR);
+            double procent = ((double) ai.getTrafficLeft() / (double) ai.getTrafficMax() * 100);
+            freeTraffic.addEntity(new ChartAPI_Entity(JDUtilities.formatBytesToMB(ai.getTrafficLeft()) + " free", String.valueOf(procent), new Color(50, 200, 50)));
+            freeTraffic.fetchImage();
+            details.add(freeTraffic, "cell 2 0,spany,aligny center");
+            details.setCollapsed(false);
+            details.setTitle("Accountinformation for " + host.getHost() + " account: " + accp.getAccount().getUser());
 
             if (ai.getValidUntil() > -1) {
-                cp.add(new JLabel("Valid until"), "newline, alignright, w 15%:pref, growx");
-                cp.add(getTextField(formater.format(new Date(ai.getValidUntil()))), "alignleft");
+                details.add(new JLabel("Valid until"), " alignright, w 15%:pref, growx");
+                details.add(getTextField(formater.format(new Date(ai.getValidUntil()))), "alignleft");
             }
+            
+            
             if (ai.getAccountBalance() > -1) {
-                cp.add(new JLabel("Balance"), "newline, alignright, w 15%:pref, growx");
-                cp.add(getTextField(String.valueOf(ai.getAccountBalance() / 100) + " €"), "alignleft");
+                details.add(new JLabel("Balance"), " alignright, w 15%:pref, growx");
+                details.add(getTextField(String.valueOf(ai.getAccountBalance() / 100) + " €"), "alignleft");
             }
             if (ai.getFilesNum() > -1) {
-                cp.add(new JLabel("Files stored"), "newline, alignright, w 15%:pref, growx");
-                cp.add(getTextField(String.valueOf(ai.getFilesNum())), "alignleft");
+                details.add(new JLabel("Files stored"), " alignright, w 15%:pref, growx");
+                details.add(getTextField(String.valueOf(ai.getFilesNum())), "alignleft");
             }
             if (ai.getUsedSpace() > -1) {
-                cp.add(new JLabel("Used Space"), "newline, alignright, w 15%:pref, growx");
-                cp.add(getTextField(JDUtilities.formatBytesToMB(ai.getUsedSpace())), "alignleft");
+                details.add(new JLabel("Used Space"), " alignright, w 15%:pref, growx");
+                details.add(getTextField(JDUtilities.formatBytesToMB(ai.getUsedSpace())), "alignleft");
             }
             if (ai.getPremiumPoints() > -1) {
-                cp.add(new JLabel("PremiumPoints"), "newline, alignright, w 15%:pref, growx");
-                cp.add(getTextField(String.valueOf(ai.getPremiumPoints())), "alignleft");
+                details.add(new JLabel("PremiumPoints"), " alignright, w 15%:pref, growx");
+                details.add(getTextField(String.valueOf(ai.getPremiumPoints())), "alignleft");
             }
             if (ai.getTrafficShareLeft() > -1) {
-                cp.add(new JLabel("Trafficshare left"), "newline, alignright, w 15%:pref, growx");
-                cp.add(getTextField(JDUtilities.formatBytesToMB(ai.getTrafficShareLeft())), "alignleft");
+                details.add(new JLabel("Trafficshare left"), " alignright, w 15%:pref, growx");
+                details.add(getTextField(JDUtilities.formatBytesToMB(ai.getTrafficShareLeft())), "alignleft");
             }
             if (ai.getTrafficLeft() > -1) {
-                cp.add(new JLabel("Traffic left"), "newline, alignright, w 15%:pref, growx");
-                cp.add(getTextField(JDUtilities.formatBytesToMB(ai.getTrafficLeft())), "alignleft");
+                details.add(new JLabel("Traffic left"), " alignright, w 15%:pref, growx");
+                details.add(getTextField(JDUtilities.formatBytesToMB(ai.getTrafficLeft())), "alignleft");
 
-                ChartAPI_GOM freeTraffic = new ChartAPI_GOM("", 370, 120, cp.getBackground());
-                double procent = ((double) ai.getTrafficLeft() / (double) ai.getTrafficMax() * 100);
-                freeTraffic.addEntity(new ChartAPI_Entity(JDUtilities.formatBytesToMB(ai.getTrafficLeft()) + " free", String.valueOf(procent), new Color(50, 200, 50)));
-                freeTraffic.fetchImage();
-                cp.add(freeTraffic, "newline, skip 1, alignright");
+               
             }
-            cp.setCollapsed(false);
+            
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -156,23 +183,24 @@ public class PremiumPane extends JTabbedPanel {
     private JTextField getTextField(String text) {
         JTextField help = new JTextField(text);
         help.setEditable(false);
+        help.setOpaque(false);
+        help.setBorder(null);
         return help;
     }
 
     private void showGlobalHostInformation() {
-        cp.setCollapsed(true);
-        cp.removeAll();
+        details.setCollapsed(true);
+        details.removeAll();
 
-        header.setTitle("Informations for " + host.getHost());
-        cp.add(header, "growx, spanx");
+        details.setTitle("Informations for " + host.getHost());
 
-        cp.add(new JLabel("Accounts"), "newline, alignright, w 15%:pref");
-        cp.add(getTextField(String.valueOf(host.getPremiumAccounts().size())), "alignleft");
+        details.add(new JLabel("Accounts"), "newline, alignright, w 15%:pref");
+        details.add(getTextField(String.valueOf(host.getPremiumAccounts().size())), "alignleft");
 
-        cp.add(freeTrafficChart, "newline, alignleft, spanx, spany");
+        details.add(this.chartContainer, "cell 0 10,spanx 2");
         new ChartRefresh().start();
 
-        cp.setCollapsed(false);
+        details.setCollapsed(false);
     }
 
     private void createPanel() {
@@ -186,8 +214,8 @@ public class PremiumPane extends JTabbedPanel {
 
         removeAll();
         add(sp = new JScrollPane(panel), "grow, push");
-
-        add(cp, "south");
+sp.setBorder(null);
+        add(details, "south");
 
         sp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);

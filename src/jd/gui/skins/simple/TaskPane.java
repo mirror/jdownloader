@@ -85,7 +85,9 @@ public class TaskPane extends JXTaskPaneContainer implements ActionListener  {
         if (src != null) {
             lastSource = src;
             src.broadcastEvent(new ActionEvent(src, TaskPanel.ACTION_TOGGLE, "Toggle"));
+            SimpleGUI.CURRENTGUI.hideSideBar(false);
         }
+      
         boolean all = true;
         for (TaskPanel p : panels) {
             if (p != lastSource) {

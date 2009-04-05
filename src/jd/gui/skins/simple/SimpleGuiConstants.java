@@ -22,5 +22,6 @@ public class SimpleGuiConstants {
     public static final String PARAM_BROWSER = "BROWSER";
     public transient static SubConfiguration GUI_CONFIG = null;
     public static final String GUICONFIGNAME = "simpleGUI";
+    public static final String PARAM_SIDEBAR_COLLAPSED = "PARAM_SIDEBAR_COLLAPSED";
 
 }

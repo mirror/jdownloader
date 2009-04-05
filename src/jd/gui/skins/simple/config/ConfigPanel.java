@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 
 import jd.config.ConfigEntry;
@@ -47,6 +48,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
         panel = new JPanel();
         this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         panel.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
+        this.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, this.getBackground().darker()));
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry) {
@@ -57,19 +59,19 @@ public abstract class ConfigPanel extends JTabbedPanel {
         String subPanelName = entry.getConfigEntry().getGroupname();
 
         if (subPanelName == null) {
-            panel.add(entry,"gapleft 10,gapright 10");
+            panel.add(entry, "gapleft 10,gapright 10");
             entries.add(entry);
-            subPanel=null;
+            subPanel = null;
             return;
         }
 
-        if (subPanel != null&&subPanel.getName().equals(subPanelName)) {
+        if (subPanel != null && subPanel.getName().equals(subPanelName)) {
             subPanel.add(entry);
         } else {
             subPanel = new JSubPanel(subPanelName);
             subPanel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
             subPanel.add(entry);
-            panel.add(subPanel,"gapleft 10,gapright 10");
+            panel.add(subPanel, "gapleft 10,gapright 10");
         }
 
         entries.add(entry);
