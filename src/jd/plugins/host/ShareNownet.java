@@ -35,10 +35,6 @@ import jd.plugins.PluginForHost;
 
 public class ShareNownet extends PluginForHost {
 
-    private String captchaCode;
-    private File captchaFile;
-    private String downloadurl;
-
     public ShareNownet(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("http://share-now.net/?site=premium"); noch net
@@ -54,8 +50,7 @@ public class ShareNownet extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        downloadurl = downloadLink.getDownloadURL();
-        br.getPage(downloadurl);
+        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Datei existiert nicht oder")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String[] linkinfo = null;
         linkinfo = br.getRegex(Pattern.compile("<h3 align=\"center\"><strong>(.*?)</strong> \\(\\s*([0-9\\.]*)\\s([GKMB]*)\\s*\\) </h3>", Pattern.CASE_INSENSITIVE)).getRow(0);
@@ -82,10 +77,10 @@ public class ShareNownet extends PluginForHost {
         /* gibts nen captcha? */
         if (br.containsHTML("Sicherheitscode eingeben")) {
             /* Captcha File holen */
-            captchaFile = getLocalCaptchaFile(this);
+            File captchaFile = getLocalCaptchaFile(this);
             br.getDownload(captchaFile, "http://share-now.net/captcha.php?id=" + form.getInputFieldByName("download").getValue());
             /* CaptchaCode holen */
-            captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+            String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
             form.put("Submit", "Download+Now");
             form.put("captcha", captchaCode);
         }

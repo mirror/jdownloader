@@ -26,8 +26,6 @@ import javax.swing.JWindow;
 import javax.swing.Timer;
 
 import jd.gui.JDLookAndFeelManager;
-import jd.gui.skins.simple.GuiRunnable;
-import jd.utils.JDTheme;
 
 public class SplashScreen implements ActionListener {
 

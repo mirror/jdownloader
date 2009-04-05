@@ -134,7 +134,7 @@
 		<mkdir dir="${dist}/pluginressourcen/120__JDLangFileEditor/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/120__JDLangFileEditor/plugins/JDLangFileEditor.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/LangFileEditor*" />
+				<include name="jd/plugins/optional/langfileeditor/**" />
 			</fileset>
 		</jar>
 

@@ -17,10 +17,7 @@
 package jd.config;
 
 import java.io.Serializable;
-import java.util.Vector;
 
-import jd.controlling.interaction.Interaction;
-import jd.router.RouterData;
 import jd.utils.JDUtilities;
 
 /**
@@ -135,7 +132,6 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String USE_SOCKS = "USE_SOCKS";
 
-
     /**
      * serialVersionUID
      */
@@ -145,8 +141,6 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_LATEST_RECONNECT_RESULT = "LATEST_RECONNECT_RESULT";
 
- 
-   
     /**
      * Konstruktor für ein Configuration Object
      */
@@ -157,22 +151,8 @@ public class Configuration extends SubConfiguration implements Serializable {
         return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, JDUtilities.getResourceFile("downloads").getAbsolutePath());
     }
 
-  
-  
- 
-
-
-
-
-  
     public void save() {
         JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", this);
     }
 
-    
-  
-   
-
-
- 
 }

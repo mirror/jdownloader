@@ -48,7 +48,6 @@ import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDEventQueue;
-import jd.gui.skins.simple.JDToolBar;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -219,7 +218,6 @@ public class Main {
                     public Object runSave() {
                         try {
                             splashScreen = new SplashScreen(JDTheme.I("gui.splash"));
-
                             splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.languages", 32, 32)));
                             splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.settings", 32, 32)));
                             splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.controller", 32, 32)));
@@ -228,10 +226,8 @@ public class Main {
                             splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.screen", 32, 32)));
                             splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.dllist", 32, 32)));
                         } catch (IOException e) {
-                            // TODO Auto-generated catch block
                             e.printStackTrace();
                         } catch (AWTException e) {
-                            // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
                         return null;

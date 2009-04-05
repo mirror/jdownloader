@@ -34,7 +34,6 @@ import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -55,6 +54,8 @@ import org.jdesktop.swingx.JXLabel;
 
 public class PremiumPane extends JTabbedPanel {
     class PremiumDetailTaskPanel extends TaskPanel {
+
+        private static final long serialVersionUID = 6542044502421479328L;
 
         public PremiumDetailTaskPanel(String string, ImageIcon ii) {
 
@@ -79,7 +80,7 @@ public class PremiumPane extends JTabbedPanel {
     private static final Color INACTIVE = new Color(0xa40604);
     private static final Color DISABLED = new Color(0xaff0000);
 
-    private static  Color FILTER_COLOR = new Color(0x00fffc);
+    private static Color FILTER_COLOR = new Color(0x00fffc);
     private static boolean premiumActivated = true;
     private PluginForHost host;
     private JScrollPane sp;
@@ -93,22 +94,22 @@ public class PremiumPane extends JTabbedPanel {
     private JPanel chartContainer;
 
     public PremiumPane(String hostname) {
-        
+
         setLayout(new MigLayout("ins 3", "[grow]"));
-        
+
         this.host = JDUtilities.getPluginForHost(hostname);
 
         details = new PremiumDetailTaskPanel("test", JDTheme.II("gui.images.config.tip", 24, 24));
-        FILTER_COLOR=details.getBackground();
+        FILTER_COLOR = details.getBackground();
         freeTrafficChart = new ChartAPI_PIE("", 500, 100, FILTER_COLOR);
-       
+
         this.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, this.getBackground().darker()));
-        
+
         chartContainer = new JPanel(new MigLayout("ins 0"));
 
         chartContainer.setOpaque(true);
         chartContainer.add(freeTrafficChart, "alignx center");
-//        chartContainer.setBorder(BorderFactory.createEtchedBorder());
+        // chartContainer.setBorder(BorderFactory.createEtchedBorder());
 
     }
 
@@ -145,8 +146,7 @@ public class PremiumPane extends JTabbedPanel {
                 details.add(new JLabel("Valid until"), " alignright, w 15%:pref, growx");
                 details.add(getTextField(formater.format(new Date(ai.getValidUntil()))), "alignleft");
             }
-            
-            
+
             if (ai.getAccountBalance() > -1) {
                 details.add(new JLabel("Balance"), " alignright, w 15%:pref, growx");
                 details.add(getTextField(String.valueOf(ai.getAccountBalance() / 100) + " €"), "alignleft");
@@ -171,10 +171,8 @@ public class PremiumPane extends JTabbedPanel {
                 details.add(new JLabel("Traffic left"), " alignright, w 15%:pref, growx");
                 details.add(getTextField(JDUtilities.formatBytesToMB(ai.getTrafficLeft())), "alignleft");
 
-               
             }
-            
-            
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -214,7 +212,7 @@ public class PremiumPane extends JTabbedPanel {
 
         removeAll();
         add(sp = new JScrollPane(panel), "grow, push");
-sp.setBorder(null);
+        sp.setBorder(null);
         add(details, "south");
 
         sp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);

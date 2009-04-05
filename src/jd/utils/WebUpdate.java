@@ -27,14 +27,12 @@ import java.util.logging.Logger;
 
 import jd.Main;
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.JDDownloadController;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -103,7 +101,7 @@ public class WebUpdate implements ControlListener {
                 ListenerAdded = true;
             }
         }
-        SubConfiguration cfg = WebUpdater.getConfig("WEBUPDATE");
+//        SubConfiguration cfg = WebUpdater.getConfig("WEBUPDATE");
 //        cfg.setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false));
 //        cfg.setProperty("PLAF", JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("PLAF"));
 //        cfg.save();
