@@ -24,6 +24,7 @@ gui.images.update_manager = default/software-update-available
 gui.images.help = default/help-browser
 gui.images.exit=default/system-log-out
 gui.images.restart=default/go-jump
+gui.images.upload=default/go-up
 gui.images.warning=default/dialog-warning
 gui.images.link=default/mime/text-x-generic-template
 gui.images.package_closed=default/document-open
