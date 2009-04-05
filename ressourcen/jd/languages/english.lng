@@ -447,7 +447,7 @@ gui.menu.action.changes.desc = Show latest changes
 gui.menu.action.changes.mnem = C
 gui.menu.action.changes.name = Changelog
 gui.menu.action.clipboard.accel = CTRL+8
-gui.menu.action.clipboard.desc = Monitor Clipboard
+gui.menu.action.clipboard.desc = Enable or disable Clipboard observation for new links
 gui.menu.action.clipboard.mnem = Z
 gui.menu.action.clipboard.name = Clipboard
 gui.menu.action.configuration.accel = F11
@@ -555,8 +555,7 @@ gui.menu.add = Add
 gui.menu.add.desc = Add links or open linkcontainers
 gui.menu.addons = Addons
 gui.menu.addons.desc=Configure existing addons or install new ones
-
-
+gui.menu.action.break.desc=Pause downloads. Limits global speed to 1 kb/s
 gui.menu.save = Save
 gui.menu.save.desc =Save and backup your linklist and settings
 gui.menu.premium = Premium

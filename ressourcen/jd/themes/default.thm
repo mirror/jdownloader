@@ -29,10 +29,7 @@ gui.images.link=default/mime/text-x-generic-template
 gui.images.package_closed=default/document-open
 gui.images.package_error=default/document-open_error
 gui.images.package_opened=default/folder-visiting
-gui.images.jd_logo = jd_logo_64_64
-gui.images.jd_logo_16_16 = jd_logo_64_64
-gui.images.jd_logo_17_17 = jd_logo_64_64
-gui.images.jd_logo_32_32 = jd_logo_64_64
+
 
 gui.splash = splash
 
@@ -49,17 +46,25 @@ gui.images.add_all=default/folder-open_add
 gui.images.add_package=default/folder-open_add
 gui.images.clear=default/user-trash
 gui.images.clipboard=default/edit-paste
+gui.images.clipboard_enabled=default/clipboard_en
+gui.images.clipboard_disabled=default/clipboard_dis
+gui.images.premium_enabled=default/premium_enabled
+gui.images.premium_disabled=default/premium_disabled
+gui.images.reconnect_enabled=default/reconnect_enabled
+gui.images.reconnect_disabled=default/reconnect_disabled
 gui.images.abort=default/emblem-unreadable
 gui.images.taskpanes.linkgrabber=default/system-search-add
 gui.images.taskpanes.configuration=default/applications-system
 gui.images.taskpanes.generalpurpose=default/go-bottom
 gui.images.taskpanes.premium=default/premium
+gui.list=default/list
+gui.images.taskpanes.download=default/go-down
 gui.images.break=default/media-playback-pause
 
 gui.images.selected=default/face-smile
 gui.images.unselected=default/face-sad
-
-
+gui.images.minimize.left=default/minimize_left
+gui.images.minimize.right=default/minimize_right
 #colors
 gui.color.statusbar.maxspeedhighlight=ff0c03
 gui.color.htmlTooltip_background=94baff
