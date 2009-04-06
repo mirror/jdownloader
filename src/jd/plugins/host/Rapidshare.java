@@ -261,10 +261,29 @@ public class Rapidshare extends PluginForHost {
                 u.setFinalFileName(matches[i][1]);
                 u.setDupecheckAllowed(true);
                 u.setMD5Hash(matches[i][6]);
-                if (matches[i][4].equals("0")) {
+                //0=File not found 1=File OK 2=File OK (direct download) 3=Server down 4=File abused 5
+                switch(Integer.parseInt(matches[i][4])){
+                case 0:
+                    u.getLinkStatus().setErrorMessage("File not found");
+                    u.getLinkStatus().setStatusText("File not found");
                     u.setAvailable(false);
-                } else {
+                    break;
+                case 1:
                     u.setAvailable(true);
+                    break;
+                case 2:
+                    u.setAvailable(true);
+                    u.getLinkStatus().setStatusText("direct download");
+                case 3:
+                    u.getLinkStatus().setErrorMessage("Server temp. down");
+                    u.getLinkStatus().setStatusText("Server temp. down");
+                    u.setAvailable(false);
+                    break;
+                case 4:
+                    u.setAvailable(false);
+                    u.getLinkStatus().setErrorMessage("Anonymous file");
+                    u.getLinkStatus().setStatusText("Anonymous file");
+                    break;
                 }
                 i++;
             }
