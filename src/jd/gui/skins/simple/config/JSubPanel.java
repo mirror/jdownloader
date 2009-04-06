@@ -35,22 +35,5 @@ public class JSubPanel extends JPanel {
         return group;
     }
 
-    private JPanel addSeparator(String title, Icon icon) {
-        JLinkButton label = null;
-        JPanel ret = new JPanel(new MigLayout("ins 0", "[]10[grow,fill]"));
-        try {
 
-            label = new JLinkButton("<html><u><b>" + title + "</b></u></html>", icon, new URL("http://wiki.jdownloader.org/?do=search&id=" + Encoding.urlEncode(title)));
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-
-        label.setIconTextGap(8);
-        label.setBorder(null);
-        ret.add(label, "align left");
-        ret.add(new JSeparator());
-add(ret);
-        return ret;
-
-    }
 }

@@ -17,15 +17,20 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.ComponentOrientation;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
+import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -41,11 +46,25 @@ public class ConfigEntriesPanel extends ConfigPanel {
 
     private JTabbedPane tabbedPane = null;
 
+    private boolean inited = false;
+
     public ConfigEntriesPanel(ConfigContainer container) {
+        this(container, false);
+    }
+
+    public ConfigEntriesPanel(ConfigContainer container, boolean idle) {
         super();
         this.container = container;
+        if (!idle) {
+            init();
+        }
+    }
+
+    public void init() {
+    
         initPanel();
         load();
+
     }
 
     private void addTabbedPanel(String title, ConfigEntriesPanel configPanelPlugin) {
@@ -59,6 +78,9 @@ public class ConfigEntriesPanel extends ConfigPanel {
 
     @Override
     public void initPanel() {
+        if (inited) return;
+        this.inited = true;
+
         if (container.getContainerNum() == 0) {
 
             Vector<ConfigEntry> entries = container.getEntries();
@@ -71,13 +93,22 @@ public class ConfigEntriesPanel extends ConfigPanel {
         } else {
             subPanels = new Vector<ConfigEntriesPanel>();
             tabbedPane = new JTabbedPane();
-         
+
             tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
             tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
             tabbedPane.setTabPlacement(SwingConstants.TOP);
+            tabbedPane.addChangeListener(new ChangeListener() {
+
+                public void stateChanged(ChangeEvent e) {
+
+                    ((ConfigEntriesPanel) tabbedPane.getSelectedComponent()).init();
+
+                }
+
+            });
             Vector<ConfigEntry> entries = container.getEntries();
 
-            Vector<ConfigContainer> container = new Vector<ConfigContainer>();
+            ArrayList<ConfigContainer> container = new ArrayList<ConfigContainer>();
             ConfigContainer general = new ConfigContainer(this);
             container.add(general);
             for (ConfigEntry cfgEntry : entries) {
@@ -90,8 +121,10 @@ public class ConfigEntriesPanel extends ConfigPanel {
             if (general.getEntries().size() == 0) {
                 container.remove(0);
             }
+
             for (ConfigContainer cfg : container) {
-                addTabbedPanel(cfg.getTitle(), new ConfigEntriesPanel(cfg));
+                addTabbedPanel(cfg.getTitle(), new ConfigEntriesPanel(cfg, true));
+
             }
             this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
             add(tabbedPane);

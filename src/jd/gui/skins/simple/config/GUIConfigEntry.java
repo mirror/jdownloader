@@ -52,22 +52,20 @@ import jd.gui.skins.simple.components.JDTextField;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.panels.PremiumPanel;
 import jd.utils.JDUtilities;
-import net.miginfocom.swing.MigLayout;
-
-import org.jdesktop.swingx.JXPanel;
 
 /**
  * Diese Klasse fasst ein label / input Paar zusammen und macht das lesen und
  * schreiben einheitlich. Es lassen sich so Dialogelemente Automatisiert
  * einfügen.
  */
-public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeListener, PropertyChangeListener, DocumentListener {
+public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyChangeListener, DocumentListener {
 
     private static final long serialVersionUID = -1391952049282528582L;
     private static final String DEBUG = "";
-    private static final String INPUT_WIDTH = "300!";
-    private static final String INPUT_WIDTH_SMALL = "100!";
-    private static final String GAPRIGHT = "gapright 10";
+
+    private static final Object GAPRIGHT = "gapright 0";
+
+
     private ConfigEntry configEntry;
 
     /**
@@ -75,7 +73,7 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
      */
 
     private JComponent[] input;
-    private JComponent[] decoration;
+    private JComponent decoration;
     // private Insets insets = new Insets(1, 5, 1, 5);
 
     // private JComponent left;
@@ -102,10 +100,9 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
         configEntry = cfg;
         cfg.setGuiListener(this);
         this.addPropertyChangeListener(cfg);
-        setLayout(new MigLayout(DEBUG + "ins 0", "[]10[grow,fill," + INPUT_WIDTH + "]"));
+
         // this.setBorder(BorderFactory.createEtchedBorder());
         input = new JComponent[1];
-        decoration = new JComponent[1];
 
         switch (configEntry.getType()) {
 
@@ -120,26 +117,27 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
             }
             // addInstantHelpLink();
             input[0].setEnabled(configEntry.isEnabled());
-            add(input[0]);
 
             break;
 
         case ConfigContainer.TYPE_PASSWORDFIELD:
-            setLayout(new MigLayout(DEBUG + "ins 0", "[fill, grow 10][grow 100,fill," + INPUT_WIDTH + ",right]"));
-            add(decoration[0] = new JLabel(configEntry.getLabel()), "gapleft 5");
-            add(input[0] = new JPasswordField(), GAPRIGHT);
+
+            decoration = new JLabel(configEntry.getLabel());
+            input[0] = new JPasswordField();
+
             PlainDocument doc = (PlainDocument) ((JPasswordField) input[0]).getDocument();
             doc.addDocumentListener(this);
-            // input[0].setMaximumSize(new Dimension(160,20));
+
             input[0].setEnabled(configEntry.isEnabled());
             ((JPasswordField) input[0]).setHorizontalAlignment(SwingConstants.RIGHT);
 
             break;
 
         case ConfigContainer.TYPE_TEXTFIELD:
-            setLayout(new MigLayout(DEBUG + "ins 0", "[fill, grow 10][grow 100,fill," + INPUT_WIDTH + ",right]"));
-            add(decoration[0] = new JLabel(configEntry.getLabel()), "gapleft 5");
-            add(input[0] = new JDTextField(), GAPRIGHT);
+
+            decoration = new JLabel(configEntry.getLabel());
+            input[0] = new JDTextField();
+
             doc = (PlainDocument) ((JDTextField) input[0]).getDocument();
             doc.addDocumentListener(this);
             input[0].setEnabled(configEntry.isEnabled());
@@ -147,75 +145,50 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
 
             break;
         case ConfigContainer.TYPE_TEXTAREA:
-            setLayout(new MigLayout(DEBUG + "ins 0,wrap 1", "[fill, grow]", "[fill,grow]0[fill,grow]"));
-            add(decoration[0] = new JLabel(configEntry.getLabel()), "gapleft 5");
-            add(new JScrollPane(input[0] = new JDTextArea()), "width 400::800,height 30::450");
+            decoration = new JLabel(configEntry.getLabel());
+            new JScrollPane(input[0] = new JDTextArea());
             input[0].setEnabled(configEntry.isEnabled());
             doc = (PlainDocument) ((JDTextArea) input[0]).getDocument();
             doc.addDocumentListener(this);
 
-            // this.setLayout(new BorderLayout());
-            // this.add(left = new
-            // JLabel(configEntry.getLabel()),BorderLayout.NORTH);
-            // // JDUtilities.addToGridBag(this, left = new
-            // JLabel(configEntry.getLabel()), 0, 0, 1, 1, 0, 0, insets,
-            // GridBagConstraints.NONE, GridBagConstraints.WEST);
-            // //// addInstantHelpLink();
-            // input[0] = new JTextArea();
-            // input[0].setEnabled(configEntry.isEnabled());
-            // doc = (PlainDocument) ((JTextArea) input[0]).getDocument();
-            // doc.addDocumentListener(this);
-            // this.add(new JScrollPane(input[0]),BorderLayout.CENTER);
-            // //JDUtilities.addToGridBag(this, total = new
-            // JScrollPane(input[0]), 0, 1, 3, 1, 1, 1, insets,
-            // GridBagConstraints.BOTH, GridBagConstraints.EAST);
-            // // total.setMinimumSize(new Dimension(200, 200));
-            // total = null;
             break;
         case ConfigContainer.TYPE_CHECKBOX:
-            setLayout(new MigLayout(DEBUG + "ins 0"));
-            // logger.info("ADD CheckBox");
 
-            // JDUtilities.addToGridBag(this,, 0, 0, 1, 1, 0, 0, insets,
-            // GridBagConstraints.NONE, GridBagConstraints.WEST);
-            // addInstantHelpLink();
             input[0] = new JCheckBox();
             input[0].setEnabled(configEntry.isEnabled());
             ((JCheckBox) input[0]).addChangeListener(this);
-            this.add(input[0]);
-            this.add(decoration[0] = new JLabel(configEntry.getLabel()));
+
+            decoration = new JLabel(configEntry.getLabel());
             break;
         case ConfigContainer.TYPE_BROWSEFILE:
             // logger.info("ADD Browser");
-            setLayout(new MigLayout(DEBUG + "ins 0", "[fill, grow 10][fill]"));
-            if (configEntry.getLabel().trim().length() > 0) add(new JLabel(configEntry.getLabel()));
+
+            if (configEntry.getLabel().trim().length() > 0) new JLabel(configEntry.getLabel());
             input[0] = new BrowseFile();
             ((BrowseFile) input[0]).setEnabled(configEntry.isEnabled());
 
             ((BrowseFile) input[0]).setEditable(true);
-            add(input[0], "gapleft 5,alignx right," + GAPRIGHT);
+
             break;
         case ConfigContainer.TYPE_BROWSEFOLDER:
             // logger.info("ADD BrowserFolder");
-            setLayout(new MigLayout(DEBUG + "ins 0", "[fill, grow 10][fill]"));
-            if (configEntry.getLabel().trim().length() > 0) add(decoration[0] = new JLabel(configEntry.getLabel()));
+
+            if (configEntry.getLabel().trim().length() > 0) decoration = new JLabel(configEntry.getLabel());
             input[0] = new BrowseFile();
 
             ((BrowseFile) input[0]).setEditable(true);
             ((BrowseFile) input[0]).setEnabled(configEntry.isEnabled());
             ((BrowseFile) input[0]).setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
-            add(input[0], "gapleft 5,alignx right," + GAPRIGHT);
             break;
         case ConfigContainer.TYPE_SPINNER:
             // logger.info("ADD Spinner");
-            setLayout(new MigLayout(DEBUG + "ins 0", "[fill, grow 10][grow 100,fill," + INPUT_WIDTH_SMALL + ",right]"));
-            add(decoration[0] = new JLabel(configEntry.getLabel()), "gapleft 5");
+            decoration = new JLabel(configEntry.getLabel());
             input[0] = new JSpinner(new SpinnerNumberModel(configEntry.getStart(), configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
             input[0].setEnabled(configEntry.isEnabled());
             ((JSpinner) input[0]).addChangeListener(this);
             // ((JSpinner)input[0])
-            add(input[0], "dock east," + GAPRIGHT);
+
             break;
         case ConfigContainer.TYPE_BUTTON:
             // //logger.info("ADD Button");
@@ -223,18 +196,11 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
             ((JButton) input[0]).addActionListener(this);
             ((JButton) input[0]).addActionListener(configEntry.getActionListener());
             input[0].setEnabled(configEntry.isEnabled());
-            add(input[0]);
+
             break;
         case ConfigContainer.TYPE_COMBOBOX:
         case ConfigContainer.TYPE_COMBOBOX_INDEX:
-            setLayout(new MigLayout(DEBUG + "ins 0", "[fill, grow 10][grow 100,fill," + INPUT_WIDTH + ",right]"));
-            this.add(new JLabel(configEntry.getLabel()), "gapleft 5");
-            // JDUtilities.addToGridBag(this, left = new
-            // JLabel(configEntry.getLabel()), 0, 0, 1, 1, 0, 0, insets,
-            // GridBagConstraints.NONE, GridBagConstraints.WEST);
-            // addInstantHelpLink();
-            // logger.info(configEntry.getLabel());
-            // logger.info("ADD Combobox");
+            decoration = new JLabel(configEntry.getLabel());
             input[0] = new JComboBox(configEntry.getList());
             ((JComboBox) input[0]).addActionListener(this);
             for (int i = 0; i < configEntry.getList().length; i++) {
@@ -246,14 +212,13 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
                 }
             }
             input[0].setEnabled(configEntry.isEnabled());
-            add(input[0], "alignx right," + GAPRIGHT);
 
             break;
         case ConfigContainer.TYPE_RADIOFIELD:
-            // //logger.info("ADD Radio");
+
             input = new JComponent[configEntry.getList().length];
             JRadioButton radio;
-            // addInstantHelpLink();
+
             ButtonGroup group = new ButtonGroup();
 
             for (int i = 0; i < configEntry.getList().length; i++) {
@@ -262,7 +227,6 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
                 radio.setActionCommand(configEntry.getList()[i].toString());
                 input[i] = radio;
                 input[i].setEnabled(configEntry.isEnabled());
-                // Group the radio buttons.
 
                 group.add(radio);
 
@@ -275,7 +239,7 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
                     radio.setSelected(true);
 
                 }
-                add(input[i]);
+
             }
             break;
         case ConfigContainer.TYPE_PREMIUMPANEL:
@@ -283,24 +247,29 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
             input[0] = new PremiumPanel(this);
             input[0].setEnabled(configEntry.isEnabled());
 
-            // JDUtilities.addToGridBag(this, total = new JScrollPane(input[0]),
-            // 0, 1, 3, 1, 1, 1, insets, GridBagConstraints.BOTH,
-            // GridBagConstraints.EAST);
-            add(input[0]);
-
         case ConfigContainer.TYPE_LABEL:
-            setLayout(new MigLayout(DEBUG + "ins 0", "[fill, grow]"));
-            add(decoration[0] = new JLabel(configEntry.getLabel()), "gapleft 5,spanx");
+            input = new JComponent[0];
+            decoration = new JLabel(configEntry.getLabel());
             break;
         case ConfigContainer.TYPE_SEPARATOR:
             // //logger.info("ADD Seperator");
-            input[0] = new JSeparator(SwingConstants.HORIZONTAL);
-            add(input[0], "spanx");
+            input = new JComponent[0];
+            decoration = new JSeparator(SwingConstants.HORIZONTAL);
 
             break;
 
         }
         this.firePropertyChange(getConfigEntry().getPropertyName(), null, getText());
+    }
+
+    private void firePropertyChange(String propertyName, Object object, Object text) {
+        // TODO Auto-generated method stub
+
+    }
+
+    private void addPropertyChangeListener(ConfigEntry cfg) {
+        // TODO Auto-generated method stub
+
     }
 
     public JComponent[] getInput() {
@@ -311,33 +280,6 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
         getConfigEntry().valueChanged(getText());
 
     }
-
-    // private void addInstantHelpLink() {
-    // // JDUtilities.addToGridBag(this, new JLabel("HELP"), 1, 0, 1, 1, 1, 0,
-    // // insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    // if (configEntry.getInstantHelp() != null) {
-    // try {
-    // String url = configEntry.getInstantHelp();
-    // JLinkButton link = new JLinkButton("", new
-    // ImageIcon(JDImage.getImage(JDTheme
-    // .V("gui.images.help")).getScaledInstance(20, 20, Image.SCALE_FAST)), new
-    // URL(url));
-    // JDUtilities.addToGridBag(this, link, 1, 0, 1, 1, 1, 0, insets,
-    // GridBagConstraints.NONE, GridBagConstraints.WEST);
-    //
-    // } catch (MalformedURLException e) {
-    // JDUtilities.addToGridBag(this, new JLabel(configEntry.getInstantHelp()),
-    // 1, 0, 1, 1, 1, 0, insets, GridBagConstraints.NONE,
-    // GridBagConstraints.WEST);
-    //
-    // }
-    // } else {
-    // JDUtilities.addToGridBag(this, new JLabel(""), 1, 0, 1, 1, 1, 0, insets,
-    // GridBagConstraints.NONE, GridBagConstraints.WEST);
-    //
-    // }
-    //
-    // }
 
     public void changedUpdate(DocumentEvent e) {
         getConfigEntry().valueChanged(getText());
@@ -411,18 +353,19 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
                 if (i != null) i.setEnabled(true);
             }
 
-            for (JComponent i : decoration) {
-                if (i != null) i.setEnabled(true);
-            }
+            if (decoration != null) decoration.setEnabled(true);
 
         } else {
             for (JComponent i : input) {
                 if (i != null) i.setEnabled(false);
             }
-            for (JComponent i : decoration) {
-                if (i != null) i.setEnabled(false);
-            }
+            if (decoration != null) decoration.setEnabled(true);
         }
+    }
+
+    public JComponent getDecoration() {
+      
+        return decoration;
     }
 
     public void removeUpdate(DocumentEvent e) {

@@ -143,7 +143,7 @@ public class BrowseFile extends JPanel implements ActionListener {
 
     private void initGUI(int width) {
 
-        setLayout(new MigLayout("ins 0", "[grow 100,fill,160:null:300]3[grow 30,fill,80!]"));
+        setLayout(new MigLayout("ins 0", "[grow 100,fill,160:null:null]3[grow 30,fill]"));
         txtInput = new JTextField();
         txtInput.setEditable(editable);
         txtInput.addActionListener(this);

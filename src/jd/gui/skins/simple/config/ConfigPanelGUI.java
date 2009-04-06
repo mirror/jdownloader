@@ -68,7 +68,7 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         ConfigEntry ce;
         /*LANGUAGE*/
-        ConfigGroup langGroup = new ConfigGroup(JDLocale.L("gui.config.gui.language", "Sprache"),JDTheme.II("gui.splash.languages",24,24));
+        ConfigGroup langGroup = new ConfigGroup(JDLocale.L("gui.config.gui.language", "Sprache"),JDTheme.II("gui.splash.languages",32,32));
 
         ConfigContainer look = new ConfigContainer(this, JDLocale.L("gui.config.gui.look.tab", "Anzeige & Bedienung"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, look));
@@ -78,7 +78,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setDefaultValue(Locale.getDefault());
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 /*LOOK*/
-        ConfigGroup lookGroup = new ConfigGroup(JDLocale.L("gui.config.gui.view", "Look"),JDTheme.II("gui.images.config.gui",24,24));
+        ConfigGroup lookGroup = new ConfigGroup(JDLocale.L("gui.config.gui.view", "Look"),JDTheme.II("gui.images.config.gui",32,32));
 
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")).setGroup(lookGroup));
         ce.setDefaultValue("default");
@@ -88,63 +88,60 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDLookAndFeelManager.PARAM_PLAF, JDLookAndFeelManager.getInstalledLookAndFeels(), JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroup(lookGroup));
         ce.setDefaultValue(JDLookAndFeelManager.getPlaf());
-        /*FEEL*/
-        ConfigGroup feel = new ConfigGroup(JDLocale.L("gui.config.gui.feel", "Feel"),JDTheme.II("gui.images.configuration",24,24));
-
         final ConfigEntry plaf = ce;
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_DCLICKPACKAGE, JDLocale.L("gui.config.gui.doubeclick", "Double click to expand/collapse Packages")).setGroup(feel));
-        ce.setDefaultValue(false);
-
+        /*FEEL*/
+        ConfigGroup feel = new ConfigGroup(JDLocale.L("gui.config.gui.feel", "Feel"),JDTheme.II("gui.images.configuration",32,32));
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_INPUTTIMEOUT, JDLocale.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600).setDefaultValue(20).setGroup(feel));
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")).setGroup(feel));
         ce.setDefaultValue(true);
+        
+       
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_DCLICKPACKAGE, JDLocale.L("gui.config.gui.doubeclick", "Double click to expand/collapse Packages")).setGroup(feel));
+        ce.setDefaultValue(false);
+
+   
 
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")).setGroup(feel));
         ce.setDefaultValue(false);
-        /*Speedmeter*/
-        ConfigGroup speedmeter = new ConfigGroup(JDLocale.L("gui.config.gui.speedmeter", "Speedmeter"),JDTheme.II("gui.images.download",24,24));
-
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, JDLocale.L("gui.config.gui.show_speed_graph", "Display speedmeter graph")).setGroup(speedmeter));
-        ce.setDefaultValue(true);
-        ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        ConfigEntry cond = ce;
-
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDLocale.L("gui.config.gui.show_speed_graph_window", "Speedmeter Time period (sec)"), 10, 60 * 60 * 12).setGroup(speedmeter));
-        ce.setDefaultValue(60);
-        ce.setEnabledCondidtion(cond, "==", true);
-
-        // Links Tab
-        ConfigContainer links = new ConfigContainer(this, JDLocale.L("gui.config.gui.container.tab", "Downloadlinks"));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, links));
-
-        // links.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-        // subConfig, LinkGrabber.PROPERTY_ONLINE_CHECK,
-        // JDLocale.L("gui.config.gui.linkgrabber.onlinecheck",
-        // "Linkgrabber:Linkstatus überprüfen(Verfügbarkeit)")));
-        // ce.setDefaultValue(true);
-
-        links.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER, JDLocale.L("gui.config.reloadContainer", "Heruntergeladene Container einlesen")));
-        ce.setDefaultValue(true);
-
-        links.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("GUI"), Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, JDLocale.L("gui.config.showContainerOnLoadInfo", "Detailierte Containerinformationen beim Öffnen anzeigen")));
-        ce.setDefaultValue(false);
-        // ce.setInstantHelp(JDLocale.L(
-        // "gui.config.showContainerOnLoadInfo.helpurl",
-        // "http://jdownloader.org/wiki/index.php?title=Konfiguration_der_Benutzeroberfl%C3%A4che"
-        // ));
+       
+   
 
         // Extended Tab
         ConfigContainer ext = new ConfigContainer(this, JDLocale.L("gui.config.gui.ext", "Advanced"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
+        
+       ext.setGroup(new ConfigGroup(JDLocale.L("gui.config.gui.container", "Container (RSDF,DLC,CCF,..)"),JDTheme.II("gui.images.container",32,32)));
+        
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER, JDLocale.L("gui.config.reloadContainer", "Heruntergeladene Container einlesen")));
+        ce.setDefaultValue(true);
 
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_NUM_PREMIUM_CONFIG_FIELDS, JDLocale.L("gui.config.gui.premiumconfigfilednum", "How many Premiumaccount fields should be displayed"), 1, 10));
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("GUI"), Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, JDLocale.L("gui.config.showContainerOnLoadInfo", "Detailierte Containerinformationen beim Öffnen anzeigen")));
+        ce.setDefaultValue(false);
+        
+        /*Speedmeter*/
+        ConfigGroup speedmeter = new ConfigGroup(JDLocale.L("gui.config.gui.speedmeter", "Speedmeter"),JDTheme.II("gui.images.download",32,32));
+
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, JDLocale.L("gui.config.gui.show_speed_graph", "Display speedmeter graph")).setGroup(speedmeter));
+        ce.setDefaultValue(true);
+        ce.setPropertyType(PropertyType.NEEDS_RESTART);
+        ConfigEntry cond = ce;
+
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDLocale.L("gui.config.gui.show_speed_graph_window", "Speedmeter Time period (sec)"), 10, 60 * 60 * 12).setGroup(speedmeter));
+        ce.setDefaultValue(60);
+        ce.setEnabledCondidtion(cond, "==", true);
+
+        ext.setGroup(null);
+        
+        
+       ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_NUM_PREMIUM_CONFIG_FIELDS, JDLocale.L("gui.config.gui.premiumconfigfilednum", "How many Premiumaccount fields should be displayed"), 1, 10));
         ce.setDefaultValue(5);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, "FILE_REGISTER", JDLocale.L("gui.config.gui.reg_protocols", "Link ccf/dlc/rsdf to JDownloader")));
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         if (!OSDetector.isWindows()) ce.setEnabled(false);
-
+ 
+        
         // Browser Tab
         Object[] browserArray = (Object[]) subConfig.getProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, null);
         if (browserArray == null) {

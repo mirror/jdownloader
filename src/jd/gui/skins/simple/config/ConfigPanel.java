@@ -16,19 +16,27 @@
 
 package jd.gui.skins.simple.config;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.simple.JTabbedPanel;
+import jd.gui.skins.simple.components.JLinkButton;
+import jd.http.Encoding;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -41,13 +49,14 @@ public abstract class ConfigPanel extends JTabbedPanel {
     protected Logger logger = JDUtilities.getLogger();
 
     protected JPanel panel;
-    private JSubPanel subPanel;
+
+    private ConfigGroup currentGroup;
 
     public ConfigPanel() {
 
         panel = new JPanel();
-        this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
-        panel.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
+        this.setLayout(new MigLayout("ins 5", "[fill,grow]", "[fill,grow]"));
+        panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
         // this.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1,
         // this.getBackground().darker()));
     }
@@ -60,21 +69,43 @@ public abstract class ConfigPanel extends JTabbedPanel {
         ConfigGroup group = entry.getConfigEntry().getGroup();
 
         if (group == null) {
-            panel.add(entry, "gapleft 10,gapright 10");
+            if (currentGroup != null) {
+                panel.add(new JSeparator(), "spanx,gapbottom 15,gaptop 15");
+            }
+            if (entry.getDecoration() != null) panel.add(entry.getDecoration(), "spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
+            for (JComponent c : entry.getInput()) {
+                panel.add(c, entry.getDecoration() == null ? "spanx" : "");
+            }
             entries.add(entry);
-            subPanel = null;
+            currentGroup=null;
             return;
-        }
-
-        if (subPanel != null && subPanel.getGroup()==group) {
-            subPanel.add(entry,"gapleft 35");
         } else {
-            subPanel = new JSubPanel(group);
-          
-            subPanel.add(entry,"gapleft 35");
-            panel.add(subPanel, "gapleft 10,gapright 10");
-        }
 
+            if (currentGroup != group) {
+
+                JPanel ret = new JPanel(new MigLayout("ins 0", "[]10[grow,fill]3[]"));
+                JLinkButton label;
+                try {
+
+                    ret.add(label = new JLinkButton("<html><u><b>" + group.getName() + "</b></u></html>", group.getIcon(), new URL("http://wiki.jdownloader.org/?do=search&id=" + Encoding.urlEncode(group.getName()))));
+                    label.setIconTextGap(8);
+                    label.setBorder(null);
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+                ret.add(new JSeparator());
+                ret.add(new JLabel(JDTheme.II("gui.images.config.tip", 16, 16)));
+                panel.add(ret, "spanx");
+                currentGroup = group;
+            }
+
+            if (entry.getDecoration() != null) panel.add(entry.getDecoration(), "gapleft 35, spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
+
+            for (JComponent c : entry.getInput()) {
+
+                panel.add(c, entry.getDecoration() == null ? "spanx,gapleft 35" : "");
+            }
+        }
         entries.add(entry);
 
     }
