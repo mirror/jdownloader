@@ -222,7 +222,7 @@ public class ConfigPanelDownload extends ConfigPanel {
            ce.setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
 /* control */
 
-        container.setGroup(new ConfigGroup(JDLocale.L("gui.config.download.download.tab", "Downloadsteuerung"), JDTheme.II("gui.images.downloadorder", 24, 24)));
+        container.setGroup(new ConfigGroup(JDLocale.L("gui.config.download.download.tab", "Downloadsteuerung"), JDTheme.II("gui.images.downloadorder", 32, 32)));
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, JDLocale.L("gui.config.download.simultan_downloads", "Maximale gleichzeitige Downloads"), 1, 20));
         ce.setDefaultValue(2);
