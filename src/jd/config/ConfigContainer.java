@@ -114,6 +114,7 @@ public class ConfigContainer implements Serializable {
     private Object instance;
     private Property propertyInstance;
     private String title;
+    private ConfigGroup group;
 
     public ConfigContainer(Object instance) {
         this.instance = instance;
@@ -134,6 +135,7 @@ public class ConfigContainer implements Serializable {
      *            Der Eintrag, der hinzugefügt werden soll
      */
     public void addEntry(ConfigEntry entry) {
+        if(entry.getGroup()==null)entry.setGroup(group);
         if (entry.getContainer() != null) {
             containers++;
         }
@@ -206,6 +208,14 @@ public class ConfigContainer implements Serializable {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+/**
+ * Sets a configgroup for this container. the containers add method will add this configgroup to every new entry
+ * @param configGroup
+ */
+    public void setGroup(ConfigGroup configGroup) {
+        this.group=configGroup;
+        
     }
 
 }

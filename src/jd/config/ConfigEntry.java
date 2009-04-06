@@ -88,7 +88,9 @@ public String toString(){
 
     private PropertyType propertyType = PropertyType.NORMAL;
 
-    private String groupname;
+
+
+    private ConfigGroup group;
 
     public PropertyType getPropertyType() {
         return propertyType;
@@ -506,13 +508,15 @@ public String toString(){
         }
     }
 
-    public ConfigEntry setGroupName(String l) {
-        groupname=l;
-        return this;
+  
+
+    public ConfigEntry setGroup(ConfigGroup cg) {
+       this.group=cg;
+       return this;
     }
 
-    public String getGroupname() {
-        return groupname;
+    public ConfigGroup getGroup() {
+        return group;
     }
     
 

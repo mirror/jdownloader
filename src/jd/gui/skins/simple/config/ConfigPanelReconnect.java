@@ -148,9 +148,13 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         container.setBorder(BorderFactory.createTitledBorder("Title"));
         panel.add(container, "spanx,gapleft 10,gapright 10,gaptop 5");
         ConfigContainer config = new ConfigContainer(this);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_IPCHECKWAITTIME, JDLocale.L("reconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), 0, 600).setDefaultValue(5).setGroupName(JDLocale.L("reconnect.global", "Reconnect-IP-Control")));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDLocale.L("reconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5).setGroupName(JDLocale.L("reconnect.global", "Reconnect-IP-Control")));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDLocale.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20).setGroupName(JDLocale.L("reconnect.global", "Reconnect-IP-Control")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_IPCHECKWAITTIME, JDLocale.L("reconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), 0, 600).setDefaultValue(5)/*.setGroupName(JDLocale.L("reconnect.global", "Reconnect-IP-Control"))*/);
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDLocale.L("reconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5)/*.setGroupName(JDLocale.L("reconnect.global", "Reconnect-IP-Control"))*/);
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDLocale.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20)/*.setGroupName(JDLocale.L("reconnect.global", "Reconnect-IP-Control"))*/);
+
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("DOWNLOAD"), "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", JDLocale.L("gui.config.download.autoresume", "Let Reconnects interrupt resumeable downloads")).setDefaultValue(true));
+
+
         cep = new ConfigEntriesPanel(config);
 
         panel.add(cep, "spanx 3, gaptop 5");

@@ -28,6 +28,7 @@ import javax.swing.UIManager;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
@@ -66,42 +67,49 @@ public class ConfigPanelGUI extends ConfigPanel {
         ConfigContainer container = new ConfigContainer(this);
 
         ConfigEntry ce;
+        /*LANGUAGE*/
+        ConfigGroup langGroup = new ConfigGroup(JDLocale.L("gui.config.gui.language", "Sprache"),JDTheme.II("gui.splash.languages",24,24));
 
-        // Look Tab
         ConfigContainer look = new ConfigContainer(this, JDLocale.L("gui.config.gui.look.tab", "Anzeige & Bedienung"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, look));
-        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.LF("gui.config.gui.languageFileInfo", "Current Language File: %s from %s in version %s", JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, Locale.getDefault().toString()), JDLocale.getTranslater(), JDLocale.getVersion())).setGroupName(JDLocale.L("gui.config.gui.language", "Sprache")));
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.LF("gui.config.gui.languageFileInfo", "Current Language File: %s from %s in version %s", JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, Locale.getDefault().toString()), JDLocale.getTranslater(), JDLocale.getVersion())).setGroup(langGroup));
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getSubConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}), "").setGroupName(JDLocale.L("gui.config.gui.language", "Sprache")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getSubConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}), "").setGroup(langGroup));
         ce.setDefaultValue(Locale.getDefault());
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
+/*LOOK*/
+        ConfigGroup lookGroup = new ConfigGroup(JDLocale.L("gui.config.gui.view", "Look"),JDTheme.II("gui.images.config.gui",24,24));
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")).setGroupName(JDLocale.L("gui.config.gui.view", "Look")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")).setGroup(lookGroup));
         ce.setDefaultValue("default");
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDSounds.PARAM_CURRENTTHEME, JDSounds.getSoundIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.soundTheme", "Soundtheme")).setGroupName(JDLocale.L("gui.config.gui.view", "Look")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDSounds.PARAM_CURRENTTHEME, JDSounds.getSoundIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.soundTheme", "Soundtheme")).setGroup(lookGroup));
         ce.setDefaultValue("noSounds");
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDLookAndFeelManager.PARAM_PLAF, JDLookAndFeelManager.getInstalledLookAndFeels(), JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroupName(JDLocale.L("gui.config.gui.view", "Look")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDLookAndFeelManager.PARAM_PLAF, JDLookAndFeelManager.getInstalledLookAndFeels(), JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroup(lookGroup));
         ce.setDefaultValue(JDLookAndFeelManager.getPlaf());
-        // ce.setPropertyType(PropertyType.NEEDS_RESTART);
+        /*FEEL*/
+        ConfigGroup feel = new ConfigGroup(JDLocale.L("gui.config.gui.feel", "Feel"),JDTheme.II("gui.images.configuration",24,24));
+
         final ConfigEntry plaf = ce;
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_DCLICKPACKAGE, JDLocale.L("gui.config.gui.doubeclick", "Double click to expand/collapse Packages")).setGroupName(JDLocale.L("gui.config.gui.feel", "Feel")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_DCLICKPACKAGE, JDLocale.L("gui.config.gui.doubeclick", "Double click to expand/collapse Packages")).setGroup(feel));
         ce.setDefaultValue(false);
 
-        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_INPUTTIMEOUT, JDLocale.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600).setDefaultValue(20).setGroupName(JDLocale.L("gui.config.gui.feel", "Feel")));
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")).setGroupName(JDLocale.L("gui.config.gui.feel", "Feel")));
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_INPUTTIMEOUT, JDLocale.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600).setDefaultValue(20).setGroup(feel));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")).setGroup(feel));
         ce.setDefaultValue(true);
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")).setGroupName(JDLocale.L("gui.config.gui.feel", "Feel")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")).setGroup(feel));
         ce.setDefaultValue(false);
+        /*Speedmeter*/
+        ConfigGroup speedmeter = new ConfigGroup(JDLocale.L("gui.config.gui.speedmeter", "Speedmeter"),JDTheme.II("gui.images.download",24,24));
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, JDLocale.L("gui.config.gui.show_speed_graph", "Display speedmeter graph")).setGroupName(JDLocale.L("gui.config.gui.speedmeter", "Speedmeter")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, JDLocale.L("gui.config.gui.show_speed_graph", "Display speedmeter graph")).setGroup(speedmeter));
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         ConfigEntry cond = ce;
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDLocale.L("gui.config.gui.show_speed_graph_window", "Speedmeter Time period (sec)"), 10, 60 * 60 * 12).setGroupName(JDLocale.L("gui.config.gui.speedmeter", "Speedmeter")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDLocale.L("gui.config.gui.show_speed_graph_window", "Speedmeter Time period (sec)"), 10, 60 * 60 * 12).setGroup(speedmeter));
         ce.setDefaultValue(60);
         ce.setEnabledCondidtion(cond, "==", true);
 

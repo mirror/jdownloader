@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 import javax.swing.JPanel;
 
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.simple.JTabbedPanel;
@@ -56,21 +57,21 @@ public abstract class ConfigPanel extends JTabbedPanel {
         // JDUtilities.addToGridBag(panel, entry, GridBagConstraints.RELATIVE,
         // GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0,
         // insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
-        String subPanelName = entry.getConfigEntry().getGroupname();
+        ConfigGroup group = entry.getConfigEntry().getGroup();
 
-        if (subPanelName == null) {
+        if (group == null) {
             panel.add(entry, "gapleft 10,gapright 10");
             entries.add(entry);
             subPanel = null;
             return;
         }
 
-        if (subPanel != null && subPanel.getName().equals(subPanelName)) {
-            subPanel.add(entry);
+        if (subPanel != null && subPanel.getGroup()==group) {
+            subPanel.add(entry,"gapleft 35");
         } else {
-            subPanel = new JSubPanel(subPanelName);
-            subPanel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
-            subPanel.add(entry);
+            subPanel = new JSubPanel(group);
+          
+            subPanel.add(entry,"gapleft 35");
             panel.add(subPanel, "gapleft 10,gapright 10");
         }
 

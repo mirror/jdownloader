@@ -174,10 +174,10 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
         ConfigEntry ce2;
 
         container = new ConfigContainer(this);
-        container.addEntry(ce1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CAPTCHA_JAC_DISABLE, JDLocale.L("gui.config.captcha.jac_disable", "Automatische Bilderkennung abschalten")).setDefaultValue(false).setGroupName(JDLocale.L("gui.config.jac.options", "Input Settings")));
-        container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.JAC_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.train.show_timeout", "Anzeigedauer des Eingabefensters"), 0, 600).setDefaultValue(20).setGroupName(JDLocale.L("gui.config.jac.options", "Input Settings")));
+        container.addEntry(ce1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CAPTCHA_JAC_DISABLE, JDLocale.L("gui.config.captcha.jac_disable", "Automatische Bilderkennung abschalten")).setDefaultValue(false)/*.setGroupName(JDLocale.L("gui.config.jac.options", "Input Settings"))*/);
+        container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.JAC_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.train.show_timeout", "Anzeigedauer des Eingabefensters"), 0, 600).setDefaultValue(20)/*.setGroupName(JDLocale.L("gui.config.jac.options", "Input Settings"))*/);
         ce2.setEnabledCondidtion(ce1, "==", false);
-        container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(95).setGroupName(JDLocale.L("gui.config.jac.options", "Input Settings")));
+        container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(95)/*.setGroupName(JDLocale.L("gui.config.jac.options", "Input Settings"))*/);
 
         ce2.setEnabledCondidtion(ce1, "==", false);
     }
