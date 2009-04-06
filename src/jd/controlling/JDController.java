@@ -329,7 +329,7 @@ public class JDController implements ControlListener {
 
             // Prüfen ob der Link entfernt werden soll
             if (lastDownloadFinished.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 0) {
-                JDUtilities.getDownloadController().removeDownloadLink(lastDownloadFinished);
+                lastDownloadFinished.getFilePackage().remove(lastDownloadFinished);
 
             }
 
@@ -355,9 +355,6 @@ public class JDController implements ControlListener {
                     toggleStartStop();
                 }
             }
-            break;
-        case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
-            Interaction.handleInteraction(Interaction.INTERACTION_LINKLIST_STRUCTURE_CHANGED, null);
             break;
         }
 
@@ -392,7 +389,7 @@ public class JDController implements ControlListener {
 
     public void prepareShutdown() {
         stopDownloads();
-        JDUtilities.getDownloadController().saveDownloadLinks();
+        JDUtilities.getDownloadController().saveDownloadLinksSync();
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
         Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
         JDUtilities.getDatabaseConnector().shutdownDatabase();
@@ -662,9 +659,8 @@ public class JDController implements ControlListener {
         if (links.contains(before) || links.contains(after)) { return false; }
         if (before != null && after != null && before.getFilePackage() != after.getFilePackage()) { return false; }
         if (before == null & after == null) { return false; }
-
-        JDUtilities.getDownloadController().removeDownloadLinks(links);
-
+        /* TODO */
+        // JDUtilities.getDownloadController().removeDownloadLinks(links);
         FilePackage dest = before == null ? after.getFilePackage() : before.getFilePackage();
         if (dest == null) { return false; }
         int pos = 0;
@@ -677,7 +673,6 @@ public class JDController implements ControlListener {
         dest.addAllAt(links, pos);
 
         // logger.info("II");
-        this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
         return true;
     }
@@ -694,7 +689,6 @@ public class JDController implements ControlListener {
             packages.addAll(pos, fps);
 
         }
-        this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
         return true;
     }

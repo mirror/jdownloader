@@ -223,7 +223,7 @@ public class LinkGrabberV2TreeTable extends JXTreeTable implements MouseListener
         if (path == null) return;
         int column = getRealcolumnAtPoint(e.getX());
         if (path != null && path.getLastPathComponent() instanceof LinkGrabberV2FilePackage) {
-            if (column == 1) {
+            if (column == 1 && e.getButton() == MouseEvent.BUTTON1) {
                 if (e.getClickCount() >= neededclicks) {
                     LinkGrabberV2FilePackage fp = (LinkGrabberV2FilePackage) path.getLastPathComponent();
                     if (fp.getBooleanProperty(PROPERTY_EXPANDED, false)) {

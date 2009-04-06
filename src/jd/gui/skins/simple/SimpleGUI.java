@@ -815,8 +815,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
                     setTitle(JDUtilities.getJDTitle());
                     break;
-                case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
-                    break;
+
                 case ControlEvent.CONTROL_JDPROPERTY_CHANGED:
                     if ((Property) event.getSource() == JDUtilities.getConfiguration()) {
                         if (event.getParameter().equals(Configuration.PARAM_DISABLE_RECONNECT)) {

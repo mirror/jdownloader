@@ -71,6 +71,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     private final AbstractButton close = new JCancelButton();
     private boolean lastSort = false;
     private LinkCheck lc = LinkCheck.getLinkChecker();
+    private Timer Update_Async;
 
     public LinkGrabberV2Panel() {
         super(new MigLayout("ins 0"));
@@ -87,7 +88,9 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         close.addActionListener(this);
         this.add(close, "id close, pos (pane.w-(close.w/2)) (pane.y+(close.h/2))");
         this.add(collapsepane, "cell 0 1, width 100%, id pane");
-        lc.addJDListener(this);
+        Update_Async = new Timer(50, this);
+        Update_Async.setInitialDelay(50);
+        Update_Async.setRepeats(false);
     }
 
     public void showFilePackageInfo(LinkGrabberV2FilePackage fp) {
@@ -128,7 +131,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
             if (isDupe(element)) continue;
             addToWaitingList(element);
         }
-        fireTableChanged(1, null);
+        Update_Async.restart();
         if (gathertimer != null) {
             gathertimer.stop();
             gathertimer.removeActionListener(LinkGrabberV2Panel.this);
@@ -235,6 +238,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     }
 
     private void stopLinkGatherer() {
+        lc.removeJDListener(LinkGrabberV2Panel.this);
         if (gatherer != null && gatherer.isAlive()) {
             gatherer_running = false;
             EventQueue.invokeLater(new Runnable() {
@@ -256,6 +260,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                 gatherer_running = true;
                 pc = new ProgressController("LinkGrabber");
                 pc.addJDListener(LinkGrabberV2Panel.this);
+                lc.addJDListener(LinkGrabberV2Panel.this);
                 pc.setRange(0);
                 while (waitingList.size() > 0 || lc.isRunning()) {
                     Vector<DownloadLink> currentList = new Vector<DownloadLink>();
@@ -276,6 +281,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                         return;
                     }
                 }
+                lc.removeJDListener(LinkGrabberV2Panel.this);
                 pc.finalize();
             }
         };
@@ -288,7 +294,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
             attachToPackagesSecondStage(link);
         }
         pc.increase(links.size());
-        fireTableChanged(1, null);
+        Update_Async.restart();
     }
 
     private String getNameMatch(String name, String pattern) {
@@ -384,6 +390,10 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
 
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent arg0) {
+        if (arg0.getSource() == this.Update_Async) {
+            fireTableChanged(1, null);
+            return;
+        }
         if (arg0.getSource() == this.close) {
             this.hideFilePackageInfo();
             return;
@@ -462,23 +472,23 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                 for (LinkGrabberV2FilePackage fp2 : selected_packages) {
                     fp2.removeOffline();
                 }
-                fireTableChanged(1, null);
+                Update_Async.restart();
                 break;
             case LinkGrabberV2TreeTableAction.SORT:
                 for (LinkGrabberV2FilePackage fp2 : selected_packages) {
                     fp2.sort(col);
                 }
-                fireTableChanged(1, null);
+                Update_Async.restart();
                 break;
             case LinkGrabberV2TreeTableAction.SORT_ALL:
                 sort(col);
-                fireTableChanged(1, null);
+                Update_Async.restart();
                 break;
             case LinkGrabberV2TreeTableAction.SELECT_HOSTER:
                 for (LinkGrabberV2FilePackage fp2 : selected_packages) {
                     fp2.keepHostersOnly(hoster);
                 }
-                fireTableChanged(1, null);
+                Update_Async.restart();
                 break;
             case LinkGrabberV2TreeTableAction.EDIT_DIR:
                 fc = new JDFileChooser();
@@ -502,7 +512,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                         removeFromPackages(link);
                         addToPackages(nfp, link);
                     }
-                    fireTableChanged(1, null);
+                    Update_Async.restart();
                 }
                 return;
             case LinkGrabberV2TreeTableAction.SET_PW:
@@ -518,24 +528,24 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                 for (int i = 0; i < selected_links.size(); i++) {
                     selected_links.get(i).setEnabled(b);
                 }
-                fireTableChanged(1, null);
+                Update_Async.restart();
                 return;
             case LinkGrabberV2TreeTableAction.ADD_ALL:
             case LinkGrabberV2TreeTableAction.ADD_SELECTED:
                 confirmPackages(selected_packages);
-                fireTableChanged(1, null);
+                Update_Async.restart();
                 return;
             case LinkGrabberV2TreeTableAction.DELETE:
                 for (DownloadLink link : selected_links) {
                     removeFromPackages(link);
                 }
-                fireTableChanged(1, null);
+                Update_Async.restart();
                 return;
             case LinkGrabberV2TreeTableAction.CLEAR:
                 for (LinkGrabberV2FilePackage fp2 : selected_packages) {
                     fp2.setDownloadLinks(new Vector<DownloadLink>());
                 }
-                fireTableChanged(1, null);
+                Update_Async.restart();
                 return;
             case LinkGrabberV2TreeTableAction.DOWNLOAD_PRIO:
                 prio = (Integer) prop.get("prio");

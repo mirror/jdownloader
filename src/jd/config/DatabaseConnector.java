@@ -196,6 +196,7 @@ public class DatabaseConnector implements Serializable {
 
             }
         } catch (Exception e) {
+            System.out.println("DB Error bei " + name);
             e.printStackTrace();
         }
 

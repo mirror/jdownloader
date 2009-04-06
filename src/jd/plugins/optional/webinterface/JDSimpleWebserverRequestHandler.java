@@ -428,9 +428,8 @@ public class JDSimpleWebserverRequestHandler {
                                     }
                                     fp.add(link);
                                     link.setFilePackage(fp);
-                                    JDUtilities.getDownloadController().addLink(link);
+                                    JDUtilities.getDownloadController().addPackage(fp);
                                 }
-                                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
                             }
                             /*
@@ -500,7 +499,9 @@ public class JDSimpleWebserverRequestHandler {
                         if (dowhat.compareToIgnoreCase("remove") == 0) {
 
                             // entfernen
-                            JDUtilities.getDownloadController().removeDownloadLinks(links);                            
+                            for (DownloadLink dl : links) {
+                                dl.getFilePackage().remove(dl);
+                            }
                         }
                         if (dowhat.compareToIgnoreCase("abort") == 0) {
 

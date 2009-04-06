@@ -32,6 +32,7 @@ import jd.config.Property;
 import jd.controlling.SingleDownloadController;
 import jd.controlling.SpeedMeter;
 import jd.event.ControlEvent;
+import jd.event.JDBroadcaster;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
@@ -157,7 +158,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private int priority = 0;
 
     private transient ImageIcon icon;
-
+    
     /**
      * Erzeugt einen neuen DownloadLink
      * 

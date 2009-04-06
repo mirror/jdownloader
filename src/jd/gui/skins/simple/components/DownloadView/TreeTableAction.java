@@ -26,36 +26,23 @@ import jd.config.Property;
 
 public class TreeTableAction extends AbstractAction {
 
-    public static final int DOWNLOAD_ABORT = 18;
-    public static final int DOWNLOAD_BROWSE_LINK = 7;
-    // public static final int DOWNLOAD_CHECK_AVAILABILITY = 24;
-    public static final int DOWNLOAD_COPY_PASSWORD = 3;
-    public static final int DOWNLOAD_COPY_URL = 301;
-    public static final int DOWNLOAD_DISABLE = 6;
-    public static final int DOWNLOAD_DLC = 20;
-    public static final int DOWNLOAD_DOWNLOAD_DIR = 1;
-    public static final int DOWNLOAD_ENABLE = 5;
-    public static final int DOWNLOAD_INFO = 0;
-    public static final int DOWNLOAD_NEW_PACKAGE = 8;
+    public static final int SORT = 103;
+    public static final int SORT_ALL = 1031;
+    public static final int DE_ACTIVATE = 400;
+    public static final int CHECK = 500;
+    public static final int DELETE = 999;
+    public static final int NEW_PACKAGE = 100;
+    public static final int DOWNLOAD_PRIO = 200;
+    public static final int SET_PW = 201;
     public static final int DOWNLOAD_RESET = 4;
+    public static final int DOWNLOAD_COPY_URL = 301;
+    public static final int DOWNLOAD_DLC = 20;
+    public static final int DOWNLOAD_DIR = 1;
+    public static final int DOWNLOAD_COPY_PASSWORD = 3;
     public static final int DOWNLOAD_RESUME = 22;
-    public static final int DOWNLOAD_PRIO = 900;
-    public static final int PACKAGE_ABORT = 19;
-    // public static final int PACKAGE_CHECK_AVAILABILITY = 25;
-    public static final int PACKAGE_COPY_PASSWORD = 23;
-    public static final int PACKAGE_DISABLE = 15;
-    public static final int PACKAGE_DLC = 21;
-    public static final int PACKAGE_DOWNLOAD_DIR = 12;
-    public static final int PACKAGE_EDIT_DIR = 10;
-    public static final int PACKAGE_EDIT_NAME = 11;
-    public static final int PACKAGE_ENABLE = 14;
-    public static final int PACKAGE_INFO = 9;
-    public static final int PACKAGE_RESET = 16;
-    public static final int PACKAGE_SORT = 17;
-    public static final int PACKAGE_PRIO = 901;
-
-    public static final int SET_PW = 910;
-    public static final int DELETE = 800;
+    public static final int DOWNLOAD_BROWSE_LINK = 7;
+    public static final int EDIT_NAME = 11;
+    public static final int EDIT_DIR = 101;
 
     private static final long serialVersionUID = 1L;
 

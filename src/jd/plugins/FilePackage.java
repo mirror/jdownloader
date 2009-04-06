@@ -75,7 +75,7 @@ public class FilePackage extends Property implements Serializable {
 
     private int linksInProgress;
 
-    private String name;
+    private String name = null;
 
     private String password;
     private boolean extractAfterDownload = true;
@@ -113,6 +113,8 @@ public class FilePackage extends Property implements Serializable {
         synchronized (downloadLinks) {
             if (!downloadLinks.contains(link)) {
                 downloadLinks.add(link);
+                link.setFilePackage(this);
+                getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.DL_ADDED));
             }
             link.setFilePackage(this);
         }
@@ -122,9 +124,14 @@ public class FilePackage extends Property implements Serializable {
         synchronized (downloadLinks) {
             if (downloadLinks.contains(link)) {
                 downloadLinks.remove(link);
+                downloadLinks.add(index, link);
+                link.setFilePackage(this);
+                getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.FP_UPDATE));
+            } else {
+                downloadLinks.add(index, link);
+                link.setFilePackage(this);
+                getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.DL_ADDED));
             }
-            downloadLinks.add(index, link);
-            link.setFilePackage(this);
         }
     }
 
@@ -416,8 +423,11 @@ public class FilePackage extends Property implements Serializable {
         if (link == null) return;
         synchronized (downloadLinks) {
             boolean ret = downloadLinks.remove(link);
-            if (ret) link.setFilePackage(null);
-            if (downloadLinks.size() == 0) this.getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.EMPTY_EVENT));
+            if (ret) {
+                link.setFilePackage(null);
+                getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.DL_REMOVED));
+                if (downloadLinks.size() == 0) this.getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.FP_EMPTY));
+            }
         }
     }
 
@@ -431,8 +441,13 @@ public class FilePackage extends Property implements Serializable {
 
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
         synchronized (downloadLinks) {
-            this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
-            if (downloadLinks.size() == 0) this.getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.EMPTY_EVENT));
+            this.downloadLinks = new Vector<DownloadLink>();
+            if (downloadLinks.size() == 0) {
+                this.getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.FP_EMPTY));
+            }
+            {
+                this.addAll(downloadLinks);
+            }
         }
     }
 
@@ -483,26 +498,40 @@ public class FilePackage extends Property implements Serializable {
         return hosterList.toString();
     }
 
-    public void sort(final String string) {
-        if (string == null) {
-            lastSort = !lastSort;
-        } else {
-            lastSort = string.equalsIgnoreCase("ASC");
-        }
+    public void sort(final int col) {
+        lastSort = !lastSort;
         synchronized (downloadLinks) {
+
             Collections.sort(downloadLinks, new Comparator<DownloadLink>() {
 
                 public int compare(DownloadLink a, DownloadLink b) {
                     if (a.getName().endsWith(".sfv")) { return -1; }
                     if (b.getName().endsWith(".sfv")) { return 1; }
+                    DownloadLink aa = a;
+                    DownloadLink bb = b;
                     if (lastSort) {
-                        return a.getName().compareToIgnoreCase(b.getName());
-                    } else {
-                        return b.getName().compareToIgnoreCase(a.getName());
+                        aa = b;
+                        bb = a;
+                    }
+                    switch (col) {
+                    case 1:
+                        return aa.getName().compareToIgnoreCase(bb.getName());
+                    case 2:
+                        return aa.getHost().compareToIgnoreCase(bb.getHost());
+                    case 3:
+                        if (aa.isAvailabilityChecked() && bb.isAvailabilityChecked()) {
+                            return (aa.isAvailable() && !bb.isAvailable()) ? 1 : -1;
+                        } else
+                            return -1;
+                    case 4:
+                        return aa.getPercent() > bb.getPercent() ? 1 : -1;
+                    default:
+                        return -1;
                     }
                 }
             });
         }
+        getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.FP_UPDATE));
     }
 
     /**
@@ -510,7 +539,7 @@ public class FilePackage extends Property implements Serializable {
      */
     @Override
     public String toString() {
-        return id;
+        return this.getName() + " " + this.size();
     }
 
     public void updateCollectives() {

@@ -412,9 +412,10 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     }
                 }
                 if (removes.size() > 0) {
-                    JDUtilities.getDownloadController().removeDownloadLinks(removes);
+                    for (DownloadLink dl : removes) {
+                        dl.getFilePackage().remove(dl);
+                    }
                     removes.clear();
-                    JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this);
                 }
 
                 Reconnecter.doReconnectIfRequested();

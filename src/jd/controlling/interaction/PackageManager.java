@@ -261,7 +261,7 @@ public class PackageManager extends Interaction implements Serializable {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                        JDUtilities.getDownloadController().removeDownloadLink(downloadLink);                      
+                        downloadLink.getFilePackage().remove(downloadLink);
                         boolean ch = false;
                         all: for (FilePackage fp : JDUtilities.getController().getPackages()) {
                             for (DownloadLink dLink : fp.getDownloadLinks()) {

@@ -12,6 +12,13 @@ public class JDDownloadControllerEvent extends JDEvent {
         super(source, ID);
     }
 
+    /**
+     * Wird bei Strukturänderungen der DownloadListe
+     */
     public static final int UPDATE = 1;
-    public static final int REFRESH = 2;
+
+    public static final int ADD_FP = 2;
+
+    public static final int REMOVE_FP = 3;
+
 }
