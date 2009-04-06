@@ -281,8 +281,13 @@ public class Rapidshare extends PluginForHost {
                     break;
                 case 4:
                     u.setAvailable(false);
-                    u.getLinkStatus().setErrorMessage("Anonymous file");
-                    u.getLinkStatus().setStatusText("Anonymous file");
+                    u.getLinkStatus().setErrorMessage("File abused");
+                    u.getLinkStatus().setStatusText("File abused");
+                    break;
+                case 5:
+                    u.setAvailable(true);
+//                    u.getLinkStatus().setErrorMessage("Anonymous file");
+//                    u.getLinkStatus().setStatusText("Anonymous file");
                     break;
                 }
                 i++;
