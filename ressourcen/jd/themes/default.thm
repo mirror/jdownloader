@@ -33,8 +33,9 @@ gui.images.package_opened=default/folder-visiting
 gui.images.downloadorder=default/edit-redo
 gui.images.networkerror=default/network-error
 gui.images.proxy=default/network-server
+gui.images.network=default/network-idle
 gui.splash = splash
-
+gui.images.container=default/package-x-generic
 gui.splash.languages=default/language
 gui.splash.settings=default/applications-system
 gui.splash.controller=default/preferences-desktop
