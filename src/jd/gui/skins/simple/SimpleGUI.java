@@ -22,6 +22,8 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Image;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -147,7 +149,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private JDToolBar toolBar;
 
-//    private JDMenuBar menuBar;
+    // private JDMenuBar menuBar;
 
     private JDStatusBar statusBar;
 
@@ -167,7 +169,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         SimpleGuiConstants.GUI_CONFIG = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
         JDLookAndFeelManager.setUIManager();
 
-//        menuBar = new JDMenuBar();
+        // menuBar = new JDMenuBar();
 
         statusBar = new JDStatusBar();
 
@@ -301,7 +303,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -333,39 +335,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // ClipboardHandler.getClipboard().toggleActivation();
         // break;
         //
-        // case JDAction.APP_SAVE_DLC:
-        // JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
-        // fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
-        // fc.setDialogTitle(JDLocale.L("gui.filechooser.savelistasdlc",
-        // "Save list in DLC file"));
-        // if (fc.showSaveDialog(frame) == JDFileChooser.APPROVE_OPTION) {
-        // File ret = fc.getSelectedFile();
-        // if (ret == null) return;
-        // if (JDIO.getFileExtension(ret) == null ||
-        // !JDIO.getFileExtension(ret).equalsIgnoreCase("dlc")) {
-        // ret = new File(ret.getAbsolutePath() + ".dlc");
-        // }
-        // if (ret != null) {
-        //
-        // JDUtilities.getController().saveDLC(ret,
-        // JDUtilities.getController().getDownloadLinks());
-        // }
-        // }
-        // break;
-        // case JDAction.APP_LOAD_DLC:
-        // fc = new JDFileChooser("_LOADSAVEDLC");
-        // fc.setDialogTitle(JDLocale.L("gui.filechooser.loaddlc",
-        // "Load DLC file"));
-        // fc.setFileFilter(new JDFileFilter(null,
-        // ".dlc|.rsdf|.ccf|.linkbackup", true));
-        // if (fc.showOpenDialog(frame) == JDFileChooser.APPROVE_OPTION) {
-        // File ret2 = fc.getSelectedFile();
-        // if (ret2 != null) {
-        // JDUtilities.getController().loadContainerFile(ret2);
-        //
-        // }
-        // }
-        // break;
+
         //
         // case JDAction.APP_EXIT:
         // frame.setVisible(false);
@@ -458,17 +428,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // showChangelogDialog();
         // break;
         // case JDAction.ITEMS_ADD:
-        // String cb = "";
-        // try {
-        // cb = (String)
-        // Toolkit.getDefaultToolkit().getSystemClipboard().getData
-        // (DataFlavor.stringFlavor);
-        // } catch (Exception e1) {
-        // }
-        // String data = LinkInputDialog.showDialog(frame, cb.trim());
-        // if (data != null && data.length() > 0) {
-        //
-        // JDUtilities.getController().distributeLinks(data);
+
         // }
         // break;
         // case JDAction.HELP:
@@ -684,7 +644,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
                 case ConfigTaskPane.ACTION_ADDONS:
                 case ConfigTaskPane.ACTION_CAPTCHA:
-//                case ConfigTaskPane.ACTION_DECRYPT:
+                    // case ConfigTaskPane.ACTION_DECRYPT:
                 case ConfigTaskPane.ACTION_DOWNLOAD:
                 case ConfigTaskPane.ACTION_EVENTMANAGER:
                 case ConfigTaskPane.ACTION_GENERAL:
@@ -713,7 +673,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 System.out.println(e.getActionCommand());
                 switch (e.getID()) {
                 case DownloadTaskPane.ACTION_TOGGLE:
-
                     contentPanel.display(((TaskPanel) e.getSource()).getPanel(0));
                     break;
                 }

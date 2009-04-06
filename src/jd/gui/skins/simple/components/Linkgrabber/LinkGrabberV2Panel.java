@@ -1,6 +1,8 @@
 package jd.gui.skins.simple.components.Linkgrabber;
 
 import java.awt.EventQueue;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -27,6 +29,7 @@ import jd.event.JDBroadcaster;
 import jd.event.JDEvent;
 import jd.event.JDListener;
 import jd.gui.skins.simple.JTabbedPanel;
+import jd.gui.skins.simple.LinkInputDialog;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JCancelButton;
@@ -430,6 +433,29 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                 case LinkGrabberV2TreeTableAction.ADD_SELECTED:
                     selected_packages = new Vector<LinkGrabberV2FilePackage>(this.internalTreeTable.getSelectedFilePackages());
                     break;
+                case LinkGrabberV2TreeTableAction.GUI_ADD:
+                    String cb = "";
+                    try {
+                        cb = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
+                    } catch (Exception e1) {
+                    }
+                    String data = LinkInputDialog.showDialog(null, cb);
+                    if (data != null && data.length() > 0) {
+                        JDUtilities.getController().distributeLinks(data);
+                    }
+                    return;
+                case LinkGrabberV2TreeTableAction.GUI_LOAD:
+                    // fc = new JDFileChooser("_LOADSAVEDLC");
+                    // fc.setDialogTitle(JDLocale.L("gui.filechooser.loaddlc",
+                    // "Load DLC file"));
+                    // fc.setFileFilter(new JDFileFilter(null,
+                    // ".dlc|.rsdf|.ccf|.linkbackup", true));
+                    // if (fc.showOpenDialog(null) ==
+                    // JDFileChooser.APPROVE_OPTION) {
+                    // File ret2 = fc.getSelectedFile();
+                    // if (ret2 != null) {
+                    // JDUtilities.getController().loadContainerFile(ret2);
+                    // return;
                 }
             } else if (arg0.getSource() instanceof JMenuItem) {
                 switch (arg0.getID()) {

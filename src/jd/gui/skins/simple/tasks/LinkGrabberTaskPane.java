@@ -8,11 +8,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JSeparator;
 
-import jd.controlling.ClipboardHandler;
 import jd.event.JDEvent;
 import jd.event.JDListener;
-import jd.gui.skins.simple.MenuAction;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2Event;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2TreeTableAction;
 import jd.utils.JDLocale;
@@ -29,14 +26,11 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, JD
     private JButton lg_clear;
 
     private JSeparator sep = new JSeparator();
-    private SimpleGUI simplegui;
     boolean lg_buttons_visible = false;
 
     public LinkGrabberTaskPane(String string, ImageIcon ii) {
         super(string, ii, "linkgrabber");
         this.setLayout(new MigLayout("ins 0, wrap 1", "[fill]"));
-
-        simplegui = SimpleGUI.CURRENTGUI;
         lg_buttons_visible = false;
         initGUI();
     }
@@ -54,25 +48,14 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, JD
 
     }
 
-    private String getClipBoardImage() {
-        if (ClipboardHandler.getClipboard().isEnabled()) {
-            return JDTheme.V("gui.images.clipboardon");
-        } else {
-            return JDTheme.V("gui.images.clipboardoff");
-        }
-    }
-
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == panel_add_links) {
-            simplegui.actionPerformed(new ActionEvent(this, MenuAction.ITEMS_ADD, null));
+            this.broadcastEvent(new ActionEvent(this, LinkGrabberV2TreeTableAction.GUI_ADD, null));
             return;
         }
-        /**
-         * TODO
-         */
+
         if (e.getSource() == panel_add_containers) {
-            // simplegui.actionPerformed(new ActionEvent(this,
-            // MenuAction.APP_LOAD_DLC, null));
+            this.broadcastEvent(new ActionEvent(this, LinkGrabberV2TreeTableAction.GUI_LOAD, null));
             return;
         }
 
