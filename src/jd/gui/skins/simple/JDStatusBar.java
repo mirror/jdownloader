@@ -7,7 +7,6 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 
 import javax.swing.Box;
-import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -24,14 +23,11 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.nutils.JDImage;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-
-
-public class JDStatusBar extends JPanel implements ChangeListener,ControlListener {
+public class JDStatusBar extends JPanel implements ChangeListener, ControlListener {
     private static final long serialVersionUID = 3676496738341246846L;
 
     private JCheckBox chbPremium;
@@ -46,7 +42,7 @@ public class JDStatusBar extends JPanel implements ChangeListener,ControlListene
 
     protected JSpinner spMaxDls;
 
-    public  JDStatusBar() {
+    public JDStatusBar() {
         setLayout(new BorderLayout());
 
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
@@ -59,11 +55,12 @@ public class JDStatusBar extends JPanel implements ChangeListener,ControlListene
         // gruener Haken - everything ok
         // oranges Warnschild - ohoh
         // roter Kreis - we are roally f#$%cked!
-//        ImageIcon statusIcon = JDTheme.II("gui.images.jd_logo", 16, 16);
+        // ImageIcon statusIcon = JDTheme.II("gui.images.jd_logo", 16, 16);
 
         lblMessage = new JLabel(JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
-//        lblMessage.setIcon(statusIcon);
-//        statusBarHandler = new LabelHandler(lblMessage, JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
+        // lblMessage.setIcon(statusIcon);
+        // statusBarHandler = new LabelHandler(lblMessage,
+        // JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
 
         chbPremium = new JCheckBox(JDLocale.L("gui.statusbar.premium", "Premium"));
         chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
@@ -131,8 +128,10 @@ public class JDStatusBar extends JPanel implements ChangeListener,ControlListene
             } else if (p == JDUtilities.getConfiguration() && event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
                 chbPremium.setSelected(p.getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
             } else if (event.getID() == ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED) {
-//                btnStartStop.setIcon(new ImageIcon(JDImage.getImage(getStartStopDownloadImage())));
-//                btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
+                // btnStartStop.setIcon(new
+                // ImageIcon(JDImage.getImage(getStartStopDownloadImage())));
+                // btnPause.setIcon(new
+                // ImageIcon(JDUtilities.getImage(getPauseImage())));
             }
         }
     }
