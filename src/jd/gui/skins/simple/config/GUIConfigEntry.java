@@ -33,7 +33,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
@@ -61,10 +60,6 @@ import jd.utils.JDUtilities;
 public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyChangeListener, DocumentListener {
 
     private static final long serialVersionUID = -1391952049282528582L;
-    private static final String DEBUG = "";
-
-    private static final Object GAPRIGHT = "gapright 0";
-
 
     private ConfigEntry configEntry;
 
@@ -73,16 +68,10 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
      */
 
     private JComponent[] input;
+    
     private JComponent decoration;
-    // private Insets insets = new Insets(1, 5, 1, 5);
 
-    // private JComponent left;
-
-    protected Logger logger = JDUtilities.getLogger();
-
-    // private JComponent right;
-
-    // private JComponent total;
+    private Logger logger = JDUtilities.getLogger();
 
     /**
      * Erstellt einen neuen GUIConfigEntry
@@ -101,7 +90,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         cfg.setGuiListener(this);
         this.addPropertyChangeListener(cfg);
 
-        // this.setBorder(BorderFactory.createEtchedBorder());
         input = new JComponent[1];
 
         switch (configEntry.getType()) {
@@ -115,7 +103,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
                 input[0] = new JLabel(configEntry.getPropertyName());
                 e.printStackTrace();
             }
-            // addInstantHelpLink();
             input[0].setEnabled(configEntry.isEnabled());
 
             break;
@@ -146,7 +133,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             break;
         case ConfigContainer.TYPE_TEXTAREA:
             decoration = new JLabel(configEntry.getLabel());
-            new JScrollPane(input[0] = new JDTextArea());
+            input[0] = new JDTextArea();
             input[0].setEnabled(configEntry.isEnabled());
             doc = (PlainDocument) ((JDTextArea) input[0]).getDocument();
             doc.addDocumentListener(this);
@@ -161,9 +148,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             decoration = new JLabel(configEntry.getLabel());
             break;
         case ConfigContainer.TYPE_BROWSEFILE:
-            // logger.info("ADD Browser");
-
-            if (configEntry.getLabel().trim().length() > 0) new JLabel(configEntry.getLabel());
+            if (configEntry.getLabel().trim().length() > 0) decoration = new JLabel(configEntry.getLabel());
             input[0] = new BrowseFile();
             ((BrowseFile) input[0]).setEnabled(configEntry.isEnabled());
 
@@ -171,8 +156,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
             break;
         case ConfigContainer.TYPE_BROWSEFOLDER:
-            // logger.info("ADD BrowserFolder");
-
             if (configEntry.getLabel().trim().length() > 0) decoration = new JLabel(configEntry.getLabel());
             input[0] = new BrowseFile();
 
@@ -182,16 +165,13 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
             break;
         case ConfigContainer.TYPE_SPINNER:
-            // logger.info("ADD Spinner");
             decoration = new JLabel(configEntry.getLabel());
             input[0] = new JSpinner(new SpinnerNumberModel(configEntry.getStart(), configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
             input[0].setEnabled(configEntry.isEnabled());
             ((JSpinner) input[0]).addChangeListener(this);
-            // ((JSpinner)input[0])
 
             break;
         case ConfigContainer.TYPE_BUTTON:
-            // //logger.info("ADD Button");
             input[0] = new JButton(configEntry.getLabel());
             ((JButton) input[0]).addActionListener(this);
             ((JButton) input[0]).addActionListener(configEntry.getActionListener());
@@ -252,7 +232,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             decoration = new JLabel(configEntry.getLabel());
             break;
         case ConfigContainer.TYPE_SEPARATOR:
-            // //logger.info("ADD Seperator");
             input = new JComponent[0];
             decoration = new JSeparator(SwingConstants.HORIZONTAL);
 
@@ -263,13 +242,9 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
     }
 
     private void firePropertyChange(String propertyName, Object object, Object text) {
-        // TODO Auto-generated method stub
-
     }
 
     private void addPropertyChangeListener(ConfigEntry cfg) {
-        // TODO Auto-generated method stub
-
     }
 
     public JComponent[] getInput() {
@@ -278,12 +253,10 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
     public void actionPerformed(ActionEvent e) {
         getConfigEntry().valueChanged(getText());
-
     }
 
     public void changedUpdate(DocumentEvent e) {
         getConfigEntry().valueChanged(getText());
-
     }
 
     public ConfigEntry getConfigEntry() {
@@ -296,7 +269,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
      * @return
      */
     public Object getText() {
-        // //logger.info(configEntry.getType()+"_2");
         switch (configEntry.getType()) {
         case ConfigContainer.TYPE_LINK:
             return ((JLinkButton) input[0]).getLinkURL().toString();
@@ -321,7 +293,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_RADIOFIELD:
             JRadioButton radio;
             for (JComponent element : input) {
-
                 radio = (JRadioButton) element;
 
                 if (radio.getSelectedObjects() != null && radio.getSelectedObjects()[0] != null) { return radio.getSelectedObjects()[0]; }

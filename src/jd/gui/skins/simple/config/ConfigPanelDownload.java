@@ -67,18 +67,11 @@ public class ConfigPanelDownload extends ConfigPanel {
         ConfigContainer container = new ConfigContainer(this);
         config = JDUtilities.getSubConfig("DOWNLOAD");
 
-        ConfigEntry ce;
-        ConfigEntry conditionEntry;
-
         setupGeneral(container);
 
-     
-       setupNetwork(container);
-        
-    setupAdvanced(container);
-       
+        setupNetwork(container);
 
-
+        setupAdvanced(container);
 
         return container;
 
@@ -87,16 +80,14 @@ public class ConfigPanelDownload extends ConfigPanel {
     private void setupAdvanced(ConfigContainer container) {
         ConfigEntry ce;
         ConfigEntry conditionEntry;
-       
-
 
         // Extended Tab
-        
+
         ConfigContainer extended = new ConfigContainer(this, JDLocale.L("gui.config.download.network.extended", "Erweiterte Einstellungen"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, extended));
 
-        extended.setGroup(new ConfigGroup(JDLocale.L("gui.config.download.ipcheck", "Reconnect IP-Check"),JDTheme.II("gui.images.network",32,32)));
-        
+        extended.setGroup(new ConfigGroup(JDLocale.L("gui.config.download.ipcheck", "Reconnect IP-Check"), JDTheme.II("gui.images.network", 32, 32)));
+
         extended.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDLocale.L("gui.config.download.ipcheck.disable", "IP Überprüfung deaktivieren")));
 
         conditionEntry.setDefaultValue(false);
@@ -117,9 +108,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setDefaultValue(10 * 60);
         ce.setEnabledCondidtion(conditionEntry, "==", false);
 
-
-        extended.setGroup(new ConfigGroup(JDLocale.L("gui.config.download.write", "File writing"),JDTheme.II("gui.images.save",32,32)));
-        
+        extended.setGroup(new ConfigGroup(JDLocale.L("gui.config.download.write", "File writing"), JDTheme.II("gui.images.save", 32, 32)));
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_DO_CRC, JDLocale.L("gui.config.download.crc", "SFV/CRC Check wenn möglich durchführen")));
 
@@ -131,7 +120,6 @@ public class ConfigPanelDownload extends ConfigPanel {
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "MAX_BUFFER_SIZE", JDLocale.L("gui.config.download.buffersize", "Max. Buffersize[MB]"), 1, 4));
         ce.setDefaultValue(1);
 
-        
     }
 
     private void setupNetwork(ConfigContainer container) {
@@ -141,8 +129,7 @@ public class ConfigPanelDownload extends ConfigPanel {
 
         ConfigContainer network = new ConfigContainer(this, JDLocale.L("gui.config.download.network.tab", "Internet & Netzwerkverbindung"));
 
-        network.setGroup(new ConfigGroup(JDLocale.L("gui.config.download.timeout", "Timeout & Connection loss"),JDTheme.II("gui.images.networkerror",32,32)));
-        
+        network.setGroup(new ConfigGroup(JDLocale.L("gui.config.download.timeout", "Timeout & Connection loss"), JDTheme.II("gui.images.networkerror", 32, 32)));
 
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, network));
 
@@ -163,9 +150,8 @@ public class ConfigPanelDownload extends ConfigPanel {
         // ce.setDefaultValue(5 * 60);
         // ce.setStep(1);
 
-
-        network.setGroup(new ConfigGroup(JDLocale.L("gui.config.download.proxy", "Proxy Settings"),JDTheme.II("gui.images.proxy",32,32)));
-        network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_PROXY, JDLocale.L("gui.config.download.use_proxy", "Http-Proxy Verwenden") + " (" + JDLocale.L("gui.warning.restartNeeded", "JD-Restart needed after changes!") + ")")/*.setGroupName(JDLocale.L("gui.config.download.proxy", "Proxy Settings"))*/);
+        network.setGroup(new ConfigGroup(JDLocale.L("gui.config.download.proxy", "Proxy Settings"), JDTheme.II("gui.images.proxy", 32, 32)));
+        network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_PROXY, JDLocale.L("gui.config.download.use_proxy", "Http-Proxy Verwenden") + " (" + JDLocale.L("gui.warning.restartNeeded", "JD-Restart needed after changes!") + ")"));
 
         conditionEntry.setDefaultValue(false);
         conditionEntry.setPropertyType(PropertyType.NEEDS_RESTART);
@@ -205,22 +191,19 @@ public class ConfigPanelDownload extends ConfigPanel {
         ConfigEntry ce;
         ConfigEntry conditionEntry;
 
-        ConfigGroup group;
-        /*DESTINATION PATH*/
-        container.setGroup(new ConfigGroup(JDLocale.L("gui.config.general.downloadDirectory","Download directory"),JDTheme.II("gui.images.package_opened",32,32)));
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, "")/*.setGroupName(JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis"))*/);
+        /* DESTINATION PATH */
+        container.setGroup(new ConfigGroup(JDLocale.L("gui.config.general.downloadDirectory", "Download directory"), JDTheme.II("gui.images.package_opened", 32, 32)));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, ""));
 
         ce.setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, JDLocale.L("gui.config.general.createSubFolders", "Wenn möglich Unterordner mit Paketname erstellen")));
         ce.setDefaultValue(false);
 
-     
-            
-            container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, JDLocale.L("gui.config.general.createSubFoldersbefore", "Create sub-folders after adding links")));
-            ce.setDefaultValue(false);
-           ce.setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
-/* control */
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, JDLocale.L("gui.config.general.createSubFoldersbefore", "Create sub-folders after adding links")));
+        ce.setDefaultValue(false);
+        ce.setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
+        /* control */
 
         container.setGroup(new ConfigGroup(JDLocale.L("gui.config.download.download.tab", "Downloadsteuerung"), JDTheme.II("gui.images.downloadorder", 32, 32)));
 
