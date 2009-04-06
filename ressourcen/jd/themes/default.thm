@@ -30,11 +30,12 @@ gui.images.link=default/mime/text-x-generic-template
 gui.images.package_closed=default/document-open
 gui.images.package_error=default/document-open_error
 gui.images.package_opened=default/folder-visiting
-
-
+gui.images.downloadorder=default/edit-redo
+gui.images.networkerror=default/network-error
+gui.images.proxy=default/network-server
 gui.splash = splash
 
-gui.splash.languages=default/internet-web-browser
+gui.splash.languages=default/language
 gui.splash.settings=default/applications-system
 gui.splash.controller=default/preferences-desktop
 gui.splash.update=default/system-software-update
@@ -44,7 +45,7 @@ gui.splash.dllist=default/media-playback-start
 gui.images.reconnect=default/view-refresh
 gui.images.download=default/software-update-available
 gui.images.add_all=default/folder-open_add
-gui.images.add_package=default/folder-open_add
+gui.images.add_package=default/folder-open
 gui.images.clear=default/user-trash
 gui.images.clipboard=default/edit-paste
 gui.images.clipboard_enabled=default/clipboard_en
