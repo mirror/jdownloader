@@ -5,8 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.prefs.PreferenceChangeEvent;
-import java.util.prefs.PreferenceChangeListener;
 
 import javax.swing.JButton;
 
@@ -17,6 +15,8 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXCollapsiblePane;
 
 public class JDSeparator extends JXCollapsiblePane implements PropertyChangeListener {
+
+    private static final long serialVersionUID = 3007033193590223026L;
     private JButton dlLIst;
     private JButton minimize;
     private JButton maximize;
@@ -25,23 +25,25 @@ public class JDSeparator extends JXCollapsiblePane implements PropertyChangeList
 
         setLayout(new MigLayout("ins 0,wrap 1"));
 
-//      
-//        add(dlLIst = new JButton(JDTheme.II("gui.list", 5, 10)), "width 4!,gapright 1");
-//
-//        dlLIst.setToolTipText(JDLocale.L("gui.sidebar.splitbuttons.download.tooltip", "Switch to Downloadlist"));
-//        dlLIst.setBorderPainted(false);
-//        dlLIst.setOpaque(false);
-//        dlLIst.setContentAreaFilled(false);
-//        dlLIst.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-//        dlLIst.setFocusPainted(false);
-//        dlLIst.setBorderPainted(false);
-//        dlLIst.addActionListener(new ActionListener() {
-//
-//            public void actionPerformed(ActionEvent e) {
-//                SimpleGUI.CURRENTGUI.getContentPane().display(SimpleGUI.CURRENTGUI.getDownloadPanel());
-//            }
-//
-//        });
+        //      
+        // add(dlLIst = new JButton(JDTheme.II("gui.list", 5, 10)),
+        // "width 4!,gapright 1");
+        //
+        // dlLIst.setToolTipText(JDLocale.L("gui.sidebar.splitbuttons.download.tooltip",
+        // "Switch to Downloadlist"));
+        // dlLIst.setBorderPainted(false);
+        // dlLIst.setOpaque(false);
+        // dlLIst.setContentAreaFilled(false);
+        // dlLIst.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        // dlLIst.setFocusPainted(false);
+        // dlLIst.setBorderPainted(false);
+        // dlLIst.addActionListener(new ActionListener() {
+        //
+        // public void actionPerformed(ActionEvent e) {
+        // SimpleGUI.CURRENTGUI.getContentPane().display(SimpleGUI.CURRENTGUI.getDownloadPanel());
+        // }
+        //
+        // });
 
         add(minimize = new JButton(JDTheme.II("gui.images.minimize.left", 5, 10)), "width 4!,gapright 1");
 
@@ -78,23 +80,18 @@ public class JDSeparator extends JXCollapsiblePane implements PropertyChangeList
         });
     }
 
-    public void preferenceChange(PreferenceChangeEvent evt) {
-      
-        
-    }
-
     public void propertyChange(PropertyChangeEvent evt) {
-        if(evt.getSource() instanceof JXCollapsiblePane&&evt.getPropertyName().equals("collapsed")){
-            if(((JXCollapsiblePane)evt.getSource()).isCollapsed()){
+        if (evt.getSource() instanceof JXCollapsiblePane && evt.getPropertyName().equals("collapsed")) {
+            if (((JXCollapsiblePane) evt.getSource()).isCollapsed()) {
                 maximize.setEnabled(true);
                 minimize.setEnabled(false);
-            }else{
+            } else {
                 maximize.setEnabled(false);
                 minimize.setEnabled(true);
             }
-          
+
         }
-        
+
     }
 
 }

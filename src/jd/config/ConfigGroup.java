@@ -6,10 +6,11 @@ public class ConfigGroup {
 
     private ImageIcon icon;
     private String name;
+
     public ConfigGroup(String name, ImageIcon icon) {
-        this.name=name;
-        this.icon=icon;
-     }
+        this.name = name;
+        this.icon = icon;
+    }
 
     public String getName() {
         return name;
@@ -26,8 +27,5 @@ public class ConfigGroup {
     public void setIcon(ImageIcon icon) {
         this.icon = icon;
     }
-
-   
-    
 
 }

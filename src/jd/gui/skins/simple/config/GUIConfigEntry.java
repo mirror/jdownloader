@@ -60,16 +60,14 @@ import org.jdesktop.swingx.JXPanel;
  * Diese Klasse fasst ein label / input Paar zusammen und macht das lesen und
  * schreiben einheitlich. Es lassen sich so Dialogelemente Automatisiert
  * einfügen.
- * 
  */
-
 public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeListener, PropertyChangeListener, DocumentListener {
 
     private static final long serialVersionUID = -1391952049282528582L;
-    private static final String DEBUG = "debug,";
+    private static final String DEBUG = "";
     private static final String INPUT_WIDTH = "300!";
-    private static final String INPUT_WIDTH_SMALL= "100!";
-    private static final Object GAPRIGHT = "gapright 10";
+    private static final String INPUT_WIDTH_SMALL = "100!";
+    private static final String GAPRIGHT = "gapright 10";
     private ConfigEntry configEntry;
 
     /**
@@ -129,7 +127,7 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
         case ConfigContainer.TYPE_PASSWORDFIELD:
             setLayout(new MigLayout(DEBUG + "ins 0", "[fill, grow 10][grow 100,fill," + INPUT_WIDTH + ",right]"));
             add(decoration[0] = new JLabel(configEntry.getLabel()), "gapleft 5");
-            add(input[0] = new JPasswordField(),GAPRIGHT);
+            add(input[0] = new JPasswordField(), GAPRIGHT);
             PlainDocument doc = (PlainDocument) ((JPasswordField) input[0]).getDocument();
             doc.addDocumentListener(this);
             // input[0].setMaximumSize(new Dimension(160,20));
@@ -141,7 +139,7 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
         case ConfigContainer.TYPE_TEXTFIELD:
             setLayout(new MigLayout(DEBUG + "ins 0", "[fill, grow 10][grow 100,fill," + INPUT_WIDTH + ",right]"));
             add(decoration[0] = new JLabel(configEntry.getLabel()), "gapleft 5");
-            add(input[0] = new JDTextField(),GAPRIGHT);
+            add(input[0] = new JDTextField(), GAPRIGHT);
             doc = (PlainDocument) ((JDTextField) input[0]).getDocument();
             doc.addDocumentListener(this);
             input[0].setEnabled(configEntry.isEnabled());
@@ -195,7 +193,7 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
             ((BrowseFile) input[0]).setEnabled(configEntry.isEnabled());
 
             ((BrowseFile) input[0]).setEditable(true);
-            add(input[0], "gapleft 5,alignx right,"+GAPRIGHT);
+            add(input[0], "gapleft 5,alignx right," + GAPRIGHT);
             break;
         case ConfigContainer.TYPE_BROWSEFOLDER:
             // logger.info("ADD BrowserFolder");
@@ -207,7 +205,7 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
             ((BrowseFile) input[0]).setEnabled(configEntry.isEnabled());
             ((BrowseFile) input[0]).setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
-            add(input[0], "gapleft 5,alignx right,"+GAPRIGHT);
+            add(input[0], "gapleft 5,alignx right," + GAPRIGHT);
             break;
         case ConfigContainer.TYPE_SPINNER:
             // logger.info("ADD Spinner");
@@ -217,7 +215,7 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
             input[0].setEnabled(configEntry.isEnabled());
             ((JSpinner) input[0]).addChangeListener(this);
             // ((JSpinner)input[0])
-            add(input[0], "dock right,"+GAPRIGHT);
+            add(input[0], "dock east," + GAPRIGHT);
             break;
         case ConfigContainer.TYPE_BUTTON:
             // //logger.info("ADD Button");
@@ -248,7 +246,7 @@ public class GUIConfigEntry extends JXPanel implements ActionListener, ChangeLis
                 }
             }
             input[0].setEnabled(configEntry.isEnabled());
-            add(input[0], "alignx right,"+GAPRIGHT);
+            add(input[0], "alignx right," + GAPRIGHT);
 
             break;
         case ConfigContainer.TYPE_RADIOFIELD:

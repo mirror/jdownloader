@@ -147,7 +147,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private JDToolBar toolBar;
 
-    private JDMenuBar menuBar;
+//    private JDMenuBar menuBar;
 
     private JDStatusBar statusBar;
 
@@ -167,7 +167,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         SimpleGuiConstants.GUI_CONFIG = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
         JDLookAndFeelManager.setUIManager();
 
-        menuBar = new JDMenuBar();
+//        menuBar = new JDMenuBar();
 
         statusBar = new JDStatusBar();
 
@@ -684,7 +684,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
                 case ConfigTaskPane.ACTION_ADDONS:
                 case ConfigTaskPane.ACTION_CAPTCHA:
-                case ConfigTaskPane.ACTION_DECRYPT:
+//                case ConfigTaskPane.ACTION_DECRYPT:
                 case ConfigTaskPane.ACTION_DOWNLOAD:
                 case ConfigTaskPane.ACTION_EVENTMANAGER:
                 case ConfigTaskPane.ACTION_GENERAL:
