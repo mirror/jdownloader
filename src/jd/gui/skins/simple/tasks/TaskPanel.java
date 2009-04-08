@@ -42,7 +42,7 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     public static final Object D1_LABEL_ICON = "spanx,alignx left,gaptop 7,gapleft 7";
     public static final Object D2_LABEL = "spanx,alignx left,gaptop 2,gapleft 27";
     public static final Object D1_LABEL = "spanx,alignx left,gaptop 7,gapleft 7";
-    public static final Object D2_PROGRESSBAR = "spanx,alignx left,height 12!,gaptop 2,gapleft 27";;
+    public static final Object D2_PROGRESSBAR = "height 10!,gaptop 7,gapleft 27, width null:110:180";
     public static final Object D1_COMPONENT = "spanx,alignx left,gaptop 2,gapleft 7";
     public boolean pressed;
 
@@ -53,7 +53,7 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
         this.listenerList = new EventListenerList();
         this.setPanelID(pid);
         this.addPropertyChangeListener(this);
-        this.setLayout(new MigLayout("ins 5, wrap 1", "[fill,grow]","[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]"));
+        this.setLayout(new MigLayout("ins 5 5 5 15, wrap 1", "[fill,grow]","[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]"));
         setDeligateCollapsed(JDUtilities.getSubConfig("gui").getBooleanProperty(getPanelID() + "_collapsed", false));
         this.panels = new ArrayList<SingletonPanel>();
     }
