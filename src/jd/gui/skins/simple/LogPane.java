@@ -59,8 +59,6 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
      */
     private JTextArea logField;
 
-    private JScrollPane scrollpane;
-
     /**
      * Primary Constructor
      * 
@@ -93,7 +91,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
         // }
         //            
         // });
-        add(scrollpane = new JScrollPane(logField));
+        add(new JScrollPane(logField));
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -104,47 +102,17 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
             onDisplay();
             break;
         case LogTaskPane.ACTION_SAVE:
-            final JDFileChooser fc = new JDFileChooser();
+            JDFileChooser fc = new JDFileChooser();
             fc.setApproveButtonText(JDLocale.L("gui.btn_save", "Save"));
             fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            this.remove(scrollpane);
-            
-            fc.setDialogType(JFileChooser.SAVE_DIALOG);
-            fc.rescanCurrentDirectory();
-            fc.addActionListener(new ActionListener() {
-
-                public void actionPerformed(ActionEvent e) {
-                    if (e.getActionCommand() == JDFileChooser.APPROVE_SELECTION) {
-                        File ret = fc.getSelectedFile();
-                        if (ret != null) {
-                            String content = toString();
-                            JDIO.writeLocalFile(ret, content);
-                            jd.controlling.JDLogger.getLogger().info("Log saved to file: " + ret.getAbsolutePath());
-                        }
-
-                    }
-                    remove(fc);
-                    add(scrollpane);
-                    invalidate();
-                    repaint();
-                   
+            if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) {
+                File ret = fc.getSelectedFile();
+                if (ret != null) {
+                    String content = toString();
+                    JDIO.writeLocalFile(ret, content);
+                    jd.controlling.JDLogger.getLogger().info("Log saved to file: " + ret.getAbsolutePath());
                 }
-
-            });
-            add(fc.createDialog(this).getContentPane());
-            this.invalidate();
-            this.repaint();
-            SimpleGUI.CURRENTGUI.pack();
-           
-            // if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) {
-            // File ret = fc.getSelectedFile();
-            // if (ret != null) {
-            // String content = toString();
-            // JDIO.writeLocalFile(ret, content);
-            // jd.controlling.JDLogger.getLogger().info("Log saved to file: " +
-            // ret.getAbsolutePath());
-            // }
-            // }
+            }
             break;
         case LogTaskPane.ACTION_UPLOAD:
             Level level = jd.controlling.JDLogger.getLogger().getLevel();
@@ -180,7 +148,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
             }
             logField.append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
             if (url != null) {
-                logField.append(JDLocale.L("gui.logupload.message", "Please send this loglink to your supporter") + "\r\n");
+                logField.append(JDLocale.L("gui.logupload.message","Please send this loglink to your supporter")+"\r\n");
                 this.logField.append(url);
             } else {
                 this.logField.append(JDLocale.L("gui.logDialog.warning.uploadFailed", "Upload failed"));
