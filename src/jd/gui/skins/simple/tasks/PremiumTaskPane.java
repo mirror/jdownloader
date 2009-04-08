@@ -24,7 +24,6 @@ public class PremiumTaskPane extends TaskPanel implements ControlListener, Actio
 
     public PremiumTaskPane(String string, ImageIcon ii) {
         super(string, ii, "premium");
-        this.setLayout(new MigLayout(" ins 0, wrap 1", "[fill]","[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0"));
         JDUtilities.getController().addControlListener(this);
         initGUI();
     }
@@ -34,14 +33,16 @@ public class PremiumTaskPane extends TaskPanel implements ControlListener, Actio
             if (wrapper.isLoaded() && wrapper.usePlugin()) {
                 final PluginForHost helpPlugin = wrapper.getPlugin();
                 if (helpPlugin.createMenuitems() != null && helpPlugin.getPremiumAccounts().size() > 0) {
-                    hoster.add(addButton(this.createButton(helpPlugin.getHost(), null)));
+                   JButton bt = this.createButton(helpPlugin.getHost(), null);
+                    hoster.add(bt);
+                    add(bt, D1_BUTTON_ICON);
                 }
             }
 
         }
         add(new JSeparator());
 
-        addButton(this.createButton(JDLocale.L("gui.task.premium.add", "Add Premiumacccount"), JDTheme.II("gui.images.add", 16, 16)));
+       add(this.createButton(JDLocale.L("gui.task.premium.add", "Add Premiumacccount"), JDTheme.II("gui.images.add", 16, 16)),D1_BUTTON_ICON);
 
     }
 

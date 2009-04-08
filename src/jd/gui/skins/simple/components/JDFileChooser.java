@@ -16,10 +16,24 @@
 
 package jd.gui.skins.simple.components;
 
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dialog;
+import java.awt.Frame;
+import java.awt.HeadlessException;
+import java.awt.Window;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.logging.Logger;
 
+import javax.accessibility.AccessibleContext;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.JRootPane;
+import javax.swing.UIManager;
 
 import jd.utils.JDUtilities;
 
@@ -52,6 +66,10 @@ public class JDFileChooser extends JFileChooser {
         fcID = id;
         setCurrentDirectory(JDUtilities.getCurrentWorkingDirectory(fcID));
     }
+
+    public JDialog createDialog(Component parent) throws HeadlessException {
+        return super.createDialog(parent);
+        }
 
     @Override
     public File getSelectedFile() {

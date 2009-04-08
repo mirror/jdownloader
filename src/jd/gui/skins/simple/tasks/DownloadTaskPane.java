@@ -1,5 +1,6 @@
 package jd.gui.skins.simple.tasks;
 
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -24,7 +25,8 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
     private static final long serialVersionUID = -9134449913836967453L;
     public static final int ACTION_SHOW_PANEL = 1;
     public static final int ACTION_STARTSTOP = 2;
-    private static final String LEFTGAP = "gapleft 20";
+    private static final String LEFTGAP = "gapleft 25";
+
 
     private JButton startStop;
     private JLabel packages;
@@ -38,10 +40,9 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
 
     public DownloadTaskPane(String string, ImageIcon ii) {
         super(string, ii, "downloadtask");
-        this.setLayout(new MigLayout("ins 5, wrap 1", "[fill,grow,null:null:150]", "[]0[]0[]0[]0[]"));
         initGUI();
 
-        Timer fadeTimer = new Timer(1000, this);
+        Timer fadeTimer = new Timer(2000, this);
         fadeTimer.setInitialDelay(0);
         fadeTimer.start();
     }
@@ -78,19 +79,28 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
 
     private void initGUI() {
 
-        add(downloadlist = new JLabel(JDLocale.L("gui.taskpanes.download.downloadlist", "Downloadlist")),"gapbottom 5");
+        downloadlist = (new JLabel(JDLocale.L("gui.taskpanes.download.downloadlist", "Downloadlist")));
         downloadlist.setIcon(JDTheme.II("gui.splash.dllist", 16, 16));
-        add(packages = new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Package(s)", 0)), LEFTGAP+",gapbottom 2");
-        add(downloadlinks = new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Link(s)", 0)), LEFTGAP+",gapbottom 2");
-        add(totalsize = new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", 0)), LEFTGAP+",gapbottom 7");
-        add(progresslabel = new JLabel(JDLocale.L("gui.taskpanes.download.progress", "Total progress")),"gapbottom 5");
+        packages = (new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Package(s)", 0)));
+        downloadlinks = (new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Link(s)", 0)));
+        totalsize = (new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", 0)));
+        progresslabel = (new JLabel(JDLocale.L("gui.taskpanes.download.progress", "Total progress")));
         progresslabel.setIcon(JDTheme.II("gui.images.progress", 16, 16));
-        add(progress = new JDProgressBar(), LEFTGAP + ", height 12!,gapbottom 2");
+        progress = (new JDProgressBar());
         progress.setStringPainted(false);
-        add(speed = new JLabel(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", 0)), LEFTGAP+",gapbottom 2");
+        speed = (new JLabel(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", 0)));
 
-        add(eta = new JLabel(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", 0)), LEFTGAP+",gapbottom 2");
+        eta = (new JLabel(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", 0)));
 
+        add(downloadlist,D1_LABEL_ICON);
+        
+        add(packages,D2_LABEL);
+        add(downloadlinks,D2_LABEL);
+        add(totalsize,D2_LABEL);
+        add(progresslabel,D1_LABEL_ICON);
+        add(progress,D2_PROGRESSBAR);
+        add(speed,D2_LABEL);
+        add(eta,D2_LABEL);
     }
 
     public void actionPerformed(ActionEvent e) {

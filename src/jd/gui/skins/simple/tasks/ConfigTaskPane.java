@@ -41,31 +41,41 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
     public static final int ACTION_ADDONS = 7;
     public static final int ACTION_EVENTMANAGER = 8;
     public static final int ACTION_SAVE = 9;
+  
 
     public ConfigTaskPane(String string, ImageIcon ii) {
         super(string, ii, "config");
-        this.setLayout(new MigLayout("ins 0, wrap 1", "[fill]", "[]0[]0[]0[]0[]0[]0[]0[]0[]"));
-        JDUtilities.getController().addControlListener(this);
+       JDUtilities.getController().addControlListener(this);
         initGUI();
     }
 
     private void initGUI() {
-        this.general = addButton(this.createButton(JDLocale.L("gui.config.tabLables.general", "general"), JDTheme.II("gui.images.config.home", 16, 16)));
-        this.download = addButton(this.createButton(JDLocale.L("gui.config.tabLables.download", "download"), JDTheme.II("gui.images.config.network_local", 16, 16)));
-        this.gui = addButton(this.createButton(JDLocale.L("gui.config.tabLables.gui", "gui"), JDTheme.II("gui.images.config.gui", 16, 16)));
-        this.reconnect = addButton(this.createButton(JDLocale.L("gui.config.tabLables.reconnect", "reconnect"), JDTheme.II("gui.images.config.reconnect", 16, 16)));
-        this.captcha = addButton(this.createButton(JDLocale.L("gui.config.tabLables.jac", "jac"), JDTheme.II("gui.images.config.ocr", 16, 16)));
-        this.host = addButton(this.createButton(JDLocale.L("gui.config.tabLables.hostPlugin", "hostPlugin"), JDTheme.II("gui.images.config.host", 16, 16)));
+        this.general = (this.createButton(JDLocale.L("gui.config.tabLables.general", "general"), JDTheme.II("gui.images.config.home", 16, 16)));
+        this.download = (this.createButton(JDLocale.L("gui.config.tabLables.download", "download"), JDTheme.II("gui.images.config.network_local", 16, 16)));
+        this.gui = (this.createButton(JDLocale.L("gui.config.tabLables.gui", "gui"), JDTheme.II("gui.images.config.gui", 16, 16)));
+        this.reconnect = (this.createButton(JDLocale.L("gui.config.tabLables.reconnect", "reconnect"), JDTheme.II("gui.images.config.reconnect", 16, 16)));
+        this.captcha = (this.createButton(JDLocale.L("gui.config.tabLables.jac", "jac"), JDTheme.II("gui.images.config.ocr", 16, 16)));
+        this.host = (this.createButton(JDLocale.L("gui.config.tabLables.hostPlugin", "hostPlugin"), JDTheme.II("gui.images.config.host", 16, 16)));
         // this.decrypt =
-        // addButton(this.createButton(JDLocale.L("gui.config.tabLables.decryptPlugin",
+        // addButton(this.createButton(JDLocale.L(
+        // "gui.config.tabLables.decryptPlugin",
         // "decryptPlugin"), JDTheme.II("gui.images.config.decrypt", 16, 16)));
-        this.addons = addButton(this.createButton(JDLocale.L("gui.config.tabLables.addons", "addons"), JDTheme.II("gui.images.config.packagemanager", 16, 16)));
-        this.eventmanager = addButton(this.createButton(JDLocale.L("gui.config.tabLables.eventManager", "eventManager"), JDTheme.II("gui.images.config.eventmanager", 16, 16)));
+        this.addons = (this.createButton(JDLocale.L("gui.config.tabLables.addons", "addons"), JDTheme.II("gui.images.config.packagemanager", 16, 16)));
+        this.eventmanager = (this.createButton(JDLocale.L("gui.config.tabLables.eventManager", "eventManager"), JDTheme.II("gui.images.config.eventmanager", 16, 16)));
+        this.sav = (this.createButton(JDLocale.L("gui.task.config.save", "Save changes"), JDTheme.II("gui.images.save", 16, 16)));
+
+        add(general, D1_BUTTON_ICON);
+        add(download, D1_BUTTON_ICON);
+        add(gui, D1_BUTTON_ICON);
+        add(reconnect, D1_BUTTON_ICON);
+        add(host, D1_BUTTON_ICON);
+        add(captcha, D1_BUTTON_ICON);
+        add(addons, D1_BUTTON_ICON);
+        add(eventmanager, D1_BUTTON_ICON);
 
         add(new JSeparator());
 
-        this.sav = addButton(this.createButton(JDLocale.L("gui.task.config.save", "Save changes"), JDTheme.II("gui.images.save", 16, 16)));
-
+        add(sav, D1_BUTTON_ICON);
     }
 
     /**

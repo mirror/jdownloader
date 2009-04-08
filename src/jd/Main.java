@@ -498,7 +498,6 @@ try{
         }
         init.checkUpdate();
 
-        Level level = jd.controlling.JDLogger.getLogger().getLevel();
 
         // logger.info(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).
         // getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS,

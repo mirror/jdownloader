@@ -23,22 +23,26 @@ public class LogTaskPane extends TaskPanel implements ActionListener {
     public static final int ACTION_SAVE = 1;
     public static final int ACTION_UPLOAD = 2;
     public static final int ACTION_LEVEL = 3;
+
+
     private JButton save;
     private JButton upload;
     private JComboBox box;
 
     public LogTaskPane(String string, ImageIcon ii) {
         super(string, ii, "logtask");
-        this.setLayout(new MigLayout("ins 0, wrap 1", "[fill,grow]", "[fill][grow]"));
+
         initGui();
     }
 
     private void initGui() {
-        this.addButton(save = this.createButton(JDLocale.L("gui.taskpanels.log.save", "Save as"), JDTheme.II("gui.images.save", 16, 16)));
-        this.addButton(upload = this.createButton(JDLocale.L("gui.taskpanels.log.upload", "Upload log"), JDTheme.II("gui.images.upload", 16, 16)));
+     save = this.createButton(JDLocale.L("gui.taskpanels.log.save", "Save as"), JDTheme.II("gui.images.save", 16, 16));
+        upload = this.createButton(JDLocale.L("gui.taskpanels.log.upload", "Upload log"), JDTheme.II("gui.images.upload", 16, 16));
+        add(save, D1_BUTTON_ICON);
+        add(upload, D1_BUTTON_ICON);
         add(new JSeparator());
-        add(new JLabel(JDLocale.L("gui.config.general.loggerLevel", "Level für's Logging")));
-        add(box = new JComboBox(new Level[] { Level.ALL, Level.FINER, Level.INFO, Level.WARNING, Level.SEVERE }), "spanx,alignx leading,gapleft 13,gapright 5,gaptop 2");
+        add(new JLabel(JDLocale.L("gui.config.general.loggerLevel", "Level für's Logging")),D1_LABEL);
+        add(box = new JComboBox(new Level[] { Level.ALL, Level.FINER, Level.INFO, Level.WARNING, Level.SEVERE }), D1_COMPONENT);
         box.addActionListener(this);
     }
 

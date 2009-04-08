@@ -273,8 +273,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
     }
 
     private void addFinishedHighlighter() {
-        Color background = JDTheme.C("gui.color.downloadlist.row_link_done", "c4ffd2", 80);
-        Color backGroundPackage = JDTheme.C("gui.color.downloadlist.row_package_done", "339933", 80);
+        Color background = JDTheme.C("gui.color.downloadlist.row_link_done", "c4ffd2", 10);
+        Color backGroundPackage = JDTheme.C("gui.color.downloadlist.row_package_done", "339933", 10);
 
         addHighlighter(new FilepackageRowHighlighter(this, backGroundPackage, backGroundPackage) {
             @Override
