@@ -108,7 +108,7 @@ public class JDImage {
                 newImage = ImageIO.read(file);
             } catch (IOException e) {
                 // TODO Auto-generated catch block
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 return null;
             }
             imagesCache.put(imageName, newImage);

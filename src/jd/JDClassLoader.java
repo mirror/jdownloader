@@ -32,7 +32,6 @@ import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 
 import jd.nutils.io.JDFileFilter;
-import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse steuert das Nachladen weiterer Klassen und Ressourcen. (Aus dem
@@ -45,7 +44,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
     private ClassLoader classLoaderParent;
     private Vector<File> jarFile;
     private JarFile jars[];
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
     private URLClassLoader rootClassLoader;
     private String rootDir;
     private static byte[] S = new byte[] { (byte) 2, (byte) 1, (byte) 1, (byte) 49, (byte) 11, (byte) 48, (byte) 9, (byte) 6, (byte) 5, (byte) 43, (byte) 14, (byte) 3, (byte) 2, (byte) 26, (byte) 5, (byte) 0, (byte) 48, (byte) 11, (byte) 6, (byte) 9, (byte) 42, (byte) -122, (byte) 72, (byte) -122, (byte) -9, (byte) 13, (byte) 1, (byte) 7, (byte) 1, (byte) -96, (byte) -126, (byte) 2, (byte) -111, (byte) 48, (byte) -126, (byte) 2, (byte) -115, (byte) 48, (byte) -126, (byte) 2, (byte) 75, (byte) 2, (byte) 4, (byte) 70, (byte) -60, (byte) 21, (byte) -27, (byte) 48, (byte) 11, (byte) 6, (byte) 7, (byte) 42, (byte) -122, (byte) 72, (byte) -50, (byte) 56, (byte) 4, (byte) 3, (byte) 5, (byte) 0, (byte) 48, (byte) 44, (byte) 49, (byte) 24, (byte) 48, (byte) 22, (byte) 6, (byte) 3, (byte) 85, (byte) 4, (byte) 10, (byte) 19, (byte) 15, (byte) 103, (byte) 117, (byte) 108, (byte) 108, (byte) 105,
@@ -62,7 +61,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         if (rootDir == null) { throw new IllegalArgumentException("Null root directory"); }
         this.rootDir = rootDir;
         this.classLoaderParent = classLoaderParent;
-        logger.fine("rootDir:" + rootDir);
+        logger.finest("rootDir:" + rootDir);
         try {
             rootClassLoader = new URLClassLoader(new URL[] { new File(rootDir).toURI().toURL() }, null);
         } catch (MalformedURLException e1) {
@@ -105,7 +104,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                             }
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                 }
             }
@@ -134,7 +133,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                         }
 
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                 }
             }
@@ -176,7 +175,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
             }
             return res;
         } catch (Exception e) {
-            // e.printStackTrace();
+            // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return null;
     }
@@ -297,7 +296,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                         // "/")+"!/"+entry.getName());
                         urls.add(new URL("jar", "", url));
                     } catch (MalformedURLException e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                 }
             }
@@ -339,9 +338,9 @@ public class JDClassLoader extends java.lang.ClassLoader {
                         c = defineClass(name, data, 0, data.length, getClass().getProtectionDomain());
                         if (c == null) { throw new ClassNotFoundException(name); }
                     } catch (ClassFormatError e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                 }
             }

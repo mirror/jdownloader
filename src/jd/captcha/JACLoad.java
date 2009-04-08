@@ -57,7 +57,7 @@ public class JACLoad {
                         String cap = "http://gwarez.cc/captcha/captcha.php";
                         br.getDownload(new File(dir + System.currentTimeMillis() + ".png"), cap);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                 }
             }).start();
@@ -76,7 +76,7 @@ public class JACLoad {
                         String cap = br.getRegex("<img src=\"([^\"]*gencap.php[^\"]*)\"").getMatch(0);
                         br.getDownload(new File(dir + cap.replaceFirst(".*?gencap.php.", "") + ".gif"), cap);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                 }
             }).start();

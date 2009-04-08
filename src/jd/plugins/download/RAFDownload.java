@@ -70,7 +70,7 @@ public class RAFDownload extends DownloadInterface {
                         try {
                             wait();
                         } catch (Exception e) {
-                            // e.printStackTrace();
+                            // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                             // return;
                         }
                     }
@@ -96,7 +96,7 @@ public class RAFDownload extends DownloadInterface {
 
                     } catch (Exception e) {
 
-                        // e.printStackTrace();
+                        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         error(LinkStatus.ERROR_LOCAL_IO, JDUtilities.convertExceptionReadable(e));
 
                         addException(e);
@@ -165,7 +165,7 @@ public class RAFDownload extends DownloadInterface {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
 
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
         }
@@ -177,17 +177,17 @@ public class RAFDownload extends DownloadInterface {
         try {
             outputChannel.force(false);
         } catch (Exception e) {
-            // e.printStackTrace();
+            // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         try {
             outputFile.close();
         } catch (Exception e) {
-            // e.printStackTrace();
+            // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         try {
             outputChannel.close();
         } catch (Exception e) {
-            // e.printStackTrace();
+            // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         if (!handleErrors()) {
 
@@ -273,7 +273,7 @@ public class RAFDownload extends DownloadInterface {
 
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             addException(e);
         }
 

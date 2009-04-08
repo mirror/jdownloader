@@ -56,7 +56,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     /**
      * Der Logger
      */
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     private boolean pause = false;
 
@@ -270,7 +270,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                 }
             }
         } catch (Exception e) {
-            // e.printStackTrace();
+            // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             // Fängt concurrentmodification Exceptions ab
         }
         return returnDownloadLink;
@@ -467,7 +467,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
             try {
                 Thread.sleep(1000);

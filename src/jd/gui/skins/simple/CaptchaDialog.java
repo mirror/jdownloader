@@ -51,7 +51,7 @@ import jd.utils.JDUtilities;
 public class CaptchaDialog extends JDialog implements ActionListener, KeyListener {
 
     @SuppressWarnings("unused")
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     private static final long serialVersionUID = 5880899982952719438L;
 

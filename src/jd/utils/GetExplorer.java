@@ -19,6 +19,7 @@ package jd.utils;
 import java.io.File;
 
 import jd.config.Configuration;
+import jd.controlling.JDLogger;
 import jd.nutils.OSDetector;
 
 public class GetExplorer {
@@ -65,7 +66,7 @@ public class GetExplorer {
         if (explorer == null) {
             explorer = GetExplorer.autoGetExplorerCommand();
             if (explorer == null) {
-                JDUtilities.getLogger().severe("Can't find explorer command");
+                JDLogger.getLogger().severe("Can't find explorer command");
             } else {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_FILE_BROWSER, explorer);
             }

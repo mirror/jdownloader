@@ -29,7 +29,6 @@ import javax.swing.event.ChangeListener;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 public class ConfigEntriesPanel extends ConfigPanel {
@@ -38,7 +37,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
 
     private ConfigContainer container = null;
 
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     private Vector<ConfigEntriesPanel> subPanels = null;
 

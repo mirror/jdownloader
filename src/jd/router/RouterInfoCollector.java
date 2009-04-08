@@ -67,7 +67,7 @@ public class RouterInfoCollector {
             return InetAddress.getByName(routerIp);
         } catch (UnknownHostException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return null;
     }

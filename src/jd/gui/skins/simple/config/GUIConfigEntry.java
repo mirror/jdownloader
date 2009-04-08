@@ -50,7 +50,6 @@ import jd.gui.skins.simple.components.JDTextArea;
 import jd.gui.skins.simple.components.JDTextField;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.panels.PremiumPanel;
-import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse fasst ein label / input Paar zusammen und macht das lesen und
@@ -71,7 +70,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
     
     private JComponent decoration;
 
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     /**
      * Erstellt einen neuen GUIConfigEntry
@@ -101,7 +100,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
             } catch (MalformedURLException e) {
                 input[0] = new JLabel(configEntry.getPropertyName());
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
             input[0].setEnabled(configEntry.isEnabled());
 
@@ -418,7 +417,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
                 ((JSpinner) input[0]).setModel(new SpinnerNumberModel(value, configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
 
             } catch (Exception e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
             break;
         case ConfigContainer.TYPE_RADIOFIELD:

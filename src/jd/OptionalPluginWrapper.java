@@ -100,13 +100,13 @@ public class OptionalPluginWrapper extends PluginWrapper {
                     return (PluginOptional) loadedPlugin;
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 logger.severe("Addon " + this.getClassName() + " is outdated and incompatible. Please update(Packagemanager) :" + e.getLocalizedMessage());
             }
 
         } catch (Throwable e) {
             logger.info("Plugin Exception!");
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return null;
 

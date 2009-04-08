@@ -124,10 +124,10 @@ public class GetRouterInfo {
                 if (InetAddress.getByName(iPaddress).isReachable(1500)) { return true; }
             } catch (UnknownHostException e) {
 
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             } catch (IOException e) {
 
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
         }
         return false;
@@ -155,12 +155,12 @@ public class GetRouterInfo {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return ret;
     }
 
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     public String password = null;
 
@@ -244,10 +244,10 @@ public class GetRouterInfo {
                                 }
                             } catch (UnknownHostException e) {
 
-                                e.printStackTrace();
+                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                             } catch (IOException e) {
 
-                                e.printStackTrace();
+                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                             }
                         }
 
@@ -271,10 +271,10 @@ public class GetRouterInfo {
                                 }
                             } catch (UnknownHostException e) {
 
-                                e.printStackTrace();
+                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                             } catch (IOException e) {
 
-                                e.printStackTrace();
+                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                             }
                         }
 
@@ -833,7 +833,7 @@ public class GetRouterInfo {
                         infos.setReconnectMethodeClr(router.getReconnectMethodeClr());
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
                 setProgress(100);
             }

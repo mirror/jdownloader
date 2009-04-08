@@ -23,7 +23,7 @@ package jd.plugins.optional.hjsplit.jaxe;
 
 import java.io.File;
 
-import jd.utils.JDUtilities;
+import jd.controlling.JDLogger;
 
 public class JoinerFactory {
     public static JAxeJoiner getJoiner(File FileName) {
@@ -37,7 +37,7 @@ public class JoinerFactory {
         String sDestDir = DestDir.getAbsolutePath();
         if (SplitFileFilter.isSplitFile(sFileName) || SplitFileFilter.isZippedSplitFile(sFileName)) { return new JAxeJoiner(sFileName, sDestDir); }
         if (UnixSplitFileFilter.isSplitFile(sFileName)) {
-            JDUtilities.getLogger().info("Unix split found");
+            JDLogger.getLogger().info("Unix split found");
             return new UnixSplitJoiner(sFileName, sDestDir);
         }
 

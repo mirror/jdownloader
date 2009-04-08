@@ -25,14 +25,13 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse zeigt dem Nutzer Auswahldialoge beim Konvertieren von FLVs an
  */
 public class ConvertDialog extends JFrame {
 
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
     /**
      * 
      */

@@ -190,7 +190,7 @@ public class JDShutdown extends PluginOptional {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         }
                         Object obj = wrapper.getPlugin().interact("isWorking", null);
                         if (obj == null || (obj instanceof Boolean && obj.equals(false))) break;

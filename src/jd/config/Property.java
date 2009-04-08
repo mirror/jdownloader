@@ -46,7 +46,7 @@ public class Property implements Serializable {
      * 
      */
     public Property() {
-        logger = JDUtilities.getLogger();
+        logger = jd.controlling.JDLogger.getLogger();
     }
 
     public Property(Object obj) {
@@ -261,7 +261,7 @@ public class Property implements Serializable {
         properties.put(key, value);
 
         if (logger == null) {
-            logger = JDUtilities.getLogger();
+            logger = jd.controlling.JDLogger.getLogger();
         }
         if (JDUtilities.getController() == null) { return; }
         try {

@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
+import jd.controlling.JDLogger;
 import jd.nutils.Executer;
 import jd.nutils.JDHash;
 import jd.parser.Regex;
@@ -68,7 +69,7 @@ public final class Sniffy {
             String[][] whit = new Regex(list, whiteList).getMatches();
             for (String[] m : whit) {
                 for (String s : m) {
-                    JDUtilities.getLogger().finer("Found " + s + " is ok");
+                    JDLogger.getLogger().finer("Found " + s + " is ok");
                 }
             }
 
@@ -76,20 +77,20 @@ public final class Sniffy {
 
             String r;
             if ((r = new Regex(list, blackList).getMatch(0)) != null) {
-                JDUtilities.getLogger().warning("Sniffy(forbidden sniffer):2" + r);
+                JDLogger.getLogger().warning("Sniffy(forbidden sniffer):2" + r);
                 check2 = true;
             }
             if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false) || JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
 
                 if ((r = new Regex(list, blackListproxy).getMatch(0)) != null) {
-                    JDUtilities.getLogger().warning("Sniffy:(forbidden proxytools)" + r);
+                    JDLogger.getLogger().warning("Sniffy:(forbidden proxytools)" + r);
                     check2 = true;
                 }
             }
 
             return check2;
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return true;
     }

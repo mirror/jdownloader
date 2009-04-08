@@ -25,7 +25,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import jd.utils.JDUtilities;
 
 public class Executer extends Thread {
     public static final String CODEPAGE = OSDetector.isWindows() ? "ISO-8859-1" : "UTF-8";
@@ -82,7 +81,7 @@ public class Executer extends Thread {
                         try {
                             line = new String(dynbuf.getLast(num), codepage).trim();
                         } catch (UnsupportedEncodingException e) {
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                             line = new String(dynbuf.getLast(num)).trim();
 
                         }
@@ -102,9 +101,9 @@ public class Executer extends Thread {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             } catch (InterruptedException e) {
-                // e.printStackTrace();
+                // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
 
         }
@@ -149,7 +148,7 @@ public class Executer extends Thread {
     public static int LISTENER_STDSTREAM = 1 << 1;
 
     private String command;
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
     private ArrayList<String> parameter;
     private String runIn;
     private DynByteBuffer inputStreamBuffer;
@@ -303,7 +302,7 @@ public class Executer extends Thread {
             this.exception = e1;
             return;
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             this.exception = e;
         }
     }
@@ -337,7 +336,7 @@ public class Executer extends Thread {
             outputStream.flush();
         } catch (IOException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 
@@ -367,7 +366,7 @@ public class Executer extends Thread {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
 
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
 
         }

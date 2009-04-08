@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Letter;
-import jd.utils.JDUtilities;
 
 public class MultiThreadDetection {
     class DetectionThread extends Thread {
@@ -58,7 +57,7 @@ public class MultiThreadDetection {
 
     private JAntiCaptcha jac;
 
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     private int maxThreads;
 
@@ -116,7 +115,7 @@ public class MultiThreadDetection {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
 
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 return;
             }
         }

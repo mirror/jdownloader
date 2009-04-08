@@ -176,7 +176,7 @@ public class FilerNet extends PluginForHost {
              * .setDownloadSize(urlConnection.getLongContentLength());
              * downloadLink.setDupecheckAllowed(true);
              * urlConnection.disconnect(); } catch (IOException e) {
-             * e.printStackTrace(); } return true;
+             * jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e); } return true;
              */
         }
 
@@ -212,7 +212,7 @@ public class FilerNet extends PluginForHost {
                 }
                 return true;
             } catch (Exception e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
             tries++;
         }

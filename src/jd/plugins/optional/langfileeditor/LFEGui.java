@@ -685,7 +685,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 initLocaleDataComplete();
             }
         } catch (SVNException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             JOptionPane.showMessageDialog(this, JDLocale.LF("plugins.optional.langfileeditor.svn.error.message", "An error occured while checking the SVN Repository out! Please check the SVN settings!\n%s", e.getMessage()), JDLocale.L("plugins.optional.langfileeditor.svn.error.title", "Error!"), JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -956,7 +956,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             }
             f.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 

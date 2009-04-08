@@ -153,7 +153,7 @@ public class JDLocale {
             f.close();
         } catch (IOException e) {
 
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
 
     }
@@ -237,7 +237,7 @@ public class JDLocale {
 
             return Encoding.UTF8Decode(Encoding.htmlDecode(new Regex(r.load(), "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getMatch(0)));
         } catch (IOException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             return null;
         }
     }

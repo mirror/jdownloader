@@ -513,7 +513,7 @@ public abstract class Request {
                     rd = new BufferedReader(new InputStreamReader(con.getInputStream(), cs));
 
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     System.err.println(con);
                     try {
                         rd = new BufferedReader(new InputStreamReader(con.getInputStream(), cs.replace("-", "")));

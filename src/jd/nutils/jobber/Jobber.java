@@ -281,7 +281,7 @@ public class Jobber {
                 try {
                     ra.go();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     fireJobException(ra, e);
                 }
                 synchronized (jobsFinished) {

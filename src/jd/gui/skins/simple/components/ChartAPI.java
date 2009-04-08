@@ -35,7 +35,6 @@ import javax.swing.JComponent;
 
 import jd.http.Encoding;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * Die ChartAPI greift auf die Google Chart API zurück Sie funktioniert nur mit
@@ -68,7 +67,7 @@ public abstract class ChartAPI extends JComponent {
     }
 
     private final String serverAdress = "chart.apis.google.com";
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
     private HashMap<String, ChartAPI_Entity> collData = new HashMap<String, ChartAPI_Entity>();
     private int width;
     private int height;

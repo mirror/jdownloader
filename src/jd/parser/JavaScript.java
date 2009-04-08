@@ -127,7 +127,7 @@ public final class JavaScript {
                         cx.evaluateString(scope, parseJS(reg[i][2]), "<cmd>", 1, null);
                     } catch (Exception e) {
                         if (debug) {
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                             System.err.println(reg[i][2]);
                         }
                     }
@@ -166,7 +166,7 @@ public final class JavaScript {
                                 cx.evaluateString(scope, parseJS(page), "<cmd>", 1, null);
                             } catch (Exception e) {
                                 if (debug) {
-                                    e.printStackTrace();
+                                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                                     System.err.println(link);
                                 }
                             }

@@ -59,7 +59,7 @@ public class JUndoManager {
                         undo.undo();
                     }
                 } catch (CannotUndoException e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
 
@@ -76,7 +76,7 @@ public class JUndoManager {
                         undo.redo();
                     }
                 } catch (CannotRedoException e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
 

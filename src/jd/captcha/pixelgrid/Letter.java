@@ -851,7 +851,7 @@ public class Letter extends PixelGrid {
                     grid[x][y] = Integer.parseInt(String.valueOf(line.charAt(x))) * getMaxPixelValue();
                 } catch (Exception e) {
 
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     return false;
                 }
                 if (grid[x][y] == 0) {

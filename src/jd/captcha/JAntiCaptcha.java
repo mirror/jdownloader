@@ -504,7 +504,7 @@ public class JAntiCaptcha {
                 if (JAntiCaptcha.isLoggerActive()) {
                     logger.severe("Fehler in useLettercomparatorFilter:" + e.getLocalizedMessage() + " / " + getJas().getString("useLettercomparatorFilter"));
                 }
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
 
         }
@@ -636,7 +636,7 @@ public class JAntiCaptcha {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.severe("Fehler bein lesen der MTH Datei!!. Methode kann nicht funktionieren!");
             }
@@ -710,7 +710,7 @@ public class JAntiCaptcha {
     // try {
     // pg.grabPixels();
     // } catch (Exception e) {
-    // e.printStackTrace();
+    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
     // }
     // ColorModel cm = pg.getColorModel();
     // tmp.setColorModel(cm);
@@ -849,7 +849,7 @@ public class JAntiCaptcha {
                 ImageIO.write(img, "png", file);
             } catch (IOException e) {
 
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
         }
     }
@@ -1047,7 +1047,7 @@ public class JAntiCaptcha {
                     preValueFilterMethod = newClass.getMethod(methodname, preValueFilterParameterTypes);
 
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
             Method postValueFilterMethod = null;
@@ -1070,7 +1070,7 @@ public class JAntiCaptcha {
                     postValueFilterMethod = newClass.getMethod(methodname, postValueFilterParameterTypes);
 
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
             while (iter.hasNext()) {
@@ -1142,7 +1142,7 @@ public class JAntiCaptcha {
 
         } catch (Exception e) {
 
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         if (res != null && res.getB() != null) {
             if (JAntiCaptcha.isLoggerActive()) {
@@ -1240,7 +1240,7 @@ public class JAntiCaptcha {
                     preValueFilterMethod = newClass.getMethod(methodname, preValueFilterParameterTypes);
 
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
             Method postValueFilterMethod = null;
@@ -1263,7 +1263,7 @@ public class JAntiCaptcha {
                     postValueFilterMethod = newClass.getMethod(methodname, postValueFilterParameterTypes);
 
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
             for (angle = UTILITIES.getJumperStart(leftAngle, rightAngle); UTILITIES.checkJumper(angle, leftAngle, rightAngle); angle = UTILITIES.nextJump(angle, leftAngle, rightAngle, steps)) {
@@ -1377,7 +1377,7 @@ public class JAntiCaptcha {
             }
             // w.refreshUI();
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
 
         if (res != null && res.getB() != null) {
@@ -1514,7 +1514,7 @@ public class JAntiCaptcha {
                 image=ImageIO.read(element);
             } catch (IOException e) {
                 // TODO Auto-generated catch block
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
             System.out.println(element.getAbsolutePath());
             int width = image.getWidth(null);
@@ -1709,7 +1709,7 @@ public class JAntiCaptcha {
             }
 
         } catch (TransformerException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
 
     }

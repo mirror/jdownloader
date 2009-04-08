@@ -71,14 +71,14 @@ public class JDController implements ControlListener {
                 public void run() {
                     while (true) {
                         if (eventStart > 0 && System.currentTimeMillis() - eventStart > MAX_EVENT_TIME) {
-                            JDUtilities.getLogger().finer("WATCHDOG: Execution Limit reached");
-                            JDUtilities.getLogger().finer("ControlListener: " + currentListener);
-                            JDUtilities.getLogger().finer("Event: " + event);
+                            jd.controlling.JDLogger.getLogger().finer("WATCHDOG: Execution Limit reached");
+                            jd.controlling.JDLogger.getLogger().finer("ControlListener: " + currentListener);
+                            jd.controlling.JDLogger.getLogger().finer("Event: " + event);
                         }
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                             return;
                         }
                     }
@@ -95,7 +95,7 @@ public class JDController implements ControlListener {
                         try {
                             wait();
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         }
                     }
                 }
@@ -130,7 +130,7 @@ public class JDController implements ControlListener {
                     // JDUtilities.getLogger().severe("THREAD2");
 
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     eventStart = 0;
                 }
             }
@@ -173,7 +173,7 @@ public class JDController implements ControlListener {
 
     private EventSender eventSender = null;
 
-    private BufferedWriter fileLogger = null;
+
 
     private Vector<DownloadLink> finishedLinks = new Vector<DownloadLink>();
 
@@ -184,7 +184,7 @@ public class JDController implements ControlListener {
     /**
      * Der Logger
      */
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     /**
      * Schnittstelle zur Benutzeroberfläche
@@ -283,33 +283,17 @@ public class JDController implements ControlListener {
                 try {
                     link.getPlugin().prepareLink(link);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
                 link.getLinkStatus().setStatusText(null);
             }
             break;
         case ControlEvent.CONTROL_LOG_OCCURED:
-            if (fileLogger != null) {
-                LogRecord l = (LogRecord) event.getParameter();
-                try {
-                    fileLogger.write(l.getMillis() + " : " + l.getSourceClassName() + "(" + l.getSourceMethodName() + ") " + "[" + l.getLevel() + "] -> " + l.getMessage() + "\r\n");
-                    fileLogger.flush();
-                } catch (IOException e) {
-                }
-
-            }
-
+        
             break;
         case ControlEvent.CONTROL_SYSTEM_EXIT:
 
-            if (fileLogger != null) {
-                try {
-                    fileLogger.flush();
-                    fileLogger.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+           
             break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
@@ -374,7 +358,7 @@ public class JDController implements ControlListener {
             if (dlcKey == null) return null;
             return xml + dlcKey;
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return null;
     }
@@ -637,7 +621,7 @@ public class JDController implements ControlListener {
                         break;
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
             progress.increase(1);
@@ -784,7 +768,7 @@ public class JDController implements ControlListener {
                                 break;
                             }
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         }
                     }
                     progress.increase(1);
@@ -853,9 +837,7 @@ public class JDController implements ControlListener {
         this.initStatus = initStatus;
     }
 
-    public void setLogFileWriter(BufferedWriter bufferedWriter) {
-        fileLogger = bufferedWriter;
-    }
+
 
     /**
      * Setzt das UIINterface
@@ -972,7 +954,7 @@ public class JDController implements ControlListener {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return null;
 
@@ -998,7 +980,7 @@ public class JDController implements ControlListener {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return ret;
     }
@@ -1023,7 +1005,7 @@ public class JDController implements ControlListener {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return ret;
     }

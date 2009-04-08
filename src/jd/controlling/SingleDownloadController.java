@@ -67,7 +67,7 @@ public class SingleDownloadController extends Thread {
     /**
      * Der Logger
      */
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     /**
      * Erstellt einen Thread zum Start des Downloadvorganges
@@ -157,12 +157,12 @@ public class SingleDownloadController extends Thread {
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             } catch (NullPointerException e) {
                 logger.severe("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             } catch (Exception e) {
                 logger.severe("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             }
@@ -237,7 +237,7 @@ public class SingleDownloadController extends Thread {
 
         } catch (Exception e) {
             logger.severe("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 
@@ -370,7 +370,7 @@ public class SingleDownloadController extends Thread {
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
             retry(downloadLink, plugin);
         }

@@ -173,7 +173,7 @@ public class Form extends Property {
     // try {
     // if (submit == value || submit.equalsIgnoreCase(value)) return true;
     // } catch (NullPointerException e) {
-    // // e.printStackTrace();
+    // // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
     // }
     // }
     // return false;
@@ -189,7 +189,7 @@ public class Form extends Property {
                 baseurl = new URL(baseURL);
             } catch (MalformedURLException e) {
 
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
         }
         String ret = action;

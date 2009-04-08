@@ -38,7 +38,7 @@ public class PasswordListener implements ProcessListener {
         try {
             lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition), JDUnrar.CODEPAGE);
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));
         }
 

@@ -34,7 +34,7 @@ public class JDFileChooser extends JFileChooser {
     private static final long serialVersionUID = 3315263822025280362L;
     private String fcID;
     @SuppressWarnings("unused")
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     public JDFileChooser() {
         super();

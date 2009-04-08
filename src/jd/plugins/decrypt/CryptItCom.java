@@ -186,7 +186,7 @@ public class CryptItCom extends PluginForDecrypt {
         } catch (DecrypterException j) {
             throw j;
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             return null;
         }
         return decryptedLinks;

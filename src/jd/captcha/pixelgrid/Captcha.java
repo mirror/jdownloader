@@ -923,7 +923,7 @@ public class Captcha extends PixelGrid {
                 if (JAntiCaptcha.isLoggerActive()) {
                     logger.severe("Fehler in useLetterFilter:" + e.getLocalizedMessage() + " / " + owner.getJas().getString("useSpecialGetLetters"));
                 }
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
             seperatedLetters = ret;
             return ret;
@@ -1076,7 +1076,7 @@ public class Captcha extends PixelGrid {
                 if (JAntiCaptcha.isLoggerActive()) {
                     logger.severe("Fehler in useSpecialGetLetters:" + e.getLocalizedMessage() + " / " + owner.getJas().getString("useSpecialGetLetters"));
                 }
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
             return null;
         }
@@ -1582,13 +1582,13 @@ public class Captcha extends PixelGrid {
             fos.close();
         } catch (FileNotFoundException e) {
 
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         } catch (ImageFormatException e) {
 
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         } catch (IOException e) {
 
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 
@@ -1649,7 +1649,7 @@ public class Captcha extends PixelGrid {
 
                     pixel[i] = ((IndexColorModel) colorModel).getRGB(bpixel[i] & pixel_mask);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     pixel[i] = 0;
                 }
 

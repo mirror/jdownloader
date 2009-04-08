@@ -35,7 +35,7 @@ public class JDSounds {
 
     private static boolean enabled = true;
 
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     private static boolean paralellSounds = false;
 
@@ -122,9 +122,9 @@ public class JDSounds {
         try {
             new AdvancedPlayer(new FileInputStream(f.getAbsolutePath())).play();
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         } catch (JavaLayerException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 
@@ -167,7 +167,7 @@ public class JDSounds {
             logger.severe("SoundTheme " + themeID + " not installed");
             return;
         }
-        logger.info("SoundTheme " + themeID + " loaded");
+        logger.finer("SoundTheme " + themeID + " loaded");
         data = new HashMap<String, String>();
         String str = JDIO.getLocalFile(file);
         String[] lines = Regex.getLines(str);

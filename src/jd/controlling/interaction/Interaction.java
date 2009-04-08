@@ -50,7 +50,7 @@ public abstract class Interaction extends Property implements Serializable {
 
     private static Integer interactionsRunning = 0;
 
-    protected static Logger logger = JDUtilities.getLogger();
+    protected static Logger logger = jd.controlling.JDLogger.getLogger();
 
     private transient static final long serialVersionUID = -5609631258725998799L;
 

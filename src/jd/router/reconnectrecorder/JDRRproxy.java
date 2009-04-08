@@ -27,8 +27,8 @@ import java.util.Vector;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
+import jd.controlling.JDLogger;
 import jd.utils.JDHexUtils;
-import jd.utils.JDUtilities;
 
 public class JDRRproxy extends Thread {
 
@@ -171,7 +171,7 @@ class ProxyThread extends Thread {
 
                         }
                     }
-                    JDUtilities.getLogger().info("before: " + headers + "");
+                    JDLogger.getLogger().info("before: " + headers + "");
                     JDRRUtils.createStep(headers, postdata, steps, ishttps);
                 } catch (Exception e) {
                 }
@@ -213,7 +213,7 @@ class ProxyThread extends Thread {
                         }
                         headers.put(key, value);
                     }
-                    JDUtilities.getLogger().info("after: " + headers + "");
+                    JDLogger.getLogger().info("after: " + headers + "");
                 } catch (Exception e) {
                 }
 

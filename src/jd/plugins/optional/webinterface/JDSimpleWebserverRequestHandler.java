@@ -46,7 +46,7 @@ public class JDSimpleWebserverRequestHandler {
     private SubConfiguration guiConfig = null;
     private HashMap<String, String> headers;
 
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
     private JDSimpleWebserverResponseCreator response;
 
     private static ArrayList<DownloadLink> totalLinkList = new ArrayList<DownloadLink>();
@@ -528,7 +528,7 @@ public class JDSimpleWebserverRequestHandler {
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
 
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         }
                         boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
                         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
@@ -556,7 +556,7 @@ public class JDSimpleWebserverRequestHandler {
                         try {
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         }
                         JDUtilities.getController().exit();
                     }
@@ -581,7 +581,7 @@ public class JDSimpleWebserverRequestHandler {
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
 
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         }
                         JDUtilities.restartJD();
                     }

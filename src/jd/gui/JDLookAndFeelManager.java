@@ -96,7 +96,7 @@ public class JDLookAndFeelManager implements Serializable {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 
@@ -108,7 +108,7 @@ public class JDLookAndFeelManager implements Serializable {
         try {
             UIManager.setLookAndFeel(getPlaf().getClassName());
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 

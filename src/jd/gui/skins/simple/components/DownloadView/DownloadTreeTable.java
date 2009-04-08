@@ -94,7 +94,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     private DownloadLink currentLink;
 
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     private DownloadTreeTableModel model;
 
@@ -429,14 +429,14 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
             break;
         case DownloadLinksPanel.REFRESH_ALL_DATA_CHANGED:
-            logger.info("Updatecomplete");
+            logger.finest("Updatecomplete");
             synchronized (JDUtilities.getDownloadController().getPackages()) {
                 supporter.fireChildrenChanged(new TreePath(model.getRoot()), null, null);
             }
 
             break;
         case DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED:
-            logger.info("REFRESH GUI COMPLETE");
+            logger.finest("REFRESH GUI COMPLETE");
             synchronized (JDUtilities.getDownloadController().getPackages()) {
                 supporter.fireTreeStructureChanged(new TreePath(model.getRoot()));
             }
@@ -708,7 +708,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         Vector<DownloadLink> links = getSelectedDownloadLinks();
         Vector<FilePackage> fps = getSelectedFilePackages();
 
-        logger.info(links.size() + " - " + fps.size());
+        logger.finer("move "+links.size() + " - " + fps.size());
         if (links.size() >= fps.size()) {
             if (links.size() == 0) { return; }
             /**
@@ -782,7 +782,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
             public void actionPerformed(ActionEvent e) {
                 updateSelectionAndExpandStatus();
-                logger.info("REFRESH");
+                logger.finest("REFRESH");
             }
 
         });

@@ -38,7 +38,7 @@ public class DatabaseConnector implements Serializable {
 
     private static final long serialVersionUID = 8074213660382482620L;
 
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     private static String configpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
 
@@ -61,7 +61,7 @@ public class DatabaseConnector implements Serializable {
     public DatabaseConnector() {
         try {
             if (con != null) return;
-            logger.info("Loading database");
+            logger.finer("Loading database");
 
             if (!checkDatabaseHeader()) {
                 logger.severe("Database broken! Creating fresh Database");
@@ -78,13 +78,13 @@ public class DatabaseConnector implements Serializable {
             con.createStatement().executeUpdate("SET LOGSIZE 1");
 
             if (!new File(configpath + "database.script").exists()) {
-                logger.info("No configuration database found. Creating new one.");
+                logger.finer("No configuration database found. Creating new one.");
 
                 con.createStatement().executeUpdate("CREATE TABLE config (name VARCHAR(256), obj OTHER)");
                 con.createStatement().executeUpdate("CREATE TABLE links (name VARCHAR(256), obj OTHER)");
 
                 PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
-                logger.info("Starting database wrapper");
+                logger.finer("Starting database wrapper");
 
                 File f = null;
                 for (String tmppath : new File(configpath).list()) {
@@ -101,13 +101,13 @@ public class DatabaseConnector implements Serializable {
                             }
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                 }
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 
@@ -115,7 +115,7 @@ public class DatabaseConnector implements Serializable {
      * Checks the database of inconsistency
      */
     private boolean checkDatabaseHeader() {
-        logger.info("Checking database");
+        logger.finer("Checking database");
         File f = new File(configpath + "database.script");
         if (!f.exists()) return true;
         boolean databaseok = true;
@@ -175,7 +175,7 @@ public class DatabaseConnector implements Serializable {
             }
             in.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return databaseok;
     }
@@ -197,7 +197,7 @@ public class DatabaseConnector implements Serializable {
             }
         } catch (Exception e) {
             System.out.println("DB Error bei " + name);
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
 
         return ret;
@@ -222,7 +222,7 @@ public class DatabaseConnector implements Serializable {
                 pst.execute();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 
@@ -234,7 +234,7 @@ public class DatabaseConnector implements Serializable {
 
             con.close();
         } catch (SQLException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 
@@ -247,7 +247,7 @@ public class DatabaseConnector implements Serializable {
             rs.next();
             return rs.getObject(2);
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return null;
     }
@@ -268,7 +268,7 @@ public class DatabaseConnector implements Serializable {
                 pst.execute();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 

@@ -42,7 +42,7 @@ public class JDRR {
             new JDRRServer(Server_Socket_HTTP, serverip, 80, false).start();
             new JDRRServer(Server_Socket_HTTPS, serverip, 443, true).start();
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 
@@ -52,12 +52,12 @@ public class JDRR {
         try {
             Server_Socket_HTTP.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         try {
             Server_Socket_HTTPS.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 
@@ -92,7 +92,7 @@ public class JDRR {
             try {
                 Server_Socket.close();
             } catch (Exception e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
         }
     }

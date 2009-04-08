@@ -46,7 +46,7 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
     private static final long serialVersionUID = 4827346842931L;
 
     @SuppressWarnings("unused")
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     private JButton btnBAD;
     private JButton btnCnTh;
@@ -78,7 +78,7 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                 }
                 int c = countdown;

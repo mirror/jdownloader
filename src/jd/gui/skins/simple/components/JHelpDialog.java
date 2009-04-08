@@ -78,7 +78,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
 
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
                 return true;
             }
@@ -99,7 +99,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
     private JTextPane htmlArea;
     protected Insets insets = new Insets(5, 5, 5, 5);
 
-    protected Logger logger = JDUtilities.getLogger();
+    protected Logger logger = jd.controlling.JDLogger.getLogger();
 
     private JFrame parentFrame;
     private int status = STATUS_UNANSWERED;

@@ -20,7 +20,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
-import jd.utils.JDUtilities;
 
 /**
  * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties
@@ -38,7 +37,7 @@ public class Property implements Serializable {
      */
     private static final long serialVersionUID = -6093927038856757256L;
 
-    protected transient Logger logger = JDUtilities.getLogger();
+    protected transient Logger logger = jd.controlling.JDLogger.getLogger();
 
     private HashMap<String, Object> properties = new HashMap<String, Object>();
 
@@ -242,7 +241,7 @@ public class Property implements Serializable {
         }
         properties.put(key, value);
         if (logger == null) {
-            logger = JDUtilities.getLogger();
+            logger = jd.controlling.JDLogger.getLogger();
         }
 
         // logger.finer("Config property: " + key + " = " + value+" - "+this);

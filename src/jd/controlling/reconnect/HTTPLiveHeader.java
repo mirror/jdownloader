@@ -278,12 +278,12 @@ public class HTTPLiveHeader extends ReconnectMethod {
             logger.severe(e.getMessage());
             return false;
         } catch (ParserConfigurationException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             progress.finalize();
             logger.severe(e.getMessage());
             return false;
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             progress.finalize();
             logger.severe(e.getCause() + " : " + e.getMessage());
             return false;
@@ -418,11 +418,11 @@ public class HTTPLiveHeader extends ReconnectMethod {
             } catch (IOException e) {
 
                 logger.severe("IO Error: " + e.getLocalizedMessage());
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 return null;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             return null;
         }
 

@@ -82,7 +82,7 @@ public class JDIO {
             f.close();
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             return false;
         }
     }
@@ -116,7 +116,7 @@ public class JDIO {
             output.close();
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             return false;
         }
     }
@@ -181,9 +181,9 @@ public class JDIO {
                 buff.close();
                 fos.close();
             } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             } catch (IOException e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
             String hashPost = JDHash.getMD5(fileOutput);
             if (hashPost == null) {
@@ -206,7 +206,7 @@ public class JDIO {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
 
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
         }
     }
@@ -289,7 +289,7 @@ public class JDIO {
             return ret.toString();
         } catch (IOException e) {
 
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return "";
     }
@@ -352,13 +352,13 @@ public class JDIO {
                     }
                 } catch (IOException e) {
 
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     return false;
                 }
             }
             return false;
         } catch (IOException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         try {
             if (inChannel != null) {
@@ -369,7 +369,7 @@ public class JDIO {
                 outChannel.close();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             return false;
         }
         return true;

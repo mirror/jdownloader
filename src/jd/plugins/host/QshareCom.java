@@ -93,7 +93,7 @@ public class QshareCom extends PluginForHost {
             date = dateFormat.parse(expire);
             ai.setValidUntil(date.getTime());
         } catch (ParseException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return ai;
     }

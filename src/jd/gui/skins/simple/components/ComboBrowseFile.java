@@ -109,7 +109,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     private FileFilter fileFilter;
 
     @SuppressWarnings("unused")
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     @SuppressWarnings("unchecked")
     public ComboBrowseFile(String string) {
@@ -117,7 +117,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         try {
             list = (Vector<String>) JDUtilities.getSubConfig("GUI").getProperty(string, new Vector<String>());
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             list = new Vector<String>();
         }
         setFiles(list);

@@ -33,7 +33,6 @@ import javax.swing.WindowConstants;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGuiUtils;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse ist wie die Optionspane mit textfeld nur mit zwei textfeldern
@@ -52,7 +51,7 @@ public class TwoTextFieldDialog extends JDialog implements ActionListener {
     private JButton btnOk;
 
     protected Insets insets = new Insets(0, 0, 0, 0);
-    protected Logger logger = JDUtilities.getLogger();
+    protected Logger logger = jd.controlling.JDLogger.getLogger();
 
     private String[] text2 = new String[2];
 

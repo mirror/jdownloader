@@ -47,7 +47,7 @@ public class DragNDrop extends JComponent implements DropTargetListener {
 
     private Image image;
 
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     public DragNDrop() {
         new DropTarget(this, this);
@@ -88,7 +88,7 @@ public class DragNDrop extends JComponent implements DropTargetListener {
                 logger.info("Unsupported Drop-Type");
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         repaint();
     }

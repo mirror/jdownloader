@@ -35,7 +35,7 @@ public class Reconnecter {
     private static boolean IS_RECONNECTING = false;
     private static boolean LAST_RECONNECT_SUCCESS = false;
     private static long lastIPUpdate = 0;
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
     private static int RECONNECT_REQUESTS = 0;
 
     private static boolean checkExternalIPChange() {

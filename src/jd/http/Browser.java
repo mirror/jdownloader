@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import jd.config.Configuration;
+import jd.controlling.JDLogger;
 import jd.http.requests.FormData;
 import jd.http.requests.GetRequest;
 import jd.http.requests.PostFormDataRequest;
@@ -277,7 +278,7 @@ public class Browser {
     private boolean snifferCheck() throws SnifferException {
         if (!snifferDetection) return false;
         if (Sniffy.hasSniffer()) {
-            JDUtilities.getLogger().severe("Sniffer Software detected");
+            JDLogger.getLogger().severe("Sniffer Software detected");
             throw new SnifferException();
         }
         return false;
@@ -384,7 +385,7 @@ public class Browser {
     private void checkContentLengthLimit(Request request) throws BrowserException {
         if (request == null || request.getHttpConnection() == null || request.getHttpConnection().getHeaderField("Content-Length") == null) return;
         if (Long.parseLong(request.getHttpConnection().getHeaderField("Content-Length")) > limit) {
-            JDUtilities.getLogger().severe(request.printHeaders());
+            JDLogger.getLogger().severe(request.printHeaders());
             throw new BrowserException("Content-length too big");
         }
     }
@@ -516,7 +517,7 @@ public class Browser {
      */
     public URLConnectionAdapter openRequestConnection(Request request) throws IOException {
         connect(request);
-        if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
+        if (isDebug()) JDLogger.getLogger().finest("\r\n" + request.printHeaders());
 
         updateCookies(request);
         this.request = request;
@@ -1099,7 +1100,7 @@ public class Browser {
         String ret = null;
 
         if (request.getHtmlCode() != null) {
-            JDUtilities.getLogger().warning("Request has already been read");
+            JDLogger.getLogger().warning("Request has already been read");
             return null;
         }
         checkContentLengthLimit(request);
@@ -1354,7 +1355,7 @@ public class Browser {
         if (port <= 0) port = 80;
         String[] auth = this.getAuth(host + ":" + port);
         if (auth == null) return null;
-        JDUtilities.getLogger().finest("Use Authentication for: " + host + ":" + port + ": " + auth[0] + " - " + auth[1]);
+        JDLogger.getLogger().finest("Use Authentication for: " + host + ":" + port + ": " + auth[0] + " - " + auth[1]);
         return new PasswordAuthentication(auth[0], auth[1].toCharArray());
     }
 
@@ -1570,7 +1571,7 @@ public class Browser {
                             br.getPage(string);
                         } catch (IOException e) {
                             // TODO Auto-generated catch block
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         }
                     }
 

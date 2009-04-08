@@ -18,10 +18,9 @@ package jd;
 
 import java.util.logging.Logger;
 
-import jd.utils.JDUtilities;
 
 public class PluginPattern {
-    static private Logger logger = JDUtilities.getLogger();
+    static private Logger logger = jd.controlling.JDLogger.getLogger();
 
     static public String decrypterPattern_UCMS_Plugin() {
         StringBuilder completePattern = new StringBuilder();

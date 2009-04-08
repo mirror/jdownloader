@@ -20,6 +20,7 @@ import java.util.Vector;
 
 import javax.swing.tree.TreePath;
 
+import jd.controlling.JDLogger;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDLocale;
@@ -260,7 +261,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
     @Override
     public void setValueAt(Object value, Object node, int col) {
-        JDUtilities.getLogger().info("NNNN");
+        JDLogger.getLogger().info("NNNN");
     }
 
 }

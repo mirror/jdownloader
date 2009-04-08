@@ -161,7 +161,7 @@ public class PostFormDataRequest extends Request {
             System.out.println(code);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
 
         }
 

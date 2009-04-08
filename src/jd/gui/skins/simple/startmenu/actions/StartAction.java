@@ -46,7 +46,7 @@ public abstract class StartAction extends AbstractAction {
 
                 putValue(Action.DISPLAYED_MNEMONIC_INDEX_KEY, JDLocale.L(kename, kename).indexOf(m));
             } catch (Exception e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
         }
 

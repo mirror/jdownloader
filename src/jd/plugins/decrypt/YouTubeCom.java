@@ -175,7 +175,7 @@ public class YouTubeCom extends PluginForDecrypt {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             return null;
         }
         return decryptedLinks;

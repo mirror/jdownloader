@@ -38,7 +38,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
             try {
                 onExit();
             } catch (Exception e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
 
         }

@@ -49,7 +49,7 @@ public class JDSimpleWebserver extends Thread {
 
         private Socket Current_Socket;
 
-        private Logger logger = JDUtilities.getLogger();
+        private Logger logger = jd.controlling.JDLogger.getLogger();
 
         public JDRequestHandler(Socket Client_Socket) {
             Current_Socket = Client_Socket;
@@ -265,7 +265,7 @@ public class JDSimpleWebserver extends Thread {
 
     private static boolean NeedAuth = false;
 
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
     private boolean Server_Running = true;
 
     private ServerSocket Server_Socket;
@@ -318,7 +318,7 @@ public class JDSimpleWebserver extends Thread {
                 Thread client_thread = new Thread(new JDRequestHandler(Client_Socket));
                 client_thread.start();
             } catch (IOException e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 logger.severe("WebInterface: Client-Connection failed");
             }
         }

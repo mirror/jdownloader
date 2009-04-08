@@ -55,7 +55,7 @@ public class SQLRouterData {
             f.close();
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             // 
             return false;
         }
@@ -111,7 +111,7 @@ public class SQLRouterData {
                         Method inf = infoc.getMethod("set" + node.getNodeName().substring(0, 1).toUpperCase() + node.getNodeName().substring(1), parameterTypes);
                         inf.invoke(info, new Object[] { node.getTextContent() });
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                 }
             }
@@ -124,7 +124,7 @@ public class SQLRouterData {
             }
             return info;
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return null;
     }

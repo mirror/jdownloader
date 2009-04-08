@@ -46,7 +46,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
 ConfigGroup logging = new ConfigGroup(JDLocale.L("gui.config.general.logging", "Logging"),JDTheme.II("gui.images.terminal",32,32));
 
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] { Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.OFF }, JDLocale.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.WARNING).setGroup(logging)));
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.LOGGER_FILELOG, JDLocale.L("gui.config.general.filelogger", "Erstelle Logdatei im ./logs/ Ordner")).setDefaultValue(false).setGroup(logging)));
+//        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.LOGGER_FILELOG, JDLocale.L("gui.config.general.filelogger", "Erstelle Logdatei im ./logs/ Ordner")).setDefaultValue(false).setGroup(logging)));
 
         ConfigGroup update = new ConfigGroup(JDLocale.L("gui.config.general.update", "Update"),JDTheme.II("gui.splash.update",32,32));
 

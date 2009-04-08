@@ -47,7 +47,7 @@ import jd.utils.JDUtilities;
 public class CountdownConfirmDialog extends JDialog implements ActionListener, HyperlinkListener {
 
     @SuppressWarnings("unused")
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     private static final long serialVersionUID = 1L;
 
@@ -141,7 +141,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                 }
                 int c = countdown;

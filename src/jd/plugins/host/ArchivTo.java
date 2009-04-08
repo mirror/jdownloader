@@ -55,7 +55,7 @@ public class ArchivTo extends PluginForHost {
 
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return false;
     }

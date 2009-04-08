@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.utils.JDUtilities;
 
 public class ConfigEntry implements Serializable, PropertyChangeListener {
     public static enum PropertyType {
@@ -50,7 +49,7 @@ public String toString(){
     }
 
     @SuppressWarnings("unused")
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     /**
      * serialVersionUID

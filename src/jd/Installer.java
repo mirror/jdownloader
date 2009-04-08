@@ -22,6 +22,7 @@ import java.util.Locale;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.OSDetector;
 import jd.utils.JDLocale;
@@ -48,7 +49,7 @@ public class Installer {
         configContainer.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getSubConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")).setDefaultValue(Locale.getDefault()));
         SimpleGUI.showConfigDialog(null, configContainer, true);
         if (JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID) == null) {
-            JDUtilities.getLogger().severe("language not set");
+            JDLogger.getLogger().severe("language not set");
             this.aborted = true;
             return;
         }
@@ -63,7 +64,7 @@ public class Installer {
         }
         SimpleGUI.showConfigDialog(null, configContainer, true);
         if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) == null) {
-            JDUtilities.getLogger().severe("downloaddir not set");
+            JDLogger.getLogger().severe("downloaddir not set");
             this.aborted = true;
             return;
         }

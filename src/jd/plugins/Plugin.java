@@ -63,7 +63,7 @@ public abstract class Plugin implements ActionListener {
     /**
      * Ein Logger, um Meldungen darzustellen
      */
-    public static Logger logger = JDUtilities.getLogger();
+    public static Logger logger = jd.controlling.JDLogger.getLogger();
 
     /**
      * Gibt die Passwörter als String aus bsp. {"Passwort1","Passwort2"}

@@ -79,7 +79,7 @@ public class GoogleGroups extends PluginForHost {
                 }
             } catch (IOException e) {
                 // TODO Auto-generated catch block
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 return false;
             }
         }

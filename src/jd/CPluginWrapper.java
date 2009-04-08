@@ -61,7 +61,7 @@ public class CPluginWrapper extends PluginWrapper {
             return (PluginsC) loadedPlugin;
         } catch (Throwable e) {
             logger.info("Plugin Exception!");
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
 
         return null;

@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.utils.JDUtilities;
 
 /**
  * Hier werden die Daten für einen Router gespeichert
@@ -30,7 +29,7 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 public class RouterData implements Serializable {
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     public transient static final int LOGIN_TYPE_AUTH = 1;
     /**

@@ -32,7 +32,6 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String JAC_SHOW_TIMEOUT = "JAC_SHOW_TIMEOUT";
 
-    public static final String LOGGER_FILELOG = "LOGGER_FILELOG";
 
     public static final String PARAM_CAPTCHA_JAC_DISABLE = "CAPTCHA_JAC_DISBALE";
 

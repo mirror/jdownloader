@@ -245,7 +245,7 @@ public class Megauploadcom extends PluginForHost {
             try {
                 id = getDownloadID(u);
             } catch (Exception e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
             map.put("id" + i, id);
             i++;

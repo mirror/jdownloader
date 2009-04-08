@@ -151,9 +151,9 @@ public class ConfigPanelGUI extends ConfigPanel {
                 launcher = new BrowserLauncher();
                 ar = launcher.getBrowserList();
             } catch (BrowserLaunchingInitializingException e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             } catch (UnsupportedOperatingSystemException e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
             if (ar == null || ar.size() < 2) {
                 browserArray = new Object[] { "JavaBrowser" };
@@ -180,7 +180,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                         save();
                         JLinkButton.openURL("http://jdownloader.org");
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         SimpleGUI.CURRENTGUI.showMessageDialog(JDLocale.LF("gui.config.gui.testbrowser.error", "Browser launcher failed: %s", e.getLocalizedMessage()));
                     }
                 }
@@ -264,7 +264,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                                     // SimpleGUI.CURRENTGUI.updateDecoration();
                                     SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
                                 } catch (Exception e) {
-                                    e.printStackTrace();
+                                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                                 }
                                 return null;
                             }
@@ -311,7 +311,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                             SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
 
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         }
                         return null;
                     }

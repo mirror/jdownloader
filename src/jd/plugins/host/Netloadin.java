@@ -400,7 +400,7 @@ public class Netloadin extends PluginForHost {
         } catch (PluginException e2) {
             throw e2;
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }

@@ -65,7 +65,7 @@ public class RInfo implements Serializable {
                             try {
                                 StrCont = JDUtilities.objectToXml(content);
                             } catch (IOException e) {
-                                e.printStackTrace();
+                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                             }
                         }
                         int c = 0;
@@ -90,13 +90,13 @@ public class RInfo implements Serializable {
                         try {
                             ret.put(field.getName(), URLEncoder.encode(StrCont, "UTF-8"));
                         } catch (UnsupportedEncodingException e) {
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         }
                     }
                 } catch (IllegalArgumentException e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 } catch (IllegalAccessException e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
         }
@@ -193,7 +193,7 @@ public class RInfo implements Serializable {
             if (reconnectMethode != null) System.out.println(SQLRouterData.br.postPage("http://localhost/router/setIntegrety2.php", getHashMap()));
 
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 

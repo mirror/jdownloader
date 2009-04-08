@@ -44,6 +44,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.config.Configuration;
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.components.ChartAPI_Entity;
 import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -140,7 +141,7 @@ public class PremiumPanel extends JPanel {
             try {
                 this.add(new JLinkButton(JDLocale.L("plugins.premium.premiumbutton", "Get Premium Account"), new URL("http://jdownloader.org/r.php?u=" + Encoding.urlEncode(premiumUrl))), "span, alignright");
             } catch (MalformedURLException e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
         }
 
@@ -310,7 +311,7 @@ public class PremiumPanel extends JPanel {
                             if (rest > 0) collectTraffic = collectTraffic + rest;
                         }
                     } catch (Exception e) {
-                        JDUtilities.getLogger().finest("Not able to load Traffic-Limit for ChartAPI");
+                        JDLogger.getLogger().finest("Not able to load Traffic-Limit for ChartAPI");
                     }
                 }
             }

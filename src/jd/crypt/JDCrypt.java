@@ -40,7 +40,7 @@ public class JDCrypt {
 
         } catch (Exception e) {
 
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return null;
     }
@@ -56,7 +56,7 @@ public class JDCrypt {
             return new String(cipher.doFinal(b));
         } catch (Exception e) {
 
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return null;
     }
@@ -90,7 +90,7 @@ public class JDCrypt {
                     in.close();
                 } catch (IOException e) {
 
-                    // e.printStackTrace();
+                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
         }
@@ -103,7 +103,7 @@ public class JDCrypt {
             return signature;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
 
         }
 

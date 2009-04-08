@@ -257,7 +257,7 @@ public class WebUpdater implements Serializable {
                 WebUpdater.getConfig("WEBUPDATE").setProperty("SERVERLIST", servers);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return getAvailableServers();
 
@@ -337,7 +337,7 @@ public class WebUpdater implements Serializable {
 
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 log(e.getLocalizedMessage());
                 log(file.toString());
                 log("Failed\r\n");

@@ -30,7 +30,7 @@ import org.schwering.irc.lib.IRCModeParser;
 import org.schwering.irc.lib.IRCUser;
 
 class IRCListener implements IRCEventListener {
-    public static Logger logger = JDUtilities.getLogger();
+    public static Logger logger = jd.controlling.JDLogger.getLogger();
     private JDChat owner;
 
     public IRCListener(JDChat owner) {

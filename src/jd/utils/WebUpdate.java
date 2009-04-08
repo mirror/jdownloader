@@ -43,7 +43,7 @@ import jd.update.PackageData;
 import jd.update.WebUpdater;
 
 public class WebUpdate implements ControlListener {
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
     private static boolean JDInitialized = false;
     private static boolean ListenerAdded = false;
 
@@ -175,7 +175,7 @@ public class WebUpdate implements ControlListener {
                                         doUpdate();
                                     }
                                 } catch (HeadlessException e) {
-                                    e.printStackTrace();
+                                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                                 }
                             }
                         }
@@ -203,7 +203,7 @@ public class WebUpdate implements ControlListener {
             WebUpdate.updateUpdater();
         } catch (IOException e) {
 
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         JDIO.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
         logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "jdupdate.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));

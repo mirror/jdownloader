@@ -34,7 +34,7 @@ import jd.utils.JDUtilities;
 public class ProgressDialog extends Progressor implements ActionListener {
 
     @SuppressWarnings("unused")
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     private static int REL = GridBagConstraints.RELATIVE;
 

@@ -21,6 +21,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 
 import jd.config.MenuItem;
+import jd.controlling.JDLogger;
 import jd.utils.JDUtilities;
 
 public class JDMenuAction extends AbstractAction {
@@ -44,7 +45,7 @@ public class JDMenuAction extends AbstractAction {
 
     public void actionPerformed(ActionEvent e) {
         if (menuItem.getActionListener() == null) {
-            JDUtilities.getLogger().warning("no Actionlistener for " + menuItem.getTitle());
+            JDLogger.getLogger().warning("no Actionlistener for " + menuItem.getTitle());
             return;
         }
         menuItem.getActionListener().actionPerformed(new ActionEvent(menuItem, menuItem.getActionID(), menuItem.getTitle()));

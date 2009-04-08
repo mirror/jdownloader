@@ -248,7 +248,7 @@ public class PixelGrid extends Property {
     // } catch (ArrayIndexOutOfBoundsException e) {
     // UTILITIES.trace("ERROR: Nicht im grid; [" + x + "][" + y
     // + "] grid " + localGrid.length);
-    // e.printStackTrace();
+    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
     //
     // }
     // }
@@ -295,7 +295,7 @@ public class PixelGrid extends Property {
         // } catch (ArrayIndexOutOfBoundsException e) {
         // UTILITIES.trace("ERROR: Nicht im grid; [" + x + "][" + y + "] grid "
         // + localGrid.length);
-        // e.printStackTrace();
+        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         //
         // }
     }
@@ -1127,7 +1127,7 @@ public class PixelGrid extends Property {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
 
         return;
@@ -1695,13 +1695,13 @@ public class PixelGrid extends Property {
             fos.close();
         } catch (FileNotFoundException e) {
 
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         } catch (ImageFormatException e) {
 
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         } catch (IOException e) {
 
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 

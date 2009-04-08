@@ -24,7 +24,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.utils.JDUtilities;
+import jd.controlling.JDLogger;
 
 public class Regex {
     public static String[] getLines(String arg) {
@@ -280,9 +280,9 @@ public class Regex {
             date = dateFormat.parse(expire);
             return (date.getTime());
         } catch (ParseException e) {
-            JDUtilities.getLogger().severe("Could not format date " + expire + " with formater " + timeformat + ": " + dateFormat.format(new Date()));
+            JDLogger.getLogger().severe("Could not format date " + expire + " with formater " + timeformat + ": " + dateFormat.format(new Date()));
 
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return -1;
 

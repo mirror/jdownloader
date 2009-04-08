@@ -161,7 +161,7 @@ public class HTMLParser {
                     if (!link.matches(".*\\s.*") || new Browser().openGetConnection(link.replaceFirst("^httpviajd", "http").replaceAll("\\s", "%20")).isOK()) { return new String[] { link.replaceAll("\\s", "%20") }; }
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
         }

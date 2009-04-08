@@ -52,7 +52,7 @@ public class DecrypterTester {
         try {
             dLinks = decrypter.decryptIt(new CryptedLink(testlink), new ProgressController("Test for decrypter " + classname + " with link " + testlink));
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         if (dLinks == null) {
             System.out.println("Decrypter returned null!");
@@ -86,7 +86,7 @@ public class DecrypterTester {
             return (PluginForDecrypt) con.newInstance(new Object[] { new DecryptPluginWrapper(classname.toLowerCase(), classname, "") });
         } catch (Exception e) {
             System.out.println("Decrypter Exception!");
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return null;
     }

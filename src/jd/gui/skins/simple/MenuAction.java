@@ -116,7 +116,7 @@ public class MenuAction extends AbstractAction {
                 putValue(Action.MNEMONIC_KEY, m);
             } catch (Exception e) {
 
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
         }
         String acceleratorString = JDLocale.L("gui.menu." + ressourceName + ".accel", "-");

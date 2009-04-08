@@ -36,7 +36,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jd.captcha.JAntiCaptcha;
-import jd.utils.JDUtilities;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -56,7 +55,7 @@ public class UTILITIES {
      */
     public static String FS = System.getProperty("file.separator");
 
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     public static boolean checkJumper(int x, int from, int to) {
         return x >= from && x <= to;
@@ -367,9 +366,9 @@ public class UTILITIES {
 
             return doc;
         } catch (SAXException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         } catch (ParserConfigurationException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         } catch (IOException e) {
 
             // DEBUG.error(e);
@@ -553,7 +552,7 @@ public class UTILITIES {
 
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             return false;
         }
     }

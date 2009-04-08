@@ -133,7 +133,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         return (LogPane) logPanel.getPanel();
     }
 
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     private TabProgress progressBar;
 
@@ -248,7 +248,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                 }
             }
@@ -857,7 +857,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        // e.printStackTrace();
+        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);
         // }
@@ -1318,7 +1318,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     ai = pluginForHost.getAccountInformation(account);
                 } catch (Exception e) {
                     account.setEnabled(false);
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("gui.accountcheck.pluginerror", "Plugin %s may be defect. Inform support!", pluginForHost.getPluginID()));
                     return;
                 }
@@ -1376,7 +1376,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             try {
                 JLinkButton.openURL("http://jdownloader.org/changes/index");
             } catch (Exception e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
         }
     }

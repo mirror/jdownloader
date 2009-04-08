@@ -392,9 +392,9 @@ public class LinkStatus implements Serializable {
                     if (value == status) { return field.getName(); }
 
                 } catch (IllegalArgumentException e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 } catch (IllegalAccessException e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
         }
@@ -424,9 +424,9 @@ public class LinkStatus implements Serializable {
                         }
                     }
                 } catch (IllegalArgumentException e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 } catch (IllegalAccessException e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
         }

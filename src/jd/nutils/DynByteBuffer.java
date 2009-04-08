@@ -50,7 +50,7 @@ public class DynByteBuffer {
         try {
             return new String(this.getLast(buffer.position()), codepage);
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             return new String(this.getLast(buffer.position()));
         }
     }

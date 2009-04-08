@@ -1094,7 +1094,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                 break;
             } catch (IOException e) {
                 addToText(null, STYLE_SYSTEM_MESSAGE, "Connect Timeout. Server not reachable...");
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 try {
                     Thread.sleep(15000);
                 } catch (InterruptedException e1) {
@@ -1420,7 +1420,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                     try {
                         Thread.sleep(10000);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                 }
             }

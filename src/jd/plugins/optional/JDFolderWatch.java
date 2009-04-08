@@ -121,7 +121,7 @@ public class JDFolderWatch extends PluginOptional {
                             Thread.sleep(5000);
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                 }
             }

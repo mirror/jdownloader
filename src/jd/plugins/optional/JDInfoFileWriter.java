@@ -143,7 +143,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
                 logger.severe("JDInfoFileWriter: can not write to: " + dest.getAbsolutePath());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             logger.severe("JDInfoFileWriter: can not write to: " + dest.getAbsolutePath());
         }
     }

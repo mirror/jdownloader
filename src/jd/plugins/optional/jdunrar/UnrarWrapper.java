@@ -22,6 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.nutils.DynByteBuffer;
 import jd.nutils.Executer;
 import jd.nutils.ProcessListener;
@@ -217,47 +218,47 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     fireEvent(JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL);
                     break;
                 case EXIT_CODE_CRC_ERROR:
-                    JDUtilities.getLogger().warning("A CRC error occurred when unpacking");
+                    JDLogger.getLogger().warning("A CRC error occurred when unpacking");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC);
                     break;
                 case EXIT_CODE_USER_BREAK:
-                    JDUtilities.getLogger().warning(" User interrupted extraction");
+                    JDLogger.getLogger().warning(" User interrupted extraction");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 case EXIT_CODE_CREATE_ERROR:
-                    JDUtilities.getLogger().warning("Could not create Outputfile");
+                    JDLogger.getLogger().warning("Could not create Outputfile");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 case EXIT_CODE_MEMORY_ERROR:
-                    JDUtilities.getLogger().warning("Not enough memory for operation");
+                    JDLogger.getLogger().warning("Not enough memory for operation");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 case EXIT_CODE_USER_ERROR:
-                    JDUtilities.getLogger().warning("Command line option error");
+                    JDLogger.getLogger().warning("Command line option error");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 case EXIT_CODE_OPEN_ERROR:
-                    JDUtilities.getLogger().warning("Open file error");
+                    JDLogger.getLogger().warning("Open file error");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 case EXIT_CODE_WRITE_ERROR:
-                    JDUtilities.getLogger().warning("Write to disk error");
+                    JDLogger.getLogger().warning("Write to disk error");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 case EXIT_CODE_LOCKED_ARCHIVE:
-                    JDUtilities.getLogger().warning("Attempt to modify an archive previously locked by the 'k' command");
+                    JDLogger.getLogger().warning("Attempt to modify an archive previously locked by the 'k' command");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 case EXIT_CODE_FATAL_ERROR:
-                    JDUtilities.getLogger().warning("A fatal error occurred");
+                    JDLogger.getLogger().warning("A fatal error occurred");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 case EXIT_CODE_WARNING:
-                    JDUtilities.getLogger().warning("Non fatal error(s) occurred");
+                    JDLogger.getLogger().warning("Non fatal error(s) occurred");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 default:
-                    JDUtilities.getLogger().warning("Unknown Error");
+                    JDLogger.getLogger().warning("Unknown Error");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 }
@@ -265,7 +266,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             }
         } catch (Exception e) {
             this.exception = e;
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
         }
 
@@ -299,11 +300,11 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 if (new File(file).isAbsolute()) {
                     new File(file).delete();
                     new File(file).deleteOnExit();
-                    JDUtilities.getLogger().warning("Deleted archive after extraction: " + new File(file));
+                    JDLogger.getLogger().warning("Deleted archive after extraction: " + new File(file));
                 } else {
                     new File(this.file.getParentFile(), file).delete();
                     new File(this.file.getParentFile(), file).deleteOnExit();
-                    JDUtilities.getLogger().warning("Deleted archive after extraction: " + new File(this.file.getParentFile(), file));
+                    JDLogger.getLogger().warning("Deleted archive after extraction: " + new File(this.file.getParentFile(), file));
                 }
             }
         }
@@ -434,7 +435,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         // CharBuffer cbuf = decoder.decode(bbuf);
         // str = cbuf.toString();
         // } catch (CharacterCodingException e) {
-        // e.printStackTrace();
+        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         // }
         //
         // JDUtilities.writeLocalFile(fileFile,str);
@@ -544,7 +545,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     sigger.append(s);
                 }
                 String sig = sigger.toString();
-                JDUtilities.getLogger().finest(exec.getInputStreamBuffer() + " : " + sig);
+                JDLogger.getLogger().finest(exec.getInputStreamBuffer() + " : " + sig);
                 if (sig.trim().length() < 8) continue;
                 Signature signature = FileSignatures.getSignature(sig);
 
@@ -606,7 +607,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 return false;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             unrarvalidated = false;
             return false;
         }
@@ -657,7 +658,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             exec.start();
             exec.waitTimeout();
             String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-            JDUtilities.getLogger().finest(res);
+            JDLogger.getLogger().finest(res);
             String match;
             if ((match = new Regex(res, Pattern.compile("Bad archive (.{5,})")).getMatch(0)) != null) {
                 statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
@@ -683,7 +684,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 throw new UnrarException(message);
             }
             if (res.indexOf(" (password incorrect") != -1 || res.contains("the file header is corrupt")) {
-                JDUtilities.getLogger().finest("Password incorrect: " + file.getName() + " pw: " + pass);
+                JDLogger.getLogger().finest("Password incorrect: " + file.getName() + " pw: " + pass);
                 continue;
             } else {
                 if (res.indexOf("Cannot find volume") != -1) {
@@ -868,7 +869,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             try {
                 lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition), JDUnrar.CODEPAGE);
             } catch (Exception e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));
             }
             if (new Regex(lastLine, Pattern.compile("Write error.*?bort ", Pattern.CASE_INSENSITIVE)).matches()) {

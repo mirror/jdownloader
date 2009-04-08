@@ -26,6 +26,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.nutils.Threader;
 import jd.nutils.jobber.JDRunnable;
@@ -178,14 +179,14 @@ public class UPnPInfo {
             System.out.println("\n** Parsing error, line " + spe.getLineNumber() + ", uri " + spe.getSystemId());
             System.out.println("   " + spe.getMessage());
             Exception e = (spe.getException() != null) ? spe.getException() : spe;
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         } catch (SAXException sxe) {
             Exception e = (sxe.getException() != null) ? sxe.getException() : sxe;
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         } catch (ParserConfigurationException pce) {
-            pce.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",pce);
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+           JDLogger.exception(ioe);
         }
 
     }

@@ -20,6 +20,7 @@ import java.util.Calendar;
 import java.util.Vector;
 
 import jd.controlling.JDController;
+import jd.controlling.JDLogger;
 import jd.plugins.DownloadLink;
 
 /**
@@ -154,7 +155,7 @@ public class Replacer {
         if (KEYS == null) Replacer.initKeys();
         for (String[] element : KEYS) {
             if (str.indexOf("%" + element[0] + "%") >= 0) {
-                JDUtilities.getLogger().finer("%" + element[0] + "%" + " --> *****");
+                JDLogger.getLogger().finer("%" + element[0] + "%" + " --> *****");
                 str = Replacer.replace(str, "%" + element[0] + "%", Replacer.getReplacement(element[0]));
             }
         }

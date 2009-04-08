@@ -42,7 +42,7 @@ public class ICaptcha {
                 Thread.sleep(500);
             } catch (Exception e) {
                 i--;
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
         }
     }

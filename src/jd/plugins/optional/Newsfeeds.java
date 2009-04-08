@@ -430,7 +430,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             logger.info("finished!");
 
         } catch (IOException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
 
         return vector;
@@ -850,9 +850,9 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                 }
 
             } catch (MalformedURLException e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             } catch (IOException e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
 
         } else {

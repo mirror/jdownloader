@@ -156,7 +156,7 @@ public class PackageCreaterRS {
                 }
             } catch (Exception e) {
 
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
             i = 1;
             filename = null;
@@ -214,7 +214,7 @@ public class PackageCreaterRS {
                 }
             } catch (Exception e) {
 
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
 
         }

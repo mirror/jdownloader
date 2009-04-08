@@ -48,7 +48,7 @@ public class DistributeData extends Thread {
     /**
      * Der Logger
      */
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     /**
      * Aufruf von Clipboard Überwachung
@@ -179,7 +179,7 @@ public class DistributeData extends Thread {
                             }
                             break;
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         }
                     }
                 }
@@ -277,7 +277,7 @@ public class DistributeData extends Thread {
                     }
                 } catch (Exception e) {
                     logger.severe("Decrypter/Search Fehler: " + e.getMessage());
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
         }
@@ -349,7 +349,7 @@ public class DistributeData extends Thread {
                     DThread dthread = new DThread(plg, decryptableLinks);
                     decryptJobbers.add(dthread);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
         }

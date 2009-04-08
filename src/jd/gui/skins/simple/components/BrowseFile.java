@@ -27,7 +27,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 public class BrowseFile extends JPanel implements ActionListener {
@@ -45,7 +44,7 @@ public class BrowseFile extends JPanel implements ActionListener {
     private int fileSelectionMode = JFileChooser.FILES_ONLY;
 
     @SuppressWarnings("unused")
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     private JTextField txtInput;
 

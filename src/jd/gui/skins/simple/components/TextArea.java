@@ -39,7 +39,6 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.PlainDocument;
 
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class TextArea extends JScrollPane implements MouseListener, ClipboardOwner {
 
@@ -119,7 +118,7 @@ public class TextArea extends JScrollPane implements MouseListener, ClipboardOwn
 
     private static JTextArea txt;
     protected TextArea _this;
-    protected Logger logger = JDUtilities.getLogger();
+    protected Logger logger = jd.controlling.JDLogger.getLogger();
 
     private int maxHeight;
 

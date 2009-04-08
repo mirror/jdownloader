@@ -38,6 +38,7 @@ import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 
 import jd.config.Configuration;
+import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -272,7 +273,7 @@ public class JDRRGui extends JDialog implements ActionListener {
                 } else {
                     reconnect_duration = System.currentTimeMillis() - reconnect_timer;
                 }
-                JDUtilities.getLogger().info("dauer: " + reconnect_duration + "");
+                JDLogger.getLogger().info("dauer: " + reconnect_duration + "");
                 statusicon.setStatus(1);
             } else {
                 statusicon.setStatus(-1);

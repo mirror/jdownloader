@@ -160,7 +160,7 @@ public abstract class PluginForDecrypt extends Plugin {
             tmpLinks = new ArrayList<DownloadLink>();
         } catch (Exception e) {
             progress.finalize();
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         if (tmpLinks == null) {
             logger.severe("Decrypter out of date: " + this);

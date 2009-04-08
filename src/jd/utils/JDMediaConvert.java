@@ -26,7 +26,7 @@ import de.savemytube.flv.FLV;
 
 public class JDMediaConvert {
 
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     private static String TempExt = ".tmp";
 

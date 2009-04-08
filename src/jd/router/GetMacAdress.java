@@ -14,7 +14,7 @@ public class GetMacAdress {
             return new GetMacAdress().getMacAddress(RouterInfoCollector.getRouterIP());
         } catch (Exception e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return null;
 
@@ -100,16 +100,16 @@ public class GetMacAdress {
             System.out.println(new GetMacAdress().getMacAddress(new GetRouterInfo(null).getAdress()));
         } catch (SocketException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         } catch (UnknownHostException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         } catch (IOException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 }

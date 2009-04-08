@@ -200,7 +200,7 @@ public abstract class PluginForHost extends Plugin {
                 }
 
             } catch (Exception e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
         }
         if (premium.getSize() != 0) {
@@ -280,9 +280,9 @@ public abstract class PluginForHost extends Plugin {
                     }
 
                 } catch (IllegalArgumentException e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 } catch (SecurityException e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
         }

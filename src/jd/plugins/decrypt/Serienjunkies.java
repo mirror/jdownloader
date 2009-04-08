@@ -264,7 +264,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                     try {
                                         Thread.sleep(1200);
                                     } catch (InterruptedException e) {
-                                        e.printStackTrace();
+                                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                                     }
                                     progress.increase(1);
                                 }
@@ -280,7 +280,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                 try {
                                     Thread.sleep(100);
                                 } catch (InterruptedException e) {
-                                    e.printStackTrace();
+                                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                                 }
                                 progress.increase(1);
                             }
@@ -313,7 +313,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         capTxt = getCaptchaCode(captchaFile, this, downloadLink);
                     } catch (Exception e) {
                         active--;
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         progress.setColor(Color.red);
                         progress.setStatus(0);
                         progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.captcha", "Error: Captcha"));
@@ -403,7 +403,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                         }
                                     }
                                 } catch (Exception e) {
-                                    e.printStackTrace();
+                                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                                 }
 
                             }
@@ -423,7 +423,7 @@ public class Serienjunkies extends PluginForDecrypt {
                             try {
                                 t.wait();
                             } catch (InterruptedException e) {
-                                e.printStackTrace();
+                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                             }
                         }
                     }
@@ -434,7 +434,7 @@ public class Serienjunkies extends PluginForDecrypt {
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return links;
     }
@@ -484,7 +484,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         capTxt = Plugin.getCaptchaCode(this, "einzellinks.serienjunkies.org", captchaFile, false, downloadLink);
                     } catch (Exception e) {
                         active--;
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         break;
                     }
                     active--;
@@ -497,7 +497,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
             links = br3.getRedirectLocation();
         } catch (IOException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return links;
     }
@@ -549,7 +549,7 @@ public class Serienjunkies extends PluginForDecrypt {
                             try {
                                 Thread.sleep(1200);
                             } catch (InterruptedException e) {
-                                e.printStackTrace();
+                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                             }
                             progress.increase(1);
                         }
@@ -574,7 +574,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         try {
                             Thread.sleep(100);
                         } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         }
                         progress.increase(1);
                     }
@@ -628,7 +628,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return decryptedLinks;
     }
@@ -653,7 +653,7 @@ public class Serienjunkies extends PluginForDecrypt {
         try {
             linkName = ((title.length() > 10 ? title.substring(0, 10) : title) + "#" + name).replaceAll("\\.", " ").replaceAll("[^\\w \\#]", "").trim() + ".rar";
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         if (linkName == null || parameter.matches("http://serienjunkies.org/sa[fv]e/.*") || parameter.matches("http://download.serienjunkies.org/..\\-.*")) {
             size = 100;
@@ -968,7 +968,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     try {
                         if (element3[1].toLowerCase().contains(Encoding.UTF8Decode(link).toLowerCase())) { return new String[] { size, element3[0], element3[1], title }; }
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
 
                 }
@@ -1240,7 +1240,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                     }
                                 } catch (Exception e) {
                                     finaldls = null;
-                                    e.printStackTrace();
+                                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                                 }
                                 if (finaldls != null) break;
                             }
@@ -1260,7 +1260,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 }
 
             } catch (Exception e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
 
             if (result == null) {
@@ -1398,7 +1398,7 @@ class SerienjunkiesSJTable extends JDialog {
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                 }
                 int c = countdown;

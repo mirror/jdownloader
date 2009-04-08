@@ -14,14 +14,16 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.utils;
+package jd.controlling;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.MessageFormat;
 import java.util.Date;
+import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
+
 
 /**
  * Mit dieser Klasse können die Logmeldungen anders dargestellt werden. Der Code
@@ -57,23 +59,39 @@ public class LogFormatter extends SimpleFormatter {
             formatter = new MessageFormat(format);
         }
         formatter.format(args, text, null);
+        String message = formatMessage(record);
         sb.append(text);
         sb.append(" - ");
-        sb.append(record.getLevel().getLocalizedName());
-        sb.append(" [");
-        if (record.getSourceClassName() != null) {
-            sb.append(record.getSourceClassName());
-        } else {
-            sb.append(record.getLoggerName());
+        if(JDLogger.getLogger().getLevel()==Level.ALL){
+            sb.append(record.getLevel().getLocalizedName());
+
+            sb.append(" [");
+            if (record.getSourceClassName() != null) {
+                sb.append(record.getSourceClassName());
+            } else {
+                sb.append(record.getLoggerName());
+            }
+            if (record.getSourceMethodName() != null) {
+                sb.append("(");
+                sb.append(record.getSourceMethodName());
+                sb.append(")");
+            }
+            sb.append("] ");
+
+            sb.append("-> ");
+        }else{
+         
+            
+          
+            if (record.getSourceClassName() != null) {
+                sb.append(record.getSourceClassName().substring(record.getSourceClassName().lastIndexOf(".")+1));
+            } else {
+                sb.append(record.getLoggerName());
+            }
+                  
+           
+            sb.append("-> ");
         }
-        if (record.getSourceMethodName() != null) {
-            sb.append("(");
-            sb.append(record.getSourceMethodName());
-            sb.append(")");
-        }
-        sb.append("] ");
-        String message = formatMessage(record);
-        sb.append("-> ");
         sb.append(message);
         sb.append(lineSeparator);
         if (record.getThrown() != null) {

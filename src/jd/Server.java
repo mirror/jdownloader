@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 public class Server extends UnicastRemoteObject implements ServerInterface {
 
-    public static Logger logger = JDUtilities.getLogger();
+    public static Logger logger = jd.controlling.JDLogger.getLogger();
     private static final long serialVersionUID = 1L;
 
     // public static void extract(final Vector<String> paths, final long rtime,
@@ -124,7 +124,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
     // try {
     // Thread.sleep(rtime * 1000);
     // } catch (InterruptedException e) {
-    // e.printStackTrace();
+    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
     // }
     //
     // } else {

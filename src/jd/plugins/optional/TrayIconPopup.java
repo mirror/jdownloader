@@ -44,6 +44,7 @@ import javax.swing.event.ChangeListener;
 import jd.config.Configuration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.MenuAction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
@@ -298,7 +299,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             simplegui.setVisible(!simplegui.isVisible());
             return;
         }
-        JDUtilities.getLogger().info(" ACTIOn " + entries.get(row));
+        JDLogger.getLogger().info(" ACTIOn " + entries.get(row));
         switch (entries.get(row)) {
 
         case TrayIconPopup.ACTION_ADD:

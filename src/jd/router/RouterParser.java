@@ -29,7 +29,6 @@ import java.util.regex.Pattern;
 import javax.swing.JFrame;
 
 import jd.nutils.io.JDIO;
-import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse ließt eine Routers.dat Datei aus
@@ -37,7 +36,7 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 public class RouterParser {
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
     int positionInFile = 0;
 
     private byte readBuffer[] = new byte[8];
@@ -102,9 +101,9 @@ public class RouterParser {
             logger.info(count + " router data loaded");
             return routerData;
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         } catch (IOException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return null;
     }

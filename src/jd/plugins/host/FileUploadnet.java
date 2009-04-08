@@ -80,7 +80,7 @@ public class FileUploadnet extends PluginForHost {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         downloadLink.setAvailable(false);
         return false;

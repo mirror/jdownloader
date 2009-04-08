@@ -40,7 +40,10 @@ public class LinkCryptWs extends PluginForDecrypt {
     public LinkCryptWs(PluginWrapper wrapper) {
         super(wrapper);
     }
-
+/*
+TODO: könntet ihr aus linkcrypt.ws/dirl/id linkcrypt.ws/dlc/id machen?  (bezogen auf CNL Links im browser)
+* @see jd.plugins.PluginForDecrypt#decryptIt(jd.plugins.CryptedLink, jd.controlling.ProgressController)
+ */
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

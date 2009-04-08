@@ -69,7 +69,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ControlListener,
 
     private boolean lastSort = false;
 
-    protected Logger logger = JDUtilities.getLogger();
+    protected Logger logger = jd.controlling.JDLogger.getLogger();
 
     private DownloadTreeTable internalTreeTable;
 

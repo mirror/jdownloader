@@ -159,7 +159,7 @@ public class LinkbaseBiz extends PluginForDecrypt {
                         }
                         progress.increase(1);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                 }
                 progress.finalize();

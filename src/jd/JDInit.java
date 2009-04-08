@@ -48,7 +48,7 @@ import jd.utils.JDUtilities;
 
 public class JDInit {
 
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     private boolean installerVisible = false;
 
@@ -74,7 +74,7 @@ public class JDInit {
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
             String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
             if (!old.equals(JDUtilities.getRevision())) {
-                logger.info("Returned from Update");
+                logger.info("Detected that JD just got updated");
 
                 if (splashScreen != null) {
                     splashScreen.finish();
@@ -143,7 +143,7 @@ public class JDInit {
     }
 
     public void initPlugins() {
-        logger.info("Lade Plugins");
+   
         loadPluginForDecrypt();
         loadPluginForHost();
         loadCPlugins();
@@ -153,11 +153,11 @@ public class JDInit {
             if (plg.isLoaded()) {
                 try {
                     if (plg.isEnabled() && !plg.getPlugin().initAddon()) {
-                        logger.severe("Error loading Optional Plugin: FALSE");
+                        logger.severe("Error loading Optional Plugin:"+plg.getClassName());
                     }
                 } catch (Throwable e) {
                     logger.severe("Error loading Optional Plugin: " + e.getMessage());
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
         }
@@ -187,7 +187,7 @@ public class JDInit {
 
             Configuration configuration = (Configuration) obj;
             JDUtilities.setConfiguration(configuration);
-            JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
+            jd.controlling.JDLogger.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
             JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_THEME, "default"));
             JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "noSounds"));
 
@@ -207,7 +207,7 @@ public class JDInit {
             }
             Configuration configuration = new Configuration();
             JDUtilities.setConfiguration(configuration);
-            JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
+            jd.controlling.JDLogger.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
             JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_THEME, "default"));
             JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "noSounds"));
 
@@ -237,20 +237,20 @@ public class JDInit {
                     // home.getAbsolutePath(), 0));
                     // System.exit(0);
                     // } catch (Exception e) {
-                    // e.printStackTrace();
+                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     // // System.exit(0);
                     // }
 
                 }
                 if (!home.canWrite()) {
-                    logger.info("INSTALL abgebrochen");
+                    logger.severe("INSTALL abgebrochen");
                     JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
                     JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                     System.exit(1);
                 }
 
             } else {
-                logger.info("INSTALL abgebrochen2");
+                logger.severe("INSTALL abgebrochen2");
                 JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation", "Error. User aborted installation."));
 
                 JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));

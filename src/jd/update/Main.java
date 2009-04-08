@@ -255,7 +255,7 @@ public class Main {
             Main.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
             System.exit(0);
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             
             Main.log(log, "ERORR "+e.getLocalizedMessage());
             
@@ -299,7 +299,7 @@ public class Main {
                 }
             } catch (Exception e) {
 
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
 
                 StackTraceElement[] trace = e.getStackTrace();
                 for (int i = 0; i < trace.length; i++)
@@ -518,7 +518,7 @@ public class Main {
             f.close();
             return true;
         } catch (Exception e) {
-            // e.printStackTrace();
+            // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             return false;
         }
     }

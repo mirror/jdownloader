@@ -57,7 +57,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
 
     private LinkGrabberV2TreeTable internalTreeTable;
 
-    protected Logger logger = JDUtilities.getLogger();
+    protected Logger logger = jd.controlling.JDLogger.getLogger();
 
     private SubConfiguration guiConfig;
     private Thread gatherer;

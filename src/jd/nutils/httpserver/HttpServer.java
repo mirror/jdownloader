@@ -45,7 +45,7 @@ public class HttpServer extends Thread {
             ssocket = new ServerSocket(port);
             ssocket.setSoTimeout(1000);
         } catch (IOException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         run = new Thread(this);
         run.start();
@@ -60,14 +60,14 @@ public class HttpServer extends Thread {
                 new RequestHandler(csocket, handler).run();
             } catch (SocketTimeoutException e) {
             } catch (IOException e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
         }
 
         try {
             ssocket.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 

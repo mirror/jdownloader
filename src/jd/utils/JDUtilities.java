@@ -35,8 +35,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -56,11 +54,6 @@ import java.util.Map;
 import java.util.SimpleTimeZone;
 import java.util.Vector;
 import java.util.concurrent.Semaphore;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Formatter;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -100,7 +93,6 @@ import jd.plugins.PluginsC;
  * @author astaldo/JD-Team
  */
 public class JDUtilities {
-    private static String LOGGER_NAME = "java_downloader";
 
     /**
      * Die Konfiguration
@@ -149,7 +141,7 @@ public class JDUtilities {
     /**
      * Der Logger für Meldungen
      */
-    private static Logger logger = null;
+    public static Logger logger = null;
 
     private static String LATEST_IP = null;
 
@@ -256,11 +248,11 @@ public class JDUtilities {
      */
     public static void addToGridBag(Container cont, Component comp, int x, int y, int width, int height, int weightX, int weightY, Insets insets, int fill, int anchor) {
         if (cont == null) {
-            JDUtilities.getLogger().severe("Container ==null");
+            jd.controlling.JDLogger.getLogger().severe("Container ==null");
             return;
         }
         if (comp == null) {
-            JDUtilities.getLogger().severe("Componente ==null");
+            jd.controlling.JDLogger.getLogger().severe("Componente ==null");
             return;
         }
         JDUtilities.addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
@@ -563,7 +555,7 @@ public class JDUtilities {
         }
         JDUtilities.getController().fireControlEvent(new ControlEvent(plugin, ControlEvent.CONTROL_CAPTCHA_LOADED, file));
 
-        JDUtilities.getLogger().info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host));
+        jd.controlling.JDLogger.getLogger().info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host));
         if (forceJAC || JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true) && !configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false)) {
             if (!JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host) || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true)) { return null; }
 
@@ -580,9 +572,9 @@ public class JDUtilities {
             JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
             Captcha captcha = jac.createCaptcha(captchaImage);
             String captchaCode = jac.checkCaptcha(captcha);
-            JDUtilities.getLogger().info("Code: " + captchaCode);
-            JDUtilities.getLogger().info("Vality: " + captcha.getValityPercent());
-            JDUtilities.getLogger().info("Object Detection: " + captcha.isPerfectObjectDetection());
+            jd.controlling.JDLogger.getLogger().info("Code: " + captchaCode);
+            jd.controlling.JDLogger.getLogger().info("Vality: " + captcha.getValityPercent());
+            jd.controlling.JDLogger.getLogger().info("Object Detection: " + captcha.isPerfectObjectDetection());
             // ScrollPaneWindow window = new ScrollPaneWindow("Captcha");
 
             plugin.setLastCaptcha(captcha);
@@ -608,7 +600,7 @@ public class JDUtilities {
                 }
             }
             // window.pack();
-            JDUtilities.getLogger().info("worst letter: " + vp);
+            jd.controlling.JDLogger.getLogger().info("worst letter: " + vp);
             if (plugin.useUserinputIfCaptchaUnknown() && vp > (double) JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)) {
                 plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
                 acquireUserIOSemaphore();
@@ -690,7 +682,7 @@ public class JDUtilities {
                 // fileSize = file.length();
 
             } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 return 0;
             }
 
@@ -702,7 +694,7 @@ public class JDUtilities {
             return checksum;
 
         } catch (IOException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             return 0;
         }
 
@@ -759,7 +751,7 @@ public class JDUtilities {
             br.setReadTimeout(5000);
         }
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-            JDUtilities.getLogger().finer("IP Check is disabled. return current Milliseconds");
+            jd.controlling.JDLogger.getLogger().finer("IP Check is disabled. return current Milliseconds");
             return System.currentTimeMillis() + "";
         }
 
@@ -767,29 +759,29 @@ public class JDUtilities {
         String patt = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
 
         try {
-            JDUtilities.getLogger().finer("IP Check via " + site);
+            jd.controlling.JDLogger.getLogger().finer("IP Check via " + site);
             Pattern pattern = Pattern.compile(patt);
             Matcher matcher = pattern.matcher(br.getPage(site));
             if (matcher.find()) {
                 if (matcher.groupCount() > 0) {
                     return LATEST_IP = matcher.group(1);
                 } else {
-                    JDUtilities.getLogger().severe("Primary bad Regex: " + patt);
+                    jd.controlling.JDLogger.getLogger().severe("Primary bad Regex: " + patt);
 
                 }
             }
-            JDUtilities.getLogger().info("Primary IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + br.toString());
+            jd.controlling.JDLogger.getLogger().info("Primary IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + br.toString());
 
         }
 
         catch (Exception e1) {
-            JDUtilities.getLogger().severe("url not found. " + e1.toString());
+            jd.controlling.JDLogger.getLogger().severe("url not found. " + e1.toString());
 
         }
 
         try {
 
-            JDUtilities.getLogger().finer("http://service.jdownloader.org/tools/getip.php");
+            jd.controlling.JDLogger.getLogger().finer("http://service.jdownloader.org/tools/getip.php");
 
             Pattern pattern = Pattern.compile(patt);
             Matcher matcher = pattern.matcher(br.getPage("http://service.jdownloader.org/tools/getip.php"));
@@ -797,7 +789,7 @@ public class JDUtilities {
                 if (matcher.groupCount() > 0) {
                     return LATEST_IP = matcher.group(1);
                 } else {
-                    JDUtilities.getLogger().severe("Primary bad Regex: " + patt);
+                    jd.controlling.JDLogger.getLogger().severe("Primary bad Regex: " + patt);
                 }
             }
             LATEST_IP = null;
@@ -805,8 +797,8 @@ public class JDUtilities {
         }
 
         catch (Exception e1) {
-            JDUtilities.getLogger().severe("url not found. " + e1.toString());
-            JDUtilities.getLogger().info("Sec. IP Check failed.");
+            jd.controlling.JDLogger.getLogger().severe("url not found. " + e1.toString());
+            jd.controlling.JDLogger.getLogger().info("Sec. IP Check failed.");
 
         }
         LATEST_IP = null;
@@ -850,7 +842,7 @@ public class JDUtilities {
             File homeDir = JDUtilities.getJDHomeDirectoryFromEnvironment();
             // String url = null;
             // Url Encode des pfads für den Classloader
-            JDUtilities.getLogger().info("Create Classloader: for: " + homeDir.getAbsolutePath());
+            jd.controlling.JDLogger.getLogger().finest("Create Classloader: for: " + homeDir.getAbsolutePath());
             jdClassLoader = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
 
         }
@@ -888,7 +880,7 @@ public class JDUtilities {
                 currentDir = currentDir.getParentFile();
             }
         } catch (URISyntaxException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
 
         // JDUtilities.getLogger().info("RunDir: " + currentDir);
@@ -907,7 +899,7 @@ public class JDUtilities {
         // System.out.println("ENV " + envDir);
         if (envDir == null) {
             envDir = "." + System.getProperty("file.separator") + ".jd_home/";
-            JDUtilities.getLogger().info("JD_HOME from current directory:" + envDir);
+            jd.controlling.JDLogger.getLogger().info("JD_HOME from current directory:" + envDir);
         }
         // System.out.println("ENV " + envDir);
         File jdHomeDir = new File(envDir);
@@ -930,73 +922,6 @@ public class JDUtilities {
             ret.append(JDUtilities.getController().getWaitingUpdates().size());
         }
         return ret.toString();
-    }
-
-    /**
-     * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
-     * Falls dieser Logger nicht existiert, wird ein neuer erstellt
-     * 
-     * @return LogKlasse
-     */
-    public static Logger getLogger() {
-
-        if (logger == null) {
-
-            logger = Logger.getLogger(LOGGER_NAME);
-            Formatter formatter = new LogFormatter();
-            logger.setUseParentHandlers(false);
-            Handler console = new ConsoleHandler();
-
-            console.setLevel(Level.ALL);
-            console.setFormatter(formatter);
-            logger.addHandler(console);
-
-            logger.setLevel(Level.ALL);
-            logger.addHandler(new Handler() {
-                public void close() {
-                }
-
-                public void flush() {
-                }
-
-                public void publish(LogRecord logRecord) {
-                    if (JDUtilities.getController() != null) {
-                        JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_LOG_OCCURED, logRecord);
-                    }
-                }
-            });
-
-            OutputStream os = new OutputStream() {
-                private StringBuilder buffer = new StringBuilder();
-//                private boolean edt=false;
-
-                public void write(int b) throws IOException {
-                    if (b == 13 || b == 10) {
-                        if (buffer.length() > 0) {
-                            logger.severe(buffer.toString());
-//                            if (buffer.indexOf("OutOfMemoryError") >= 0) {
-//                                logger.finer("Restart");
-//                                if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.messages.outofmemoryerror", "An error ocured!\r\nJDownloader is out of memory. Restart recommended.\r\nPlease report this bug!"))) {
-//                                    JDUtilities.restartJD();
-//                                }
-//                            }
-//                            else if(buffer.indexOf("UiThreadingViolationException")>=0){
-//                              
-//                                edt=true;
-//                            }else if(edt&&buffer.indexOf("at jd.")>=0){
-//                              
-//                                edt=false;
-//                            }
-                        }
-                        buffer = new StringBuilder();
-                    } else {
-                        buffer.append((char) b);
-                    }
-                }
-            };
-            System.setErr(new PrintStream(os));
-        }
-        return logger;
     }
 
     /**
@@ -1098,7 +1023,7 @@ public class JDUtilities {
         for (int i = 0; i < priority.size(); i++) {
             for (int b = plgs.size() - 1; b >= 0; b--) {
                 if (plgs.get(b).getHost() == null) {
-                    JDUtilities.getLogger().info("OO");
+                    jd.controlling.JDLogger.getLogger().info("OO");
                 }
                 if (plgs.get(b).getHost().equalsIgnoreCase(priority.get(i))) {
                     HostPluginWrapper plg = plgs.remove(b);
@@ -1169,7 +1094,7 @@ public class JDUtilities {
 
     public static void restartJD() {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
-        JDUtilities.getLogger().info(JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", }, getResourceFile(".").getAbsolutePath(), 0));
+        jd.controlling.JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", }, getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
 
     }
@@ -1209,7 +1134,7 @@ public class JDUtilities {
         System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
         System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);
 
-        JDUtilities.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
+        jd.controlling.JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
     }
 
@@ -1361,7 +1286,7 @@ public class JDUtilities {
         try {
             return new GetExplorer().openExplorer(path);
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             return false;
         }
     }

@@ -240,7 +240,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
             initGUI();
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             return false;
         }
     }
@@ -343,7 +343,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
         try {
             systemTray.add(trayIcon);
         } catch (AWTException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 

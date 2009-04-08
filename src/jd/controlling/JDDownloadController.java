@@ -51,7 +51,7 @@ public class JDDownloadController extends JDBroadcaster implements JDListener, A
     }
 
     private JDDownloadController() {
-        logger = JDUtilities.getLogger();
+        logger = jd.controlling.JDLogger.getLogger();
         controller = JDUtilities.getController();
         initDownloadLinks();
         Save_Async = new Timer(2000, this);
@@ -69,7 +69,7 @@ public class JDDownloadController extends JDBroadcaster implements JDListener, A
         try {
             packages = loadDownloadLinks();
         } catch (Exception e) {
-            JDUtilities.getLogger().severe("" + e.getStackTrace());
+            jd.controlling.JDLogger.getLogger().severe("" + e.getStackTrace());
             packages = null;
         }
         if (packages == null) {
@@ -201,7 +201,7 @@ public class JDDownloadController extends JDBroadcaster implements JDListener, A
                         try {
                             pluginForHost = JDUtilities.getNewPluginForHostInstanz(localLink.getHost());
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         }
                         // Gibt es einen Names für ein Containerformat,
                         // wird ein passendes Plugin gesucht
@@ -213,7 +213,7 @@ public class JDDownloadController extends JDBroadcaster implements JDListener, A
                                 }
                             }
                         } catch (NullPointerException e) {
-                            e.printStackTrace();
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         }
                         if (pluginForHost != null) {
                             localLink.setLoadedPlugin(pluginForHost);

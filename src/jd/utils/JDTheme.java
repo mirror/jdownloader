@@ -38,7 +38,7 @@ public class JDTheme {
 
     private static HashMap<String, String> defaultData;
 
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     public static String THEME_DIR = "jd/themes/";
 
@@ -60,13 +60,13 @@ public class JDTheme {
             logger.severe("Use setTheme() first!");
             setTheme("default");
         }
-        logger.info("Key  found: " + key + " (" + def + ")");
+      
         if (data.containsKey(key)) return Encoding.UTF8Decode(data.get(key));
-        logger.info("Key not found: " + key + " (" + def + ")");
+        logger.warning("Key not found: " + key + " (" + def + ")");
 
         if (defaultData.containsKey(key)) {
             def = Encoding.UTF8Decode(defaultData.get(key));
-            logger.finer("Use default Value: " + def);
+            logger.finest("Use default Value: " + def);
         }
         if (def == null) def = key;
         data.put(key, def);
@@ -137,7 +137,7 @@ public class JDTheme {
             return new ImageIcon(getImage(V(key), width, height));
         } catch (Exception e) {
             logger.severe("image not found: " + key + "(" + V(key) + "_" + width + "_" + height);
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return null;
     }

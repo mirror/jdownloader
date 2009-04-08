@@ -151,7 +151,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         try {
             systemTray.add(trayIcon);
         } catch (AWTException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
     }
 

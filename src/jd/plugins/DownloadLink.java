@@ -55,7 +55,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public static final int LINKTYPE_NORMAL = 0;
 
     // Logger für Meldungen
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     private static final long serialVersionUID = 1981079856214268373L;
 
@@ -620,7 +620,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 if (e.getMessage().contains("code: 500")) {
                     try {
                         wait += 500;
-                        JDUtilities.getLogger().finer("500 Error Code, retrying in " + wait);
+                        jd.controlling.JDLogger.getLogger().finer("500 Error Code, retrying in " + wait);
                         Thread.sleep(wait);
                     } catch (InterruptedException e1) {
                         available = false;
@@ -630,13 +630,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 } else {
                     // logger.severe("Hoster Plugin Version: " +
                     // getPlugin().getVersion());
-                    // e.printStackTrace();
+                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     break;
                 }
             } catch (Exception e) {
                 // logger.severe("Hoster Plugin Version: " +
                 // getPlugin().getVersion());
-                // e.printStackTrace();
+                // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 available = false;
                 break;
             }
@@ -682,12 +682,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
 
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
         }
         if (getPlugin() != null) getPlugin().reset_downloadlink(this);
-        downloadMax = 0;
+        //downloadMax = 0;
         priority = 0;
         chunksProgress = null;
         downloadLinkController = null;

@@ -29,7 +29,7 @@ import jd.utils.JDUtilities;
 
 public class JDSimpleWebserverStaticFileRequestHandler {
 
-    private Logger logger = JDUtilities.getLogger();
+    private Logger logger = jd.controlling.JDLogger.getLogger();
     private JDSimpleWebserverResponseCreator response;
 
     /**

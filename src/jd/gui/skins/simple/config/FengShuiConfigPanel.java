@@ -65,6 +65,7 @@ import javax.swing.event.MenuListener;
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.MenuItem;
+import jd.controlling.JDLogger;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
@@ -187,7 +188,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
             mld.getProgress().setMaximum(100);
             mld.getProgress().setValue(2);
 
-            JDUtilities.getLogger().info("Start Reconnect");
+            JDLogger.getLogger().info("Start Reconnect");
             JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, 0);
 
             new Thread(new Runnable() {
@@ -413,7 +414,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
             tip.setToolTipText(help);
             this.add(tip, GAPLEFT + "w pref!" + WRAP);
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
 
     }
@@ -530,7 +531,7 @@ public class FengShuiConfigPanel extends JTabbedPanel implements ActionListener 
             label.setBorder(null);
             this.add(label, "align left, split 2");
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
 
         this.add(new JSeparator(), "gapleft 10, spanx, pushx, growx");

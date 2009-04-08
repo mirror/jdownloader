@@ -44,7 +44,7 @@ public class LinkInputDialog extends JDialog implements ActionListener {
     private static final long serialVersionUID = -5108880482000959849L;
 
     @SuppressWarnings("unused")
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     private JButton btnCancel;
 

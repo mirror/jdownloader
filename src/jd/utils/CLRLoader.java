@@ -29,7 +29,7 @@ import org.xml.sax.InputSource;
 
 public class CLRLoader {
 
-    static Logger logger = JDUtilities.getLogger();
+    static Logger logger = jd.controlling.JDLogger.getLogger();
 
     public static String[] createLiveHeader(String CLR) {
         try {
@@ -119,7 +119,7 @@ public class CLRLoader {
             // logger.info(hlh.toString());
             return new String[] { routerName, hlh.toString() };
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             return null;
         }
 

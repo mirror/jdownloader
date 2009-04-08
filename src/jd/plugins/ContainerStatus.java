@@ -114,9 +114,9 @@ public class ContainerStatus {
                         }
                     }
                 } catch (IllegalArgumentException e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 } catch (IllegalAccessException e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
         }

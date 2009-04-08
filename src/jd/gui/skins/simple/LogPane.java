@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -35,6 +36,11 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import jd.controlling.JDLogHandler;
+import jd.controlling.JDLogger;
+import jd.controlling.LogFormatter;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JHelpDialog;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -44,69 +50,16 @@ import jd.http.Encoding;
 import jd.nutils.io.JDIO;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.LogFormatter;
 import jd.utils.Upload;
 import net.miginfocom.swing.MigLayout;
 
 /**
  * Ein Dialog, der Logger-Output anzeigen kann.
  * 
- * @author Tom
  */
-public class LogPane extends JTabbedPanel implements ActionListener {
+public class LogPane extends JTabbedPanel implements ActionListener, ControlListener {
 
-    /**
-     * Ein OutputStream, der die Daten an das log field weiterleitet
-     */
-    private class LogStream extends OutputStream {
-
-        @Override
-        public void write(final int b) throws IOException {
-            // Another example where some non-EDT Thread accesses calls a Swing
-            // method. This is forbidden and might bring the whole app down.
-            // more info:
-            // http://java.sun.com/products/jfc/tsc/articles/threads/threads1.html
-            // and: http://en.wikipedia.org/wiki/Event_dispatching_thread
-            if (logField != null) {
-                EventQueue.invokeLater(new Runnable() {
-                    public void run() {
-                        logField.append(String.valueOf((char) b));
-                    }
-                });
-            }
-        }
-
-    }
-
-    /**
-     * Handler der einen OutputStream unterstuetzt basierend auf einem
-     * ConsoleHandler
-     */
-    private class LogStreamHandler extends StreamHandler {
-
-        public LogStreamHandler(OutputStream stream) {
-            setOutputStream(stream);
-        }
-
-        /**
-         * Publish a <tt>LogRecord</tt>.
-         * <p>
-         * The logging request was made initially to a <tt>Logger</tt> object,
-         * which initialized the <tt>LogRecord</tt> and forwarded it here.
-         * <p>
-         * 
-         * @param record
-         *            description of the log event. A null record is silently
-         *            ignored and is not published
-         */
-        @Override
-        public void publish(LogRecord record) {
-            super.publish(record);
-            flush();
-        }
-
-    }
-
+ 
     private static final long serialVersionUID = -5753733398829409112L;
 
     /**
@@ -124,10 +77,7 @@ public class LogPane extends JTabbedPanel implements ActionListener {
         this.setName("LOGDIALOG");
         this.setLayout(new MigLayout("ins 3", "[fill,grow]", "[fill,grow]"));
 
-        LogStreamHandler streamHandler = new LogStreamHandler(new PrintStream(new LogStream()));
-        streamHandler.setLevel(Level.ALL);
-        streamHandler.setFormatter(new LogFormatter());
-        logger.addHandler(streamHandler);
+  
 
         logField = new JTextArea(10, 60);
 
@@ -137,6 +87,10 @@ public class LogPane extends JTabbedPanel implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         switch (e.getID()) {
+        case LogTaskPane.ACTION_LEVEL:
+            onHide();
+            onDisplay();
+            break;
         case LogTaskPane.ACTION_SAVE:
             JFileChooser fc = new JFileChooser();
             fc.setApproveButtonText(JDLocale.L("gui.btn_save", "Save"));
@@ -146,12 +100,12 @@ public class LogPane extends JTabbedPanel implements ActionListener {
                 if (ret != null) {
                     String content = toString();
                     JDIO.writeLocalFile(ret, content);
-                    JDUtilities.getLogger().info("Log saved to file: " + ret.getAbsolutePath());
+                    jd.controlling.JDLogger.getLogger().info("Log saved to file: " + ret.getAbsolutePath());
                 }
             }
             break;
         case LogTaskPane.ACTION_UPLOAD:
-            Level level = JDUtilities.getLogger().getLevel();
+            Level level = jd.controlling.JDLogger.getLogger().getLevel();
             if (!level.equals(Level.ALL)) {
                 try {
                     JHelpDialog.showHelpMessage(SimpleGUI.CURRENTGUI, null, JDLocale.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), new URL("http://jdownloader.org/knowledge/wiki/support/create-a-jd-log"), null, 30);
@@ -204,11 +158,32 @@ public class LogPane extends JTabbedPanel implements ActionListener {
         /*
          * enable autoscrolling by setting the caret to the last position
          */
-        logField.setCaretPosition(logField.getText().length());
+        SimpleGUI.CURRENTGUI.setWaiting(true);
+       JDUtilities.getController().addControlListener(this);
+       ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
+       StringBuilder sb=new StringBuilder();
+       for(LogRecord lr:buff){
+           if(lr.getLevel().intValue()>=JDLogger.getLogger().getLevel().intValue())
+           sb.append( JDLogHandler.getHandler().getFormatter().format(lr));
+//           sb.append("\r\n");
+       }
+       logField.setText(sb.toString());
+       SimpleGUI.CURRENTGUI.setWaiting(false);
+       
     }
 
     @Override
     public void onHide() {
+        JDUtilities.getController().removeControlListener(this);
+    }
+
+    public void controlEvent(ControlEvent event) {
+       if(event.getID()==ControlEvent.CONTROL_LOG_OCCURED){
+  
+           logField.append(JDLogHandler.getHandler().getFormatter().format((LogRecord)event.getParameter()));
+//           logField.append("\r\n");
+       }
+        
     }
 
 }

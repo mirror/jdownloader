@@ -117,7 +117,7 @@ public class HTTPAllgemein extends PluginForHost {
             return true;
         } catch (IOException e) {
             if (urlConnection != null && urlConnection.isConnected() == true) urlConnection.disconnect();
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }

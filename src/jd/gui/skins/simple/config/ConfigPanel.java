@@ -46,7 +46,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
     protected Vector<GUIConfigEntry> entries = new Vector<GUIConfigEntry>();
 
-    protected Logger logger = JDUtilities.getLogger();
+    protected Logger logger = jd.controlling.JDLogger.getLogger();
 
     protected JPanel panel;
 
@@ -91,7 +91,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
                     label.setIconTextGap(8);
                     label.setBorder(null);
                 } catch (MalformedURLException e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
                 ret.add(new JSeparator());
                 ret.add(new JLabel(JDTheme.II("gui.images.config.tip", 16, 16)));

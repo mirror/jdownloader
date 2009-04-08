@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import jd.utils.JDUtilities;
+import jd.controlling.JDLogger;
 
 public class Cookie {
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z", Locale.UK);
@@ -72,7 +72,7 @@ public class Cookie {
                     try {
                         this.expires = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z", Locale.UK).parse(expires);
                     } catch (Exception e4) {
-                        JDUtilities.getLogger().severe("CookieParser failed: " + expires);
+                        JDLogger.getLogger().severe("CookieParser failed: " + expires);
                         this.expires = null;
                         this.formatedexpires = null;
                         return;
@@ -111,7 +111,7 @@ public class Cookie {
              * anscheinend handelt das jeder browser anders
              */
         } catch (Exception e1) {
-            JDUtilities.getLogger().severe("CookieParser failed: " + expires);
+            JDLogger.getLogger().severe("CookieParser failed: " + expires);
             return false;
         }
         return false;
@@ -137,7 +137,7 @@ public class Cookie {
                     try {
                         ResponseDate = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z", Locale.UK).parse(Date);
                     } catch (Exception e4) {
-                        JDUtilities.getLogger().severe("CookieParser failed: " + expires);
+                        JDLogger.getLogger().severe("CookieParser failed: " + expires);
                         this.timedifference = 0;
                         return;
                     }
@@ -164,7 +164,7 @@ public class Cookie {
             try {
                 formatedexpires = DATE_FORMAT.format(expires);
             } catch (Exception e1) {
-                JDUtilities.getLogger().severe("CookieParser failed: " + expires);
+                JDLogger.getLogger().severe("CookieParser failed: " + expires);
                 formatedexpires = null;
             }
         } else {

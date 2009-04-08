@@ -34,7 +34,7 @@ public class Upload {
             String ret = br.postPage("http://service.jdownloader.org/tools/log.php", "upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
             return "http://www.jdownloader.org/pastebin/" + ret;
         } catch (IOException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return null;
 
@@ -47,7 +47,7 @@ public class Upload {
             br.postPage("http://jd_" + JDHash.getMD5(str) + ".pastebin.com/pastebin.php", "parent_pid=&format=text&code2=" + URLEncoder.encode(str, "UTF-8") + "&poster=" + URLEncoder.encode(name, "UTF-8") + "&paste=Send&expiry=f&email=");
             if (br.getHttpConnection().isOK()) return br.getRedirectLocation();
         } catch (IOException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return null;
     }
@@ -67,7 +67,7 @@ public class Upload {
             String[] lines = Regex.getLines(code);
             return lines[1];
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             return null;
         }
 
@@ -95,7 +95,7 @@ public class Upload {
     // br.getPage("http://uploaded.to/home");
     // return br.getRegex("http://uploaded.to/\\?id=[A-Za-z0-9]+").getMatch(0);
     // } catch (Exception e) {
-    // e.printStackTrace();
+    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
     // }
     // return "";
     //

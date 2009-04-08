@@ -47,7 +47,7 @@ public class Przeslijnet extends PluginForHost {
                 return true;
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         downloadLink.setAvailable(false);
         return false;

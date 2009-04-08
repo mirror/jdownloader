@@ -10,7 +10,7 @@ import jd.utils.JDUtilities;
 
 public abstract class ReconnectMethod {
 
-    protected static Logger logger = JDUtilities.getLogger();
+    protected static Logger logger = jd.controlling.JDLogger.getLogger();
 
     public static final String PARAM_RECONNECT_TYPE = "RECONNECT_TYPE";
 

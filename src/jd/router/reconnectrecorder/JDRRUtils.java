@@ -25,6 +25,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
+import jd.controlling.JDLogger;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.utils.JDHexUtils;
@@ -81,7 +82,7 @@ public class JDRRUtils {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         bigbuffer.flip();
         return bigbuffer;
@@ -134,7 +135,7 @@ public class JDRRUtils {
         if (location != null) {
             if (new Regex(location, "https?://(.*?)/?").getMatch(0) != null) {
                 String oldlocation = location;
-                JDUtilities.getLogger().severe("Rewriting Location Header");
+                JDLogger.getLogger().severe("Rewriting Location Header");
                 location = new Regex(location, "https?://.*?/(.+)", Pattern.DOTALL).getMatch(0);
                 if (!oldlocation.startsWith("https")) {
                     if (location != null) {
@@ -160,7 +161,7 @@ public class JDRRUtils {
         if (host != null) {
             if (new Regex(host, "(.*?):?").getMatch(0) != null) {
                 String oldhost = host;
-                JDUtilities.getLogger().severe("Rewriting Host Header");
+                JDLogger.getLogger().severe("Rewriting Host Header");
                 host = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
                 instance.buffer = instance.buffer.replaceAll(JDHexUtils.getHexString("Host: " + oldhost), JDHexUtils.getHexString("Host: " + host));
                 instance.renewbuffer = true;
@@ -174,7 +175,7 @@ public class JDRRUtils {
             String type = new Regex(con, "(.+)").getMatch(0);
             if (type != null && !type.equalsIgnoreCase("close")) {
                 String oldcon = con;
-                JDUtilities.getLogger().severe("Rewriting Connection Header");
+                JDLogger.getLogger().severe("Rewriting Connection Header");
                 con = "close";
                 instance.buffer = instance.buffer.replaceAll(JDHexUtils.getHexString("Connection: " + oldcon), JDHexUtils.getHexString("Connection: " + con));
                 instance.renewbuffer = true;
@@ -186,7 +187,7 @@ public class JDRRUtils {
         String ref = JDHexUtils.toString(new Regex(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Referer: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
         if (ref != null) {
             if (new Regex(ref, "https?://(.*?)/?").getMatch(0) != null) {
-                JDUtilities.getLogger().severe("Rewriting Referer Header");
+                JDLogger.getLogger().severe("Rewriting Referer Header");
                 String oldref = ref;
                 String ref2 = new Regex(ref, "https?://.*?/(.+)", Pattern.DOTALL).getMatch(0);
                 if (!oldref.startsWith("https")) {

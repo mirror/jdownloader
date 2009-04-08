@@ -145,7 +145,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     }
 
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
             break;
@@ -446,7 +446,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
             return new File(ret, path);
         } catch (Exception e) {
-            e.printStackTrace();
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             return ret;
         }
     }
@@ -796,7 +796,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     // n.getKey()));
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             }
         }
 
