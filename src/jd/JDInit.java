@@ -26,7 +26,7 @@ import javax.swing.JOptionPane;
 
 import jd.config.Configuration;
 import jd.controlling.JDController;
-import jd.controlling.JDDownloadController;
+import jd.controlling.DownloadController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;
@@ -130,8 +130,8 @@ public class JDInit {
         return new JDController();
     }
 
-    public JDDownloadController initDownloadController() {
-        return JDDownloadController.getDownloadController();
+    public DownloadController initDownloadController() {
+        return DownloadController.getDownloadController();
     }
 
     public UIInterface initGUI(JDController controller) {

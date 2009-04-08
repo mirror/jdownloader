@@ -13,11 +13,6 @@ public class FilePackageEvent extends JDEvent {
     /* das FilePackage ist leer */
     public static final int FP_EMPTY = 999;
 
-    public FilePackageEvent(Object source, int ID, Object parameter) {
-        super(source, ID, parameter);
-        // TODO Auto-generated constructor stub
-    }
-
     public FilePackageEvent(Object source, int ID) {
         super(source, ID);
         // TODO Auto-generated constructor stub

@@ -1,19 +1,20 @@
 package jd.event;
 
+import java.util.EventListener;
 import java.util.Vector;
 
-public class JDBroadcaster {
+public abstract class JDBroadcaster<T extends EventListener,TT extends JDEvent> {
 
-    transient private Vector<JDListener> callList = null;
+    transient private Vector<T> callList = null;
 
-    transient private Vector<JDListener> removeList = null;
+    transient private Vector<T> removeList = null;
 
     public JDBroadcaster() {
-        callList = new Vector<JDListener>();
-        removeList = new Vector<JDListener>();
+        callList = new Vector<T>();
+        removeList = new Vector<T>();
     }
 
-    public void addJDListener(JDListener listener) {
+    public void addListener(T listener) {
         synchronized (callList) {
             synchronized (removeList) {
                 if (removeList.contains(listener)) removeList.remove(listener);
@@ -22,14 +23,14 @@ public class JDBroadcaster {
         }
     }
 
-    public boolean hasJDListener() {
+    public boolean hasListener() {
         return callList.size() > 0;
     }
 
-    public void fireJDEvent(JDEvent event) {
+    public void fireEvent(TT event) {
         synchronized (callList) {
             for (int i = callList.size() - 1; i >= 0; i--) {
-                callList.get(i).receiveJDEvent(event);
+                this.fireEvent(callList.get(i), event);
             }
             synchronized (removeList) {
                 callList.removeAll(removeList);
@@ -38,7 +39,9 @@ public class JDBroadcaster {
         }
     }
 
-    public void removeJDListener(JDListener listener) {
+    protected abstract void fireEvent(T listener, TT event);
+
+    public void removeListener(T listener) {
         synchronized (removeList) {
             if (!removeList.contains(listener)) removeList.add(listener);
         }

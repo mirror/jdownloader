@@ -20,8 +20,8 @@ import java.io.Serializable;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.DownloadController;
 import jd.controlling.JDController;
-import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
@@ -48,7 +48,7 @@ public class ResetLink extends Interaction implements Serializable {
                 link.getLinkStatus().setStatusText("");
                 link.reset();
                 ((PluginForHost) link.getPlugin()).resetPluginGlobals();
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, link));
+                DownloadController.getDownloadController().fireRefresh_Specific(link);
             } else {
                 logger.severe("Kein letzter Downloadlink gefunden");
             }

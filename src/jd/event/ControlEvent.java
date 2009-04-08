@@ -24,11 +24,6 @@ import java.awt.AWTEvent;
  * @author astaldo
  */
 public class ControlEvent extends AWTEvent {
-    /**
-     * Die Daten von einem oder mehreren Downloadlinks wurden verändert. Dazu
-     * zählen auch Statusids,Fortschritt usw..
-     */
-    public final static int CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED = 2;
 
     /**
      * Alle Downloads wurden bearbeitet. Und der download wird angehalten
@@ -112,11 +107,6 @@ public class ControlEvent extends AWTEvent {
 
     public final static int CONTROL_PLUGIN_INACTIVE = 4;
 
-    /**
-     * Es wird eine ArrayList mit den veränderten DownloadLinks als parameter
-     * erwartet
-     */
-    public final static int CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED = 7;
     /**
      * Startet/Stoppt den Download
      */

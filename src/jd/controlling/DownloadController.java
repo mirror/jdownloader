@@ -13,50 +13,69 @@ import javax.swing.Timer;
 import jd.Main;
 import jd.config.Configuration;
 import jd.event.JDBroadcaster;
-import jd.event.JDEvent;
-import jd.event.JDListener;
 import jd.gui.skins.simple.components.DownloadView.DownloadTreeTable;
 import jd.nutils.io.JDIO;
 import jd.plugins.BackupLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageEvent;
+import jd.plugins.FilePackageListener;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.update.PackageData;
 import jd.utils.JDUtilities;
 
-public class JDDownloadController extends JDBroadcaster implements JDListener, ActionListener {
+class DownloadControllerBroadcaster extends JDBroadcaster<DownloadControllerListener, DownloadControllerEvent> {
 
-    private static JDDownloadController INSTANCE = null;
+    @Override
+    protected void fireEvent(DownloadControllerListener listener, DownloadControllerEvent event) {
+        listener.handle_DownloadControllerEvent(event);
+
+    }
+
+}
+
+public class DownloadController implements FilePackageListener, DownloadControllerListener, ActionListener {
+
+    private static DownloadController INSTANCE = null;
 
     private Vector<FilePackage> packages = new Vector<FilePackage>();
     private Logger logger = null;
 
     private JDController controller;
 
+    private transient DownloadControllerBroadcaster broadcaster = new DownloadControllerBroadcaster();
+
     private Timer Save_Async; /*
                                * Async-Save, Linkliste wird verzögert
                                * gespeichert
                                */
 
-    public synchronized static JDDownloadController getDownloadController() {
+    public synchronized static DownloadController getDownloadController() {
         /* darf erst nachdem der JDController init wurde, aufgerufen werden */
         if (INSTANCE == null) {
-            INSTANCE = new JDDownloadController();
+            INSTANCE = new DownloadController();
         }
         return INSTANCE;
     }
 
-    private JDDownloadController() {
+    public synchronized JDBroadcaster<DownloadControllerListener, DownloadControllerEvent> getBroadcaster() {
+        if (broadcaster == null) broadcaster = new DownloadControllerBroadcaster();
+        return broadcaster;
+    }
+
+    private DownloadController() {
         logger = jd.controlling.JDLogger.getLogger();
         controller = JDUtilities.getController();
         initDownloadLinks();
         Save_Async = new Timer(2000, this);
         Save_Async.setInitialDelay(2000);
         Save_Async.setRepeats(false);
-        addJDListener(this);/* erst nachdem die packages geinit wurden! */
+        broadcaster.addListener(this);/*
+                                       * erst nachdem die packages geinit
+                                       * wurden!
+                                       */
     }
 
     /**
@@ -88,7 +107,7 @@ public class JDDownloadController extends JDBroadcaster implements JDListener, A
             return;
         }
         for (FilePackage filePackage : packages) {
-            filePackage.getJDBroadcaster().addJDListener(this);
+            filePackage.getBroadcaster().addListener(this);
             for (DownloadLink downloadLink : filePackage.getDownloadLinks()) {
                 downloadLink.setProperty(DownloadTreeTable.PROPERTY_SELECTED, false);
             }
@@ -200,7 +219,7 @@ public class JDDownloadController extends JDBroadcaster implements JDListener, A
                         try {
                             pluginForHost = JDUtilities.getNewPluginForHostInstanz(localLink.getHost());
                         } catch (Exception e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                         }
                         // Gibt es einen Names für ein Containerformat,
                         // wird ein passendes Plugin gesucht
@@ -212,7 +231,7 @@ public class JDDownloadController extends JDBroadcaster implements JDListener, A
                                 }
                             }
                         } catch (NullPointerException e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                         }
                         if (pluginForHost != null) {
                             localLink.setLoadedPlugin(pluginForHost);
@@ -241,9 +260,9 @@ public class JDDownloadController extends JDBroadcaster implements JDListener, A
         synchronized (packages) {
             if (!packages.contains(fp)) {
                 added = true;
-                fp.getJDBroadcaster().addJDListener(this);
+                fp.getBroadcaster().addListener(this);
                 packages.add(fp);
-                if (added) fireJDEvent(new JDDownloadControllerEvent(this, JDDownloadControllerEvent.ADD_FP));
+                if (added) broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FP));
             }
         }
     }
@@ -266,16 +285,16 @@ public class JDDownloadController extends JDBroadcaster implements JDListener, A
             }
             packages.add(index, fp);
         }
-        fireJDEvent(new JDDownloadControllerEvent(this, JDDownloadControllerEvent.UPDATE));
+        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
     }
 
     public void removePackage(FilePackage fp2) {
         if (fp2 == null) return;
         synchronized (packages) {
             fp2.abortDownload();
-            fp2.getJDBroadcaster().removeJDListener(this);
+            fp2.getBroadcaster().removeListener(this);
             packages.remove(fp2);
-            fireJDEvent(new JDDownloadControllerEvent(this, JDDownloadControllerEvent.REMOVE_FP));
+            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REMOVE_FP));
         }
     }
 
@@ -377,49 +396,61 @@ public class JDDownloadController extends JDBroadcaster implements JDListener, A
         return null;
     }
 
-    public void receiveJDEvent(JDEvent event) {
-        if (event instanceof JDDownloadControllerEvent) {
-            switch (event.getID()) {
-            case JDDownloadControllerEvent.ADD_FP:
-                System.out.println("DOWNLOADCONTROLLER: FilePackage added, Throw Update Event");
-                fireJDEvent(new JDDownloadControllerEvent(this, JDDownloadControllerEvent.UPDATE));
-                break;
-            case JDDownloadControllerEvent.REMOVE_FP:
-                System.out.println("DOWNLOADCONTROLLER: FilePackage removed, Throw Update Event");
-                fireJDEvent(new JDDownloadControllerEvent(this, JDDownloadControllerEvent.UPDATE));
-                break;
-            case JDDownloadControllerEvent.UPDATE:
-                System.out.println("DOWNLOADCONTROLLER: Update Event, Save LinkList (Async)");
-                this.saveDownloadLinksAsync();
-                break;
-            }
-        }
-        if (event instanceof FilePackageEvent) {
-            switch (event.getID()) {
-            case FilePackageEvent.DL_ADDED:
-                System.out.println("DOWNLOADCONTROLLER: Filepackage, Link added, Throw Update Event");
-                fireJDEvent(new JDDownloadControllerEvent(this, JDDownloadControllerEvent.UPDATE));
-                break;
-            case FilePackageEvent.DL_REMOVED:
-                System.out.println("DOWNLOADCONTROLLER: Filepackage, Link removed, Throw Update Event");
-                fireJDEvent(new JDDownloadControllerEvent(this, JDDownloadControllerEvent.UPDATE));
-                break;
-            case FilePackageEvent.FP_UPDATE:
-                System.out.println("DOWNLOADCONTROLLER: forward Filepackage Update to GUI");
-                fireJDEvent(new JDDownloadControllerEvent(this, JDDownloadControllerEvent.UPDATE));
-                break;
-            case FilePackageEvent.FP_EMPTY:
-                System.out.println("DOWNLOADCONTROLLER: remove FilePackage, Update GUI");
-                this.removePackage((FilePackage) event.getSource());
-                fireJDEvent(new JDDownloadControllerEvent(this, JDDownloadControllerEvent.UPDATE));
-                break;
-            }
-        }
-    }
-
     public void actionPerformed(ActionEvent arg0) {
         if (arg0.getSource() == Save_Async) {
             this.saveDownloadLinksSync();
+        }
+    }
+
+    public void fireUpdate() {
+        this.getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+    }
+
+    public void fireRefresh() {
+        this.getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_ALL));
+    }
+
+    public void fireRefresh_Specific(Object param) {
+        this.getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_SPECIFIC, param));
+    }
+
+    public void handle_DownloadControllerEvent(DownloadControllerEvent event) {
+        switch (event.getID()) {
+        case DownloadControllerEvent.ADD_FP:
+            System.out.println("DOWNLOADCONTROLLER: FilePackage added, Throw Update Event");
+            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+            break;
+        case DownloadControllerEvent.REMOVE_FP:
+            System.out.println("DOWNLOADCONTROLLER: FilePackage removed, Throw Update Event");
+            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+            break;
+        case DownloadControllerEvent.UPDATE:
+            System.out.println("DOWNLOADCONTROLLER: Update Event, Save LinkList (Async)");
+            this.saveDownloadLinksAsync();
+            break;
+        }
+    }
+
+    public void handle_FilePackageEvent(FilePackageEvent event) {
+        switch (event.getID()) {
+        case FilePackageEvent.DL_ADDED:
+            System.out.println("DOWNLOADCONTROLLER: Filepackage, Link added, Throw Update Event");
+            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+            break;
+        case FilePackageEvent.DL_REMOVED:
+            System.out.println("DOWNLOADCONTROLLER: Filepackage, Link removed, Throw Update Event");
+            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+            break;
+        case FilePackageEvent.FP_UPDATE:
+            System.out.println("DOWNLOADCONTROLLER: forward Filepackage Update to GUI");
+            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+            break;
+        case FilePackageEvent.FP_EMPTY:
+            System.out.println("DOWNLOADCONTROLLER: remove FilePackage, Update GUI");
+            this.removePackage((FilePackage) event.getSource());
+            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+            break;
+
         }
     }
 }

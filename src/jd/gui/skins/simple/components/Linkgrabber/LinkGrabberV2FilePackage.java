@@ -10,12 +10,20 @@ import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.event.JDBroadcaster;
-import jd.event.JDListener;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+
+class LinkGrabberFilePackageBroadcaster extends JDBroadcaster<LinkGrabberFilePackageListener, LinkGrabberFilePackageEvent> {
+
+    @Override
+    protected void fireEvent(LinkGrabberFilePackageListener listener, LinkGrabberFilePackageEvent event) {
+        listener.handle_LinkGrabberFilePackageEvent(event);
+    }
+
+}
 
 public class LinkGrabberV2FilePackage extends Property {
 
@@ -33,12 +41,12 @@ public class LinkGrabberV2FilePackage extends Property {
     private String password = "";
     private long size = -1;
 
-    private JDBroadcaster jdb = new JDBroadcaster();
     private long lastSizeCalc = 0;
     private String dlpassword = "";
     private boolean lastSort = false;
     private int lastfail = 0;
     private long lastFailCount = 0;
+    private transient LinkGrabberFilePackageBroadcaster broadcaster = new LinkGrabberFilePackageBroadcaster();
 
     public LinkGrabberV2FilePackage() {
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
@@ -51,9 +59,14 @@ public class LinkGrabberV2FilePackage extends Property {
         }
     }
 
-    public LinkGrabberV2FilePackage(String name, JDListener listener) {
+    public synchronized JDBroadcaster<LinkGrabberFilePackageListener, LinkGrabberFilePackageEvent> getBroadcaster() {
+        if (broadcaster == null) broadcaster = new LinkGrabberFilePackageBroadcaster();
+        return this.broadcaster;
+    }
+
+    public LinkGrabberV2FilePackage(String name, LinkGrabberFilePackageListener listener) {
         this(name);
-        jdb.addJDListener(listener);
+        broadcaster.addListener(listener);
     }
 
     public synchronized long getDownloadSize(boolean forceUpdate) {
@@ -95,17 +108,13 @@ public class LinkGrabberV2FilePackage extends Property {
         }
     }
 
-    public JDBroadcaster getJDBroadcaster() {
-        return jdb;
-    }
-
     public String getDownloadDirectory() {
         return downloadDirectory;
     }
 
     public void setUseSubDir(boolean b) {
         useSubDir = b;
-        jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
+        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public boolean useSubDir() {
@@ -114,7 +123,7 @@ public class LinkGrabberV2FilePackage extends Property {
 
     public void setDownloadDirectory(String dir) {
         downloadDirectory = dir;
-        jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
+        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public LinkGrabberV2FilePackage(String name) {
@@ -223,7 +232,7 @@ public class LinkGrabberV2FilePackage extends Property {
 
     public void setExtractAfterDownload(boolean extractAfterDownload) {
         this.extractAfterDownload = extractAfterDownload;
-        jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
+        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public void addAllAt(Vector<DownloadLink> links, int index) {
@@ -268,7 +277,7 @@ public class LinkGrabberV2FilePackage extends Property {
     public boolean remove(DownloadLink link) {
         synchronized (downloadLinks) {
             boolean ret = downloadLinks.remove(link);
-            if (downloadLinks.size() == 0) jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.EMPTY_EVENT));
+            if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
             return ret;
         }
     }
@@ -276,7 +285,7 @@ public class LinkGrabberV2FilePackage extends Property {
     public DownloadLink remove(int index) {
         synchronized (downloadLinks) {
             DownloadLink link = downloadLinks.remove(index);
-            if (downloadLinks.size() == 0) jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.EMPTY_EVENT));
+            if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
             return link;
         }
     }
@@ -284,19 +293,19 @@ public class LinkGrabberV2FilePackage extends Property {
     public void setComment(String comment) {
         if (comment == null) comment = "";
         this.comment = comment;
-        jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
+        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public void setDLPassword(String pass) {
         if (pass == null) pass = "";
         this.dlpassword = pass;
-        jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
+        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
         synchronized (downloadLinks) {
             this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
-            if (downloadLinks.size() == 0) jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.EMPTY_EVENT));
+            if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
         }
     }
 
@@ -305,13 +314,13 @@ public class LinkGrabberV2FilePackage extends Property {
             this.name = JDUtilities.removeEndingPoints(JDLocale.L("controller.packages.defaultname", "various"));
         } else
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
-        jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
+        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public void setPassword(String password) {
         if (password == null) password = "";
         this.password = password;
-        jdb.fireJDEvent(new LinkGrabberV2FilePackageEvent(this, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
+        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public int size() {

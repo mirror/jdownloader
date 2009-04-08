@@ -239,7 +239,7 @@ public class Netloadin extends PluginForHost {
 
     private void isExpired(Account account) throws IOException, PluginException {
         br.getPage("http://netload.in/index.php?id=2");
-        String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0).trim();
+        String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0);
         if (validUntil != null && new Regex(validUntil.trim(), "kein").matches()) {
             account.setEnabled(false);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);

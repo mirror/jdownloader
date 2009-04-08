@@ -24,6 +24,16 @@ import jd.event.ControlEvent;
 import jd.event.JDBroadcaster;
 import jd.utils.JDUtilities;
 
+class ProgressControllerBroadcaster extends JDBroadcaster<ProgressControllerListener, ProgressControllerEvent> {
+
+    @Override
+    protected void fireEvent(ProgressControllerListener listener, ProgressControllerEvent event) {
+        listener.handle_ProgressControllerEvent(event);
+
+    }
+
+}
+
 /**
  * Diese Klasse kann dazu verwendet werden einen Fortschritt in der GUI
  * anzuzeigen. Sie bildet dabei die schnittstelle zwischen Interactionen,
@@ -31,7 +41,7 @@ import jd.utils.JDUtilities;
  * 
  * @author JD-Team
  */
-public class ProgressController extends JDBroadcaster {
+public class ProgressController {
 
     private static int idCounter = 0;
     private long currentValue;
@@ -45,7 +55,9 @@ public class ProgressController extends JDBroadcaster {
     private String statusText;
     private Color progresscolor;
 
-    public Icon icon = null;   
+    public Icon icon = null;
+
+    private transient ProgressControllerBroadcaster broadcaster = new ProgressControllerBroadcaster();
 
     public Icon getIcon() {
         return icon;
@@ -60,7 +72,7 @@ public class ProgressController extends JDBroadcaster {
     }
 
     public boolean isCancelVisible() {
-        return hasJDListener();
+        return broadcaster.hasListener();
     }
 
     public ProgressController(String name, long max) {
@@ -71,6 +83,11 @@ public class ProgressController extends JDBroadcaster {
         finished = false;
         progresscolor = null;
         fireChanges();
+    }
+
+    public synchronized JDBroadcaster<ProgressControllerListener, ProgressControllerEvent> getBroadcaster() {
+        if (broadcaster == null) broadcaster = new ProgressControllerBroadcaster();
+        return this.broadcaster;
     }
 
     public void setColor(Color color) {
@@ -186,6 +203,6 @@ public class ProgressController extends JDBroadcaster {
     }
 
     public void fireCancelAction() {
-        this.fireJDEvent(new ProgressControllerEvent(this,ProgressControllerEvent.CANCEL));
+        broadcaster.fireEvent(new ProgressControllerEvent(this, ProgressControllerEvent.CANCEL));
     }
 }

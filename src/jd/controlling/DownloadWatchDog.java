@@ -88,7 +88,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                 al.add(singleDownloadController.abortDownload().getDownloadLink());
             }
 
-            deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, al));
+            DownloadController.getDownloadController().fireRefresh_Specific(al);
             boolean check = true;
             // Warteschleife bis alle activelinks abgebrochen wurden
             logger.finer("Warten bis alle activeLinks abgebrochen wurden.");
@@ -113,7 +113,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         }
         logger.info("Active links abgebrochen");
 
-        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, al));
+        DownloadController.getDownloadController().fireRefresh_Specific(al);
 
         progress.finalize();
         logger.finer("Abbruch komplett");
@@ -161,8 +161,8 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                 }
 
             }
-        }
-        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, null));
+        }        
+        DownloadController.getDownloadController().fireRefresh();
 
     }
 
@@ -270,7 +270,8 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                 }
             }
         } catch (Exception e) {
-            // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.
+            // SEVERE,"Exception occured",e);
             // Fängt concurrentmodification Exceptions ab
         }
         return returnDownloadLink;
@@ -447,7 +448,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     totalSpeed = 0;
                 }
                 if (updates.size() > 0) {
-                    deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, updates));
+                    DownloadController.getDownloadController().fireRefresh_Specific(updates);
                 }
                 int ret = 0;
                 if (Interaction.areInteractionsInProgress() && activeDownloadControllers.size() < getSimultanDownloadNum() && !pause) {
@@ -467,7 +468,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     }
                 }
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
             try {
                 Thread.sleep(1000);

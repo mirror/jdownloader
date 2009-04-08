@@ -28,8 +28,8 @@ import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
+import jd.controlling.DownloadController;
 import jd.controlling.reconnect.Reconnecter;
-import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2Panel;
 import jd.http.Encoding;
@@ -474,7 +474,7 @@ public class JDSimpleWebserverRequestHandler {
                                 link = it.next();
                                 link.setEnabled(true);
                             }
-                            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
+                            DownloadController.getDownloadController().fireRefresh();
                         }
                         if (dowhat.compareToIgnoreCase("deactivate") == 0) {
                             /* deaktivieren */
@@ -482,7 +482,7 @@ public class JDSimpleWebserverRequestHandler {
                                 link = it.next();
                                 link.setEnabled(false);
                             }
-                            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
+                            DownloadController.getDownloadController().fireRefresh();
                         }
                         if (dowhat.compareToIgnoreCase("reset") == 0) {
                             /*
@@ -494,7 +494,7 @@ public class JDSimpleWebserverRequestHandler {
                                 link.getLinkStatus().setStatusText("");
                                 link.reset();
                             }
-                            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
+                            DownloadController.getDownloadController().fireRefresh();
                         }
                         if (dowhat.compareToIgnoreCase("remove") == 0) {
 
@@ -510,7 +510,7 @@ public class JDSimpleWebserverRequestHandler {
                                 link = it.next();
                                 link.setAborted(true);
                             }
-                            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
+                            DownloadController.getDownloadController().fireRefresh();
                         }
                     }
                 }

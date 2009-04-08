@@ -10,8 +10,6 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
 import jd.config.Configuration;
-import jd.event.JDEvent;
-import jd.event.JDListener;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JDTextField;
@@ -19,7 +17,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class LinkGrabberV2FilePackageInfo extends JPanel implements JDListener, ActionListener {
+public class LinkGrabberV2FilePackageInfo extends JPanel implements LinkGrabberFilePackageListener, ActionListener {
 
     private static final long serialVersionUID = 5410296068527460629L;
 
@@ -55,10 +53,10 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements JDListener, 
             update();
             return;
         }
-        if (this.fp != null) this.fp.getJDBroadcaster().removeJDListener(this);
+        if (this.fp != null) this.fp.getBroadcaster().removeListener(this);
         this.fp = fp;
         if (this.fp != null) {
-            fp.getJDBroadcaster().addJDListener(this);
+            fp.getBroadcaster().addListener(this);
             update();
         }
     }
@@ -146,7 +144,7 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements JDListener, 
         this.add(tabbedPane, "grow");
     }
 
-    public void UpdateEvent(LinkGrabberV2FilePackageEvent event) {
+    public void UpdateEvent(LinkGrabberFilePackageEvent event) {
 
     }
 
@@ -167,17 +165,15 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements JDListener, 
         }
     }
 
-    public void receiveJDEvent(JDEvent event) {
-        if (!(event instanceof LinkGrabberV2FilePackageEvent)) return;
+    public void handle_LinkGrabberFilePackageEvent(LinkGrabberFilePackageEvent event) {
         if (this.fp == null) return;
-        if (!(event.getSource() instanceof LinkGrabberV2FilePackage)) return;
         if (event.getSource() != fp) return;
         switch (event.getID()) {
-        case LinkGrabberV2FilePackageEvent.EMPTY_EVENT:
-            fp.getJDBroadcaster().removeJDListener(this);
+        case LinkGrabberFilePackageEvent.EMPTY_EVENT:
+            fp.getBroadcaster().removeListener(this);
             fp = null;
             break;
-        case LinkGrabberV2FilePackageEvent.UPDATE_EVENT:
+        case LinkGrabberFilePackageEvent.UPDATE_EVENT:
             update();
             break;
         default:

@@ -73,7 +73,7 @@ import jd.config.Configuration;
 import jd.config.DatabaseConnector;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
-import jd.controlling.JDDownloadController;
+import jd.controlling.DownloadController;
 import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.http.Browser;
@@ -1201,8 +1201,8 @@ public class JDUtilities {
         controller = con;
     }
 
-    public static JDDownloadController getDownloadController() {
-        return JDDownloadController.getDownloadController();
+    public static DownloadController getDownloadController() {
+        return DownloadController.getDownloadController();
     }
 
     /**

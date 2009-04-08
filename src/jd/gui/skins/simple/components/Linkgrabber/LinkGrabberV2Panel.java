@@ -25,9 +25,8 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
+import jd.controlling.ProgressControllerListener;
 import jd.event.JDBroadcaster;
-import jd.event.JDEvent;
-import jd.event.JDListener;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.LinkInputDialog;
 import jd.gui.skins.simple.SimpleGUI;
@@ -46,7 +45,17 @@ import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 
-public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, JDListener {
+class LinkGrabberBroadcaster extends JDBroadcaster<LinkGrabberListener, LinkGrabberEvent> {
+
+    @Override
+    protected void fireEvent(LinkGrabberListener listener, LinkGrabberEvent event) {
+        listener.handle_LinkGrabberEvent(event);
+
+    }
+
+}
+
+public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, LinkGrabberFilePackageListener, LinkCheckListener, ProgressControllerListener {
 
     private static final long serialVersionUID = 1607433619381447389L;
     protected static Vector<LinkGrabberV2FilePackage> packages = new Vector<LinkGrabberV2FilePackage>();
@@ -69,15 +78,18 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     private LinkGrabberV2FilePackageInfo FilePackageInfo;
     private Timer gathertimer;
 
-    private JDBroadcaster jdb = new jd.event.JDBroadcaster();
     private Jobber checkJobbers = new Jobber(4);
     private final AbstractButton close = new JCancelButton();
     private boolean lastSort = false;
     private LinkCheck lc = LinkCheck.getLinkChecker();
     private Timer Update_Async;
+    private static LinkGrabberV2Panel INSTANCE;
+
+    private transient LinkGrabberBroadcaster broadcaster = new LinkGrabberBroadcaster();
 
     public LinkGrabberV2Panel() {
         super(new MigLayout("ins 0"));
+
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
         guiConfig = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
@@ -94,6 +106,12 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         Update_Async = new Timer(50, this);
         Update_Async.setInitialDelay(50);
         Update_Async.setRepeats(false);
+        INSTANCE = this;
+    }
+
+    public synchronized JDBroadcaster<LinkGrabberListener, LinkGrabberEvent> getBroadcaster() {
+        if (broadcaster == null) broadcaster = new LinkGrabberBroadcaster();
+        return this.broadcaster;
     }
 
     public void showFilePackageInfo(LinkGrabberV2FilePackage fp) {
@@ -105,22 +123,14 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         collapsepane.setCollapsed(true);
     }
 
-    public JDBroadcaster getJDBroadcaster() {
-        return jdb;
-    }
-
     public Vector<LinkGrabberV2FilePackage> getPackages() {
         return packages;
     }
 
     public synchronized void fireTableChanged(final int id, final Object param) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                synchronized (packages) {
-                    internalTreeTable.fireTableChanged(id, param);
-                }
-            }
-        });
+        synchronized (packages) {
+            internalTreeTable.fireTableChanged(id, param);
+        }
     }
 
     @Override
@@ -151,7 +161,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         waitingList.add(element);
         checkAlreadyinList(element);
         attachToPackagesFirstStage(element);
-        jdb.fireJDEvent(new LinkGrabberV2Event(this, LinkGrabberV2Event.UPDATE_EVENT));
+        broadcaster.fireEvent(new LinkGrabberEvent(this, LinkGrabberEvent.UPDATE_EVENT));
     }
 
     private void attachToPackagesFirstStage(DownloadLink link) {
@@ -241,7 +251,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
     }
 
     private void stopLinkGatherer() {
-        lc.removeJDListener(LinkGrabberV2Panel.this);
+        lc.getBroadcaster().removeListener(this);
         if (gatherer != null && gatherer.isAlive()) {
             gatherer_running = false;
             EventQueue.invokeLater(new Runnable() {
@@ -262,8 +272,8 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                 setName("LinkGrabber");
                 gatherer_running = true;
                 pc = new ProgressController("LinkGrabber");
-                pc.addJDListener(LinkGrabberV2Panel.this);
-                lc.addJDListener(LinkGrabberV2Panel.this);
+                pc.getBroadcaster().addListener(INSTANCE);
+                lc.getBroadcaster().addListener(INSTANCE);
                 pc.setRange(0);
                 while (waitingList.size() > 0 || lc.isRunning()) {
                     Vector<DownloadLink> currentList = new Vector<DownloadLink>();
@@ -284,8 +294,9 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                         return;
                     }
                 }
-                lc.removeJDListener(LinkGrabberV2Panel.this);
+                lc.getBroadcaster().removeListener(INSTANCE);
                 pc.finalize();
+                pc.getBroadcaster().removeListener(INSTANCE);
             }
         };
         gatherer.start();
@@ -546,7 +557,7 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                 for (int i = 0; i < selected_links.size(); i++) {
                     fp = this.getFPwithLink(selected_links.elementAt(i));
                     selected_links.elementAt(i).setProperty("pass", pw);
-                    if (fp != null) fp.getJDBroadcaster().fireJDEvent(new LinkGrabberV2FilePackageEvent(fp, LinkGrabberV2FilePackageEvent.UPDATE_EVENT));
+                    if (fp != null) fp.getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(fp, LinkGrabberFilePackageEvent.UPDATE_EVENT));
                 }
                 return;
             case LinkGrabberV2TreeTableAction.DE_ACTIVATE:
@@ -662,39 +673,6 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public void receiveJDEvent(JDEvent event) {
-        if (event instanceof ProgressControllerEvent) {
-            if (event.getSource() == this.pc) {
-                lc.abortLinkCheck();
-                this.stopLinkGatherer();
-                return;
-            }
-        }
-        if (event instanceof LinkGrabberV2FilePackageEvent && event.getID() == LinkGrabberV2FilePackageEvent.EMPTY_EVENT) {
-            synchronized (packages) {
-                ((LinkGrabberV2FilePackage) event.getSource()).getJDBroadcaster().removeJDListener(this);
-                if (FilePackageInfo.getPackage() == ((LinkGrabberV2FilePackage) event.getSource()) || FilePackageInfo.getPackage() == null) {
-                    this.hideFilePackageInfo();
-                }
-                packages.remove(event.getSource());
-                if (packages.size() == 0) jdb.fireJDEvent(new LinkGrabberV2Event(this, LinkGrabberV2Event.EMPTY_EVENT));
-            }
-        }
-        if (event.getSource() == lc) {
-            if (event instanceof LinkCheckEvent) {
-                switch (event.getID()) {
-                case LinkCheckEvent.AFTER_CHECK:
-                    afterLinkGrabber((Vector<DownloadLink>) event.getParameter());
-                    break;
-                case LinkCheckEvent.ABORT:
-                    stopLinkGatherer();
-                    break;
-                }
-            }
-        }
-    }
-
     private void sort(final int col) {
         lastSort = !lastSort;
         synchronized (packages) {
@@ -724,6 +702,40 @@ public class LinkGrabberV2Panel extends JTabbedPanel implements ActionListener, 
                 }
 
             });
+        }
+    }
+
+    public void handle_LinkGrabberFilePackageEvent(LinkGrabberFilePackageEvent event) {
+        if (event.getID() == LinkGrabberFilePackageEvent.EMPTY_EVENT) {
+            synchronized (packages) {
+                ((LinkGrabberV2FilePackage) event.getSource()).getBroadcaster().removeListener(this);
+                if (FilePackageInfo.getPackage() == ((LinkGrabberV2FilePackage) event.getSource()) || FilePackageInfo.getPackage() == null) {
+                    this.hideFilePackageInfo();
+                }
+                packages.remove(event.getSource());
+                if (packages.size() == 0) broadcaster.fireEvent(new LinkGrabberEvent(this, LinkGrabberEvent.EMPTY_EVENT));
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public void handle_LinkCheckEvent(LinkCheckEvent event) {
+        switch (event.getID()) {
+        case LinkCheckEvent.AFTER_CHECK:
+            afterLinkGrabber((Vector<DownloadLink>) event.getParameter());
+            break;
+        case LinkCheckEvent.ABORT:
+            stopLinkGatherer();
+            break;
+        }
+
+    }
+
+    public void handle_ProgressControllerEvent(ProgressControllerEvent event) {
+        if (event.getSource() == this.pc) {
+            lc.abortLinkCheck();
+            this.stopLinkGatherer();
+            return;
         }
     }
 }

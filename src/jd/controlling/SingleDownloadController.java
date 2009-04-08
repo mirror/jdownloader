@@ -124,7 +124,7 @@ public class SingleDownloadController extends Thread {
 
                 downloadLink.setEnabled(false);
                 // linkStatus.addStatus(LinkStatus.ERROR_SECURITY);
-                fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
+                DownloadController.getDownloadController().fireRefresh_Specific(downloadLink);
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);
 
                 return;
@@ -134,7 +134,7 @@ public class SingleDownloadController extends Thread {
             linkStatus.setStatusText(JDLocale.L("gui.download.create_connection", "Connecting..."));
 
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, currentPlugin);
-            fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
+            DownloadController.getDownloadController().fireRefresh_Specific(downloadLink);
             currentPlugin.init();
             try {
                 currentPlugin.handle(downloadLink);
@@ -157,12 +157,12 @@ public class SingleDownloadController extends Thread {
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             } catch (NullPointerException e) {
                 logger.severe("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             } catch (Exception e) {
                 logger.severe("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             }
@@ -237,7 +237,7 @@ public class SingleDownloadController extends Thread {
 
         } catch (Exception e) {
             logger.severe("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
     }
 
@@ -248,8 +248,7 @@ public class SingleDownloadController extends Thread {
         status.resetWaitTime();
 
         downloadLink.setEnabled(false);
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-
+        DownloadController.getDownloadController().fireRefresh_Specific(downloadLink);
     }
 
     private void onErrorPluginDefect(DownloadLink downloadLink2, PluginForHost currentPlugin2) {
@@ -275,7 +274,7 @@ public class SingleDownloadController extends Thread {
         if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
             new PackageManager().onDownloadedPackage(downloadLink);
         }
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        DownloadController.getDownloadController().fireRefresh_Specific(downloadLink);
 
         Interaction.handleInteraction(Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED, downloadLink);
         if (JDUtilities.getController().isContainerFile(new File(downloadLink.getFileOutput()))) {
@@ -300,7 +299,7 @@ public class SingleDownloadController extends Thread {
         }
         JDUtilities.releaseUserIOSemaphore();
 
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        DownloadController.getDownloadController().fireRefresh_Specific(downloadLink);
 
     }
 
@@ -370,7 +369,7 @@ public class SingleDownloadController extends Thread {
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
             retry(downloadLink, plugin);
         }
@@ -387,7 +386,7 @@ public class SingleDownloadController extends Thread {
         if (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 1) {
             downloadLink.setEnabled(false);
             status.setErrorMessage(JDLocale.L("controller.status.fileexists.skip", "File already exists."));
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+            DownloadController.getDownloadController().fireRefresh_Specific(downloadLink);
         } else {
             if (new File(downloadLink.getFileOutput()).delete()) {
                 status.reset();
@@ -396,7 +395,7 @@ public class SingleDownloadController extends Thread {
                 status.setErrorMessage(JDLocale.L("controller.status.fileexists.overwritefailed", "Überschreiben fehlgeschlagen ") + downloadLink.getFileOutput());
             }
         }
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        DownloadController.getDownloadController().fireRefresh_Specific(downloadLink);
 
     }
 
@@ -429,7 +428,7 @@ public class SingleDownloadController extends Thread {
         if (linkStatus.getErrorMessage() == null) {
             linkStatus.setErrorMessage(JDLocale.L("controller.status.connectionproblems", "Connection lost."));
         }
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        DownloadController.getDownloadController().fireRefresh_Specific(downloadLink);
 
     }
 
@@ -458,7 +457,7 @@ public class SingleDownloadController extends Thread {
         status.setWaitTime(30 * 60 * 1000l);
 
         downloadLink.setEnabled(false);
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        DownloadController.getDownloadController().fireRefresh_Specific(downloadLink);
     }
 
     /**
@@ -487,7 +486,7 @@ public class SingleDownloadController extends Thread {
         }
 
         downloadLink.setEnabled(false);
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        DownloadController.getDownloadController().fireRefresh_Specific(downloadLink);
     }
 
     /**
@@ -514,7 +513,7 @@ public class SingleDownloadController extends Thread {
 
         Reconnecter.requestReconnect();
 
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, null));
+        DownloadController.getDownloadController().fireRefresh_Specific(downloadLink);
 
     }
 

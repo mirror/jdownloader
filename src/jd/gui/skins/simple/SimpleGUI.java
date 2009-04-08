@@ -664,7 +664,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         linkGrabber = new LinkGrabberV2Panel();
         lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 24, 24));
         lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
-        linkGrabber.getJDBroadcaster().addJDListener(lgTaskPane);
+        linkGrabber.getBroadcaster().addListener(lgTaskPane);
         lgTaskPane.addActionListener(linkGrabber);
         lgTaskPane.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -855,7 +855,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        // ,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);
         // }

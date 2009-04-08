@@ -22,6 +22,7 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -32,15 +33,11 @@ import java.util.logging.Logger;
 
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import jd.controlling.ClipboardHandler;
-import jd.controlling.JDDownloadControllerEvent;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
-import jd.event.JDEvent;
-import jd.event.JDListener;
+import jd.controlling.DownloadControllerEvent;
+import jd.controlling.DownloadControllerListener;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
@@ -48,6 +45,7 @@ import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.Linkgrabber.LinkCheck;
 import jd.gui.skins.simple.components.Linkgrabber.LinkCheckEvent;
+import jd.gui.skins.simple.components.Linkgrabber.LinkCheckListener;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
@@ -56,16 +54,22 @@ import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class DownloadLinksPanel extends JTabbedPanel implements ControlListener, JDListener, ActionListener {
+public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, DownloadControllerListener, LinkCheckListener {
 
     /**
      * 
      */
     private static final long serialVersionUID = -6029423913449902141L;
 
+    private final int NO_JOB = -1;
     public final static int REFRESH_ALL_DATA_CHANGED = 1;
     public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;
     public static final int REFRESH_SPECIFIED_LINKS = 2;
+
+    private final static int UPDATE_TIMING = 50;
+
+    private int job_ID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
+    private ArrayList<DownloadLink> job_links = new ArrayList<DownloadLink>();
 
     private boolean lastSort = false;
 
@@ -75,27 +79,25 @@ public class DownloadLinksPanel extends JTabbedPanel implements ControlListener,
 
     private Timer Update_Async;
 
+    private long last_async_update;
+
     public DownloadLinksPanel() {
         super(new BorderLayout());
         internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
         this.add(scrollPane);
-        JDUtilities.getController().addControlListener(this);
-        JDUtilities.getDownloadController().addJDListener(this);
-        Update_Async = new Timer(50, this);
-        Update_Async.setInitialDelay(50);
+        JDUtilities.getDownloadController().getBroadcaster().addListener(this);
+        Update_Async = new Timer(UPDATE_TIMING, this);
+        last_async_update = 0;
+        Update_Async.setInitialDelay(UPDATE_TIMING);
         Update_Async.setRepeats(false);
         Update_Async.restart();
     }
 
-    public synchronized void fireTableChanged(final int id, final Object param) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                synchronized (JDUtilities.getController().getPackages()) {
-                    internalTreeTable.fireTableChanged(id, param);
-                }
-            }
-        });
+    public synchronized void fireTableChanged(int id, Object param) {
+        synchronized (JDUtilities.getController().getPackages()) {
+            internalTreeTable.fireTableChanged(id, param);
+        }
     }
 
     @Override
@@ -109,44 +111,75 @@ public class DownloadLinksPanel extends JTabbedPanel implements ControlListener,
         internalTreeTable.removeKeyListener(internalTreeTable);
     }
 
-    public void controlEvent(final ControlEvent event) {
-        if (event == null) {
-            logger.warning("event == null");
-            return;
-        }
-        switch (event.getID()) {
-        case ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED:
-            fireTableChanged(REFRESH_SPECIFIED_LINKS, event.getParameter());
-            break;
-        case ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED:
-            fireTableChanged(REFRESH_ALL_DATA_CHANGED, null);
+    @SuppressWarnings("unchecked")
+    private synchronized void updateTableTask(int id, Object Param) {
+        System.out.println("got new TableJob, Update old one");
+        Update_Async.stop();
+        switch (id) {
+        case REFRESH_DATA_AND_STRUCTURE_CHANGED: {
+            this.job_ID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
+            this.job_links.clear();
             break;
         }
+        case REFRESH_ALL_DATA_CHANGED: {
+            switch (this.job_ID) {
+            case REFRESH_DATA_AND_STRUCTURE_CHANGED:                
+            case REFRESH_ALL_DATA_CHANGED:
+                break;
+            case NO_JOB:
+            case REFRESH_SPECIFIED_LINKS:
+                this.job_ID = REFRESH_ALL_DATA_CHANGED;
+                this.job_links.clear();
+                break;
+            }
+            break;
+        }
+        case REFRESH_SPECIFIED_LINKS: {
+            switch (this.job_ID) {
+            case REFRESH_DATA_AND_STRUCTURE_CHANGED:
+            case REFRESH_ALL_DATA_CHANGED:
+                break;
+            case NO_JOB:
+            case REFRESH_SPECIFIED_LINKS:
+                this.job_ID = REFRESH_SPECIFIED_LINKS;
+                if (Param instanceof DownloadLink) {
+                    System.out.println("refesh single link");
+                    if (!job_links.contains(Param)) {
+                        System.out.println("refesh single link, added");
+                        job_links.add((DownloadLink) Param);
+                    }
+                } else if (Param instanceof ArrayList) {
+                    System.out.println("refesh multiple link");
+                    for (DownloadLink dl : (ArrayList<DownloadLink>) Param) {
+                        if (!job_links.contains(dl)) {
+                            System.out.println("refesh multiple link,added");
+                            job_links.add(dl);
+                        }
+                    }
+                }
+                break;
+            }
+        }
+        }
+        if (System.currentTimeMillis() - last_async_update > UPDATE_TIMING + 50) {
+            System.out.println("max update timeout reached, fire now!");
+            fireTableTask();
+        }
+        Update_Async.restart();
     }
 
-    public void receiveJDEvent(JDEvent event) {
-        if (event instanceof LinkCheckEvent) {
-            switch (event.getID()) {
-            case LinkCheckEvent.ABORT:
-            case LinkCheckEvent.STOP:
-                LinkCheck.getLinkChecker().removeJDListener(this);
-                break;
-            }
-        }
-        if (event instanceof JDDownloadControllerEvent) {
-            switch (event.getID()) {
-            case JDDownloadControllerEvent.UPDATE:
-                System.out.println("DOWNLOADLIST: Update Event, Refresh Complete Table (Async)");
-                Update_Async.restart();
-                break;
-            }
-        }
+    private synchronized void fireTableTask() {
+        last_async_update = System.currentTimeMillis();
+        System.out.println("fire TableJob");
+        fireTableChanged(this.job_ID, this.job_links);
+        this.job_ID = this.NO_JOB;
+        this.job_links.clear();
     }
 
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == this.Update_Async) {
-            fireTableChanged(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
+            fireTableTask();
             return;
         }
         Vector<FilePackage> selected_packages = new Vector<FilePackage>();
@@ -319,7 +352,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ControlListener,
         }
         case TreeTableAction.CHECK:
             LinkCheck.getLinkChecker().checkLinks(selected_links);
-            LinkCheck.getLinkChecker().addJDListener(this);
+            LinkCheck.getLinkChecker().getBroadcaster().addListener(this);
             break;
         case TreeTableAction.SORT_ALL:
             sort(col);
@@ -334,7 +367,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ControlListener,
             for (int i = 0; i < selected_links.size(); i++) {
                 selected_links.get(i).setEnabled(b);
             }
-            JDUtilities.getDownloadController().fireJDEvent(new JDDownloadControllerEvent(this, JDDownloadControllerEvent.UPDATE));
+            JDUtilities.getDownloadController().getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
             return;
         }
         case TreeTableAction.NEW_PACKAGE: {
@@ -406,6 +439,32 @@ public class DownloadLinksPanel extends JTabbedPanel implements ControlListener,
 
             });
         }
-        JDUtilities.getDownloadController().fireJDEvent(new JDDownloadControllerEvent(this, JDDownloadControllerEvent.UPDATE));
+        JDUtilities.getDownloadController().getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+    }
+
+    public void handle_DownloadControllerEvent(DownloadControllerEvent event) {
+        switch (event.getID()) {
+        case DownloadControllerEvent.UPDATE:
+            System.out.println("DOWNLOADLIST: Update Event, Refresh Complete Table (Async)");
+            updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
+            break;
+        case DownloadControllerEvent.REFRESH_SPECIFIC:
+            System.out.println("DOWNLOADLIST: Refresh Specific Event (Async)");
+            updateTableTask(REFRESH_SPECIFIED_LINKS, event.getParameter());
+            break;
+        case DownloadControllerEvent.REFRESH_ALL:
+            System.out.println("DOWNLOADLIST: Refresh All Event (Async)");
+            updateTableTask(REFRESH_ALL_DATA_CHANGED, null);
+            break;
+        }
+    }
+
+    public void handle_LinkCheckEvent(LinkCheckEvent event) {
+        switch (event.getID()) {
+        case LinkCheckEvent.ABORT:
+        case LinkCheckEvent.STOP:
+            LinkCheck.getLinkChecker().getBroadcaster().removeListener(this);
+            break;
+        }
     }
 }

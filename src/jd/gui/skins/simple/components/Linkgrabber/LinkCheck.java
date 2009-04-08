@@ -11,15 +11,23 @@ import javax.swing.Timer;
 
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
+import jd.controlling.ProgressControllerListener;
 import jd.event.JDBroadcaster;
-import jd.event.JDEvent;
-import jd.event.JDListener;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
-public class LinkCheck extends JDBroadcaster implements ActionListener, JDListener {
+class LinkCheckBroadcaster extends JDBroadcaster<LinkCheckListener, LinkCheckEvent> {
+
+    @Override
+    protected void fireEvent(LinkCheckListener listener, LinkCheckEvent event) {
+        listener.handle_LinkCheckEvent(event);
+    }
+
+}
+
+public class LinkCheck implements ActionListener, ProgressControllerListener {
 
     private static LinkCheck INSTANCE = null;
     private Timer checkTimer = null;
@@ -29,6 +37,7 @@ public class LinkCheck extends JDBroadcaster implements ActionListener, JDListen
     private boolean check_running = false;
     protected ProgressController pc;
     protected Jobber checkJobbers;
+    transient private LinkCheckBroadcaster broadcaster = new LinkCheckBroadcaster();
 
     public synchronized static LinkCheck getLinkChecker() {
         if (INSTANCE == null) {
@@ -42,6 +51,11 @@ public class LinkCheck extends JDBroadcaster implements ActionListener, JDListen
 
     public boolean isRunning() {
         return check_running;
+    }
+
+    public synchronized JDBroadcaster<LinkCheckListener, LinkCheckEvent> getBroadcaster() {
+        if (broadcaster == null) broadcaster = new LinkCheckBroadcaster();
+        return this.broadcaster;
     }
 
     public synchronized void checkLinks(Vector<DownloadLink> links) {
@@ -75,7 +89,7 @@ public class LinkCheck extends JDBroadcaster implements ActionListener, JDListen
                     link.isAvailable();
                 }
             }
-            this.fireJDEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, hosterList));
+            broadcaster.fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, hosterList));
             pc.increase(hosterList.size());
         }
     }
@@ -85,9 +99,9 @@ public class LinkCheck extends JDBroadcaster implements ActionListener, JDListen
         checkThread = new Thread() {
             public void run() {
                 setName("OnlineCheck");
-                fireJDEvent(new LinkCheckEvent(this, LinkCheckEvent.START));
+                broadcaster.fireEvent(new LinkCheckEvent(this, LinkCheckEvent.START));
                 pc = new ProgressController("OnlineCheck");
-                pc.addJDListener(LinkCheck.getLinkChecker());
+                pc.getBroadcaster().addListener(LinkCheck.getLinkChecker());
                 pc.setRange(0);
                 while (LinksToCheck.size() != 0) {
                     Vector<DownloadLink> currentList;
@@ -136,7 +150,8 @@ public class LinkCheck extends JDBroadcaster implements ActionListener, JDListen
                     return;
                 }
                 pc.finalize();
-                fireJDEvent(new LinkCheckEvent(this, LinkCheckEvent.STOP));
+                pc.getBroadcaster().removeListener(LinkCheck.getLinkChecker());
+                broadcaster.fireEvent(new LinkCheckEvent(this, LinkCheckEvent.STOP));
                 check_running = false;
             }
         };
@@ -172,16 +187,6 @@ public class LinkCheck extends JDBroadcaster implements ActionListener, JDListen
         }
     }
 
-    public void receiveJDEvent(JDEvent event) {
-        if (event instanceof ProgressControllerEvent) {
-            if (event.getSource() == this.pc) {
-                this.abortLinkCheck();
-                fireJDEvent(new LinkCheckEvent(this, LinkCheckEvent.ABORT));
-                return;
-            }
-        }
-    }
-
     public void abortLinkCheck() {
         check_running = false;
         if (checkTimer != null) {
@@ -200,6 +205,14 @@ public class LinkCheck extends JDBroadcaster implements ActionListener, JDListen
         }
         synchronized (LinksToCheck) {
             LinksToCheck = new Vector<DownloadLink>();
+        }
+    }
+
+    public void handle_ProgressControllerEvent(ProgressControllerEvent event) {
+        if (event.getSource() == this.pc) {
+            this.abortLinkCheck();
+            broadcaster.fireEvent(new LinkCheckEvent(this, LinkCheckEvent.ABORT));
+            return;
         }
     }
 

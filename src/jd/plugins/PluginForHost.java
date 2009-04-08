@@ -31,7 +31,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
-import jd.event.ControlEvent;
+import jd.controlling.DownloadController;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.http.Browser;
@@ -200,7 +200,7 @@ public abstract class PluginForHost extends Plugin {
                 }
 
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
         }
         if (premium.getSize() != 0) {
@@ -280,9 +280,9 @@ public abstract class PluginForHost extends Plugin {
                     }
 
                 } catch (IllegalArgumentException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 } catch (SecurityException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
         }
@@ -439,8 +439,7 @@ public abstract class PluginForHost extends Plugin {
 
             if (t > 0) {
                 this.resetHosterWaitTime();
-
-                this.fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, JDUtilities.getController().getDownloadLinks(this));
+                DownloadController.getDownloadController().fireRefresh();
             }
             try {
                 handleFree(downloadLink);
@@ -518,7 +517,7 @@ public abstract class PluginForHost extends Plugin {
         } else {
             if (t > 0) {
                 this.resetHosterWaitTime();
-                this.fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, JDUtilities.getController().getDownloadLinks(this));
+                DownloadController.getDownloadController().fireRefresh();
             }
             try {
                 handleFree(downloadLink);

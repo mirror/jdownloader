@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 
 import jd.Main;
 import jd.config.Configuration;
-import jd.controlling.JDDownloadController;
+import jd.controlling.DownloadController;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
@@ -197,7 +197,7 @@ public class WebUpdate implements ControlListener {
             }
         }
 
-        JDDownloadController.getDownloadController().backupDownloadLinks();
+        DownloadController.getDownloadController().backupDownloadLinks();
 
         try {
             WebUpdate.updateUpdater();

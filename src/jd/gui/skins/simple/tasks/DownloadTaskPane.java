@@ -8,7 +8,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.Timer;
 
-import jd.controlling.JDDownloadController;
+import jd.controlling.DownloadController;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
@@ -44,7 +44,7 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
      * TODO
      */
     private void update() {
-        JDDownloadController dlc = JDUtilities.getDownloadController();
+        DownloadController dlc = JDUtilities.getDownloadController();
         packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", dlc.getPackages().size()));
         downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", dlc.getAllDownloadLinks().size()));
         long tot = 0;

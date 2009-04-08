@@ -31,6 +31,15 @@ import jd.nutils.io.JDIO;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
+class FilePackageBroadcaster extends JDBroadcaster<FilePackageListener, FilePackageEvent> {
+
+    @Override
+    protected void fireEvent(FilePackageListener listener, FilePackageEvent event) {
+        listener.handle_FilePackageEvent(event);
+    }
+
+}
+
 /**
  * Diese Klasse verwaltet Pakete
  * 
@@ -51,13 +60,6 @@ public class FilePackage extends Property implements Serializable {
 
     private Vector<DownloadLink> downloadLinks;
     private transient static FilePackage FP = null;
-
-    private transient JDBroadcaster bc = null;
-
-    public JDBroadcaster getJDBroadcaster() {
-        if (bc == null) bc = new JDBroadcaster();
-        return bc;
-    }
 
     public static FilePackage getDefaultFilePackage() {
         if (FP == null) FP = new FilePackage(JDLocale.L("controller.packages.defaultname", "various"));
@@ -92,6 +94,13 @@ public class FilePackage extends Property implements Serializable {
 
     private boolean isFinished;
 
+    private transient FilePackageBroadcaster broadcaster = new FilePackageBroadcaster();
+
+    public synchronized JDBroadcaster<FilePackageListener, FilePackageEvent> getBroadcaster() {
+        if (broadcaster == null) broadcaster = new FilePackageBroadcaster();
+        return broadcaster;
+    }
+
     public FilePackage() {
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
         counter++;
@@ -114,7 +123,7 @@ public class FilePackage extends Property implements Serializable {
             if (!downloadLinks.contains(link)) {
                 downloadLinks.add(link);
                 link.setFilePackage(this);
-                getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.DL_ADDED));
+                broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DL_ADDED));
             }
             link.setFilePackage(this);
         }
@@ -126,11 +135,11 @@ public class FilePackage extends Property implements Serializable {
                 downloadLinks.remove(link);
                 downloadLinks.add(index, link);
                 link.setFilePackage(this);
-                getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.FP_UPDATE));
+                broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FP_UPDATE));
             } else {
                 downloadLinks.add(index, link);
                 link.setFilePackage(this);
-                getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.DL_ADDED));
+                broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DL_ADDED));
             }
         }
     }
@@ -425,8 +434,8 @@ public class FilePackage extends Property implements Serializable {
             boolean ret = downloadLinks.remove(link);
             if (ret) {
                 link.setFilePackage(null);
-                getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.DL_REMOVED));
-                if (downloadLinks.size() == 0) this.getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.FP_EMPTY));
+                broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DL_REMOVED));
+                if (downloadLinks.size() == 0) broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FP_EMPTY));
             }
         }
     }
@@ -443,9 +452,8 @@ public class FilePackage extends Property implements Serializable {
         synchronized (downloadLinks) {
             this.downloadLinks = new Vector<DownloadLink>();
             if (downloadLinks.size() == 0) {
-                this.getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.FP_EMPTY));
-            }
-            {
+                broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FP_EMPTY));
+            } else {
                 this.addAll(downloadLinks);
             }
         }
@@ -531,7 +539,7 @@ public class FilePackage extends Property implements Serializable {
                 }
             });
         }
-        getJDBroadcaster().fireJDEvent(new FilePackageEvent(this, FilePackageEvent.FP_UPDATE));
+        broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FP_UPDATE));
     }
 
     /**

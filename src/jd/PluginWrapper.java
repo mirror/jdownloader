@@ -29,8 +29,8 @@ import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.DownloadController;
 import jd.controlling.ProgressController;
-import jd.event.ControlEvent;
 import jd.plugins.Plugin;
 import jd.update.FileUpdate;
 import jd.update.WebUpdater;
@@ -136,7 +136,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
             return loadedPlugin;
         } catch (Throwable e) {
             logger.info("Plugin Exception!");
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return null;
     }
@@ -156,7 +156,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     public void setUsePlugin(boolean bool) {
         getPluginConfig().setProperty("USE_PLUGIN", bool);
         getPluginConfig().save();
-        if (JDUtilities.getController() != null) JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, null));
+        if (JDUtilities.getController() != null) DownloadController.getDownloadController().fireRefresh();
     }
 
     public boolean canHandle(String data) {
@@ -190,17 +190,17 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         try {
             return getPlugin().getClass().getConstructor(new Class[] { PluginWrapper.class }).newInstance(new Object[] { this });
         } catch (IllegalArgumentException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (SecurityException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (InstantiationException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (IllegalAccessException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (InvocationTargetException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (NoSuchMethodException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return null;
 
@@ -223,7 +223,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
             try {
                 throw new Exception("plugin " + className + " could not be found");
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 return null;
             }
         }

@@ -9,14 +9,13 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
 
-import jd.event.JDEvent;
-import jd.event.JDListener;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2Event;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberEvent;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberListener;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2TreeTableAction;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 
-public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, JDListener {
+public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, LinkGrabberListener {
 
     private static final long serialVersionUID = -7720749076951577192L;
     private JButton panel_add_links;
@@ -108,9 +107,8 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, JD
         }
     }
 
-    public void receiveJDEvent(JDEvent event) {
-        if (!(event instanceof LinkGrabberV2Event)) return;
-        if (event.getID() == LinkGrabberV2Event.EMPTY_EVENT) {
+    public void handle_LinkGrabberEvent(LinkGrabberEvent event) {
+        if (event.getID() == LinkGrabberEvent.EMPTY_EVENT) {
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     lg_add_all.setEnabled(false);
@@ -121,7 +119,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, JD
                 }
             });
         }
-        if (event.getID() == LinkGrabberV2Event.UPDATE_EVENT && lg_buttons_visible == false) {
+        if (event.getID() == LinkGrabberEvent.UPDATE_EVENT && lg_buttons_visible == false) {
             lg_buttons_visible = true;
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
@@ -132,7 +130,6 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, JD
                 }
             });
         }
-
     }
 
 }

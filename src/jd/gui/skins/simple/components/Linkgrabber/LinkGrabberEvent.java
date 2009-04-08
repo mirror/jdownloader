@@ -2,9 +2,9 @@ package jd.gui.skins.simple.components.Linkgrabber;
 
 import jd.event.JDEvent;
 
-public class LinkGrabberV2Event extends JDEvent {
+public class LinkGrabberEvent extends JDEvent {
 
-    public LinkGrabberV2Event(Object source, int ID) {
+    public LinkGrabberEvent(Object source, int ID) {
         super(source, ID);
         // TODO Auto-generated constructor stub
     }

@@ -29,9 +29,9 @@ import javax.swing.ImageIcon;
 
 import jd.config.Configuration;
 import jd.config.Property;
+import jd.controlling.DownloadController;
 import jd.controlling.SingleDownloadController;
 import jd.controlling.SpeedMeter;
-import jd.event.ControlEvent;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
@@ -157,7 +157,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private int priority = 0;
 
     private transient ImageIcon icon;
-    
+
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -630,13 +630,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 } else {
                     // logger.severe("Hoster Plugin Version: " +
                     // getPlugin().getVersion());
-                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    //jd.controlling.JDLogger.getLogger().log(java.util.logging.
+                    // Level.SEVERE,"Exception occured",e);
                     break;
                 }
             } catch (Exception e) {
                 // logger.severe("Hoster Plugin Version: " +
                 // getPlugin().getVersion());
-                // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level
+                // .SEVERE,"Exception occured",e);
                 available = false;
                 break;
             }
@@ -670,7 +672,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void requestGuiUpdate() {
-        JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, this);
+        DownloadController.getDownloadController().fireRefresh_Specific(this);
     }
 
     // Setzt alle DownloadWErte zurück
@@ -682,12 +684,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
 
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
         }
         if (getPlugin() != null) getPlugin().reset_downloadlink(this);
-        //downloadMax = 0;
+        // downloadMax = 0;
         priority = 0;
         chunksProgress = null;
         downloadLinkController = null;
@@ -916,7 +918,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setName(String name) {
         if (name != null && name.length() > 0) {
-            this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));            
+            this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
         }
         this.setIcon(null);
     }
@@ -948,7 +950,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public void setFinalFileName(String newfinalFileName) {
         setName(newfinalFileName);
         if (newfinalFileName != null && newfinalFileName.length() > 0) {
-            finalFileName = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(newfinalFileName));            
+            finalFileName = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(newfinalFileName));
         } else {
             finalFileName = null;
         }

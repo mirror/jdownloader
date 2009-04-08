@@ -35,7 +35,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
-import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import javax.swing.DropMode;
@@ -88,11 +87,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     private static final long serialVersionUID = 1L;
 
-    private static final long UPDATE_INTERVAL = 200;
-
     private TableCellRenderer cellRenderer;
-
-    private DownloadLink currentLink;
 
     private Logger logger = jd.controlling.JDLogger.getLogger();
 
@@ -103,10 +98,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
     private int neededclicks = 1;
 
     private Timer timer;
-
-    private HashMap<FilePackage, ArrayList<DownloadLink>> updatePackages = new HashMap<FilePackage, ArrayList<DownloadLink>>();
-
-    private long updateTimer = 0;
 
     private TableColumnExt[] cols;
 
@@ -344,108 +335,27 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
     public synchronized void fireTableChanged(int id, Object param) {
         TreeModelSupport supporter = getDownladTreeTableModel().getModelSupporter();
         switch (id) {
-        /*
-         * Es werden nur die Ãœbergebenen LinkPfade aktualisiert.
-         * REFRESH_SPECIFIED_LINKS kann als Parameter eine Arraylist oder einen
-         * einzellnen DownloadLink haben. ArrayLists werden nicht ausgewertet.
-         * in diesem Fall wird die komplette Tabelle neu gezeichnet.
-         */
         case DownloadLinksPanel.REFRESH_SPECIFIED_LINKS:
-            // logger.info("REFRESH SPECS COMPLETE");
-            if (param instanceof DownloadLink) {
-                currentLink = (DownloadLink) param;
-                // logger.info("Updatesingle "+currentLink);
-                synchronized (updatePackages) {
-                    if (updatePackages.containsKey(currentLink.getFilePackage())) {
-                        if (!updatePackages.get(currentLink.getFilePackage()).contains(currentLink)) {
-                            updatePackages.get(currentLink.getFilePackage()).add(currentLink);
-                        }
-                    } else {
-                        ArrayList<DownloadLink> ar = new ArrayList<DownloadLink>();
-                        updatePackages.put(currentLink.getFilePackage(), ar);
-                        ar.add(currentLink);
-                    }
-                }
-            } else if (param instanceof ArrayList) {
-                for (Iterator<DownloadLink> it = ((ArrayList<DownloadLink>) param).iterator(); it.hasNext();) {
-                    currentLink = it.next();
-                    synchronized (updatePackages) {
-                        if (updatePackages.containsKey(currentLink.getFilePackage())) {
-                            if (!updatePackages.get(currentLink.getFilePackage()).contains(currentLink)) {
-                                updatePackages.get(currentLink.getFilePackage()).add(currentLink);
-                            }
-                        } else {
-                            ArrayList<DownloadLink> ar = new ArrayList<DownloadLink>();
-                            updatePackages.put(currentLink.getFilePackage(), ar);
-                            ar.add(currentLink);
-                        }
-                    }
-                }
+            ArrayList<DownloadLink> links = ((ArrayList<DownloadLink>) param);
+            logger.info("REFRESH SPECS COMPLETE");
+            for (DownloadLink dl : links) {
+                TreePath path = getPathfor(dl);
+                if (path == null) continue;
+                System.out.println("path found");
+                supporter.fireChildrenChanged(path, null, null);
             }
-            if (System.currentTimeMillis() - updateTimer > UPDATE_INTERVAL && updatePackages.size() > 0) {
-                Entry<FilePackage, ArrayList<DownloadLink>> next;
-                DownloadLink next3;
-                synchronized (updatePackages) {
-                    synchronized (JDUtilities.getDownloadController().getPackages()) {
-                        for (Iterator<Entry<FilePackage, ArrayList<DownloadLink>>> it2 = updatePackages.entrySet().iterator(); it2.hasNext();) {
-                            next = it2.next();
-                            // logger.info("Refresh " + next.getKey() + " - " +
-                            // next.getValue().size());
-
-                            if (JDUtilities.getDownloadController().getPackages().contains(next.getKey())) continue;
-                            supporter.firePathChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }));
-
-                            if (next.getKey().getBooleanProperty(PROPERTY_EXPANDED, false)) {
-
-                                int[] ind = new int[next.getValue().size()];
-                                Object[] objs = new Object[next.getValue().size()];
-                                int i = 0;
-
-                                for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext();) {
-                                    next3 = it3.next();
-                                    if (!next.getKey().contains(next3)) {
-                                        logger.warning("Dauniel bug");
-                                        continue;
-                                    }
-                                    ind[i] = next.getKey().indexOf(next3);
-                                    objs[i] = next3;
-
-                                    i++;
-                                    // logger.info(" children: " + next3 + " - "
-                                    // +
-                                    // ind[i]);
-                                }
-
-                                if (i > 0) {
-                                    supporter.fireChildrenChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }), ind, objs);
-                                }
-                            }
-
-                        }
-                    }
-                }
-                updateTimer = System.currentTimeMillis();
-            }
-
             break;
         case DownloadLinksPanel.REFRESH_ALL_DATA_CHANGED:
             logger.finest("Updatecomplete");
-            synchronized (JDUtilities.getDownloadController().getPackages()) {
-                supporter.fireChildrenChanged(new TreePath(model.getRoot()), null, null);
-            }
-
+            supporter.fireChildrenChanged(new TreePath(model.getRoot()), null, null);
             break;
         case DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED:
             logger.finest("REFRESH GUI COMPLETE");
-            synchronized (JDUtilities.getDownloadController().getPackages()) {
-                supporter.fireTreeStructureChanged(new TreePath(model.getRoot()));
-            }
+            supporter.fireTreeStructureChanged(new TreePath(model.getRoot()));
             updateSelectionAndExpandStatus();
-            // logger.info("finished");
 
             break;
         }
-
     }
 
     public DownloadTreeTableModel getDownladTreeTableModel() {
@@ -708,7 +618,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         Vector<DownloadLink> links = getSelectedDownloadLinks();
         Vector<FilePackage> fps = getSelectedFilePackages();
 
-        logger.finer("move "+links.size() + " - " + fps.size());
+        logger.finer("move " + links.size() + " - " + fps.size());
         if (links.size() >= fps.size()) {
             if (links.size() == 0) { return; }
             /**
@@ -822,4 +732,14 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         }
     }
 
+    public TreePath getPathfor(DownloadLink link) {
+        int i = 0;
+        while (getPathForRow(i) != null) {
+            if (getPathForRow(i).getLastPathComponent() instanceof DownloadLink) {
+                if ((DownloadLink) getPathForRow(i).getLastPathComponent() == link) { return new TreePath(this.getPathForRow(i).getPath()); }
+            }
+            i++;
+        }
+        return null;
+    }
 }

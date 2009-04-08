@@ -75,7 +75,7 @@ public class JDController implements ControlListener {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                             return;
                         }
                     }
@@ -92,7 +92,7 @@ public class JDController implements ControlListener {
                         try {
                             wait();
                         } catch (Exception e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                         }
                     }
                 }
@@ -127,7 +127,7 @@ public class JDController implements ControlListener {
                     // JDUtilities.getLogger().severe("THREAD2");
 
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     eventStart = 0;
                 }
             }
@@ -169,8 +169,6 @@ public class JDController implements ControlListener {
     private ArrayList<ControlEvent> eventQueue = new ArrayList<ControlEvent>();;
 
     private EventSender eventSender = null;
-
-
 
     private Vector<DownloadLink> finishedLinks = new Vector<DownloadLink>();
 
@@ -280,17 +278,16 @@ public class JDController implements ControlListener {
                 try {
                     link.getPlugin().prepareLink(link);
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
                 link.getLinkStatus().setStatusText(null);
             }
             break;
         case ControlEvent.CONTROL_LOG_OCCURED:
-        
+
             break;
         case ControlEvent.CONTROL_SYSTEM_EXIT:
 
-           
             break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
@@ -355,7 +352,7 @@ public class JDController implements ControlListener {
             if (dlcKey == null) return null;
             return xml + dlcKey;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return null;
     }
@@ -618,7 +615,7 @@ public class JDController implements ControlListener {
                         break;
                     }
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
             progress.increase(1);
@@ -691,10 +688,6 @@ public class JDController implements ControlListener {
         }
     }
 
-    public void requestDownloadLinkUpdate(DownloadLink link) {
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, link));
-    }
-
     /**
      * Setzt de Status aller Links zurück die nicht gerade geladen werden.
      */
@@ -721,7 +714,7 @@ public class JDController implements ControlListener {
 
                 }
             }
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, al));
+            DownloadController.getDownloadController().fireRefresh_Specific(al);
         }
 
     }
@@ -765,7 +758,7 @@ public class JDController implements ControlListener {
                                 break;
                             }
                         } catch (Exception e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                         }
                     }
                     progress.increase(1);
@@ -833,8 +826,6 @@ public class JDController implements ControlListener {
     public void setInitStatus(int initStatus) {
         this.initStatus = initStatus;
     }
-
-
 
     /**
      * Setzt das UIINterface
@@ -951,7 +942,7 @@ public class JDController implements ControlListener {
                 }
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return null;
 
@@ -977,7 +968,7 @@ public class JDController implements ControlListener {
                 }
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return ret;
     }
@@ -1002,7 +993,7 @@ public class JDController implements ControlListener {
                 }
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return ret;
     }
