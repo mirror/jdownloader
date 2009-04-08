@@ -15,7 +15,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import net.miginfocom.swing.MigLayout;
 
 public class PremiumTaskPane extends TaskPanel implements ControlListener, ActionListener {
     private static final long serialVersionUID = -373653036070545536L;
@@ -33,7 +32,7 @@ public class PremiumTaskPane extends TaskPanel implements ControlListener, Actio
             if (wrapper.isLoaded() && wrapper.usePlugin()) {
                 final PluginForHost helpPlugin = wrapper.getPlugin();
                 if (helpPlugin.createMenuitems() != null && helpPlugin.getPremiumAccounts().size() > 0) {
-                   JButton bt = this.createButton(helpPlugin.getHost(), null);
+                    JButton bt = this.createButton(helpPlugin.getHost(), null);
                     hoster.add(bt);
                     add(bt, D1_BUTTON_ICON);
                 }
@@ -42,11 +41,9 @@ public class PremiumTaskPane extends TaskPanel implements ControlListener, Actio
         }
         add(new JSeparator());
 
-       add(this.createButton(JDLocale.L("gui.task.premium.add", "Add Premiumacccount"), JDTheme.II("gui.images.add", 16, 16)),D1_BUTTON_ICON);
+        add(this.createButton(JDLocale.L("gui.task.premium.add", "Add Premiumacccount"), JDTheme.II("gui.images.add", 16, 16)), D1_BUTTON_ICON);
 
     }
-
-
 
     public void controlEvent(ControlEvent event) {
     }

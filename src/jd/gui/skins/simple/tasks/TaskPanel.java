@@ -16,8 +16,6 @@ import java.util.Map;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JProgressBar;
 import javax.swing.event.EventListenerList;
 
 import jd.config.SubConfiguration;
@@ -38,12 +36,12 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     private String panelID = "taskpanel";
     protected static final String GAP_BUTTON_LEFT = "gapleft 10";
     private ArrayList<SingletonPanel> panels;
-    public static final String D1_BUTTON_ICON = "spanx,alignx left,gaptop 2";
-    public static final Object D1_LABEL_ICON = "spanx,alignx left,gaptop 7,gapleft 7";
-    public static final Object D2_LABEL = "spanx,alignx left,gaptop 2,gapleft 27";
-    public static final Object D1_LABEL = "spanx,alignx left,gaptop 7,gapleft 7";
-    public static final Object D2_PROGRESSBAR = "height 10!,gaptop 7,gapleft 27, width null:110:180";
-    public static final Object D1_COMPONENT = "spanx,alignx left,gaptop 2,gapleft 7";
+    protected static final String D1_BUTTON_ICON = "spanx,alignx left,gaptop 2";
+    protected static final String D1_LABEL_ICON = "spanx,alignx left,gaptop 7,gapleft 7";
+    protected static final String D2_LABEL = "spanx,alignx left,gaptop 2,gapleft 27";
+    protected static final String D1_LABEL = "spanx,alignx left,gaptop 7,gapleft 7";
+    protected static final String D2_PROGRESSBAR = "height 10!,gaptop 7,gapleft 27, width null:110:180";
+    protected static final String D1_COMPONENT = "spanx,alignx left,gaptop 2,gapleft 7";
     public boolean pressed;
 
     public TaskPanel(String string, ImageIcon ii, String pid) {
@@ -53,7 +51,7 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
         this.listenerList = new EventListenerList();
         this.setPanelID(pid);
         this.addPropertyChangeListener(this);
-        this.setLayout(new MigLayout("ins 5 5 5 15, wrap 1", "[fill,grow]","[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]"));
+        this.setLayout(new MigLayout("ins 5 5 5 15, wrap 1", "[fill,grow]", "[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]"));
         setDeligateCollapsed(JDUtilities.getSubConfig("gui").getBooleanProperty(getPanelID() + "_collapsed", false));
         this.panels = new ArrayList<SingletonPanel>();
     }
@@ -66,8 +64,6 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     public void setDeligateCollapsed(boolean collapsed) {
         super.setCollapsed(collapsed);
     }
-
-
 
     /**
      * Adds an <code>ActionListener</code> to the button.

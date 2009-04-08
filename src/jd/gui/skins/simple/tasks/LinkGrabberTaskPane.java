@@ -25,7 +25,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, JD
     private JButton lg_add_selected;
     private JButton lg_clear;
 
-    boolean lg_buttons_visible = false;
+    private boolean lg_buttons_visible = false;
 
     private JLabel linkgrabber;
 
@@ -38,31 +38,6 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, JD
 
         lg_buttons_visible = false;
         initGUI();
-    }
-
-    private void update() {
-        // if( this.getPanel(0)!=null){
-        // ((LinkGrabberV2Panel) getPanel(0)).
-        //           
-        // }
-        // JDDownloadController dlc = JDUtilities.getDownloadController();
-        // packages.setText(JDLocale.LF(
-        // "gui.taskpanes.download.linkgrabber.packages", "%s Packages",
-        // dlc.getPackages().size()));
-        // downloadlinks.setText(JDLocale.LF(
-        // "gui.taskpanes.download.linkgrabber.downloadLinks", "%s Links",
-        // dlc.getAllDownloadLinks().size()));
-        // long tot = 0;
-        // long loaded = 0;
-        // for (DownloadLink l : dlc.getAllDownloadLinks()) {
-        // tot += l.getDownloadSize();
-        // loaded += l.getDownloadCurrent();
-        // }
-        //
-        //totalsize.setText(JDLocale.LF("gui.taskpanes.download.linkgrabber.size"
-        // , "Total size: %s", JDUtilities.formatKbReadable(tot / 1024)));
-        //  
-
     }
 
     private void initListStatGUI() {
@@ -89,17 +64,17 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, JD
 
         this.panel_add_links = (this.createButton(JDLocale.L("gui.linkgrabberv2.addlinks", "Add Links"), JDTheme.II("gui.images.add", 16, 16)));
         this.panel_add_containers = (this.createButton(JDLocale.L("gui.linkgrabberv2.addcontainers", "Add Containers"), JDTheme.II("gui.images.load", 16, 16)));
-     
+
         lg_add_all = (createButton(JDLocale.L("gui.linkgrabberv2.lg.addall", "Add all packages"), JDTheme.II("gui.images.add_all", 16, 16)));
         lg_add_selected = (createButton(JDLocale.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)"), JDTheme.II("gui.images.add_package", 16, 16)));
         lg_clear = (createButton(JDLocale.L("gui.linkgrabberv2.lg.clear", "Clear List"), JDTheme.II("gui.images.clear", 16, 16)));
-        
-        add(panel_add_links,D1_BUTTON_ICON);
-        add(panel_add_containers,D1_BUTTON_ICON);
+
+        add(panel_add_links, D1_BUTTON_ICON);
+        add(panel_add_containers, D1_BUTTON_ICON);
         add(new JSeparator());
-        add(lg_add_all,D1_BUTTON_ICON);
-        add(lg_add_selected,D1_BUTTON_ICON);
-        add(lg_clear,D1_BUTTON_ICON);
+        add(lg_add_all, D1_BUTTON_ICON);
+        add(lg_add_selected, D1_BUTTON_ICON);
+        add(lg_clear, D1_BUTTON_ICON);
         lg_add_all.setEnabled(false);
         lg_add_selected.setEnabled(false);
         lg_clear.setEnabled(false);

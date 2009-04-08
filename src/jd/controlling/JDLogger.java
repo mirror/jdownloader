@@ -1,18 +1,9 @@
 package jd.controlling;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
-import java.util.logging.Handler;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-
-import jd.JDInitFlags;
-import jd.event.ControlEvent;
-import jd.utils.JDUtilities;
 
 public class JDLogger {
     private static Logger LOGGER = null;

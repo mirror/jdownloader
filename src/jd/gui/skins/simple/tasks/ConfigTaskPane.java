@@ -15,7 +15,6 @@ import jd.gui.skins.simple.config.ConfigPanel;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import net.miginfocom.swing.MigLayout;
 
 public class ConfigTaskPane extends TaskPanel implements ActionListener, ControlListener {
 
@@ -41,11 +40,10 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
     public static final int ACTION_ADDONS = 7;
     public static final int ACTION_EVENTMANAGER = 8;
     public static final int ACTION_SAVE = 9;
-  
 
     public ConfigTaskPane(String string, ImageIcon ii) {
         super(string, ii, "config");
-       JDUtilities.getController().addControlListener(this);
+        JDUtilities.getController().addControlListener(this);
         initGUI();
     }
 

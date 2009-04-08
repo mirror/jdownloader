@@ -1,6 +1,5 @@
 package jd.gui.skins.simple.tasks;
 
-import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -15,18 +14,12 @@ import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import net.miginfocom.swing.MigLayout;
 
 public class DownloadTaskPane extends TaskPanel implements ActionListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -9134449913836967453L;
     public static final int ACTION_SHOW_PANEL = 1;
     public static final int ACTION_STARTSTOP = 2;
-    private static final String LEFTGAP = "gapleft 25";
-
 
     private JButton startStop;
     private JLabel packages;
@@ -64,10 +57,10 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
         totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", JDUtilities.formatKbReadable(tot / 1024)));
         progress.setMaximum(tot);
         progress.setValue(loaded);
-        
+
         if (JDUtilities.getController().getSpeedMeter() > 1024) {
-        speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", JDUtilities.formatBytesToMB(JDUtilities.getController().getSpeedMeter()) + "/s"));
-      
+            speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", JDUtilities.formatBytesToMB(JDUtilities.getController().getSpeedMeter()) + "/s"));
+
             long etanum = (tot - loaded) / JDUtilities.getController().getSpeedMeter();
 
             eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", JDUtilities.formatSeconds(etanum)));
@@ -92,15 +85,15 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
 
         eta = (new JLabel(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", 0)));
 
-        add(downloadlist,D1_LABEL_ICON);
-        
-        add(packages,D2_LABEL);
-        add(downloadlinks,D2_LABEL);
-        add(totalsize,D2_LABEL);
-        add(progresslabel,D1_LABEL_ICON);
-        add(progress,D2_PROGRESSBAR);
-        add(speed,D2_LABEL);
-        add(eta,D2_LABEL);
+        add(downloadlist, D1_LABEL_ICON);
+
+        add(packages, D2_LABEL);
+        add(downloadlinks, D2_LABEL);
+        add(totalsize, D2_LABEL);
+        add(progresslabel, D1_LABEL_ICON);
+        add(progress, D2_PROGRESSBAR);
+        add(speed, D2_LABEL);
+        add(eta, D2_LABEL);
     }
 
     public void actionPerformed(ActionEvent e) {

@@ -27,7 +27,8 @@ public class LFETaskPane extends TaskPanel implements ActionListener {
         this.setLayout(new MigLayout("ins 0, wrap 1", "[fill]"));
         this.addPanel(new SingletonPanel(LFEGui.class));
 
-        showGui = addComponent(createButton(JDLocale.L("plugins.optional.langfileeditor.taskpane", "Show LFE"), JDTheme.II("gui.splash.languages", 16, 16)));
+        showGui = createButton(JDLocale.L("plugins.optional.langfileeditor.taskpane", "Show LFE"), JDTheme.II("gui.splash.languages", 16, 16));
+        add(showGui, D1_BUTTON_ICON);
     }
 
     public void actionPerformed(ActionEvent e) {

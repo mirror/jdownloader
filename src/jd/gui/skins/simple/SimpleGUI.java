@@ -22,8 +22,6 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Image;
-import java.awt.Toolkit;
-import java.awt.datatransfer.DataFlavor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -248,7 +246,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     }
                 }
             }
@@ -303,7 +301,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -1318,7 +1316,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     ai = pluginForHost.getAccountInformation(account);
                 } catch (Exception e) {
                     account.setEnabled(false);
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("gui.accountcheck.pluginerror", "Plugin %s may be defect. Inform support!", pluginForHost.getPluginID()));
                     return;
                 }
@@ -1376,7 +1374,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             try {
                 JLinkButton.openURL("http://jdownloader.org/changes/index");
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
         }
     }
