@@ -1350,8 +1350,12 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public void showAccountInformation(final PluginForHost pluginForHost, final Account account) {
-        new Thread() {
-            public void run() {
+       new GuiRunnable(){
+
+        @Override
+        public Object runSave() {
+            // TODO Auto-generated method stub
+     
                 AccountInfo ai;
                 try {
                     ai = pluginForHost.getAccountInformation(account);
@@ -1359,21 +1363,21 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     account.setEnabled(false);
                     jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("gui.accountcheck.pluginerror", "Plugin %s may be defect. Inform support!", pluginForHost.getPluginID()));
-                    return;
+                    return null;
                 }
                 if (ai == null) {
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.error", "The %s plugin does not support the Accountinfo feature yet.", pluginForHost.getHost()));
-                    return;
+                    return null;
                 }
                 if (!ai.isValid()) {
                     account.setEnabled(false);
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
-                    return;
+                    return null;
                 }
                 if (ai.isExpired()) {
                     account.setEnabled(false);
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
-                    return;
+                    return null;
                 }
                 JPanel panel = new JPanel(new MigLayout("ins 22", "[right]10[grow,fill]40"));
                 String def = String.format(JDLocale.L("plugins.host.premium.info.title", "Accountinformation from %s for %s"), account.getUser(), pluginForHost.getHost());
@@ -1395,18 +1399,32 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                         panel.add(new JLabel(label[j]), "gapleft 20");
                         if (label[j].equals(JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
                             JPanel panel2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-                            panel2.add(new JTextField(data[j]));
+                            JTextField tf;
+                            panel2.add(tf=new JTextField(data[j]));
+                            tf.setBorder(null);
+                            tf.setBackground(null);
+                            tf.setEditable(false);
+                            tf.setOpaque(false);
                             panel2.add(freeTrafficChart);
                             panel.add(panel2, "wrap");
                         } else {
-                            panel.add(new JTextField(data[j]), "wrap");
+                            JTextField tf;
+                            panel.add(tf=new JTextField(data[j]), "wrap");
+                            tf.setBorder(null);
+                            tf.setBackground(null);
+                            tf.setEditable(false);
+                            tf.setOpaque(false);
+                         
                         }
                     }
 
                 }
                 JOptionPane.showMessageDialog(null, panel, def, JOptionPane.INFORMATION_MESSAGE);
-            }
-        }.start();
+            
+        return null;
+       }
+          
+      }.start();
     }
 
     public static void showChangelogDialog() {

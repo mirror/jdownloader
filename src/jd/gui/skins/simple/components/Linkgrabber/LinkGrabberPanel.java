@@ -93,7 +93,9 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     }
 
     private LinkGrabberPanel() {
-        super(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
+
+        super(new MigLayout("ins 0,wrap 1","[fill,grow]","[fill,grow]"));
+
 
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
