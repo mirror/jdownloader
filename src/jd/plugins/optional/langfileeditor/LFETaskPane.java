@@ -7,11 +7,11 @@ import javax.swing.JButton;
 
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SingletonPanel;
-import jd.gui.skins.simple.tasks.TaskPanel;
-import jd.utils.JDLocale;
+import jd.gui.skins.simple.tasks.DownloadTaskPane;
+import jd.gui.skins.simple.tasks.TaskButton;
 import jd.utils.JDTheme;
 
-public class LFETaskPane extends TaskPanel implements ActionListener {
+public class LFETaskPane extends TaskButton {
 
     private static final long serialVersionUID = -5506038175097521342L;
     private JButton showGui;
@@ -20,20 +20,32 @@ public class LFETaskPane extends TaskPanel implements ActionListener {
         super(string, JDTheme.II("gui.splash.languages", 24, 24), "lfe");
 
         initGUI();
+
+        addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                System.out.println(e.getActionCommand());
+                switch (e.getID()) {
+                case DownloadTaskPane.ACTION_TOGGLE:
+
+                    SimpleGUI.CURRENTGUI.getContentPane().display(getPanel(0));
+                    break;
+
+                }
+
+            }
+        });
     }
 
     private void initGUI() {
         this.addPanel(new SingletonPanel(LFEGui.class));
 
-        showGui = createButton(JDLocale.L("plugins.optional.langfileeditor.taskpane", "Show LFE"), JDTheme.II("gui.splash.languages", 16, 16));
-        add(showGui, D1_BUTTON_ICON);
+     
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == showGui) {
-            SimpleGUI.CURRENTGUI.getContentPane().display(this.getPanel(0));
-            SimpleGUI.CURRENTGUI.getTaskPane().switcher(this);
-        }
+        // TODO Auto-generated method stub
+        
     }
 
 }
