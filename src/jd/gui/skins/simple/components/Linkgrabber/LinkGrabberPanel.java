@@ -91,6 +91,10 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         return INSTANCE;
     }
 
+    public boolean isRunning() {
+        return gatherer_running;
+    }
+
     private LinkGrabberPanel() {
         super(new MigLayout("ins 0"));
 
@@ -301,6 +305,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 lc.getBroadcaster().removeListener(INSTANCE);
                 pc.finalize();
                 pc.getBroadcaster().removeListener(INSTANCE);
+                gatherer_running = false;
             }
         };
         gatherer.start();
@@ -309,7 +314,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     private synchronized void afterLinkGrabber(Vector<DownloadLink> links) {
         for (DownloadLink link : links) {
             if (!gatherer_running) break;
-            attachToPackagesSecondStage(link);
+            if (!link.getBooleanProperty("removed", false)) attachToPackagesSecondStage(link);
         }
         pc.increase(links.size());
         Update_Async.restart();
@@ -578,6 +583,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 return;
             case LinkGrabberTreeTableAction.DELETE:
                 for (DownloadLink link : selected_links) {
+                    link.setProperty("removed", true);
                     removeFromPackages(link);
                 }
                 Update_Async.restart();
@@ -615,7 +621,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         return ((ArrayList<String[]>) guiConfig.getProperty("DOWNLOADDIR_LIST", new ArrayList<String[]>()));
     }
 
-    private void confirmPackage(LinkGrabberFilePackage fpv2, String host) {
+    public void confirmPackage(LinkGrabberFilePackage fpv2, String host) {
         if (fpv2 == null) return;
         Vector<DownloadLink> linkList = fpv2.getDownloadLinks();
         if (linkList.isEmpty()) return;
@@ -667,7 +673,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             fpv2.setDownloadLinks(linkList);
         }
         JDUtilities.getDownloadController().addPackage(fp);
-
+        Update_Async.restart();
     }
 
     public void checkAlreadyinList(DownloadLink link) {
@@ -717,6 +723,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                     this.hideFilePackageInfo();
                 }
                 packages.remove(event.getSource());
+                Update_Async.restart();
                 if (packages.size() == 0) getBroadcaster().fireEvent(new LinkGrabberEvent(this, LinkGrabberEvent.EMPTY_EVENT));
             }
         }

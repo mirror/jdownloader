@@ -34,9 +34,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class JDWebinterface extends PluginOptional {
-    static public JDWebinterface instance;
-    static public Vector<FilePackage> Link_Adder_Packages = new Vector<FilePackage>();
-    static public boolean gathererrunning = false;
+    static public JDWebinterface instance;    
     static final String PROPERTY_HTTPS = "PARAM_HTTPS";
     static final String PROPERTY_LOGIN = "PARAM_LOGIN";
     static final String PROPERTY_PASS = "PARAM_PASS";

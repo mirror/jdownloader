@@ -30,6 +30,8 @@ import java.util.Vector;
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.controlling.JDController;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -114,13 +116,13 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         Hashtable<Object, Object> h, h2 = new Hashtable<Object, Object>();
         v = new Vector<Object>();
 
-        FilePackage filePackage;
+        LinkGrabberFilePackage filePackage;
         DownloadLink dLink;
         Integer Package_ID;
         Integer Download_ID;
 
-        for (Package_ID = 0; Package_ID < JDWebinterface.Link_Adder_Packages.size(); Package_ID++) {
-            filePackage = JDWebinterface.Link_Adder_Packages.get(Package_ID);
+        for (Package_ID = 0; Package_ID < LinkGrabberPanel.getLinkGrabber().getPackages().size(); Package_ID++) {
+            filePackage = LinkGrabberPanel.getLinkGrabber().getPackages().get(Package_ID);
 
             h = new Hashtable<Object, Object>();
             /* Paket Infos */
@@ -155,7 +157,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         // t.setParam("message_status", "show");
         // t.setParam("message", "great work");
         t.setParam("pakete", v);
-        if (JDWebinterface.gathererrunning) {
+        if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
             t.setParam("message_status", "show");
             t.setParam("message", "LinkGrabber still Running! Please Reload Page in few Secs!");
         }
@@ -448,13 +450,13 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             response.setOk();
         } catch (FileNotFoundException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (IllegalStateException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (IOException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
     }
 }

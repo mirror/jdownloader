@@ -128,7 +128,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
      */
     private static final long serialVersionUID = 3966433144683787356L;
 
-     protected static final Color BG_COLOR = new Color(0.0f,0.0f,0.0f,0.0f);
+    protected static final Color BG_COLOR = new Color(0.0f, 0.0f, 0.0f, 0.0f);
 
     private LinkGrabberPanel linkGrabber;
 
@@ -182,7 +182,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         statusBar = new JDStatusBar();
 
         RootPaneUI ui = this.getRootPane().getUI();
-
 
         if (ui instanceof SubstanceRootPaneUI) {
             this.getRootPane().setUI(new JDSubstanceUI());
@@ -263,18 +262,18 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 }
             }
         }.start();
-        
-    loadTips();
+
+        loadTips();
 
     }
 
     private void loadTips() {
-//        List tips = Arrays.asList(new DefaultTip("Tip 1", "This is <b>tip</b> 1"), new DefaultTip("Tip 2", "This is tip 2"));
-//        DefaultTipOfTheDayModel model = new DefaultTipOfTheDayModel(tips);
-//        JXTipOfTheDay tipOfTheDay = new JXTipOfTheDay(model);
-//        tipOfTheDay.showDialog(this);
-       
-        
+        // List tips = Arrays.asList(new DefaultTip("Tip 1",
+        // "This is <b>tip</b> 1"), new DefaultTip("Tip 2", "This is tip 2"));
+        // DefaultTipOfTheDayModel model = new DefaultTipOfTheDayModel(tips);
+        // JXTipOfTheDay tipOfTheDay = new JXTipOfTheDay(model);
+        // tipOfTheDay.showDialog(this);
+
     }
 
     public void updateDecoration() {
@@ -324,7 +323,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -498,7 +497,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
                 logger.info("add to grabber");
                 linkGrabber.addLinks(linkList);
-                taskPane.switcher(lgTaskPane);
+                if (!hideGrabber) taskPane.switcher(lgTaskPane);
                 return null;
             }
 
@@ -619,7 +618,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private void addConfigTask() {
         ConfigTaskPane cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 24, 24));
-     
+
         Object[] configConstructorObjects = new Object[] { JDUtilities.getConfiguration() };
 
         cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_ADDONS, new SingletonPanel(ConfigPanelAddons.class, configConstructorObjects));
@@ -642,7 +641,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
                 switch (e.getID()) {
                 case DownloadTaskPane.ACTION_TOGGLE:
-               
+
                     contentPanel.display(((TaskPanel) e.getSource()).getPanel(SimpleGuiConstants.GUI_CONFIG.getIntegerProperty("LAST_CONFIG_PANEL", ConfigTaskPane.ACTION_GENERAL)));
 
                     break;
@@ -673,10 +672,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 case ConfigTaskPane.ACTION_GUI:
                 case ConfigTaskPane.ACTION_HOST:
                 case ConfigTaskPane.ACTION_RECONNECT:
-                  SimpleGuiConstants.GUI_CONFIG.setProperty("LAST_CONFIG_PANEL", e.getID());
-                 
+                    SimpleGuiConstants.GUI_CONFIG.setProperty("LAST_CONFIG_PANEL", e.getID());
+
                     contentPanel.display(((ConfigTaskPane) e.getSource()).getPanel(e.getID()));
-                  SimpleGuiConstants.GUI_CONFIG.save();
+                    SimpleGuiConstants.GUI_CONFIG.save();
                     break;
                 }
 
@@ -760,7 +759,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
                         JDUtilities.getController().startDownloads();
                     }
-                 
+
                     break;
                 case ControlEvent.CONTROL_PLUGIN_ACTIVE:
                     logger.info("Plugin Aktiviert: " + event.getSource());
@@ -1461,19 +1460,17 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         return this.linkListPane;
     }
 
-  
-
-    public String[] showLoginDialog(String title, String defaultUser, String defaultPassword,String error) {
-        JXLoginDialog d = new JXLoginDialog(this,JDLocale.L("gui.dialogs.login.title","Login required"),true);
-        if(defaultPassword!=null)d.getPanel().setPassword(defaultPassword.toCharArray());
+    public String[] showLoginDialog(String title, String defaultUser, String defaultPassword, String error) {
+        JXLoginDialog d = new JXLoginDialog(this, JDLocale.L("gui.dialogs.login.title", "Login required"), true);
+        if (defaultPassword != null) d.getPanel().setPassword(defaultPassword.toCharArray());
         d.getPanel().setUserName(defaultUser);
         d.getPanel().setErrorMessage(error);
         d.getPanel().setMessage(title);
-        d.setVisible(true); 
+        d.setVisible(true);
 
-       if(d.getStatus()!=Status.SUCCEEDED)return null;
-       
-        return new String[]{ d.getPanel().getUserName(),new String(d.getPanel().getPassword())};
+        if (d.getStatus() != Status.SUCCEEDED) return null;
+
+        return new String[] { d.getPanel().getUserName(), new String(d.getPanel().getPassword()) };
     }
 
 }
