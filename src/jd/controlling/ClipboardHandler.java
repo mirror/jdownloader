@@ -36,9 +36,9 @@ import jd.utils.JDUtilities;
 public class ClipboardHandler extends Thread implements ControlListener {
     private static ClipboardHandler INSTANCE = null;
 
-    public static ClipboardHandler getClipboard() {
+    public synchronized static ClipboardHandler getClipboard() {
         if (INSTANCE == null) {
-            new ClipboardHandler();
+            INSTANCE = new ClipboardHandler();
         }
         return INSTANCE;
 
@@ -54,15 +54,16 @@ public class ClipboardHandler extends Thread implements ControlListener {
 
     private List<?> oldList;
 
+    private boolean waitFlag;
+
     /**
      */
     private ClipboardHandler() {
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        INSTANCE = this;
-        // logger = JDUtilities.getLogger();
         JDUtilities.getController().addControlListener(this);
         this.enabled = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
         this.setName("ClipboardHandler");
+        this.start();
     }
 
     public void setOldData(String data) {
@@ -80,52 +81,63 @@ public class ClipboardHandler extends Thread implements ControlListener {
 
     @Override
     public void run() {
-        enabled = true;
-        while (enabled) {
-            try {
-                for (DataFlavor element : clipboard.getAvailableDataFlavors()) {
-
-                    if (element.isFlavorJavaFileListType()) {
-                        List<?> list = (List<?>) clipboard.getData(element);
-
-                        boolean ch = oldList == null || list.size() != oldList.size();
-                        if (!ch) {
-                            for (int t = 0; t < list.size(); t++) {
-                                if (!((File) list.get(t)).getAbsolutePath().equals(((File) oldList.get(t)).getAbsolutePath())) {
-                                    ch = true;
-                                    break;
-                                }
-
-                            }
-                        }
-                        if (ch) {
-                            oldList = list;
-                            for (int t = 0; t < list.size(); t++) {
-                                JDUtilities.getController().loadContainerFile((File) list.get(t));
-                            }
-                        }
-
-                        break;
-
+        while (true) {
+            waitFlag = true;
+            synchronized (this) {
+                while (waitFlag) {
+                    try {
+                        wait();
+                    } catch (Exception e) {
+                        return;
                     }
-                    if (element.isFlavorTextType() && element.getRepresentationClass() == String.class && element.getHumanPresentableName().equals("Unicode String")) {
-
-                        // if (olddata == null) {
-                        // olddata = data;
-                        // }
-                        if (!((String) clipboard.getData(element)).equals(olddata)) {
-                            olddata = (String) clipboard.getData(element);
-
-                            new DistributeData(olddata.trim(), true).start();
-                        }
-                        break;
-
-                    }
-
                 }
-                Thread.sleep(500);
-            } catch (Exception e2) {
-                // e2.printStackTrace();
+            }
+            while (enabled) {
+                try {
+                    for (DataFlavor element : clipboard.getAvailableDataFlavors()) {
+
+                        if (element.isFlavorJavaFileListType()) {
+                            List<?> list = (List<?>) clipboard.getData(element);
+
+                            boolean ch = oldList == null || list.size() != oldList.size();
+                            if (!ch) {
+                                for (int t = 0; t < list.size(); t++) {
+                                    if (!((File) list.get(t)).getAbsolutePath().equals(((File) oldList.get(t)).getAbsolutePath())) {
+                                        ch = true;
+                                        break;
+                                    }
+
+                                }
+                            }
+                            if (ch) {
+                                oldList = list;
+                                for (int t = 0; t < list.size(); t++) {
+                                    JDUtilities.getController().loadContainerFile((File) list.get(t));
+                                }
+                            }
+
+                            break;
+
+                        }
+                        if (element.isFlavorTextType() && element.getRepresentationClass() == String.class && element.getHumanPresentableName().equals("Unicode String")) {
+
+                            // if (olddata == null) {
+                            // olddata = data;
+                            // }
+                            if (!((String) clipboard.getData(element)).equals(olddata)) {
+                                olddata = (String) clipboard.getData(element);
+
+                                new DistributeData(olddata.trim(), true).start();
+                            }
+                            break;
+
+                        }
+
+                    }
+                    Thread.sleep(500);
+                } catch (Exception e2) {
+                    // e2.printStackTrace();
+                }
             }
         }
     }
@@ -135,16 +147,17 @@ public class ClipboardHandler extends Thread implements ControlListener {
      * 
      * @param enabled
      */
-    private void setEnabled(boolean enabled2) {
+    public void setEnabled(boolean enabled2) {
+        if (!this.isAlive()) return;
         enabled = enabled2;
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, enabled2);
         JDUtilities.getConfiguration().save();
-
-        if (enabled && !isAlive()) {
-            new ClipboardHandler();
-            INSTANCE.start();
+        if (waitFlag) {
+            waitFlag = false;
+            synchronized (this) {
+                notify();
+            }
         }
-
     }
 
     public void toggleActivation() {
@@ -153,7 +166,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
 
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
-            if (enabled) INSTANCE.start();
+            setEnabled(true);
             JDUtilities.getController().removeControlListener(this);
         }
 

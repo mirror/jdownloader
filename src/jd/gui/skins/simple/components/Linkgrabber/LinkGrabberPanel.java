@@ -15,7 +15,6 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.AbstractButton;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
@@ -31,7 +30,6 @@ import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.LinkInputDialog;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
-import jd.gui.skins.simple.components.JCancelButton;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
 import jd.nutils.jobber.Jobber;
@@ -42,8 +40,6 @@ import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
-
-import org.jdesktop.swingx.JXCollapsiblePane;
 
 class LinkGrabberBroadcaster extends JDBroadcaster<LinkGrabberListener, LinkGrabberEvent> {
 
@@ -97,7 +93,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     }
 
     private LinkGrabberPanel() {
-        super(new MigLayout("ins 0,wrap 1","[fill,grow]"));
+        super(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
 
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
@@ -106,8 +102,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
         this.add(scrollPane, "cell 0 0");
         FilePackageInfo = new LinkGrabberFilePackageInfo();
-   
-     
+
         Update_Async = new Timer(50, this);
         Update_Async.setInitialDelay(50);
         Update_Async.setRepeats(false);
@@ -123,8 +118,9 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         FilePackageInfo.setPackage(fp);
         JDCollapser.getInstance().getContentPane().removeAll();
         JDCollapser.getInstance().getContentPane().add(FilePackageInfo);
+        JDCollapser.getInstance().setTitle("FilePackage");
         JDCollapser.getInstance().setVisible(true);
-        
+
         JDCollapser.getInstance().setCollapsed(false);
     }
 
@@ -418,7 +414,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             fireTableChanged(1, null);
             return;
         }
-     
+
         if (arg0.getSource() == this.gathertimer) {
             gathertimer.stop();
             gathertimer.removeActionListener(this);

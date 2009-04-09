@@ -14,6 +14,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.config.Configuration;
+import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
@@ -86,10 +87,9 @@ public class JDToolBar extends JToolBar implements ControlListener {
                 } else {
                     clipboard.setIcon(JDTheme.II("gui.images.clipboard_disabled", 24, 24));
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
-
                 }
                 JDUtilities.getConfiguration().save();
-
+                ClipboardHandler.getClipboard().setEnabled(clipboard.isSelected());
             }
 
         });
@@ -132,6 +132,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
 
                 }
+                ClipboardHandler.getClipboard().toggleActivation();
                 JDUtilities.getConfiguration().save();
 
             }
@@ -258,6 +259,9 @@ public class JDToolBar extends JToolBar implements ControlListener {
                             reconnect.setToolTipText(JDLocale.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
                         }
 
+                    }
+                    if (event.getParameter() == Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE) {
+                        clipboard.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false));
                     }
 
                 }
