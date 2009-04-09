@@ -47,9 +47,9 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     private Configuration configuration;
 
-    private ConfigEntriesPanel cep;
 
-    private ConfigContainer container;
+
+
 
     private SubPanelPluginsOptional sppo;
 
@@ -92,7 +92,7 @@ public class ConfigPanelAddons extends ConfigPanel {
     }
 
     public void save() {
-        cep.save();
+     
         sppo.save();
         spr.save();
         WebUpdater.getConfig("JDU").save();

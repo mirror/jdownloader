@@ -98,9 +98,10 @@ public class TreeTableRenderer extends DefaultTableRenderer {
     private void initIcons() {
         icon_fp_open = JDTheme.II("gui.images.package_closed", 16, 16);
         icon_fp_closed = JDTheme.II("gui.images.package_opened", 16, 16);
-        imgFinished = JDTheme.II("gui.images.selected", 16, 16);
-        imgFailed = JDTheme.II("gui.images.unselected", 16, 16);
+        imgFinished = JDTheme.II("gui.images.ok", 16, 16);
+        imgFailed = JDTheme.II("gui.images.bad", 16, 16);
         imgExtract = JDTheme.II("gui.images.update_manager", 16, 16);
+        
     }
 
     private void initLocale() {
@@ -244,21 +245,43 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             ((JRendererLabel) co).setText("");
             ((JRendererLabel) co).setBorder(null);
             return co;
-
-        case DownloadTreeTableModel.COL_STATUS:
+        case DownloadTreeTableModel.COL_STATUS_ICON:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            ((JRendererLabel) co).setText("");
             if (dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
                 ((JRendererLabel) co).setIcon(imgExtract);
-                ((JRendererLabel) co).setText(dLink.getLinkStatus().getStatusString());
+               
             } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 ((JRendererLabel) co).setIcon(imgFinished);
-                ((JRendererLabel) co).setText("");
+         
             } else if (dLink.getLinkStatus().isFailed()) {
                 ((JRendererLabel) co).setIcon(imgFailed);
+               
+            } else {
+             
+                ((JRendererLabel) co).setIcon(null);
+            }
+
+            ((JRendererLabel) co).setBorder(null);
+
+            return co;
+
+        
+        case DownloadTreeTableModel.COL_STATUS:
+            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            ((JRendererLabel) co).setIcon(null);
+            if (dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
+             
+                ((JRendererLabel) co).setText(dLink.getLinkStatus().getStatusString());
+            } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+    
+                ((JRendererLabel) co).setText("");
+            } else if (dLink.getLinkStatus().isFailed()) {
+            
                 ((JRendererLabel) co).setText("");
             } else {
                 ((JRendererLabel) co).setText(dLink.getLinkStatus().getStatusString());
-                ((JRendererLabel) co).setIcon(null);
+            
             }
 
             ((JRendererLabel) co).setBorder(null);
@@ -317,11 +340,26 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             }
 
             return progress;
-
+        case DownloadTreeTableModel.COL_STATUS_ICON:
+            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            ((JRendererLabel) co).setText("");
+            ((JRendererLabel) co).setIcon(null);
+            if (fp.isFinished()) {
+                ((JRendererLabel) co).setIcon(this.imgFinished);
+            } else if (fp.getTotalDownloadSpeed() > 0) {
+                
+            } else if (fp.getLinksInProgress() > 0) {
+            
+            } else {
+               
+            }
+            ((JRendererLabel) co).setBorder(null);
+            return co;
+        
         case DownloadTreeTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (fp.isFinished()) {
-                ((JRendererLabel) co).setText(strFilePackageStatusFinished);
+                ((JRendererLabel) co).setText("");
             } else if (fp.getTotalDownloadSpeed() > 0) {
                 clearSB();
                 sb.append('[').append(fp.getLinksInProgress()).append('/').append(fp.size()).append("] ");

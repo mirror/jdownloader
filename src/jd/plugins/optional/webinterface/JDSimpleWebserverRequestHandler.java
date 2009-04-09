@@ -31,7 +31,7 @@ import jd.controlling.DistributeData;
 import jd.controlling.DownloadController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.skins.simple.SimpleGuiConstants;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberV2Panel;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
 import jd.http.Encoding;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
@@ -107,7 +107,7 @@ public class JDSimpleWebserverRequestHandler {
             public void run() {
                 while (links.size() > 0 && JDWebinterface.gathererrunning == true) {
                     DownloadLink link = links.remove(0);
-                    if (!guiConfig.getBooleanProperty(LinkGrabberV2Panel.PROPERTY_ONLINE_CHECK, true)) {
+                    if (!guiConfig.getBooleanProperty(LinkGrabberPanel.PROPERTY_ONLINE_CHECK, true)) {
                         addingLinkList.add(link);
                         try {
                             Thread.sleep(5);

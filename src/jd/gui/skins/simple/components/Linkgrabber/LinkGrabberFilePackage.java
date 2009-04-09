@@ -25,7 +25,7 @@ class LinkGrabberFilePackageBroadcaster extends JDBroadcaster<LinkGrabberFilePac
 
 }
 
-public class LinkGrabberV2FilePackage extends Property {
+public class LinkGrabberFilePackage extends Property {
 
     /**
      * 
@@ -48,7 +48,7 @@ public class LinkGrabberV2FilePackage extends Property {
     private long lastFailCount = 0;
     private transient LinkGrabberFilePackageBroadcaster broadcaster = new LinkGrabberFilePackageBroadcaster();
 
-    public LinkGrabberV2FilePackage() {
+    public LinkGrabberFilePackage() {
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
         name = JDUtilities.removeEndingPoints(JDLocale.L("controller.packages.defaultname", "various"));
         useSubDir = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false);
@@ -64,7 +64,7 @@ public class LinkGrabberV2FilePackage extends Property {
         return this.broadcaster;
     }
 
-    public LinkGrabberV2FilePackage(String name, LinkGrabberFilePackageListener listener) {
+    public LinkGrabberFilePackage(String name, LinkGrabberFilePackageListener listener) {
         this(name);
         broadcaster.addListener(listener);
     }
@@ -126,7 +126,7 @@ public class LinkGrabberV2FilePackage extends Property {
         broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
-    public LinkGrabberV2FilePackage(String name) {
+    public LinkGrabberFilePackage(String name) {
         this();
         this.setName(name);
     }

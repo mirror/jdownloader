@@ -8,7 +8,7 @@ import javax.swing.Action;
 
 import jd.config.Property;
 
-public class LinkGrabberV2TreeTableAction extends AbstractAction {
+public class LinkGrabberTreeTableAction extends AbstractAction {
 
     private static final long serialVersionUID = 1220090161204767583L;
     public static final int NEW_PACKAGE = 100;
@@ -33,11 +33,11 @@ public class LinkGrabberV2TreeTableAction extends AbstractAction {
     private Property property;
     private String ressourceName;
 
-    public LinkGrabberV2TreeTableAction(ActionListener actionListener, String ressourceName, int actionID) {
+    public LinkGrabberTreeTableAction(ActionListener actionListener, String ressourceName, int actionID) {
         this(actionListener, ressourceName, actionID, null);
     }
 
-    public LinkGrabberV2TreeTableAction(ActionListener actionListener, String ressourceName, int actionID, Property obj) {
+    public LinkGrabberTreeTableAction(ActionListener actionListener, String ressourceName, int actionID, Property obj) {
         super();
         this.ressourceName = ressourceName;
         this.actionID = actionID;

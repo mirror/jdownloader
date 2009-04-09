@@ -17,7 +17,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class LinkGrabberV2FilePackageInfo extends JPanel implements LinkGrabberFilePackageListener, ActionListener {
+public class LinkGrabberFilePackageInfo extends JPanel implements LinkGrabberFilePackageListener, ActionListener {
 
     private static final long serialVersionUID = 5410296068527460629L;
 
@@ -39,16 +39,16 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements LinkGrabberF
 
     private JPanel simplePanel, extendedPanel;
 
-    private LinkGrabberV2FilePackage fp = null;
+    private LinkGrabberFilePackage fp = null;
 
     private boolean notifyUpdate = true;
 
-    public LinkGrabberV2FilePackageInfo() {
+    public LinkGrabberFilePackageInfo() {
         buildGui();
         fp = null;
     }
 
-    public void setPackage(LinkGrabberV2FilePackage fp) {
+    public void setPackage(LinkGrabberFilePackage fp) {
         if (this.fp != null && this.fp == fp) {
             update();
             return;
@@ -79,7 +79,7 @@ public class LinkGrabberV2FilePackageInfo extends JPanel implements LinkGrabberF
         notifyUpdate = true;
     }
 
-    public LinkGrabberV2FilePackage getPackage() {
+    public LinkGrabberFilePackage getPackage() {
         return fp;
     }
 

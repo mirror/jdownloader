@@ -33,13 +33,13 @@ import org.jdesktop.swingx.decorator.HighlightPredicate;
 //
 //    public abstract boolean doHighlight(LinkGrabberV2FilePackage fp);
 
-public abstract class LinkGrabberV2FilePackageRowHighlighter extends DownloadLinkRowHighlighter {
+public abstract class LinkGrabberFilePackageRowHighlighter extends DownloadLinkRowHighlighter {
 
-    public LinkGrabberV2FilePackageRowHighlighter(JXTreeTable table, Color colora) {
+    public LinkGrabberFilePackageRowHighlighter(JXTreeTable table, Color colora) {
         super(table, colora);
     }
 
-    public LinkGrabberV2FilePackageRowHighlighter(JXTreeTable table, Color colora, Color colorb) {
+    public LinkGrabberFilePackageRowHighlighter(JXTreeTable table, Color colora, Color colorb) {
         super(table, colora, colorb);
     }
 
@@ -50,7 +50,7 @@ public abstract class LinkGrabberV2FilePackageRowHighlighter extends DownloadLin
                 Object element;
                 if (path != null) {
                     element = path.getLastPathComponent();
-                    if (element instanceof LinkGrabberV2FilePackage) { return doHighlight((LinkGrabberV2FilePackage) element); }
+                    if (element instanceof LinkGrabberFilePackage) { return doHighlight((LinkGrabberFilePackage) element); }
                 }
                 return false;
             }
@@ -62,6 +62,6 @@ public abstract class LinkGrabberV2FilePackageRowHighlighter extends DownloadLin
         return false;
     }
 
-    public abstract boolean doHighlight(LinkGrabberV2FilePackage link);
+    public abstract boolean doHighlight(LinkGrabberFilePackage link);
 
 }

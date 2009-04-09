@@ -149,11 +149,11 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         // JDTheme.C("gui.color.downloadlist.row_package", "fffa7c"),
         // Color.BLACK));
 
-        addFinishedHighlighter();
+//        addFinishedHighlighter();
         addDisabledHighlighter();
         addPostErrorHighlighter();
         addWaitHighlighter();
-        addErrorHighlighter();
+//        addErrorHighlighter();
 
         // addHighlighter(new FilepackageRowHighlighter(this, Color.RED,
         // Color.BLUE, Color.RED, Color.BLUE) {
@@ -298,8 +298,12 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         final SubConfiguration config = JDUtilities.getSubConfig("gui");
         cols = new TableColumnExt[getModel().getColumnCount()];
         for (int i = 0; i < getModel().getColumnCount(); i++) {
-
             TableColumnExt tableColumn = getColumnFactory().createAndConfigureTableColumn(getModel(), i);
+            cols[i] = tableColumn;
+
+   
+
+        
             cols[i] = tableColumn;
             if (i > 0) {
                 tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
@@ -316,14 +320,20 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 });
 
                 tableColumn.setVisible(config.getBooleanProperty("VISABLE_COL_" + i, true));
+                if(i==DownloadTreeTableModel.COL_STATUS_ICON){
+                    tableColumn.setMinWidth(20);
+                    tableColumn.setMaxWidth(20);
+                }else{
                 tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + i, tableColumn.getWidth()));
+                }
                 if (tableColumn != null) {
                     getColumnModel().addColumn(tableColumn);
                 }
             } else {
                 tableColumn.setVisible(false);
             }
-        }
+}
+        
 
     }
 

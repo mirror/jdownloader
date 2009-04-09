@@ -37,12 +37,12 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
     public static final int COL_HIDDEN = 0;
     public static final int COL_PART = 1;
 
-    public static final int COL_PROGRESS = 4;
-
+    public static final int COL_PROGRESS = 5;
+    public static final int COL_STATUS_ICON = 4;
     public static final int COL_STATUS = 3;
 
     /** table column names */
-    static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.treetable.header_1.tree", "F"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
+    static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.treetable.header_1.tree", "F"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"),JDLocale.L("gui.treetable.header_4.statusicon", "Status Icon"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
 
     /**
      * Creates a {@link ProjectsTreeTableModel}
@@ -114,6 +114,8 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
         case COL_HOSTER:
             return String.class;
+        case COL_STATUS_ICON:
+            return String.class;
         case COL_STATUS:
             return String.class;
         case COL_PROGRESS:
@@ -176,28 +178,10 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
         if (node instanceof DownloadLink) {
             DownloadLink downloadLink = (DownloadLink) node;
-            switch (column) {
-            case COL_PART:
-                return downloadLink;
-            case COL_HOSTER:
-                return downloadLink;
-            case COL_STATUS:
-                return downloadLink;
-            case COL_PROGRESS:
-                return downloadLink;
-            }
+            return downloadLink;
         } else if (node instanceof FilePackage) {
             FilePackage filePackage = (FilePackage) node;
-            switch (column) {
-            case COL_PART:
-                return filePackage;
-            case COL_HOSTER:
-                return filePackage;
-            case COL_STATUS:
-                return filePackage;
-            case COL_PROGRESS:
-                return filePackage;
-            }
+           return filePackage;
         } else if (node instanceof String) {
             return (column == 0) ? node.toString() : "";
         } else {

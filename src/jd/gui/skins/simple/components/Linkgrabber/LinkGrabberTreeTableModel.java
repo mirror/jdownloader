@@ -8,7 +8,7 @@ import jd.utils.JDLocale;
 import org.jdesktop.swingx.tree.TreeModelSupport;
 import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 
-public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
+public class LinkGrabberTreeTableModel extends AbstractTreeTableModel {
 
     public static final int COL_HIDDEN = 0;
     public static final int COL_PACK_FILE = 1;
@@ -19,7 +19,7 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
     /** table column names */
     static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.linkgrabber.header.packagesfiles", "Pakete/Dateien"), JDLocale.L("gui.treetable.header.size", "Größe"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status") };
 
-    private LinkGrabberV2Panel owner;
+    private LinkGrabberPanel owner;
 
     /**
      * Creates a {@link ProjectsTreeTableModel}
@@ -30,12 +30,12 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
      * @param aList
      *            the ProjectList to start out with.
      */
-    public LinkGrabberV2TreeTableModel(LinkGrabberV2Panel treeTable) {
+    public LinkGrabberTreeTableModel(LinkGrabberPanel treeTable) {
         super("root");
         owner = treeTable;
     }
 
-    public boolean containesPackage(LinkGrabberV2FilePackage fp) {
+    public boolean containesPackage(LinkGrabberFilePackage fp) {
         return owner.getPackages().contains(fp);
     }
 
@@ -43,8 +43,8 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
         Object child = null;
         if (parent instanceof String) {
             child = getPackages().get(index);
-        } else if (parent instanceof LinkGrabberV2FilePackage) {
-            LinkGrabberV2FilePackage pack = (LinkGrabberV2FilePackage) parent;
+        } else if (parent instanceof LinkGrabberFilePackage) {
+            LinkGrabberFilePackage pack = (LinkGrabberFilePackage) parent;
             child = pack.getDownloadLinks().get(index);
         } else if (parent instanceof DownloadLink) {
             // for now, DownloadLinks do not have Children
@@ -66,8 +66,8 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
         int count = 0;
         if (parent instanceof String) {
             count = getPackages().size();
-        } else if (parent instanceof LinkGrabberV2FilePackage) {
-            LinkGrabberV2FilePackage pack = (LinkGrabberV2FilePackage) parent;
+        } else if (parent instanceof LinkGrabberFilePackage) {
+            LinkGrabberFilePackage pack = (LinkGrabberFilePackage) parent;
             count = pack.getDownloadLinks().size();
         } else if (parent instanceof DownloadLink) {
             count = 0;
@@ -115,8 +115,8 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
         int index = -1;
         if (parent instanceof String) {
             index = getPackages().indexOf(child);
-        } else if (parent instanceof LinkGrabberV2FilePackage) {
-            index = ((LinkGrabberV2FilePackage) parent).getDownloadLinks().indexOf(child);
+        } else if (parent instanceof LinkGrabberFilePackage) {
+            index = ((LinkGrabberFilePackage) parent).getDownloadLinks().indexOf(child);
         } else if (parent instanceof DownloadLink) {
             index = -1;
         }
@@ -141,7 +141,7 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
      * 
      *         Have to implement this:
      */
-    public Vector<LinkGrabberV2FilePackage> getPackages() {
+    public Vector<LinkGrabberFilePackage> getPackages() {
         return owner.getPackages();
     }
 
@@ -161,8 +161,8 @@ public class LinkGrabberV2TreeTableModel extends AbstractTreeTableModel {
             case COL_STATUS:
                 return downloadLink;
             }
-        } else if (node instanceof LinkGrabberV2FilePackage) {
-            LinkGrabberV2FilePackage filePackage = (LinkGrabberV2FilePackage) node;
+        } else if (node instanceof LinkGrabberFilePackage) {
+            LinkGrabberFilePackage filePackage = (LinkGrabberFilePackage) node;
             switch (column) {
             case COL_PACK_FILE:
                 return filePackage;

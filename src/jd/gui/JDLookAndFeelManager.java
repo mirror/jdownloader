@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.Serializable;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
@@ -38,24 +39,50 @@ public class JDLookAndFeelManager implements Serializable {
     private static boolean uiInitated = false;
     private String className;
 
-    public static JDLookAndFeelManager[] getInstalledLookAndFeels() {
+    public static JDLookAndFeelManager[] getSupportedLookAndFeels() {
         LookAndFeelInfo[] lafis = UIManager.getInstalledLookAndFeels();
-        JDLookAndFeelManager[] ret = new JDLookAndFeelManager[lafis.length];
+
+        ArrayList<JDLookAndFeelManager> ret = new ArrayList<JDLookAndFeelManager>();
         for (int i = 0; i < lafis.length; i++) {
-            ret[i] = new JDLookAndFeelManager(lafis[i]);
+            String clname = lafis[i].getClassName();
+            if (lafis[i].getClassName().endsWith("MetalLookAndFeel")) continue;
+            if (lafis[i].getClassName().endsWith("NimbusLookAndFeel")) continue;
+            if (lafis[i].getClassName().endsWith("MotifLookAndFeel")) continue;
+            if (lafis[i].getClassName().contains("GTK")) continue;
+            if (lafis[i].getClassName().endsWith("WindowsLookAndFeel")) continue;
+            if (lafis[i].getClassName().endsWith("WindowsClassicLookAndFeel")) continue;
+            if (lafis[i].getClassName().endsWith("WindowsLookAndFeel")) continue;
+            if (lafis[i].getClassName().endsWith("WindowsLookAndFeel")) continue;
+            if (lafis[i].getClassName().contains("Substance") && JDUtilities.getJavaVersion() >= 1.6) {
+                ret.add(new JDLookAndFeelManager(lafis[i]));
+            }
+
         }
-        return ret;
+        return ret.toArray(new JDLookAndFeelManager[] {});
+    }
+/**
+ * Returns the configured LAF and makes sure that this LAF is supported by the system
+ * @return
+ */
+    public static JDLookAndFeelManager getPlaf() {
+        JDLookAndFeelManager ret = getPlaf0();
+        for (JDLookAndFeelManager laf : getSupportedLookAndFeels()) {
+            if (ret.getClassName().equals(ret.getClassName())) return ret;
+        }
+
+        return getDefaultLAFM();
+
     }
 
-    public static JDLookAndFeelManager getPlaf() {
+    public static JDLookAndFeelManager getPlaf0() {
         SubConfiguration config = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
         Object plaf = config.getProperty(PARAM_PLAF, null);
-        if (plaf == null) return new JDLookAndFeelManager(UIManager.getSystemLookAndFeelClassName());
+        if (plaf == null) { return getDefaultLAFM(); }
         if (plaf instanceof JDLookAndFeelManager) {
             if (((JDLookAndFeelManager) plaf).className != null) {
                 return (JDLookAndFeelManager) plaf;
             } else {
-                plaf = new JDLookAndFeelManager(UIManager.getSystemLookAndFeelClassName());
+                plaf = getDefaultLAFM();
                 config.setProperty(PARAM_PLAF, plaf);
                 config.save();
                 return (JDLookAndFeelManager) plaf;
@@ -70,6 +97,12 @@ public class JDLookAndFeelManager implements Serializable {
                 }
             }
         }
+        return getDefaultLAFM();
+    }
+
+    private static JDLookAndFeelManager getDefaultLAFM() {
+        if (JDUtilities.getJavaVersion() >= 1.6) return new JDLookAndFeelManager("org.jvnet.substance.skin.SubstanceBusinessBlackSteelLookAndFeel");
+
         return new JDLookAndFeelManager(UIManager.getSystemLookAndFeelClassName());
     }
 
@@ -92,11 +125,11 @@ public class JDLookAndFeelManager implements Serializable {
                         UIManager.installLookAndFeel(laf, "org.jvnet.substance.skin." + laf + "LookAndFeel");
                     }
                 }
-           
+
             }
 
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
     }
 
@@ -108,7 +141,7 @@ public class JDLookAndFeelManager implements Serializable {
         try {
             UIManager.setLookAndFeel(getPlaf().getClassName());
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
     }
 
@@ -136,7 +169,7 @@ public class JDLookAndFeelManager implements Serializable {
     @Override
     public String toString() {
         if (className == null) return null;
-        return className.substring(className.lastIndexOf(".") + 1, className.length() - 11);
+        return className.substring(className.lastIndexOf(".") + 1, className.length() - 11).replace("Substance", "");
     }
 
 }
