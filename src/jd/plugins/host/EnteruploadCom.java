@@ -32,9 +32,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-public class FileloadUs extends PluginForHost {
+public class EnteruploadCom extends PluginForHost {
 
-    public FileloadUs(PluginWrapper wrapper) {
+    public EnteruploadCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -49,12 +49,12 @@ public class FileloadUs extends PluginForHost {
         Form1.remove("method_premium");
         Form1.put("referer", Encoding.urlEncode(downloadLink.getDownloadURL()));
         br.submitForm(Form1);
-        if (br.containsHTML("You have to wait")) {
-            int minutes= 0, seconds = 0;
+        if (br.containsHTML("You have reached")) {
+            int minutes = 0, seconds = 0;
             String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
             if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-            String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
-            if (tmpsec!= null) seconds = Integer.parseInt(tmpsec);
+            String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?\\)").getMatch(0);
+            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
             int waittime = ((60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         } else {
@@ -69,7 +69,7 @@ public class FileloadUs extends PluginForHost {
             String code = Plugin.getCaptchaCode(file, this, downloadLink);
             Form1.put("code", code);
             Form1.setAction(downloadLink.getDownloadURL());
-            this.sleep(15000, downloadLink);
+            this.sleep(40000, downloadLink);
             br.submitForm(Form1);
             URLConnectionAdapter con2 = br.getHttpConnection();
             if (con2.getContentType().contains("html")) {
@@ -96,17 +96,17 @@ public class FileloadUs extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://fileload.us/tos.html";
+        return "http://www.enterupload.com/tos.html";
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage("http://fileload.us/?op=change_lang&lang=english");
+        br.getPage("http://www.enterupload.com/?op=change_lang&lang=english");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("You\\s+have\\s+requested:\\s+(.*?)\\s+-").getMatch(0));
-        String filesize = br.getRegex("Size\\s+\\((.*?)\\)</font>").getMatch(0);
+        if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex("You\\s+have\\s+requested\\s+<font\\s+color=\"red\">http://[\\w\\.]*?enterupload\\.com/[a-z0-9]+/(.*?)</font>").getMatch(0));
+        String filesize = br.getRegex("\\s+\\((.*?)\\)</font>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
@@ -115,7 +115,7 @@ public class FileloadUs extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision$");
+        return getVersion("$Revision: 5202 $");
     }
 
     @Override
