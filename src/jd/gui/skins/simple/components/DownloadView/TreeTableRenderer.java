@@ -126,6 +126,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             if (!((DownloadLink) value).isEnabled()) {
                 co.setEnabled(false);
             }
+            return co;
         } else {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         }

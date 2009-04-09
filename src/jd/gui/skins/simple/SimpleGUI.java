@@ -76,7 +76,7 @@ import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.ConfigurationPopup;
-import jd.gui.skins.simple.config.FengShuiConfigPanel;
+
 import jd.gui.skins.simple.config.panels.ConfigPanelAddons;
 import jd.gui.skins.simple.config.panels.ConfigPanelCaptcha;
 import jd.gui.skins.simple.config.panels.ConfigPanelDownload;
@@ -617,7 +617,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private void addConfigTask() {
         ConfigTaskPane cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 24, 24));
-        cfgTskPane.addPanel(new SingletonPanel(FengShuiConfigPanel.class, new Object[] {}));
+     
         Object[] configConstructorObjects = new Object[] { JDUtilities.getConfiguration() };
 
         cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_ADDONS, new SingletonPanel(ConfigPanelAddons.class, configConstructorObjects));
@@ -640,8 +640,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
                 switch (e.getID()) {
                 case DownloadTaskPane.ACTION_TOGGLE:
-
-                    contentPanel.display(((TaskPanel) e.getSource()).getPanel(0));
+               
+                    contentPanel.display(((TaskPanel) e.getSource()).getPanel(SimpleGuiConstants.GUI_CONFIG.getIntegerProperty("LAST_CONFIG_PANEL", ConfigTaskPane.ACTION_GENERAL)));
 
                     break;
                 case ConfigTaskPane.ACTION_SAVE:
@@ -671,7 +671,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 case ConfigTaskPane.ACTION_GUI:
                 case ConfigTaskPane.ACTION_HOST:
                 case ConfigTaskPane.ACTION_RECONNECT:
+                  SimpleGuiConstants.GUI_CONFIG.setProperty("LAST_CONFIG_PANEL", e.getID());
+                 
                     contentPanel.display(((ConfigTaskPane) e.getSource()).getPanel(e.getID()));
+                  SimpleGuiConstants.GUI_CONFIG.save();
                     break;
                 }
 

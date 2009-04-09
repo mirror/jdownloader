@@ -146,6 +146,7 @@ public class JDLookAndFeelManager implements Serializable {
     }
 
     public JDLookAndFeelManager(LookAndFeelInfo lafi) {
+     
         this.className = lafi.getClassName();
     }
 

@@ -304,6 +304,8 @@ public class ConfigPanelGUI extends ConfigPanel {
                     public Object runSave() {
                         try {
                             try {
+                             if(UIManager.getLookAndFeel().getClass().getName().equals(JDLookAndFeelManager.getPlaf().getClassName()))return null;
+                               
                                 UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
                                 // SimpleGUI.CURRENTGUI.updateDecoration();
                             } catch (Exception e1) {
