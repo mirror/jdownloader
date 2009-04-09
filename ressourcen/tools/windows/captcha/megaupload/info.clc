@@ -1,0 +1,8 @@
+<CryptLoad>
+  <Method name="Sym" author="Angelasferkel" />
+  <Parameters file="Megaupload.bat">
+    <ImagePath />
+  </Parameters>
+  <Format type="gif" />
+  <Result file="Megaupload.txt" />
+</CryptLoad>

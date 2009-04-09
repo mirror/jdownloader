@@ -60,6 +60,7 @@ import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
@@ -560,58 +561,76 @@ public class JDUtilities {
             if (!JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host) || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true)) { return null; }
 
             JFrame jf = new JFrame();
-            Image captchaImage = new JFrame().getToolkit().getImage(file.getAbsolutePath());
-            MediaTracker mediaTracker = new MediaTracker(jf);
-            mediaTracker.addImage(captchaImage, 0);
+            Image captchaImage;
             try {
-                mediaTracker.waitForID(0);
-            } catch (InterruptedException e) {
+                captchaImage = ImageIO.read(file);
+
+                MediaTracker mediaTracker = new MediaTracker(jf);
+                mediaTracker.addImage(captchaImage, 0);
+                try {
+                    mediaTracker.waitForID(0);
+                } catch (InterruptedException e) {
+                    return null;
+                }
+                mediaTracker.removeImage(captchaImage);
+                JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
+                Captcha captcha = jac.createCaptcha(captchaImage);
+                String captchaCode = jac.checkCaptcha(captcha);
+                if(jac.isExtern()){
+                    if(captchaCode==null||captchaCode.trim().length()==0){
+                    plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
+                    acquireUserIOSemaphore();
+                    captchaCode = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
+                    releaseUserIOSemaphore();  
+                    }
+                    return captchaCode;
+                
+                }
+                jd.controlling.JDLogger.getLogger().info("Code: " + captchaCode);
+                jd.controlling.JDLogger.getLogger().info("Vality: " + captcha.getValityPercent());
+                jd.controlling.JDLogger.getLogger().info("Object Detection: " + captcha.isPerfectObjectDetection());
+                // ScrollPaneWindow window = new ScrollPaneWindow("Captcha");
+
+                plugin.setLastCaptcha(captcha);
+                String code = null;
+                plugin.setCaptchaDetectID(Plugin.CAPTCHA_JAC);
+                LetterComperator[] lcs = captcha.getLetterComperators();
+
+                double vp = 0.0;
+                if (lcs == null) {
+                    vp = 100.0;
+                } else {
+                    for (LetterComperator element : lcs) {
+                        // window.setImage(i, 0, lcs[i].getB().getImage(3));
+                        // window.setImage(i, 1, lcs[i].getA().getImage(3));
+                        if (element == null) {
+                            vp = 100.0;
+                            break;
+                        }
+                        vp = Math.max(vp, element.getValityPercent());
+                        // window.setText(i, 2, lcs[i].getValityPercent());
+                        // window.setText(i, 3, lcs[i].getDecodedValue());
+                        // window.setText(i, 4, lcs[i].getB().getPixelString());
+                    }
+                }
+                // window.pack();
+                jd.controlling.JDLogger.getLogger().info("worst letter: " + vp);
+                if (plugin.useUserinputIfCaptchaUnknown() && vp > (double) JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)) {
+                    plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
+                    acquireUserIOSemaphore();
+                    code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
+                    releaseUserIOSemaphore();
+                } else {
+                    return captchaCode;
+                }
+
+                if (code != null && code.equals(captchaCode)) { return captchaCode; }
+                return code;
+            } catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
                 return null;
             }
-            mediaTracker.removeImage(captchaImage);
-            JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
-            Captcha captcha = jac.createCaptcha(captchaImage);
-            String captchaCode = jac.checkCaptcha(captcha);
-            jd.controlling.JDLogger.getLogger().info("Code: " + captchaCode);
-            jd.controlling.JDLogger.getLogger().info("Vality: " + captcha.getValityPercent());
-            jd.controlling.JDLogger.getLogger().info("Object Detection: " + captcha.isPerfectObjectDetection());
-            // ScrollPaneWindow window = new ScrollPaneWindow("Captcha");
-
-            plugin.setLastCaptcha(captcha);
-            String code = null;
-            plugin.setCaptchaDetectID(Plugin.CAPTCHA_JAC);
-            LetterComperator[] lcs = captcha.getLetterComperators();
-
-            double vp = 0.0;
-            if (lcs == null) {
-                vp = 100.0;
-            } else {
-                for (LetterComperator element : lcs) {
-                    // window.setImage(i, 0, lcs[i].getB().getImage(3));
-                    // window.setImage(i, 1, lcs[i].getA().getImage(3));
-                    if (element == null) {
-                        vp = 100.0;
-                        break;
-                    }
-                    vp = Math.max(vp, element.getValityPercent());
-                    // window.setText(i, 2, lcs[i].getValityPercent());
-                    // window.setText(i, 3, lcs[i].getDecodedValue());
-                    // window.setText(i, 4, lcs[i].getB().getPixelString());
-                }
-            }
-            // window.pack();
-            jd.controlling.JDLogger.getLogger().info("worst letter: " + vp);
-            if (plugin.useUserinputIfCaptchaUnknown() && vp > (double) JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)) {
-                plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
-                acquireUserIOSemaphore();
-                code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
-                releaseUserIOSemaphore();
-            } else {
-                return captchaCode;
-            }
-
-            if (code != null && code.equals(captchaCode)) { return captchaCode; }
-            return code;
         }
 
         else {

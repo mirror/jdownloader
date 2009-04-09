@@ -23,6 +23,7 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -61,7 +62,9 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
+import jd.nutils.Executer;
 import jd.nutils.JDHash;
+import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -142,7 +145,12 @@ public class JAntiCaptcha {
             public boolean accept(File pathname) {
                 //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
-                if (pathname.isDirectory() && new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml").exists() && !JDIO.getLocalFile(new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml")).contains("disabled")) {
+
+                if (pathname.isDirectory() && new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml").exists()) {
+                    String content = JDIO.getLocalFile(new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml"));
+                    if (content.contains("extern") && OSDetector.isLinux() && !content.contains("linux")) return false;
+                    if (content.contains("extern") && OSDetector.isMac() && !content.contains("mac")) return false;
+                    if (content.contains("extern") && OSDetector.isWindows() && !content.contains("windows")) return false;
 
                     return true;
                 } else {
@@ -163,10 +171,13 @@ public class JAntiCaptcha {
      * @return true/false
      */
     public static boolean hasMethod(String methodsPath, String methodName) {
-        boolean ret = JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/script.jas").exists();
+        boolean ret = JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/jacinfo.xml").exists();
         if (!ret) { return false; }
-        String info = JDIO.getLocalFile(JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/jacinfo.xml"));
-        if (info.contains("disabled")) { return false; }
+        String content = JDIO.getLocalFile(JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/jacinfo.xml"));
+        if (content.contains("extern") && OSDetector.isLinux() && !content.contains("linux")) return false;
+        if (content.contains("extern") && OSDetector.isMac() && !content.contains("mac")) return false;
+        if (content.contains("extern") && OSDetector.isWindows() && !content.contains("windows")) return false;
+
         return true;
     }
 
@@ -358,11 +369,26 @@ public class JAntiCaptcha {
     /**
      * Pfad zum SourceBild (Standalone). Wird aus der jacinfo.xml gelesen
      */
-    private String sourceImage;
-
+    // private String sourceImage;
     private Vector<ScrollPaneWindow> spw = new Vector<ScrollPaneWindow>();
 
     private Captcha workingCaptcha;
+
+    private boolean extern;
+
+    public boolean isExtern() {
+        return extern;
+    }
+
+    private String os;
+
+    private String command;
+
+    private String dstFile;
+
+    private String srcFile;
+
+    private Image sourceImage;
 
     /**
      * @param methodsPath
@@ -404,7 +430,7 @@ public class JAntiCaptcha {
      * @return CaptchaCode
      */
     public String checkCaptcha(Captcha captcha) {
-
+if(extern)return callExtern();
         workingCaptcha = captcha;
         // Führe prepare aus
         jas.executePrepareCommands(captcha);
@@ -504,7 +530,7 @@ public class JAntiCaptcha {
                 if (JAntiCaptcha.isLoggerActive()) {
                     logger.severe("Fehler in useLettercomparatorFilter:" + e.getLocalizedMessage() + " / " + getJas().getString("useLettercomparatorFilter"));
                 }
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
 
         }
@@ -541,6 +567,31 @@ public class JAntiCaptcha {
         return ret;
     }
 
+    private String callExtern() {
+       
+        try {
+            File file = JDUtilities.getResourceFile(this.srcFile);
+            String ext = JDIO.getFileExtension(this.srcFile);
+            ImageIO.write((RenderedImage) this.sourceImage, ext, file);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
+        }
+        Executer exec = new Executer(JDUtilities.getResourceFile(this.command).getAbsolutePath());
+ 
+        exec.setRunin(JDUtilities.getResourceFile(this.command).getParent());
+        exec.setWaitTimeout(300);
+        exec.start();
+        exec.waitTimeout();
+        String ret= exec.getOutputStream() + " \r\n " + exec.getErrorStream();
+        
+        String res=JDIO.getLocalFile(JDUtilities.getResourceFile(this.dstFile));
+        if(res==null)return null;
+        return res.trim();
+        
+    }
+
     /**
      * Gibt den erkannten CaptchaText zurück
      * 
@@ -567,6 +618,8 @@ public class JAntiCaptcha {
      * @return captcha
      */
     public Captcha createCaptcha(Image captchaImage) {
+        this.sourceImage = captchaImage;
+        if (extern) return null;
         if (captchaImage.getWidth(null) <= 0 || captchaImage.getHeight(null) <= 0) {
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.severe("Image Dimensionen zu klein. Image hat keinen Inahlt. Pfad/Url prüfen!");
@@ -636,7 +689,7 @@ public class JAntiCaptcha {
                 }
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.severe("Fehler bein lesen der MTH Datei!!. Methode kann nicht funktionieren!");
             }
@@ -710,7 +763,8 @@ public class JAntiCaptcha {
     // try {
     // pg.grabPixels();
     // } catch (Exception e) {
-    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,
+    // "Exception occured",e);
     // }
     // ColorModel cm = pg.getColorModel();
     // tmp.setColorModel(cm);
@@ -849,7 +903,7 @@ public class JAntiCaptcha {
                 ImageIO.write(img, "png", file);
             } catch (IOException e) {
 
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
         }
     }
@@ -884,7 +938,7 @@ public class JAntiCaptcha {
                 if (JAntiCaptcha.isLoggerActive()) {
                     logger.info(pathname.getName());
                 }
-                if (pathname.getName().endsWith(".bmp") ||pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
+                if (pathname.getName().endsWith(".bmp") || pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
 
                     return true;
                 } else {
@@ -934,6 +988,14 @@ public class JAntiCaptcha {
 
                 setMethodAuthor(UTILITIES.getAttribute(childNode, "author"));
                 setMethodName(UTILITIES.getAttribute(childNode, "name"));
+                this.extern = UTILITIES.getAttribute(childNode, "type").equalsIgnoreCase("extern");
+                this.os = UTILITIES.getAttribute(childNode, "os");
+            }
+            if (childNode.getNodeName().equals("command")) {
+
+                this.srcFile = UTILITIES.getAttribute(childNode, "src");
+                this.dstFile = UTILITIES.getAttribute(childNode, "dst");
+                this.command = UTILITIES.getAttribute(childNode, "cmd");
 
             }
             if (childNode.getNodeName().equals("format")) {
@@ -953,11 +1015,7 @@ public class JAntiCaptcha {
                 setImageType(UTILITIES.getAttribute(childNode, "type"));
 
             }
-            if (childNode.getNodeName().equals("source")) {
 
-                setSourceImage(UTILITIES.getAttribute(childNode, "file"));
-
-            }
             if (childNode.getNodeName().equals("result")) {
 
                 setResultFile(UTILITIES.getAttribute(childNode, "file"));
@@ -1047,7 +1105,7 @@ public class JAntiCaptcha {
                     preValueFilterMethod = newClass.getMethod(methodname, preValueFilterParameterTypes);
 
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
             Method postValueFilterMethod = null;
@@ -1070,14 +1128,14 @@ public class JAntiCaptcha {
                     postValueFilterMethod = newClass.getMethod(methodname, postValueFilterParameterTypes);
 
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
             while (iter.hasNext()) {
-                if( Thread.currentThread().isInterrupted()){
-                  
-                    throw new InterruptedException();
-                    
+                if (Thread.currentThread().isInterrupted()) {
+
+                throw new InterruptedException();
+
                 }
                 tmp = (Letter) iter.next();
 
@@ -1142,7 +1200,7 @@ public class JAntiCaptcha {
 
         } catch (Exception e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         if (res != null && res.getB() != null) {
             if (JAntiCaptcha.isLoggerActive()) {
@@ -1240,7 +1298,7 @@ public class JAntiCaptcha {
                     preValueFilterMethod = newClass.getMethod(methodname, preValueFilterParameterTypes);
 
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
             Method postValueFilterMethod = null;
@@ -1263,7 +1321,7 @@ public class JAntiCaptcha {
                     postValueFilterMethod = newClass.getMethod(methodname, postValueFilterParameterTypes);
 
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
             for (angle = UTILITIES.getJumperStart(leftAngle, rightAngle); UTILITIES.checkJumper(angle, leftAngle, rightAngle); angle = UTILITIES.nextJump(angle, leftAngle, rightAngle, steps)) {
@@ -1279,9 +1337,8 @@ public class JAntiCaptcha {
                 Iterator<Letter> iter = letterDB.iterator();
                 int tt = 0;
                 while (iter.hasNext()) {
-                    if( Thread.currentThread().isInterrupted()){
-                        throw new InterruptedException();
-                        
+                    if (Thread.currentThread().isInterrupted()) { throw new InterruptedException();
+
                     }
                     if (turnDB) {
                         tmp = ((Letter) iter.next()).turn(angle);
@@ -1377,7 +1434,7 @@ public class JAntiCaptcha {
             }
             // w.refreshUI();
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
 
         if (res != null && res.getB() != null) {
@@ -1480,13 +1537,6 @@ public class JAntiCaptcha {
         return resultFile;
     }
 
-    /**
-     * @return the sourceImage
-     */
-    public String getSourceImage() {
-        return sourceImage;
-    }
-
     public Captcha getWorkingCaptcha() {
         return workingCaptcha;
     }
@@ -1501,20 +1551,20 @@ public class JAntiCaptcha {
      */
     public void importDB(File path) {
 
-        String pattern = JOptionPane.showInputDialog("PATTERN","(\\w).*");
+        String pattern = JOptionPane.showInputDialog("PATTERN", "(\\w).*");
         if (JOptionPane.showConfirmDialog(null, "Delete old db?") == JOptionPane.OK_OPTION) letterDB = new LinkedList<Letter>();
         getResourceFile("letters.mth").delete();
-        System.out.println("LETTERS BEFOPRE: "+letterDB.size());
+        System.out.println("LETTERS BEFOPRE: " + letterDB.size());
         Image image;
         Letter letter;
         File[] images = getImages(path.getAbsolutePath());
         for (File element : images) {
             image = UTILITIES.loadImage(element);
             try {
-                image=ImageIO.read(element);
+                image = ImageIO.read(element);
             } catch (IOException e) {
                 // TODO Auto-generated catch block
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
             System.out.println(element.getAbsolutePath());
             int width = image.getWidth(null);
@@ -1540,7 +1590,7 @@ public class JAntiCaptcha {
 
             letter.setDecodedValue(let);
 
-//             BasicWindow.showImage(letter.getImage(1),element.getName());
+            // BasicWindow.showImage(letter.getImage(1),element.getName());
             letter.clean();
 
             letterDB.add(letter);
@@ -1550,7 +1600,7 @@ public class JAntiCaptcha {
             // BasicWindow.showImage(ret.getImage());
 
         }
-        System.out.println("LETTERS AFTER: "+letterDB.size());
+        System.out.println("LETTERS AFTER: " + letterDB.size());
         sortLetterDB();
         saveMTHFile();
     }
@@ -1709,7 +1759,7 @@ public class JAntiCaptcha {
             }
 
         } catch (TransformerException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
 
     }
@@ -1796,17 +1846,6 @@ public class JAntiCaptcha {
      */
     public void setShowDebugGui(boolean showDebugGui) {
         this.showDebugGui = showDebugGui;
-    }
-
-    /**
-     * @param sourceImage
-     *            the sourceImage to set
-     */
-    public void setSourceImage(String sourceImage) {
-        if (JAntiCaptcha.isLoggerActive()) {
-            logger.finer("SET PARAMETER: [sourceImage] = " + sourceImage);
-        }
-        this.sourceImage = sourceImage;
     }
 
     public void setWorkingCaptcha(Captcha workingCaptcha) {

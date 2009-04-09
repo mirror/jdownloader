@@ -113,7 +113,7 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
 
     private JButton btnReset;
 
-    private ConfigEntriesPanel cep;
+ 
 
     private ArrayList<PackageData> packageData = new ArrayList<PackageData>();
 
@@ -233,7 +233,7 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
 
     @Override
     public void save() {
-        cep.save();
+     
     }
 
 }

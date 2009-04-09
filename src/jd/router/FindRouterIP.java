@@ -24,31 +24,32 @@ import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.utils.JDLocale;
 
 public class FindRouterIP {
-public static String findIP(GUIConfigEntry ip){
-    final ProgressController progress = new ProgressController(JDLocale.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."), 100);
-    
-    ip.setData(JDLocale.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
-    progress.setStatus(60);
-    GetRouterInfo rinfo = new GetRouterInfo(null);
-    progress.setStatus(80);
-    InetAddress ia = rinfo.getAdress();
-    if (ia != null) ip.setData(ia.getHostAddress());
-    progress.setStatus(100);
-    if (ia != null) {
-        progress.setStatusText(JDLocale.LF("gui.config.routeripfinder.ready", "Hostname found: %s", ia.getHostAddress()));
-        progress.finalize(3000);
-        return ia.getHostAddress();
+    public static String findIP(GUIConfigEntry ip) {
+        final ProgressController progress = new ProgressController(JDLocale.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."), 100);
 
-    } else {
-        progress.setStatusText(JDLocale.L("gui.config.routeripfinder.notfound", "Can't find your routers hostname"));
-        progress.finalize(3000);
-        progress.setColor(Color.RED);
-        
-        return null;
+        ip.setData(JDLocale.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
+        progress.setStatus(60);
+        GetRouterInfo rinfo = new GetRouterInfo(null);
+        progress.setStatus(80);
+        InetAddress ia = rinfo.getAdress();
+        if (ia != null) ip.setData(ia.getHostAddress());
+        progress.setStatus(100);
+        if (ia != null) {
+            progress.setStatusText(JDLocale.LF("gui.config.routeripfinder.ready", "Hostname found: %s", ia.getHostAddress()));
+            progress.finalize(3000);
+            return ia.getHostAddress();
+
+        } else {
+            progress.setStatusText(JDLocale.L("gui.config.routeripfinder.notfound", "Can't find your routers hostname"));
+            progress.finalize(3000);
+            progress.setColor(Color.RED);
+
+            return null;
+        }
     }
-}
+
     public FindRouterIP(final GUIConfigEntry ip) {
-       
+
         new Thread() {
             @Override
             public void run() {
@@ -56,7 +57,5 @@ public static String findIP(GUIConfigEntry ip){
             }
         }.start();
     }
-
-
 
 }
