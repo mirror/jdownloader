@@ -222,10 +222,10 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             }
             break;
         case ConfigContainer.TYPE_PREMIUMPANEL:
-
+            input = new JComponent[1];
             input[0] = new PremiumPanel(this);
             input[0].setEnabled(configEntry.isEnabled());
-
+break;
         case ConfigContainer.TYPE_LABEL:
             input = new JComponent[0];
             decoration = new JLabel(configEntry.getLabel());

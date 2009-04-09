@@ -218,4 +218,9 @@ public class ConfigContainer implements Serializable {
         
     }
 
+public ConfigGroup getGroup() {
+    // TODO Auto-generated method stub
+    return group;
+}
+
 }

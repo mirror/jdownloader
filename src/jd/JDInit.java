@@ -262,31 +262,7 @@ public class JDInit {
         return JDUtilities.getConfiguration();
     }
 
-    /**
-     * Bilder werden dynamisch aus dem Homedir geladen.
-     */
-    public void loadImages() {
-        final ClassLoader cl = JDUtilities.getJDClassLoader();
-        final Toolkit toolkit = Toolkit.getDefaultToolkit();
-
-        File dir = JDUtilities.getResourceFile("jd/img/");
-
-        String[] images = dir.list();
-        if (images == null || images.length == 0) {
-            logger.severe("Could not find the img directory");
-            return;
-        }
-
-        for (final String element : images) {
-            if (element.toLowerCase().endsWith(".png") || element.toLowerCase().endsWith(".gif")) {
-                File f = new File(element);
-
-                logger.finer("Loaded image: " + f.getName().split("\\.")[0] + " from " + cl.getResource("jd/img/" + f.getName()));
-                JDUtilities.addImage(f.getName().split("\\.")[0], toolkit.getImage(cl.getResource("jd/img/" + f.getName())));
-            }
-        }
-    }
-
+  
     public void loadCPlugins() {
         new CPluginWrapper("linkbackup", "B", ".+\\.linkbackup");
         new CPluginWrapper("ccf", "C", ".+\\.ccf");

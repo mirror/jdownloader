@@ -173,7 +173,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
      * Das Hauptfenster wird erstellt. Singleton. Use SimpleGUI.createGUI
      */
     private SimpleGUI() {
-        super("§test");
+        super("");
         SimpleGuiConstants.GUI_CONFIG = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
         JDLookAndFeelManager.setUIManager();
 
@@ -246,6 +246,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         ClipboardHandler.getClipboard();
 
+       
         new Thread("guiworker") {
             public void run() {
                 while (true) {
@@ -566,13 +567,14 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         leftcolPane = new JDCollapsiblePane();
         leftcolPane.add(new JScrollPane(taskPane));
 
-        panel.add(leftcolPane);
+        panel.add(leftcolPane,"spany 2");
         sep = new JDSeparator();
 
         leftcolPane.addPropertyChangeListener(sep);
-        panel.add(sep, "gapright 2");
+        panel.add(sep, "gapright 2,spany 2");
 
         panel.add(contentPanel);
+        panel.add(JDCollapser.getInstance(),"hidemode 3,gaptop 15,gapleft 10, gapright 10");
         // panel.add(generalPurposeTasks, "cell 0 2");
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
         panel.add(progressBar, "spanx,hidemode 3");
@@ -1277,21 +1279,35 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public static void showConfigDialog(JFrame parent, ConfigContainer container, boolean alwaysOnTop) {
-        showConfigDialog(parent, new ConfigEntriesPanel(container), alwaysOnTop);
+        
+        JDCollapser.getInstance().getContentPane().removeAll();
+        JDCollapser.getInstance().getContentPane().add(new ConfigEntriesPanel(container));
+        if(container.getGroup()!=null){
+            JDCollapser.getInstance().setTitle(container.getGroup().getName());
+            JDCollapser.getInstance().setIcon(container.getGroup().getIcon());
+        }else{
+            JDCollapser.getInstance().setTitle(JDLocale.L("gui.panels.collapsibleconfig","Settings"));
+            JDCollapser.getInstance().setIcon(JDTheme.II("gui.images.config.addons",24,24));
+        }
+     
+        JDCollapser.getInstance().setVisible(true);
+        JDCollapser.getInstance().setCollapsed(false);
+        
+       // showConfigDialog(parent, new ConfigEntriesPanel(container), alwaysOnTop);
     }
 
-    public static void showConfigDialog(JFrame parent, ConfigPanel config, boolean alwaysOnTop) {
-        // logger.info("ConfigDialog");
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.add(new JPanel(), BorderLayout.NORTH);
-        panel.add(config, BorderLayout.CENTER);
-
-        ConfigurationPopup pop = new ConfigurationPopup(parent, config, panel);
-        pop.setModal(true);
-        pop.setAlwaysOnTop(alwaysOnTop);
-        pop.setLocation(JDUtilities.getCenterOfComponent(parent, pop));
-        pop.setVisible(true);
-    }
+//    public static void showConfigDialog(JFrame parent, ConfigPanel config, boolean alwaysOnTop) {
+//        // logger.info("ConfigDialog");
+//        JPanel panel = new JPanel(new BorderLayout());
+//        panel.add(new JPanel(), BorderLayout.NORTH);
+//        panel.add(config, BorderLayout.CENTER);
+//
+//        ConfigurationPopup pop = new ConfigurationPopup(parent, config, panel);
+//        pop.setModal(true);
+//        pop.setAlwaysOnTop(alwaysOnTop);
+//        pop.setLocation(JDUtilities.getCenterOfComponent(parent, pop));
+//        pop.setVisible(true);
+//    }
 
     public void windowActivated(WindowEvent e) {
     }

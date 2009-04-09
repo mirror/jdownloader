@@ -50,7 +50,7 @@ import jd.gui.skins.simple.ProgressDialog;
 import jd.gui.skins.simple.Progressor;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
-import jd.gui.skins.simple.config.FengShuiConfigPanel;
+
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.http.Browser;
 import jd.http.RequestHeader;
@@ -910,12 +910,7 @@ public class GetRouterInfo {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, data.getRouterName());
                 }
 
-                else if (routerScript != null && routerScript instanceof FengShuiConfigPanel) {
-                    FengShuiConfigPanel m = ((FengShuiConfigPanel) routerScript);
-                    m.routername.setText(data.getRouterName());
-                    m.Reconnectmethode = data.getReconnectMethode();
-                    m.ReconnectmethodeClr = data.getReconnectMethodeClr();
-                }
+                
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, data.getRouterName());
                 progress.setVisible(false);
                 progress.dispose();

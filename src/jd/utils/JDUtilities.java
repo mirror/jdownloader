@@ -207,20 +207,7 @@ public class JDUtilities {
         userio_sem.release(1);
     }
 
-    /**
-     * Fügt ein Bild zur Map hinzu
-     * 
-     * @param imageName
-     *            Name des Bildes, dass hinzugefügt werden soll
-     * @param image
-     *            Das hinzuzufügende Bild
-     */
-    public static void addImage(String imageName, Image image) {
-        // get
-        // Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
-        // images.put(imageName, image);
-    }
-
+ 
     /**
      * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
      * 

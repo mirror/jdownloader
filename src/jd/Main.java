@@ -34,6 +34,7 @@ import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
@@ -107,15 +108,14 @@ public class Main {
             }
 
             JFrame jf = new JFrame();
-            Image captchaImage = new JFrame().getToolkit().getImage(file.getAbsolutePath());
+            try {
+            Image captchaImage = ImageIO.read(file);
             MediaTracker mediaTracker = new MediaTracker(jf);
             mediaTracker.addImage(captchaImage, 0);
 
-            try {
+           
                 mediaTracker.waitForID(0);
-            } catch (InterruptedException e) {
-                return e.getStackTrace().toString();
-            }
+          
 
             mediaTracker.removeImage(captchaImage);
             JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
@@ -124,7 +124,9 @@ public class Main {
             file.delete();
 
             return captchaCode;
-
+            } catch (Exception e) {
+                return e.getStackTrace().toString();
+            }
         } else {
 
             return "jDownloader has no method for " + host;
@@ -395,8 +397,7 @@ public class Main {
         final JDInit init = new JDInit(splashScreen);
 
         init.init();
-        LOGGER.info("init Images");
-        init.loadImages();
+   
         LOGGER.info("init Configuration");
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "Lade Konfiguration"));
 

@@ -42,7 +42,7 @@ public class Uploadedto extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://uploaded.to/ref?id=70683&r");
         setMaxConnections(20);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "PREMIUMCHUNKS", JDLocale.L("plugins.hoster.uploadedto.chunks", "Premium connections # (>1 causes higher traffic)"), 1, 20).setDefaultValue(1).setStep(1));
+//        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "PREMIUMCHUNKS", JDLocale.L("plugins.hoster.uploadedto.chunks", "Premium connections # (>1 causes higher traffic)"), 1, 20).setDefaultValue(1).setStep(1));
     }
 
     /**
@@ -168,7 +168,7 @@ public class Uploadedto extends PluginForHost {
         }
 
         br.setDebug(true);
-        dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, this.getPluginConfig().getIntegerProperty("PREMIUMCHUNKS", 1));
+        dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
 
         dl.setFileSizeVerified(true);
         if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {

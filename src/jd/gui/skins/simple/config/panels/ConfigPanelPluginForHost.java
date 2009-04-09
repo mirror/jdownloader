@@ -42,6 +42,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
 import jd.HostPluginWrapper;
+import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.simple.SimpleGUI;
@@ -49,6 +50,7 @@ import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.nutils.Colors;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -210,6 +212,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     private void editEntry(HostPluginWrapper hpw) {
+        hpw.getPlugin().getConfig().setGroup(new ConfigGroup(hpw.getPlugin().getHost(), JDTheme.II("gui.images.taskpanes.premium", 24, 24)));
         SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, hpw.getPlugin().getConfig());
     }
 
