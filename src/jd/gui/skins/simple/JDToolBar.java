@@ -132,7 +132,6 @@ public class JDToolBar extends JToolBar implements ControlListener {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
 
                 }
-                ClipboardHandler.getClipboard().toggleActivation();
                 JDUtilities.getConfiguration().save();
 
             }

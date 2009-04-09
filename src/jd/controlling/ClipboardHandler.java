@@ -166,7 +166,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
 
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
-            setEnabled(true);
+            setEnabled(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false));
             JDUtilities.getController().removeControlListener(this);
         }
 
