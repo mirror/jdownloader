@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.config;
+package jd.gui.skins.simple.config.subpanels;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -42,6 +42,8 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.PackageManager;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.simple.config.ConfigEntriesPanel;
+import jd.gui.skins.simple.config.ConfigPanel;
 import jd.update.PackageData;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;
@@ -50,7 +52,7 @@ import net.miginfocom.swing.MigLayout;
 /**
  * @author JD-Team
  */
-public class SubPanelRessources extends ConfigPanel implements ActionListener, PropertyChangeListener {
+public class SubPanelOptionalInstaller extends ConfigPanel implements ActionListener {
 
     private class InternalTableModel extends AbstractTableModel {
 
@@ -62,7 +64,7 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
         }
 
         public int getColumnCount() {
-            return 6;
+            return 5;
         }
 
         @Override
@@ -72,13 +74,12 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
                 return JDLocale.L("gui.config.packagemanager.column_name", "Paket");
             case 1:
                 return JDLocale.L("gui.config.packagemanager.column_category", "Kategorie");
+         
             case 2:
-                return JDLocale.L("gui.config.packagemanager.column_info", "Info.");
-            case 3:
                 return JDLocale.L("gui.config.packagemanager.column_latestVersion", "Akt. Version");
-            case 4:
+            case 3:
                 return JDLocale.L("gui.config.packagemanager.column_installedVersion", "Inst. Version");
-            case 5:
+            case 4:
                 return JDLocale.L("gui.config.packagemanager.column_select", "Auswählen");
             }
             return super.getColumnName(column);
@@ -96,13 +97,11 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
                 return element.getStringProperty("name");
             case 1:
                 return element.getStringProperty("category");
-            case 2:
-                return new JLinkButton(JDLocale.L("gui.config.packagemanager.table.info", "Info"), element.getStringProperty("infourl"));
-            case 3:
+           case 2:
                 return element.getStringProperty("version");
-            case 4:
+            case 3:
                 return String.valueOf(element.getInstalledVersion());
-            case 5:
+            case 4:
                 return element.isSelected();
             }
             return null;
@@ -110,12 +109,12 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
 
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return columnIndex == 2 || columnIndex == 5;
+            return  columnIndex == 4;
         }
 
         @Override
         public void setValueAt(Object value, int row, int col) {
-            if (col == 5) {
+            if (col == 4) {
                 PackageData element = packageData.get(row);
                 element.setSelected(!element.isSelected());
             }
@@ -134,7 +133,7 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
 
     private InternalTableModel tableModel;
 
-    public SubPanelRessources(Configuration configuration) {
+    public SubPanelOptionalInstaller(Configuration configuration) {
         super();
         initPanel();
         load();
@@ -151,16 +150,12 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
         }
     }
 
-    public void propertyChange(PropertyChangeEvent evt) {
-        if (evt.getSource() == cep) {
-            cep.save();
-        }
-    }
+
 
     @Override
     public void initPanel() {
-        this.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow][fill]"));
-
+  
+        panel.setLayout(new MigLayout("ins 10,wrap 2", "[fill,grow 10]10[fill,grow]","[fill,grow,null:150000:null][]"));
         packageData = new PackageManager().getPackageData();
         Collections.sort(packageData, new Comparator<PackageData>() {
             public int compare(PackageData a, PackageData b) {
@@ -172,33 +167,33 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
 
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
-        table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
+      
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-
-            private static final long serialVersionUID = 1L;
-            private Color bgNormal = null;
-            private Color bgSelected = null;
-
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
-                if (bgNormal == null) bgNormal = getBackground();
-                if (bgSelected == null && isSelected) bgSelected = getBackground();
-
-                PackageData pd = packageData.get(row);
-                if (isSelected) {
-                    c.setBackground(bgSelected);
-                } else if (column == 0 && (pd.getInstalledVersion() != 0 || pd.isSelected()) && pd.getInstalledVersion() < Integer.valueOf(pd.getStringProperty("version"))) {
-                    c.setBackground(Color.GREEN);
-                } else {
-                    c.setBackground(bgNormal);
-                }
-
-                return c;
-            }
-
-        });
+//        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+//
+//            private static final long serialVersionUID = 1L;
+//            private Color bgNormal = null;
+//            private Color bgSelected = null;
+//
+//            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+//                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+//
+//                if (bgNormal == null) bgNormal = getBackground();
+//                if (bgSelected == null && isSelected) bgSelected = getBackground();
+//
+//                PackageData pd = packageData.get(row);
+//                if (isSelected) {
+//                    c.setBackground(bgSelected);
+//                } else if (column == 0 && (pd.getInstalledVersion() != 0 || pd.isSelected()) && pd.getInstalledVersion() < Integer.valueOf(pd.getStringProperty("version"))) {
+//                    c.setBackground(Color.GREEN);
+//                } else {
+//                    c.setBackground(bgNormal);
+//                }
+//
+//                return c;
+//            }
+//
+//        });
 
         TableColumn column = null;
         for (int c = 0; c < tableModel.getColumnCount(); ++c) {
@@ -210,23 +205,16 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
             case 1:
                 column.setPreferredWidth(100);
                 column.setMaxWidth(150);
-                break;
+                break;         
             case 2:
-                column.setPreferredWidth(70);
-                column.setMaxWidth(70);
-                column.setMinWidth(70);
-                column.setCellRenderer(JLinkButton.getJLinkButtonRenderer());
-                column.setCellEditor(JLinkButton.getJLinkButtonEditor());
+                column.setPreferredWidth(80);
+                column.setMaxWidth(100);
                 break;
             case 3:
                 column.setPreferredWidth(80);
                 column.setMaxWidth(100);
                 break;
             case 4:
-                column.setPreferredWidth(80);
-                column.setMaxWidth(100);
-                break;
-            case 5:
                 column.setPreferredWidth(70);
                 column.setMaxWidth(70);
                 column.setMinWidth(70);
@@ -235,20 +223,20 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
         }
 
         JScrollPane scrollpane = new JScrollPane(table);
-        scrollpane.setPreferredSize(new Dimension(600, 300));
+
 
         btnReset = new JButton(JDLocale.L("gui.config.packagemanager.reset", "Addons neu herunterladen"));
         btnReset.addActionListener(this);
 
-        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
-        bpanel.add(btnReset);
+    
 
-        ConfigContainer container = new ConfigContainer(this);
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, WebUpdater.getConfig("JDU"), "SUPPORT_JD", JDLocale.L("gui.config.packagemanager.supportJD", "Support JD by downloading pumped-up-addons")).setDefaultValue(true));
-        this.add(cep = new ConfigEntriesPanel(container));
-        cep.addPropertyChangeListener(this);
-        this.add(scrollpane, "spanx,height :900:,gapleft 10, gapright 10");
-        this.add(bpanel, "spanx,gapleft 10, gapright 10");
+//        ConfigContainer container = new ConfigContainer(this);
+//        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, WebUpdater.getConfig("JDU"), "SUPPORT_JD", JDLocale.L("gui.config.packagemanager.supportJD", "Support JD by downloading pumped-up-addons")).setDefaultValue(true));
+//        this.add(cep = new ConfigEntriesPanel(container));
+//        cep.addPropertyChangeListener(this);
+        panel.add(scrollpane, "spanx");
+        panel.add(btnReset, "");
+        add(panel);
     }
 
     @Override

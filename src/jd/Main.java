@@ -490,12 +490,7 @@ public class Main {
 
         LOGGER.info("Revision: " + JDUtilities.getJDTitle());
         LOGGER.finer("Runtype: " + JDUtilities.getRunType());
-        try {
-            throw new Exception("Test Exception ");
-        } catch (Exception e) {
-
-            JDLogger.exception(e);
-        }
+ 
         try {
             splashScreen.finish();
         } catch (Exception e) {

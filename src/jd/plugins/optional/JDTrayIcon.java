@@ -52,6 +52,7 @@ import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
@@ -237,7 +238,16 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
                 guiFrame.addWindowListener(this);
             }
             logger.info("Systemtray OK");
-            initGUI();
+          new GuiRunnable(){
+
+            @Override
+            public Object runSave() {
+                initGUI();
+                return null;
+            }
+              
+          }.waitForEDT();
+        
             return true;
         } catch (Exception e) {
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
@@ -318,7 +328,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
         popupMenu.addSeparator();
         exit = createMenuItem(JDLocale.L("gui.btn_exit", "Exit"));
 
-        trayIcon = new TrayIcon(JDImage.getImage(JDTheme.V("gui.images.jd_logo")));
+        trayIcon = new TrayIcon(JDImage.getImage("logo/jd_logo_64_64"));
         trayIcon.setImageAutoSize(true);
 
         trayParent = new JWindow();

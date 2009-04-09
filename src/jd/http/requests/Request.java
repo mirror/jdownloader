@@ -518,8 +518,7 @@ public abstract class Request {
                     try {
                         rd = new BufferedReader(new InputStreamReader(con.getInputStream(), cs.replace("-", "")));
                     } catch (Exception e2) {
-                        e2.printStackTrace();
-                        System.err.println(con);
+                        
                         rd = new BufferedReader(new InputStreamReader(con.getInputStream()));
                     }
                 }

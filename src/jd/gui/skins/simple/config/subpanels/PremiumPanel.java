@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.config.panels;
+package jd.gui.skins.simple.config.subpanels;
 
 import java.awt.Color;
 import java.awt.Toolkit;

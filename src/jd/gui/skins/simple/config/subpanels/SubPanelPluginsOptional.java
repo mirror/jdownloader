@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.config;
+package jd.gui.skins.simple.config.subpanels;
 
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -39,6 +39,8 @@ import jd.config.Configuration;
 import jd.gui.skins.simple.OptionalMenuMenu;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.simple.config.ConfigPanel;
+import jd.gui.skins.simple.config.PluginTableCellRenderer;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
@@ -159,7 +161,8 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
     @Override
     public void initPanel() {
-        this.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow][fill]"));
+        panel.setLayout(new MigLayout("ins 10,wrap 2", "[fill,grow 10]10[fill,grow]","[fill,grow,null:150000:null][]"));
+        
 
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
@@ -170,8 +173,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
                 btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
             }
         });
-        table.setDefaultRenderer(Object.class, new PluginTableCellRenderer<OptionalPluginWrapper>(pluginsOptional));
-
+        
         TableColumn column = null;
         for (int c = 0; c < tableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
@@ -196,8 +198,9 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         bpanel.add(btnEdit);
         bpanel.add(new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help", "Hilfe"), JDLocale.L("gui.config.plugin.optional.link_help", "  http://jdownloader.org/page.php?id=122")));
 
-        this.add(scrollpane, "spanx,height :900:,gapleft 10, gapright 10");
-        this.add(bpanel, "spanx,gapleft 10, gapright 10");
+        panel.add(scrollpane, "spanx");
+        panel.add(bpanel, "spanx");
+        add(panel);
 
     }
 

@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.config;
+package jd.gui.skins.simple.config.panels;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -36,12 +36,14 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
-import jd.CPluginWrapper;
+import jd.DecryptPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.config.ConfigPanel;
+import jd.gui.skins.simple.config.PluginTableCellRenderer;
 import jd.utils.JDLocale;
 
-public class ConfigPanelPluginForContainer extends ConfigPanel implements ActionListener, MouseListener {
+public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionListener, MouseListener {
 
     private class InternalTableModel extends AbstractTableModel {
 
@@ -49,11 +51,23 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
 
         @Override
         public Class<?> getColumnClass(int columnIndex) {
-            return String.class;
+            return getValueAt(0, columnIndex).getClass();
         }
 
         public int getColumnCount() {
-            return 3;
+            return 4;
+        }
+
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return columnIndex == 3;
+        }
+
+        @Override
+        public void setValueAt(Object value, int row, int col) {
+            if (col == 3) {
+                pluginsForDecrypt.get(row).setUsePlugin((Boolean) value);
+            }
         }
 
         @Override
@@ -65,39 +79,47 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
                 return JDLocale.L("gui.column_version", "Version");
             case 2:
                 return JDLocale.L("gui.column_coder", "Ersteller");
+            case 3:
+                return JDLocale.L("gui.column_usePlugin", "Plugin benutzen");
             }
             return super.getColumnName(column);
         }
 
         public int getRowCount() {
-            return pluginsForContainer.size();
+            return pluginsForDecrypt.size();
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
             switch (columnIndex) {
             case 0:
-                return pluginsForContainer.get(rowIndex).getHost();
+                return pluginsForDecrypt.get(rowIndex).getHost();
             case 1:
-                return pluginsForContainer.get(rowIndex).getVersion();
+                return pluginsForDecrypt.get(rowIndex).getVersion();
             case 2:
-                return pluginsForContainer.get(rowIndex).getCoder();
+                return pluginsForDecrypt.get(rowIndex).getCoder();
+            case 3:
+                return pluginsForDecrypt.get(rowIndex).usePlugin();
             }
             return null;
         }
     }
 
-    private static final long serialVersionUID = -169660462836773855L;
+    private static final long serialVersionUID = -5308908915544580923L;
 
     private JButton btnEdit;
 
-    private ArrayList<CPluginWrapper> pluginsForContainer;
+    private JButton btnLoad;
+
+    private ArrayList<DecryptPluginWrapper> pluginsForDecrypt;
 
     private JTable table;
 
-    public ConfigPanelPluginForContainer(Configuration configuration) {
+    private InternalTableModel tableModel;
+
+    public ConfigPanelPluginForDecrypt(Configuration configuration) {
         super();
-        pluginsForContainer = CPluginWrapper.getCWrapper();
-        Collections.sort(pluginsForContainer);
+        pluginsForDecrypt = DecryptPluginWrapper.getDecryptWrapper();
+        Collections.sort(pluginsForDecrypt);
         initPanel();
         load();
     }
@@ -105,43 +127,68 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnEdit) {
             editEntry();
+        } else if (e.getSource() == btnLoad) {
+            loadEntry();
         }
     }
 
+    private void editEntry(DecryptPluginWrapper dpw) {
+        SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, dpw.getPlugin().getConfig());
+    }
+
     private void editEntry() {
-        SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, pluginsForContainer.get(table.getSelectedRow()).getPlugin().getConfig());
+        editEntry(pluginsForDecrypt.get(table.getSelectedRow()));
+    }
+
+    private void loadEntry(DecryptPluginWrapper dpw) {
+        int cur = table.getSelectedRow();
+        dpw.getPlugin();
+        tableModel.fireTableRowsUpdated(cur, cur);
+        btnEdit.setEnabled(dpw.hasConfig());
+        btnLoad.setEnabled(false);
+    }
+
+    private void loadEntry() {
+        loadEntry(pluginsForDecrypt.get(table.getSelectedRow()));
     }
 
     @Override
     public void initPanel() {
         this.setLayout(new BorderLayout());
-        this.setPreferredSize(new Dimension(700, 350));
+        this.setPreferredSize(new Dimension(550, 350));
 
-        table = new JTable();
-        InternalTableModel internalTableModel = new InternalTableModel();
-        table.setModel(internalTableModel);
+        tableModel = new InternalTableModel();
+        table = new JTable(tableModel);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForContainer.get(table.getSelectedRow()).hasConfig());
+                if (table.getSelectedRow() < 0) return;
+                DecryptPluginWrapper dpw = pluginsForDecrypt.get(table.getSelectedRow());
+                btnEdit.setEnabled(dpw.hasConfig());
+                btnLoad.setEnabled(!dpw.isLoaded());
             }
         });
-        // table.setDefaultRenderer(Object.class, new
-        // PluginTableCellRenderer<PluginForContainer>(pluginsForContainer));
+        table.setDefaultRenderer(Object.class, new PluginTableCellRenderer<DecryptPluginWrapper>(pluginsForDecrypt));
 
         TableColumn column = null;
-        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
+        for (int c = 0; c < tableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
             case 0:
-                column.setPreferredWidth(250);
-                break;
-            case 1:
                 column.setPreferredWidth(200);
                 break;
+            case 1:
+                column.setPreferredWidth(60);
+                column.setMinWidth(60);
+                break;
             case 2:
-                column.setPreferredWidth(250);
+                column.setPreferredWidth(100);
+                break;
+            case 3:
+                column.setPreferredWidth(90);
+                column.setMaxWidth(90);
+                column.setMinWidth(90);
                 break;
             }
         }
@@ -153,8 +200,13 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
+        btnLoad = new JButton(JDLocale.L("gui.config.plugin.decrypt.btn_load", "Load Plugin"));
+        btnLoad.setEnabled(false);
+        btnLoad.addActionListener(this);
+
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         bpanel.add(btnEdit);
+        bpanel.add(btnLoad);
 
         this.add(scrollpane);
         this.add(bpanel, BorderLayout.SOUTH);
@@ -165,8 +217,13 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && pluginsForContainer.get(table.getSelectedRow()).hasConfig()) {
-            editEntry();
+        if (e.getClickCount() > 1) {
+            DecryptPluginWrapper dpw = pluginsForDecrypt.get(table.getSelectedRow());
+            if (!dpw.isLoaded()) {
+                loadEntry(dpw);
+            } else if (dpw.hasConfig()) {
+                editEntry(dpw);
+            }
         }
     }
 
@@ -184,6 +241,5 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
 
     @Override
     public void save() {
-
     }
 }

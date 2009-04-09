@@ -14,9 +14,10 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.config;
+package jd.gui.skins.simple.config.panels;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.dnd.DropTarget;
@@ -33,11 +34,9 @@ import java.util.Vector;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -49,10 +48,19 @@ import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.simple.config.ConfigPanel;
+import jd.nutils.Colors;
 import jd.utils.JDLocale;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdesktop.swingx.JXTable;
+import org.jdesktop.swingx.decorator.ComponentAdapter;
+import org.jdesktop.swingx.decorator.HighlightPredicate;
+import org.jdesktop.swingx.decorator.PainterHighlighter;
+import org.jdesktop.swingx.painter.MattePainter;
+import org.jvnet.lafwidget.animation.FadeConfigurationManager;
+import org.jvnet.lafwidget.animation.FadeKind;
 
 public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener, DropTargetListener {
 
@@ -79,12 +87,13 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 2:
                 return JDLocale.L("gui.column_version", "Version");
 
+          
             case 3:
-                return JDLocale.L("gui.column_agb", "AGB");
-            case 4:
                 return JDLocale.L("gui.column_agbChecked", "akzeptieren");
-            case 5:
+            case 4:
                 return JDLocale.L("gui.column_usePlugin", "verwenden");
+            case 5:
+                return JDLocale.L("gui.column_agb", "AGB");
             }
             return super.getColumnName(column);
         }
@@ -102,8 +111,13 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 2:
                 return pluginsForHost.get(rowIndex).getVersion();
 
+    
             case 3:
-                return new JLinkButton(new AbstractAction(JDLocale.L("gui.config.plugin.host.readAGB", "AGB")) {
+                return pluginsForHost.get(rowIndex).isAGBChecked();
+            case 4:
+                return pluginsForHost.get(rowIndex).usePlugin();
+            case 5:
+                JLinkButton ret = new JLinkButton(new AbstractAction(JDLocale.L("gui.config.plugin.host.readAGB", "AGB")) {
 
                     private static final long serialVersionUID = 5915595466511261075L;
 
@@ -115,12 +129,10 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                         }
 
                     }
-
                 });
-            case 4:
-                return pluginsForHost.get(rowIndex).isAGBChecked();
-            case 5:
-                return pluginsForHost.get(rowIndex).usePlugin();
+                ret.setLinkColor(null);
+                ret.setOpaque(true);
+                return ret;
             }
             return null;
         }
@@ -134,7 +146,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         public void setValueAt(Object value, int row, int col) {
             if (col == 4) {
                 if ((Boolean) value) {
-                    String msg = JDLocale.LF("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!", pluginsForHost.get(row).getHost());
+                    String msg = JDLocale.L("gui.config.plugin.host.desc", "Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB <br> der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!") + "\r\n\r\n" + JDLocale.LF("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!", pluginsForHost.get(row).getHost());
                     if (JOptionPane.showConfirmDialog(SimpleGUI.CURRENTGUI, msg) == JOptionPane.OK_OPTION) {
                         pluginsForHost.get(row).setAGBChecked((Boolean) value);
                     }
@@ -159,7 +171,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private ArrayList<HostPluginWrapper> pluginsForHost;
 
-    private JTable table;
+    private JXTable table;
 
     private InternalTableModel tableModel;
 
@@ -223,11 +235,10 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     @Override
     public void initPanel() {
-        this.setLayout(new BorderLayout());
-        this.setPreferredSize(new Dimension(650, 350));
+       
 
         tableModel = new InternalTableModel();
-        table = new JTable(tableModel);
+        table = new JXTable(tableModel);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -238,8 +249,21 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 btnLoad.setEnabled(!hpw.isLoaded());
             }
         });
-        table.setDefaultRenderer(Object.class, new PluginTableCellRenderer<HostPluginWrapper>(pluginsForHost));
+        // table.setDefaultRenderer(Object.class, new
+        // PluginTableCellRenderer<HostPluginWrapper>(pluginsForHost));
+        PainterHighlighter highlighter = new PainterHighlighter(new HighlightPredicate() {
+            public boolean isHighlighted(Component renderer, ComponentAdapter adapter) {
+                return pluginsForHost.get(adapter.row).hasConfig();
+            }
+        });
+        highlighter.setPainter(new MattePainter(Colors.getColor(getBackground().darker(), 50)));
+
+        table.setHighlighters(highlighter);
+        table.addHighlighter(new PainterHighlighter(HighlightPredicate.ROLLOVER_ROW, new MattePainter(Colors.getColor(getBackground().brighter(), 50))));
+
         table.setDragEnabled(true);
+
+        FadeConfigurationManager.getInstance().disallowFades(FadeKind.ROLLOVER, table);
         new DropTarget(table, this);
 
         TableColumn column = null;
@@ -260,20 +284,22 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 column.setMinWidth(60);
                 break;
 
+      
             case 3:
+                column.setPreferredWidth(90);
+                column.setMaxWidth(90);
+                column.setMinWidth(90);
+                break;
+            case 4:
+                column.setPreferredWidth(100);
+                break;
+                
+            case 5:
                 column.setPreferredWidth(70);
                 column.setMaxWidth(70);
                 column.setMinWidth(70);
                 column.setCellRenderer(JLinkButton.getJLinkButtonRenderer());
                 column.setCellEditor(JLinkButton.getJLinkButtonEditor());
-                break;
-            case 4:
-                column.setPreferredWidth(90);
-                column.setMaxWidth(90);
-                column.setMinWidth(90);
-                break;
-            case 5:
-                column.setPreferredWidth(100);
                 break;
             }
         }
@@ -291,12 +317,10 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         bpanel.add(btnEdit);
         bpanel.add(btnLoad);
-        JLabel warning = new JLabel("<html><body align=\"justify\" color=\"black\" style='width:400px'><b>" + JDLocale.L("gui.config.plugin.host.desc", "Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB <br> der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!")+"</b></body></html>");
         this.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow][fill]"));
-        this.add(new JLabel(JDTheme.II("gui.images.warning", 32, 32)),"gapleft 10");
-        this.add(warning,"gapright 10");
-        this.add(scrollpane,"spanx,height :900:,gapleft 10, gapright 10");
-        this.add(bpanel,"spanx,gapleft 10, gapright 10");
+
+        this.add(scrollpane, "spanx,height :900:,gapleft 10, gapright 10");
+        this.add(bpanel, "spanx,gapleft 10, gapright 10");
     }
 
     @Override

@@ -14,15 +14,27 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.config;
+package jd.gui.skins.simple.config.panels;
+
+import java.awt.ComponentOrientation;
+
+import javax.swing.JTabbedPane;
+import javax.swing.SwingConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.interaction.PackageManager;
+import jd.gui.skins.simple.config.ConfigEntriesPanel;
+import jd.gui.skins.simple.config.ConfigPanel;
+import jd.gui.skins.simple.config.subpanels.SubPanelPluginsOptional;
+import jd.gui.skins.simple.config.subpanels.SubPanelOptionalInstaller;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -41,7 +53,9 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     private SubPanelPluginsOptional sppo;
 
-    private SubPanelRessources spr;
+    private SubPanelOptionalInstaller spr;
+
+    private JTabbedPane tabbed;
 
     public ConfigPanelAddons(Configuration configuration) {
         super();
@@ -52,15 +66,25 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     public void initPanel() {
         this.setLayout(new MigLayout("ins 0", "[fill,grow]"));
-        container = new ConfigContainer(this);
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, new ConfigContainer(this, JDLocale.L("gui.config.addons.settings.tab", "Settings"))));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, new ConfigContainer(this, JDLocale.L("gui.config.addons.install.tab", "Installation & updates"))));
+        
+        
+        
+        
+        panel.add(tabbed = new JTabbedPane(), "spanx");
+        tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+        tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        tabbed.setTabPlacement(SwingConstants.TOP);
+        tabbed.addChangeListener(new ChangeListener() {
 
-        add(cep = new ConfigEntriesPanel(container));
-        cep.getSubPanels().get(0).setLayout(new MigLayout("ins 0", "[fill,grow]"));
-        cep.getSubPanels().get(0).add(sppo = new SubPanelPluginsOptional(configuration));
-        cep.getSubPanels().get(1).setLayout(new MigLayout("ins 0", "[fill,grow]"));
-        cep.getSubPanels().get(1).add(spr = new SubPanelRessources(configuration));
+            public void stateChanged(ChangeEvent e) {
+              
+            }
+
+        });
+        tabbed.addTab(JDLocale.L("gui.config.addons.settings.tab", "Settings"), JDTheme.II("gui.splash.controller",16,16),sppo = new SubPanelPluginsOptional(configuration));
+        tabbed.addTab(JDLocale.L("gui.config.addons.install.tab", "Installation & updates"), JDTheme.II("gui.images.taskpanes.download",16,16),spr = new SubPanelOptionalInstaller(configuration));
+       
+        add(panel);
     }
 
     public void load() {
@@ -77,7 +101,7 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     public PropertyType hasChanges() {
 
-        return PropertyType.getMax(super.hasChanges(), cep.hasChanges(), sppo.hasChanges(), spr.hasChanges());
+        return PropertyType.getMax(super.hasChanges(), sppo.hasChanges(), spr.hasChanges());
     }
 
 }

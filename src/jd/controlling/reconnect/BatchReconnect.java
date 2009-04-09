@@ -29,7 +29,7 @@ public class BatchReconnect extends ReconnectMethod {
 
     private SubConfiguration configuration;
 
-    private static final String PROPERTY_DO_OUTPUT = "PROPERTY_DO_OUTPUT";
+
 
     private static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN2";
 
@@ -57,7 +57,7 @@ public class BatchReconnect extends ReconnectMethod {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, PROPERTY_RECONNECT_EXECUTE_FOLDER, JDLocale.L("interaction.batchreconnect.executeIn", "Ausführen in (Ordner der Anwendung)")));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, PROPERTY_IP_WAIT_FOR_RETURN, JDLocale.L("interaction.batchreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek]"), -1, 600).setDefaultValue(-1));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, PROPERTY_DO_OUTPUT, JDLocale.L("interaction.batchreconnect.doOutput", "Rückgaben im Log anzeigen")).setDefaultValue(false));
+      
     }
 
     @Override

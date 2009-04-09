@@ -47,6 +47,11 @@ public class JDLogger {
       System.err.println("Removed Consolehandler. Start with -debug to see console output");
        
     }
+
+    public static void addHeader(String string) {
+       getLogger().info("\r\n\r\n--------------------------------------"+string+"-----------------------------------");
+        
+    }
     
 
 }

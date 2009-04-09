@@ -14,29 +14,32 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.config;
+package jd.gui.skins.simple.config.panels;
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
 
-import javax.swing.BorderFactory;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
+import net.miginfocom.swing.MigLayout;
+
 import jd.captcha.JAntiCaptcha;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.gui.skins.simple.config.ConfigEntriesPanel;
+import jd.gui.skins.simple.config.ConfigPanel;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import net.miginfocom.swing.MigLayout;
 
 public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 
@@ -108,9 +111,9 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 
     public void initPanel() {
         setupContainer();
-        setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]"));
-
-        this.add(cep = new ConfigEntriesPanel(container), BorderLayout.NORTH);
+        panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]","[][][fill,grow]"));
+        panel.add(cep = new ConfigEntriesPanel(container),"spanx");
+     
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
@@ -133,9 +136,10 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
             }
         }
         JScrollPane sp = new JScrollPane(table);
-        sp.setBorder(BorderFactory.createTitledBorder(JDLocale.L("gui.config.jac.table", "Available OCR Methods")));
-        this.add(sp, "height :900:,gapleft 10, gapright 10");
+        panel.add(getHeader(new ConfigGroup(JDLocale.L("gui.config.captcha.list", "Captcha Methods"), JDTheme.II("gui.images.captcha.methods", 32, 32))), "spanx,gaptop 15,gapleft 20, gapright 20");
 
+        panel.add(sp, "spanx,gapleft 55, gapright 40");
+        add(panel);
     }
 
     public void load() {
@@ -174,10 +178,11 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
         ConfigEntry ce2;
 
         container = new ConfigContainer(this);
-        container.addEntry(ce1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CAPTCHA_JAC_DISABLE, JDLocale.L("gui.config.captcha.jac_disable", "Automatische Bilderkennung abschalten")).setDefaultValue(false)/*.setGroupName(JDLocale.L("gui.config.jac.options", "Input Settings"))*/);
-        container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.JAC_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.train.show_timeout", "Anzeigedauer des Eingabefensters"), 0, 600).setDefaultValue(20)/*.setGroupName(JDLocale.L("gui.config.jac.options", "Input Settings"))*/);
+        container.setGroup(new ConfigGroup(JDLocale.L("gui.config.captcha.settings", "Captcha settings"), JDTheme.II("gui.images.config.ocr", 32, 32)));
+        container.addEntry(ce1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CAPTCHA_JAC_DISABLE, JDLocale.L("gui.config.captcha.jac_disable", "Automatische Bilderkennung abschalten")).setDefaultValue(false));
+        container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.JAC_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.train.show_timeout", "Anzeigedauer des Eingabefensters"), 0, 600).setDefaultValue(20));
         ce2.setEnabledCondidtion(ce1, "==", false);
-        container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(95)/*.setGroupName(JDLocale.L("gui.config.jac.options", "Input Settings"))*/);
+        container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(95));
 
         ce2.setEnabledCondidtion(ce1, "==", false);
     }

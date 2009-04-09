@@ -49,7 +49,7 @@ import jd.gui.skins.simple.components.BrowseFile;
 import jd.gui.skins.simple.components.JDTextArea;
 import jd.gui.skins.simple.components.JDTextField;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.gui.skins.simple.config.panels.PremiumPanel;
+import jd.gui.skins.simple.config.subpanels.PremiumPanel;
 
 /**
  * Diese Klasse fasst ein label / input Paar zusammen und macht das lesen und
@@ -84,7 +84,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
      * @param label
      *            Label
      */
-    GUIConfigEntry(ConfigEntry cfg) {
+    public GUIConfigEntry(ConfigEntry cfg) {
         configEntry = cfg;
         cfg.setGuiListener(this);
         this.addPropertyChangeListener(cfg);

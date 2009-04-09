@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.config;
+package jd.gui.skins.simple.config.subpanels;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -25,6 +25,8 @@ import javax.swing.JPanel;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.gui.skins.simple.config.ConfigPanel;
+import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.router.FindRouterIP;
 import jd.utils.JDLocale;
 import net.miginfocom.swing.MigLayout;

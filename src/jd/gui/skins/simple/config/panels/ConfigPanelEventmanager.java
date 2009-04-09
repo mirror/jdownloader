@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.config;
+package jd.gui.skins.simple.config.panels;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -43,12 +43,17 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
+import net.miginfocom.swing.MigLayout;
+
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.config.ConfigEntriesPanel;
+import jd.gui.skins.simple.config.ConfigPanel;
+import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -214,8 +219,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 
     @Override
     public void initPanel() {
-        this.setLayout(new BorderLayout());
-        this.setPreferredSize(new Dimension(700, 350));
+    
 
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
@@ -259,8 +263,13 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         btnRemove.addActionListener(this);
         btnEdit.addActionListener(this);
 
-        this.add(scrollpane);
-        this.add(bpanel, BorderLayout.SOUTH);
+        
+        this.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow][fill]"));
+
+        this.add(scrollpane, "spanx,height :900:,gapleft 10, gapright 10");
+        this.add(bpanel, "spanx,gapleft 10, gapright 10");
+        
+    
     }
 
     @Override

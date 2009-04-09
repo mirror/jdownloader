@@ -34,6 +34,7 @@ import javax.swing.ButtonModel;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.WindowConstants;
 import javax.swing.event.CellEditorListener;
@@ -129,6 +130,7 @@ class JLinkButtonEditor implements TableCellEditor, ActionListener {
         stop = false;
         JLinkButton btn = (JLinkButton) value;
         btn.addActionListener(this);
+        btn.setOpaque(true);
         return btn;
     }
 
@@ -151,7 +153,10 @@ class JLinkButtonEditor implements TableCellEditor, ActionListener {
 
 class JLinkButtonRenderer implements TableCellRenderer {
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        return (JLinkButton) value;
+       
+
+
+        return (Component)value;
     }
 }
 
@@ -307,6 +312,7 @@ public class JLinkButton extends JButton {
             setText(url.toExternalForm());
         }
         setLinkURL(url);
+        this.setBackground(null);
         setCursor(Cursor.getPredefinedCursor(12));
         setBorderPainted(false);
         setContentAreaFilled(false);
@@ -316,7 +322,7 @@ public class JLinkButton extends JButton {
 
             public void actionPerformed(ActionEvent e) {
                 try {
-                    JLinkButton.openURL(getLinkURL());
+                    if(getLinkURL()!=null) JLinkButton.openURL(getLinkURL());
                 } catch (Exception e1) {
                     e1.printStackTrace();
                 }

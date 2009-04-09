@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.config;
+package jd.gui.skins.simple.config.subpanels;
 
 import java.awt.Color;
 import java.awt.Cursor;
@@ -49,6 +49,8 @@ import jd.config.Configuration;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.config.ConfigPanel;
+import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.http.Encoding;
 import jd.router.FindRouterIP;
 import jd.router.GetRouterInfo;
@@ -58,7 +60,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener {
+public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener {
 
     private static final long serialVersionUID = 6710420298517566329L;
 
@@ -76,7 +78,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
 
     private GUIConfigEntry pass;
 
-    private GUIConfigEntry routerScript;
+
 
     private GUIConfigEntry user;
 
@@ -282,7 +284,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
                 if (data[2].toLowerCase().indexOf("curl") >= 0) {
                     JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
                 }
-                routerScript.setData(data[2]);
+                script.setData(data[2]);
                 String username = (String) user.getText();
                 if (username == null || username.matches("[\\s]*")) {
                     user.setData(data[4]);
@@ -294,7 +296,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
 
             }
         } else if (e.getSource() == btnAutoConfig) {
-            GetRouterInfo.autoConfig(pass, user, ip, routerScript);
+            GetRouterInfo.autoConfig(pass, user, ip, script);
         }
 
     }
@@ -306,7 +308,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
         btnSelectRouter = new JButton(JDLocale.L("gui.config.liveHeader.selectRouter", "Routerauswahl"));
         btnSelectRouter.addActionListener(this);
         add(btnSelectRouter,"gaptop 10");
-        add(panel,"spany");
+        add(panel,"spany 3");
    
 
         btnFindIP = new JButton(JDLocale.L("gui.config.liveHeader.btnFindIP", "Router IP ermitteln"));
@@ -325,6 +327,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
         btnRouterRecorder = new JButton(JDLocale.L("gui.config.liveHeader.recorder", "Create Reconnect Script"));
         btnRouterRecorder.addActionListener(this);
         add(btnRouterRecorder,"aligny top");
+        panel.setLayout(new MigLayout("ins 10 10 10 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
         user = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_USER, JDLocale.L("gui.config.httpliveheader.user", "User")));
         addGUIConfigEntry(user);
         pass = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, configuration, Configuration.PARAM_HTTPSEND_PASS, JDLocale.L("gui.config.httpliveheader.password", "Password")));
@@ -332,7 +335,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
         ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDLocale.L("gui.config.httpliveheader.routerIP", "Router's ip")));
         addGUIConfigEntry(ip);
 
-        addGUIConfigEntry(script=new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.httpliveheader.script", "Reconnect Script"))));
+        addGUIConfigEntry(script=new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.httpliveheader.script", "Reconnect Script"))),this);
 
         // routerScript = new GUIConfigEntry();
         // this.entries.add(routerScript);

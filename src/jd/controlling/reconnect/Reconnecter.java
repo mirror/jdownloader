@@ -61,6 +61,7 @@ public class Reconnecter {
         boolean ipChangeSuccess = false;
         IS_RECONNECTING = true;
         if (Reconnecter.isGlobalDisabled()) {
+            
             if (System.currentTimeMillis() - lastIPUpdate > 1000 * JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) {
                 ipChangeSuccess = Reconnecter.checkExternalIPChange();
                 JDUtilities.getGUI().displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."), 60000);

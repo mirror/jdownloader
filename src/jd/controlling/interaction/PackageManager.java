@@ -104,7 +104,8 @@ public class PackageManager extends Interaction implements Serializable {
                 pkg.setUpdating(true);
 
                 DistributeData distributeData = null;
-                if (config.getBooleanProperty("SUPPORT_JD", true)) {
+                /*Currently no pumped up addons*/
+                if (config.getBooleanProperty("SUPPORT_JD", true)||false) {
                     distributeData = new DistributeData(pkg.getStringProperty("url"));
                 } else {
                     distributeData = new DistributeData(pkg.getStringProperty("light-url"));
