@@ -28,6 +28,7 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.TreeSet;
 import java.util.logging.Level;
@@ -150,7 +151,7 @@ public class Main {
                 JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
             }
         }
-     
+
         preInitChecks();
 
         for (int i = 0; i < args.length; i++) {
@@ -225,9 +226,9 @@ public class Main {
                             splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.screen", 32, 32)));
                             splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.dllist", 32, 32)));
                         } catch (IOException e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                         } catch (AWTException e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                         }
                         return null;
                     }
@@ -241,7 +242,6 @@ public class Main {
         LOGGER.info("init Localisation");
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadLanguage", "lade Sprachen"));
 
-       
         JDSounds.setSoundTheme("default");
 
         if (!JDInitFlags.SWITCH_NEW_INSTANCE && Main.tryConnectToServer(args)) {
@@ -288,7 +288,7 @@ public class Main {
                             try {
                                 server.processParameters(processArgs);
                             } catch (RemoteException e) {
-                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                             }
 
                         }
@@ -299,7 +299,7 @@ public class Main {
             } catch (RemoteException e) {
 
                 LOGGER.severe("Server could not be started - ignore parameters");
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
 
                 if (!JDInitFlags.STOP) {
 
@@ -330,7 +330,7 @@ public class Main {
             JDInitFlags.SHOW_SPLASH = false;
             LOGGER.warning("Heapcheck: Not enough heap. use: java -jar -Xmx512m JDownloader.jar");
         }
-    
+
     }
 
     /**
@@ -393,13 +393,13 @@ public class Main {
     @SuppressWarnings("unchecked")
     private void go() {
         final JDInit init = new JDInit(splashScreen);
-      
+
         init.init();
         LOGGER.info("init Images");
         init.loadImages();
         LOGGER.info("init Configuration");
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "Lade Konfiguration"));
-     
+
         String old = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("LOCALE", null);
         if (old != null) {
             JDUtilities.getSubConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, old);
@@ -411,15 +411,14 @@ public class Main {
 
             JOptionPane.showMessageDialog(null, "JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
-        
 
         // JFrame.setDefaultLookAndFeelDecorated(true);
         // JDialog.setDefaultLookAndFeelDecorated(true);
         if (JDInitFlags.SWITCH_DEBUG) {
             LOGGER.info("DEBUG MODE ACTIVATED");
             jd.controlling.JDLogger.getLogger().setLevel(Level.ALL);
-        }else{
-           JDLogger.removeConsoleHandler();
+        } else {
+            JDLogger.removeConsoleHandler();
         }
         // JDInit.setupProxy();
         // JDInit.setupSocks();
@@ -430,25 +429,34 @@ public class Main {
 
         final JDController controller = init.initController();
 
-//        if (JDInitFlags.SWITCH_DEBUG || JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false)) {
-//            try {
-//                
-//                File log = JDUtilities.getResourceFile("logs/" + (JDInitFlags.SWITCH_DEBUG ? "debug" : "") + "log_" + System.currentTimeMillis() + ".log");
-//                LOGGER.info("DEBUGGER: Write log to "+log);
-//                if (!log.getParentFile().exists()) {
-//                    log.getParentFile().mkdirs();
-//                }
-//                controller.setLogFileWriter(new BufferedWriter(new FileWriter(log)));
-//            } catch (IOException e) {
-//                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
-//            }
-//        }
+        // if (JDInitFlags.SWITCH_DEBUG ||
+        // JDUtilities.getConfiguration().getBooleanProperty
+        // (Configuration.LOGGER_FILELOG, false)) {
+        // try {
+        //                
+        // File log = JDUtilities.getResourceFile("logs/" +
+        // (JDInitFlags.SWITCH_DEBUG ? "debug" : "") + "log_" +
+        // System.currentTimeMillis() + ".log");
+        // LOGGER.info("DEBUGGER: Write log to "+log);
+        // if (!log.getParentFile().exists()) {
+        // log.getParentFile().mkdirs();
+        // }
+        // controller.setLogFileWriter(new BufferedWriter(new FileWriter(log)));
+        // } catch (IOException e) {
+        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        // ,"Exception occured",e);
+        // }
+        // }
         LOGGER.info("init Webupdate");
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.webupdate", "Check Updates"));
         new WebUpdate().doWebupdate(false);
         LOGGER.info("init plugins");
         Main.setSplashStatus(splashScreen, 15, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
         init.initPlugins();
+
+     
+        Locale.setDefault(Locale.ENGLISH);
+
         LOGGER.info("init gui");
         Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
         new GuiRunnable() {
@@ -482,12 +490,12 @@ public class Main {
 
         LOGGER.info("Revision: " + JDUtilities.getJDTitle());
         LOGGER.finer("Runtype: " + JDUtilities.getRunType());
-try{
-    throw new Exception ("Test Exception ");
-}catch(Exception e){
-  
-    JDLogger.exception(e);
-}
+        try {
+            throw new Exception("Test Exception ");
+        } catch (Exception e) {
+
+            JDLogger.exception(e);
+        }
         try {
             splashScreen.finish();
         } catch (Exception e) {
@@ -495,13 +503,28 @@ try{
         }
         init.checkUpdate();
 
-
         // logger.info(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).
         // getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS,
         // false).toString());
-//        if ((JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) && (JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) || level.equals(Level.ALL) || level.equals(Level.FINER) || level.equals(Level.FINE)) && !JDInitFlags.SWITCH_DEBUG && (!JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false))) {
-//            JDUtilities.getGUI().showHelpMessage(JDLocale.L("main.start.logwarning.title", "Logwarnung"), JDLocale.LF("main.start.logwarning.body", "ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet.", level.getName(), JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) ? JDLocale.L("main.status.active", "an") : JDLocale.L("main.status.inactive", "aus")), true, JDLocale.L("main.urls.faq", "http://jdownloader.org/faq.php?lng=deutsch"), null, 10);
-//        }
+        // if ((JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) &&
+        // (JDUtilities.getConfiguration().getBooleanProperty(Configuration.
+        // LOGGER_FILELOG, false) || level.equals(Level.ALL) ||
+        // level.equals(Level.FINER) || level.equals(Level.FINE)) &&
+        // !JDInitFlags.SWITCH_DEBUG &&
+        // (!JDUtilities.getSubConfig(SimpleGuiConstants
+        // .GUICONFIGNAME).getBooleanProperty
+        // (SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false))) {
+        // JDUtilities.getGUI().showHelpMessage(JDLocale.L(
+        // "main.start.logwarning.title", "Logwarnung"),
+        // JDLocale.LF("main.start.logwarning.body",
+        // "ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet."
+        // , level.getName(),
+        // JDUtilities.getConfiguration().getBooleanProperty(Configuration
+        // .LOGGER_FILELOG, false) ? JDLocale.L("main.status.active", "an") :
+        // JDLocale.L("main.status.inactive", "aus")), true,
+        // JDLocale.L("main.urls.faq",
+        // "http://jdownloader.org/faq.php?lng=deutsch"), null, 10);
+        // }
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
 
@@ -510,7 +533,7 @@ try{
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         new PackageManager().interact(this);
 

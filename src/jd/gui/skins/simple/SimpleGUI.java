@@ -107,8 +107,11 @@ import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.JXFrame;
+import org.jdesktop.swingx.JXLoginDialog;
 import org.jdesktop.swingx.JXTipOfTheDay;
 import org.jdesktop.swingx.JXTitledSeparator;
+import org.jdesktop.swingx.JXLoginPane.Status;
+import org.jdesktop.swingx.auth.LoginService;
 import org.jdesktop.swingx.tips.DefaultTip;
 import org.jdesktop.swingx.tips.DefaultTipOfTheDayModel;
 import org.jvnet.substance.SubstanceLookAndFeel;
@@ -750,7 +753,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
                         JDUtilities.getController().startDownloads();
                     }
-
+                 
                     break;
                 case ControlEvent.CONTROL_PLUGIN_ACTIVE:
                     logger.info("Plugin Aktiviert: " + event.getSource());
@@ -1435,6 +1438,21 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     public JTabbedPanel getDownloadPanel() {
         // TODO Auto-generated method stub
         return this.linkListPane;
+    }
+
+  
+
+    public String[] showLoginDialog(String title, String defaultUser, String defaultPassword,String error) {
+        JXLoginDialog d = new JXLoginDialog(this,JDLocale.L("gui.dialogs.login.title","Login required"),true);
+        if(defaultPassword!=null)d.getPanel().setPassword(defaultPassword.toCharArray());
+        d.getPanel().setUserName(defaultUser);
+        d.getPanel().setErrorMessage(error);
+        d.getPanel().setMessage(title);
+        d.setVisible(true); 
+
+       if(d.getStatus()!=Status.SUCCEEDED)return null;
+       
+        return new String[]{ d.getPanel().getUserName(),new String(d.getPanel().getPassword())};
     }
 
 }

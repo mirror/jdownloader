@@ -98,7 +98,7 @@ public interface UIInterface extends ControlListener {
     public boolean showConfirmDialog(String string);
 
     public boolean showConfirmDialog(String string, String title);
-
+public String[] showLoginDialog(String title,String defaultUser,String defaultPassword,String errorMessage);
     /**
      * Zeigt einen MessageDialog mit Countdown an
      * 
