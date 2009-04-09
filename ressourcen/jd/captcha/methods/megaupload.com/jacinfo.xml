@@ -1,4 +1,4 @@
 <jDownloader>
-  <method name="JAC_megaupload.com" author="Coalado" />
-  <format type="png" letterNum="4"/>
+  <method type="extern" os="windows" />
+  <command cmd="tools\windows\captcha\megaupload\Megaupload.bat" src="tools\windows\captcha\megaupload\megaupload.gif" dst="tools\windows\captcha\megaupload\Megaupload.txt" />
 </jDownloader>
