@@ -31,7 +31,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -105,7 +107,10 @@ import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.JXFrame;
+import org.jdesktop.swingx.JXTipOfTheDay;
 import org.jdesktop.swingx.JXTitledSeparator;
+import org.jdesktop.swingx.tips.DefaultTip;
+import org.jdesktop.swingx.tips.DefaultTipOfTheDayModel;
 import org.jvnet.substance.SubstanceLookAndFeel;
 import org.jvnet.substance.SubstanceRootPaneUI;
 
@@ -172,6 +177,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         statusBar = new JDStatusBar();
 
         RootPaneUI ui = this.getRootPane().getUI();
+
 
         if (ui instanceof SubstanceRootPaneUI) {
             this.getRootPane().setUI(new JDSubstanceUI());
@@ -251,7 +257,18 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 }
             }
         }.start();
+        
+    loadTips();
 
+    }
+
+    private void loadTips() {
+//        List tips = Arrays.asList(new DefaultTip("Tip 1", "This is <b>tip</b> 1"), new DefaultTip("Tip 2", "This is tip 2"));
+//        DefaultTipOfTheDayModel model = new DefaultTipOfTheDayModel(tips);
+//        JXTipOfTheDay tipOfTheDay = new JXTipOfTheDay(model);
+//        tipOfTheDay.showDialog(this);
+       
+        
     }
 
     public void updateDecoration() {

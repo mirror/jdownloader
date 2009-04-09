@@ -16,19 +16,23 @@
 
 package jd.gui.skins.simple.config;
 
+import java.awt.ComponentOrientation;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.LogRecord;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.reconnect.BatchReconnect;
@@ -40,14 +44,13 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 public class ConfigPanelReconnect extends ConfigPanel implements ActionListener, ControlListener {
 
     private static final long serialVersionUID = 3383448498625377495L;
-
-    private String[] types;
 
     private JComboBox box;
 
@@ -67,9 +70,10 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
 
     private JPanel container;
 
+    private JTabbedPane tabbed;
+
     public ConfigPanelReconnect(Configuration configuration) {
         super();
-        types = new String[] { JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), JDLocale.L("modules.reconnect.types.extern", "Extern"), JDLocale.L("modules.reconnect.types.batch", "Batch"), JDLocale.L("modules.reconnect.types.clr", "CLR Script") };
         this.configuration = configuration;
         initPanel();
         load();
@@ -79,7 +83,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         if (e.getSource() == box) {
             int selected = box.getSelectedIndex();
             configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, selected);
-            setReconnectType();
+            // setReconnectType();
         } else if (e.getSource() == btn) {
             save();
 
@@ -133,32 +137,88 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
     @Override
     public void initPanel() {
         /* 0=LiveHeader, 1=Extern, 2=Batch,3=CLR */
-        panel.setLayout(new MigLayout("ins 0,wrap 3", "[ fill][fill][grow 100,fill]", "[]0[]0[]0[]0[]"));
-        box = new JComboBox(types);
-        box.setSelectedIndex(configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER));
-        box.addActionListener(this);
 
-        btn = new JButton(JDLocale.L("modules.reconnect.testreconnect", "Test Reconnect"));
-        btn.addActionListener(this);
+    
+  
+        // types = new String[] { , , };
+        panel.setLayout(new MigLayout("ins 10,wrap 2", "[fill,grow 10]10[fill,grow]"));
+        ConfigGroup group = new ConfigGroup(JDLocale.L("gui.config.reconnect.shared","General Reconnect Settings"), JDTheme.II("gui.images.reconnect_settings", 32, 32));
+        this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_IPCHECKWAITTIME, JDLocale.L("reconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), 0, 600).setDefaultValue(5).setGroup(group)));
+        this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDLocale.L("reconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5).setGroup(group)));
+        this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDLocale.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20).setGroup(group)));
 
-        panel.add(new JLabel(JDLocale.L("modules.reconnect.pleaseSelect", "Bitte Methode auswählen:")), "spanx 3,gapleft 13,gapbottom 3");
-        panel.add(box, "width 160!,gapleft 13,gapbottom 3");
-        panel.add(btn, "width 160!,wrap");
-        container = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
-        container.setBorder(BorderFactory.createTitledBorder("Title"));
-        panel.add(container, "spanx,gapleft 10,gapright 10,gaptop 5");
-        ConfigContainer config = new ConfigContainer(this);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_IPCHECKWAITTIME, JDLocale.L("reconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), 0, 600).setDefaultValue(5)/*.setGroupName(JDLocale.L("reconnect.global", "Reconnect-IP-Control"))*/);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDLocale.L("reconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5)/*.setGroupName(JDLocale.L("reconnect.global", "Reconnect-IP-Control"))*/);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDLocale.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20)/*.setGroupName(JDLocale.L("reconnect.global", "Reconnect-IP-Control"))*/);
+        this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("DOWNLOAD"), "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", JDLocale.L("gui.config.download.autoresume", "Let Reconnects interrupt resumeable downloads")).setDefaultValue(true).setGroup(group)));
+        panel.add(getHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.methods","Reconnect Methods"), JDTheme.II("gui.images.reconnect_selection", 32, 32))), "spanx");
+        
+        panel.add(tabbed = new JTabbedPane(),"spanx");
+        tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+        tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        tabbed.setTabPlacement(SwingConstants.TOP);
+        tabbed.addChangeListener(new ChangeListener() {
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("DOWNLOAD"), "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", JDLocale.L("gui.config.download.autoresume", "Let Reconnects interrupt resumeable downloads")).setDefaultValue(true));
+            public void stateChanged(ChangeEvent e) {
 
+            }
 
-        cep = new ConfigEntriesPanel(config);
-
-        panel.add(cep, "spanx 3, gaptop 5");
-        add(panel);
+        });
+        
+       addLiveheader();
+        addExtern();
+        addBatch();
+        addCLR();
+        // panel.setLayout(new MigLayout("ins 0,wrap 3",
+        // "[ fill][fill][grow 100,fill]", "[]0[]0[]0[]0[]"));
+        // box = new JComboBox(types);
+        //box.setSelectedIndex(configuration.getIntegerProperty(ReconnectMethod.
+        // PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER));
+        // box.addActionListener(this);
+        //
+        // btn = new JButton(JDLocale.L("modules.reconnect.testreconnect",
+        // "Test Reconnect"));
+        // btn.addActionListener(this);
+        //
+        // panel.add(new JLabel(JDLocale.L("modules.reconnect.pleaseSelect",
+        // "Bitte Methode auswählen:")), "spanx 3,gapleft 13,gapbottom 3");
+        // panel.add(box, "width 160!,gapleft 13,gapbottom 3");
+        // panel.add(btn, "width 160!,wrap");
+        // container = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]",
+        // "[fill,grow]"));
+        // container.setBorder(BorderFactory.createTitledBorder("Title"));
+        // panel.add(container, "spanx,gapleft 10,gapright 10,gaptop 5");
+        // ConfigContainer config = new ConfigContainer(this);
+        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER,
+        // JDUtilities.getConfiguration(),
+        // ReconnectMethod.PARAM_IPCHECKWAITTIME,
+        // JDLocale.L("reconnect.waitTimeToFirstIPCheck",
+        // "Wartezeit bis zum ersten IP-Check [sek]"), 0,
+        // 600).setDefaultValue(5)/*.setGroupName(JDLocale.L("reconnect.global",
+        // "Reconnect-IP-Control"))*/);
+        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER,
+        // JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES,
+        // JDLocale.L("reconnect.retries",
+        // "Max. Wiederholungen (-1 = unendlich)"), -1,
+        // 20).setDefaultValue(5)/*.setGroupName(JDLocale.L("reconnect.global",
+        // "Reconnect-IP-Control"))*/);
+        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER,
+        // JDUtilities.getConfiguration(),
+        // ReconnectMethod.PARAM_WAITFORIPCHANGE,
+        // JDLocale.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0,
+        // 600)
+        // .setDefaultValue(20)/*.setGroupName(JDLocale.L("reconnect.global",
+        // "Reconnect-IP-Control"))*/);
+        //
+        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // JDUtilities.getSubConfig("DOWNLOAD"),
+        // "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT",
+        // JDLocale.L("gui.config.download.autoresume",
+        // "Let Reconnects interrupt resumeable downloads"
+        // )).setDefaultValue(true));
+        //
+        //
+        // cep = new ConfigEntriesPanel(config);
+        //
+        // panel.add(cep, "spanx 3, gaptop 5");
+        // add(panel);
         // JDUtilities.addToGridBag(panel, cep, 0, 0, 5, 1, 0, 0, new Insets(0,
         // 0, 5, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
         // JDUtilities.addToGridBag(panel, new
@@ -173,9 +233,44 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         // new Insets(0, 7, 3, 0), GridBagConstraints.BOTH,
         // GridBagConstraints.NORTHWEST);
         //
-        // add(panel, BorderLayout.NORTH);
+        add(panel);
 
-        setReconnectType();
+        // setReconnectType();
+    }
+
+    private void addCLR() {
+        String name = JDLocale.L("modules.reconnect.types.clr", "CLR Script");
+  
+
+        tabbed.addTab(name,  lhclr = new SubPanelCLRReconnect(configuration));
+       
+      
+    }
+
+    private void addBatch() {
+        String name = JDLocale.L("modules.reconnect.types.batch", "Batch");
+     
+        tabbed.addTab(name,  er = new ConfigEntriesPanel(new BatchReconnect().getConfig()));
+   
+      
+    }
+
+    private void addExtern() {
+        String name = JDLocale.L("modules.reconnect.types.extern", "Extern");
+      
+        tabbed.addTab(name,  er = new ConfigEntriesPanel(new ExternReconnect().getConfig()));
+       
+       
+
+    }
+
+    private void addLiveheader() {
+        String name = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
+        lh = new SubPanelLiveHeaderReconnect(configuration, new HTTPLiveHeader());
+        tabbed.addTab(name, lh);
+       
+ 
+
     }
 
     @Override
@@ -202,53 +297,54 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         }
     }
 
-    public PropertyType hasChanges() {
+//    public PropertyType hasChanges() {
+//
+//        PropertyType ret = PropertyType.getMax(super.hasChanges(), cep.hasChanges());
+//
+//        if (lh != null) {
+//
+//        return lh.hasChanges().getMax(ret); }
+//        if (er != null) { return er.hasChanges().getMax(ret); }
+//        if (lhclr != null) { return lhclr.hasChanges().getMax(ret); }
+//        return ret;
+//    }
 
-        PropertyType ret = PropertyType.getMax(super.hasChanges(), cep.hasChanges());
-
-        if (lh != null) {
-
-        return lh.hasChanges().getMax(ret); }
-        if (er != null) { return er.hasChanges().getMax(ret); }
-        if (lhclr != null) { return lhclr.hasChanges().getMax(ret); }
-        return ret;
-    }
-
-    private void setReconnectType() {
-        if (lh != null) {
-            container.remove(lh);
-            lh = null;
-        } else if (er != null) {
-            container.remove(er);
-            er = null;
-        } else if (lhclr != null) {
-            container.remove(lhclr);
-            lhclr = null;
-        }
-        container.setBorder(BorderFactory.createTitledBorder(types[box.getSelectedIndex()]));
-        switch (box.getSelectedIndex()) {
-        case 0:
-            lh = new SubPanelLiveHeaderReconnect(configuration, new HTTPLiveHeader());
-
-            container.add(lh);
-            break;
-        case 1:
-            er = new ConfigEntriesPanel(new ExternReconnect().getConfig());
-
-            container.add(er);
-            break;
-        case 2:
-            er = new ConfigEntriesPanel(new BatchReconnect().getConfig());
-
-            container.add(er);
-            break;
-        case 3:
-            lhclr = new SubPanelCLRReconnect(configuration);
-
-            container.add(lhclr);
-            break;
-        }
-
-        validate();
-    }
+    // private void setReconnectType() {
+    // if (lh != null) {
+    // container.remove(lh);
+    // lh = null;
+    // } else if (er != null) {
+    // container.remove(er);
+    // er = null;
+    // } else if (lhclr != null) {
+    // container.remove(lhclr);
+    // lhclr = null;
+    // }
+    // container.setBorder(BorderFactory.createTitledBorder(types[box.
+    // getSelectedIndex()]));
+    // switch (box.getSelectedIndex()) {
+    // case 0:
+    //           
+    //
+    // container.add(lh);
+    // break;
+    // case 1:
+    //           
+    //
+    // container.add(er);
+    // break;
+    // case 2:
+    //           
+    //
+    // container.add(er);
+    // break;
+    // case 3:
+    //          
+    //
+    // container.add(lhclr);
+    // break;
+    // }
+    //
+    // validate();
+    // }
 }

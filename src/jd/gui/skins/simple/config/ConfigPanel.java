@@ -16,6 +16,7 @@
 
 package jd.gui.skins.simple.config;
 
+import java.awt.Component;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -26,8 +27,10 @@ import java.util.logging.Logger;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
+import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
@@ -61,7 +64,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
         // this.getBackground().darker()));
     }
 
-    public void addGUIConfigEntry(GUIConfigEntry entry) {
+    public void addGUIConfigEntry(GUIConfigEntry entry, JPanel panel) {
 
         // JDUtilities.addToGridBag(panel, entry, GridBagConstraints.RELATIVE,
         // GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0,
@@ -72,41 +75,73 @@ public abstract class ConfigPanel extends JTabbedPanel {
             if (currentGroup != null) {
                 panel.add(new JSeparator(), "spanx,gapbottom 15,gaptop 15");
             }
-            if (entry.getDecoration() != null) panel.add(entry.getDecoration(), "spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
+            if (entry.getDecoration() != null) {
+                if (entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) {
+                    panel.add(entry.getDecoration(), "spany " + entry.getInput().length + ",spanx");
+
+                } else {
+                    panel.add(entry.getDecoration(), "spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
+                }
+            }
+
             for (JComponent c : entry.getInput()) {
-                panel.add(c, entry.getDecoration() == null ? "spanx" : "");
+                if (entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) {
+                    panel.add(new JScrollPane(c), "spanx,gapright 20,growy,height 60:15000:null");
+                } else {
+                    panel.add(c, entry.getDecoration() == null ? "spanx,gapright 20" : "gapright 20");
+                }
             }
             entries.add(entry);
-            currentGroup=null;
+            currentGroup = null;
             return;
         } else {
 
             if (currentGroup != group) {
 
-                JPanel ret = new JPanel(new MigLayout("ins 0", "[]10[grow,fill]3[]"));
-                JLinkButton label;
-                try {
-
-                    ret.add(label = new JLinkButton("<html><u><b>" + group.getName() + "</b></u></html>", group.getIcon(), new URL("http://wiki.jdownloader.org/?do=search&id=" + Encoding.urlEncode(group.getName()))));
-                    label.setIconTextGap(8);
-                    label.setBorder(null);
-                } catch (MalformedURLException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
-                }
-                ret.add(new JSeparator());
-                ret.add(new JLabel(JDTheme.II("gui.images.config.tip", 16, 16)));
-                panel.add(ret, "spanx");
+                panel.add(getHeader(group), "spanx");
                 currentGroup = group;
             }
+            if (entry.getDecoration() != null) {
+                if (entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) {
+                    panel.add(entry.getDecoration(), "gapleft 35,spany " + entry.getInput().length + ",spanx");
 
-            if (entry.getDecoration() != null) panel.add(entry.getDecoration(), "gapleft 35, spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
+                } else {
+                    panel.add(entry.getDecoration(), "gapleft 35,spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
+                }
+            }
 
             for (JComponent c : entry.getInput()) {
+                if (entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) {
+                    panel.add(new JScrollPane(c), "spanx,gapleft 35,gapright 20,growy,height 60:15000:null");
+                } else {
+                    panel.add(c, entry.getDecoration() == null ? "spanx,gapright 20,gapleft 35" : "gapright 20");
+                }
 
-                panel.add(c, entry.getDecoration() == null ? "spanx,gapleft 35" : "");
             }
         }
         entries.add(entry);
+
+    }
+
+    public Component getHeader(ConfigGroup group) {
+        JPanel ret = new JPanel(new MigLayout("ins 0", "[]10[grow,fill]3[]"));
+        JLinkButton label;
+        try {
+
+            ret.add(label = new JLinkButton("<html><u><b>" + group.getName() + "</b></u></html>", group.getIcon(), new URL("http://wiki.jdownloader.org/?do=search&id=" + Encoding.urlEncode(group.getName()))));
+            label.setIconTextGap(8);
+            label.setBorder(null);
+        } catch (MalformedURLException e) {
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+        }
+        ret.add(new JSeparator());
+        ret.add(new JLabel(JDTheme.II("gui.images.config.tip", 16, 16)));
+        return ret;
+    }
+
+    public void addGUIConfigEntry(GUIConfigEntry entry) {
+
+        addGUIConfigEntry(entry, panel);
 
     }
 

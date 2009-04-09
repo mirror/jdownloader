@@ -27,7 +27,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 public class SQLRouterData {
-    public static JFrame frame = new JFrame();
+//    public static JFrame frame = new JFrame();
     public static Browser br = new Browser();
 
     public static String setPlaceHolder(String data) {

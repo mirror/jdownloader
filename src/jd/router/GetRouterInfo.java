@@ -45,6 +45,7 @@ import javax.swing.JTextField;
 import jd.config.Configuration;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.ProgressDialog;
 import jd.gui.skins.simple.Progressor;
 import jd.gui.skins.simple.SimpleGUI;
@@ -845,12 +846,21 @@ public class GetRouterInfo {
             return null;
     }
 
-    private void setProgress(int val) {
-        if (progressBar != null) {
-            progressBar.setValue(val);
-        } else {
-            logger.info(val + "%");
-        }
+    private void setProgress(final int val) {
+        new GuiRunnable(){
+
+            @Override
+            public Object runSave() {
+                if (progressBar != null) {
+                    progressBar.setValue(val);
+                } else {
+                    logger.info(val + "%");
+                }
+                return null;
+            }
+            
+        }.start();
+       
     }
 
     private void setProgressText(String text) {

@@ -16,6 +16,7 @@
 
 package jd.router;
 
+import java.awt.Color;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.net.InetAddress;
@@ -24,76 +25,47 @@ import java.util.logging.LogRecord;
 
 import javax.swing.ScrollPaneConstants;
 
+import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class FindRouterIP implements ControlListener, WindowListener {
+public class FindRouterIP {
+public static String findIP(GUIConfigEntry ip){
+    final ProgressController progress = new ProgressController(JDLocale.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."), 100);
+    
+    ip.setData(JDLocale.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
+    progress.setStatus(60);
+    GetRouterInfo rinfo = new GetRouterInfo(null);
+    progress.setStatus(80);
+    InetAddress ia = rinfo.getAdress();
+    if (ia != null) ip.setData(ia.getHostAddress());
+    progress.setStatus(100);
+    if (ia != null) {
+        progress.setStatusText(JDLocale.LF("gui.config.routeripfinder.ready", "Hostname found: %s", ia.getHostAddress()));
+        progress.finalize(3000);
+        return ia.getHostAddress();
 
-    private MiniLogDialog mld;
-
+    } else {
+        progress.setStatusText(JDLocale.L("gui.config.routeripfinder.notfound", "Can't find your routers hostname"));
+        progress.finalize(3000);
+        progress.setColor(Color.RED);
+        
+        return null;
+    }
+}
     public FindRouterIP(final GUIConfigEntry ip) {
-        mld = new MiniLogDialog(JDLocale.L("gui.config.routeripfinder", "Router IPsearch"));
-        mld.addWindowListener(this);
-        mld.getBtnOK().setEnabled(false);
-        mld.getProgress().setMaximum(100);
-        mld.getProgress().setValue(2);
-
-        JDUtilities.getController().addControlListener(this);
+       
         new Thread() {
             @Override
             public void run() {
-                ip.setData(JDLocale.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
-                mld.getProgress().setValue(60);
-                GetRouterInfo rinfo = new GetRouterInfo(null);
-                mld.getProgress().setValue(80);
-                InetAddress ia = rinfo.getAdress();
-                if (ia != null) ip.setData(ia.getHostAddress());
-                mld.getProgress().setValue(100);
-                if (ia != null)
-                    mld.setTitle(JDLocale.LF("gui.config.routeripfinder.ready", "Hostname found: %s", ia.getHostAddress()));
-                else
-                    mld.setTitle(JDLocale.LF("gui.config.routeripfinder.notfound", "Can't find your routers hostname"));
-                mld.getBtnOK().setEnabled(true);
-                mld.getBtnOK().setText(JDLocale.L("gui.config.routeripfinder.close", "close"));
+                findIP(ip);
             }
         }.start();
     }
 
-    public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED) {
-            LogRecord l = (LogRecord) event.getParameter();
 
-            if (l.getSourceClassName().startsWith("jd.router.GetRouterInfo")) {
-                mld.appendLine(new SimpleDateFormat("HH:mm:ss").format(l.getMillis()) + " : " + l.getMessage());
-                mld.getScrollPane().setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-                mld.getProgress().setValue(mld.getProgress().getValue() + 1);
-            }
-        }
-    }
 
-    public void windowActivated(WindowEvent e) {
-    }
-
-    public void windowClosed(WindowEvent e) {
-        JDUtilities.getController().removeControlListener(this);
-    }
-
-    public void windowClosing(WindowEvent e) {
-    }
-
-    public void windowDeactivated(WindowEvent e) {
-    }
-
-    public void windowDeiconified(WindowEvent e) {
-    }
-
-    public void windowIconified(WindowEvent e) {
-    }
-
-    public void windowOpened(WindowEvent e) {
-    }
 }
