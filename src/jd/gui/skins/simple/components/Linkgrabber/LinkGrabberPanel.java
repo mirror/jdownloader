@@ -26,6 +26,7 @@ import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
 import jd.event.JDBroadcaster;
+import jd.gui.skins.simple.JDCollapser;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.LinkInputDialog;
 import jd.gui.skins.simple.SimpleGUI;
@@ -73,12 +74,12 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     private String PACKAGENAME_UNSORTED;
     private String PACKAGENAME_UNCHECKED;
     private ProgressController pc;
-    private JXCollapsiblePane collapsepane;
+
     private LinkGrabberFilePackageInfo FilePackageInfo;
     private Timer gathertimer;
 
     private Jobber checkJobbers = new Jobber(4);
-    private final AbstractButton close = new JCancelButton();
+
     private boolean lastSort = false;
     private LinkCheck lc = LinkCheck.getLinkChecker();
     private Timer Update_Async;
@@ -96,21 +97,17 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     }
 
     private LinkGrabberPanel() {
-        super(new MigLayout("ins 0"));
+        super(new MigLayout("ins 0,wrap 1","[fill,grow]"));
 
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
         guiConfig = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
         internalTreeTable = new LinkGrabberTreeTable(new LinkGrabberTreeTableModel(this), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
-        this.add(scrollPane, "cell 0 0, width 100%, height 100%");
+        this.add(scrollPane, "cell 0 0");
         FilePackageInfo = new LinkGrabberFilePackageInfo();
-        collapsepane = new JXCollapsiblePane();
-        collapsepane.setCollapsed(true);
-        collapsepane.add(FilePackageInfo);
-        close.addActionListener(this);
-        this.add(close, "id close, pos (pane.w-(close.w/2)) (pane.y+(close.h/2))");
-        this.add(collapsepane, "cell 0 1, width 100%, id pane");
+   
+     
         Update_Async = new Timer(50, this);
         Update_Async.setInitialDelay(50);
         Update_Async.setRepeats(false);
@@ -124,11 +121,15 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     public void showFilePackageInfo(LinkGrabberFilePackage fp) {
         FilePackageInfo.setPackage(fp);
-        collapsepane.setCollapsed(false);
+        JDCollapser.getInstance().getContentPane().removeAll();
+        JDCollapser.getInstance().getContentPane().add(FilePackageInfo);
+        JDCollapser.getInstance().setVisible(true);
+        
+        JDCollapser.getInstance().setCollapsed(false);
     }
 
     public void hideFilePackageInfo() {
-        collapsepane.setCollapsed(true);
+        JDCollapser.getInstance().setCollapsed(true);
     }
 
     public Vector<LinkGrabberFilePackage> getPackages() {
@@ -417,10 +418,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             fireTableChanged(1, null);
             return;
         }
-        if (arg0.getSource() == this.close) {
-            this.hideFilePackageInfo();
-            return;
-        }
+     
         if (arg0.getSource() == this.gathertimer) {
             gathertimer.stop();
             gathertimer.removeActionListener(this);

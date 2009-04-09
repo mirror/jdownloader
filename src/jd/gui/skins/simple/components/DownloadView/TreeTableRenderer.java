@@ -120,17 +120,25 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         column = this.table.getColumn(column).getModelIndex();
         if (value instanceof FilePackage) {
             co = getFilePackageCell(table, value, isSelected, hasFocus, row, column);
-
+            if (!((FilePackage) value).isEnabled()) {
+                co.setEnabled(false);
+            }else{
+                co.setEnabled(true);
+            }
+            return co;
         } else if (value instanceof DownloadLink) {
             co = getDownloadLinkCell(table, value, isSelected, hasFocus, row, column);
             if (!((DownloadLink) value).isEnabled()) {
                 co.setEnabled(false);
+            }else{
+                co.setEnabled(true);
             }
             return co;
         } else {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            co.setEnabled(true);
         }
-        co.setEnabled(true);
+       
         return co;
 
     }

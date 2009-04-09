@@ -573,11 +573,11 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         panel.add(sep, "gapright 2,spany 2");
 
         panel.add(contentPanel);
-        panel.add(JDCollapser.getInstance(),"hidemode 3,gaptop 15,gapleft 10, gapright 10");
+        panel.add(JDCollapser.getInstance(),"hidemode 3,gaptop 15,cell 2 2");
         // panel.add(generalPurposeTasks, "cell 0 2");
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
-        panel.add(progressBar, "spanx,hidemode 3");
-        panel.add(this.statusBar, "spanx");
+        panel.add(progressBar, "spanx,hidemode 3,cell 0 3");
+        panel.add(this.statusBar, "spanx, cell 0 4");
 
     }
 

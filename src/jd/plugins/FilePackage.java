@@ -96,6 +96,8 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private transient FilePackageBroadcaster broadcaster = new FilePackageBroadcaster();
 
+    private int linksDisabled;
+
     public synchronized JDBroadcaster<FilePackageListener, FilePackageEvent> getBroadcaster() {
         if (broadcaster == null) broadcaster = new FilePackageBroadcaster();
         return broadcaster;
@@ -552,6 +554,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             linksInProgress = 0;
             linksFailed = 0;
             totalBytesLoaded = 0;
+            linksDisabled=0;
             long avg = 0;
             DownloadLink next;
             int i = 0;
@@ -563,6 +566,8 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
                     if (next.isEnabled()) {
                         totalEstimatedPackageSize += next.getDownloadSize() / 1024;
+                    }else{
+                        linksDisabled++;
                     }
 
                     avg = (i * avg + next.getDownloadSize() / 1024) / (i + 1);
@@ -573,6 +578,8 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                     if (it.hasNext()) {
                         if (next.isEnabled()) {
                             totalEstimatedPackageSize += avg;
+                        }else{
+                            linksDisabled++;
                         }
 
                         // logger.info(i+"+avg "+avg+" kb
@@ -583,6 +590,8 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                             totalEstimatedPackageSize += avg / 2;
                             // logger.info(i+"+avg "+(avg/2)+" kb
                             // =+"+totalEstimatedPackageSize);
+                        }else{
+                            linksDisabled++;
                         }
                     }
                 }
@@ -601,6 +610,16 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         updateTime = System.currentTimeMillis();
     }
 
+    public int getLinksDisabled() {
+        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
+            updateCollectives();
+        }
+        return linksDisabled;
+    }
+public boolean isEnabled(){
+    if(downloadLinks.size()<=getLinksDisabled())return false;
+    return true;
+}
     public void handle_DownloadLinkEvent(DownloadLinkEvent event) {
         System.out.println("got downloadlinkevent");
 
