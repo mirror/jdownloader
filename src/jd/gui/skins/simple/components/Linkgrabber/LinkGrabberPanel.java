@@ -18,7 +18,6 @@ import java.util.logging.Logger;
 import javax.swing.AbstractButton;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import jd.config.Configuration;
@@ -87,7 +86,12 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     private transient LinkGrabberBroadcaster broadcaster = new LinkGrabberBroadcaster();
 
-    public LinkGrabberPanel() {
+    public static synchronized LinkGrabberPanel getLinkGrabber() {
+        if (INSTANCE == null) INSTANCE = new LinkGrabberPanel();
+        return INSTANCE;
+    }
+
+    private LinkGrabberPanel() {
         super(new MigLayout("ins 0"));
 
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");

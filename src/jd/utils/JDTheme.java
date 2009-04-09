@@ -60,7 +60,7 @@ public class JDTheme {
             logger.severe("Use setTheme() first!");
             setTheme("default");
         }
-      
+
         if (data.containsKey(key)) return Encoding.UTF8Decode(data.get(key));
         logger.warning("Key not found: " + key + " (" + def + ")");
 
@@ -137,7 +137,7 @@ public class JDTheme {
             return new ImageIcon(getImage(V(key), width, height));
         } catch (Exception e) {
             logger.severe("image not found: " + key + "(" + V(key) + "_" + width + "_" + height);
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return null;
     }
@@ -155,7 +155,7 @@ public class JDTheme {
     }
 
     public static String getTheme() {
-        if(currentTheme==null)return "default";
+        if (currentTheme == null) return "default";
         return currentTheme;
     }
 

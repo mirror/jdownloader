@@ -40,10 +40,7 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
         fadeTimer.start();
     }
 
-    /**
-     * TODO
-     */
-    private void update() {
+    private void update() {/* TODO: soll man über events aktuallisiert werden */
         DownloadController dlc = JDUtilities.getDownloadController();
         packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", dlc.getPackages().size()));
         downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", dlc.getAllDownloadLinks().size()));

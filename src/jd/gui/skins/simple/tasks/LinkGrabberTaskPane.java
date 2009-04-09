@@ -8,12 +8,17 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
+import javax.swing.Timer;
 
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberEvent;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberListener;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberTreeTableAction;
+import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 
 public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, LinkGrabberListener {
 
@@ -31,12 +36,16 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     private JLabel downloadlinks;
     private JLabel packages;
     private JLabel totalsize;
+    private Timer fadeTimer;
 
     public LinkGrabberTaskPane(String string, ImageIcon ii) {
         super(string, ii, "linkgrabber");
 
         lg_buttons_visible = false;
         initGUI();
+        fadeTimer = new Timer(2000, this);
+        fadeTimer.setInitialDelay(0);
+        fadeTimer.start();
     }
 
     private void initListStatGUI() {
@@ -51,6 +60,23 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         add(packages, D2_LABEL);
         add(downloadlinks, D2_LABEL);
         add(totalsize, D2_LABEL);
+    }
+    
+    private void update() {/* TODO: soll man über events aktuallisiert werden */
+        LinkGrabberPanel lg = LinkGrabberPanel.getLinkGrabber();
+        packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", lg.getPackages().size()));        
+        long tot = 0;
+        long links = 0;
+        synchronized(lg.getPackages()){
+            for (LinkGrabberFilePackage fp: lg.getPackages()){
+                for (DownloadLink l : fp.getDownloadLinks()) {
+                    tot += l.getDownloadSize();
+                    links++;
+                }
+            }        
+        }
+        downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", links));
+        totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", JDUtilities.formatKbReadable(tot / 1024)));        
     }
 
     private void initGUI() {
@@ -77,6 +103,10 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     }
 
     public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == fadeTimer) {
+            update();
+            return;
+        }
         if (e.getSource() == panel_add_links) {
             this.broadcastEvent(new ActionEvent(this, LinkGrabberTreeTableAction.GUI_ADD, null));
             return;

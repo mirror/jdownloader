@@ -686,7 +686,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     private void addLinkgrabberTask() {
-        linkGrabber = new LinkGrabberPanel();
+        linkGrabber = LinkGrabberPanel.getLinkGrabber();
         lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 24, 24));
         lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
         linkGrabber.getBroadcaster().addListener(lgTaskPane);
