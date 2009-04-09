@@ -45,7 +45,7 @@ class FilePackageBroadcaster extends JDBroadcaster<FilePackageListener, FilePack
  * 
  * @author JD-Team
  */
-public class FilePackage extends Property implements Serializable {
+public class FilePackage extends Property implements Serializable, DownloadLinkListener {
 
     // Zählt die instanzierungen durch um eine ID zu erstellen
     private static int counter = 0;
@@ -123,7 +123,8 @@ public class FilePackage extends Property implements Serializable {
             if (!downloadLinks.contains(link)) {
                 downloadLinks.add(link);
                 link.setFilePackage(this);
-                broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DL_ADDED));
+                link.getBroadcaster().addListener(this);
+                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DL_ADDED));
             }
             link.setFilePackage(this);
         }
@@ -135,11 +136,13 @@ public class FilePackage extends Property implements Serializable {
                 downloadLinks.remove(link);
                 downloadLinks.add(index, link);
                 link.setFilePackage(this);
-                broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FP_UPDATE));
+                link.getBroadcaster().addListener(this);
+                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FP_UPDATE));
             } else {
                 downloadLinks.add(index, link);
                 link.setFilePackage(this);
-                broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DL_ADDED));
+                link.getBroadcaster().addListener(this);
+                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DL_ADDED));
             }
         }
     }
@@ -434,8 +437,9 @@ public class FilePackage extends Property implements Serializable {
             boolean ret = downloadLinks.remove(link);
             if (ret) {
                 link.setFilePackage(null);
-                broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DL_REMOVED));
-                if (downloadLinks.size() == 0) broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FP_EMPTY));
+                link.getBroadcaster().removeListener(this);
+                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DL_REMOVED));
+                if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FP_EMPTY));
             }
         }
     }
@@ -446,17 +450,6 @@ public class FilePackage extends Property implements Serializable {
 
     public void setDownloadDirectory(String subFolder) {
         downloadDirectory = JDUtilities.removeEndingPoints(subFolder);
-    }
-
-    public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
-        synchronized (downloadLinks) {
-            this.downloadLinks = new Vector<DownloadLink>();
-            if (downloadLinks.size() == 0) {
-                broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FP_EMPTY));
-            } else {
-                this.addAll(downloadLinks);
-            }
-        }
     }
 
     public void setName(String name) {
@@ -539,7 +532,7 @@ public class FilePackage extends Property implements Serializable {
                 }
             });
         }
-        broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FP_UPDATE));
+        getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FP_UPDATE));
     }
 
     /**
@@ -606,6 +599,11 @@ public class FilePackage extends Property implements Serializable {
             }
         }
         updateTime = System.currentTimeMillis();
+    }
+
+    public void handle_DownloadLinkEvent(DownloadLinkEvent event) {
+        System.out.println("got downloadlinkevent");
+
     }
 
 }

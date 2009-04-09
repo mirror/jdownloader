@@ -348,11 +348,14 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         case DownloadLinksPanel.REFRESH_SPECIFIED_LINKS:
             ArrayList<DownloadLink> links = ((ArrayList<DownloadLink>) param);
             logger.info("REFRESH SPECS COMPLETE");
+            HashMap<Object, TreePath> map = this.getPathMap();
             for (DownloadLink dl : links) {
-                TreePath path = getPathfor(dl);
+                TreePath path = map.remove(dl);
                 if (path == null) continue;
-                System.out.println("path found");
-                supporter.fireChildrenChanged(path, null, null);
+                supporter.firePathChanged(path);
+                path = map.remove(dl.getFilePackage());
+                if (path == null) continue;
+                supporter.firePathChanged(path);
             }
             break;
         case DownloadLinksPanel.REFRESH_ALL_DATA_CHANGED:
@@ -363,7 +366,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             logger.finest("REFRESH GUI COMPLETE");
             supporter.fireTreeStructureChanged(new TreePath(model.getRoot()));
             updateSelectionAndExpandStatus();
-
             break;
         }
     }
@@ -742,14 +744,13 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         }
     }
 
-    public TreePath getPathfor(DownloadLink link) {
+    public HashMap<Object, TreePath> getPathMap() {
+        HashMap<Object, TreePath> map = new HashMap<Object, TreePath>();
         int i = 0;
         while (getPathForRow(i) != null) {
-            if (getPathForRow(i).getLastPathComponent() instanceof DownloadLink) {
-                if ((DownloadLink) getPathForRow(i).getLastPathComponent() == link) { return new TreePath(this.getPathForRow(i).getPath()); }
-            }
+            map.put(getPathForRow(i).getLastPathComponent(), new TreePath(this.getPathForRow(i).getPath()));
             i++;
         }
-        return null;
+        return map;
     }
 }

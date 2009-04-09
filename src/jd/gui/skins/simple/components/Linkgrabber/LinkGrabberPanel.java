@@ -161,7 +161,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         waitingList.add(element);
         checkAlreadyinList(element);
         attachToPackagesFirstStage(element);
-        broadcaster.fireEvent(new LinkGrabberEvent(this, LinkGrabberEvent.UPDATE_EVENT));
+        getBroadcaster().fireEvent(new LinkGrabberEvent(this, LinkGrabberEvent.UPDATE_EVENT));
     }
 
     private void attachToPackagesFirstStage(DownloadLink link) {
@@ -635,7 +635,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         int files = 0;
         if (host == null) {
             files = linkList.size();
-            fp.setDownloadLinks(linkList);
+            fp.addAll(linkList);
             for (DownloadLink link : linkList) {
                 boolean avail = true;
                 if (link.isAvailabilityChecked()) avail = link.isAvailable();
@@ -659,7 +659,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 }
             }
             if (files == 0) return;
-            fp.setDownloadLinks(linkListHost);
+            fp.addAll(linkListHost);
             fpv2.setDownloadLinks(linkList);
         }
         JDUtilities.getDownloadController().addPackage(fp);
@@ -713,7 +713,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                     this.hideFilePackageInfo();
                 }
                 packages.remove(event.getSource());
-                if (packages.size() == 0) broadcaster.fireEvent(new LinkGrabberEvent(this, LinkGrabberEvent.EMPTY_EVENT));
+                if (packages.size() == 0) getBroadcaster().fireEvent(new LinkGrabberEvent(this, LinkGrabberEvent.EMPTY_EVENT));
             }
         }
     }

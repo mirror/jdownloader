@@ -110,6 +110,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
             filePackage.getBroadcaster().addListener(this);
             for (DownloadLink downloadLink : filePackage.getDownloadLinks()) {
                 downloadLink.setProperty(DownloadTreeTable.PROPERTY_SELECTED, false);
+                downloadLink.getBroadcaster().addListener(filePackage);
             }
         }
         return;
@@ -417,15 +418,12 @@ public class DownloadController implements FilePackageListener, DownloadControll
     public void handle_DownloadControllerEvent(DownloadControllerEvent event) {
         switch (event.getID()) {
         case DownloadControllerEvent.ADD_FP:
-            System.out.println("DOWNLOADCONTROLLER: FilePackage added, Throw Update Event");
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+            this.fireUpdate();
             break;
         case DownloadControllerEvent.REMOVE_FP:
-            System.out.println("DOWNLOADCONTROLLER: FilePackage removed, Throw Update Event");
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+            this.fireUpdate();
             break;
         case DownloadControllerEvent.UPDATE:
-            System.out.println("DOWNLOADCONTROLLER: Update Event, Save LinkList (Async)");
             this.saveDownloadLinksAsync();
             break;
         }
@@ -434,21 +432,17 @@ public class DownloadController implements FilePackageListener, DownloadControll
     public void handle_FilePackageEvent(FilePackageEvent event) {
         switch (event.getID()) {
         case FilePackageEvent.DL_ADDED:
-            System.out.println("DOWNLOADCONTROLLER: Filepackage, Link added, Throw Update Event");
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+            this.fireUpdate();
             break;
         case FilePackageEvent.DL_REMOVED:
-            System.out.println("DOWNLOADCONTROLLER: Filepackage, Link removed, Throw Update Event");
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+            this.fireUpdate();
             break;
         case FilePackageEvent.FP_UPDATE:
-            System.out.println("DOWNLOADCONTROLLER: forward Filepackage Update to GUI");
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+            this.fireUpdate();
             break;
         case FilePackageEvent.FP_EMPTY:
-            System.out.println("DOWNLOADCONTROLLER: remove FilePackage, Update GUI");
             this.removePackage((FilePackage) event.getSource());
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+            this.fireUpdate();
             break;
 
         }

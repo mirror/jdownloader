@@ -89,7 +89,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                     link.isAvailable();
                 }
             }
-            broadcaster.fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, hosterList));
+            getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, hosterList));
             pc.increase(hosterList.size());
         }
     }
@@ -99,7 +99,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
         checkThread = new Thread() {
             public void run() {
                 setName("OnlineCheck");
-                broadcaster.fireEvent(new LinkCheckEvent(this, LinkCheckEvent.START));
+                getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.START));
                 pc = new ProgressController("OnlineCheck");
                 pc.getBroadcaster().addListener(LinkCheck.getLinkChecker());
                 pc.setRange(0);
@@ -151,7 +151,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                 }
                 pc.finalize();
                 pc.getBroadcaster().removeListener(LinkCheck.getLinkChecker());
-                broadcaster.fireEvent(new LinkCheckEvent(this, LinkCheckEvent.STOP));
+                getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.STOP));
                 check_running = false;
             }
         };
@@ -211,7 +211,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
     public void handle_ProgressControllerEvent(ProgressControllerEvent event) {
         if (event.getSource() == this.pc) {
             this.abortLinkCheck();
-            broadcaster.fireEvent(new LinkCheckEvent(this, LinkCheckEvent.ABORT));
+            getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.ABORT));
             return;
         }
     }

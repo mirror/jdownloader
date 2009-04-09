@@ -66,7 +66,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;
     public static final int REFRESH_SPECIFIED_LINKS = 2;
 
-    private final static int UPDATE_TIMING = 50;
+    private final static int UPDATE_TIMING = 100;
 
     private int job_ID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
     private ArrayList<DownloadLink> job_links = new ArrayList<DownloadLink>();
@@ -113,21 +113,23 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     @SuppressWarnings("unchecked")
     private synchronized void updateTableTask(int id, Object Param) {
-        System.out.println("got new TableJob, Update old one");
+        boolean changed = false;
         Update_Async.stop();
         switch (id) {
         case REFRESH_DATA_AND_STRUCTURE_CHANGED: {
+            changed = true;
             this.job_ID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
             this.job_links.clear();
             break;
         }
         case REFRESH_ALL_DATA_CHANGED: {
             switch (this.job_ID) {
-            case REFRESH_DATA_AND_STRUCTURE_CHANGED:                
+            case REFRESH_DATA_AND_STRUCTURE_CHANGED:
             case REFRESH_ALL_DATA_CHANGED:
                 break;
             case NO_JOB:
             case REFRESH_SPECIFIED_LINKS:
+                changed = true;
                 this.job_ID = REFRESH_ALL_DATA_CHANGED;
                 this.job_links.clear();
                 break;
@@ -143,16 +145,14 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
             case REFRESH_SPECIFIED_LINKS:
                 this.job_ID = REFRESH_SPECIFIED_LINKS;
                 if (Param instanceof DownloadLink) {
-                    System.out.println("refesh single link");
                     if (!job_links.contains(Param)) {
-                        System.out.println("refesh single link, added");
+                        changed = true;
                         job_links.add((DownloadLink) Param);
                     }
                 } else if (Param instanceof ArrayList) {
-                    System.out.println("refesh multiple link");
                     for (DownloadLink dl : (ArrayList<DownloadLink>) Param) {
                         if (!job_links.contains(dl)) {
-                            System.out.println("refesh multiple link,added");
+                            changed = true;
                             job_links.add(dl);
                         }
                     }
@@ -161,8 +161,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
             }
         }
         }
-        if (System.currentTimeMillis() - last_async_update > UPDATE_TIMING + 50) {
-            System.out.println("max update timeout reached, fire now!");
+        if (!changed && (System.currentTimeMillis() - last_async_update > UPDATE_TIMING + 100)) {            
             fireTableTask();
         }
         Update_Async.restart();
@@ -170,7 +169,6 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     private synchronized void fireTableTask() {
         last_async_update = System.currentTimeMillis();
-        System.out.println("fire TableJob");
         fireTableChanged(this.job_ID, this.job_links);
         this.job_ID = this.NO_JOB;
         this.job_links.clear();
@@ -439,21 +437,18 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
             });
         }
-        JDUtilities.getDownloadController().getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+        JDUtilities.getDownloadController().fireUpdate();
     }
 
     public void handle_DownloadControllerEvent(DownloadControllerEvent event) {
         switch (event.getID()) {
         case DownloadControllerEvent.UPDATE:
-            System.out.println("DOWNLOADLIST: Update Event, Refresh Complete Table (Async)");
             updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
             break;
         case DownloadControllerEvent.REFRESH_SPECIFIC:
-            System.out.println("DOWNLOADLIST: Refresh Specific Event (Async)");
             updateTableTask(REFRESH_SPECIFIED_LINKS, event.getParameter());
             break;
         case DownloadControllerEvent.REFRESH_ALL:
-            System.out.println("DOWNLOADLIST: Refresh All Event (Async)");
             updateTableTask(REFRESH_ALL_DATA_CHANGED, null);
             break;
         }

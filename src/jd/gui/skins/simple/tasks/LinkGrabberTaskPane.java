@@ -42,17 +42,11 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     private void initListStatGUI() {
 
         linkgrabber = (new JLabel(JDLocale.L("gui.taskpanes.download.linkgrabber", "Packagestats")));
-        linkgrabber.setIcon(JDTheme.II("gui.splash.dllist", 16, 16));
+        linkgrabber.setIcon(JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16));
 
         packages = (new JLabel(JDLocale.LF("gui.taskpanes.download.linkgrabber.packages", "%s Package(s)", 0)));
         downloadlinks = (new JLabel(JDLocale.LF("gui.taskpanes.download.linkgrabber.downloadLinks", "%s Link(s)", 0)));
         totalsize = (new JLabel(JDLocale.LF("gui.taskpanes.download.linkgrabber.size", "Total size: %s", 0)));
-        // Font f = linkgrabber.getFont();
-
-        // linkgrabber.setFont(f.deriveFont(f.getStyle() ^ Font.BOLD));
-        // packages.setFont(f.deriveFont(f.getStyle() ^ Font.BOLD));
-        // downloadlinks.setFont(f.deriveFont(f.getStyle() ^ Font.BOLD));
-        // totalsize.setFont(f.deriveFont(f.getStyle() ^ Font.BOLD));
         add(linkgrabber, D1_LABEL_ICON);
         add(packages, D2_LABEL);
         add(downloadlinks, D2_LABEL);

@@ -5,6 +5,7 @@ import java.awt.AlphaComposite;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.DisplayMode;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JWindow;
 import javax.swing.Timer;
@@ -74,20 +76,20 @@ public class SplashScreen implements ActionListener {
         JDLookAndFeelManager.setUIManager();
         this.image = (BufferedImage) image;
         progressimages = new ArrayList<SplashProgressImage>();
-        // screenshot = GraphicsEnvironment.getLocalGraphicsEnvironment().
-        // getDefaultScreenDevice
-        // ().getDefaultConfiguration().createCompatibleImage
-        // (image.getWidth(null), image.getHeight(null));
-        Dimension screenDimension = Toolkit.getDefaultToolkit().getScreenSize();
-        x = (int) (screenDimension.getWidth() / 2 - image.getWidth(null) / 2);
-        y = (int) (screenDimension.getHeight() / 2 - image.getHeight(null) / 2);
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+
+        Rectangle v = ge.getDefaultScreenDevice().getDefaultConfiguration().getBounds();
+        int screenWidth = (int) v.getWidth();
+        int screenHeight = (int) v.getHeight();
+        System.out.println(screenWidth + " " + screenHeight);
+        x = (int) (screenWidth / 2 - image.getWidth(null) / 2);
+        y = (int) (screenHeight / 2 - image.getHeight(null) / 2);
         w = image.getWidth(null);
         h = image.getHeight(null);
-
+        System.out.println(x + " " + y);
         createScreenshot();
         initGui();
         annimate();
-
     }
 
     private void annimate() {
@@ -99,17 +101,19 @@ public class SplashScreen implements ActionListener {
     }
 
     private void initGui() {
+        GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
         label = new JLabel();
         label.setIcon(drawImage(0.0f));
 
-        window = new JWindow();
+        window = new JWindow(gc);
         window.setAlwaysOnTop(true);
         window.setSize(image.getWidth(null), image.getHeight(null));
         Container content = window.getContentPane();
         content.add(BorderLayout.NORTH, label);
-        window.setVisible(true);
         window.pack();
-        window.setLocation(x, y);
+        Rectangle b = gc.getBounds();
+        window.setLocation(b.x + x, b.y + y);
+        window.setVisible(true);
 
     }
 
@@ -117,13 +121,10 @@ public class SplashScreen implements ActionListener {
         final Robot robot = new Robot();
         final Rectangle rectangle = new Rectangle(x, y, w, h);
         screenshot = robot.createScreenCapture(rectangle);
-
     }
 
     public void actionPerformed(final ActionEvent e) {
-
         edtAction(e);
-
     }
 
     private void edtAction(ActionEvent e) {
@@ -137,15 +138,13 @@ public class SplashScreen implements ActionListener {
 
     }
 
-    
-
     /**
      * Draws Background, then draws image over it
      * 
      * @param alphaValue
+     * @throws AWTException
      */
     private ImageIcon drawImage(float alphaValue) {
-
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice gd = ge.getDefaultScreenDevice();
         GraphicsConfiguration gc = gd.getDefaultConfiguration();

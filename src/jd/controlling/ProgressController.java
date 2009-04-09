@@ -72,7 +72,7 @@ public class ProgressController {
     }
 
     public boolean isCancelVisible() {
-        return broadcaster.hasListener();
+        return getBroadcaster().hasListener();
     }
 
     public ProgressController(String name, long max) {
@@ -203,6 +203,6 @@ public class ProgressController {
     }
 
     public void fireCancelAction() {
-        broadcaster.fireEvent(new ProgressControllerEvent(this, ProgressControllerEvent.CANCEL));
+        getBroadcaster().fireEvent(new ProgressControllerEvent(this, ProgressControllerEvent.CANCEL));
     }
 }

@@ -32,6 +32,7 @@ import jd.config.Property;
 import jd.controlling.DownloadController;
 import jd.controlling.SingleDownloadController;
 import jd.controlling.SpeedMeter;
+import jd.event.JDBroadcaster;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
@@ -46,6 +47,16 @@ import jd.utils.JDUtilities;
  * 
  * @author astaldo
  */
+
+class DownloadLinkBroadcaster extends JDBroadcaster<DownloadLinkListener, DownloadLinkEvent> {
+
+    @Override
+    protected void fireEvent(DownloadLinkListener listener, DownloadLinkEvent event) {
+        listener.handle_DownloadLinkEvent(event);
+    }
+
+}
+
 public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink> {
 
     public static final int LINKTYPE_CONTAINER = 1;
@@ -66,6 +77,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private transient Boolean available = null;
 
     private long[] chunksProgress = null;
+
+    private transient DownloadLinkBroadcaster broadcaster = new DownloadLinkBroadcaster();
 
     // Containername
     private String container;
@@ -189,6 +202,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         if (name == null && urlDownload != null) {
             this.name = Plugin.extractFileNameFromURL(getDownloadURL());
         }
+    }
+
+    public synchronized JDBroadcaster<DownloadLinkListener, DownloadLinkEvent> getBroadcaster() {
+        if (broadcaster == null) broadcaster = new DownloadLinkBroadcaster();
+        return broadcaster;
     }
 
     public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
@@ -790,7 +808,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      *            Die Größe der Datei
      */
     public void setDownloadSize(long downloadMax) {
-
         this.downloadMax = downloadMax;
     }
 
