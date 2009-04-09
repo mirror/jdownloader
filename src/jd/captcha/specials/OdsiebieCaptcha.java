@@ -27,7 +27,7 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
-import jd.captcha.utils.UTILITIES;
+import jd.nutils.Colors;
 
 /**
  * 
@@ -54,7 +54,7 @@ public class OdsiebieCaptcha {
                 for (Iterator<PixelObject> it = ret.iterator(); it.hasNext();) {
                     PixelObject o = it.next();
 
-                    if (o.isTouching(x, y, true, 4, 4) && UTILITIES.getColorDifference(grid.getGrid()[x][y], o.getAverage()) < 25) {
+                    if (o.isTouching(x, y, true, 4, 4) && Colors.getColorDifference(grid.getGrid()[x][y], o.getAverage()) < 25) {
 
                         merge.add(o);
                         // n.add(o);
@@ -215,7 +215,7 @@ public class OdsiebieCaptcha {
                 int area = (xMax - xMin) * (yMax - yMin);
                 if (area > 10) {
                     if (a.getArea() < area * 1.4 || b.getArea() < area * 1.4) {
-                        if (UTILITIES.getColorDifference(a.getAverage(), b.getAverage()) < 85) {
+                        if (Colors.getColorDifference(a.getAverage(), b.getAverage()) < 85) {
 
                             // ScrollPaneWindow w = new ScrollPaneWindow(null);
                             // w.setImage(0, 1, a.toLetter().getImage(3));
@@ -238,7 +238,7 @@ public class OdsiebieCaptcha {
         for (int x = 0; x < captcha.getWidth(); x++) {
 
             for (int y = 0; y < captcha.getHeight(); y++) {
-                if (UTILITIES.getColorDifference(0x8080ff, captcha.getPixelValue(x, y)) < 3) {
+                if (Colors.getColorDifference(0x8080ff, captcha.getPixelValue(x, y)) < 3) {
                     captcha.setPixelValue(x, y, captcha.getMaxPixelValue());
                 }
             }

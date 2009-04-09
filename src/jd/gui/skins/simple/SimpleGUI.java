@@ -128,6 +128,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
      */
     private static final long serialVersionUID = 3966433144683787356L;
 
+     protected static final Color BG_COLOR = new Color(0.0f,0.0f,0.0f,0.0f);
+
     private LinkGrabberPanel linkGrabber;
 
     /**
@@ -1365,7 +1367,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
                 String[] data = new String[] { validUntil, JDUtilities.formatBytesToMB(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, JDUtilities.formatBytesToMB(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", JDUtilities.formatBytesToMB(ai.getTrafficShareLeft()), ai.getStatus() };
                 panel.add(new JXTitledSeparator(def), "spanx, pushx, growx, gapbottom 15");
-                ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 125, 60, panel.getBackground());
+                ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 125, 60, BG_COLOR);
                 freeTrafficChart.addEntity(new ChartAPI_Entity("Free", ai.getTrafficLeft(), new Color(50, 200, 50)));
                 freeTrafficChart.addEntity(new ChartAPI_Entity("", ai.getTrafficMax() - ai.getTrafficLeft(), new Color(150, 150, 150)));
                 freeTrafficChart.fetchImage();

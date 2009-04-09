@@ -38,6 +38,7 @@ import jd.captcha.LetterComperator;
 import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
+import jd.nutils.Colors;
 
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
@@ -250,19 +251,19 @@ public class Captcha extends PixelGrid {
                 test[x][y] = Math.abs(mask.getPixelValue(x, y) - getPixelValue(x, y));
                 int del = 0;
                 int del2 = 0;
-                if (UTILITIES.getColorDifference(mask.getPixelValue(x, y), getPixelValue(x, y)) < dif) {
+                if (Colors.getColorDifference(mask.getPixelValue(x, y), getPixelValue(x, y)) < dif) {
                     del += tolerance;
                     del2 += tolerance;
                     for (int i = 1; i < tolerance; i++) {
                         if (y + i < getHeight()) {
-                            if (UTILITIES.getColorDifference(mask.getPixelValue(x, y + i), getPixelValue(x, y + i)) < dif) del += tolerance - i;
+                            if (Colors.getColorDifference(mask.getPixelValue(x, y + i), getPixelValue(x, y + i)) < dif) del += tolerance - i;
                             del2 += tolerance - i;
                         } else
                             min2++;
                     }
                     for (int i = 1; i < tolerance; i++) {
                         if (x + i < getWidth()) {
-                            if (UTILITIES.getColorDifference(mask.getPixelValue(x + i, y), getPixelValue(x + i, y)) < dif) del += tolerance - i;
+                            if (Colors.getColorDifference(mask.getPixelValue(x + i, y), getPixelValue(x + i, y)) < dif) del += tolerance - i;
                             del2 += tolerance - i;
                         } else
                             min2++;
@@ -301,7 +302,7 @@ public class Captcha extends PixelGrid {
             for (int y = 0; y < getHeight(); y++) {
                 test[x][y] = Math.abs(mask.getPixelValue(x, y) - getPixelValue(x, y));
 
-                if (UTILITIES.getColorDifference(mask.getPixelValue(x, y), getPixelValue(x, y)) < dif) {
+                if (Colors.getColorDifference(mask.getPixelValue(x, y), getPixelValue(x, y)) < dif) {
                     // if (Math.abs(mask.getPixelValue(x, y) - getPixelValue(x,
                     // y)) < dif) {
 
@@ -370,7 +371,7 @@ public class Captcha extends PixelGrid {
             for (int y = 0; y < getHeight(); y++) {
                 if (PixelGrid.getPixelValue(x, y, tmp.grid, owner) > owner.getJas().getDouble("getBlackPercent") * getMaxPixelValue()) {
 
-                    int newPixelValue = UTILITIES.mixColors(getPixelValue(x, y), PixelGrid.getPixelValue(x, y, tmp.grid, owner));
+                    int newPixelValue = Colors.mixColors(getPixelValue(x, y), PixelGrid.getPixelValue(x, y, tmp.grid, owner));
                     setPixelValue(x, y, newPixelValue);
                 }
             }
@@ -483,7 +484,7 @@ public class Captcha extends PixelGrid {
         for (int x = Math.max(0, px - halfW); x < Math.min(px + width - halfW, getWidth()); x++) {
             for (int y = Math.max(0, py - halfH); y < Math.min(py + height - halfH, getHeight()); y++) {
                 if (mask.getPixelValue(x, y) > 100) {
-                    bv = UTILITIES.hexToRgb(getPixelValue(x, y));
+                    bv = Colors.hexToRgb(getPixelValue(x, y));
                     avg[0] += bv[0];
                     avg[1] += bv[1];
                     avg[2] += bv[2];
@@ -496,7 +497,7 @@ public class Captcha extends PixelGrid {
         avg[0] /= i;
         avg[1] /= i;
         avg[2] /= i;
-        return UTILITIES.rgbToHex(avg);
+        return Colors.rgbToHex(avg);
     }
 
     public Vector<PixelObject> getBiggestObjects(int letterNum, int minArea, double contrast, double objectContrast) {
@@ -1200,7 +1201,7 @@ public class Captcha extends PixelGrid {
 
                 for (int line = 0; line < owner.getJas().getInteger("GapWidthAverage"); line++) {
                     if (getWidth() > x + line) {
-                        rowAverage[x] = UTILITIES.mixColors(rowAverage[x], getPixelValue(x + line, y), count, 1);
+                        rowAverage[x] = Colors.mixColors(rowAverage[x], getPixelValue(x + line, y), count, 1);
                         count++;
                     }
                 }

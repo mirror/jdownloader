@@ -26,6 +26,7 @@ import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.utils.UTILITIES;
+import jd.nutils.Colors;
 
 /**
  * Diese Klasse ist wie die Letterklasse ein PixelContainer. Allerdings werden
@@ -129,7 +130,7 @@ public class PixelObject implements Comparable<PixelObject> {
         int[] tmp = { x, y, color };
         int tmpAvg = avg;
 
-        if (color > 0) avg = UTILITIES.mixColors(avg, color, getSize(), 1);
+        if (color > 0) avg = Colors.mixColors(avg, color, getSize(), 1);
         HashMap<Integer, int[]> row = grid.get(x);
         if (row == null) grid.put(x, row = new HashMap<Integer, int[]>());
         row.put(y, new int[] { x, y, color });
@@ -155,7 +156,7 @@ public class PixelObject implements Comparable<PixelObject> {
     }
 
     public void add(PixelObject current) {
-        avg = UTILITIES.mixColors(avg, current.getAverage(), getSize(), current.getSize());
+        avg = Colors.mixColors(avg, current.getAverage(), getSize(), current.getSize());
 
         for (int i = 0; i < current.object.size(); i++) {
             add(current.object.get(i)[0], current.object.get(i)[1], -1);

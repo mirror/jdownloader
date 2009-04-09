@@ -33,6 +33,7 @@ import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.UTILITIES;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.Colors;
 import jd.nutils.JDHash;
 import jd.parser.html.Form;
 import jd.utils.JDUtilities;
@@ -145,7 +146,7 @@ public class MegaUpload {
         for (int x = 0; x < captcha.getWidth(); x++) {
             for (int y = 0; y < captcha.getHeight(); y++) {
                 int avg = captcha.getAverage(x, y, 3, 3);
-                double dif = Math.min(UTILITIES.getColorDifference(avg, 0), UTILITIES.getColorDifference(avg, 0xffffff));
+                double dif = Math.min(Colors.getColorDifference(avg, 0), Colors.getColorDifference(avg, 0xffffff));
 
                 if (dif > 43.0) {
                     grid[x][y] = 0;

@@ -26,7 +26,7 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
-import jd.captcha.utils.UTILITIES;
+import jd.nutils.Colors;
 
 /**
  * 
@@ -49,7 +49,7 @@ public class ColorObjects {
                 for (Iterator<PixelObject> it = ret.iterator(); it.hasNext();) {
                     PixelObject o = it.next();
 
-                    if (o.isTouching(x, y, true, 10, 10) && UTILITIES.getColorDifference(grid.getGrid()[x][y], o.getAverage()) < tollerance) {
+                    if (o.isTouching(x, y, true, 10, 10) && Colors.getColorDifference(grid.getGrid()[x][y], o.getAverage()) < tollerance) {
 
                         merge.add(o);
                         // n.add(o);

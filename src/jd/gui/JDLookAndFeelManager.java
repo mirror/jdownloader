@@ -89,7 +89,7 @@ public class JDLookAndFeelManager implements Serializable {
             }
         } else if (plaf instanceof String) {
             for (LookAndFeelInfo lafi : UIManager.getInstalledLookAndFeels()) {
-                if (lafi.getName().equals(plaf)) {
+                if (lafi.getName().equals(plaf)||lafi.getName().equals("Substance"+plaf)) {
                     plaf = new JDLookAndFeelManager(lafi);
                     config.setProperty(PARAM_PLAF, plaf);
                     config.save();

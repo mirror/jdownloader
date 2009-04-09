@@ -114,6 +114,8 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private String lngKey = null;
     private boolean changed = false;
     private static final JDFileFilter fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter", "LanguageFiles (*.lng)"), ".lng", true);
+
+    private static final Color BG_COLOR = new Color(0.0f,0.0f,0.0f,0.0f);
     private boolean colorizeDone, colorizeMissing, colorizeOld;
     private Color colorDone, colorMissing, colorOld;
     private ColorHighlighter doneHighlighter, missingHighlighter, oldHighlighter;
@@ -179,7 +181,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         topFile.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.languageFile", "Language File:")), BorderLayout.LINE_START);
         topFile.add(cmboFile);
 
-        keyChart = new ChartAPI_PIE(JDLocale.L("plugins.optional.langfileeditor.keychart", "KeyChart"), 250, 60, this.getBackground());
+        keyChart = new ChartAPI_PIE(JDLocale.L("plugins.optional.langfileeditor.keychart", "KeyChart"), 250, 60, BG_COLOR);
         keyChart.addEntity(entDone = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.done", "Done"), 0, colorDone));
         keyChart.addEntity(entMissing = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.missing", "Missing"), 0, colorMissing));
         keyChart.addEntity(entOld = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.old", "Old"), 0, colorOld));

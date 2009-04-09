@@ -46,7 +46,8 @@ public class ChartAPI_GOM extends ChartAPI {
     }
 
     public String getUrl() {
-    	return "http://" + getServerAdress() + "/chart?cht=gom&chd=t:" + createDataString() + "&chco=" + createColorString() + "&chs=" + getWidth() + "x" + getHeight() + "&chl=" + createCaptionString() + "&chf=bg,s," + String.format("%02X%02X%02X", getBackgroundColor().getRed(), getBackgroundColor().getGreen(), getBackgroundColor().getBlue());
+        
+    	return "http://" + getServerAdress() + "/chart?cht=gom&chd=t:" + createDataString() + "&chco=" + createColorString() + "&chs=" + getWidth() + "x" + getHeight() + "&chl=" + createCaptionString() + "&chf=bg,s," + String.format("%02X%02X%02X%02X", getBackgroundColor().getRed(), getBackgroundColor().getGreen(), getBackgroundColor().getBlue(),getBackgroundColor().getAlpha());
     }
 
     public void fetchImage() {

@@ -33,7 +33,9 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 
+import jd.captcha.utils.UTILITIES;
 import jd.http.Encoding;
+import jd.nutils.Colors;
 import jd.utils.JDLocale;
 
 /**
@@ -174,7 +176,9 @@ public abstract class ChartAPI extends JComponent {
         }
         @Override
         public int filterRGB(int x, int y, int rgb) {
-            if (rgb != transparentRGB) return rgb | 0xff000000;
+            
+     
+            if( Colors.getColorDifference(rgb, transparentRGB)>40.0) return rgb | 0x44000000;
             return rgb & 0xffffff; 
         }
     }
@@ -182,11 +186,11 @@ public abstract class ChartAPI extends JComponent {
     public void setImage(BufferedImage image) {
 
        
-        TransparentFilter filter = new TransparentFilter(this.backgroundColor);
+//        TransparentFilter filter = new TransparentFilter(this.backgroundColor);
+//
+//        FilteredImageSource filteredSrc = new FilteredImageSource(image.getSource(), filter);
 
-        FilteredImageSource filteredSrc = new FilteredImageSource(image.getSource(), filter);
-
-        this.image = Toolkit.getDefaultToolkit().createImage(filteredSrc);
+        this.image =image;// Toolkit.getDefaultToolkit().createImage(filteredSrc);
 
         Dimension d = new Dimension(image.getWidth(), image.getHeight());
         setPreferredSize(d);

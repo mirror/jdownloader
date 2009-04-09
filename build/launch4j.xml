@@ -2,9 +2,9 @@
   <dontWrapJar>true</dontWrapJar>
   <headerType>gui</headerType>
   <jar>JDownloader.jar</jar>
-  <outfile>C:\Users\Anne\Desktop\JDownloader.exe</outfile>
-  <errTitle>Wrong Java Version installed. Install 1.5 or higher. Alt. try to start jDownlaoder by executing JDownloader.jar</errTitle>
-  <cmdLine>-Xmx512m</cmdLine>
+  <outfile>D:\jdworkspace2\JDownloader\dist\JDownloader.exe</outfile>
+  <errTitle></errTitle>
+  <cmdLine></cmdLine>
   <chdir></chdir>
   <priority>normal</priority>
   <downloadUrl>http://java.com/download</downloadUrl>
@@ -12,7 +12,7 @@
   <customProcName>false</customProcName>
   <stayAlive>false</stayAlive>
   <manifest></manifest>
-  <icon>G:\jdressourcen\128_128_jd_icon.ico</icon>
+  <icon>D:\jdworkspace2\JDownloader\ressourcen\jd\img\logo\64 px only icon.ico</icon>
   <jre>
     <path></path>
     <minVersion>1.5.0</minVersion>
@@ -20,24 +20,4 @@
     <jdkPreference>preferJre</jdkPreference>
     <maxHeapSize>512</maxHeapSize>
   </jre>
-  <versionInfo>
-    <fileVersion>3.0.0.0</fileVersion>
-    <txtFileVersion>rev</txtFileVersion>
-    <fileDescription>JDownloader Windows Launcher</fileDescription>
-    <copyright>(GPL) JD-TEam /JDownloader contributors</copyright>
-    <productVersion>2.0.0.0</productVersion>
-    <txtProductVersion>rev</txtProductVersion>
-    <productName>JDownloader Windows Launcher</productName>
-    <companyName>JD-team</companyName>
-    <internalName>JDLaunch4j</internalName>
-    <originalFilename>JDownloader.exe</originalFilename>
-  </versionInfo>
-  <messages>
-    <startupErr>An error occurred while starting the application.
-Start jDownlaoder out of the console using this command: &quot;java -jar -Xmx512m JDownlaoder.jar -debug&quot; and send the resulting log to the JD-Supportteam</startupErr>
-    <bundledJreErr>This application was configured to use a bundled Java Runtime Environment but the runtime is missing or corrupted.</bundledJreErr>
-    <jreVersionErr>This application requires a Java Runtime Environment</jreVersionErr>
-    <launcherErr>The registry refers to a nonexistent Java Runtime Environment installation or the runtime is corrupted.</launcherErr>
-    <instanceAlreadyExistsMsg>An application instance is already running.</instanceAlreadyExistsMsg>
-  </messages>
 </launch4jConfig>

@@ -80,7 +80,7 @@ public class PremiumPane extends JTabbedPanel {
     private static final Color INACTIVE = new Color(0xa40604);
     private static final Color DISABLED = new Color(0xaff0000);
 
-    private static Color FILTER_COLOR = new Color(0x00fffc);
+    private static Color FILTER_COLOR = new Color(0.0f,0.0f,0.0f,0.0f);
     private static boolean premiumActivated = true;
     private PluginForHost host;
     private JScrollPane sp;
@@ -100,7 +100,7 @@ public class PremiumPane extends JTabbedPanel {
         this.host = JDUtilities.getPluginForHost(hostname);
 
         details = new PremiumDetailTaskPanel("test", JDTheme.II("gui.images.config.tip", 24, 24));
-        FILTER_COLOR = details.getBackground();
+  
         freeTrafficChart = new ChartAPI_PIE("", 500, 100, FILTER_COLOR);
 
         this.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, this.getBackground().darker()));

@@ -65,13 +65,15 @@ public class PremiumPanel extends JPanel {
     private static final Color ACTIVE = new Color(0x7cd622);
     private static final Color INACTIVE = new Color(0xa40604);
     private static final Color DISABLED = new Color(0xaff0000);
+
+    private static final Color BG_COLOR = new Color(0.0f,0.0f,0.0f,0.0f);
     private static boolean premiumActivated = true;
     private boolean specialCharsWarningDisplayed = false;
     private PluginForHost host;
     private int accountNum;
     private AccountPanel[] accs;
 
-    private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 450, 60, this.getBackground());
+    private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 450, 60,BG_COLOR);
 
     public PremiumPanel(GUIConfigEntry gce) {
         host = (PluginForHost) gce.getConfigEntry().getActionListener();

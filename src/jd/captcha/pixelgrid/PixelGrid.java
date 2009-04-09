@@ -37,6 +37,7 @@ import jd.captcha.configuration.Property;
 import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
+import jd.nutils.Colors;
 
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
@@ -465,7 +466,7 @@ public class PixelGrid extends Property {
     public void cleanByHSBValue(Comparator<float[]> comparator) {  
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {              
-                if(comparator.compare(null,UTILITIES.rgb2hsb(this.getPixelValue(x, y)))==1){
+                if(comparator.compare(null,Colors.rgb2hsb(this.getPixelValue(x, y)))==1){
                     this.setPixelValue(x, y, getMaxPixelValue());
                 }                 
 
@@ -482,7 +483,7 @@ public class PixelGrid extends Property {
     public void cleanByColor(int i, double d) {
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                if(UTILITIES.getColorDifference(i, this.getPixelValue(x, y))<d){
+                if(Colors.getColorDifference(i, this.getPixelValue(x, y))<d){
                     this.setPixelValue(x, y, getMaxPixelValue());
                 }              
 
@@ -649,7 +650,7 @@ public class PixelGrid extends Property {
             for (int y = 0; y < getHeight(); y++) {
                 // Nicht die Colormix Funktion verwenden!!! DIe gibt nur in
                 // zurück, das ist nicht ausreichend
-                bv = UTILITIES.hexToRgb(getPixelValue(x, y));
+                bv = Colors.hexToRgb(getPixelValue(x, y));
                 avg[0] += bv[0];
                 avg[1] += bv[1];
                 avg[2] += bv[2];
@@ -661,7 +662,7 @@ public class PixelGrid extends Property {
         avg[0] /= i;
         avg[1] /= i;
         avg[2] /= i;
-        return UTILITIES.rgbToHex(avg);
+        return Colors.rgbToHex(avg);
 
     }
 
@@ -693,7 +694,7 @@ public class PixelGrid extends Property {
 
         for (int x = Math.max(0, px - halfW); x < Math.min(px + width - halfW, getWidth()); x++) {
             for (int y = Math.max(0, py - halfH); y < Math.min(py + height - halfH, getHeight()); y++) {
-                bv = UTILITIES.hexToRgb(getPixelValue(x, y));
+                bv = Colors.hexToRgb(getPixelValue(x, y));
                 avg[0] += bv[0];
                 avg[1] += bv[1];
                 avg[2] += bv[2];
@@ -705,7 +706,7 @@ public class PixelGrid extends Property {
         avg[0] /= i;
         avg[1] /= i;
         avg[2] /= i;
-        return UTILITIES.rgbToHex(avg);
+        return Colors.rgbToHex(avg);
     }
 
     /**
@@ -740,7 +741,7 @@ public class PixelGrid extends Property {
             for (int y = Math.max(0, py - halfH); y < Math.min(py + height - halfH, getHeight()); y++) {
                 if (x != px || y != py) {
 
-                    bv = UTILITIES.hexToRgb(getPixelValue(x, y));
+                    bv = Colors.hexToRgb(getPixelValue(x, y));
                     avg[0] += bv[0];
                     avg[1] += bv[1];
                     avg[2] += bv[2];
@@ -755,7 +756,7 @@ public class PixelGrid extends Property {
             avg[1] /= i;
             avg[2] /= i;
         }
-        return UTILITIES.rgbToHex(avg);
+        return Colors.rgbToHex(avg);
     }
 
     protected Vector<PixelObject> getColorObjects(int letterNum) {
@@ -767,10 +768,10 @@ public class PixelGrid extends Property {
         logger.info("Max pixel value: " + this.getMaxPixelValue());
         // Erstelle Farbverteilungsmap
         HashMap<Integer[], PixelObject> map = new HashMap<Integer[], PixelObject>();
-        logger.info("" + UTILITIES.getColorDifference(new int[] { 0, 0, 204 }, new int[] { 0, 0, 184 }));
-        logger.info("" + UTILITIES.getColorDifference(new int[] { 0, 0, 204 }, new int[] { 60, 10, 240 }));
+        logger.info("" + Colors.getColorDifference(new int[] { 0, 0, 204 }, new int[] { 0, 0, 184 }));
+        logger.info("" + Colors.getColorDifference(new int[] { 0, 0, 204 }, new int[] { 60, 10, 240 }));
 
-        logger.info("" + UTILITIES.getColorDifference(new int[] { 255, 255, 255 }, new int[] { 0, 0, 0 }));
+        logger.info("" + Colors.getColorDifference(new int[] { 255, 255, 255 }, new int[] { 0, 0, 0 }));
         final int avg = getAverage();
         int intensivity = 8;
         int h = getWidth() / letterNum / 4;
@@ -780,15 +781,15 @@ public class PixelGrid extends Property {
             for (int y = 0; y < getHeight(); y++) {
 
                 Integer key = getPixelValue(x, y);
-                int[] rgbA = UTILITIES.hexToRgb(key);
+                int[] rgbA = Colors.hexToRgb(key);
 
-                if (isElement(key, avg) || UTILITIES.rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0] * 100 > 0) {
+                if (isElement(key, avg) || Colors.rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0] * 100 > 0) {
                     if (map.get(key) == null) {
                         if (d++ < getHeight() * 2) {
                             d = 0;
-                            int[] bv = UTILITIES.hexToRgb(key);
+                            int[] bv = Colors.hexToRgb(key);
                             boolean found = false;
-                            if (last != null && UTILITIES.getHsbColorDifference(bv, UTILITIES.hexToRgb(map.get(last).getAverage())) < intensivity) {
+                            if (last != null && Colors.getHsbColorDifference(bv, Colors.hexToRgb(map.get(last).getAverage())) < intensivity) {
                                 map.get(last).add(x, y, key);
                                 found = true;
                             } else {
@@ -801,7 +802,7 @@ public class PixelGrid extends Property {
                                     Integer[] key2 = iterator.next();
                                     PixelObject object = valsiter.next();
                                     if (Math.abs((double) (x - key2[1] - object.getWidth())) < h) {
-                                        dif = UTILITIES.getHsbColorDifference(bv, UTILITIES
+                                        dif = Colors.getHsbColorDifference(bv, Colors
 
                                         .hexToRgb(object.getAverage()));
 
@@ -919,9 +920,9 @@ public class PixelGrid extends Property {
 
                 }
                 if (bestKey != null) {
-                    dif = UTILITIES.getHsbColorDifference(UTILITIES
+                    dif = Colors.getHsbColorDifference(Colors
 
-                    .hexToRgb(bestobj.getAverage()), UTILITIES
+                    .hexToRgb(bestobj.getAverage()), Colors
 
                     .hexToRgb(object.getAverage()));
                     if (dif < addd) {
@@ -1339,12 +1340,12 @@ public class PixelGrid extends Property {
     public void invert() {
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
-                int[] a = UTILITIES.hexToRgb(getMaxPixelValue());
-                int[] b = UTILITIES.hexToRgb(getPixelValue(x, y));
+                int[] a = Colors.hexToRgb(getMaxPixelValue());
+                int[] b = Colors.hexToRgb(getPixelValue(x, y));
                 a[0] = a[0] - b[0];
                 a[1] = a[1] - b[1];
                 a[2] = a[2] - b[2];
-                setPixelValue(x, y, UTILITIES.rgbToHex(a));
+                setPixelValue(x, y, Colors.rgbToHex(a));
             }
         }
     }
@@ -1651,7 +1652,7 @@ public class PixelGrid extends Property {
                         if (newX > getWidth() || newY > getHeight()) {
                             continue;
                         }
-                        localAVG = UTILITIES.mixColors(localAVG, getPixelValue(newX, newY), values, 1);
+                        localAVG = Colors.mixColors(localAVG, getPixelValue(newX, newY), values, 1);
                         values++;
 
                     }
@@ -1824,8 +1825,8 @@ public class PixelGrid extends Property {
         StringBuilder ret = new StringBuilder();
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                int[] rgb = UTILITIES.hexToRgb(getPixelValue(x, y));
-                float[] hsb = UTILITIES.rgb2hsb(rgb[0], rgb[1], rgb[2]);
+                int[] rgb = Colors.hexToRgb(getPixelValue(x, y));
+                float[] hsb = Colors.rgb2hsb(rgb[0], rgb[1], rgb[2]);
                 ret.append("y(");
                 ret.append(y);
                 ret.append(")x(");
