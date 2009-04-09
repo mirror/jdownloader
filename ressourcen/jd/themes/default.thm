@@ -9,9 +9,10 @@ gui.images.config.host = default/internet-web-browser
 
 gui.images.config.ocr = default/format-text-italic
 gui.images.config.eventmanager = default/appointment-new
+gui.images.progress=default/appointment-new
 gui.images.config.packagemanager = default/system-software-update
 gui.images.config.tip = default/dialog-information
-
+gui.images.captcha.methods=default/font-x-generic
 gui.images.configuration = default/preferences-desktop
 gui.images.delete = default/list-remove
 
@@ -34,7 +35,11 @@ gui.images.downloadorder=default/edit-redo
 gui.images.networkerror=default/network-error
 gui.images.proxy=default/network-server
 gui.images.network=default/network-idle
+gui.images.reconnect_selection=default/reconnect_select
+gui.images.reconnect_settings=default/reconnect_cfg
 gui.splash = splash
+gui.images.search=default/system-search
+gui.images.undo=default/edit-undo
 gui.images.container=default/package-x-generic
 gui.splash.languages=default/language
 gui.splash.settings=default/applications-system
@@ -63,7 +68,8 @@ gui.images.taskpanes.premium=default/premium
 gui.list=default/list
 gui.images.taskpanes.download=default/go-down
 gui.images.break=default/media-playback-pause
-
+gui.images.ok=default/ok
+gui.images.bad=default/bad
 gui.images.selected=default/face-smile
 gui.images.unselected=default/face-sad
 gui.images.minimize.left=default/minimize_left
