@@ -18,9 +18,6 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import net.java.balloontip.BalloonTip;
-import net.java.balloontip.utils.ToolTipUtils;
-
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;

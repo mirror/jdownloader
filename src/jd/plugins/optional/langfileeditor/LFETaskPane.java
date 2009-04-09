@@ -10,7 +10,6 @@ import jd.gui.skins.simple.SingletonPanel;
 import jd.gui.skins.simple.tasks.TaskPanel;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
-import net.miginfocom.swing.MigLayout;
 
 public class LFETaskPane extends TaskPanel implements ActionListener {
 
@@ -24,7 +23,6 @@ public class LFETaskPane extends TaskPanel implements ActionListener {
     }
 
     private void initGUI() {
-        this.setLayout(new MigLayout("ins 0, wrap 1", "[fill]"));
         this.addPanel(new SingletonPanel(LFEGui.class));
 
         showGui = createButton(JDLocale.L("plugins.optional.langfileeditor.taskpane", "Show LFE"), JDTheme.II("gui.splash.languages", 16, 16));

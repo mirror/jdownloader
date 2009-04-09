@@ -1127,7 +1127,7 @@ reconnect.progress.2_oldip = Reconnect Old IP:
 reconnect.progress.3_ipcheck = Reconnect New IP: %s / %s
 reconnect.retries = Max repeats (-1 = no limit)
 reconnect.waitforip = Wait for new IP (sec)
-reconnect.waittimetofirstipcheck = Fist IP Check wait time (sec)
+reconnect.waittimetofirstipcheck = First IP check wait time (sec)
 routerinfocollector.dialog.msg = <b>To improve the automated Router and Reconnect detection, we collect routerinformation!</b><br>If you agree on uploading the given details of your router confirm with YES!
 routerinfocollector.dialog.title = Please help us to improve the automatic routerdetection.
 showcaptcha.choose.file = Select a Imagefile

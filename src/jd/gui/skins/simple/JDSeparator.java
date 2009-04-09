@@ -17,7 +17,6 @@ import org.jdesktop.swingx.JXCollapsiblePane;
 public class JDSeparator extends JXCollapsiblePane implements PropertyChangeListener {
 
     private static final long serialVersionUID = 3007033193590223026L;
-    private JButton dlLIst;
     private JButton minimize;
     private JButton maximize;
 

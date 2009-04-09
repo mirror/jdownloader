@@ -27,8 +27,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
-import net.miginfocom.swing.MigLayout;
-
 import jd.captcha.JAntiCaptcha;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,6 +38,7 @@ import jd.gui.skins.simple.config.ConfigPanel;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 

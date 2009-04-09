@@ -17,20 +17,11 @@
 package jd.router;
 
 import java.awt.Color;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.net.InetAddress;
-import java.text.SimpleDateFormat;
-import java.util.logging.LogRecord;
-
-import javax.swing.ScrollPaneConstants;
 
 import jd.controlling.ProgressController;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class FindRouterIP {
 public static String findIP(GUIConfigEntry ip){

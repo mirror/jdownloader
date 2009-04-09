@@ -40,7 +40,6 @@ public class SplashScreen implements ActionListener {
 
     private Timer timer;
     private JWindow window;
-    private float alphaValue;
 
     private BufferedImage screenshot;
 

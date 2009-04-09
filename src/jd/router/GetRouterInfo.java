@@ -847,7 +847,7 @@ public class GetRouterInfo {
     }
 
     private void setProgress(final int val) {
-        new GuiRunnable(){
+        new GuiRunnable<Object>(){
 
             @Override
             public Object runSave() {

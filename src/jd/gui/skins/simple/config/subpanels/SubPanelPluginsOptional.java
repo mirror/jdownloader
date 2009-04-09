@@ -40,7 +40,6 @@ import jd.gui.skins.simple.OptionalMenuMenu;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.ConfigPanel;
-import jd.gui.skins.simple.config.PluginTableCellRenderer;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;

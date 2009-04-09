@@ -58,7 +58,6 @@ import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 

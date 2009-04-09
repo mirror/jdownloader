@@ -12,7 +12,6 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import javax.swing.JFrame;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;

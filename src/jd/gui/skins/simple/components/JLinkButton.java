@@ -34,7 +34,6 @@ import javax.swing.ButtonModel;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.WindowConstants;
 import javax.swing.event.CellEditorListener;

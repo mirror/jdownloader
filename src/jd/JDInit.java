@@ -25,8 +25,8 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import jd.config.Configuration;
-import jd.controlling.JDController;
 import jd.controlling.DownloadController;
+import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;

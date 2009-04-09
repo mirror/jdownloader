@@ -23,15 +23,12 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.interaction.PackageManager;
-import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
-import jd.gui.skins.simple.config.subpanels.SubPanelPluginsOptional;
 import jd.gui.skins.simple.config.subpanels.SubPanelOptionalInstaller;
+import jd.gui.skins.simple.config.subpanels.SubPanelPluginsOptional;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -46,10 +43,6 @@ public class ConfigPanelAddons extends ConfigPanel {
     private static final long serialVersionUID = 4145243293360008779L;
 
     private Configuration configuration;
-
-
-
-
 
     private SubPanelPluginsOptional sppo;
 
@@ -66,10 +59,7 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     public void initPanel() {
         this.setLayout(new MigLayout("ins 0", "[fill,grow]"));
-        
-        
-        
-        
+
         panel.add(tabbed = new JTabbedPane(), "spanx");
         tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
@@ -77,13 +67,13 @@ public class ConfigPanelAddons extends ConfigPanel {
         tabbed.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
-              
+
             }
 
         });
-        tabbed.addTab(JDLocale.L("gui.config.addons.settings.tab", "Settings"), JDTheme.II("gui.splash.controller",16,16),sppo = new SubPanelPluginsOptional(configuration));
-        tabbed.addTab(JDLocale.L("gui.config.addons.install.tab", "Installation & updates"), JDTheme.II("gui.images.taskpanes.download",16,16),spr = new SubPanelOptionalInstaller(configuration));
-       
+        tabbed.addTab(JDLocale.L("gui.config.addons.settings.tab", "Settings"), JDTheme.II("gui.splash.controller", 16, 16), sppo = new SubPanelPluginsOptional(configuration));
+        tabbed.addTab(JDLocale.L("gui.config.addons.install.tab", "Installation & updates"), JDTheme.II("gui.images.taskpanes.download", 16, 16), spr = new SubPanelOptionalInstaller(configuration));
+
         add(panel);
     }
 
@@ -92,7 +82,7 @@ public class ConfigPanelAddons extends ConfigPanel {
     }
 
     public void save() {
-     
+
         sppo.save();
         spr.save();
         WebUpdater.getConfig("JDU").save();

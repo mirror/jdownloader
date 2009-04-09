@@ -16,9 +16,7 @@
 
 package jd.gui.skins.simple.config.panels;
 
-import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDragEvent;
@@ -87,7 +85,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 2:
                 return JDLocale.L("gui.column_version", "Version");
 
-          
             case 3:
                 return JDLocale.L("gui.column_agbChecked", "akzeptieren");
             case 4:
@@ -111,7 +108,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 2:
                 return pluginsForHost.get(rowIndex).getVersion();
 
-    
             case 3:
                 return pluginsForHost.get(rowIndex).isAGBChecked();
             case 4:
@@ -235,7 +231,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     @Override
     public void initPanel() {
-       
 
         tableModel = new InternalTableModel();
         table = new JXTable(tableModel);
@@ -283,8 +278,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 column.setPreferredWidth(60);
                 column.setMinWidth(60);
                 break;
-
-      
             case 3:
                 column.setPreferredWidth(90);
                 column.setMaxWidth(90);
@@ -293,7 +286,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 4:
                 column.setPreferredWidth(100);
                 break;
-                
             case 5:
                 column.setPreferredWidth(70);
                 column.setMaxWidth(70);

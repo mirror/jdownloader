@@ -115,7 +115,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
                             }
                         }
                     }
-                    new GuiRunnable(){
+                    new GuiRunnable<Object>(){
 
                         @Override
                         public Object runSave() {
