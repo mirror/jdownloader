@@ -27,9 +27,8 @@ public class UploadingCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        br.getPage("http://www.uploading.com/lang/?lang=en");
-        String filesize = br.getRegex("File\\ssize:\\s(.*?)<br />").getMatch(0);
-        String filename = br.getRegex("Download\\sfile\\s:</span><br /><br /><br />\\s+<span[^>]*>(.*?)</span>").getMatch(0);
+        String filesize = br.getRegex("File\\ssize:\\s(.*?)<br/>").getMatch(0);
+        String filename = br.getRegex("File\\sname:\\s<span[^>]*>(.*?)</span>").getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
