@@ -1,4 +1,13 @@
 #Default Theme by Coalado
+##unset
+gui.icons.copy=default/edit-copy
+gui.icons.cut=default/edit-cut
+gui.icons.paste=default/edit-paste
+gui.icons.select_all=default/edit-select-all
+gui.icons.delete=default/edit-delete
+
+
+##
 gui.images.add = default/list-add
 gui.images.config.addons = default/mail-attachment
 gui.images.config.home = default/applications-system
