@@ -196,7 +196,7 @@ public class DatabaseConnector implements Serializable {
 
             }
         } catch (Exception e) {
-            System.out.println("DB Error bei " + name);
+          
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
 

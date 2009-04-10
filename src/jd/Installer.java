@@ -16,14 +16,22 @@
 
 package jd;
 
+import java.awt.BorderLayout;
 import java.io.File;
 import java.util.Locale;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.JDLogger;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.config.ConfigEntriesPanel;
+import jd.gui.skins.simple.config.ConfigPanel;
+import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.nutils.OSDetector;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -47,7 +55,7 @@ public class Installer {
 
         configContainer = new ConfigContainer(this, "Language");
         configContainer.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getSubConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")).setDefaultValue(Locale.getDefault()));
-        SimpleGUI.showConfigDialog(null, configContainer, true);
+        showConfigDialog(null, configContainer, true);
         if (JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID) == null) {
             JDLogger.getLogger().severe("language not set");
             this.aborted = true;
@@ -62,7 +70,7 @@ public class Installer {
         } else {
             ce.setDefaultValue(new File(System.getProperty("user.home") + "/Downloads"));
         }
-        SimpleGUI.showConfigDialog(null, configContainer, true);
+        showConfigDialog(null, configContainer, true);
         if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) == null) {
             JDLogger.getLogger().severe("downloaddir not set");
             this.aborted = true;
@@ -70,6 +78,30 @@ public class Installer {
         }
 
         JDUtilities.getConfiguration().save();
+    }
+
+    public static void showConfigDialog(final JFrame parent, final ConfigContainer configContainer, final boolean alwaysOnTop) {
+        // logger.info("ConfigDialog");
+        new GuiRunnable() {
+
+            @Override
+            public Object runSave() {
+                ConfigEntriesPanel p = new ConfigEntriesPanel(configContainer);
+                JPanel panel = new JPanel(new BorderLayout());
+                panel.add(new JPanel(), BorderLayout.NORTH);
+                panel.add(p, BorderLayout.CENTER);
+
+                ConfigurationPopup pop = new ConfigurationPopup(parent, p, panel);
+                pop.setModal(true);
+                pop.setAlwaysOnTop(alwaysOnTop);
+                pop.setLocation(JDUtilities.getCenterOfComponent(parent, pop));
+                pop.setVisible(true);
+
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+        }.waitForEDT();
     }
 
     public boolean isAborted() {

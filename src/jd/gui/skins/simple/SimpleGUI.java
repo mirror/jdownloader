@@ -1277,36 +1277,33 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         showConfigDialog(parent, container, false);
     }
 
-    public static void showConfigDialog(JFrame parent, ConfigContainer container, boolean alwaysOnTop) {
+    public static void showConfigDialog(final JFrame parent, final ConfigContainer container, boolean alwaysOnTop) {
+        new GuiRunnable<Object>(){
+
+            @Override
+            public Object runSave() {
+                JDCollapser.getInstance().getContentPane().removeAll();
+                JDCollapser.getInstance().getContentPane().add(new ConfigEntriesPanel(container));
+                if(container.getGroup()!=null){
+                    JDCollapser.getInstance().setTitle(container.getGroup().getName());
+                    JDCollapser.getInstance().setIcon(container.getGroup().getIcon());
+                }else{
+                    JDCollapser.getInstance().setTitle(JDLocale.L("gui.panels.collapsibleconfig","Settings"));
+                    JDCollapser.getInstance().setIcon(JDTheme.II("gui.images.config.addons",24,24));
+                }
+             
+                JDCollapser.getInstance().setVisible(true);
+                JDCollapser.getInstance().setCollapsed(false);
+                return null;
+            }
+            
+        }.waitForEDT();
         
-        JDCollapser.getInstance().getContentPane().removeAll();
-        JDCollapser.getInstance().getContentPane().add(new ConfigEntriesPanel(container));
-        if(container.getGroup()!=null){
-            JDCollapser.getInstance().setTitle(container.getGroup().getName());
-            JDCollapser.getInstance().setIcon(container.getGroup().getIcon());
-        }else{
-            JDCollapser.getInstance().setTitle(JDLocale.L("gui.panels.collapsibleconfig","Settings"));
-            JDCollapser.getInstance().setIcon(JDTheme.II("gui.images.config.addons",24,24));
-        }
-     
-        JDCollapser.getInstance().setVisible(true);
-        JDCollapser.getInstance().setCollapsed(false);
         
        // showConfigDialog(parent, new ConfigEntriesPanel(container), alwaysOnTop);
     }
 
-//    public static void showConfigDialog(JFrame parent, ConfigPanel config, boolean alwaysOnTop) {
-//        // logger.info("ConfigDialog");
-//        JPanel panel = new JPanel(new BorderLayout());
-//        panel.add(new JPanel(), BorderLayout.NORTH);
-//        panel.add(config, BorderLayout.CENTER);
-//
-//        ConfigurationPopup pop = new ConfigurationPopup(parent, config, panel);
-//        pop.setModal(true);
-//        pop.setAlwaysOnTop(alwaysOnTop);
-//        pop.setLocation(JDUtilities.getCenterOfComponent(parent, pop));
-//        pop.setVisible(true);
-//    }
+
 
     public void windowActivated(WindowEvent e) {
     }

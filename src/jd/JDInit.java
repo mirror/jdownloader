@@ -16,7 +16,6 @@
 
 package jd;
 
-import java.awt.Toolkit;
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,6 +29,7 @@ import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.http.Browser;
@@ -143,7 +143,7 @@ public class JDInit {
     }
 
     public void initPlugins() {
-   
+
         loadPluginForDecrypt();
         loadPluginForHost();
         loadCPlugins();
@@ -153,11 +153,11 @@ public class JDInit {
             if (plg.isLoaded()) {
                 try {
                     if (plg.isEnabled() && !plg.getPlugin().initAddon()) {
-                        logger.severe("Error loading Optional Plugin:"+plg.getClassName());
+                        logger.severe("Error loading Optional Plugin:" + plg.getClassName());
                     }
                 } catch (Throwable e) {
                     logger.severe("Error loading Optional Plugin: " + e.getMessage());
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
         }
@@ -225,8 +225,17 @@ public class JDInit {
                 File home = JDUtilities.getResourceFile(".");
                 if (home.canWrite() && !JDUtilities.getResourceFile("noupdate.txt").exists()) {
 
-                    JOptionPane.showMessageDialog(null, JDLocale.L("installer.welcome", "Welcome to jDownloader."));
+                    new GuiRunnable() {
 
+                        @Override
+                        public Object runSave() {
+                            // TODO Auto-generated method stub
+
+                            JOptionPane.showMessageDialog(null, JDLocale.L("installer.welcome", "Welcome to jDownloader."));
+                            return null;
+                        }
+
+                    }.waitForEDT();
                     // try {
                     // new WebUpdate().doWebupdate(true);
                     // JDUtilities.getConfiguration().save();
@@ -237,22 +246,42 @@ public class JDInit {
                     // home.getAbsolutePath(), 0));
                     // System.exit(0);
                     // } catch (Exception e) {
-                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    //jd.controlling.JDLogger.getLogger().log(java.util.logging.
+                    // Level.SEVERE,"Exception occured",e);
                     // // System.exit(0);
                     // }
 
                 }
                 if (!home.canWrite()) {
                     logger.severe("INSTALL abgebrochen");
-                    JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
+                    
+                    new GuiRunnable() {
+
+                        @Override
+                        public Object runSave() {
+                            // TODO Auto-generated method stub
+
+                            JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
+                            return null;
+                        }
+
+                    }.waitForEDT();
                     JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                     System.exit(1);
                 }
 
             } else {
                 logger.severe("INSTALL abgebrochen2");
-                JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation", "Error. User aborted installation."));
+                new GuiRunnable() {
 
+                    @Override
+                    public Object runSave() {
+                        JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation", "Error. User aborted installation."));
+
+                        return null;
+                    }
+
+                }.waitForEDT();
                 JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                 System.exit(0);
 
@@ -262,7 +291,6 @@ public class JDInit {
         return JDUtilities.getConfiguration();
     }
 
-  
     public void loadCPlugins() {
         new CPluginWrapper("linkbackup", "B", ".+\\.linkbackup");
         new CPluginWrapper("ccf", "C", ".+\\.ccf");
