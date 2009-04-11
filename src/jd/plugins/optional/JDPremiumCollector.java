@@ -261,7 +261,7 @@ public class JDPremiumCollector extends PluginOptional {
                             }
                         }
                     } catch (Exception e1) {
-                        JDLogger.exception(e1);
+                      
                     }
                 }
                 plg.getPlugin().setPremiumAccounts(accounts);

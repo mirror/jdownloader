@@ -26,13 +26,12 @@ import jd.event.ControlListener;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class JDStatusBar extends JPanel implements ChangeListener, ControlListener {
     private static final long serialVersionUID = 3676496738341246846L;
 
-    private JCheckBox chbPremium;
-
-    private JLabel lblMessage;
+  
 
     private JLabel lblSimu;
 
@@ -43,29 +42,15 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
     protected JSpinner spMaxDls;
 
     public JDStatusBar() {
-        setLayout(new BorderLayout());
+        setLayout(new MigLayout("ins 3 0 0 0,", "[fill,grow,left][shrink,right][shrink,right][shrink,right][shrink,right]", "[20px!]"));
 
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        JPanel panel = new JPanel(new BorderLayout(0, 0));
-        add(panel, BorderLayout.WEST);
-        add(right, BorderLayout.EAST);
+      
 
-        // TODO: Please replace with proper Icon that catches the users eye.
-        // Icon could even change in case of a warning or error.
-        // gruener Haken - everything ok
-        // oranges Warnschild - ohoh
-        // roter Kreis - we are roally f#$%cked!
-        // ImageIcon statusIcon = JDTheme.II("gui.images.jd_logo", 16, 16);
-
-        lblMessage = new JLabel(JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
         // lblMessage.setIcon(statusIcon);
         // statusBarHandler = new LabelHandler(lblMessage,
         // JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
 
-        chbPremium = new JCheckBox(JDLocale.L("gui.statusbar.premium", "Premium"));
-        chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
-        chbPremium.setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium", "Aus/An schalten des Premiumdownloads"));
-        chbPremium.addChangeListener(this);
+   
         JDUtilities.getController().addControlListener(this);
         lblSpeed = new JLabel(JDLocale.L("gui.statusbar.speed", "Max. Speed"));
         lblSimu = new JLabel(JDLocale.L("gui.statusbar.sim_ownloads", "Max.Dls."));
@@ -83,10 +68,14 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         spMaxDls.setToolTipText(JDLocale.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
         spMaxDls.addChangeListener(this);
 
-        panel.add(lblMessage);
-        right.add(chbPremium);
-        addItem(true, right, bundle(lblSimu, spMaxDls));
-        addItem(true, right, bundle(lblSpeed, spMax));
+      
+        add(new PremiumStatus(),"gapright");
+      add(lblSimu);
+      add(spMaxDls,"width 90!");
+      add(lblSpeed);
+      add(spMax,"width 90!");
+     
+   
     }
 
     void addItem(boolean seperator, JComponent where, Component component) {
@@ -125,8 +114,6 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
                 setSpinnerSpeed(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
             } else if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN)) {
                 spMaxDls.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
-            } else if (p == JDUtilities.getConfiguration() && event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
-                chbPremium.setSelected(p.getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
             } else if (event.getID() == ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED) {
                 // btnStartStop.setIcon(new
                 // ImageIcon(JDImage.getImage(getStartStopDownloadImage())));
@@ -168,11 +155,6 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
             subConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, (Integer) spMaxDls.getValue());
             subConfig.save();
 
-        } else if (e.getSource() == chbPremium) {
-            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) != chbPremium.isSelected()) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, chbPremium.isSelected());
-                JDUtilities.getConfiguration().save();
-            }
-        }
+        } 
     }
 }

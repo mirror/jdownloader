@@ -711,6 +711,10 @@ public class Rapidshare extends PluginForHost {
         } finally {
             if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 selectedServer = null;
+                AccountInfo ai = (AccountInfo)account.getProperty("accountinfo");
+                if(ai!=null){
+                    ai.setTrafficLeft(ai.getTrafficLeft()-downloadLink.getDownloadSize());
+                }
             }
 
         }
