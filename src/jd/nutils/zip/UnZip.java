@@ -27,6 +27,8 @@ import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import jd.controlling.JDLogger;
+
 public class UnZip {
     public boolean autoDelete = false;
 
@@ -140,7 +142,7 @@ public class UnZip {
             return ret.toArray(new String[ret.size()]);
 
         } catch (IOException err) {
-            err.printStackTrace();
+            JDLogger.exception(err);
         }
         return null;
     }

@@ -25,6 +25,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import jd.controlling.JDLogger;
+
 
 public class Executer extends Thread {
     public static final String CODEPAGE = OSDetector.isWindows() ? "ISO-8859-1" : "UTF-8";
@@ -298,7 +300,7 @@ public class Executer extends Thread {
             }
 
         } catch (IOException e1) {
-            e1.printStackTrace();
+            JDLogger.exception(e1);
             this.exception = e1;
             return;
         } catch (InterruptedException e) {

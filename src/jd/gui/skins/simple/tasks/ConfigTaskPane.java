@@ -74,6 +74,7 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
         add(new JSeparator());
 
         add(sav, D1_BUTTON_ICON);
+      //  sav.setEnabled(false);
     }
 
     /**

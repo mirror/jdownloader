@@ -37,6 +37,7 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.UIManager;
 
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
@@ -60,6 +61,9 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.MacOSController;
 import jd.utils.WebUpdate;
+
+import org.jvnet.lafwidget.LafWidget;
+import org.jvnet.lafwidget.utils.LafConstants.AnimationKind;
 
 /**
  * @author astaldo/JD-Team
@@ -109,21 +113,19 @@ public class Main {
 
             JFrame jf = new JFrame();
             try {
-            Image captchaImage = ImageIO.read(file);
-            MediaTracker mediaTracker = new MediaTracker(jf);
-            mediaTracker.addImage(captchaImage, 0);
+                Image captchaImage = ImageIO.read(file);
+                MediaTracker mediaTracker = new MediaTracker(jf);
+                mediaTracker.addImage(captchaImage, 0);
 
-           
                 mediaTracker.waitForID(0);
-          
 
-            mediaTracker.removeImage(captchaImage);
-            JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
-            Captcha captcha = jac.createCaptcha(captchaImage);
-            String captchaCode = jac.checkCaptcha(captcha);
-            file.delete();
+                mediaTracker.removeImage(captchaImage);
+                JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
+                Captcha captcha = jac.createCaptcha(captchaImage);
+                String captchaCode = jac.checkCaptcha(captcha);
+                file.delete();
 
-            return captchaCode;
+                return captchaCode;
             } catch (Exception e) {
                 return e.getStackTrace().toString();
             }
@@ -239,6 +241,7 @@ public class Main {
 
             }
         }
+        if(JDUtilities.getJavaVersion()>=1.6)UIManager.put(LafWidget.ANIMATION_KIND, AnimationKind.SLOW);
         LOGGER.info("init Eventmanager");
         Interaction.initTriggers();
         LOGGER.info("init Localisation");
@@ -397,7 +400,7 @@ public class Main {
         final JDInit init = new JDInit(splashScreen);
 
         init.init();
-   
+
         LOGGER.info("init Configuration");
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "Lade Konfiguration"));
 
@@ -455,7 +458,6 @@ public class Main {
         Main.setSplashStatus(splashScreen, 15, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
         init.initPlugins();
 
-     
         Locale.setDefault(Locale.ENGLISH);
 
         LOGGER.info("init gui");
@@ -491,7 +493,7 @@ public class Main {
 
         LOGGER.info("Revision: " + JDUtilities.getJDTitle());
         LOGGER.finer("Runtype: " + JDUtilities.getRunType());
- 
+
         try {
             splashScreen.finish();
         } catch (Exception e) {

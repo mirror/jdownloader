@@ -59,6 +59,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jd.PluginWrapper;
 import jd.config.MenuItem;
+import jd.controlling.JDLogger;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGuiUtils;
@@ -138,7 +139,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
             } catch (Exception e1) {
                 // TODO Auto-generated catch block
-                e1.printStackTrace();
+                JDLogger.exception(e1);
             }
         } else if (e.getSource() == menImportJDLH) {
             importLHScript();

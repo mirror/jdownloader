@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
@@ -31,9 +30,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -75,8 +72,6 @@ import jd.gui.skins.simple.components.DownloadView.DownloadLinksPanel;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
-import jd.gui.skins.simple.config.ConfigurationPopup;
-
 import jd.gui.skins.simple.config.panels.ConfigPanelAddons;
 import jd.gui.skins.simple.config.panels.ConfigPanelCaptcha;
 import jd.gui.skins.simple.config.panels.ConfigPanelDownload;
@@ -86,6 +81,7 @@ import jd.gui.skins.simple.config.panels.ConfigPanelGeneral;
 import jd.gui.skins.simple.config.panels.ConfigPanelPluginForHost;
 import jd.gui.skins.simple.config.panels.ConfigPanelReconnect;
 import jd.gui.skins.simple.premium.PremiumPane;
+import jd.gui.skins.simple.tasks.AddonTaskPane;
 import jd.gui.skins.simple.tasks.ConfigTaskPane;
 import jd.gui.skins.simple.tasks.DownloadTaskPane;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
@@ -108,12 +104,8 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.JXFrame;
 import org.jdesktop.swingx.JXLoginDialog;
-import org.jdesktop.swingx.JXTipOfTheDay;
 import org.jdesktop.swingx.JXTitledSeparator;
 import org.jdesktop.swingx.JXLoginPane.Status;
-import org.jdesktop.swingx.auth.LoginService;
-import org.jdesktop.swingx.tips.DefaultTip;
-import org.jdesktop.swingx.tips.DefaultTipOfTheDayModel;
 import org.jvnet.substance.SubstanceLookAndFeel;
 import org.jvnet.substance.SubstanceRootPaneUI;
 
@@ -168,6 +160,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     private JDSeparator sep;
 
     private SingletonPanel logPanel;
+
+    private SingletonPanel addonPanel;
+
+    private ConfigTaskPane cfgTskPane;
 
     /**
      * Das Hauptfenster wird erstellt. Singleton. Use SimpleGUI.createGUI
@@ -245,7 +241,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         ClipboardHandler.getClipboard();
 
-       
         new Thread("guiworker") {
             public void run() {
                 while (true) {
@@ -456,7 +451,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // JLinkButton.openURL(JDLocale.L("gui.support.forumurl",
         // "http://board.jdownloader.org"));
         // } catch (Exception e1) {
-        // e1.printStackTrace();
+        // JDLogger.exception(e1);
         // }
         // break;
         // case JDAction.WIKI:
@@ -464,7 +459,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // JLinkButton.openURL(JDLocale.L("gui.support.wikiurl",
         // "http://wiki.jdownloader.org"));
         // } catch (Exception e1) {
-        // e1.printStackTrace();
+        // JDLogger.exception(e1);
         // }
         // break;
         // // case JDAction.APP_CONFIGURATION:
@@ -527,7 +522,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         addLinkgrabberTask();
 
         addConfigTask();
-
+        addAddonTask();
         addPremiumTask();
 
         addLogTask();
@@ -566,14 +561,17 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         leftcolPane = new JDCollapsiblePane();
         leftcolPane.add(new JScrollPane(taskPane));
 
-        panel.add(leftcolPane,"spany 2");
+        panel.add(leftcolPane, "spany 2");
         sep = new JDSeparator();
 
         leftcolPane.addPropertyChangeListener(sep);
         panel.add(sep, "gapright 2,spany 2");
 
+   
         panel.add(contentPanel);
-        panel.add(JDCollapser.getInstance(),"hidemode 3,gaptop 15,cell 2 2");
+        //sp.setBorder(null);
+        
+        panel.add(JDCollapser.getInstance(), "hidemode 3,gaptop 15,cell 2 2");
         // panel.add(generalPurposeTasks, "cell 0 2");
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
         panel.add(progressBar, "spanx,hidemode 3,cell 0 3");
@@ -581,11 +579,19 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     }
 
+    private void addAddonTask() {
+        AddonTaskPane pane = new AddonTaskPane(JDLocale.L("gui.taskpanes.addons", "Addons"), JDTheme.II("gui.images.taskpanes.addons", 24, 24));
+        
+        addonPanel = new SingletonPanel(AddonPane.class, new Object[]{});
+        pane.addPanel(addonPanel);
+        taskPane.add(pane);
+    }
+
     private void addLogTask() {
 
         LogTaskPane logTask = new LogTaskPane(JDLocale.L("gui.taskpanes.log", "Log"), JDTheme.II("gui.images.terminal", 24, 24));
 
-        logPanel = new SingletonPanel(new LogPane(logger));
+        logPanel = new SingletonPanel(LogPane.class, new Object[]{logger});
         logTask.addPanel(logPanel);
         logTask.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -617,7 +623,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     private void addConfigTask() {
-        ConfigTaskPane cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 24, 24));
+        cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 24, 24));
 
         Object[] configConstructorObjects = new Object[] { JDUtilities.getConfiguration() };
 
@@ -684,6 +690,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         taskPane.add(cfgTskPane);
 
+    }
+
+    public ConfigTaskPane getCfgTskPane() {
+        return cfgTskPane;
     }
 
     private void addLinkgrabberTask() {
@@ -1278,32 +1288,30 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public static void showConfigDialog(final JFrame parent, final ConfigContainer container, boolean alwaysOnTop) {
-        new GuiRunnable<Object>(){
+        new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
-                JDCollapser.getInstance().getContentPane().removeAll();
-                JDCollapser.getInstance().getContentPane().add(new ConfigEntriesPanel(container));
-                if(container.getGroup()!=null){
+                JDCollapser.getInstance().setContentPanel(new ConfigEntriesPanel(container));
+           
+                if (container.getGroup() != null) {
                     JDCollapser.getInstance().setTitle(container.getGroup().getName());
                     JDCollapser.getInstance().setIcon(container.getGroup().getIcon());
-                }else{
-                    JDCollapser.getInstance().setTitle(JDLocale.L("gui.panels.collapsibleconfig","Settings"));
-                    JDCollapser.getInstance().setIcon(JDTheme.II("gui.images.config.addons",24,24));
+                } else {
+                    JDCollapser.getInstance().setTitle(JDLocale.L("gui.panels.collapsibleconfig", "Settings"));
+                    JDCollapser.getInstance().setIcon(JDTheme.II("gui.images.config.addons", 24, 24));
                 }
-             
+
                 JDCollapser.getInstance().setVisible(true);
                 JDCollapser.getInstance().setCollapsed(false);
                 return null;
             }
-            
+
         }.waitForEDT();
-        
-        
-       // showConfigDialog(parent, new ConfigEntriesPanel(container), alwaysOnTop);
+
+        // showConfigDialog(parent, new ConfigEntriesPanel(container),
+        // alwaysOnTop);
     }
-
-
 
     public void windowActivated(WindowEvent e) {
     }
@@ -1347,12 +1355,12 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public void showAccountInformation(final PluginForHost pluginForHost, final Account account) {
-       new GuiRunnable(){
+        new GuiRunnable() {
 
-        @Override
-        public Object runSave() {
-            // TODO Auto-generated method stub
-     
+            @Override
+            public Object runSave() {
+                // TODO Auto-generated method stub
+
                 AccountInfo ai;
                 try {
                     ai = pluginForHost.getAccountInformation(account);
@@ -1397,7 +1405,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                         if (label[j].equals(JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
                             JPanel panel2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
                             JTextField tf;
-                            panel2.add(tf=new JTextField(data[j]));
+                            panel2.add(tf = new JTextField(data[j]));
                             tf.setBorder(null);
                             tf.setBackground(null);
                             tf.setEditable(false);
@@ -1406,22 +1414,22 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                             panel.add(panel2, "wrap");
                         } else {
                             JTextField tf;
-                            panel.add(tf=new JTextField(data[j]), "wrap");
+                            panel.add(tf = new JTextField(data[j]), "wrap");
                             tf.setBorder(null);
                             tf.setBackground(null);
                             tf.setEditable(false);
                             tf.setOpaque(false);
-                         
+
                         }
                     }
 
                 }
                 JOptionPane.showMessageDialog(null, panel, def, JOptionPane.INFORMATION_MESSAGE);
-            
-        return null;
-       }
-          
-      }.start();
+
+                return null;
+            }
+
+        }.start();
     }
 
     public static void showChangelogDialog() {

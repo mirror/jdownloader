@@ -62,6 +62,7 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
+import jd.controlling.JDLogger;
 import jd.nutils.Executer;
 import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
@@ -430,7 +431,7 @@ public class JAntiCaptcha {
      * @return CaptchaCode
      */
     public String checkCaptcha(Captcha captcha) {
-if(extern)return callExtern();
+        if (extern) return callExtern();
         workingCaptcha = captcha;
         // Führe prepare aus
         jas.executePrepareCommands(captcha);
@@ -568,28 +569,28 @@ if(extern)return callExtern();
     }
 
     private String callExtern() {
-       
+
         try {
             File file = JDUtilities.getResourceFile(this.srcFile);
             String ext = JDIO.getFileExtension(this.srcFile);
             ImageIO.write((RenderedImage) this.sourceImage, ext, file);
         } catch (IOException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            JDLogger.exception(e);
             return null;
         }
         Executer exec = new Executer(JDUtilities.getResourceFile(this.command).getAbsolutePath());
- 
+
         exec.setRunin(JDUtilities.getResourceFile(this.command).getParent());
         exec.setWaitTimeout(300);
         exec.start();
         exec.waitTimeout();
-        String ret= exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-        
-        String res=JDIO.getLocalFile(JDUtilities.getResourceFile(this.dstFile));
-        if(res==null)return null;
+        String ret = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
+
+        String res = JDIO.getLocalFile(JDUtilities.getResourceFile(this.dstFile));
+        if (res == null) return null;
         return res.trim();
-        
+
     }
 
     /**
@@ -868,7 +869,7 @@ if(extern)return callExtern();
                         list.add(let);
 
                     } catch (Exception ew) {
-                        ew.printStackTrace();
+                        JDLogger.exception(ew);
                     }
                 }
                 for (Letter letter : list) {

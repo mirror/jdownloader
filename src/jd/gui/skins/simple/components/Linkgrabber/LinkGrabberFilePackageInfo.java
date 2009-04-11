@@ -10,6 +10,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
 import jd.config.Configuration;
+import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JDTextField;
@@ -17,7 +18,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class LinkGrabberFilePackageInfo extends JPanel implements LinkGrabberFilePackageListener, ActionListener {
+public class LinkGrabberFilePackageInfo extends JTabbedPanel implements LinkGrabberFilePackageListener, ActionListener {
 
     private static final long serialVersionUID = 5410296068527460629L;
 
@@ -179,6 +180,18 @@ public class LinkGrabberFilePackageInfo extends JPanel implements LinkGrabberFil
         default:
             break;
         }
+    }
+
+    @Override
+    public void onDisplay() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void onHide() {
+        // TODO Auto-generated method stub
+        
     }
 
 }

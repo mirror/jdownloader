@@ -451,51 +451,17 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         }
     }
 
+    public String getIconKey() {
+        return "gui.images.addons.unrar";
+    }
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
-
         menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.jdunrar.menu.toggle", "Activate"), 1).setActionListener(this));
-        m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
-
-        menu.add(new MenuItem(MenuItem.SEPARATOR));
+        m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));   
 
         menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.extract.singlefils", "Extract archive(s)"), 21).setActionListener(this));
-
-        // MenuItem queue;
-        // queue = new MenuItem(MenuItem.CONTAINER,
-        // JDLocale.L("plugins.optional.jdunrar.menu.queue", "Current Queue"),
-        // 3);
-        // m = new MenuItem(MenuItem.NORMAL,
-        // JDLocale.L("plugins.optional.jdunrar.menu.queue.start",
-        // "Start queue"), 30);
-        //
-        // m.setActionListener(this);
-        // queue.addMenuItem(m);
-        // m = new MenuItem(MenuItem.NORMAL,
-        // JDLocale.L("plugins.optional.jdunrar.menu.queue.clear",
-        // "Clear queue"), 31);
-        //
-        // m.setActionListener(this);
-        // queue.addMenuItem(m);
-        // queue.addMenuItem(m = new MenuItem(MenuItem.SEPARATOR));
-        // int i = 0;
-        // for (DownloadLink link : this.queue) {
-        // m = new MenuItem(MenuItem.NORMAL,
-        // JDLocale.LF("plugins.optional.jdunrar.menu.queue.extract",
-        // "Extract %s", link.getName()), 3000 + i);
-        // m.setActionListener(this);
-        // queue.addMenuItem(m);
-        // i++;
-        //
-        // }
-        // menu.add(queue);
-
-        menu.add(new MenuItem(MenuItem.SEPARATOR));
-        menu.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.pwList", "Passwordlist"), 5).setActionListener(this));
-        m.setAccelerator("F3");
-        menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.config", "Settings"), 4).setActionListener(this));
 
         return menu;
     }

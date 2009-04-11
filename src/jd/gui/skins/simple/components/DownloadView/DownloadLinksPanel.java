@@ -38,6 +38,7 @@ import javax.swing.Timer;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadControllerEvent;
 import jd.controlling.DownloadControllerListener;
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
@@ -267,7 +268,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                 try {
                     JLinkButton.openURL(link.getBrowserUrl());
                 } catch (Exception e1) {
-                    e1.printStackTrace();
+                    JDLogger.exception(e1);
                 }
             }
             return;

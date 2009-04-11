@@ -35,7 +35,6 @@ import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 

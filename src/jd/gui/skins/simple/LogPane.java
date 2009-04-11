@@ -120,7 +120,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
                 try {
                     JHelpDialog.showHelpMessage(SimpleGUI.CURRENTGUI, null, JDLocale.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), new URL("http://jdownloader.org/knowledge/wiki/support/create-a-jd-log"), null, 30);
                 } catch (MalformedURLException e1) {
-                    e1.printStackTrace();
+                    JDLogger.exception(e1);
                 }
             }
             String content = logField.getSelectedText();
@@ -144,7 +144,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
             try {
                 JLinkButton.openURL(url);
             } catch (Exception e1) {
-                e1.printStackTrace();
+                JDLogger.exception(e1);
             }
             logField.append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
             if (url != null) {

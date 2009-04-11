@@ -21,14 +21,12 @@ package jd.plugins.optional.webinterface;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
-import java.util.Vector;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;

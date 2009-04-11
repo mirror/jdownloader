@@ -2,6 +2,8 @@ package jd.gui.skins.simple;
 
 import java.awt.LayoutManager;
 
+import javax.swing.BorderFactory;
+
 import org.jdesktop.swingx.JXPanel;
 
 public abstract class JTabbedPanel extends JXPanel {
@@ -10,6 +12,7 @@ public abstract class JTabbedPanel extends JXPanel {
 
     public JTabbedPanel(LayoutManager layout) {
         super(layout);
+       
     }
 
     public JTabbedPanel() {

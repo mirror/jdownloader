@@ -45,6 +45,7 @@ import jd.HostPluginWrapper;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.ConfigPanel;
@@ -123,7 +124,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                         try {
                             JLinkButton.openURL(pluginsForHost.get(rowIndex).getPlugin().getAGBLink());
                         } catch (Exception e1) {
-                            e1.printStackTrace();
+                            JDLogger.exception(e1);
                         }
 
                     }

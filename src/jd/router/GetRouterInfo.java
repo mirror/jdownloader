@@ -50,7 +50,6 @@ import jd.gui.skins.simple.ProgressDialog;
 import jd.gui.skins.simple.Progressor;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
-
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.http.Browser;
 import jd.http.RequestHeader;

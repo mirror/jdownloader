@@ -45,6 +45,7 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.Executer;
@@ -235,10 +236,10 @@ public class JLinkButton extends JButton {
                         launcher.openURLinBrowser(Browser, url.toString());
                     } catch (BrowserLaunchingInitializingException e1) {
 
-                        e1.printStackTrace();
+                        JDLogger.exception(e1);
                     } catch (UnsupportedOperatingSystemException e1) {
 
-                        e1.printStackTrace();
+                        JDLogger.exception(e1);
                     }
 
                 }
@@ -296,14 +297,14 @@ public class JLinkButton extends JButton {
                     url = new URL(text);
                 } catch (MalformedURLException e1) {
 
-                    e1.printStackTrace();
+                    JDLogger.exception(e1);
                 }
             } else if (text.matches("www\\..*?\\..*")) {
                 try {
                     url = new URL("http://" + text);
                 } catch (MalformedURLException e1) {
 
-                    e1.printStackTrace();
+                    JDLogger.exception(e1);
                 }
             }
         }
@@ -323,7 +324,7 @@ public class JLinkButton extends JButton {
                 try {
                     if(getLinkURL()!=null) JLinkButton.openURL(getLinkURL());
                 } catch (Exception e1) {
-                    e1.printStackTrace();
+                    JDLogger.exception(e1);
                 }
             }
 
@@ -353,13 +354,13 @@ public class JLinkButton extends JButton {
                 try {
                     url = new URL(text);
                 } catch (MalformedURLException e1) {
-                    e1.printStackTrace();
+                    JDLogger.exception(e1);
                 }
             } else if (text.matches("www\\..*?\\..*")) {
                 try {
                     url = new URL("http://" + text);
                 } catch (MalformedURLException e1) {
-                    e1.printStackTrace();
+                    JDLogger.exception(e1);
                 }
             }
         }
@@ -378,7 +379,7 @@ public class JLinkButton extends JButton {
                 try {
                     JLinkButton.openURL(getLinkURL());
                 } catch (Exception e1) {
-                    e1.printStackTrace();
+                    JDLogger.exception(e1);
                 }
             }
 
@@ -449,7 +450,7 @@ public class JLinkButton extends JButton {
                     try {
                         JLinkButton.openURL(e.getURL());
                     } catch (Exception e1) {
-                        e1.printStackTrace();
+                        JDLogger.exception(e1);
                     }
                 }
 

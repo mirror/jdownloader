@@ -45,6 +45,7 @@ import javax.swing.table.AbstractTableModel;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.ChartAPI_Entity;
@@ -456,7 +457,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                     try {
                         languageFile.createNewFile();
                     } catch (IOException e1) {
-                        e1.printStackTrace();
+                        JDLogger.exception(e1);
                     }
                 }
                 cmboFile.setCurrentPath(languageFile);

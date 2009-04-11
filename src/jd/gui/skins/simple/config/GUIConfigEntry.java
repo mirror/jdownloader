@@ -45,6 +45,7 @@ import javax.swing.text.PlainDocument;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.gui.skins.simple.components.JDTextArea;
 import jd.gui.skins.simple.components.JDTextField;
@@ -364,7 +365,7 @@ break;
                 ((JLinkButton) input[0]).setLinkURL(new URL(text == null ? "" : text.toString()));
             } catch (MalformedURLException e1) {
 
-                e1.printStackTrace();
+                JDLogger.exception(e1);
             }
             break;
         case ConfigContainer.TYPE_PASSWORDFIELD:

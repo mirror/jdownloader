@@ -1,6 +1,5 @@
 package jd.gui.skins.simple.startmenu;
 
-import javax.swing.JMenuItem;
 
 public class AboutMenu extends JStartMenu {
     public AboutMenu() {

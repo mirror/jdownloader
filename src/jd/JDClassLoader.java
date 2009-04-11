@@ -31,6 +31,7 @@ import java.util.jar.JarFile;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 
+import jd.controlling.JDLogger;
 import jd.nutils.io.JDFileFilter;
 
 /**
@@ -65,13 +66,13 @@ public class JDClassLoader extends java.lang.ClassLoader {
         try {
             rootClassLoader = new URLClassLoader(new URL[] { new File(rootDir).toURI().toURL() }, null);
         } catch (MalformedURLException e1) {
-            e1.printStackTrace();
+            JDLogger.exception(e1);
         }
 
         boolean isWebupdater = false;
         System.out.println(rootDir);
         System.out.println(" " + rootClassLoader.getResource("jd"));
-        isWebupdater = (classLoaderParent.getResource("jd") + "").contains("jdupdate.jar")||(classLoaderParent.getResource("jd") + "").contains("webupdater.jar");
+        isWebupdater = (classLoaderParent.getResource("jd") + "").contains("jdupdate.jar") || (classLoaderParent.getResource("jd") + "").contains("webupdater.jar");
         if (!isWebupdater) {
             // Hier werden die JAR Dateien ausgelesen
             Vector<JarFile> jarFiles = new Vector<JarFile>();
@@ -83,15 +84,14 @@ public class JDClassLoader extends java.lang.ClassLoader {
                 // jars = new JarFile[files.length];
 
                 for (int i = 0; i < files.length; i++) {
-                 
 
                     try {
-                        if (!files[i].getAbsolutePath().endsWith("webupdater.jar")||!files[i].getAbsolutePath().endsWith("jdupdate.jar")) {
+                        if (!files[i].getAbsolutePath().endsWith("webupdater.jar") || !files[i].getAbsolutePath().endsWith("jdupdate.jar")) {
                             if (!comp(getSig(files[i].getAbsolutePath()))) {
                                 logger.severe("Not loaded due to sig violation: " + files[i]);
                                 continue;
                             }
-                            
+
                             if (names.contains(files[i].getName())) {
                                 logger.severe("Duplicate Jars found: " + files[i].getAbsolutePath());
                             } else {
@@ -104,7 +104,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                             }
                         }
                     } catch (Exception e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     }
                 }
             }
@@ -114,10 +114,9 @@ public class JDClassLoader extends java.lang.ClassLoader {
                 // jars = new JarFile[files.length];
                 for (int i = 0; i < files.length; i++) {
 
-                  
                     try {
-                        
-                        if (!files[i].getAbsolutePath().endsWith("webupdater.jar")&&!files[i].getAbsolutePath().endsWith("jdupdate.jar")) {
+
+                        if (!files[i].getAbsolutePath().endsWith("webupdater.jar") && !files[i].getAbsolutePath().endsWith("jdupdate.jar")) {
                             if (!comp(getSig(files[i].getAbsolutePath()))) {
                                 logger.severe("Not loaded due to sig violation: " + files[i]);
                                 continue;
@@ -133,7 +132,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                         }
 
                     } catch (IOException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     }
                 }
             }
@@ -175,7 +174,8 @@ public class JDClassLoader extends java.lang.ClassLoader {
             }
             return res;
         } catch (Exception e) {
-            // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.
+            // SEVERE,"Exception occured",e);
         }
         return null;
     }
@@ -296,7 +296,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                         // "/")+"!/"+entry.getName());
                         urls.add(new URL("jar", "", url));
                     } catch (MalformedURLException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     }
                 }
             }
@@ -338,9 +338,9 @@ public class JDClassLoader extends java.lang.ClassLoader {
                         c = defineClass(name, data, 0, data.length, getClass().getProtectionDomain());
                         if (c == null) { throw new ClassNotFoundException(name); }
                     } catch (ClassFormatError e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     } catch (IOException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     }
                 }
             }

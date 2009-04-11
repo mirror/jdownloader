@@ -44,7 +44,9 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
         }
 
     }
-
+ public String getIconKey(){
+     return "gui.images.config.home";
+ }
     @Override
     public String getLinkName() {
         return null;

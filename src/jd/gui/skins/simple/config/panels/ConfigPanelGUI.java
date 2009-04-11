@@ -32,6 +32,7 @@ import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.controlling.JDLogger;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
@@ -262,7 +263,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                                         UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
                                     } catch (Exception e1) {
                                         // TODO Auto-generated catch block
-                                        e1.printStackTrace();
+                                        JDLogger.exception(e1);
                                     }
                                     // SimpleGUI.CURRENTGUI.updateDecoration();
                                     SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
@@ -310,7 +311,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                                 // SimpleGUI.CURRENTGUI.updateDecoration();
                             } catch (Exception e1) {
                                 // TODO Auto-generated catch block
-                                e1.printStackTrace();
+                                JDLogger.exception(e1);
                             }
                             System.out.println("Set LAF " + JDLookAndFeelManager.getPlaf());
                             SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);

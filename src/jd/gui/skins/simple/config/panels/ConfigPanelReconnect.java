@@ -178,7 +178,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("DOWNLOAD"), "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", JDLocale.L("gui.config.download.autoresume", "Let Reconnects interrupt resumeable downloads")).setDefaultValue(true).setGroup(group)));
         panel.add(getHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.methods", "Reconnect Methods"), JDTheme.II("gui.images.reconnect_selection", 32, 32))), "spanx");
 
-        panel.add(tabbed = new JTabbedPane(), "spanx");
+        panel.add(tabbed = new JTabbedPane(), "spanx,pushy,growy");
         tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbed.setTabPlacement(SwingConstants.TOP);

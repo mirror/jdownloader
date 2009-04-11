@@ -16,6 +16,8 @@
 
 package jd.crypt;
 
+import jd.controlling.JDLogger;
+
 /**
  * <p>
  * Encodes and decodes to and from Base64 notation.
@@ -91,7 +93,7 @@ package jd.crypt;
  */
 public class Base64 {
 
-    /*  P U B L I C F I E L D S */
+    /* P U B L I C F I E L D S */
 
     /**
      * A {@link Base64.InputStream} will read data from another
@@ -642,7 +644,7 @@ public class Base64 {
      */
     private final static byte[] _URL_SAFE_ALPHABET = { (byte) 'A', (byte) 'B', (byte) 'C', (byte) 'D', (byte) 'E', (byte) 'F', (byte) 'G', (byte) 'H', (byte) 'I', (byte) 'J', (byte) 'K', (byte) 'L', (byte) 'M', (byte) 'N', (byte) 'O', (byte) 'P', (byte) 'Q', (byte) 'R', (byte) 'S', (byte) 'T', (byte) 'U', (byte) 'V', (byte) 'W', (byte) 'X', (byte) 'Y', (byte) 'Z', (byte) 'a', (byte) 'b', (byte) 'c', (byte) 'd', (byte) 'e', (byte) 'f', (byte) 'g', (byte) 'h', (byte) 'i', (byte) 'j', (byte) 'k', (byte) 'l', (byte) 'm', (byte) 'n', (byte) 'o', (byte) 'p', (byte) 'q', (byte) 'r', (byte) 's', (byte) 't', (byte) 'u', (byte) 'v', (byte) 'w', (byte) 'x', (byte) 'y', (byte) 'z', (byte) '0', (byte) '1', (byte) '2', (byte) '3', (byte) '4', (byte) '5', (byte) '6', (byte) '7', (byte) '8', (byte) '9', (byte) '-', (byte) '_' };
 
-    /*  P R I V A T E F I E L D S */
+    /* P R I V A T E F I E L D S */
 
     /**
      * Used in decoding URL- and Filename-safe dialects of Base64.
@@ -707,7 +709,7 @@ public class Base64 {
     private final static byte EQUALS_SIGN_ENC = -1; // Indicates equals sign in
     // encoding
 
-    /*  S T A N D A R D B A S E 6 4 A L P H A B E T */
+    /* S T A N D A R D B A S E 6 4 A L P H A B E T */
 
     /** Specify that data should be gzip-compressed. */
     public final static int GZIP = 2;
@@ -715,7 +717,7 @@ public class Base64 {
     /** Maximum line length (76) of Base64 output. */
     private final static int MAX_LINE_LENGTH = 76;
 
-    /*  U R L S A F E B A S E 6 4 A L P H A B E T */
+    /* U R L S A F E B A S E 6 4 A L P H A B E T */
 
     /** The new line character (\n) as a byte. */
     private final static byte NEW_LINE = (byte) '\n';
@@ -723,7 +725,7 @@ public class Base64 {
     /** No options specified. Value is zero. */
     public final static int NO_OPTIONS = 0;
 
-    /*  O R D E R E D B A S E 6 4 A L P H A B E T */
+    /* O R D E R E D B A S E 6 4 A L P H A B E T */
 
     /**
      * Encode using the special "ordered" dialect of Base64 described here: <a
@@ -735,7 +737,7 @@ public class Base64 {
     /** Preferred encoding. */
     private final static String PREFERRED_ENCODING = "UTF-8";
 
-    /*  D E T E R M I N E W H I C H A L H A B E T */
+    /* D E T E R M I N E W H I C H A L H A B E T */
 
     /**
      * Encode using Base64-like encoding that is URL- and Filename-safe as
@@ -900,7 +902,7 @@ public class Base64 {
         return bytes;
     } // end decode
 
-    /*  E N C O D I N G M E T H O D S */
+    /* E N C O D I N G M E T H O D S */
 
     /**
      * Decodes four bytes from array <var>source</var> and writes the resulting
@@ -1005,7 +1007,7 @@ public class Base64 {
             out.write(decoded);
         } // end try
         catch (java.io.IOException ex) {
-            ex.printStackTrace();
+            JDLogger.exception(ex);
         } // end catch
         finally {
             try {
@@ -1123,11 +1125,11 @@ public class Base64 {
             obj = ois.readObject();
         } // end try
         catch (java.io.IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             obj = null;
         } // end catch
         catch (java.lang.ClassNotFoundException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             obj = null;
         } // end catch
         finally {
@@ -1251,7 +1253,7 @@ public class Base64 {
         return Base64.encodeBytes(source, 0, source.length, NO_OPTIONS);
     } // end encodeBytes
 
-    /*  D E C O D I N G M E T H O D S */
+    /* D E C O D I N G M E T H O D S */
 
     /**
      * Encodes a byte array into Base64 notation.
@@ -1352,7 +1354,7 @@ public class Base64 {
                 gzos.close();
             } // end try
             catch (java.io.IOException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 return null;
             } // end catch
             finally {
@@ -1438,7 +1440,7 @@ public class Base64 {
             out.write(encoded.getBytes("US-ASCII")); // Strict, 7-bit output.
         } // end try
         catch (java.io.IOException ex) {
-            ex.printStackTrace();
+            JDLogger.exception(ex);
         } // end catch
         finally {
             try {
@@ -1570,7 +1572,7 @@ public class Base64 {
             oos.writeObject(serializableObject);
         } // end try
         catch (java.io.IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             return null;
         } // end catch
         finally {
@@ -1669,7 +1671,7 @@ public class Base64 {
 
     } // end getAlphabet
 
-    /*  I N N E R C L A S S O U T P U T S T R E A M */
+    /* I N N E R C L A S S O U T P U T S T R E A M */
 
     /** Defeats instantiation. */
     private Base64() {

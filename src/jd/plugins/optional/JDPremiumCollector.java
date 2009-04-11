@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 
 import jd.HostPluginWrapper;
 import jd.Main;
@@ -31,6 +30,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
@@ -72,12 +72,16 @@ public class JDPremiumCollector extends PluginOptional {
             br.postPage(subConfig.getStringProperty(PROPERTY_API_URL), post);
 
         } catch (IOException e1) {
-            e1.printStackTrace();
-            JOptionPane.showMessageDialog(guiFrame, JDLocale.L("plugins.optional.premiumcollector.error.url", "Probably wrong URL! See log for more infos!"), JDLocale.L("plugins.optional.premiumcollector.error", "Error!"), JOptionPane.ERROR_MESSAGE);
+           
+           // JDLogger.exception(e1);
+           logger.severe(JDLocale.L("plugins.optional.premiumcollector.error.url", "Probably wrong URL! See log for more infos!"));
+           // JOptionPane.showMessageDialog(guiFrame, , JDLocale.L("plugins.optional.premiumcollector.error", "Error!"), JOptionPane.ERROR_MESSAGE);
         }
 
         if (br.containsHTML("Login faild")) {
-            JOptionPane.showMessageDialog(guiFrame, JDLocale.L("plugins.optional.premiumcollector.error.userpass", "Wrong username/password!"), JDLocale.L("plugins.optional.premiumcollector.error", "Error!"), JOptionPane.ERROR_MESSAGE);
+            logger.severe(JDLocale.L("plugins.optional.premiumcollector.error.userpass", "Wrong username/password!"));
+            
+
             return;
         }
 
@@ -169,7 +173,9 @@ public class JDPremiumCollector extends PluginOptional {
 
         return menu;
     }
-
+    public String getIconKey(){
+        return "gui.images.taskpanes.premium";
+    }
     @Override
     public String getHost() {
         return JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector");
@@ -211,7 +217,7 @@ public class JDPremiumCollector extends PluginOptional {
                                 logger.finer(plg.getHost() + " : account " + account.getUser() + " is not valid; not added to list");
                             }
                         } catch (Exception e1) {
-                            e1.printStackTrace();
+                            JDLogger.exception(e1);
                         }
                     } else {
                         accounts.add(account);
@@ -255,7 +261,7 @@ public class JDPremiumCollector extends PluginOptional {
                             }
                         }
                     } catch (Exception e1) {
-                        e1.printStackTrace();
+                        JDLogger.exception(e1);
                     }
                 }
                 plg.getPlugin().setPremiumAccounts(accounts);

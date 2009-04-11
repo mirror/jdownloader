@@ -38,6 +38,7 @@ import javax.swing.WindowConstants;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
+import jd.controlling.JDLogger;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -173,7 +174,7 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
 
             } catch (Exception e1) {
                 // TODO Auto-generated catch block
-                e1.printStackTrace();
+                JDLogger.exception(e1);
             }
 
         }

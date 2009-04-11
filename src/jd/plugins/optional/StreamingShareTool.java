@@ -36,6 +36,7 @@ import javax.swing.JTextArea;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.DistributeData;
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiUtils;
@@ -134,7 +135,7 @@ public class StreamingShareTool extends PluginOptional {
 
             } catch (Exception e1) {
                 // TODO Auto-generated catch block
-                e1.printStackTrace();
+                JDLogger.exception(e1);
             }
 
             return;

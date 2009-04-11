@@ -71,7 +71,9 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         this.queue = new Jobber(1);
         initConfig();
     }
-
+    public String getIconKey(){
+        return "gui.images.addons.merge";
+    }
     /**
      * Das controllevent fängt heruntergeladene file ab und wertet sie aus.
      * CONTROL_PLUGIN_INACTIVE: Wertet die frisch fertig gewordenen Downloads

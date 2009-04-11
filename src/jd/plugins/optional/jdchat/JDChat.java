@@ -49,6 +49,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -930,7 +931,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                         try {
                             JLinkButton.openURL(e.getURL());
                         } catch (Exception e1) {
-                            e1.printStackTrace();
+                            JDLogger.exception(e1);
                         }
                     }
                 }
@@ -1099,7 +1100,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                     Thread.sleep(15000);
                 } catch (InterruptedException e1) {
 
-                    e1.printStackTrace();
+                    JDLogger.exception(e1);
                 }
                 initIRC();
             }

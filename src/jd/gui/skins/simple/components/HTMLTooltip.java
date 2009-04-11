@@ -32,6 +32,7 @@ import javax.swing.JWindow;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
+import jd.controlling.JDLogger;
 import jd.utils.JDTheme;
 
 public class HTMLTooltip extends JWindow implements MouseListener, HyperlinkListener {
@@ -134,7 +135,7 @@ public class HTMLTooltip extends JWindow implements MouseListener, HyperlinkList
             try {
                 JLinkButton.openURL(e.getURL());
             } catch (Exception e1) {
-                e1.printStackTrace();
+                JDLogger.exception(e1);
             }
         }
     }

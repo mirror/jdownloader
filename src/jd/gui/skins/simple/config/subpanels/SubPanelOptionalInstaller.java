@@ -31,7 +31,6 @@ import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
 import jd.controlling.interaction.PackageManager;
-import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.update.PackageData;
 import jd.utils.JDLocale;

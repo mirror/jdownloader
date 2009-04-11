@@ -19,8 +19,6 @@ package jd.plugins.host;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;

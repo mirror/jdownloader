@@ -118,7 +118,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     public void showFilePackageInfo(LinkGrabberFilePackage fp) {
         FilePackageInfo.setPackage(fp);
-        JDCollapser.getInstance().getContentPane().removeAll();
+        JDCollapser.getInstance().setContentPanel(FilePackageInfo);
         JDCollapser.getInstance().getContentPane().add(FilePackageInfo);
         JDCollapser.getInstance().setTitle("FilePackage");
         JDCollapser.getInstance().setVisible(true);

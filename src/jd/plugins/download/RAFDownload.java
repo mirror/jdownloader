@@ -25,6 +25,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 
 import jd.config.Configuration;
+import jd.controlling.JDLogger;
 import jd.http.requests.Request;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -299,7 +300,7 @@ public class RAFDownload extends DownloadInterface {
                 if (outputFile != null) outputFile.close();
                 if (outputChannel != null) outputChannel.close();
             } catch (Exception e2) {
-                e2.printStackTrace();
+                JDLogger.exception(e2);
             }
             addException(e);
             throw e;

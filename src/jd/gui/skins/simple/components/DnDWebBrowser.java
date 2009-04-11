@@ -47,6 +47,8 @@ import javax.swing.JToolBar;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
+import jd.controlling.JDLogger;
+
 public class DnDWebBrowser extends JDialog {
 
     private class DropTargetHandler implements DropTargetListener {
@@ -80,10 +82,10 @@ public class DnDWebBrowser extends JDialog {
                     }
                     event.dropComplete(true);
                 } catch (UnsupportedFlavorException flavorException) {
-                    flavorException.printStackTrace();
+                    JDLogger.exception(flavorException);
                     event.dropComplete(false);
                 } catch (IOException ioException) {
-                    ioException.printStackTrace();
+                    JDLogger.exception(ioException);
                     event.dropComplete(false);
                 }
             } else {
@@ -152,7 +154,7 @@ class WebBrowserPane extends JEditorPane {
         try {
             setPage(pageURL);
         } catch (IOException ioException) {
-            ioException.printStackTrace();
+            JDLogger.exception(ioException);
         }
     }
 
@@ -199,7 +201,7 @@ class WebToolBar extends JToolBar implements HyperlinkListener {
                     URL url = new URL(urlTextField.getText());
                     webBrowserPane.goToURL(url);
                 } catch (MalformedURLException urlException) {
-                    urlException.printStackTrace();
+                    JDLogger.exception(urlException);
                 }
             }
         });

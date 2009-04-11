@@ -86,7 +86,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
             for (JComponent c : entry.getInput()) {
                 if (entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) {
-                    panel.add(new JScrollPane(c), "spanx,gapright 20,growy,height 60:15000:null");
+                    panel.add(new JScrollPane(c), "spanx,gapright 20,growy,pushy");
                 } else {
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright 20" : "gapright 20");
                 }
@@ -112,7 +112,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
             for (JComponent c : entry.getInput()) {
                 if (entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) {
-                    panel.add(new JScrollPane(c), "spanx,gapleft 35,gapright 20,growy,height 60:15000:null");
+                    panel.add(new JScrollPane(c), "spanx,gapleft 35,gapright 20");
                 } else {
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright 20,gapleft 35" : "gapright 20");
                 }

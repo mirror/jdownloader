@@ -35,6 +35,7 @@ import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.Property;
 import jd.controlling.DistributeData;
+import jd.controlling.JDLogger;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlListener;
 import jd.http.Encoding;
@@ -651,7 +652,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDLocale.L("plugins.optional.remotecontrol.startedonport", "started on port") + " " + getPluginConfig().getIntegerProperty("PORT", 10025) + "\n http://127.0.0.1:" + getPluginConfig().getIntegerProperty("PORT", 10025) + JDLocale.L("plugins.optional.remotecontrol.help", "/help for Developer Information."));
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            JDLogger.exception(ex);
         }
     }
 

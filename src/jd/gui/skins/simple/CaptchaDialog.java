@@ -38,6 +38,7 @@ import javax.swing.WindowConstants;
 
 import jd.captcha.JAntiCaptcha;
 import jd.config.Configuration;
+import jd.controlling.JDLogger;
 import jd.plugins.Plugin;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
@@ -146,7 +147,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
                         code = JDUtilities.getCaptcha(plugin, host, file, true);
                     } catch (InterruptedException e1) {
                         // TODO Auto-generated catch block
-                        e1.printStackTrace();
+                        JDLogger.exception(e1);
                     }
                     try {
                         Thread.sleep(1000);

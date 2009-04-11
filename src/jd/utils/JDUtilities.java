@@ -75,6 +75,7 @@ import jd.config.DatabaseConnector;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
+import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.http.Browser;
@@ -207,7 +208,6 @@ public class JDUtilities {
         userio_sem.release(1);
     }
 
- 
     /**
      * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
      * 
@@ -563,15 +563,15 @@ public class JDUtilities {
                 JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
                 Captcha captcha = jac.createCaptcha(captchaImage);
                 String captchaCode = jac.checkCaptcha(captcha);
-                if(jac.isExtern()){
-                    if(captchaCode==null||captchaCode.trim().length()==0){
-                    plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
-                    acquireUserIOSemaphore();
-                    captchaCode = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
-                    releaseUserIOSemaphore();  
+                if (jac.isExtern()) {
+                    if (captchaCode == null || captchaCode.trim().length() == 0) {
+                        plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
+                        acquireUserIOSemaphore();
+                        captchaCode = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
+                        releaseUserIOSemaphore();
                     }
                     return captchaCode;
-                
+
                 }
                 jd.controlling.JDLogger.getLogger().info("Code: " + captchaCode);
                 jd.controlling.JDLogger.getLogger().info("Vality: " + captcha.getValityPercent());
@@ -615,7 +615,7 @@ public class JDUtilities {
                 return code;
             } catch (IOException e1) {
                 // TODO Auto-generated catch block
-                e1.printStackTrace();
+                JDLogger.exception(e1);
                 return null;
             }
         }
@@ -1079,7 +1079,7 @@ public class JDUtilities {
     public synchronized static SubConfiguration getSubConfig(String name) {
         if (SUBCONFIG_LOCK) {
 
-            new Exception("Static Database init error!!").printStackTrace();
+            JDLogger.exception(new Exception("Static Database init error!!"));
         }
         SUBCONFIG_LOCK = true;
         try {

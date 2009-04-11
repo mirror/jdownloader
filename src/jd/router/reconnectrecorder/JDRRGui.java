@@ -152,7 +152,7 @@ public class JDRRGui extends JDialog implements ActionListener {
 
             } catch (Exception e1) {
                 // TODO Auto-generated catch block
-                e1.printStackTrace();
+                JDLogger.exception(e1);
             }
 
             JDRRInfoPopup popup = new JDRRInfoPopup(ip_before);

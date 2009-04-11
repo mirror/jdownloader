@@ -37,6 +37,7 @@ import java.util.Vector;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
+import jd.controlling.JDLogger;
 import jd.nutils.JDHash;
 
 public class JDIO {
@@ -342,7 +343,7 @@ public class JDIO {
             return true;
         } catch (FileNotFoundException e1) {
 
-            e1.printStackTrace();
+            JDLogger.exception(e1);
             if (inChannel != null) {
                 try {
                     inChannel.close();

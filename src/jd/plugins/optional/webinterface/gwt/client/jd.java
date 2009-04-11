@@ -1,13 +1,8 @@
 package jd.plugins.optional.webinterface.gwt.client;
 
-import com.google.gwt.core.client.EntryPoint;
-import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.ClickListener;
-import com.google.gwt.user.client.ui.Image;
-import com.google.gwt.user.client.ui.RootPanel;
-import com.google.gwt.user.client.ui.VerticalPanel;
-import com.google.gwt.user.client.ui.Widget;
-import com.smartgwt.client.util.SC;
+import java.awt.Image;
+
+import org.jvnet.substance.utils.SubstanceInternalFrameTitlePane.ClickListener;
 
 public class jd implements EntryPoint {
 

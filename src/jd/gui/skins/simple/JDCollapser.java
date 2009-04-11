@@ -4,6 +4,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
+import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingworker.SwingWorker;
 import org.jdesktop.swingx.JXTaskPane;
@@ -15,6 +16,8 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
         if (INSTANCE == null) INSTANCE = new JDCollapser();
         return INSTANCE;
     }
+
+    private JTabbedPanel panel;
 
     private JDCollapser() {
         super();
@@ -44,10 +47,10 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
     }
 
     public void mouseReleased(MouseEvent e) {
-        if (this.getContentPane().getComponent(0) instanceof ConfigEntriesPanel){
-            
-            ((ConfigEntriesPanel)this.getContentPane().getComponent(0)).save();  
-            ((ConfigEntriesPanel)this.getContentPane().getComponent(0)).saveConfigEntries();
+        if (this.getContentPane().getComponent(0) instanceof ConfigEntriesPanel) {
+
+            ((ConfigEntriesPanel) this.getContentPane().getComponent(0)).save();
+            ((ConfigEntriesPanel) this.getContentPane().getComponent(0)).saveConfigEntries();
         }
         this.setCollapsed(true);
         new SwingWorker() {
@@ -62,6 +65,23 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
                 setVisible(false);
             }
         }.execute();
+
+    }
+
+    public void setContentPanel(JTabbedPanel panel) {
+        if (panel == this.panel) return;
+
+        if (this.panel != null) {
+            this.panel.onHide();
+            getContentPane().remove(this.panel);
+        }
+
+        this.panel = panel;
+        panel.onDisplay();
+        getContentPane().setLayout(new MigLayout("ins 0,wrap 1", "[grow, fill]", "[grow,fill]"));
+        getContentPane().add(this.panel, "cell 0 0");
+        this.invalidate();
+        this.repaint();
 
     }
 }

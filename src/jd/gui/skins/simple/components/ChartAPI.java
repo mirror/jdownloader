@@ -21,9 +21,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Image;
-import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
-import java.awt.image.FilteredImageSource;
 import java.awt.image.RGBImageFilter;
 import java.io.IOException;
 import java.net.URL;
@@ -33,7 +31,6 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 
-import jd.captcha.utils.UTILITIES;
 import jd.http.Encoding;
 import jd.nutils.Colors;
 import jd.utils.JDLocale;

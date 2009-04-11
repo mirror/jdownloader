@@ -32,6 +32,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
+import jd.controlling.JDLogger;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -92,7 +93,7 @@ public class ConfirmCheckBoxDialog extends JDialog implements ActionListener {
 
                         } catch (Exception e1) {
                             // TODO Auto-generated catch block
-                            e1.printStackTrace();
+                            JDLogger.exception(e1);
                         }
                     }
 

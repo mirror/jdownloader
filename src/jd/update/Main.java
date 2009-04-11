@@ -41,6 +41,7 @@ import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.EmptyBorder;
 
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -468,7 +469,7 @@ public class Main {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e1) {
-            e1.printStackTrace();
+            JDLogger.exception(e1);
         }
 
         int n = 5;

@@ -41,6 +41,7 @@ import javax.swing.JTextPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
+import jd.controlling.JDLogger;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -299,7 +300,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
             try {
                 JLinkButton.openURL(e.getURL());
             } catch (Exception e1) {
-                e1.printStackTrace();
+                JDLogger.exception(e1);
             }
         }
     }

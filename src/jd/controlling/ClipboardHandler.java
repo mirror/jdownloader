@@ -136,7 +136,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
                     }
                     Thread.sleep(500);
                 } catch (Exception e2) {
-                    // e2.printStackTrace();
+                    // JDLogger.exception(e2);
                 }
             }
         }
