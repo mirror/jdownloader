@@ -40,6 +40,8 @@ public class RsLayerCom extends PluginForDecrypt {
     private static Pattern linkPattern = Pattern.compile("onclick=\"getFile\\('([^;]*)'\\)", Pattern.CASE_INSENSITIVE);
     private static String strCaptchaPattern = "<img src=\"(captcha-[^\"]*\\.png)\" ";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html", Pattern.CASE_INSENSITIVE);
+    
+    private static final String linkpattern = "name=\"file\" src=\"(.*?)\"";
 
     public RsLayerCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,8 +68,7 @@ public class RsLayerCom extends PluginForDecrypt {
 
         br.getPage(parameter);
         if (parameter.indexOf("/link-") != -1) {
-            String link = br.getRegex("<iframe src=\"(.*?)\" ").getMatch(0);
-            link = Encoding.htmlDecode(link);
+        	String link = br.getFrameLink(0);
             if (link == null) {
                 return null;
             } else {
@@ -115,7 +116,7 @@ public class RsLayerCom extends PluginForDecrypt {
                 progress.setRange(layerLinks.length);
                 for (String element : layerLinks) {
                     br.getPage("http://rs-layer.com/link-" + element + ".html");
-                    String link = br.getRegex("<iframe src=\"(.*?)\" ").getMatch(0);
+                    String link = br.getFrameLink(0);
                     if (link != null) decryptedLinks.add(createDownloadlink(link));
                     progress.increase(1);
                 }

@@ -903,9 +903,25 @@ public class Browser {
     public boolean containsHTML(String regex) {
         return new Regex(this, regex).matches();
     }
-
+    
     /**
-     * Reads teh contents behind con and returns them. Note: if con==null, the
+     * Returns the framesource
+     */
+    public String getFrameLink(int group) {
+    	return Encoding.htmlDecode(new Regex(this, "<frame.*?src=\"(.*?)\".*?>").getMatch(group));
+    }
+    
+    /**
+     * Submits a frame
+     */
+    public String submitFrame(int group) throws IOException {
+    	String link = getFrameLink(group);
+    	if(link == null) return null;
+    	return getPage(link);
+    }
+    
+    /**
+     * Reads the content behind a con and returns them. Note: if con==null, the
      * current request is read. This is usefull for redirects. Note #2: if a
      * connection is loaded, data is not stored in the browser instance.
      * 
