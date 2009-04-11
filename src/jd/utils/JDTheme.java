@@ -60,7 +60,7 @@ public class JDTheme {
             logger.severe("Use setTheme() first!");
             setTheme("default");
         }
-HashMap<String, String> dat = data;
+
         if (data.containsKey(key)) return Encoding.UTF8Decode(data.get(key));
         logger.warning("Key not found: " + key + " (" + def + ")");
 
@@ -164,6 +164,7 @@ HashMap<String, String> dat = data;
 
         if (!file.exists()) {
             logger.severe("Theme " + themeID + " not installed");
+            themeID="default";
             return;
         }
         currentTheme = themeID;
