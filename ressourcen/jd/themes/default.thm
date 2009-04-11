@@ -9,13 +9,15 @@ gui.icons.delete=default/edit-delete
 
 ##
 gui.images.add = default/list-add
+gui.images.taskpanes.addons=default/mail-attachment
 gui.images.config.addons = default/mail-attachment
 gui.images.config.home = default/applications-system
 gui.images.config.network_local = default/network-idle
 gui.images.config.gui = default/preferences-desktop-wallpaper
 gui.images.config.reconnect = default/view-refresh
 gui.images.config.host = default/internet-web-browser
-
+gui.images.addons.unrar=default/package-x-generic
+gui.images.addons.merge=default/merge
 gui.images.config.ocr = default/format-text-italic
 gui.images.config.eventmanager = default/appointment-new
 gui.images.progress=default/appointment-new
