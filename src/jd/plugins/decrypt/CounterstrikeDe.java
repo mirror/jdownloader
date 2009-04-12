@@ -44,7 +44,7 @@ public class CounterstrikeDe extends PluginForDecrypt {
 
         // Add to decrypted links - we use http://ftp.freenet instead of
         // ftp://freenet which works
-        decryptedLinks.add(createDownloadlink(br.getRedirectLocation().replaceFirst("ftp", "http")));
+        decryptedLinks.add(createDownloadlink(br.getRedirectLocation().replaceFirst("ftp", "httpviajd")));
 
         return decryptedLinks;
     }
