@@ -38,9 +38,9 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.gui.skins.simple.JTabbedPanel;
-import jd.gui.skins.simple.components.ChartAPI_Entity;
+import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.ChartAPI_GOM;
-import jd.gui.skins.simple.components.ChartAPI_PIE;
+import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.tasks.TaskPanel;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -88,7 +88,7 @@ public class PremiumPane extends JTabbedPanel {
     private ArrayList<AccountPanel> accs = new ArrayList<AccountPanel>();
     private AccountPanel lastOpenedPanel;
 
-    private ChartAPI_PIE freeTrafficChart;
+    private PieChartAPI freeTrafficChart;
     private PremiumDetailTaskPanel details;
 
     private JPanel chartContainer;
@@ -101,7 +101,7 @@ public class PremiumPane extends JTabbedPanel {
 
         details = new PremiumDetailTaskPanel("test", JDTheme.II("gui.images.config.tip", 24, 24));
   
-        freeTrafficChart = new ChartAPI_PIE("", 500, 100, FILTER_COLOR);
+        freeTrafficChart = new PieChartAPI("", 500, 100, FILTER_COLOR);
 
         this.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, this.getBackground().darker()));
 
@@ -136,7 +136,7 @@ public class PremiumPane extends JTabbedPanel {
             DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
             ChartAPI_GOM freeTraffic = new ChartAPI_GOM("", 200, 100, FILTER_COLOR);
             double procent = ((double) ai.getTrafficLeft() / (double) ai.getTrafficMax() * 100);
-            freeTraffic.addEntity(new ChartAPI_Entity(JDUtilities.formatBytesToMB(ai.getTrafficLeft()) + " free", String.valueOf(procent), new Color(50, 200, 50)));
+            freeTraffic.addEntity(new ChartAPIEntity(JDUtilities.formatBytesToMB(ai.getTrafficLeft()) + " free", String.valueOf(procent), new Color(50, 200, 50)));
             freeTraffic.fetchImage();
             details.add(freeTraffic, "cell 2 0,spany,aligny center");
             details.setCollapsed(false);
@@ -345,7 +345,7 @@ public class PremiumPane extends JTabbedPanel {
                         AccountInfo ai = host.getAccountInformation(acc);
                         Long tleft = new Long(ai.getTrafficLeft());
                         if (tleft >= 0 && ai.isExpired() == false) {
-                            freeTrafficChart.addEntity(new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", tleft, new Color(50, 255 - ((255 / (i + host.getPremiumAccounts().size())) * accCounter), 50)));
+                            freeTrafficChart.addEntity(new ChartAPIEntity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", tleft, new Color(50, 255 - ((255 / (i + host.getPremiumAccounts().size())) * accCounter), 50)));
                             long rest = ai.getTrafficMax() - tleft;
                             if (rest > 0) collectTraffic = collectTraffic + rest;
                         } else if (!ai.isValid()) {
@@ -366,7 +366,7 @@ public class PremiumPane extends JTabbedPanel {
                 }
             }
 
-            if (collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPI_Entity(JDLocale.L("plugins.config.premium.chartapi.maxTraffic", "Max. Traffic to collect") + " [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", collectTraffic, new Color(150, 150, 150)));
+            if (collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPIEntity(JDLocale.L("plugins.config.premium.chartapi.maxTraffic", "Max. Traffic to collect") + " [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", collectTraffic, new Color(150, 150, 150)));
             freeTrafficChart.fetchImage();
         }
     }

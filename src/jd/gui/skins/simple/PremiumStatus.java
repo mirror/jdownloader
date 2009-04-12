@@ -1,20 +1,26 @@
 package jd.gui.skins.simple;
 
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.logging.Logger;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import jd.HostPluginWrapper;
 import jd.controlling.JDController;
+import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
+import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -30,10 +36,13 @@ public class PremiumStatus extends JPanel implements ControlListener {
     private long trafficTotal = 0l;
     private Thread refresher;
     private JLabel lbl;
+    private Thread cacheWait;
+    private Logger logger;
 
     public PremiumStatus() {
         super();
         bars = new JDProgressBar[BARCOUNT];
+        logger = JDLogger.getLogger();
         this.map = new HashMap<HostPluginWrapper, ArrayList<AccountInfo>>();
         this.mapSize = new HashMap<HostPluginWrapper, Long>();
         this.setLayout(new MigLayout(DEBUG + "ins 0", "[]", "[]"));
@@ -42,6 +51,43 @@ public class PremiumStatus extends JPanel implements ControlListener {
         for (int i = 0; i < BARCOUNT; i++) {
             JDProgressBar pg = new JDProgressBar();
             bars[i] = pg;
+            bars[i].addMouseListener(new MouseListener() {
+
+                public void mouseClicked(MouseEvent arg0) {
+
+                    for (int i = 0; i < BARCOUNT; i++) {
+                        if (bars[i] == arg0.getSource()) {
+                            for (Iterator<HostPluginWrapper> it = getMap().keySet().iterator(); it.hasNext();) {
+                                HostPluginWrapper wrapper = it.next();
+
+                                if (i == 0) {
+                                    showDetails(wrapper);
+                                    return;
+                                }
+                                i--;
+                            }
+
+                        }
+                    }
+                }
+
+                public void mouseEntered(MouseEvent arg0) {
+
+                }
+
+                public void mouseExited(MouseEvent arg0) {
+
+                }
+
+                public void mousePressed(MouseEvent arg0) {
+
+                }
+
+                public void mouseReleased(MouseEvent arg0) {
+
+                }
+
+            });
             pg.setStringPainted(true);
             pg.setVisible(false);
             add(pg, "width 70!,height 16!,hidemode 3");
@@ -51,12 +97,13 @@ public class PremiumStatus extends JPanel implements ControlListener {
             public void run() {
 
                 while (true) {
-                    updatePremium();
                     try {
                         Thread.sleep(15 * 60 * 1000);
                     } catch (InterruptedException e) {
                         return;
                     }
+                    updatePremium();
+
                 }
             }
 
@@ -65,8 +112,16 @@ public class PremiumStatus extends JPanel implements ControlListener {
         refresher.start();
     }
 
+    protected void showDetails(HostPluginWrapper wrapper) {
+        System.out.println("Show detaoils to " + wrapper.getClassName());
+        SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, wrapper.getPlugin().getConfig());
+     
+
+    }
+
     private void updatePremium() {
         long trafficTotal = 0;
+        logger.finer("Update Premiuminfo");
         HashMap<HostPluginWrapper, ArrayList<AccountInfo>> map = new HashMap<HostPluginWrapper, ArrayList<AccountInfo>>();
         HashMap<HostPluginWrapper, Long> mapSize = new HashMap<HostPluginWrapper, Long>();
         for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
@@ -143,10 +198,12 @@ public class PremiumStatus extends JPanel implements ControlListener {
 
             if (left >= 0) {
                 bars[i].setString(JDUtilities.formatKbReadable(left / 1024));
-                bars[i].setToolTipText(wrapper.getHost() + ": " + JDUtilities.formatKbReadable(left / 1024) + " in " + list.size() + " accounts");
+                bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", wrapper.getHost(), list.size(), JDUtilities.formatKbReadable(left / 1024)));
             } else {
-                bars[i].setString(JDUtilities.formatKbReadable(left / 1024));
-                bars[i].setToolTipText(wrapper.getHost() + ": unlimited traffic");
+                bars[i].setMaximum(10);
+                bars[i].setValue(10);
+                bars[i].setString("");
+                bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.unlimited_traffic.tooltip", "%s -- Unlimited traffic! You can download as much as you want to.", wrapper.getHost()));
 
             }
             i++;
@@ -192,6 +249,21 @@ public class PremiumStatus extends JPanel implements ControlListener {
                 }
 
             }.start();
+        } else if (event.getParameter() == PluginForHost.PROPERTY_PREMIUM) {
+            if (cacheWait != null) return;
+            this.cacheWait = new Thread() {
+                public void run() {
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                    updatePremium();
+                    cacheWait = null;
+                }
+            };
+            cacheWait.start();
+
         }
 
     }

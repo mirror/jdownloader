@@ -150,15 +150,15 @@ public class ConfigEntriesPanel extends ConfigPanel {
     public void save() {
         if (subPanels != null) {
             for (int i = 0; i < subPanels.size(); i++) {
-                logger.info("Saved tab " + i);
+            
                 subPanels.get(i).save();
             }
         }
 
         if (container != null) {
-            logger.info("Save " + container.getTitle());
+            logger.finer("Save " + container.getTitle());
         } else {
-            logger.info("Save normal panel" + this);
+            logger.finer("Save normal panel" + this);
         }
 
         saveConfigEntries();

@@ -80,9 +80,7 @@ public abstract class PluginForHost extends Plugin {
     private static final String CONFIGNAME = "pluginsForHost";
     private static int currentConnections = 0;
 
-    public boolean premiumSpecialCharsAllowed() {
-        return true;
-    }
+ 
 
     private static HashMap<Class<? extends PluginForHost>, Long> HOSTER_WAIT_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
     private static HashMap<Class<? extends PluginForHost>, Long> HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();

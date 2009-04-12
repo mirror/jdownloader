@@ -59,8 +59,8 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.components.ChartAPI_Entity;
-import jd.gui.skins.simple.components.ChartAPI_PIE;
+import jd.gui.skins.simple.components.ChartAPIEntity;
+import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.HTMLDialog;
 import jd.gui.skins.simple.components.JHelpDialog;
@@ -488,9 +488,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
             @Override
             public Object runSave() {
-                logger.info("GRAB");
+                logger.info("Add links to Linkgrabber: "+links.size());
                 DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
-                logger.info("add to grabber");
+             
                 linkGrabber.addLinks(linkList);
                 if (!hideGrabber) taskPane.switcher(lgTaskPane);
                 return null;
@@ -523,7 +523,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         addConfigTask();
         addAddonTask();
-        addPremiumTask();
+//        addPremiumTask();
 
         addLogTask();
 
@@ -607,20 +607,20 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         taskPane.add(logTask);
     }
 
-    private void addPremiumTask() {
-        PremiumTaskPane premTskPane = new PremiumTaskPane(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"), JDTheme.II("gui.images.taskpanes.premium", 24, 24));
-
-        premTskPane.addPanel(new SingletonPanel(PremiumPane.class, new Object[] {}));
-        premTskPane.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (!(e.getSource() instanceof JButton)) return;
-                contentPanel.display(new SingletonPanel(PremiumPane.class, new Object[] { ((JButton) e.getSource()).getText() }).getPanel());
-            }
-        });
-
-        taskPane.add(premTskPane);
-
-    }
+//    private void addPremiumTask() {
+//        PremiumTaskPane premTskPane = new PremiumTaskPane(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"), JDTheme.II("gui.images.taskpanes.premium", 24, 24));
+//
+//        premTskPane.addPanel(new SingletonPanel(PremiumPane.class, new Object[] {}));
+//        premTskPane.addActionListener(new ActionListener() {
+//            public void actionPerformed(ActionEvent e) {
+//                if (!(e.getSource() instanceof JButton)) return;
+//                contentPanel.display(new SingletonPanel(PremiumPane.class, new Object[] { ((JButton) e.getSource()).getText() }).getPanel());
+//            }
+//        });
+//
+//        taskPane.add(premTskPane);
+//
+//    }
 
     private void addConfigTask() {
         cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 24, 24));
@@ -772,9 +772,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
                     break;
                 case ControlEvent.CONTROL_PLUGIN_ACTIVE:
-                    logger.info("Plugin Aktiviert: " + event.getSource());
+                    logger.info("Module started: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
-                        logger.info("Interaction start. ");
+                        
 
                         setTitle(JDUtilities.JD_TITLE + " | " + JDLocale.L("gui.titleaddaction", "Action: ") + " " + ((Interaction) event.getSource()).getInteractionName());
                     }
@@ -784,9 +784,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     SimpleGUI.this.dispose();
                     break;
                 case ControlEvent.CONTROL_PLUGIN_INACTIVE:
-                    logger.info("Plugin Deaktiviert: " + event.getSource());
+                    logger.info("Module finished: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
-                        logger.info("Interaction zu Ende. Rest status");
+                      
                         if (Interaction.areInteractionsInProgress()) {
 
                             setTitle(JDUtilities.getJDTitle());
@@ -795,7 +795,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     break;
 
                 case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                    logger.info("ALL FINISHED");
+                    logger.info("All downloads in list finished");
 
                     if (speedmeter != null) speedmeter.stop();
 
@@ -803,7 +803,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                     break;
                 case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE:
-                    setTitle(JDUtilities.getJDTitle() + " - Downloads werden abgebrochen");
+                    setTitle(JDUtilities.getJDTitle() + " - terminate");
                     break;
                 case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
                     setTitle(JDUtilities.getJDTitle());
@@ -1394,9 +1394,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
                 String[] data = new String[] { validUntil, JDUtilities.formatBytesToMB(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, JDUtilities.formatBytesToMB(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", JDUtilities.formatBytesToMB(ai.getTrafficShareLeft()), ai.getStatus() };
                 panel.add(new JXTitledSeparator(def), "spanx, pushx, growx, gapbottom 15");
-                ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 125, 60, BG_COLOR);
-                freeTrafficChart.addEntity(new ChartAPI_Entity("Free", ai.getTrafficLeft(), new Color(50, 200, 50)));
-                freeTrafficChart.addEntity(new ChartAPI_Entity("", ai.getTrafficMax() - ai.getTrafficLeft(), new Color(150, 150, 150)));
+                PieChartAPI freeTrafficChart = new PieChartAPI("", 125, 60, BG_COLOR);
+                freeTrafficChart.addEntity(new ChartAPIEntity("Free", ai.getTrafficLeft(), new Color(50, 200, 50)));
+                freeTrafficChart.addEntity(new ChartAPIEntity("", ai.getTrafficMax() - ai.getTrafficLeft(), new Color(150, 150, 150)));
                 freeTrafficChart.fetchImage();
 
                 for (int j = 0; j < data.length; j++) {

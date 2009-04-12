@@ -20,6 +20,7 @@ public class ContentPanel extends JXPanel {
     }
 
     public void display(JTabbedPanel panel) {
+        JDCollapser.getInstance().setCollapsed(true);
         if (rightPanel != null) {
             this.remove(rightPanel);
             rightPanel.setEnabled(false);

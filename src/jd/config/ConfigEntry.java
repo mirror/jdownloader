@@ -91,6 +91,8 @@ public String toString(){
 
     private ConfigGroup group;
 
+    private boolean changes;
+
     public PropertyType getPropertyType() {
         return propertyType;
     }
@@ -517,6 +519,15 @@ public String toString(){
     public ConfigGroup getGroup() {
         return group;
     }
-    
+/**Gets set if this config entry has changes*/
+    public void setChanges(boolean b) {
+        changes=b;
+        
+    }
+    /**return if this configentry got changed and has to be saved*/
+    public boolean hasChanges() {
+        return changes;
+        
+    }
 
 }

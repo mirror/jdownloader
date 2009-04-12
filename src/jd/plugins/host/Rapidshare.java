@@ -115,9 +115,7 @@ public class Rapidshare extends PluginForHost {
         // downloadLink.setProperty("linkcorrected", true);
     }
 
-    public boolean premiumSpecialCharsAllowed() {
-        return false;
-    }
+
 
     /**
      * Korrigiert die URL und befreit von subdomains etc.

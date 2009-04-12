@@ -79,4 +79,8 @@ public class Account extends Property {
         this.user = user;
         if (this.user != null) this.user = this.user.trim();
     }
+    
+    public String toString(){
+        return user+":"+pass+" "+status+" "+enabled+" "+super.toString();
+    }
 }

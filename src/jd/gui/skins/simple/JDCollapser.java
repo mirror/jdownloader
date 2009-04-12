@@ -3,7 +3,6 @@ package jd.gui.skins.simple;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
-import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingworker.SwingWorker;
@@ -24,6 +23,7 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
         this.setVisible(false);
         this.setCollapsed(true);
         this.addMouseListener(this);
+        getContentPane().setLayout(new MigLayout("ins 0,wrap 1", "[grow, fill]", "[grow,fill]"));
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -47,25 +47,34 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
     }
 
     public void mouseReleased(MouseEvent e) {
-        if (this.getContentPane().getComponent(0) instanceof ConfigEntriesPanel) {
 
-            ((ConfigEntriesPanel) this.getContentPane().getComponent(0)).save();
-            ((ConfigEntriesPanel) this.getContentPane().getComponent(0)).saveConfigEntries();
-        }
         this.setCollapsed(true);
-        new SwingWorker() {
 
-            @Override
-            protected Object doInBackground() throws Exception {
-                Thread.sleep(500);
-                return null;
+    }
+
+    public void setCollapsed(boolean b) {
+        if (b == this.isCollapsed()) return;
+        super.setCollapsed(b);
+        if (b) {
+            if (panel != null) {
+                panel.onHide();
+                panel = null;
             }
 
-            protected void done() {
-                setVisible(false);
-            }
-        }.execute();
+            new SwingWorker() {
 
+                @Override
+                protected Object doInBackground() throws Exception {
+                    Thread.sleep(500);
+                    return null;
+                }
+
+                protected void done() {
+                    setVisible(false);
+
+                }
+            }.execute();
+        }
     }
 
     public void setContentPanel(JTabbedPanel panel) {
@@ -73,12 +82,12 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
 
         if (this.panel != null) {
             this.panel.onHide();
-            getContentPane().remove(this.panel);
-        }
 
+        }
+        getContentPane().removeAll();
         this.panel = panel;
         panel.onDisplay();
-        getContentPane().setLayout(new MigLayout("ins 0,wrap 1", "[grow, fill]", "[grow,fill]"));
+
         getContentPane().add(this.panel, "cell 0 0");
         this.invalidate();
         this.repaint();

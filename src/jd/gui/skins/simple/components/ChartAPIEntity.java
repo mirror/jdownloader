@@ -18,18 +18,18 @@ package jd.gui.skins.simple.components;
 
 import java.awt.Color;
 
-public class ChartAPI_Entity {
+public class ChartAPIEntity {
     private String caption = "";
     private String data = "";
     private Color color;
 
-    public ChartAPI_Entity(String caption, Object data, Color RGB) {
+    public ChartAPIEntity(String caption, Object data, Color RGB) {
         this.caption = caption;
         this.data = data.toString();
         this.color = RGB;
     }
 
-    public ChartAPI_Entity(String caption, Object data) {
+    public ChartAPIEntity(String caption, Object data) {
         this.caption = caption;
         this.data = data.toString();
     }

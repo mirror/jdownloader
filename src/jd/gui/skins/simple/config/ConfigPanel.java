@@ -171,17 +171,17 @@ public abstract class ConfigPanel extends JTabbedPanel {
     }
 
     public void onHide() {
-        PropertyType changes = this.hasChanges();
-        if (changes != ConfigEntry.PropertyType.NONE) {
-            if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.save.doyourealywant", "Do you want to save your changes?"), JDLocale.L("gui.config.save.doyourealywant.title", "Changes"))) {
+//        PropertyType changes = this.hasChanges();
+//        if (changes != ConfigEntry.PropertyType.NONE) {
+//            if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.save.doyourealywant", "Do you want to save your changes?"), JDLocale.L("gui.config.save.doyourealywant.title", "Changes"))) {
                 this.save();
-                if (changes == ConfigEntry.PropertyType.NEEDS_RESTART) {
-                    if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDLocale.L("gui.config.save.restart.title", "JDownloader restart requested"))) {
-                        JDUtilities.restartJD();
-                    }
-                }
-            }
-        }
+//                if (changes == ConfigEntry.PropertyType.NEEDS_RESTART) {
+//                    if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDLocale.L("gui.config.save.restart.title", "JDownloader restart requested"))) {
+//                        JDUtilities.restartJD();
+//                    }
+//                }
+//            }
+//        }
 
     }
 
@@ -193,6 +193,9 @@ public abstract class ConfigPanel extends JTabbedPanel {
             akt = it.next();
 
             if (akt.getConfigEntry().getPropertyInstance() != null && akt.getConfigEntry().getPropertyName() != null) {
+                if (akt.getConfigEntry().hasChanges()) {
+                    ret = ret.getMax(PropertyType.NORMAL);
+                }
                 old = akt.getConfigEntry().getPropertyInstance().getProperty(akt.getConfigEntry().getPropertyName());
                 if (old == null && akt.getText() != null) {
                     ret = ret.getMax(akt.getConfigEntry().getPropertyType());

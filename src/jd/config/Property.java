@@ -38,7 +38,8 @@ public class Property implements Serializable {
 
     protected transient Logger logger = null;
 
-    private HashMap<String, Object> properties = new HashMap<String, Object>();
+    private HashMap<String, Object> properties;
+    private HashMap<String, Integer> propertiesHashes;
 
     private long saveCount = 0;
 
@@ -46,7 +47,11 @@ public class Property implements Serializable {
      * 
      */
     public Property() {
+        properties=new HashMap<String, Object>();
+        propertiesHashes = new HashMap<String, Integer>();
+
         logger = jd.controlling.JDLogger.getLogger();
+
     }
 
     public Property(Object obj) {
@@ -259,7 +264,12 @@ public class Property implements Serializable {
         Object old = getProperty(key);
 
         properties.put(key, value);
-
+        if(propertiesHashes==null){
+            propertiesHashes= new HashMap<String, Integer>();
+        }
+        Integer oldHash = propertiesHashes.get(key);
+    
+        propertiesHashes.put(key, value.toString().hashCode());
         if (logger == null) {
             logger = jd.controlling.JDLogger.getLogger();
         }
@@ -267,16 +277,19 @@ public class Property implements Serializable {
         try {
             if (old == null && value != null) {
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
-
+                return;
             } else if (value instanceof Comparable) {
                 if (((Comparable<Comparable<?>>) value).compareTo((Comparable<?>) old) != 0) {
                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
-                }
-            } else if (value instanceof Object) {
-                if (!value.equals(old)) {
-                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
 
                 }
+                return;
+            } else if (value instanceof Object) {
+                if (!value.equals(old)||oldHash!=value.hashCode()) {
+                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+
+                } 
+                return;
             } else {
                 if (value != old) {
                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));

@@ -42,7 +42,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
     protected JSpinner spMaxDls;
 
     public JDStatusBar() {
-        setLayout(new MigLayout("ins 3 0 0 0,", "[fill,grow,left][shrink,right][shrink,right][shrink,right][shrink,right]", "[20px!]"));
+        setLayout(new MigLayout("ins 0 3 0 3,", "[fill,grow,left][shrink,right][shrink,right][shrink,right][shrink,right]", "[20px!]"));
 
       
 
@@ -71,9 +71,9 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
       
         add(new PremiumStatus(),"gapright");
       add(lblSimu);
-      add(spMaxDls,"width 90!");
+      add(spMaxDls,"width 90!,height 16!");
       add(lblSpeed);
-      add(spMax,"width 90!");
+      add(spMax,"width 90!,height 16!");
      
    
     }

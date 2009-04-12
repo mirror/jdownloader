@@ -287,7 +287,7 @@ public class Main {
                             Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
                             main.go();
                             for (String p : processArgs) {
-                                LOGGER.severe("Param: " + p);
+                                LOGGER.finest("Param: " + p);
                             }
                             // post start parameters //
                             try {
@@ -312,7 +312,7 @@ public class Main {
                     main.go();
 
                     for (String p : args) {
-                        LOGGER.severe("Param: " + p);
+                        LOGGER.finest("Param: " + p);
                     }
 
                 }

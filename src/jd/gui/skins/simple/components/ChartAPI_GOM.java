@@ -27,7 +27,7 @@ public class ChartAPI_GOM extends ChartAPI {
 
     public String createDataString() {
         String data = "";
-        for (ChartAPI_Entity tmp : super.getHashMap().values()) {
+        for (ChartAPIEntity tmp : super.getHashMap().values()) {
             data = tmp.getData();
         }
         return data;
@@ -35,7 +35,7 @@ public class ChartAPI_GOM extends ChartAPI {
 
     public String createColorString() {
         String data = "";
-        for (ChartAPI_Entity tmp : super.getHashMap().values()) {
+        for (ChartAPIEntity tmp : super.getHashMap().values()) {
             if (tmp.getColor() != null) data += String.format("%02X%02X%02X", tmp.getColor().getRed(), tmp.getColor().getGreen(), tmp.getColor().getBlue()) + ",";
         }
         if (data.endsWith(",")) {

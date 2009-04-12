@@ -67,7 +67,7 @@ public abstract class ChartAPI extends JComponent {
 
     private final String serverAdress = "chart.apis.google.com";
     private Logger logger = jd.controlling.JDLogger.getLogger();
-    private HashMap<String, ChartAPI_Entity> collData = new HashMap<String, ChartAPI_Entity>();
+    private HashMap<String, ChartAPIEntity> collData = new HashMap<String, ChartAPIEntity>();
     private int width;
     private int height;
     private Color backgroundColor;
@@ -87,11 +87,11 @@ public abstract class ChartAPI extends JComponent {
         collData.clear();
     }
 
-    public void addEntity(ChartAPI_Entity input) {
+    public void addEntity(ChartAPIEntity input) {
         collData.put(input.getCaption(), input);
     }
 
-    public void removeEntity(ChartAPI_Entity input) {
+    public void removeEntity(ChartAPIEntity input) {
         collData.remove(input.getCaption());
     }
 
@@ -99,11 +99,11 @@ public abstract class ChartAPI extends JComponent {
         collData.remove(caption);
     }
 
-    public ChartAPI_Entity getEntity(String caption) {
+    public ChartAPIEntity getEntity(String caption) {
         return collData.get(caption);
     }
 
-    public HashMap<String, ChartAPI_Entity> getHashMap() {
+    public HashMap<String, ChartAPIEntity> getHashMap() {
         return collData;
     }
 
@@ -137,7 +137,7 @@ public abstract class ChartAPI extends JComponent {
 
     public String createCaptionString() {
         String data = "";
-        for (ChartAPI_Entity tmp : collData.values()) {
+        for (ChartAPIEntity tmp : collData.values()) {
             data += Encoding.urlEncode(tmp.getCaption()) + "|";
         }
         return data;
@@ -145,7 +145,7 @@ public abstract class ChartAPI extends JComponent {
 
     public long getMaxValue() {
         long max = 0;
-        for (ChartAPI_Entity tmp : collData.values()) {
+        for (ChartAPIEntity tmp : collData.values()) {
             if (Long.valueOf(tmp.getData()) > max) max = Long.valueOf(tmp.getData());
         }
         return max;

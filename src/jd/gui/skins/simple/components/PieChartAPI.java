@@ -18,16 +18,16 @@ package jd.gui.skins.simple.components;
 
 import java.awt.Color;
 
-public class ChartAPI_PIE extends ChartAPI {
+public class PieChartAPI extends ChartAPI {
     private static final long serialVersionUID = 7576517180813229367L;
 
-    public ChartAPI_PIE(String caption, int width, int height, Color RGB) {
+    public PieChartAPI(String caption, int width, int height, Color RGB) {
         super(caption, width, height, RGB);
     }
 
     public String createDataString() {
         String data = "";
-        for (ChartAPI_Entity tmp : super.getHashMap().values()) {
+        for (ChartAPIEntity tmp : super.getHashMap().values()) {
             data += getRelativeValue(tmp.getData()) + ",";
         }
         if (data.endsWith(",")) {
@@ -39,7 +39,7 @@ public class ChartAPI_PIE extends ChartAPI {
 
     public String createColorString() {
         String data = "";
-        for (ChartAPI_Entity tmp : super.getHashMap().values()) {
+        for (ChartAPIEntity tmp : super.getHashMap().values()) {
             if (tmp.getColor() != null) data += String.format("%02X%02X%02X", tmp.getColor().getRed(), tmp.getColor().getGreen(), tmp.getColor().getBlue()) + ",";
         }
         if (data.endsWith(",")) {

@@ -146,7 +146,7 @@ public class JDTheme {
         BufferedImage img = JDImage.getImage(string + "_" + width + "_" + height);
         if (img != null) return img;
         try {
-            logger.warning("Unscaled image: " + string + "_" + width + "_" + height);
+            logger.finer("Unscaled image: " + string + "_" + width + "_" + height);
             return JDImage.getScaledImage(JDImage.getImage(string), width, height);
         } catch (Exception e) {
             logger.severe("Could not find image: " + string);
@@ -207,7 +207,7 @@ public class JDTheme {
                 String key = element.substring(0, split).trim();
                 String value = element.substring(split + 1).trim();
                 if (data.containsKey(key)) {
-                    logger.severe("Dupe found: " + key);
+                    logger.finer("Dupe found: " + key);
                 } else {
                     data.put(key, value);
                 }
