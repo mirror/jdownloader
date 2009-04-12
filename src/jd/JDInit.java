@@ -437,6 +437,7 @@ public class JDInit {
         new DecryptPluginWrapper("chaoz.ws", "Woireless6xTo", "http://[\\w.]*?chaoz\\.ws/woireless/page/album_\\d+\\.html");
         new DecryptPluginWrapper("Wordpress Parser", "Wordpress", PluginPattern.decrypterPattern_Wordpress_Plugin());
         new DecryptPluginWrapper("xaili.com", "Xailicom", "http://[\\w\\.]*?xaili\\.com/\\?site=protect\\&id=[0-9]+");
+        new DecryptPluginWrapper("xenonlink.net", "XenonLinkNet", "http://[\\w\\.]*?xenonlink\\.net/");
         new DecryptPluginWrapper("xink.it", "XinkIt", "http://[\\w\\.]*?xink\\.it/f-[a-zA-Z0-9]+");
         new DecryptPluginWrapper("xlice.net", "XliceNet", "http://[\\w\\.]*?xlice\\.net/download/[a-z0-9]+");
         new DecryptPluginWrapper("xlink.in", "Xlinkin", "http://[\\w\\.]*?xlink\\.in/\\?v=[a-zA-Z0-9]+");
