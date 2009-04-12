@@ -711,10 +711,7 @@ public class Rapidshare extends PluginForHost {
         } finally {
             if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 selectedServer = null;
-                AccountInfo ai = (AccountInfo)account.getProperty("accountinfo");
-                if(ai!=null){
-                    ai.setTrafficLeft(ai.getTrafficLeft()-downloadLink.getDownloadSize());
-                }
+               
             }
 
         }
@@ -1000,12 +997,9 @@ public class Rapidshare extends PluginForHost {
     }
 
     @Override
-    public AccountInfo getAccountInformation(Account account) throws Exception {
-        // 5 minute cache
-        if (account.getProperty("accountinfo") != null) {
-            AccountInfo ai = (AccountInfo) account.getProperty("accountinfo");
-            if ((System.currentTimeMillis() - ai.getCreateTime()) < 5 * 60 * 1000) { return ai; }
-        }
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+     
+    
         AccountInfo ai = new AccountInfo(this, account);
         String api = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + account.getUser() + "&password=" + account.getPass() + "&type=prem";
         br.getPage(api);

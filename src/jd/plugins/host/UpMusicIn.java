@@ -123,7 +123,7 @@ public class UpMusicIn extends PluginForHost {
      * (br.containsHTML("package_info'\\)\"><b>Zareje")) return false; return
      * true; }
      * 
-     * @Override public AccountInfo getAccountInformation(Account account)
+     * @Override public AccountInfo fetchAccountInfo(Account account)
      * throws Exception { AccountInfo ai = new AccountInfo(this, account); try {
      * login(account); } catch (PluginException e) { ai.setValid(false); return
      * ai; } if (!isPremium()) {

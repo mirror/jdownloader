@@ -8,6 +8,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import jd.HostPluginWrapper;
+import jd.controlling.JDController;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -15,35 +18,42 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class PremiumStatus extends JPanel {
+public class PremiumStatus extends JPanel implements ControlListener {
     private static final int GAP = 5;
     private static final long UNLIMITED = 10l * 1024l * 1024l * 1024l;
     private static final String DEBUG = "";
+    private static final int BARCOUNT = 5;
     private HashMap<HostPluginWrapper, ArrayList<AccountInfo>> map;
     private HashMap<HostPluginWrapper, Long> mapSize;
+    private JDProgressBar[] bars;
 
-   
     private long trafficTotal = 0l;
     private Thread refresher;
     private JLabel lbl;
 
-
-
     public PremiumStatus() {
         super();
-
+        bars = new JDProgressBar[BARCOUNT];
         this.map = new HashMap<HostPluginWrapper, ArrayList<AccountInfo>>();
         this.mapSize = new HashMap<HostPluginWrapper, Long>();
-        this.setLayout(new MigLayout(DEBUG+"ins 0", "[]", "[]"));
-        add(lbl = new JLabel("Load Premiumstatus..."));
+        this.setLayout(new MigLayout(DEBUG + "ins 0", "[]", "[]"));
+        add(lbl = new JLabel("Load Premiumstatus..."), "hidemode 3");
+        JDController.getInstance().addControlListener(this);
+        for (int i = 0; i < BARCOUNT; i++) {
+            JDProgressBar pg = new JDProgressBar();
+            bars[i] = pg;
+            pg.setStringPainted(true);
+            pg.setVisible(false);
+            add(pg, "width 70!,height 16!,hidemode 3");
 
+        }
         refresher = new Thread() {
             public void run() {
 
                 while (true) {
                     updatePremium();
                     try {
-                        Thread.sleep(1 * 60 * 1000);
+                        Thread.sleep(15 * 60 * 1000);
                     } catch (InterruptedException e) {
                         return;
                     }
@@ -96,7 +106,7 @@ public class PremiumStatus extends JPanel {
         this.setTrafficTotal(trafficTotal);
         this.setMap(map);
         this.setMapSize(mapSize);
-        new GuiRunnable() {
+        new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
@@ -108,9 +118,12 @@ public class PremiumStatus extends JPanel {
     }
 
     private void redraw() {
-        this.removeAll();
+        lbl.setVisible(false);
+        for (int i = 0; i < BARCOUNT; i++) {
+            bars[i].setVisible(false);
+        }
 
-        String cols = "";
+        int i = 0;
         for (Iterator<HostPluginWrapper> it = getMap().keySet().iterator(); it.hasNext();) {
             HostPluginWrapper wrapper = it.next();
             ArrayList<AccountInfo> list = this.getMap().get(wrapper);
@@ -123,47 +136,27 @@ public class PremiumStatus extends JPanel {
                 max += ai.getTrafficMax();
                 left += ai.getTrafficLeft();
             }
-            JDProgressBar pg = new JDProgressBar();
-            pg.setMaximum(max);
-            pg.setValue(left);
-            pg.setStringPainted(true);
-            add(pg, "width 70!,height 16!");
+            bars[i].setVisible(true);
+
+            bars[i].setMaximum(max);
+            bars[i].setValue(left);
+
             if (left >= 0) {
-                pg.setString(JDUtilities.formatKbReadable(left / 1024));
-                pg.setToolTipText(wrapper.getHost() + ": " + JDUtilities.formatKbReadable(left / 1024) + " in " + list.size() + " accounts");
+                bars[i].setString(JDUtilities.formatKbReadable(left / 1024));
+                bars[i].setToolTipText(wrapper.getHost() + ": " + JDUtilities.formatKbReadable(left / 1024) + " in " + list.size() + " accounts");
             } else {
-                pg.setString(JDUtilities.formatKbReadable(left / 1024));
-                pg.setToolTipText(wrapper.getHost() + ": unlimited traffic");
+                bars[i].setString(JDUtilities.formatKbReadable(left / 1024));
+                bars[i].setToolTipText(wrapper.getHost() + ": unlimited traffic");
 
             }
+            i++;
+            if (i >= BARCOUNT) break;
         }
 
         this.invalidate();
-       
+
     }
-    // public void paintComponent(Graphics g) {
-    //
-    // ((Graphics2D)
-    // g).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0f));
-    // super.paintComponent(g);
-    // Graphics2D g2 = (Graphics2D) g;
-    // g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-    // RenderingHints.VALUE_ANTIALIAS_ON);
-    // g2.setStroke(new BasicStroke(1));
-    //
-    // g2.setColor(getBackground().darker());
-    // int x = 0;
-    // for (Iterator<HostPluginWrapper> it = getMap().keySet().iterator();
-    // it.hasNext();) {
-    // HostPluginWrapper wrapper = it.next();
-    // Long left = this.getMapSize().get(wrapper);
-    // double percent = left / (double) getTrafficTotal();
-    // int width = getWidth() - getMap().size() * GAP;
-    // g2.drawRect(x, 0, (int) (width * percent), getHeight());
-    //
-    // }
-    //
-    // }
+
     public synchronized void setMap(HashMap<HostPluginWrapper, ArrayList<AccountInfo>> map) {
         this.map = map;
     }
@@ -175,6 +168,7 @@ public class PremiumStatus extends JPanel {
     public synchronized void setTrafficTotal(long trafficTotal) {
         this.trafficTotal = trafficTotal;
     }
+
     public synchronized HashMap<HostPluginWrapper, ArrayList<AccountInfo>> getMap() {
         return map;
     }
@@ -185,6 +179,21 @@ public class PremiumStatus extends JPanel {
 
     public synchronized long getTrafficTotal() {
         return trafficTotal;
+    }
+
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == ControlEvent.CONTROL_PLUGIN_INACTIVE) {
+            new GuiRunnable<Object>() {
+
+                @Override
+                public Object runSave() {
+                    redraw();
+                    return null;
+                }
+
+            }.start();
+        }
+
     }
 
 }

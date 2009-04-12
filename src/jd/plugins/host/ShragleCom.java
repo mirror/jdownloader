@@ -76,7 +76,7 @@ public class ShragleCom extends PluginForHost {
         }
     }
 
-    public AccountInfo getAccountInformation(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
         br.getPage("http://www.shragle.com/api.php?key=" + apikey + "&action=checkUser&useMD5=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(JDHash.getMD5(account.getPass())));

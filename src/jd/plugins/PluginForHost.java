@@ -151,6 +151,19 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
+        if (account.getProperty(AccountInfo.PARAM_INSTANCE) != null) {
+            AccountInfo ai = (AccountInfo) account.getProperty(AccountInfo.PARAM_INSTANCE);
+            if ((System.currentTimeMillis() - ai.getCreateTime()) < 5 * 60 * 1000) { return ai; }
+        }
+        AccountInfo ret = fetchAccountInfo(account);
+        if (ret == null) return null;
+        account.setProperty(AccountInfo.PARAM_INSTANCE, ret);
+
+        return ret;
+    }
+
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        // TODO Auto-generated method stub
         return null;
     }
 
@@ -475,6 +488,7 @@ public abstract class PluginForHost extends Plugin {
             }
         }
         if (account != null) {
+            long before = downloadLink.getDownloadCurrent();
             try {
                 handlePremium(downloadLink, account);
                 if (dl != null && dl.getConnection() != null) {
@@ -486,6 +500,13 @@ public abstract class PluginForHost extends Plugin {
             } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
             }
+
+            long traffic = downloadLink.getDownloadCurrent() - before;
+            if (account.getProperty(AccountInfo.PARAM_INSTANCE) != null) {
+                AccountInfo ai = (AccountInfo) account.getProperty(AccountInfo.PARAM_INSTANCE);
+                ai.setTrafficLeft(ai.getTrafficLeft() - traffic);
+            }
+
             synchronized (accounts) {
                 if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_PREMIUM)) {
                     if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE) {

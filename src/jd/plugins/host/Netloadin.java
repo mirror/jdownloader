@@ -246,7 +246,7 @@ public class Netloadin extends PluginForHost {
         }
     }
 
-    public AccountInfo getAccountInformation(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
             login(account);

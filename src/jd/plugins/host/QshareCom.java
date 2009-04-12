@@ -42,7 +42,7 @@ public class QshareCom extends PluginForHost {
         this.enablePremium("http://s1.qshare.com/index.php?sysm=sys_page&sysf=site&site=buy");
     }
 
-    public AccountInfo getAccountInformation(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
         br.setCookiesExclusive(true);

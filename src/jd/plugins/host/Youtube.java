@@ -134,7 +134,7 @@ public class Youtube extends PluginForHost {
         br.submitForm(login);
     }
 
-    public AccountInfo getAccountInformation(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);

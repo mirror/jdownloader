@@ -84,7 +84,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo getAccountInformation(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
         try {
