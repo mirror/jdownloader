@@ -38,9 +38,7 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 public abstract class ConfigPanel extends JTabbedPanel {

@@ -269,7 +269,10 @@ public class Property implements Serializable {
         }
         Integer oldHash = propertiesHashes.get(key);
     
-        propertiesHashes.put(key, value.toString().hashCode());
+        /*
+         * check for null to avoid nullpointer due to .toString() method
+         */
+        propertiesHashes.put(key, (value == null) ? null : value.toString().hashCode());
         if (logger == null) {
             logger = jd.controlling.JDLogger.getLogger();
         }

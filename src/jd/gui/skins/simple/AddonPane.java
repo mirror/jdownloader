@@ -18,32 +18,8 @@ package jd.gui.skins.simple;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-
-import jd.controlling.JDLogHandler;
-import jd.controlling.JDLogger;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
-import jd.gui.skins.simple.components.JDFileChooser;
-import jd.gui.skins.simple.components.JHelpDialog;
-import jd.gui.skins.simple.components.JLinkButton;
-import jd.gui.skins.simple.tasks.LogTaskPane;
-import jd.http.Encoding;
-import jd.nutils.io.JDIO;
-import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
-import jd.utils.Upload;
 import net.miginfocom.swing.MigLayout;
 
 /**
