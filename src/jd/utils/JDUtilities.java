@@ -438,6 +438,27 @@ public class JDUtilities {
         if (value >= 1024) return c.format(value / 1024.0) + " MB";
         return value + " KB";
     }
+    
+    public static String formatFilesize(double value, int size) {
+    	if(value > 1024 && size < 5) {
+    		 return formatFilesize(value / 1024.0, ++size);
+    	} else {
+    		DecimalFormat c = new DecimalFormat("0.00");
+    		switch(size) {
+    			case 0:
+    				return c.format(value) + " B";
+    			case 1:
+    				return c.format(value) + " KB";
+    			case 2:
+    				return c.format(value) + " MB";
+    			case 3:
+    				return c.format(value) + " GB";
+    			case 4:
+    				return c.format(value) + " TB";
+    		}
+    	}
+    	return null;
+    }
 
     /**
      * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden
