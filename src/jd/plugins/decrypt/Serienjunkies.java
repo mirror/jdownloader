@@ -1038,7 +1038,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
             public Object runSave() {
 
-                new Dialog(((SimpleGUI) JDUtilities.getGUI())) {
+                new Dialog(SimpleGUI.CURRENTGUI) {
 
                     private static final long serialVersionUID = -5144850223169000644L;
 
