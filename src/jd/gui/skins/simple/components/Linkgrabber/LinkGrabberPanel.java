@@ -32,6 +32,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
+import jd.nutils.io.JDFileFilter;
 import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -94,8 +95,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     private LinkGrabberPanel() {
 
-        super(new MigLayout("ins 0,wrap 1","[fill,grow]","[fill,grow]"));
-
+        super(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
 
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
@@ -108,6 +108,9 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         Update_Async = new Timer(50, this);
         Update_Async.setInitialDelay(50);
         Update_Async.setRepeats(false);
+        gathertimer = new Timer(2000, LinkGrabberPanel.this);
+        gathertimer.setInitialDelay(2000);
+        gathertimer.setRepeats(false);
         INSTANCE = this;
     }
 
@@ -152,16 +155,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             addToWaitingList(element);
         }
         Update_Async.restart();
-        if (gathertimer != null) {
-            gathertimer.stop();
-            gathertimer.removeActionListener(LinkGrabberPanel.this);
-            gathertimer = null;
-
-        }
-        gathertimer = new Timer(2000, LinkGrabberPanel.this);
-        gathertimer.setInitialDelay(2000);
-        gathertimer.setRepeats(false);
-        gathertimer.start();
+        gathertimer.restart();
     }
 
     public synchronized void addToWaitingList(DownloadLink element) {
@@ -245,7 +239,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             LinkGrabberFilePackage fptmp = getFPwithLink(link);
             if (!packages.contains(fp)) packages.add(fp);
             fp.add(link);
-            if (fptmp != null) fptmp.remove(link);
+            if (fptmp != null && fp != fptmp) fptmp.remove(link);
         }
     }
 
@@ -419,8 +413,6 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
         if (arg0.getSource() == this.gathertimer) {
             gathertimer.stop();
-            gathertimer.removeActionListener(this);
-            gathertimer = null;
             if (waitingList.size() > 0) {
                 startLinkGatherer();
             }
@@ -461,17 +453,16 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                     }
                     return;
                 case LinkGrabberTreeTableAction.GUI_LOAD:
-                    // fc = new JDFileChooser("_LOADSAVEDLC");
-                    // fc.setDialogTitle(JDLocale.L("gui.filechooser.loaddlc",
-                    // "Load DLC file"));
-                    // fc.setFileFilter(new JDFileFilter(null,
-                    // ".dlc|.rsdf|.ccf|.linkbackup", true));
-                    // if (fc.showOpenDialog(null) ==
-                    // JDFileChooser.APPROVE_OPTION) {
-                    // File ret2 = fc.getSelectedFile();
-                    // if (ret2 != null) {
-                    // JDUtilities.getController().loadContainerFile(ret2);
-                    // return;
+                    fc = new JDFileChooser("_LOADSAVEDLC");
+                    fc.setDialogTitle(JDLocale.L("gui.filechooser.loaddlc", "Load DLC file"));
+                    fc.setFileFilter(new JDFileFilter(null, ".dlc|.rsdf|.ccf|.linkbackup", true));
+                    if (fc.showOpenDialog(null) == JDFileChooser.APPROVE_OPTION) {
+                        File ret2 = fc.getSelectedFile();
+                        if (ret2 != null) {
+                            JDUtilities.getController().loadContainerFile(ret2);
+                        }
+                    }
+                    return;
                 }
             } else if (arg0.getSource() instanceof JMenuItem) {
                 switch (arg0.getID()) {

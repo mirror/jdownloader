@@ -11,6 +11,7 @@ import javax.swing.Timer;
 import jd.controlling.DownloadController;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -47,7 +48,7 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
         long tot = 0;
         long loaded = 0;
         for (DownloadLink l : dlc.getAllDownloadLinks()) {
-            tot += l.getDownloadSize();
+            if (!l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS) && l.isEnabled()) tot += l.getDownloadSize();
             loaded += l.getDownloadCurrent();
         }
 

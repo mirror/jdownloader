@@ -47,6 +47,9 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
     }
 
     private LinkCheck() {
+        checkTimer = new Timer(2000, this);
+        checkTimer.setInitialDelay(2000);
+        checkTimer.setRepeats(false);
     }
 
     public boolean isRunning() {
@@ -66,16 +69,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                 if (!LinksToCheck.contains(element)) LinksToCheck.add(element);
             }
         }
-        if (checkTimer != null) {
-            checkTimer.stop();
-            checkTimer.removeActionListener(this);
-            checkTimer = null;
-
-        }
-        checkTimer = new Timer(2000, this);
-        checkTimer.setInitialDelay(2000);
-        checkTimer.setRepeats(false);
-        checkTimer.start();
+        checkTimer.restart();
     }
 
     private void checkHosterList(Vector<DownloadLink> hosterList) {
@@ -143,11 +137,11 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                     synchronized (LinksToCheck) {
                         LinksToCheck.removeAll(currentList);
                     }
-                }
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    return;
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        return;
+                    }
                 }
                 pc.finalize();
                 pc.getBroadcaster().removeListener(LinkCheck.getLinkChecker());
@@ -161,8 +155,6 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
     public void actionPerformed(ActionEvent arg0) {
         if (arg0.getSource() == checkTimer) {
             checkTimer.stop();
-            checkTimer.removeActionListener(this);
-            checkTimer = null;
             if (LinksToCheck.size() > 0) {
                 startLinkCheck();
             }
@@ -189,10 +181,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
 
     public void abortLinkCheck() {
         check_running = false;
-        if (checkTimer != null) {
-            checkTimer.stop();
-            checkTimer.removeActionListener(this);
-        }
+        checkTimer.stop();
         if (checkThread != null && checkThread.isAlive()) {
             EventQueue.invokeLater(new Runnable() {
                 public void run() {

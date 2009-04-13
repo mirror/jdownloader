@@ -499,7 +499,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
             if (getPathForRow(row) == null) { return; }
             Vector<DownloadLink> alllinks = getAllSelectedDownloadLinks();
-            Vector<DownloadLink> resumlinks = getAllSelectedDownloadLinks();
+            Vector<DownloadLink> resumlinks = new Vector<DownloadLink>();
             Vector<DownloadLink> allnoncon = new Vector<DownloadLink>();
             int links_enabled = 0;
             for (DownloadLink next : alllinks) {
