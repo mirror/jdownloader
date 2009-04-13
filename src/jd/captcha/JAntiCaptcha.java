@@ -989,7 +989,12 @@ public class JAntiCaptcha {
 
                 setMethodAuthor(UTILITIES.getAttribute(childNode, "author"));
                 setMethodName(UTILITIES.getAttribute(childNode, "name"));
-                this.extern = UTILITIES.getAttribute(childNode, "type").equalsIgnoreCase("extern");
+                try {
+                    this.extern = UTILITIES.getAttribute(childNode, "type").equalsIgnoreCase("extern");
+				} catch (Exception e) {
+					// TODO: handle exception
+				}
+
                 this.os = UTILITIES.getAttribute(childNode, "os");
             }
             if (childNode.getNodeName().equals("command")) {

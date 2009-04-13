@@ -1296,7 +1296,7 @@ class SerienjunkiesSJTable extends JDialog {
         this.dls = DownloadLinks;
         m_data = new SerienjunkiesTM(dls);
         setModal(true);
-        m_title = new JLabel(JDLocale.L("plugin.serienjunkies.manager.dllinks", "Unerwünschte Links einfach löschen"), new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.config.infoFile"))), SwingConstants.LEFT);
+        m_title = new JLabel(JDLocale.L("plugin.serienjunkies.manager.dllinks", "Unerwünschte Links einfach löschen"), new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.config.addons"))), SwingConstants.LEFT);
         getContentPane().add(m_title, BorderLayout.NORTH);
 
         m_table = new JTable();
