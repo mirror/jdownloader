@@ -12,16 +12,18 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 
 public abstract class StartAction extends AbstractAction {
+
+    private static final long serialVersionUID = -7331375722486190184L;
     private Dimension dimension;
 
     public StartAction() {
         super();
-        dimension=new Dimension(16,16);
+        dimension = new Dimension(16, 16);
         this.init();
     }
 
     protected void setIcon(String key) {
-        putValue(Action.SMALL_ICON, JDTheme.II(key, (int)dimension.getWidth(),  (int)dimension.getHeight()));
+        putValue(Action.SMALL_ICON, JDTheme.II(key, (int) dimension.getWidth(), (int) dimension.getHeight()));
 
     }
 
@@ -56,10 +58,12 @@ public abstract class StartAction extends AbstractAction {
         putValue(Action.NAME, JDLocale.L(string, string));
 
     }
+
     protected void setIconDim(Dimension dimension) {
-        this.dimension=dimension;
-         
-     }
+        this.dimension = dimension;
+
+    }
+
     protected void setShortDescription(String string) {
         putValue(Action.SHORT_DESCRIPTION, JDLocale.L(string, string));
 

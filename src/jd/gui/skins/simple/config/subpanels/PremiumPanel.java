@@ -195,7 +195,7 @@ public class PremiumPanel extends JPanel {
         }
 
         bt.setContentAreaFilled(false);
-        bt.setCursor(Cursor.getPredefinedCursor(12));
+        bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         bt.setFocusPainted(false);
         bt.setBorderPainted(false);
         bt.setHorizontalAlignment(JButton.LEFT);

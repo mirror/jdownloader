@@ -5,9 +5,11 @@ import java.awt.event.ActionEvent;
 
 public class ExitAction extends StartAction {
 
+    private static final long serialVersionUID = -1428029294638573437L;
+
     @Override
     public void init() {
-        setIconDim(new Dimension(24,24));
+        setIconDim(new Dimension(24, 24));
         setIcon("gui.images.exit");
         this.setShortDescription("gui.menu.action.exit.desc");
         this.setName("gui.menu.action.exit.name");

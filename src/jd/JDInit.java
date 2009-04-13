@@ -225,12 +225,10 @@ public class JDInit {
                 File home = JDUtilities.getResourceFile(".");
                 if (home.canWrite() && !JDUtilities.getResourceFile("noupdate.txt").exists()) {
 
-                    new GuiRunnable() {
+                    new GuiRunnable<Object>() {
 
                         @Override
                         public Object runSave() {
-                            // TODO Auto-generated method stub
-
                             JOptionPane.showMessageDialog(null, JDLocale.L("installer.welcome", "Welcome to jDownloader."));
                             return null;
                         }
@@ -255,12 +253,10 @@ public class JDInit {
                 if (!home.canWrite()) {
                     logger.severe("INSTALL abgebrochen");
                     
-                    new GuiRunnable() {
+                    new GuiRunnable<Object>() {
 
                         @Override
                         public Object runSave() {
-                            // TODO Auto-generated method stub
-
                             JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
                             return null;
                         }
@@ -272,12 +268,11 @@ public class JDInit {
 
             } else {
                 logger.severe("INSTALL abgebrochen2");
-                new GuiRunnable() {
+                new GuiRunnable<Object>() {
 
                     @Override
                     public Object runSave() {
                         JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation", "Error. User aborted installation."));
-
                         return null;
                     }
 

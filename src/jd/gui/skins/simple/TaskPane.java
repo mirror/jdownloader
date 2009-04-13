@@ -15,16 +15,9 @@ public class TaskPane extends JXTaskPaneContainer implements ActionListener {
     private ArrayList<TaskPanel> panels;
     private TaskPanel lastSource;
 
-    private boolean overButton;
-
     public TaskPane() {
         panels = new ArrayList<TaskPanel>();
         this.setLayout(new MigLayout("ins 2, wrap 1", "[fill,grow]", "[]2[]2[]2[]2[]2[]2[]2[]2[fill,grow]"));
-        // this.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0,
-        // Color.GRAY));
-        // add(new JLabel(JDImage.getImageIcon("default/enlarge_left")),
-        // "cell 0 7, dock east");
-
     }
 
     public void add(TaskPanel panel) {
@@ -72,7 +65,6 @@ public class TaskPane extends JXTaskPaneContainer implements ActionListener {
             SimpleGUI.CURRENTGUI.hideSideBar(false);
         }
 
-        boolean all = true;
         for (TaskPanel p : panels) {
             if (p != lastSource) {
                 p.setSpecial(false);

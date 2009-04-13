@@ -237,7 +237,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
                 guiFrame.addWindowListener(this);
             }
             logger.info("Systemtray OK");
-          new GuiRunnable(){
+          new GuiRunnable<Object>(){
 
             @Override
             public Object runSave() {

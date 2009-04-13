@@ -9,7 +9,7 @@ import jd.gui.skins.simple.startmenu.actions.RestartAction;
 public class JDStartMenu {
 
     public static void createMenu(JMenu menu) {
-     
+
         menu.add(new AddLinksMenu());
         menu.add(new CleanupMenu());
         menu.add(new SaveMenu());

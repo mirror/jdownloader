@@ -80,7 +80,7 @@ public class Installer {
 
     public static void showConfigDialog(final JFrame parent, final ConfigContainer configContainer, final boolean alwaysOnTop) {
         // logger.info("ConfigDialog");
-        new GuiRunnable() {
+        new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
@@ -95,7 +95,6 @@ public class Installer {
                 pop.setLocation(JDUtilities.getCenterOfComponent(parent, pop));
                 pop.setVisible(true);
 
-                // TODO Auto-generated method stub
                 return null;
             }
 

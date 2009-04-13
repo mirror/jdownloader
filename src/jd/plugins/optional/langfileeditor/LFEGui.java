@@ -116,7 +116,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private boolean changed = false;
     private static final JDFileFilter fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter", "LanguageFiles (*.lng)"), ".lng", true);
 
-    private static final Color BG_COLOR = new Color(0.0f,0.0f,0.0f,0.0f);
+    private static final Color BG_COLOR = new Color(0.0f, 0.0f, 0.0f, 0.0f);
     private boolean colorizeDone, colorizeMissing, colorizeOld;
     private Color colorDone, colorMissing, colorOld;
     private ColorHighlighter doneHighlighter, missingHighlighter, oldHighlighter;
@@ -688,7 +688,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 initLocaleDataComplete();
             }
         } catch (SVNException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             JOptionPane.showMessageDialog(this, JDLocale.LF("plugins.optional.langfileeditor.svn.error.message", "An error occured while checking the SVN Repository out! Please check the SVN settings!\n%s", e.getMessage()), JDLocale.L("plugins.optional.langfileeditor.svn.error.title", "Error!"), JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -959,7 +959,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             }
             f.close();
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
     }
 

@@ -164,14 +164,14 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
 
     public JButton createButton(String string, Icon i) {
         JButton bt;
-        if(i!=null){
-            bt= new JButton(string, i);
-        }else{
-            bt= new JButton(string);
+        if (i != null) {
+            bt = new JButton(string, i);
+        } else {
+            bt = new JButton(string);
         }
-      
+
         bt.setContentAreaFilled(false);
-        bt.setCursor(Cursor.getPredefinedCursor(12));
+        bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         bt.setFocusPainted(false);
         bt.setBorderPainted(false);
         bt.setHorizontalAlignment(JButton.LEFT);

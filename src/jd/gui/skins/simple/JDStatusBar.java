@@ -1,6 +1,5 @@
 package jd.gui.skins.simple;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -86,15 +85,8 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         where.add(component);
     }
 
-    private Component bundle(Component c1, Component c2) {
-        JPanel panel = new JPanel(new BorderLayout(2, 0));
-        panel.add(c1, BorderLayout.WEST);
-        panel.add(c2, BorderLayout.EAST);
-        return panel;
-    }
-
     private void colorizeSpinnerSpeed() {
-        /* fÃ¤rbt den spinner ein, falls speedbegrenzung aktiv */
+        /* färbt den spinner ein, falls speedbegrenzung aktiv */
         JSpinner.DefaultEditor spMaxEditor = (JSpinner.DefaultEditor) spMax.getEditor();
         if ((Integer) spMax.getValue() > 0) {
             lblSpeed.setForeground(JDTheme.C("gui.color.statusbar.maxspeedhighlight", "ff0c03"));

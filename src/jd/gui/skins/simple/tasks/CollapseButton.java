@@ -21,11 +21,12 @@ import org.jdesktop.swingx.JXCollapsiblePane;
 
 public class CollapseButton extends JPanel {
 
+    private static final long serialVersionUID = -4630190465173892024L;
     private JButton button;
     private JXCollapsiblePane collapsible;
 
     public CollapseButton(String host, ImageIcon ii) {
-        this.setLayout(new MigLayout("ins 0,wrap 1, gap 0 0","grow,fill"));
+        this.setLayout(new MigLayout("ins 0,wrap 1, gap 0 0", "grow,fill"));
         button = createButton(host, ii);
         add(button);
         button.addActionListener(new ActionListener() {
@@ -34,7 +35,7 @@ public class CollapseButton extends JPanel {
                 if (collapsible.isCollapsed()) {
                     collapsible.setCollapsed(false);
                 } else {
-                  //  collapsible.setCollapsed(true);
+                    // collapsible.setCollapsed(true);
                 }
 
             }
@@ -42,19 +43,21 @@ public class CollapseButton extends JPanel {
         });
         collapsible = new JXCollapsiblePane();
         collapsible.setCollapsed(true);
-        
-        collapsible.setLayout(new MigLayout("ins 0,wrap 1,gap 0 0","grow,fill"));
+
+        collapsible.setLayout(new MigLayout("ins 0,wrap 1,gap 0 0", "grow,fill"));
         add(collapsible);
 
     }
-public void setCollapsed(boolean b){
-    collapsible.setCollapsed(b);
-}
+
+    public void setCollapsed(boolean b) {
+        collapsible.setCollapsed(b);
+    }
+
     public Container getContentPane() {
         return collapsible.getContentPane();
     }
 
-    public JButton createButton(String string, Icon i) {
+    private JButton createButton(String string, Icon i) {
         JButton bt;
 
         if (i == null) {
@@ -64,7 +67,7 @@ public void setCollapsed(boolean b){
         }
 
         bt.setContentAreaFilled(false);
-        bt.setCursor(Cursor.getPredefinedCursor(12));
+        bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         bt.setFocusPainted(false);
         bt.setBorderPainted(false);
         bt.setHorizontalAlignment(JButton.LEFT);
@@ -97,8 +100,7 @@ public void setCollapsed(boolean b){
     }
 
     public JButton getButton() {
-     return button;
-        
+        return button;
     }
 
 }

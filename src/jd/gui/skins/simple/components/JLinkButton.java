@@ -313,7 +313,7 @@ public class JLinkButton extends JButton {
         }
         setLinkURL(url);
         this.setBackground(null);
-        setCursor(Cursor.getPredefinedCursor(12));
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setBorderPainted(false);
         setContentAreaFilled(false);
         setRolloverEnabled(true);
@@ -368,7 +368,7 @@ public class JLinkButton extends JButton {
             setText(url.toExternalForm());
         }
         setLinkURL(url);
-        setCursor(Cursor.getPredefinedCursor(12));
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setBorderPainted(false);
         setContentAreaFilled(false);
         setRolloverEnabled(true);

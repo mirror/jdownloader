@@ -19,15 +19,12 @@ package jd.plugins.optional.langfileeditor;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import jd.Main;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
-import jd.event.ControlEvent;
-import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SingletonPanel;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * Editor for jDownloader language files. Gets JDLocale.L() and JDLocale.LF()
@@ -38,14 +35,18 @@ import jd.utils.JDUtilities;
  */
 public class LangFileEditor extends PluginOptional {
 
-    private LFETaskPane tp = null;
+    private SingletonPanel lfe = null;
 
     public LangFileEditor(PluginWrapper wrapper) {
         super(wrapper);
+        lfe = new SingletonPanel(LFEGui.class);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
+            SimpleGUI.CURRENTGUI.getContentPane().display(lfe.getPanel());
+        }
     }
 
     @Override
@@ -55,51 +56,30 @@ public class LangFileEditor extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        if (SimpleGUI.CURRENTGUI == null) {
-            JDUtilities.getController().addControlListener(this);
-        } else {
-            initLFE();
-        }
         return true;
-    }
-
-    private void initLFE() {
-        new GuiRunnable<Object>() {
-
-            @Override
-            public Object runSave() {
-                if (tp == null) tp = new LFETaskPane(getHost());
-                SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
-                return null;
-            }
-
-        }.start();
-    }
-
-    @Override
-    public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
-            initLFE();
-            JDUtilities.getController().removeControlListener(this);
-            return;
-        }
-        super.controlEvent(event);
     }
 
     @Override
     public void onExit() {
-        SimpleGUI.CURRENTGUI.getTaskPane().remove(tp);
-        JDUtilities.getController().removeControlListener(this);
     }
 
     @Override
     public ArrayList<MenuItem> createMenuitems() {
-        return null;
+        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
+
+        menu.add(new MenuItem(MenuItem.NORMAL, getHost(), 0).setActionListener(this));
+
+        return menu;
     }
 
     @Override
     public String getCoder() {
         return "Greeny";
+    }
+
+    @Override
+    public String getIconKey() {
+        return "gui.splash.languages";
     }
 
     @Override

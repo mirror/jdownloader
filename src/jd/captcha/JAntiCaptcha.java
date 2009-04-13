@@ -381,7 +381,7 @@ public class JAntiCaptcha {
         return extern;
     }
 
-    private String os;
+//    private String os;
 
     private String command;
 
@@ -585,7 +585,7 @@ public class JAntiCaptcha {
         exec.setWaitTimeout(300);
         exec.start();
         exec.waitTimeout();
-        String ret = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
+//        String ret = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
 
         String res = JDIO.getLocalFile(JDUtilities.getResourceFile(this.dstFile));
         if (res == null) return null;
@@ -995,7 +995,7 @@ public class JAntiCaptcha {
 					// TODO: handle exception
 				}
 
-                this.os = UTILITIES.getAttribute(childNode, "os");
+//                this.os = UTILITIES.getAttribute(childNode, "os");
             }
             if (childNode.getNodeName().equals("command")) {
 

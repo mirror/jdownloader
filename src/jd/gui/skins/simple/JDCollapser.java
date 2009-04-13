@@ -9,6 +9,8 @@ import org.jdesktop.swingworker.SwingWorker;
 import org.jdesktop.swingx.JXTaskPane;
 
 public class JDCollapser extends JXTaskPane implements MouseListener {
+
+    private static final long serialVersionUID = 6864885344815243560L;
     private static JDCollapser INSTANCE = null;
 
     public static JDCollapser getInstance() {
@@ -27,23 +29,15 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
     }
 
     public void mouseClicked(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseEntered(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseExited(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mousePressed(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseReleased(MouseEvent e) {

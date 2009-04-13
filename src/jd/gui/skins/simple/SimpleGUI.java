@@ -1352,12 +1352,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public void showAccountInformation(final PluginForHost pluginForHost, final Account account) {
-        new GuiRunnable() {
+        new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
-                // TODO Auto-generated method stub
-
                 AccountInfo ai;
                 try {
                     ai = pluginForHost.getAccountInformation(account);

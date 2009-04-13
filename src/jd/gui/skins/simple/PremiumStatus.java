@@ -27,7 +27,8 @@ import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 public class PremiumStatus extends JPanel implements ControlListener {
-    private static final int GAP = 5;
+
+    private static final long serialVersionUID = 7290466989514173719L;
     private static final long UNLIMITED = 10l * 1024l * 1024l * 1024l;
     private static final String DEBUG = "";
     private static final int BARCOUNT = 5;

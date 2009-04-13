@@ -36,7 +36,6 @@ import javax.swing.table.TableColumn;
 
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
-import jd.gui.skins.simple.OptionalMenuMenu;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.ConfigPanel;
@@ -120,8 +119,6 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
                         plgWrapper.getPlugin().onExit();
                     }
                 }
-                OptionalMenuMenu.getMenu(null, null).createOptionalPluginsMenuEntries();
-
             }
         }
 

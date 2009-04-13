@@ -5,6 +5,8 @@ import java.awt.event.ActionEvent;
 
 public class RestartAction extends StartAction {
 
+    private static final long serialVersionUID = 1333126351380171619L;
+
     public void actionPerformed(ActionEvent e) {
         // TODO Auto-generated method stub
 
@@ -12,7 +14,7 @@ public class RestartAction extends StartAction {
 
     @Override
     public void init() {
-        setIconDim(new Dimension(24,24));
+        setIconDim(new Dimension(24, 24));
         setIcon("gui.images.restart");
         this.setShortDescription("gui.menu.action.restart.desc");
         this.setName("gui.menu.action.restart.name");
@@ -20,7 +22,5 @@ public class RestartAction extends StartAction {
         this.setAccelerator("gui.menu.action.restart.accel");
 
     }
-
- 
 
 }

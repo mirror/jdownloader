@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import javax.swing.JFrame;
-
 import jd.HostPluginWrapper;
 import jd.Main;
 import jd.PluginWrapper;
@@ -53,8 +51,6 @@ public class JDPremiumCollector extends PluginOptional {
     private static final String PROPERTY_ACCOUNTS = "PROPERTY_ACCOUNTS";
     private static final String PROPERTY_ACCOUNTS2 = "PROPERTY_ACCOUNTS2";
 
-    private JFrame guiFrame;
-
     private Thread t;
 
     public JDPremiumCollector(PluginWrapper wrapper) {
@@ -72,15 +68,16 @@ public class JDPremiumCollector extends PluginOptional {
             br.postPage(subConfig.getStringProperty(PROPERTY_API_URL), post);
 
         } catch (IOException e1) {
-           
-           // JDLogger.exception(e1);
-           logger.severe(JDLocale.L("plugins.optional.premiumcollector.error.url", "Probably wrong URL! See log for more infos!"));
-           // JOptionPane.showMessageDialog(guiFrame, , JDLocale.L("plugins.optional.premiumcollector.error", "Error!"), JOptionPane.ERROR_MESSAGE);
+
+            // JDLogger.exception(e1);
+            logger.severe(JDLocale.L("plugins.optional.premiumcollector.error.url", "Probably wrong URL! See log for more infos!"));
+            // JOptionPane.showMessageDialog(guiFrame, ,
+            // JDLocale.L("plugins.optional.premiumcollector.error", "Error!"),
+            // JOptionPane.ERROR_MESSAGE);
         }
 
         if (br.containsHTML("Login faild")) {
             logger.severe(JDLocale.L("plugins.optional.premiumcollector.error.userpass", "Wrong username/password!"));
-            
 
             return;
         }
@@ -139,9 +136,9 @@ public class JDPremiumCollector extends PluginOptional {
         return true;
     }
 
+    @Override
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
-            guiFrame = SimpleGUI.CURRENTGUI;
             fetchAccounts();
             JDUtilities.getController().removeControlListener(this);
             return;
@@ -173,9 +170,12 @@ public class JDPremiumCollector extends PluginOptional {
 
         return menu;
     }
-    public String getIconKey(){
+
+    @Override
+    public String getIconKey() {
         return "gui.images.taskpanes.premium";
     }
+
     @Override
     public String getHost() {
         return JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector");
@@ -261,7 +261,7 @@ public class JDPremiumCollector extends PluginOptional {
                             }
                         }
                     } catch (Exception e1) {
-                      
+
                     }
                 }
                 plg.getPlugin().setPremiumAccounts(accounts);
