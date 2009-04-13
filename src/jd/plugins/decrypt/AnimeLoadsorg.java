@@ -35,18 +35,28 @@ public class AnimeLoadsorg extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<String> links = new ArrayList<String>();
         String parameter = param.toString();
 
         br.setCookiesExclusive(true);
         br.clearCookies(host);
-        br.getPage(parameter);
-        String[] links = br.getRegex("src=\"(.*?)\"").getColumn(0);
-        progress.setRange(links.length);
-
-        for (String element : links) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(element)));
-            progress.increase(1);
+        
+        if(parameter.contains("crypt")) {
+        	links.add(parameter);
+        } else {
+        	br.getPage(parameter);
+        	String[][] help = br.getRegex("<a href=\"(crypt\\.php.*?)\"").getMatches();
+        	
+        	for(String[] help1 : help)
+        		links.add(help1[0]);
         }
+        
+        
+        for(String link : links) {
+        	br.getPage(link);
+        	decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(br.getRegex("iframe src=\'(.*?)\'").getMatch(0))));
+        }
+        
 
         return decryptedLinks;
     }

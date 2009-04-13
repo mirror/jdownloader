@@ -300,7 +300,7 @@ public class JDInit {
         new DecryptPluginWrapper("alpha-link.eu", "AlphaLink", "http://[\\w\\.]*?alpha\\-link\\.eu\\/\\?id=[a-fA-F0-9]+");
         new DecryptPluginWrapper("protectbox.in", "ProtectBoxIn", "http://[\\w\\.]*?protectbox\\.in\\/\\?id=[a-fA-F0-9]+");
         new DecryptPluginWrapper("animea.net", "AnimeANet", PluginPattern.decrypterPattern_AnimeANet_Plugin);
-        new DecryptPluginWrapper("anime-loads.org", "AnimeLoadsorg", "http://[\\w\\.]*?anime-loads\\.org/Crypt-it/([^/]*)/[a-zA-Z0-9]+\\.html");
+        new DecryptPluginWrapper("anime-loads.org", "AnimeLoadsorg", "http://[\\w\\.]*?anime-loads\\.org/crypt.php\\?cryptid=[a-zA-Z0-9]+|http://[\\w\\.]*?anime-loads\\.org/page.php\\?id=[0-9]+");
         new DecryptPluginWrapper("baberepublic.com", "LinkBucks", "http://[\\w\\.]*?baberepublic\\.com/link/[0-9a-zA-Z]+(/\\d+)?");
         new DecryptPluginWrapper("bat5.com", "URLCash", "http://.+bat5\\.com");
         new DecryptPluginWrapper("counterstrike.de", "CounterstrikeDe", "http://[\\w\\.]*?4players\\.de/\\S*/download/[0-9]+/([01]/)?index\\.html?");
@@ -591,7 +591,7 @@ public class JDInit {
     public void loadPluginOptional() {
         new OptionalPluginWrapper("JDTrayIcon", 1.6);
 
-        new OptionalPluginWrapper("JDLightTray", 1.6);
+        new OptionalPluginWrapper("jdtrayicon.JDLightTray", 1.6);
 
         new OptionalPluginWrapper("webinterface.JDWebinterface", 1.5);
 
