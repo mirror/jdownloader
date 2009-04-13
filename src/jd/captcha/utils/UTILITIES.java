@@ -20,14 +20,10 @@ import java.awt.GridBagConstraints;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.MediaTracker;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -35,6 +31,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jd.captcha.JAntiCaptcha;
+import jd.controlling.JDLogger;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -54,7 +51,7 @@ public class UTILITIES {
      */
     public static String FS = System.getProperty("file.separator");
 
-    private static Logger logger = jd.controlling.JDLogger.getLogger();
+    private static Logger logger = JDLogger.getLogger();
 
     public static boolean checkJumper(int x, int from, int to) {
         return x >= from && x <= to;
@@ -159,60 +156,6 @@ public class UTILITIES {
         return logger;
     }
 
-    /**
-     * Gibt alle treffer in source nach dem pattern zurück. Platzhalter ist nur
-     * !! °
-     * 
-     * @param source
-     * @param pattern
-     * @return Alle TReffer
-     */
-    public static String[] getMatches(String source, String pattern) {
-        // DEBUG.trace("pattern: "+STRING.getPattern(pattern));
-        if (source == null || pattern == null) return null;
-        Matcher rr = Pattern.compile(UTILITIES.getPattern(pattern), Pattern.DOTALL).matcher(source);
-        if (!rr.find()) {
-            // Keine treffer
-        }
-        try {
-            String[] ret = new String[rr.groupCount()];
-            for (int i = 1; i <= rr.groupCount(); i++) {
-                ret[i - 1] = rr.group(i);
-            }
-            return ret;
-        } catch (IllegalStateException e) {
-
-            return null;
-        }
-    }
-
-    /**
-     * Gibt ein Regex pattern zurück. ° dient als Platzhalter!
-     * 
-     * @param str
-     * @return RegEx Pattern
-     */
-    private static String getPattern(String str) {
-
-        String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm 1234567890";
-        StringBuilder ret = new StringBuilder();
-        int i;
-        for (i = 0; i < str.length(); i++) {
-            char letter = str.charAt(i);
-            // 176 == °
-            if (letter == 176) {
-                ret.append("(.*?)");
-            } else if (allowed.indexOf(letter) == -1) {
-                ret.append('\\');
-                ret.append(letter);
-            } else {
-                ret.append(letter);
-            }
-        }
-
-        return ret.toString();
-    }
-
     public static int getPercent(int a, int b) {
         if (b == 0) return 100;
         return a * 100 / b;
@@ -290,11 +233,10 @@ public class UTILITIES {
 
             return doc;
         } catch (SAXException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (ParserConfigurationException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (IOException e) {
-
             // DEBUG.error(e);
         }
         return null;
@@ -324,45 +266,6 @@ public class UTILITIES {
         ret[0] = xTrans + nullX;
         ret[1] = yTrans + nullY;
         return ret;
-    }
-
-    /**
-     * Schreibt über einen BufferedWriter content in file. file wird gelöscht
-     * falls sie schon existiert
-     * 
-     * @param file
-     * @param content
-     * @return true/false je Nach Erfolg
-     */
-    public static boolean writeLocalFile(File file, String content) {
-        try {
-            if (file.isFile()) {
-                if (!file.delete()) {
-                    if (JAntiCaptcha.isLoggerActive()) {
-                        logger.warning("Konnte Datei nicht löschen " + file);
-                    }
-                    return false;
-                }
-            }
-            if (JAntiCaptcha.isLoggerActive()) {
-                logger.info("DIR :" + file.getParent());
-            }
-            if (file.getParent() != null && !file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
-            }
-            file.createNewFile();
-
-            // FileWriter f = new FileWriter(file);
-            BufferedWriter f = new BufferedWriter(new FileWriter(file));
-            // DEBUG.trace(file+" - "+content);
-            f.write(content);
-            f.close();
-
-            return true;
-        } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
-            return false;
-        }
     }
 
 }

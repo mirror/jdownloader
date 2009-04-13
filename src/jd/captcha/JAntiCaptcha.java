@@ -32,7 +32,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Vector;
@@ -144,7 +143,7 @@ public class JAntiCaptcha {
 
         File[] entries = dir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
 
                 if (pathname.isDirectory() && new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml").exists()) {
@@ -213,7 +212,7 @@ public class JAntiCaptcha {
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, methodName);
         File[] entries = captchaDir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
                 if (pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
 
@@ -381,7 +380,7 @@ public class JAntiCaptcha {
         return extern;
     }
 
-//    private String os;
+    // private String os;
 
     private String command;
 
@@ -585,7 +584,8 @@ public class JAntiCaptcha {
         exec.setWaitTimeout(300);
         exec.start();
         exec.waitTimeout();
-//        String ret = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
+        // String ret = exec.getOutputStream() + " \r\n " +
+        // exec.getErrorStream();
 
         String res = JDIO.getLocalFile(JDUtilities.getResourceFile(this.dstFile));
         if (res == null) return null;
@@ -719,11 +719,8 @@ public class JAntiCaptcha {
             element.appendChild(xml.createTextNode(getLetterMapString()));
         }
 
-        Letter letter;
-        Iterator<Letter> iter = letterDB.iterator();
         int i = 0;
-        while (iter.hasNext()) {
-            letter = (Letter) iter.next();
+        for (Letter letter : letterDB) {
             Element element = xml.createElement("letter");
             xml.getFirstChild().appendChild(element);
             element.appendChild(xml.createTextNode(letter.getPixelString()));
@@ -737,65 +734,6 @@ public class JAntiCaptcha {
         return xml;
 
     }
-
-    // /**
-    // * TestFunktion - Annimierte Gifs verarbeiten
-    // *
-    // * @param path
-    // */
-    // public void mergeGif(File path) {
-    // getJas().setColorType("G");
-    // GifDecoder d = new GifDecoder();
-    // d.read(path.getAbsolutePath());
-    // int n = d.getFrameCount();
-    //
-    // if(JAntiCaptcha.isLoggerActive())logger.fine("Found Frames: " + n);
-    // int width = (int) d.getFrameSize().getWidth();
-    // int height = (int) d.getFrameSize().getHeight();
-    // Captcha merged = new Captcha(width, height);
-    // merged.setOwner(this);
-    // Captcha tmp;
-    //
-    // for (int i = 0; i < n; i++) {
-    // BufferedImage frame = d.getFrame(i);
-    // tmp = new Captcha(width, height);
-    // tmp.setOwner(this);
-    // PixelGrabber pg = new PixelGrabber(frame, 0, 0, width, height, false);
-    // try {
-    // pg.grabPixels();
-    // } catch (Exception e) {
-    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,
-    // "Exception occured",e);
-    // }
-    // ColorModel cm = pg.getColorModel();
-    // tmp.setColorModel(cm);
-    //
-    // if (!(cm instanceof IndexColorModel)) {
-    // // not an indexed file (ie: not a gif file)
-    // tmp.setPixel((int[]) pg.getPixels());
-    // } else {
-    //
-    // tmp.setPixel((byte[]) pg.getPixels());
-    // }
-    // merged.concat(tmp);
-    //
-    // }
-    //
-    // merged.crop(6, 12, 6, 12);
-    // // merged.removeSmallObjects(0.3, 0.3);
-    // // merged.invert();
-    // merged.toBlackAndWhite(0.4);
-    // merged.removeSmallObjects(0.3, 0.3, 20);
-    // merged.reduceBlackNoise(4, 0.45);
-    // merged.toBlackAndWhite(1);
-    // // merged.reduceBlackNoise(6, 1.6);
-    // // merged.reduceBlackNoise(6, 1.6);
-    // // getJas().setBackgroundSampleCleanContrast(0.1);
-    // // merged.cleanBackgroundBySample(4, 4, 7, 7);
-    //
-    // BasicWindow.showImage(merged.getImage(4), 160, 60);
-    //
-    // }
 
     private void destroyScrollPaneWindows() {
         while (spw.size() > 0) {
@@ -891,9 +829,7 @@ public class JAntiCaptcha {
         File file;
         BufferedImage img;
         int i = 0;
-        Iterator<Letter> iter = letterDB.iterator();
-        while (iter.hasNext()) {
-            Letter letter = (Letter) iter.next();
+        for (Letter letter : letterDB) {
             img = (BufferedImage) letter.getFullImage();
             file = new File(path + "/letterDB_" + getMethodName() + "/" + i++ + "_" + letter.getDecodedValue() + ".png");
             file.mkdirs();
@@ -910,10 +846,8 @@ public class JAntiCaptcha {
     }
 
     private String getCodeFromFileName(String name, String captchaHash) {
-        // captcha_share.gulli.com_codeph2.gif
-
-        String[] matches = UTILITIES.getMatches(name, "captcha_°_code°.°");
-        if (matches != null && matches.length > 0) { return matches[1]; }
+        String[] matches = new Regex(name, "captcha_(.*?)_code(.*?)\\.(.*?)").getRow(0);
+        if (matches != null && matches.length > 0) return matches[1];
 
         return null;
     }
@@ -991,11 +925,11 @@ public class JAntiCaptcha {
                 setMethodName(UTILITIES.getAttribute(childNode, "name"));
                 try {
                     this.extern = UTILITIES.getAttribute(childNode, "type").equalsIgnoreCase("extern");
-				} catch (Exception e) {
-					// TODO: handle exception
-				}
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
 
-//                this.os = UTILITIES.getAttribute(childNode, "os");
+                // this.os = UTILITIES.getAttribute(childNode, "os");
             }
             if (childNode.getNodeName().equals("command")) {
 
@@ -1072,8 +1006,6 @@ public class JAntiCaptcha {
                 return null;
             }
 
-            Letter tmp;
-
             LetterComperator lc;
             ScrollPaneWindow w = null;
             if (isShowDebugGui()) {
@@ -1088,7 +1020,6 @@ public class JAntiCaptcha {
             lc.setScanVariance(0, 0);
             lc.setOwner(this);
             res = lc;
-            Iterator<Letter> iter = letterDB.iterator();
             int tt = 0;
             logger.info("Do quickscan");
             Method preValueFilterMethod = null;
@@ -1137,13 +1068,8 @@ public class JAntiCaptcha {
                     jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
-            while (iter.hasNext()) {
-                if (Thread.currentThread().isInterrupted()) {
-
-                throw new InterruptedException();
-
-                }
-                tmp = (Letter) iter.next();
+            for (Letter tmp : letterDB) {
+                if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
 
                 if (Math.abs(tmp.getHeight() - letter.getHeight()) > bvY || Math.abs(tmp.getWidth() - letter.getWidth()) > bvX) {
                     continue;
@@ -1340,17 +1266,15 @@ public class JAntiCaptcha {
                 // if(JAntiCaptcha.isLoggerActive())logger.finer(" Angle " +
                 // angle + " : " + letter.getDim());
 
-                Iterator<Letter> iter = letterDB.iterator();
                 int tt = 0;
-                while (iter.hasNext()) {
-                    if (Thread.currentThread().isInterrupted()) { throw new InterruptedException();
+                for (Letter ltr : letterDB) {
+                    if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
 
-                    }
                     if (turnDB) {
-                        tmp = ((Letter) iter.next()).turn(angle);
+                        tmp = ltr.turn(angle);
 
                     } else {
-                        tmp = (Letter) iter.next();
+                        tmp = ltr;
                     }
 
                     if (Math.abs(tmp.getHeight() - letter.getHeight()) > jas.getInteger("borderVarianceY") || Math.abs(tmp.getWidth() - letter.getWidth()) > jas.getInteger("borderVarianceX")) {
@@ -1618,10 +1542,9 @@ public class JAntiCaptcha {
      * @return true/false
      */
     private boolean isCaptchaInMTH(String captchaHash) {
-        if (letterDB == null) { return false; }
-        Iterator<Letter> iter = letterDB.iterator();
-        while (iter.hasNext()) {
-            if (((Letter) iter.next()).getSourcehash().equals(captchaHash)) { return true; }
+        if (letterDB == null) return false;
+        for (Letter letter : letterDB) {
+            if (letter.getSourcehash().equals(captchaHash)) return true;
         }
 
         return false;
@@ -1758,7 +1681,7 @@ public class JAntiCaptcha {
 
             String xmlString = result.getWriter().toString();
 
-            if (!UTILITIES.writeLocalFile(getResourceFile("letters.mth"), xmlString)) {
+            if (!JDIO.writeLocalFile(getResourceFile("letters.mth"), xmlString)) {
                 if (JAntiCaptcha.isLoggerActive()) {
                     logger.severe("MTHO file Konnte nicht gespeichert werden");
                 }
@@ -1968,7 +1891,7 @@ public class JAntiCaptcha {
             }
 
             // String methodsPath = UTILITIES.getFullPath(new String[] {
-            //JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
+            // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
             // "jd", "captcha", "methods" });
             // String hoster = "rscat.com";
             // JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
@@ -2332,9 +2255,4 @@ public class JAntiCaptcha {
         return ret;
     }
 
-    //  
-    // private static String[] getMethods() {
-
-    //
-    // }
 }

@@ -28,6 +28,7 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.UTILITIES;
 import jd.nutils.io.JDIO;
+import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 /**
@@ -113,7 +114,7 @@ public class JACScript {
             parseScriptFile();
             executeParameterCommands();
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
 
     }
@@ -216,7 +217,7 @@ public class JACScript {
                             if (JAntiCaptcha.isLoggerActive()) {
                                 logger.severe("Fehler in doSpecial:" + e.getLocalizedMessage());
                             }
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                         }
 
                     } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByColor")) {
@@ -295,7 +296,7 @@ public class JACScript {
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.severe("Syntax Error in " + method + "/script.jas");
             }
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
 
         }
         // BasicWindow.showImage(captcha.getImage(),120,80);
@@ -349,7 +350,7 @@ public class JACScript {
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.severe("Syntax Error in " + method + "/+script.jas");
             }
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
 
     }
@@ -454,7 +455,7 @@ public class JACScript {
                             if (JAntiCaptcha.isLoggerActive()) {
                                 logger.severe("Fehler in doSpecial:" + e.getLocalizedMessage());
                             }
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                         }
 
                     } else if (cmd[1].equalsIgnoreCase("saveImageasJpg")) {
@@ -537,7 +538,7 @@ public class JACScript {
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.severe("Syntax Error in " + method + "/script.jas (captcha)");
             }
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
 
         }
         // BasicWindow.showImage(captcha.getImage(),120,80);
@@ -981,20 +982,20 @@ public class JACScript {
         String[] ret = new String[3];
         String[] matches;
         cmd = "#" + cmd + "#";
-        if ((matches = UTILITIES.getMatches(cmd, "#°=°#")) != null) {
+        if ((matches = new Regex(cmd, "#(.*?)=(.*?)#").getRow(0)) != null) {
 
             ret[0] = "parameter";
             ret[1] = matches[0].trim();
             ret[2] = matches[1].replaceAll("\\\"", "").trim();
 
-        } else if ((matches = UTILITIES.getMatches(cmd, "#°(°)#")) != null) {
+        } else if ((matches = new Regex(cmd, "#(.*?)\\((.*?)\\)#").getRow(0)) != null) {
             ret[0] = "function";
             ret[1] = matches[0].trim();
             ret[2] = matches[1].replaceAll("\\\"", "").trim();
             if (ret[2].length() == 0) {
                 ret[2] = null;
             }
-        } else if ((matches = UTILITIES.getMatches(cmd, "#°()#")) != null) {
+        } else if ((matches = new Regex(cmd, "#(.*?)\\((.*?)\\)#").getRow(0)) != null) {
             ret[0] = "function";
             ret[1] = matches[0].trim();
             ret[2] = null;
