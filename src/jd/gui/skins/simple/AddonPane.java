@@ -22,36 +22,23 @@ import java.util.logging.Logger;
 
 import net.miginfocom.swing.MigLayout;
 
-/**
- * Ein Dialog, der Logger-Output anzeigen kann.
- * 
- */
 public class AddonPane extends JTabbedPanel implements ActionListener {
 
-    
-    public AddonPane(Logger logger) {
-       
-        this.setLayout(new MigLayout("ins 3", "[fill,grow]", "[fill,grow]"));
+    private static final long serialVersionUID = 1511081032101600835L;
 
+    public AddonPane(Logger logger) {
+        this.setLayout(new MigLayout("ins 3", "[fill,grow]", "[fill,grow]"));
     }
 
     public void actionPerformed(ActionEvent e) {
-
-     
-
     }
-
 
     @Override
     public void onDisplay() {
-      
     }
 
     @Override
     public void onHide() {
-        
     }
-
-   
 
 }

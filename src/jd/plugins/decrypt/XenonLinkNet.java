@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 public class XenonLinkNet extends PluginForDecrypt {
@@ -34,20 +35,22 @@ public class XenonLinkNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        String dataCode = getUserInput("Data-Code?", param);
+        String dataCode = Plugin.getUserInput("Data-Code?", param);
 
         br.getPage("http://www.xenonlink.net/index.php?p=2&dg=" + dataCode);
 
         String password = br.getRegex("Passwort:.*<br>(.*?)</font>").getMatch(0);
+
+        /*
+         * Will diesen Namen als Namen fÃ¼r das Package benutzen.
+         */
         // String name =
         // br.getRegex("<font color=white size=4>(.*?)</font>").getMatch(0);
-        // Will diesen Namen als Namen für das Package benutzen.
-
-        String[][] links = br.getRegex("<br>(http://.*?)\\s").getMatches();
+        String[] links = br.getRegex("<br>(http://.*?)\\s").getColumn(0);
 
         progress.setRange(links.length);
-        for (String[] element : links) {
-            DownloadLink dLink = createDownloadlink(element[0]);
+        for (String element : links) {
+            DownloadLink dLink = createDownloadlink(element);
             dLink.addSourcePluginPassword(password);
             decryptedLinks.add(dLink);
 
@@ -59,6 +62,6 @@ public class XenonLinkNet extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision:$");
+        return getVersion("$Revision$");
     }
 }

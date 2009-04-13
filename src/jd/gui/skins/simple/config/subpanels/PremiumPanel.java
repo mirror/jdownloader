@@ -229,6 +229,7 @@ public class PremiumPanel extends JPanel {
 
     private class AccountPanel extends JPanel implements ChangeListener, ActionListener, FocusListener {
 
+        private static final long serialVersionUID = 6448121932852086853L;
         private JCheckBox chkEnable;
         private JLabel lblUsername;
         private JLabel lblPassword;
@@ -322,7 +323,7 @@ public class PremiumPanel extends JPanel {
             account.setEnabled(chkEnable.isSelected());
             info = new JXCollapsiblePane();
             info.setCollapsed(false);
-       
+
             add(info, "spanx,growx,newline");
         }
 

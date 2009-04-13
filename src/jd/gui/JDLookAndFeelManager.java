@@ -45,29 +45,32 @@ public class JDLookAndFeelManager implements Serializable {
         ArrayList<JDLookAndFeelManager> ret = new ArrayList<JDLookAndFeelManager>();
         for (int i = 0; i < lafis.length; i++) {
             String clname = lafis[i].getClassName();
-            if (lafis[i].getClassName().endsWith("MetalLookAndFeel")) continue;
-            if (lafis[i].getClassName().endsWith("NimbusLookAndFeel")) continue;
-            if (lafis[i].getClassName().endsWith("MotifLookAndFeel")) continue;
-            if (lafis[i].getClassName().contains("GTK")) continue;
-            if (lafis[i].getClassName().endsWith("WindowsLookAndFeel")) continue;
-            if (lafis[i].getClassName().endsWith("WindowsClassicLookAndFeel")) continue;
-            if (lafis[i].getClassName().endsWith("WindowsLookAndFeel")) continue;
-            if (lafis[i].getClassName().endsWith("WindowsLookAndFeel")) continue;
-            if (lafis[i].getClassName().contains("Substance") && JDUtilities.getJavaVersion() >= 1.6) {
+            if (clname.endsWith("MetalLookAndFeel")) continue;
+            if (clname.endsWith("NimbusLookAndFeel")) continue;
+            if (clname.endsWith("MotifLookAndFeel")) continue;
+            if (clname.contains("GTK")) continue;
+            if (clname.endsWith("WindowsLookAndFeel")) continue;
+            if (clname.endsWith("WindowsClassicLookAndFeel")) continue;
+            if (clname.endsWith("WindowsLookAndFeel")) continue;
+            if (clname.endsWith("WindowsLookAndFeel")) continue;
+            if (clname.contains("Substance") && JDUtilities.getJavaVersion() >= 1.6) {
                 ret.add(new JDLookAndFeelManager(lafis[i]));
             }
 
         }
         return ret.toArray(new JDLookAndFeelManager[] {});
     }
-/**
- * Returns the configured LAF and makes sure that this LAF is supported by the system
- * @return
- */
+
+    /**
+     * Returns the configured LAF and makes sure that this LAF is supported by
+     * the system
+     * 
+     * @return
+     */
     public static JDLookAndFeelManager getPlaf() {
         JDLookAndFeelManager ret = getPlaf0();
         for (JDLookAndFeelManager laf : getSupportedLookAndFeels()) {
-            if (ret.getClassName().equals(ret.getClassName())) return ret;
+            if (ret.getClassName().equals(laf.getClassName())) return ret;
         }
 
         return getDefaultLAFM();
@@ -89,7 +92,7 @@ public class JDLookAndFeelManager implements Serializable {
             }
         } else if (plaf instanceof String) {
             for (LookAndFeelInfo lafi : UIManager.getInstalledLookAndFeels()) {
-                if (lafi.getName().equals(plaf)||lafi.getName().equals("Substance"+plaf)) {
+                if (lafi.getName().equals(plaf) || lafi.getName().equals("Substance" + plaf)) {
                     plaf = new JDLookAndFeelManager(lafi);
                     config.setProperty(PARAM_PLAF, plaf);
                     config.save();
@@ -146,7 +149,7 @@ public class JDLookAndFeelManager implements Serializable {
     }
 
     public JDLookAndFeelManager(LookAndFeelInfo lafi) {
-     
+
         this.className = lafi.getClassName();
     }
 
