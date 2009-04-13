@@ -18,6 +18,7 @@ package jd.gui.skins.simple.config.subpanels;
 
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -33,7 +34,9 @@ import java.awt.event.MouseEvent;
 import java.awt.font.TextAttribute;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Map;
 
 import javax.swing.Icon;
@@ -62,6 +65,9 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdesktop.swingx.JXCollapsiblePane;
+import org.jdesktop.swingx.JXTitledSeparator;
 
 public class PremiumPanel extends JPanel {
 
@@ -118,7 +124,7 @@ public class PremiumPanel extends JPanel {
     @SuppressWarnings("unchecked")
     public void setAccounts(Object list) {
         ArrayList<Account> accounts = (ArrayList<Account>) list;
-        this.list=accounts;
+        this.list = accounts;
         createPanel(accounts.size());
         for (int i = 0; i < accs.size(); i++) {
             if (i >= accounts.size()) break;
@@ -133,68 +139,67 @@ public class PremiumPanel extends JPanel {
 
     private void createPanel(int j) {
         accs = new ArrayList<AccountPanel>();
-        JPanel panel = new JPanel(new MigLayout("ins 0, wrap 2","[grow, fill][grow, fill]","[grow, fill]"));
+        JPanel panel = new JPanel(new MigLayout("ins 0, wrap 2", "[grow, fill][grow, fill]", "[grow, fill]"));
         removeAll();
         JScrollPane sp;
-        add(sp=new JScrollPane(panel));
+        add(sp = new JScrollPane(panel));
         sp.setBorder(null);
         for (int i = 0; i < j; i++) {
             AccountPanel p = new AccountPanel(i);
 
-            panel.add(p,"spanx");
+            panel.add(p, "spanx");
             accs.add(p);
         }
 
-        
-        add= createButton(JDLocale.L("plugins.premium.add", "Add new account"),JDTheme.II("gui.images.add",16,16));
-        add.addActionListener(new ActionListener(){
+        add = createButton(JDLocale.L("plugins.premium.add", "Add new account"), JDTheme.II("gui.images.add", 16, 16));
+        add.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
                 list.add(new Account("", new String("")));
                 setAccounts(list);
             }
-            
+
         });
-        
-      
+
         final String premiumUrl = host.getBuyPremiumUrl();
-        JButton buy = createButton(JDLocale.L("plugins.premium.premiumbutton", "Get Premium Account"),JDTheme.II("gui.images.buy",16,16));
-        buy.addActionListener(new ActionListener(){
+        JButton buy = createButton(JDLocale.L("plugins.premium.premiumbutton", "Get Premium Account"), JDTheme.II("gui.images.buy", 16, 16));
+        buy.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
-               try {
-                JLinkButton.openURL(new URL("http://jdownloader.org/r.php?u=" + Encoding.urlEncode(premiumUrl)));
-            } catch (MalformedURLException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                try {
+                    JLinkButton.openURL(new URL("http://jdownloader.org/r.php?u=" + Encoding.urlEncode(premiumUrl)));
+                } catch (MalformedURLException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
-            }
-            
+
         });
-   
-        panel.add(add,"alignx left");
-        panel.add(freeTrafficChart,"spany 2");
-        panel.add(buy,"alignx left");
+
+        panel.add(add, "alignx left");
+        panel.add(freeTrafficChart, "spany 2");
+        panel.add(buy, "alignx left");
         this.getParent().invalidate();
         this.getParent().repaint();
     }
+
     public JButton createButton(String string, Icon i) {
         JButton bt;
-        if(i!=null){
-            bt= new JButton(string, i);
-        }else{
-            bt= new JButton(string);
+        if (i != null) {
+            bt = new JButton(string, i);
+        } else {
+            bt = new JButton(string);
         }
-      
+
         bt.setContentAreaFilled(false);
         bt.setCursor(Cursor.getPredefinedCursor(12));
         bt.setFocusPainted(false);
         bt.setBorderPainted(false);
         bt.setHorizontalAlignment(JButton.LEFT);
-    
+
         bt.addMouseListener(new MouseAdapter() {
 
             private Font originalFont;
@@ -221,6 +226,7 @@ public class PremiumPanel extends JPanel {
         });
         return bt;
     }
+
     private class AccountPanel extends JPanel implements ChangeListener, ActionListener, FocusListener {
 
         private JCheckBox chkEnable;
@@ -233,9 +239,10 @@ public class PremiumPanel extends JPanel {
         private JButton btnDelete;
         private Account account;
         private int panelID;
+        private JXCollapsiblePane info;
 
         public AccountPanel(int nr) {
-this.panelID=nr;
+            this.panelID = nr;
             createPanel(nr);
         }
 
@@ -280,26 +287,26 @@ this.panelID=nr;
             add(chkEnable, "alignx left");
             chkEnable.addChangeListener(this);
 
-            add(btnCheck = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")),"split 3,spanx 3");
+            add(btnCheck = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")), "split 3,spanx 3");
             btnCheck.addActionListener(this);
             btnCheck.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            add(btnDelete = new JButton(JDTheme.II("gui.images.undo", 16, 16)),"shrinkx");
+            add(btnDelete = new JButton(JDTheme.II("gui.images.undo", 16, 16)), "shrinkx");
             btnDelete.addActionListener(this);
             btnDelete.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             btnDelete.setToolTipText(JDLocale.L("plugins.config.premium.delete", "Remove this account"));
-          
+
             add(txtStatus = new JTextField(""), "spanx, pushx, growx,gapleft 20");
             txtStatus.setBorder(null);
             txtStatus.setBackground(null);
             txtStatus.setOpaque(false);
             txtStatus.setEditable(false);
-           
+
             add(lblUsername = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "newline,alignx right");
-            add(txtUsername = new JTextField(""),"spanx 1, growx");
+            add(txtUsername = new JTextField(""), "spanx 1, growx");
 
             txtUsername.addFocusListener(this);
 
-            add(lblPassword = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "alignx right,gapleft 15"); 
+            add(lblPassword = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "alignx right,gapleft 15");
 
             add(txtPassword = new JDPasswordField(), "growx");
             txtPassword.addFocusListener(this);
@@ -313,6 +320,10 @@ this.panelID=nr;
             lblPassword.setEnabled(false);
             lblUsername.setEnabled(false);
             account.setEnabled(chkEnable.isSelected());
+            info = new JXCollapsiblePane();
+            info.setCollapsed(false);
+       
+            add(info, "spanx,growx,newline");
         }
 
         public void stateChanged(ChangeEvent e) {
@@ -336,13 +347,61 @@ this.panelID=nr;
 
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() == btnCheck) {
-                JDUtilities.getGUI().showAccountInformation(host, getAccount());
+                info.setCollapsed(false);
+                AccountInfo ai;
+                try {
+                    ai = host.getAccountInformation(account);
+
+                    info.getContentPane().setLayout(new MigLayout("ins 22", "[right]10[grow,fill]40"));
+                    String def = String.format(JDLocale.L("plugins.host.premium.info.title", "Accountinformation from %s for %s"), account.getUser(), host.getHost());
+                    String[] label = new String[] { JDLocale.L("plugins.host.premium.info.validUntil", "Valid until"), JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDLocale.L("plugins.host.premium.info.files", "Files"), JDLocale.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"), JDLocale.L("plugins.host.premium.info.usedSpace", "Used Space"), JDLocale.L("plugins.host.premium.info.cash", "Cash"), JDLocale.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"), JDLocale.L("plugins.host.premium.info.status", "Info") };
+
+                    DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
+                    String validUntil = (ai.isExpired() ? "[expired] " : "") + formater.format(new Date(ai.getValidUntil())) + "";
+                    if (ai.getValidUntil() == -1) validUntil = null;
+                    String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
+                    String[] data = new String[] { validUntil, JDUtilities.formatBytesToMB(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, JDUtilities.formatBytesToMB(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", JDUtilities.formatBytesToMB(ai.getTrafficShareLeft()), ai.getStatus() };
+                    info.getContentPane().add(new JXTitledSeparator(def), "spanx, pushx, growx, gapbottom 15");
+                    PieChartAPI freeTrafficChart = new PieChartAPI("", 125, 60, BG_COLOR);
+                    freeTrafficChart.addEntity(new ChartAPIEntity("Free", ai.getTrafficLeft(), new Color(50, 200, 50)));
+                    freeTrafficChart.addEntity(new ChartAPIEntity("", ai.getTrafficMax() - ai.getTrafficLeft(), new Color(150, 150, 150)));
+                    freeTrafficChart.fetchImage();
+
+                    for (int j = 0; j < data.length; j++) {
+                        if (data[j] != null && !data[j].equals("-1")) {
+                            info.getContentPane().add(new JLabel(label[j]), "gapleft 20");
+                            if (label[j].equals(JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
+                                JPanel panel2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+                                JTextField tf;
+                                panel2.add(tf = new JTextField(data[j]));
+                                tf.setBorder(null);
+                                tf.setBackground(null);
+                                tf.setEditable(false);
+                                tf.setOpaque(false);
+                                panel2.add(freeTrafficChart);
+                                info.getContentPane().add(panel2, "wrap");
+                            } else {
+                                JTextField tf;
+                                info.getContentPane().add(tf = new JTextField(data[j]), "wrap");
+                                tf.setBorder(null);
+                                tf.setBackground(null);
+                                tf.setEditable(false);
+                                tf.setOpaque(false);
+
+                            }
+                        }
+
+                    }
+                } catch (Exception e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
+
             } else if (e.getSource() == btnDelete) {
                 list.remove(panelID);
                 ce.setChanges(true);
                 setAccounts(list);
-         
-             
+
             }
         }
 

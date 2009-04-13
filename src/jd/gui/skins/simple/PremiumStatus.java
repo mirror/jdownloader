@@ -1,5 +1,6 @@
 package jd.gui.skins.simple;
 
+import java.awt.Component;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.logging.Logger;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 
 import jd.HostPluginWrapper;
 import jd.controlling.JDController;
@@ -16,6 +18,7 @@ import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
+import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
@@ -112,10 +115,14 @@ public class PremiumStatus extends JPanel implements ControlListener {
     }
 
     protected void showDetails(HostPluginWrapper wrapper) {
-        System.out.println("Show detaoils to " + wrapper.getClassName());
-        SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, wrapper.getPlugin().getConfig());
-     
-
+        //System.out.println("Show detaoils to " + wrapper.getClassName());
+       // SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, wrapper.getPlugin().getConfig());
+        ConfigEntriesPanel panel = new ConfigEntriesPanel(wrapper.getPlugin().getConfig());
+Component comp = panel.getComponent(0);
+        if(comp instanceof JTabbedPane){
+            ((JTabbedPane)comp).setSelectedIndex(((JTabbedPane)comp).getTabCount()-1);
+        }
+        SimpleGUI.CURRENTGUI.getContentPane().display(panel);
     }
 
     private void updatePremium() {
