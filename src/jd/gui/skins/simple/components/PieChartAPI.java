@@ -16,13 +16,12 @@
 
 package jd.gui.skins.simple.components;
 
-import java.awt.Color;
 
 public class PieChartAPI extends ChartAPI {
     private static final long serialVersionUID = 7576517180813229367L;
 
-    public PieChartAPI(String caption, int width, int height, Color RGB) {
-        super(caption, width, height, RGB);
+    public PieChartAPI(String caption, int width, int height) {
+        super(caption, width, height);
     }
 
     public String createDataString() {
@@ -50,7 +49,7 @@ public class PieChartAPI extends ChartAPI {
     }
 
     public String getUrl() {
-        return "http://" + getServerAdress() + "/chart?cht=p3&chd=t:" + createDataString() + "&chco=" + createColorString() + "&chs=" + getWidth() + "x" + getHeight() + "&chl=" + createCaptionString() + "&chf=bg,s," + String.format("%02X%02X%02X%02X", getBackgroundColor().getRed(), getBackgroundColor().getGreen(), getBackgroundColor().getBlue(),getBackgroundColor().getAlpha());
+        return "http://" + getServerAdress() + "/chart?cht=p3&chd=t:" + createDataString() + "&chco=" + createColorString() + "&chs=" + getWidth() + "x" + getHeight() + "&chl=" + createCaptionString() + "&chf=bg,s," + String.format("%02X%02X%02X%02X", getBackgroundColor().getRed(), getBackgroundColor().getGreen(), getBackgroundColor().getBlue(), getBackgroundColor().getAlpha());
     }
 
     public void fetchImage() {

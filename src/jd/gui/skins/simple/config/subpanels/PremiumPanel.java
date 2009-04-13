@@ -77,14 +77,13 @@ public class PremiumPanel extends JPanel {
     private static final Color INACTIVE = new Color(0xa40604);
     private static final Color DISABLED = new Color(0xaff0000);
 
-    private static final Color BG_COLOR = new Color(0.0f, 0.0f, 0.0f, 0.0f);
     private static boolean premiumActivated = true;
 
     private PluginForHost host;
 
     private ArrayList<AccountPanel> accs;
 
-    private PieChartAPI freeTrafficChart = new PieChartAPI("", 450, 60, BG_COLOR);
+    private PieChartAPI freeTrafficChart = new PieChartAPI("", 450, 60);
 
     private ConfigEntry ce;
 
@@ -363,7 +362,7 @@ public class PremiumPanel extends JPanel {
                     String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
                     String[] data = new String[] { validUntil, JDUtilities.formatBytesToMB(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, JDUtilities.formatBytesToMB(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", JDUtilities.formatBytesToMB(ai.getTrafficShareLeft()), ai.getStatus() };
                     info.getContentPane().add(new JXTitledSeparator(def), "spanx, pushx, growx, gapbottom 15");
-                    PieChartAPI freeTrafficChart = new PieChartAPI("", 125, 60, BG_COLOR);
+                    PieChartAPI freeTrafficChart = new PieChartAPI("", 125, 60);
                     freeTrafficChart.addEntity(new ChartAPIEntity("Free", ai.getTrafficLeft(), new Color(50, 200, 50)));
                     freeTrafficChart.addEntity(new ChartAPIEntity("", ai.getTrafficMax() - ai.getTrafficLeft(), new Color(150, 150, 150)));
                     freeTrafficChart.fetchImage();

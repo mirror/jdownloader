@@ -25,11 +25,9 @@ import java.util.logging.Logger;
 
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadController;
 import jd.controlling.reconnect.Reconnecter;
-import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
 import jd.http.Encoding;
@@ -40,14 +38,14 @@ import jd.utils.JDUtilities;
 
 public class JDSimpleWebserverRequestHandler {
 
-    private SubConfiguration guiConfig = null;
+//    private SubConfiguration guiConfig = null;
     private HashMap<String, String> headers;
 
     private Logger logger = jd.controlling.JDLogger.getLogger();
     private JDSimpleWebserverResponseCreator response;
 
     public JDSimpleWebserverRequestHandler(HashMap<String, String> headers, JDSimpleWebserverResponseCreator response) {
-        guiConfig = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
+//        guiConfig = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
         this.response = response;
         this.headers = headers;
     }

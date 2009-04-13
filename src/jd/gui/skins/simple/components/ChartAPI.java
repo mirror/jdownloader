@@ -46,13 +46,14 @@ public abstract class ChartAPI extends JComponent {
 
     private static final long serialVersionUID = -3619951791325759665L;
 
-    class PictureLoader extends Thread {
+    private class PictureLoader extends Thread {
         private String path;
 
         public PictureLoader(String path) {
             this.path = path;
         }
 
+        @Override
         public void run() {
             BufferedImage image = null;
             try {
@@ -75,11 +76,11 @@ public abstract class ChartAPI extends JComponent {
     private PictureLoader loader;
     private String caption;
 
-    public ChartAPI(String caption, int width, int height, Color backgroundColor) {
+    public ChartAPI(String caption, int width, int height) {
         this.caption = caption;
         this.width = width;
         this.height = height;
-        this.backgroundColor = backgroundColor;
+        this.backgroundColor = new Color(0.0f, 0.0f, 0.0f, 0.0f);
         setPreferredSize(new Dimension(width, height));
     }
 
@@ -127,9 +128,9 @@ public abstract class ChartAPI extends JComponent {
         return backgroundColor;
     }
 
-    public void setBackgroundColor(Color backgroundColor) {
-        this.backgroundColor = backgroundColor;
-    }
+    // public void setBackgroundColor(Color backgroundColor) {
+    // this.backgroundColor = backgroundColor;
+    // }
 
     public String getServerAdress() {
         return serverAdress;
@@ -168,26 +169,28 @@ public abstract class ChartAPI extends JComponent {
 
     public class TransparentFilter extends RGBImageFilter {
         private final int transparentRGB;
+
         public TransparentFilter(Color color) {
             this.transparentRGB = color.getRGB();
         }
+
         @Override
         public int filterRGB(int x, int y, int rgb) {
-            
-     
-            if( Colors.getColorDifference(rgb, transparentRGB)>40.0) return rgb | 0x44000000;
-            return rgb & 0xffffff; 
+
+            if (Colors.getColorDifference(rgb, transparentRGB) > 40.0) return rgb | 0x44000000;
+            return rgb & 0xffffff;
         }
     }
 
     public void setImage(BufferedImage image) {
 
-       
-//        TransparentFilter filter = new TransparentFilter(this.backgroundColor);
-//
-//        FilteredImageSource filteredSrc = new FilteredImageSource(image.getSource(), filter);
+        // TransparentFilter filter = new
+        // TransparentFilter(this.backgroundColor);
+        //
+        // FilteredImageSource filteredSrc = new
+        // FilteredImageSource(image.getSource(), filter);
 
-        this.image =image;// Toolkit.getDefaultToolkit().createImage(filteredSrc);
+        this.image = image;// Toolkit.getDefaultToolkit().createImage(filteredSrc);
 
         Dimension d = new Dimension(image.getWidth(), image.getHeight());
         setPreferredSize(d);

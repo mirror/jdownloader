@@ -136,7 +136,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
     private long lastDeIconifiedEvent = 0;
 
     public void actionPerformed(ActionEvent e) {
-        SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
+//        SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
         if (e.getSource() == exit) {
             JDUtilities.getController().exit();
         } else if (e.getSource() == startstop) {

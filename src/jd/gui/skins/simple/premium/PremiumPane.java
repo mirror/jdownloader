@@ -80,7 +80,6 @@ public class PremiumPane extends JTabbedPanel {
     private static final Color INACTIVE = new Color(0xa40604);
     private static final Color DISABLED = new Color(0xaff0000);
 
-    private static Color FILTER_COLOR = new Color(0.0f,0.0f,0.0f,0.0f);
     private static boolean premiumActivated = true;
     private PluginForHost host;
     private JScrollPane sp;
@@ -101,7 +100,7 @@ public class PremiumPane extends JTabbedPanel {
 
         details = new PremiumDetailTaskPanel("test", JDTheme.II("gui.images.config.tip", 24, 24));
   
-        freeTrafficChart = new PieChartAPI("", 500, 100, FILTER_COLOR);
+        freeTrafficChart = new PieChartAPI("", 500, 100);
 
         this.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, this.getBackground().darker()));
 
@@ -134,7 +133,7 @@ public class PremiumPane extends JTabbedPanel {
             }
 
             DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
-            ChartAPI_GOM freeTraffic = new ChartAPI_GOM("", 200, 100, FILTER_COLOR);
+            ChartAPI_GOM freeTraffic = new ChartAPI_GOM("", 200, 100);
             double procent = ((double) ai.getTrafficLeft() / (double) ai.getTrafficMax() * 100);
             freeTraffic.addEntity(new ChartAPIEntity(JDUtilities.formatBytesToMB(ai.getTrafficLeft()) + " free", String.valueOf(procent), new Color(50, 200, 50)));
             freeTraffic.fetchImage();
