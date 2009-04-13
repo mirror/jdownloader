@@ -51,6 +51,8 @@ public class FileFactory extends PluginForHost {
     private static final String NOT_AVAILABLE = "class=\"box error\"";
     private static final String PATTERN_DOWNLOADING_TOO_MANY_FILES = "currently downloading too many files at once";
     private static final String WAIT_TIME = "have exceeded the download limit for free users.  Please wait ([0-9]+) minutes to download more files";
+    
+    private static final String LOGIN_ERROR = "The email or password you have entered is incorrect";
 
     private static Pattern patternForCaptcha = Pattern.compile("<img class=\"captchaImage\" src=\"(.*?)\"");
     private static Pattern patternForDownloadlink = Pattern.compile("<p><a href=\"(.*?)\" class=\"download\">");
@@ -88,7 +90,6 @@ public class FileFactory extends PluginForHost {
 
     public void handleFree0(DownloadLink parameter) throws Exception {
         br.setFollowRedirects(true);
-        br.setDebug(true);
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("there are currently no free download slots")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 3 * 60 * 1000l); }
         if (br.containsHTML(NOT_AVAILABLE)) {
@@ -100,10 +101,7 @@ public class FileFactory extends PluginForHost {
         br.setCookie(br.getURL(), "viewad11", "yes");
         String captchaCode = null;
         int vp = JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18);
-        // JDUtilities.getSubConfig("JAC").setProperty(Configuration.
-        // AUTOTRAIN_ERROR_LEVEL, 20);
         int i = 30;
-        // ArrayList<String> codes = new ArrayList<String>();
         File captchaFile = null;
 
         while (i-- > 0) {
@@ -172,8 +170,6 @@ public class FileFactory extends PluginForHost {
             br.followConnection();
             if (br.containsHTML(DOWNLOAD_LIMIT)) {
                 logger.info("Traffic Limit for Free User reached");
-                System.out.println(br.toString());
-                System.out.println(br.getRegex(WAIT_TIME).getMatch(0));
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex(WAIT_TIME).getMatch(0)) * 60 * 1000l);
             } else if (br.containsHTML(PATTERN_DOWNLOADING_TOO_MANY_FILES)) {
                 logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) and retry afterwards");
@@ -190,7 +186,6 @@ public class FileFactory extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
-
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.setFollowRedirects(true);
@@ -201,30 +196,25 @@ public class FileFactory extends PluginForHost {
         login.put("password", account.getPass());
         br.submitForm(login);
 
-        if (br.containsHTML("record of an account with that email")) {
+        if (br.containsHTML(LOGIN_ERROR)) {
             ai.setValid(false);
-            ai.setStatus("No account with this email");
+            ai.setStatus(LOGIN_ERROR);
             return ai;
         }
-        if (br.containsHTML("password you entered is incorrect")) {
-            ai.setValid(false);
-            ai.setStatus("Account found, but password is wrong");
-            return ai;
-        }
-        br.getPage("http://filefactory.com/rewards/summary/");
-        String expire = br.getMatch("subscription will expire on <strong>(.*?)</strong>");
+        br.getPage("http://www.filefactory.com/member/");
+        String expire = br.getMatch("Your account is valid until the <strong>(.*?)</strong>");
         if (expire == null) {
             ai.setValid(false);
             return ai;
         }
-        // 17 October, 2008 (in 66 days).
+        expire = expire.replace("th", "");
         ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM, yyyy", Locale.UK));
-        String pThisMonth = br.getMatch("\\(Usable next month\\)</td>.*?<td.*?>(.*?)</td>").replaceAll("\\,", "");
-        String pUsable = br.getMatch("Usable Accumulated Points</h2></td>.*?<td.*?><h2>(.*?)</h2></td>").replaceAll("\\,", "");
+        
+        br.getPage("http://www.filefactory.com/reward/summary.php");
+        String points = br.getMatch("Available reward points.*?class=\"amount\">(.*?) points").replaceAll("\\,", "");
+        ai.setPremiumPoints(Long.parseLong(points.trim()));
 
-        ai.setPremiumPoints(Long.parseLong(pThisMonth) + Long.parseLong(pUsable));
-
-        br.getPage("http://www.filefactory.com/members/details/premium/usage/");
+        /*br.getPage("http://www.filefactory.com/members/details/premium/usage/");
 
         String[] dat = br.getRegex("You have downloaded (.*?) in the last 24 hours.*?Your daily limit is (.*?), and your download usage will be reset ").getRow(0);
         long gone;
@@ -236,11 +226,11 @@ public class FileFactory extends PluginForHost {
             gone = Regex.getSize(dat[0].replace(",", ""));
         }
         ai.setTrafficMax(12 * 1024 * 1024 * 1024l);
-        ai.setTrafficLeft(12 * 1024 * 1024 * 1024l - gone);
+        ai.setTrafficLeft(12 * 1024 * 1024 * 1024l - gone);*/
+        
         return ai;
     }
 
-    // by eXecuTe
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String user = account.getUser();
@@ -254,19 +244,18 @@ public class FileFactory extends PluginForHost {
             return;
         }
         br.setCookiesExclusive(true);
-        // br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage("http://filefactory.com");
 
-        Form login = br.getFormBySubmitvalue("Log+in");
+        Form login = br.getForm(0);
         login.put("email", account.getUser());
         login.put("password", account.getPass());
         br.submitForm(login);
         br.setFollowRedirects(true);
-        String error = br.getRegex("<div class=\"box error\">.*?<p>(.*?)<").getMatch(0);
-        if (error != null) {
-
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+        
+        if (br.getRegex(LOGIN_ERROR).getMatch(0) != null)
+        	throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGIN_ERROR, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        
         br.setFollowRedirects(false);
         br.openGetConnection(downloadLink.getDownloadURL());
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
