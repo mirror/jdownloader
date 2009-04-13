@@ -24,8 +24,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Vector;
-import java.util.logging.Logger;
-
 
 public class ConfigEntry implements Serializable, PropertyChangeListener {
     public static enum PropertyType {
@@ -33,23 +31,23 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
         public PropertyType getMax(PropertyType propertyType) {
 
-            return getMax(propertyType,this);
+            return getMax(propertyType, this);
         }
-public String toString(){
-    return this.name();
-}
+
+        public String toString() {
+            return this.name();
+        }
+
         public static PropertyType getMax(PropertyType... changes) {
             ArrayList<PropertyType> sorter = new ArrayList<PropertyType>();
-            for(PropertyType type:changes)sorter.add(type);
+            for (PropertyType type : changes)
+                sorter.add(type);
             Collections.sort(sorter);
-            PropertyType ret = sorter.get(sorter.size()-1);
-            
+            PropertyType ret = sorter.get(sorter.size() - 1);
+
             return ret;
         }
     }
-
-    @SuppressWarnings("unused")
-    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     /**
      * serialVersionUID
@@ -65,7 +63,7 @@ public String toString(){
     private boolean enabled = true;
     private int end;
     private PropertyChangeListener guiListener;
-//    private String instantHelp;
+    // private String instantHelp;
 
     private String label;
 
@@ -86,8 +84,6 @@ public String toString(){
     private int type;
 
     private PropertyType propertyType = PropertyType.NORMAL;
-
-
 
     private ConfigGroup group;
 
@@ -293,9 +289,9 @@ public String toString(){
         return guiListener;
     }
 
-//    public String getInstantHelp() {
-//        return instantHelp;
-//    }
+    // public String getInstantHelp() {
+    // return instantHelp;
+    // }
 
     public String getLabel() {
         return label;
@@ -448,11 +444,11 @@ public String toString(){
 
     }
 
-//    public ConfigEntry setInstantHelp(String l) {
-//        instantHelp = l;
-//        return this;
-//
-//    }
+    // public ConfigEntry setInstantHelp(String l) {
+    // instantHelp = l;
+    // return this;
+    //
+    // }
 
     public ConfigEntry setLabel(String label) {
         this.label = label;
@@ -509,25 +505,25 @@ public String toString(){
         }
     }
 
-  
-
     public ConfigEntry setGroup(ConfigGroup cg) {
-       this.group=cg;
-       return this;
+        this.group = cg;
+        return this;
     }
 
     public ConfigGroup getGroup() {
         return group;
     }
-/**Gets set if this config entry has changes*/
+
+    /** Gets set if this config entry has changes */
     public void setChanges(boolean b) {
-        changes=b;
-        
+        changes = b;
+
     }
-    /**return if this configentry got changed and has to be saved*/
+
+    /** return if this configentry got changed and has to be saved */
     public boolean hasChanges() {
         return changes;
-        
+
     }
 
 }

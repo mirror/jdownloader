@@ -54,6 +54,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.components.ChartAPIEntity;
+import jd.gui.skins.simple.components.JDTextField;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.config.GUIConfigEntry;
@@ -232,7 +233,7 @@ public class PremiumPanel extends JPanel {
         private JCheckBox chkEnable;
         private JLabel lblUsername;
         private JLabel lblPassword;
-        private JTextField txtUsername;
+        private JDTextField txtUsername;
         private JDPasswordField txtPassword;
         private JTextField txtStatus;
         private JButton btnCheck;
@@ -302,7 +303,7 @@ public class PremiumPanel extends JPanel {
             txtStatus.setEditable(false);
 
             add(lblUsername = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "newline,alignx right");
-            add(txtUsername = new JTextField(""), "spanx 1, growx");
+            add(txtUsername = new JDTextField(""), "spanx 1, growx");
 
             txtUsername.addFocusListener(this);
 

@@ -21,14 +21,13 @@ import java.awt.Image;
 import java.awt.Insets;
 import java.awt.MediaTracker;
 import java.io.File;
-import java.io.IOException;
 import java.io.StringReader;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jd.captcha.JAntiCaptcha;
 import jd.controlling.JDLogger;
@@ -37,7 +36,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 /**
  * Diese Klasse beinhaltet mehrere Hilfsfunktionen
@@ -232,12 +230,8 @@ public class UTILITIES {
             Document doc = factory.newDocumentBuilder().parse(inSource);
 
             return doc;
-        } catch (SAXException e) {
-            JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-        } catch (ParserConfigurationException e) {
-            JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-        } catch (IOException e) {
-            // DEBUG.error(e);
+        } catch (Exception e) {
+            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
         }
         return null;
     }
