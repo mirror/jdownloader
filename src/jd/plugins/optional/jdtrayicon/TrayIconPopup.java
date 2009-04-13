@@ -47,7 +47,6 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.MenuAction;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.nutils.JDImage;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

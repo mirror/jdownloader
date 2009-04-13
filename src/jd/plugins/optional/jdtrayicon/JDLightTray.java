@@ -45,7 +45,6 @@ import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class JDLightTray extends PluginOptional implements MouseListener, MouseMotionListener, WindowListener {
@@ -57,6 +56,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     private static final String PROPERTY_MINIMIZE_TO_TRAY = "PROPERTY_MINIMIZE_TO_TRAY";
 
     private static final String PROPERTY_SINGLE_CLICK = "PROPERTY_SINGLE_CLICK";
+    
+    private static final String PROPERTY_TOOLTIP = "PROPERTY_TOOLTIP";
 
     private TrayIconPopup trayIconPopup;
 
@@ -129,6 +130,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_START_MINIMIZED, JDLocale.L("plugins.optional.JDLightTray.startMinimized", "Start minimized")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SINGLE_CLICK, JDLocale.L("plugins.optional.JDLightTray.singleClick", "Toggle window status with single click")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_TOOLTIP, JDLocale.L("plugins.optional.JDLightTray.tooltip", "Show Tooltip")).setDefaultValue(true));
     }
 
     public void controlEvent(ControlEvent event) {
@@ -211,7 +214,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     public void mouseDragged(MouseEvent e) {}
 
     public void mouseMoved(MouseEvent e) {
-    	if (trayIconPopup != null && trayIconPopup.isVisible()) return;
+    	if (trayIconPopup != null && trayIconPopup.isVisible() && !subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) return;
     	tit.show(e);
     }
 
