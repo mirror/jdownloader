@@ -123,8 +123,11 @@ public class Cryptlinkws extends PluginForDecrypt {
     }
 
     private String fixLink(String link) {
-        return HTMLEntities.unhtmlentities(link.replaceAll("&#", ";&#").substring(1) + ";");
+        link = link.replaceAll("&#", ";&#").substring(1) + ";";
+        link = HTMLEntities.unhtmlentities(link);
+        return link;
     }
+
     @Override
     public String getVersion() {
         return getVersion("$Revision$");
