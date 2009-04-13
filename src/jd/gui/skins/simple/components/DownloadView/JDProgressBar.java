@@ -16,6 +16,9 @@
 
 package jd.gui.skins.simple.components.DownloadView;
 
+import java.awt.Graphics;
+
+import javax.swing.ImageIcon;
 import javax.swing.JProgressBar;
 
 /**
@@ -26,6 +29,8 @@ public class JDProgressBar extends JProgressBar {
     private static final long serialVersionUID = 7787146508749392032L;
 
     private int faktor = 1;
+
+    private ImageIcon icon;
 
     public void setMaximum(long value) {
         while ((value / faktor) >= Integer.MAX_VALUE) {
@@ -47,4 +52,15 @@ public class JDProgressBar extends JProgressBar {
         this.setMaximum(getMaximum() / 2);
     }
 
+    public void setIcon(ImageIcon hosterIcon) {
+        this.icon = hosterIcon;
+
+    }
+
+    public void paintComponent(Graphics g) {
+super.paintComponent(g);
+if(icon!=null){
+    g.drawImage(icon.getImage(),2, (getHeight()-icon.getIconHeight())/2, null); 
+}
+    }
 }

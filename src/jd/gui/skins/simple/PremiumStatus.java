@@ -6,6 +6,7 @@ import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import javax.swing.JLabel;
@@ -19,6 +20,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
+import jd.nutils.JDImage;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
@@ -31,9 +33,9 @@ public class PremiumStatus extends JPanel implements ControlListener {
     private static final long serialVersionUID = 7290466989514173719L;
     private static final long UNLIMITED = 10l * 1024l * 1024l * 1024l;
     private static final String DEBUG = "";
-    private static final int BARCOUNT = 5;
-    private HashMap<HostPluginWrapper, ArrayList<AccountInfo>> map;
-    private HashMap<HostPluginWrapper, Long> mapSize;
+    private static final int BARCOUNT = 8;
+    private TreeMap<HostPluginWrapper, ArrayList<AccountInfo>> map;
+    private TreeMap<HostPluginWrapper, Long> mapSize;
     private JDProgressBar[] bars;
 
     private long trafficTotal = 0l;
@@ -46,8 +48,8 @@ public class PremiumStatus extends JPanel implements ControlListener {
         super();
         bars = new JDProgressBar[BARCOUNT];
         logger = JDLogger.getLogger();
-        this.map = new HashMap<HostPluginWrapper, ArrayList<AccountInfo>>();
-        this.mapSize = new HashMap<HostPluginWrapper, Long>();
+        this.map = new TreeMap<HostPluginWrapper, ArrayList<AccountInfo>>();
+        this.mapSize = new TreeMap<HostPluginWrapper, Long>();
         this.setLayout(new MigLayout(DEBUG + "ins 0", "[]", "[]"));
         add(lbl = new JLabel("Load Premiumstatus..."), "hidemode 3");
         JDController.getInstance().addControlListener(this);
@@ -93,7 +95,7 @@ public class PremiumStatus extends JPanel implements ControlListener {
             });
             pg.setStringPainted(true);
             pg.setVisible(false);
-            add(pg, "width 70!,height 16!,hidemode 3");
+            add(pg, "width 80!,height 16!,hidemode 3");
 
         }
         refresher = new Thread() {
@@ -116,12 +118,13 @@ public class PremiumStatus extends JPanel implements ControlListener {
     }
 
     protected void showDetails(HostPluginWrapper wrapper) {
-        //System.out.println("Show detaoils to " + wrapper.getClassName());
-       // SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, wrapper.getPlugin().getConfig());
+        // System.out.println("Show detaoils to " + wrapper.getClassName());
+        // SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI,
+        // wrapper.getPlugin().getConfig());
         ConfigEntriesPanel panel = new ConfigEntriesPanel(wrapper.getPlugin().getConfig());
-Component comp = panel.getComponent(0);
-        if(comp instanceof JTabbedPane){
-            ((JTabbedPane)comp).setSelectedIndex(((JTabbedPane)comp).getTabCount()-1);
+        Component comp = panel.getComponent(0);
+        if (comp instanceof JTabbedPane) {
+            ((JTabbedPane) comp).setSelectedIndex(((JTabbedPane) comp).getTabCount() - 1);
         }
         SimpleGUI.CURRENTGUI.getContentPane().display(panel);
     }
@@ -129,8 +132,8 @@ Component comp = panel.getComponent(0);
     private void updatePremium() {
         long trafficTotal = 0;
         logger.finer("Update Premiuminfo");
-        HashMap<HostPluginWrapper, ArrayList<AccountInfo>> map = new HashMap<HostPluginWrapper, ArrayList<AccountInfo>>();
-        HashMap<HostPluginWrapper, Long> mapSize = new HashMap<HostPluginWrapper, Long>();
+        TreeMap<HostPluginWrapper, ArrayList<AccountInfo>> map = new TreeMap<HostPluginWrapper, ArrayList<AccountInfo>>();
+        TreeMap<HostPluginWrapper, Long> mapSize = new TreeMap<HostPluginWrapper, Long>();
         for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
             if (wrapper.isLoaded() && wrapper.usePlugin()) {
                 final PluginForHost helpPlugin = wrapper.getPlugin();
@@ -199,7 +202,7 @@ Component comp = panel.getComponent(0);
                 left += ai.getTrafficLeft();
             }
             bars[i].setVisible(true);
-
+            bars[i].setIcon(JDImage.getScaledImageIcon(wrapper.getPlugin().getHosterIcon(), 12, 12));
             bars[i].setMaximum(max);
             bars[i].setValue(left);
 
@@ -221,11 +224,11 @@ Component comp = panel.getComponent(0);
 
     }
 
-    public synchronized void setMap(HashMap<HostPluginWrapper, ArrayList<AccountInfo>> map) {
+    public synchronized void setMap(TreeMap<HostPluginWrapper, ArrayList<AccountInfo>> map) {
         this.map = map;
     }
 
-    public synchronized void setMapSize(HashMap<HostPluginWrapper, Long> mapSize) {
+    public synchronized void setMapSize(TreeMap<HostPluginWrapper, Long> mapSize) {
         this.mapSize = mapSize;
     }
 
@@ -233,11 +236,11 @@ Component comp = panel.getComponent(0);
         this.trafficTotal = trafficTotal;
     }
 
-    public synchronized HashMap<HostPluginWrapper, ArrayList<AccountInfo>> getMap() {
+    public synchronized TreeMap<HostPluginWrapper, ArrayList<AccountInfo>> getMap() {
         return map;
     }
 
-    public synchronized HashMap<HostPluginWrapper, Long> getMapSize() {
+    public synchronized TreeMap<HostPluginWrapper, Long> getMapSize() {
         return mapSize;
     }
 

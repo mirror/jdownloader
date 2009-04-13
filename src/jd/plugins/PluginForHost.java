@@ -16,14 +16,23 @@
 
 package jd.plugins;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
+import java.awt.Transparency;
 import java.awt.event.ActionEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
 
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
 import jd.PluginWrapper;
@@ -79,8 +88,6 @@ public abstract class PluginForHost extends Plugin {
     private static final String AGB_CHECKED = "AGB_CHECKED";
     private static final String CONFIGNAME = "pluginsForHost";
     private static int currentConnections = 0;
-
- 
 
     private static HashMap<Class<? extends PluginForHost>, Long> HOSTER_WAIT_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
     private static HashMap<Class<? extends PluginForHost>, Long> HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
@@ -748,14 +755,52 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public final boolean hasHosterIcon() {
-        File res = JDUtilities.getResourceFile("jd/img/hostericons/" + getHost() + ".png");
+        File res = JDUtilities.getResourceFile("jd/img/hosterlogos/" + getHost() + ".png");
         return (res != null && res.exists());
     }
 
     public final ImageIcon getHosterIcon() {
-        Image image = JDImage.getImage("hostericons/" + getHost());
+        Image image = JDImage.getImage("hosterlogos/" + getHost());
+        if (image == null) image = createDefaultIcon();
         if (image != null) return new ImageIcon(image);
         return null;
     }
+/**
+ * CReates a dummyHosterIcon
+ * @return
+ */
+    private Image createDefaultIcon() {
+        int w = 16;
+        int h = 16;
+        int size = 9;
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice gd = ge.getDefaultScreenDevice();
+        GraphicsConfiguration gc = gd.getDefaultConfiguration();
+        final BufferedImage image = gc.createCompatibleImage(w, h, Transparency.BITMASK);
+        Graphics2D g = image.createGraphics();
+        String host = this.getClass().getSimpleName();
+        String dummy = host.replaceAll("[a-z0-9]", "");
+        if (dummy.length() < 2) dummy = host.toUpperCase();
+        if (dummy.length() > 2) dummy = dummy.substring(0, 2);
+        g.setFont(new Font("Arial", Font.BOLD, size));
+        int ww = g.getFontMetrics().stringWidth(dummy);
+        g.setColor(Color.BLACK);
+        g.drawRect(0, 0, w - 1, h - 1);
+ 
+        g.setColor(Color.GRAY.brighter());
+        g.fillRect(1, 1, w - 2, h - 2);
+        g.setColor(Color.BLACK);
+        g.drawString(dummy, (w-ww)/2, 2 + size);
 
+        g.dispose();
+        try {
+            ImageIO.write(image, "png",JDUtilities.getResourceFile("jd/img/hosterlogos/" + getHost() + ".png"));
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        return image;
+
+    }
 }

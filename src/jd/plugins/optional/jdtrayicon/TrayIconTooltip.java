@@ -55,6 +55,7 @@ public class TrayIconTooltip {
     
     public TrayIconTooltip() {
     	SwingUtilities.invokeLater(new Runnable() {
+
 			public void run() {
 				toolPanel = new JPanel();
 				toolPanel.setLayout(new MigLayout("wrap 2", "[fill, grow][fill, grow]"));
@@ -77,15 +78,19 @@ public class TrayIconTooltip {
 				toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.eta", "ETA:")));
 				toolPanel.add(lblETA = new JLabel(""));
 				toolPanel.addMouseListener(new MouseListener() {
+
 					public void mouseClicked(MouseEvent arg0) {}
+
 
 					public void mouseEntered(MouseEvent arg0) {
 						inside = true;
 					}
 
+
 					public void mouseExited(MouseEvent arg0) {
 						inside = false;
 					}
+
 
 					public void mousePressed(MouseEvent arg0) {}
 
@@ -163,6 +168,7 @@ public class TrayIconTooltip {
 
             while ((inside || counter > 0) && toolParent.isVisible()) {
             	SwingUtilities.invokeLater(new Runnable() {
+
 					public void run() {
 						
 		            	long tot = 0;

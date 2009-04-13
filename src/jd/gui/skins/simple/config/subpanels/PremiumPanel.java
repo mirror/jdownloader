@@ -17,8 +17,8 @@
 package jd.gui.skins.simple.config.subpanels;
 
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Cursor;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -42,6 +42,7 @@ import java.util.Map;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
@@ -54,6 +55,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.components.ChartAPIEntity;
+import jd.gui.skins.simple.components.ChartAPI_GOM;
 import jd.gui.skins.simple.components.JDTextField;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.PieChartAPI;
@@ -67,8 +69,8 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdesktop.swingworker.SwingWorker;
 import org.jdesktop.swingx.JXCollapsiblePane;
-import org.jdesktop.swingx.JXTitledSeparator;
 
 public class PremiumPanel extends JPanel {
 
@@ -84,7 +86,7 @@ public class PremiumPanel extends JPanel {
 
     private ArrayList<AccountPanel> accs;
 
-    private PieChartAPI freeTrafficChart = new PieChartAPI("", 450, 60);
+    private PieChartAPI freeTrafficChart = new PieChartAPI("", 450, 70);
 
     private ConfigEntry ce;
 
@@ -288,7 +290,7 @@ public class PremiumPanel extends JPanel {
             add(chkEnable, "alignx left");
             chkEnable.addChangeListener(this);
 
-            add(btnCheck = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")), "split 3,spanx 3");
+            add(btnCheck = new JButton(JDLocale.L("plugins.config.premium.test.show", "Show Details")), "split 3,spanx 3");
             btnCheck.addActionListener(this);
             btnCheck.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             add(btnDelete = new JButton(JDTheme.II("gui.images.undo", 16, 16)), "shrinkx");
@@ -322,7 +324,7 @@ public class PremiumPanel extends JPanel {
             lblUsername.setEnabled(false);
             account.setEnabled(chkEnable.isSelected());
             info = new JXCollapsiblePane();
-            info.setCollapsed(false);
+            info.setCollapsed(true);
 
             add(info, "spanx,growx,newline");
         }
@@ -346,57 +348,101 @@ public class PremiumPanel extends JPanel {
             lblUsername.setEnabled(sel);
         }
 
+        private JTextField getTextField(String text) {
+            JTextField help = new JTextField(text);
+            help.setEditable(false);
+            help.setOpaque(false);
+            help.setBorder(null);
+            return help;
+        }
+
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() == btnCheck) {
-                info.setCollapsed(false);
-                AccountInfo ai;
-                try {
-                    ai = host.getAccountInformation(account);
+                if (info.isCollapsed()) {
+                    AccountInfo ai;
+                    try {
+                        ai = host.getAccountInformation(account);
 
-                    info.getContentPane().setLayout(new MigLayout("ins 22", "[right]10[grow,fill]40"));
-                    String def = String.format(JDLocale.L("plugins.host.premium.info.title", "Accountinformation from %s for %s"), account.getUser(), host.getHost());
-                    String[] label = new String[] { JDLocale.L("plugins.host.premium.info.validUntil", "Valid until"), JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDLocale.L("plugins.host.premium.info.files", "Files"), JDLocale.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"), JDLocale.L("plugins.host.premium.info.usedSpace", "Used Space"), JDLocale.L("plugins.host.premium.info.cash", "Cash"), JDLocale.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"), JDLocale.L("plugins.host.premium.info.status", "Info") };
+                        Container details = info.getContentPane();
+                        info.getContentPane().setLayout(new MigLayout("ins 0 150 0 0, wrap 3", "[fill]15[grow, fill][]", "[][][][][][][][][][][fill,grow]"));
+                        details.removeAll();
 
-                    DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
-                    String validUntil = (ai.isExpired() ? "[expired] " : "") + formater.format(new Date(ai.getValidUntil())) + "";
-                    if (ai.getValidUntil() == -1) validUntil = null;
-                    String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
-                    String[] data = new String[] { validUntil, JDUtilities.formatBytesToMB(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, JDUtilities.formatBytesToMB(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", JDUtilities.formatBytesToMB(ai.getTrafficShareLeft()), ai.getStatus() };
-                    info.getContentPane().add(new JXTitledSeparator(def), "spanx, pushx, growx, gapbottom 15");
-                    PieChartAPI freeTrafficChart = new PieChartAPI("", 125, 60);
-                    freeTrafficChart.addEntity(new ChartAPIEntity("Free", ai.getTrafficLeft(), new Color(50, 200, 50)));
-                    freeTrafficChart.addEntity(new ChartAPIEntity("", ai.getTrafficMax() - ai.getTrafficLeft(), new Color(150, 150, 150)));
-                    freeTrafficChart.fetchImage();
-
-                    for (int j = 0; j < data.length; j++) {
-                        if (data[j] != null && !data[j].equals("-1")) {
-                            info.getContentPane().add(new JLabel(label[j]), "gapleft 20");
-                            if (label[j].equals(JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
-                                JPanel panel2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-                                JTextField tf;
-                                panel2.add(tf = new JTextField(data[j]));
-                                tf.setBorder(null);
-                                tf.setBackground(null);
-                                tf.setEditable(false);
-                                tf.setOpaque(false);
-                                panel2.add(freeTrafficChart);
-                                info.getContentPane().add(panel2, "wrap");
-                            } else {
-                                JTextField tf;
-                                info.getContentPane().add(tf = new JTextField(data[j]), "wrap");
-                                tf.setBorder(null);
-                                tf.setBackground(null);
-                                tf.setEditable(false);
-                                tf.setOpaque(false);
-
-                            }
+                        if (!ai.isValid()) {
+                            txtStatus.setText(ai.getStatus());
+                            return;
                         }
 
+                        DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
+                        ChartAPI_GOM freeTraffic = new ChartAPI_GOM("", 200, 100);
+                        double procent = ((double) ai.getTrafficLeft() / (double) ai.getTrafficMax() * 100);
+                        freeTraffic.addEntity(new ChartAPIEntity(JDUtilities.formatBytesToMB(ai.getTrafficLeft()) + " free", String.valueOf(procent), new Color(50, 200, 50)));
+                        freeTraffic.fetchImage();
+                        details.add(freeTraffic, "cell 2 0,spany,aligny center");
+
+                        if (ai.getValidUntil() > -1) {
+                            details.add(new JLabel("Valid until"), " alignright, w 15%:pref, growx");
+                            details.add(getTextField(formater.format(new Date(ai.getValidUntil()))), "alignleft");
+                        }
+
+                        if (ai.getAccountBalance() > -1) {
+                            details.add(new JLabel("Balance"), " alignright, w 15%:pref, growx");
+                            details.add(getTextField(String.valueOf(ai.getAccountBalance() / 100) + " €"), "alignleft");
+                        }
+                        if (ai.getFilesNum() > -1) {
+                            details.add(new JLabel("Files stored"), " alignright, w 15%:pref, growx");
+                            details.add(getTextField(String.valueOf(ai.getFilesNum())), "alignleft");
+                        }
+                        if (ai.getUsedSpace() > -1) {
+                            details.add(new JLabel("Used Space"), " alignright, w 15%:pref, growx");
+                            details.add(getTextField(JDUtilities.formatBytesToMB(ai.getUsedSpace())), "alignleft");
+                        }
+                        if (ai.getPremiumPoints() > -1) {
+                            details.add(new JLabel("PremiumPoints"), " alignright, w 15%:pref, growx");
+                            details.add(getTextField(String.valueOf(ai.getPremiumPoints())), "alignleft");
+                        }
+                        if (ai.getTrafficShareLeft() > -1) {
+                            details.add(new JLabel("Trafficshare left"), " alignright, w 15%:pref, growx");
+                            details.add(getTextField(JDUtilities.formatBytesToMB(ai.getTrafficShareLeft())), "alignleft");
+                        }
+                        if (ai.getTrafficLeft() > -1) {
+                            details.add(new JLabel("Traffic left"), " alignright, w 15%:pref, growx");
+                            details.add(getTextField(JDUtilities.formatBytesToMB(ai.getTrafficLeft())), "alignleft");
+
+                        }
+                        info.setCollapsed(false);
+                        btnCheck.setText(JDLocale.L("plugins.config.premium.test.hide", "Hide Details"));
+                    } catch (Exception e2) {
+                        JDLogger.exception(e2);
                     }
-                } catch (Exception e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
+                } else {
+                    btnCheck.setText(JDLocale.L("plugins.config.premium.test.show", "Show Details"));
+                    info.setCollapsed(true);
+
                 }
+                new SwingWorker() {
+
+                    @Override
+                    protected Object doInBackground() throws Exception {
+                        // TODO Auto-generated method stub
+                        Thread.sleep(500);
+                        return null;
+                    }
+
+                    public void done() {
+                        // SimpleGUI.CURRENTGUI.invalidate();
+                        // SimpleGUI.CURRENTGUI.repaint();
+                        // SimpleGUI.CURRENTGUI.pack();
+                        PremiumPanel.this.getParent().getParent().getParent().invalidate();
+                        PremiumPanel.this.getParent().getParent().getParent().repaint();
+//
+//                        Container c = PremiumPanel.this;
+//                        while (c != null) {
+//
+//                            c = c.getParent();
+//                            System.out.println(c);
+//                        }
+                    }
+                }.execute();
 
             } else if (e.getSource() == btnDelete) {
                 list.remove(panelID);
@@ -440,6 +486,7 @@ public class PremiumPanel extends JPanel {
 
             if (collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPIEntity(JDLocale.L("plugins.config.premium.chartapi.maxTraffic", "Max. Traffic to collect") + " [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", collectTraffic, new Color(150, 150, 150)));
             freeTrafficChart.fetchImage();
+
         }
     }
 

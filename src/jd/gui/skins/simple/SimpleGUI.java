@@ -592,7 +592,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             public void actionPerformed(ActionEvent e) {
 
                 switch (e.getID()) {
-                case DownloadTaskPane.ACTION_TOGGLE:
+                case DownloadTaskPane.ACTION_CLICK:
 
                     contentPanel.display(((TaskPanel) e.getSource()).getPanel(0));
 
@@ -641,7 +641,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             public void actionPerformed(final ActionEvent e) {
 
                 switch (e.getID()) {
-                case DownloadTaskPane.ACTION_TOGGLE:
+                case DownloadTaskPane.ACTION_CLICK:
 
                     contentPanel.display(((TaskPanel) e.getSource()).getPanel(SimpleGuiConstants.GUI_CONFIG.getIntegerProperty("LAST_CONFIG_PANEL", ConfigTaskPane.ACTION_GENERAL)));
 
@@ -701,7 +701,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             public void actionPerformed(ActionEvent e) {
                 System.out.println(e.getActionCommand());
                 switch (e.getID()) {
-                case DownloadTaskPane.ACTION_TOGGLE:
+                case DownloadTaskPane.ACTION_CLICK:
                     contentPanel.display(((TaskPanel) e.getSource()).getPanel(0));
                     break;
                 }
@@ -724,7 +724,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             public void actionPerformed(ActionEvent e) {
                 System.out.println(e.getActionCommand());
                 switch (e.getID()) {
-                case DownloadTaskPane.ACTION_TOGGLE:
+                case DownloadTaskPane.ACTION_CLICK:
 
                     contentPanel.display(dlTskPane.getPanel(0));
                     break;

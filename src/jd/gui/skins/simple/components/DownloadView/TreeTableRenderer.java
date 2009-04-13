@@ -26,6 +26,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.border.Border;
 
+import jd.nutils.JDImage;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -164,7 +165,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             sb.append(dLink.getPlugin().getHost());
             sb.append(dLink.getPlugin().getSessionInfo());
             ((JRendererLabel) co).setText(sb.toString());
-
+          //  ((JRendererLabel) co).setIcon(JDImage.getScaledImageIcon(dLink.getPlugin().getHosterIcon(),16,16));
             return co;
 
         case DownloadTreeTableModel.COL_PROGRESS:

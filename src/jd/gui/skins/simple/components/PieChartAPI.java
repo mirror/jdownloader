@@ -16,6 +16,8 @@
 
 package jd.gui.skins.simple.components;
 
+import java.awt.Color;
+import java.awt.image.PixelGrabber;
 
 public class PieChartAPI extends ChartAPI {
     private static final long serialVersionUID = 7576517180813229367L;
@@ -55,5 +57,8 @@ public class PieChartAPI extends ChartAPI {
     public void fetchImage() {
         super.downloadImage(getUrl());
     }
+
+  
+    
 
 }

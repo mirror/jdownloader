@@ -72,7 +72,7 @@ public abstract class ChartAPI extends JComponent {
     private int width;
     private int height;
     private Color backgroundColor;
-    private Image image;
+    protected Image image;
     private PictureLoader loader;
     private String caption;
 
@@ -182,7 +182,7 @@ public abstract class ChartAPI extends JComponent {
         }
     }
 
-    public void setImage(BufferedImage image) {
+    public void setImage(Image image) {
 
         // TransparentFilter filter = new
         // TransparentFilter(this.backgroundColor);
@@ -192,7 +192,7 @@ public abstract class ChartAPI extends JComponent {
 
         this.image = image;// Toolkit.getDefaultToolkit().createImage(filteredSrc);
 
-        Dimension d = new Dimension(image.getWidth(), image.getHeight());
+        Dimension d = new Dimension(image.getWidth(null), image.getHeight(null));
         setPreferredSize(d);
         revalidate();
         repaint();
