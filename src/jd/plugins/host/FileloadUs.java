@@ -43,42 +43,41 @@ public class FileloadUs extends PluginForHost {
         getFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.setDebug(true);
-        Form[] Forms = br.getForms();
-        Form Form1 = Forms[0];
-        Form1.setAction(downloadLink.getDownloadURL());
-        Form1.remove("method_premium");
-        Form1.put("referer", Encoding.urlEncode(downloadLink.getDownloadURL()));
-        br.submitForm(Form1);
+        Form form = br.getForm(0);
+        form.setAction(downloadLink.getDownloadURL());
+        form.remove("method_premium");
+        form.put("referer", Encoding.urlEncode(downloadLink.getDownloadURL()));
+        br.submitForm(form);
         if (br.containsHTML("You have to wait")) {
-            int minutes= 0, seconds = 0;
+            int minutes = 0, seconds = 0;
             String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
             if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
             String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
-            if (tmpsec!= null) seconds = Integer.parseInt(tmpsec);
+            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
             int waittime = ((60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         } else {
-            Forms = br.getForms();
-            Form1 = br.getFormbyProperty("name", "F1");
-            if (Form1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            form = br.getFormbyProperty("name", "F1");
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             // TODO: AntiCaptcha Method would allow simultanous connections
             String captchaurl = br.getRegex(Pattern.compile("below:</b></td></tr>\\s+<tr><td><img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             URLConnectionAdapter con = br.openGetConnection(captchaurl);
             File file = this.getLocalCaptchaFile(this);
             Browser.download(file, con);
             String code = Plugin.getCaptchaCode(file, this, downloadLink);
-            Form1.put("code", code);
-            Form1.setAction(downloadLink.getDownloadURL());
+            form.put("code", code);
+            form.setAction(downloadLink.getDownloadURL());
             this.sleep(15000, downloadLink);
-            br.submitForm(Form1);
+            br.submitForm(form);
             URLConnectionAdapter con2 = br.getHttpConnection();
             if (con2.getContentType().contains("html")) {
                 String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
                 logger.warning(error);
-                if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session"))
+                if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                else
+                } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
+                }
             }
             dl = br.openDownload(downloadLink, br.getRedirectLocation());
             dl.startDownload();
