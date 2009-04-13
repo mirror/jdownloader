@@ -48,10 +48,31 @@ public class Cryptlinkws extends PluginForDecrypt {
             /* Einzelne Datei */
             br.getPage(parameter);
             String link = br.getRegex("unescape\\(('|\")(.*?)('|\")\\)").getMatch(1);
-            link = Encoding.htmlDecode(Encoding.htmlDecode(link));
+            link = Encoding.htmlDecode(link);             
+
+            /* ASCII-Code in Zeichen umwandeln */
+            /* TODO: Das muss doch auch einfacher gehen... */
+            String[] ascii = link.split("&#");
+            link = "";
+            for (int i = 1; i <= ascii.length-1; i++) {
+                int j = Integer.parseInt(ascii[i]);
+                link += new Character((char)j).toString();
+            }
+                        
             br.getPage("http://www.cryptlink.ws/" + link);
             link = br.getRegex("unescape\\(('|\")(.*?)('|\")\\)").getMatch(1);
-            link = Encoding.htmlDecode(Encoding.htmlDecode(link));
+            link = Encoding.htmlDecode(link);
+            
+            /* ASCII-Code in Zeichen umwandeln */
+            /* TODO: Das muss doch auch einfacher gehen... */
+            ascii = link.split("&#");
+            link = "";
+            for (int i = 1; i <= ascii.length-1; i++) {
+                int j = Integer.parseInt(ascii[i]);
+                link += new Character((char)j).toString();
+            }
+                        
+            //link = Encoding.htmlDecode(Encoding.htmlDecode(link));
             if (link.startsWith("cryptfiles/")) {
                 /* Weiterleitung durch Server */
                 br.getPage("http://www.cryptlink.ws/" + link);
