@@ -36,8 +36,10 @@ public class RapidshareMu extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-
-        String link = br.getRegex("name=\"frame\" src=\"(.*?)\"></iframe>").getMatch(0);
+        
+        String link = br.getRegex("20;url=(.*?)\"").getMatch(0);
+        if (link == null) link = br.getRegex("<h6><a href=\"(.*?)\"").getMatch(0);
+        if (link == null) return null;
         decryptedLinks.add(createDownloadlink(link));
 
         return decryptedLinks;
