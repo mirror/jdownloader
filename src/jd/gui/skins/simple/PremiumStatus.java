@@ -4,7 +4,6 @@ import java.awt.Component;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.logging.Logger;

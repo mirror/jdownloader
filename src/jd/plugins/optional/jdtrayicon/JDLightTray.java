@@ -56,7 +56,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     private static final String PROPERTY_MINIMIZE_TO_TRAY = "PROPERTY_MINIMIZE_TO_TRAY";
 
     private static final String PROPERTY_SINGLE_CLICK = "PROPERTY_SINGLE_CLICK";
-    
+
     private static final String PROPERTY_TOOLTIP = "PROPERTY_TOOLTIP";
 
     private TrayIconPopup trayIconPopup;
@@ -64,11 +64,11 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     private TrayIcon trayIcon;
 
     private JFrame guiFrame;
-    
+
     private boolean iconfied = false;
-    
+
     private long lastDeIconifiedEvent = System.currentTimeMillis() - 1000;
-    
+
     private TrayIconTooltip tit;
 
     public static int getAddonInterfaceVersion() {
@@ -148,30 +148,33 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     private void initGUI() {
-    	SystemTray systemTray = SystemTray.getSystemTray();
-    	Image img = JDImage.getImage("logo/jd_logo_128_128").getScaledInstance((int)systemTray.getTrayIconSize().getWidth(), (int)systemTray.getTrayIconSize().getHeight(), Image.SCALE_SMOOTH);
-    	
+        SystemTray systemTray = SystemTray.getSystemTray();
+        Image img = JDImage.getImage("logo/jd_logo_128_128").getScaledInstance((int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight(), Image.SCALE_SMOOTH);
+
         trayIcon = new TrayIcon(img);
         trayIcon.addActionListener(this);
         trayIcon.addMouseListener(this);
         trayIcon.addMouseMotionListener(this);
         tit = new TrayIconTooltip();
-        
+
         try {
             systemTray.add(trayIcon);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
     }
 
-    public void mouseClicked(MouseEvent e) {}
+    public void mouseClicked(MouseEvent e) {
+    }
 
-    public void mouseEntered(MouseEvent e) {}
+    public void mouseEntered(MouseEvent e) {
+    }
 
-    public void mouseExited(MouseEvent e) {}
+    public void mouseExited(MouseEvent e) {
+    }
 
     public void mousePressed(MouseEvent e) {
-    	tit.hide();
+        tit.hide();
         if (e.getSource() instanceof TrayIcon) {
             if (!OSDetector.isMac()) {
                 if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
@@ -209,13 +212,15 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         }
     }
 
-    public void mouseReleased(MouseEvent e) {}
+    public void mouseReleased(MouseEvent e) {
+    }
 
-    public void mouseDragged(MouseEvent e) {}
+    public void mouseDragged(MouseEvent e) {
+    }
 
     public void mouseMoved(MouseEvent e) {
-    	if (trayIconPopup != null && trayIconPopup.isVisible() && !subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) return;
-    	tit.show(e);
+        if (trayIconPopup != null && trayIconPopup.isVisible() && !subConfig.getBooleanProperty(PROPERTY_TOOLTIP, false)) return;
+        tit.show(e);
     }
 
     @Override
@@ -282,22 +287,26 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         }
     }
 
-    public void windowActivated(WindowEvent arg0) {}
+    public void windowActivated(WindowEvent arg0) {
+    }
 
-    public void windowClosed(WindowEvent arg0) {}
+    public void windowClosed(WindowEvent arg0) {
+    }
 
-    public void windowClosing(WindowEvent arg0) {}
+    public void windowClosing(WindowEvent arg0) {
+    }
 
-    public void windowDeactivated(WindowEvent arg0) {}
+    public void windowDeactivated(WindowEvent arg0) {
+    }
 
     public void windowDeiconified(WindowEvent arg0) {
         windowIconified(arg0);
     }
 
     public void windowIconified(WindowEvent arg0) {
-        if (subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true))
-            miniIt();
+        if (subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true)) miniIt();
     }
 
-    public void windowOpened(WindowEvent arg0) {}
+    public void windowOpened(WindowEvent arg0) {
+    }
 }

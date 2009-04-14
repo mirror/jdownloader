@@ -29,13 +29,12 @@ import javax.swing.JPanel;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
-import net.miginfocom.swing.MigLayout;
-
 import jd.controlling.DownloadController;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class TrayIconTooltip {
     private JWindow toolParent;

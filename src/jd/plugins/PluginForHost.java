@@ -765,10 +765,12 @@ public abstract class PluginForHost extends Plugin {
         if (image != null) return new ImageIcon(image);
         return null;
     }
-/**
- * CReates a dummyHosterIcon
- * @return
- */
+
+    /**
+     * CReates a dummyHosterIcon
+     * 
+     * @return
+     */
     private Image createDefaultIcon() {
         int w = 16;
         int h = 16;
@@ -786,17 +788,18 @@ public abstract class PluginForHost extends Plugin {
         int ww = g.getFontMetrics().stringWidth(dummy);
         g.setColor(Color.BLACK);
         g.drawRect(0, 0, w - 1, h - 1);
- 
+
         g.setColor(Color.GRAY.brighter());
         g.fillRect(1, 1, w - 2, h - 2);
         g.setColor(Color.BLACK);
-        g.drawString(dummy, (w-ww)/2, 2 + size);
+        g.drawString(dummy, (w - ww) / 2, 2 + size);
 
         g.dispose();
         try {
-            ImageIO.write(image, "png",JDUtilities.getResourceFile("jd/img/hosterlogos/" + getHost() + ".png"));
+            File imageFile = JDUtilities.getResourceFile("jd/img/hosterlogos/" + getHost() + ".png");
+            if (!imageFile.getParentFile().exists()) imageFile.getParentFile().mkdirs();
+            ImageIO.write(image, "png", imageFile);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
