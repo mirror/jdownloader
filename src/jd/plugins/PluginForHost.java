@@ -44,7 +44,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountManager;
 import jd.controlling.DownloadController;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.parser.Regex;
@@ -233,14 +232,12 @@ public abstract class PluginForHost extends Plugin {
 
     public abstract String getAGBLink();
 
-
-
     protected void enablePremium() {
-        this.enablePremium( null);
+        this.enablePremium(null);
     }
 
     protected void enablePremium(String url) {
-     
+
         this.premiumurl = url;
 
         enablePremium = true;
@@ -249,7 +246,7 @@ public abstract class PluginForHost extends Plugin {
         ConfigContainer premiumConfig = new ConfigContainer(this, JDLocale.L("plugins.hoster.premiumtab", "Premium Einstellungen"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, premiumConfig));
 
-        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PREMIUMPANEL, AccountManager.getInstance(), this.getHost(),0));
+        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PREMIUMPANEL, AccountManager.getInstance(), this.getHost(), 0));
         cfg.setActionListener(this);
         cfg.setDefaultValue(new ArrayList<Account>());
 

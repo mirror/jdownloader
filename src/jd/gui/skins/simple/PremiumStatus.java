@@ -49,6 +49,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
     private String MAP_PROP = "MAP2";
     private String MAPSIZE_PROP = "MAPSIZE2";
 
+    @SuppressWarnings("unchecked")
     public PremiumStatus() {
         super();
         bars = new JDProgressBar[BARCOUNT];

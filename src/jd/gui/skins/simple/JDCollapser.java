@@ -55,7 +55,7 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
                 panel = null;
             }
 
-            new SwingWorker() {
+            new SwingWorker<Object, Object>() {
 
                 @Override
                 protected Object doInBackground() throws Exception {

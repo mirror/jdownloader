@@ -53,11 +53,11 @@ import jd.utils.JDUtilities;
  */
 
 public class JDController implements ControlListener {
-    
-    public static JDController getInstance(){
-       
+
+    public static JDController getInstance() {
         return INSTANCE;
     }
+
     private class EventSender extends Thread {
 
         protected static final long MAX_EVENT_TIME = 10000;
@@ -204,7 +204,7 @@ public class JDController implements ControlListener {
     public JDController() {
         downloadStatus = DOWNLOAD_NOT_RUNNING;
         eventSender = getEventSender();
-        INSTANCE=this;
+        INSTANCE = this;
         JDUtilities.setController(this);
     }
 

@@ -57,7 +57,7 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
         progress.setValue(loaded);
 
         if (JDUtilities.getController().getSpeedMeter() > 1024) {
-            speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", JDUtilities.formatBytesToMB(JDUtilities.getController().getSpeedMeter()) + "/s"));
+            speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", JDUtilities.formatKbReadable(JDUtilities.getController().getSpeedMeter() / 1000) + "/s"));
 
             long etanum = (tot - loaded) / JDUtilities.getController().getSpeedMeter();
 

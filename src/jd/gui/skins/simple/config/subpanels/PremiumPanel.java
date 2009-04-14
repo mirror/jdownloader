@@ -170,10 +170,8 @@ public class PremiumPanel extends JPanel {
                 try {
                     JLinkButton.openURL(new URL("http://jdownloader.org/r.php?u=" + Encoding.urlEncode(premiumUrl)));
                 } catch (MalformedURLException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 } catch (Exception e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
@@ -418,11 +416,10 @@ public class PremiumPanel extends JPanel {
                     info.setCollapsed(true);
 
                 }
-                new SwingWorker() {
+                new SwingWorker<Object, Object>() {
 
                     @Override
                     protected Object doInBackground() throws Exception {
-                        // TODO Auto-generated method stub
                         Thread.sleep(500);
                         return null;
                     }

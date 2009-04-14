@@ -13,6 +13,7 @@ import jd.utils.JDUtilities;
 
 public class AccountManager extends SubConfiguration implements ControlListener {
 
+    private static final long serialVersionUID = -9118055222709490746L;
     public static AccountManager INSTANCE = null;
     private static final String PROPERTY_PREMIUM = "PREMIUM";
     private static final String IMPORTEDFLAG = "imported";
@@ -26,20 +27,21 @@ public class AccountManager extends SubConfiguration implements ControlListener 
             @Override
             protected void fireEvent(AccountListener listener, AccountsUpdateEvent event) {
                 listener.onUpdate();
-
             }
+
         };
         JDController.getInstance().addControlListener(this);
-    
+
     }
 
     private void init() {
         if (this.inited) return;
         inited = true;
-        if (!hasProperty(IMPORTEDFLAG) ) importOld();
+        if (!hasProperty(IMPORTEDFLAG)) importOld();
 
     }
 
+    @SuppressWarnings("unchecked")
     private void importOld() {
 
         for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
@@ -59,12 +61,11 @@ public class AccountManager extends SubConfiguration implements ControlListener 
     }
 
     public static ArrayList<Account> getAccounts(PluginForHost pluginForHost) {
-
         return getInstance().getAccountsForHost(pluginForHost.getHost());
     }
 
+    @SuppressWarnings("unchecked")
     private ArrayList<Account> getAccountsForHost(String host) {
-
         return (ArrayList<Account>) getProperty(host, new ArrayList<Account>());
     }
 
@@ -77,7 +78,6 @@ public class AccountManager extends SubConfiguration implements ControlListener 
     public void setAccountsForHost(PluginForHost plugin, ArrayList<Account> accounts) {
         setProperty(plugin.getHost(), accounts);
         save();
-
     }
 
     public synchronized Account getValidAccount(PluginForHost pluginForHost) {
@@ -96,15 +96,15 @@ public class AccountManager extends SubConfiguration implements ControlListener 
         }
 
         return ret;
-
     }
 
+    @Override
     public synchronized void setProperty(String key, Object value) {
         init();
         super.setProperty(key, value);
-
     }
 
+    @Override
     public Object getProperty(String key, Object def) {
         init();
         return super.getProperty(key, def);
@@ -127,6 +127,7 @@ public class AccountManager extends SubConfiguration implements ControlListener 
 
     }
 
+    @Override
     public void save() {
         init();
         super.save();

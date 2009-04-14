@@ -17,6 +17,7 @@
 package jd.gui.skins.simple.components.DownloadView;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.LinearGradientPaint;
 import java.awt.Point;
 import java.awt.MultipleGradientPaint.CycleMethod;
@@ -195,7 +196,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         // Color.BLACK));
     }
 
-    public static Painter getFolderPainter(JXTreeTable table) {
+    public static Painter<Component> getFolderPainter(JXTreeTable table) {
 
         if (JDUtilities.getJavaVersion() >= 1.6 && SimpleGUI.isSubstance()) {
 
@@ -204,10 +205,10 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             SubstanceColorScheme colorScheme = SubstanceColorSchemeUtilities.getColorScheme(table, ComponentState.SELECTED);
             Color[] colors = new Color[] { Colors.getColor(colorScheme.getUltraLightColor(), 50), Colors.getColor(colorScheme.getLightColor(), 50), Colors.getColor(colorScheme.getMidColor(), 50), Colors.getColor(colorScheme.getUltraLightColor(), 50) };
             LinearGradientPaint paint = new LinearGradientPaint(0, 0, 0, height, new float[] { 0.0f, 0.4f, 0.5f, 1.0f }, colors, CycleMethod.REPEAT);
-            return new MattePainter(paint);
+            return new MattePainter<Component>(paint);
 
         } else {
-            return new MattePainter(JDTheme.C("gui.color.downloadlist.package", "4c4c4c", 150));
+            return new MattePainter<Component>(JDTheme.C("gui.color.downloadlist.package", "4c4c4c", 150));
         }
 
     }
