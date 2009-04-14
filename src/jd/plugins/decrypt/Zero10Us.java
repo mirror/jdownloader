@@ -36,13 +36,21 @@ public class Zero10Us extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        String link = null;
+        String linkid;
+        boolean hlink = false;
         if (parameter.indexOf("h-link.us") != -1) {
-            link = parameter.replaceFirst("h-link.us", "zero10.us");
+            hlink=true;
         }
-        if (link == null) return null;
-        String linkid = new Regex(link, ".*?zero10\\.us/([^/]*)").getMatch(0);
-        br.getPage("http://zero10.us/m1.php?id=" + linkid);
+        if (hlink==true) {
+            linkid = new Regex(parameter, ".*?h-link\\.us/([^/]*)").getMatch(0);
+            br.getPage("http://h-link.us/m1.php?id=" + linkid);
+
+        }
+        else
+        {
+            linkid = new Regex(parameter, ".*?zero10\\.us/([^/]*)").getMatch(0);
+            br.getPage("http://zero10.us/m1.php?id=" + linkid);
+        }
         String declink = br.getRegex("onclick=\"NewWindow\\('(.*?)','name'").getMatch(0);
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(declink)));
 
