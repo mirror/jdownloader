@@ -38,6 +38,7 @@ import javax.swing.WindowConstants;
 
 import jd.captcha.JAntiCaptcha;
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.plugins.Plugin;
 import jd.utils.JDLocale;
@@ -96,7 +97,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
     public CaptchaDialog(final JFrame owner, final Plugin plugin, final File file, final String def) {
         super(owner);
 
-        countdown = Math.max(2, JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
+        countdown = Math.max(2, SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
         JDSounds.PT("sound.captcha.onCaptchaInput");
         this.setModal(true);
         this.addWindowListener(new WindowListener() {
@@ -206,7 +207,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
                 }
 
             };
-            if (JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20) != 0) {
+            if (SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20) != 0) {
                 countdownThread.start();
             } else {
                 setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Please enter..."));

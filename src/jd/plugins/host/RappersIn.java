@@ -20,12 +20,12 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class RappersIn extends PluginForHost {
     private static final String AGB_LINK = "http://www0.rappers.in/agb.php";
@@ -82,7 +82,7 @@ public class RappersIn extends PluginForHost {
         }
 
         dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        dl.setChunkNum(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.setResume(true);
         dl.startDownload();
     }

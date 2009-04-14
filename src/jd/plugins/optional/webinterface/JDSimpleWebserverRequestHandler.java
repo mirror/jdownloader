@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadController;
 import jd.controlling.reconnect.Reconnecter;
@@ -111,7 +112,7 @@ public class JDSimpleWebserverRequestHandler {
                     if (setspeed < 0) {
                         setspeed = 0;
                     }
-                    JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, setspeed);
+                    SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, setspeed);
                 }
 
                 if (requestParameter.containsKey("maxdls")) {
@@ -119,7 +120,7 @@ public class JDSimpleWebserverRequestHandler {
                     if (maxdls < 1) {
                         maxdls = 1;
                     }
-                    JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls);
+                    SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls);
                 }
 
                 if (!requestParameter.containsKey("selected_dowhat_link_adder")) {

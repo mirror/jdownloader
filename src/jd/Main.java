@@ -42,6 +42,7 @@ import javax.swing.UIManager;
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
+import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
@@ -214,7 +215,7 @@ public class Main {
         splashScreen = null;
         JDTheme.setTheme("default");
         if (JDInitFlags.SHOW_SPLASH) {
-            if (JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPLASH, true)) {
+            if (SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPLASH, true)) {
                 LOGGER.info("init Splash");
                 new GuiRunnable<Object>() {
 
@@ -404,12 +405,12 @@ public class Main {
         LOGGER.info("init Configuration");
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "Lade Konfiguration"));
 
-        String old = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("LOCALE", null);
+        String old = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("LOCALE", null);
         if (old != null) {
-            JDUtilities.getSubConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, old);
-            JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty("LOCALE", null);
-            JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).save();
-            JDUtilities.getSubConfig(JDLocale.CONFIG).save();
+            SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, old);
+            SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty("LOCALE", null);
+            SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).save();
+            SubConfiguration.getConfig(JDLocale.CONFIG).save();
         }
         if (init.loadConfiguration() == null) {
 

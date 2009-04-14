@@ -26,6 +26,7 @@ import java.util.Vector;
 
 import javax.swing.UIManager;
 
+import jd.config.SubConfiguration;
 import jd.http.Encoding;
 import jd.http.requests.PostRequest;
 import jd.nutils.io.JDFileFilter;
@@ -82,7 +83,7 @@ public class JDLocale {
 
     public static String getLocaleString(String key2, String def) {
         if (data == null || localeFile == null) {
-            JDLocale.setLocale(JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, JDLocale.isGerman() ? "german" : "english"));
+            JDLocale.setLocale(SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, JDLocale.isGerman() ? "german" : "english"));
         }
 
         key = key2.toLowerCase().hashCode();

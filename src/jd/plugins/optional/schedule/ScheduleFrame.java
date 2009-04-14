@@ -33,6 +33,7 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.Timer;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -72,10 +73,10 @@ public class ScheduleFrame extends JPanel implements ActionListener {
         start.setBorderPainted(false);
         start.setFocusPainted(false);
 
-        maxdls = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
+        maxdls = new JSpinner(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
         maxdls.setBorder(BorderFactory.createEmptyBorder());
 
-        maxspeed = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED), 0, Integer.MAX_VALUE, 50));
+        maxspeed = new JSpinner(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED), 0, Integer.MAX_VALUE, 50));
         maxspeed.setBorder(BorderFactory.createEmptyBorder());
 
         time = new JSpinner(date_model);
@@ -154,9 +155,9 @@ public class ScheduleFrame extends JPanel implements ActionListener {
             }
         } else if (e.getSource() == t) {
 
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, maxspeed.getValue());
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls.getValue());
-            JDUtilities.getSubConfig("DOWNLOAD").save();
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, maxspeed.getValue());
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls.getValue());
+            SubConfiguration.getConfig("DOWNLOAD").save();
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, !reconnect.isSelected());
             JDUtilities.getConfiguration().save();

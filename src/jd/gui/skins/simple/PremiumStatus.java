@@ -13,6 +13,9 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
 import jd.HostPluginWrapper;
+import jd.config.SubConfiguration;
+import jd.controlling.AccountListener;
+import jd.controlling.AccountManager;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
@@ -27,14 +30,14 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class PremiumStatus extends JPanel implements ControlListener {
+public class PremiumStatus extends JPanel implements ControlListener, AccountListener {
 
     private static final long serialVersionUID = 7290466989514173719L;
     private static final long UNLIMITED = 10l * 1024l * 1024l * 1024l;
     private static final String DEBUG = "";
     private static final int BARCOUNT = 8;
-    private TreeMap<HostPluginWrapper, ArrayList<AccountInfo>> map;
-    private TreeMap<HostPluginWrapper, Long> mapSize;
+    private TreeMap<String, ArrayList<AccountInfo>> map;
+    private TreeMap<String, Long> mapSize;
     private JDProgressBar[] bars;
 
     private long trafficTotal = 0l;
@@ -42,16 +45,19 @@ public class PremiumStatus extends JPanel implements ControlListener {
     private JLabel lbl;
     private Thread cacheWait;
     private Logger logger;
+    private SubConfiguration config;
+    private String MAP_PROP = "MAP2";
+    private String MAPSIZE_PROP = "MAPSIZE2";
 
     public PremiumStatus() {
         super();
         bars = new JDProgressBar[BARCOUNT];
         logger = JDLogger.getLogger();
-        this.map = new TreeMap<HostPluginWrapper, ArrayList<AccountInfo>>();
-        this.mapSize = new TreeMap<HostPluginWrapper, Long>();
+
         this.setLayout(new MigLayout(DEBUG + "ins 0", "[]", "[]"));
         add(lbl = new JLabel("Load Premiumstatus..."), "hidemode 3");
         JDController.getInstance().addControlListener(this);
+        AccountManager.getInstance().addAccountListener(this);
         for (int i = 0; i < BARCOUNT; i++) {
             JDProgressBar pg = new JDProgressBar();
             bars[i] = pg;
@@ -61,11 +67,11 @@ public class PremiumStatus extends JPanel implements ControlListener {
 
                     for (int i = 0; i < BARCOUNT; i++) {
                         if (bars[i] == arg0.getSource()) {
-                            for (Iterator<HostPluginWrapper> it = getMap().keySet().iterator(); it.hasNext();) {
-                                HostPluginWrapper wrapper = it.next();
+                            for (Iterator<String> it = getMap().keySet().iterator(); it.hasNext();) {
+                                String host = it.next();
 
                                 if (i == 0) {
-                                    showDetails(wrapper);
+                                    showDetails((HostPluginWrapper) JDUtilities.getPluginForHost(host).getWrapper());
                                     return;
                                 }
                                 i--;
@@ -94,9 +100,12 @@ public class PremiumStatus extends JPanel implements ControlListener {
             });
             pg.setStringPainted(true);
             pg.setVisible(false);
-            add(pg, "width 80!,height 16!,hidemode 3");
+            add(pg, "width 100!,height 16!,hidemode 3");
 
         }
+        config = SubConfiguration.getConfig("PREMIUMSTATUS");
+        this.map = (TreeMap<String, ArrayList<AccountInfo>>) config.getProperty(MAP_PROP, new TreeMap<String, ArrayList<AccountInfo>>());
+        this.mapSize = (TreeMap<String, Long>) config.getProperty(MAPSIZE_PROP, new TreeMap<String, Long>());
         refresher = new Thread() {
             public void run() {
 
@@ -114,6 +123,15 @@ public class PremiumStatus extends JPanel implements ControlListener {
         };
 
         refresher.start();
+        new GuiRunnable<Object>() {
+
+            @Override
+            public Object runSave() {
+                redraw();
+                return null;
+            }
+
+        }.start();
     }
 
     protected void showDetails(HostPluginWrapper wrapper) {
@@ -131,8 +149,8 @@ public class PremiumStatus extends JPanel implements ControlListener {
     private void updatePremium() {
         long trafficTotal = 0;
         logger.finer("Update Premiuminfo");
-        TreeMap<HostPluginWrapper, ArrayList<AccountInfo>> map = new TreeMap<HostPluginWrapper, ArrayList<AccountInfo>>();
-        TreeMap<HostPluginWrapper, Long> mapSize = new TreeMap<HostPluginWrapper, Long>();
+        TreeMap<String, ArrayList<AccountInfo>> map = new TreeMap<String, ArrayList<AccountInfo>>();
+        TreeMap<String, Long> mapSize = new TreeMap<String, Long>();
         for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
             if (wrapper.isLoaded() && wrapper.usePlugin()) {
                 final PluginForHost helpPlugin = wrapper.getPlugin();
@@ -146,13 +164,13 @@ public class PremiumStatus extends JPanel implements ControlListener {
                                 AccountInfo ai = helpPlugin.getAccountInformation(a);
                                 helpPlugin.getBrowser().setConnectTimeout(to);
                                 if (ai.isValid()) {
-                                    if (!map.containsKey(wrapper)) {
-                                        mapSize.put(wrapper, 0l);
-                                        map.put(wrapper, new ArrayList<AccountInfo>());
+                                    if (!map.containsKey(wrapper.getHost())) {
+                                        mapSize.put(wrapper.getHost(), 0l);
+                                        map.put(wrapper.getHost(), new ArrayList<AccountInfo>());
                                     }
 
-                                    map.get(wrapper).add(ai);
-                                    mapSize.put(wrapper, mapSize.get(wrapper) + (ai.getTrafficLeft() > 0 ? ai.getTrafficLeft() : UNLIMITED));
+                                    map.get(wrapper.getHost()).add(ai);
+                                    mapSize.put(wrapper.getHost(), mapSize.get(wrapper) + (ai.getTrafficLeft() > 0 ? ai.getTrafficLeft() : UNLIMITED));
 
                                     trafficTotal += (ai.getTrafficLeft() > 0 ? ai.getTrafficLeft() : UNLIMITED);
 
@@ -170,6 +188,7 @@ public class PremiumStatus extends JPanel implements ControlListener {
         this.setTrafficTotal(trafficTotal);
         this.setMap(map);
         this.setMapSize(mapSize);
+        save();
         new GuiRunnable<Object>() {
 
             @Override
@@ -181,6 +200,13 @@ public class PremiumStatus extends JPanel implements ControlListener {
         }.start();
     }
 
+    private void save() {
+        config.setProperty(MAP_PROP, map);
+        config.setProperty(MAPSIZE_PROP, mapSize);
+        config.save();
+
+    }
+
     private void redraw() {
         lbl.setVisible(false);
         for (int i = 0; i < BARCOUNT; i++) {
@@ -188,10 +214,11 @@ public class PremiumStatus extends JPanel implements ControlListener {
         }
 
         int i = 0;
-        for (Iterator<HostPluginWrapper> it = getMap().keySet().iterator(); it.hasNext();) {
-            HostPluginWrapper wrapper = it.next();
-            ArrayList<AccountInfo> list = this.getMap().get(wrapper);
+        for (Iterator<String> it = getMap().keySet().iterator(); it.hasNext();) {
+            String host = it.next();
+            ArrayList<AccountInfo> list = this.getMap().get(host);
 
+            PluginForHost plugin = JDUtilities.getPluginForHost(host);
             long max = 0l;
             long left = 0l;
 
@@ -201,18 +228,19 @@ public class PremiumStatus extends JPanel implements ControlListener {
                 left += ai.getTrafficLeft();
             }
             bars[i].setVisible(true);
-            bars[i].setIcon(JDImage.getScaledImageIcon(wrapper.getPlugin().getHosterIcon(), 12, 12));
+            bars[i].setIcon(JDImage.getScaledImageIcon(plugin.getHosterIcon(), 12, 12));
             bars[i].setMaximum(max);
+            bars[i].setAlignmentX(RIGHT_ALIGNMENT);
             bars[i].setValue(left);
 
             if (left >= 0) {
                 bars[i].setString(JDUtilities.formatKbReadable(left / 1024));
-                bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", wrapper.getHost(), list.size(), JDUtilities.formatKbReadable(left / 1024)));
+                bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), JDUtilities.formatKbReadable(left / 1024)));
             } else {
                 bars[i].setMaximum(10);
                 bars[i].setValue(10);
-                bars[i].setString("");
-                bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.unlimited_traffic.tooltip", "%s -- Unlimited traffic! You can download as much as you want to.", wrapper.getHost()));
+                bars[i].setString(host);
+                bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.unlimited_traffic.tooltip", "%s -- Unlimited traffic! You can download as much as you want to.", host));
 
             }
             i++;
@@ -223,11 +251,11 @@ public class PremiumStatus extends JPanel implements ControlListener {
 
     }
 
-    public synchronized void setMap(TreeMap<HostPluginWrapper, ArrayList<AccountInfo>> map) {
+    public synchronized void setMap(TreeMap<String, ArrayList<AccountInfo>> map) {
         this.map = map;
     }
 
-    public synchronized void setMapSize(TreeMap<HostPluginWrapper, Long> mapSize) {
+    public synchronized void setMapSize(TreeMap<String, Long> mapSize) {
         this.mapSize = mapSize;
     }
 
@@ -235,11 +263,11 @@ public class PremiumStatus extends JPanel implements ControlListener {
         this.trafficTotal = trafficTotal;
     }
 
-    public synchronized TreeMap<HostPluginWrapper, ArrayList<AccountInfo>> getMap() {
+    public synchronized TreeMap<String, ArrayList<AccountInfo>> getMap() {
         return map;
     }
 
-    public synchronized TreeMap<HostPluginWrapper, Long> getMapSize() {
+    public synchronized TreeMap<String, Long> getMapSize() {
         return mapSize;
     }
 
@@ -258,22 +286,24 @@ public class PremiumStatus extends JPanel implements ControlListener {
                 }
 
             }.start();
-        } else if (event.getParameter() == PluginForHost.PROPERTY_PREMIUM) {
-            if (cacheWait != null) return;
-            this.cacheWait = new Thread() {
-                public void run() {
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                    updatePremium();
-                    cacheWait = null;
-                }
-            };
-            cacheWait.start();
-
         }
+
+    }
+
+    public void onUpdate() {
+        if (cacheWait != null) return;
+        this.cacheWait = new Thread() {
+            public void run() {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    return;
+                }
+                updatePremium();
+                cacheWait = null;
+            }
+        };
+        cacheWait.start();
 
     }
 

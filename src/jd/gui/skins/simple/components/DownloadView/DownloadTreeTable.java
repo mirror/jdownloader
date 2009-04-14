@@ -121,7 +121,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         if (JDUtilities.getJavaVersion() >= 1.6) {
             setDropMode(DropMode.ON_OR_INSERT_ROWS);
         }
-        if (JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DCLICKPACKAGE, false)) neededclicks = 2;
+        if (SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DCLICKPACKAGE, false)) neededclicks = 2;
         setDragEnabled(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -295,7 +295,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
         }
 
-        final SubConfiguration config = JDUtilities.getSubConfig("gui");
+        final SubConfiguration config = SubConfiguration.getConfig("gui");
         cols = new TableColumnExt[getModel().getColumnCount()];
         for (int i = 0; i < getModel().getColumnCount(); i++) {
             TableColumnExt tableColumn = getColumnFactory().createAndConfigureTableColumn(getModel(), i);

@@ -78,7 +78,7 @@ public class JDLookAndFeelManager implements Serializable {
     }
 
     public static JDLookAndFeelManager getPlaf0() {
-        SubConfiguration config = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
+        SubConfiguration config = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
         Object plaf = config.getProperty(PARAM_PLAF, null);
         if (plaf == null) { return getDefaultLAFM(); }
         if (plaf instanceof JDLookAndFeelManager) {

@@ -21,7 +21,6 @@ import javax.swing.event.EventListenerList;
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SingletonPanel;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTaskPane;
@@ -52,7 +51,7 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
         this.setPanelID(pid);
         this.addPropertyChangeListener(this);
         this.setLayout(new MigLayout("ins 5 5 5 15, wrap 1", "[fill,grow]", "[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]"));
-        setDeligateCollapsed(JDUtilities.getSubConfig("gui").getBooleanProperty(getPanelID() + "_collapsed", false));
+        setDeligateCollapsed(SubConfiguration.getConfig("gui").getBooleanProperty(getPanelID() + "_collapsed", false));
         this.panels = new ArrayList<SingletonPanel>();
     }
 
@@ -205,7 +204,7 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
 
     public void propertyChange(PropertyChangeEvent evt) {
         if (evt.getPropertyName().equals("collapsed")) {
-            SubConfiguration cfg = JDUtilities.getSubConfig("gui");
+            SubConfiguration cfg = SubConfiguration.getConfig("gui");
             if (pressed) {
                 broadcastEvent(new ActionEvent(this, ACTION_TOGGLE, "Toggle"));
                 cfg.setProperty(getPanelID() + "_collapsed", this.isCollapsed());

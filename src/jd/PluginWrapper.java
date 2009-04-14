@@ -183,7 +183,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     }
 
     public SubConfiguration getPluginConfig() {
-        return JDUtilities.getSubConfig(getHost());
+        return SubConfiguration.getConfig(getHost());
     }
 
     public Plugin getNewPluginInstance() {

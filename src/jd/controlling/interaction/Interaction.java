@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 import jd.config.ConfigContainer;
 import jd.config.Configuration;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -89,7 +90,7 @@ public abstract class Interaction extends Property implements Serializable {
     @SuppressWarnings("unchecked")
     public static Interaction[] getInteractions(InteractionTrigger trigger) {
 
-        Vector<Interaction> interactions = (Vector<Interaction>) JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
+        Vector<Interaction> interactions = (Vector<Interaction>) SubConfiguration.getConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
 
         Vector<Interaction> ret = new Vector<Interaction>();
         for (int i = 0; i < interactions.size(); i++) {
@@ -120,7 +121,7 @@ public abstract class Interaction extends Property implements Serializable {
     public static void handleInteraction(InteractionTrigger trigger, Object param) {
         logger.finer("Interaction start: Trigger: " + trigger.getName());
         JDUtilities.getController().fireControlEvent(new ControlEvent(trigger, ControlEvent.CONTROL_INTERACTION_CALL, param));
-        Vector<Interaction> interactions = (Vector<Interaction>) JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
+        Vector<Interaction> interactions = (Vector<Interaction>) SubConfiguration.getConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
         for (Interaction interaction : interactions) {
             if (interaction == null || interaction.getTrigger() == null) continue;
 

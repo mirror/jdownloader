@@ -369,7 +369,7 @@ public class WebUpdater implements Serializable {
      * @return
      */
     public static SubConfiguration getConfig(String string) {
-        SubConfiguration guiConfig = JDUtilities.getSubConfig(string);
+        SubConfiguration guiConfig = SubConfiguration.getConfig(string);
         CFGConfig gui = CFGConfig.getConfig(string);
         if (gui.getProperties().size() != 0) {
             guiConfig.getProperties().putAll(gui.getProperties());

@@ -38,7 +38,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.JXTreeTable;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
@@ -66,11 +65,11 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
     public LinkGrabberTreeTable(LinkGrabberTreeTableModel treeModel, LinkGrabberPanel linkgrabber) {
         super(treeModel);
         this.linkgrabber = linkgrabber;
-        JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
+        SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
         cellRenderer = new LinkGrabberTreeTableRenderer(this);
         model = treeModel;
         createColumns();
-        if (JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DCLICKPACKAGE, false)) neededclicks = 2;
+        if (SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DCLICKPACKAGE, false)) neededclicks = 2;
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
@@ -426,7 +425,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         for (Iterator<TableColumn> iter = columns.iterator(); iter.hasNext();) {
             getColumnModel().removeColumn(iter.next());
         }
-        final SubConfiguration config = JDUtilities.getSubConfig("linkgrabber");
+        final SubConfiguration config = SubConfiguration.getConfig("linkgrabber");
         cols = new TableColumnExt[getModel().getColumnCount()];
         for (int i = 0; i < getModel().getColumnCount(); i++) {
 

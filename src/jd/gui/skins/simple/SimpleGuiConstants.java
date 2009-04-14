@@ -7,7 +7,7 @@ public class SimpleGuiConstants {
     public static final String PARAM_CUSTOM_BROWSER_PARAM = "PARAM_CUSTOM_ROWSER_PARAM";
     public static final String PARAM_CUSTOM_BROWSER = "CUSTOM_ROWSER";
     public static final String PARAM_CUSTOM_BROWSER_USE = "PARAM_CUSTOM_ROWSER_USE";
-    public static final String PARAM_NUM_PREMIUM_CONFIG_FIELDS = "PARAM_NUM_PREMIUM_CONFIG_FIELDS";
+//    public static final String PARAM_NUM_PREMIUM_CONFIG_FIELDS = "PARAM_NUM_PREMIUM_CONFIG_FIELDS";
     public static final String PARAM_SHOW_SPEEDMETER = "PARAM_SHOW_SPEEDMETER";
     public static final String PARAM_SHOW_SPEEDMETER_WINDOWSIZE = "PARAM_SHOW_SPEEDMETER_WINDOWSIZE";
     public static final String SELECTED_CONFIG_TAB = "SELECTED_CONFIG_TAB";

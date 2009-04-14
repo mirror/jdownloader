@@ -42,6 +42,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
@@ -240,7 +241,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     }
 
     private void initBottomPanel() {
-        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+        int maxspeed = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
 
         spMax = new JSpinner();
         spMax.setModel(new SpinnerNumberModel(maxspeed, 0, Integer.MAX_VALUE, 50));
@@ -249,7 +250,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         spMax.addChangeListener(this);
 
         spMaxDls = new JSpinner();
-        spMaxDls.setModel(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
+        spMaxDls.setModel(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
         spMaxDls.setPreferredSize(new Dimension(60, 20));
         spMaxDls.setToolTipText(JDLocale.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
         spMaxDls.addChangeListener(this);
@@ -380,22 +381,22 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     }
 
     public void stateChanged(ChangeEvent e) {
-        int max = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+        int max = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
 
         if (e.getSource() == spMax) {
             int value = (Integer) spMax.getValue();
 
             if (max != value) {
-                JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, value);
-                JDUtilities.getSubConfig("DOWNLOAD").save();
+                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, value);
+                SubConfiguration.getConfig("DOWNLOAD").save();
             }
         }
         if (e.getSource() == spMaxDls) {
             int value = (Integer) spMaxDls.getValue();
 
             if (max != value) {
-                JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, value);
-                JDUtilities.getSubConfig("DOWNLOAD").save();
+                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, value);
+                SubConfiguration.getConfig("DOWNLOAD").save();
             }
         }
     }

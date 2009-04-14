@@ -35,6 +35,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
+import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadControllerEvent;
 import jd.controlling.DownloadControllerListener;
@@ -292,7 +293,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         }
         case TreeTableAction.DOWNLOAD_RESET: {
             boolean b = true;
-            if (!JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+            if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
                 b = false;
                 if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDLocale.LF("gui.downloadlist.delete.size_packagev2", "%s links", selected_links.size()) + ")")) {
                     b = true;
@@ -391,7 +392,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         }
         case TreeTableAction.DELETE: {
             boolean b = true;
-            if (!JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+            if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
                 b = false;
                 if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDLocale.LF("gui.downloadlist.delete.size_packagev2", "%s links", selected_links.size()) + ")")) {
                     b = true;

@@ -37,6 +37,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import jd.controlling.AccountManager;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.ChartAPI_GOM;
@@ -99,7 +100,7 @@ public class PremiumPane extends JTabbedPanel {
         this.host = JDUtilities.getPluginForHost(hostname);
 
         details = new PremiumDetailTaskPanel("test", JDTheme.II("gui.images.config.tip", 24, 24));
-  
+
         freeTrafficChart = new PieChartAPI("", 500, 100);
 
         this.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, this.getBackground().darker()));
@@ -173,7 +174,7 @@ public class PremiumPane extends JTabbedPanel {
             }
 
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
     }
 
@@ -323,8 +324,8 @@ public class PremiumPane extends JTabbedPanel {
                         break;
                     }
                 }
+                AccountManager.getInstance().setAccountsForHost(host, hp);
 
-                host.setPremiumAccounts(hp);
                 owner.createPanel();
             }
         }

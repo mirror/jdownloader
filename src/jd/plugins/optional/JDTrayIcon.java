@@ -50,6 +50,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
+import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.GuiRunnable;
@@ -155,28 +156,28 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
             JDUtilities.getConfiguration().save();
         } else if (e.getSource() == speed1) {
             int speed = getPluginConfig().getIntegerProperty("SPEED1", 100);
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
-            JDUtilities.getSubConfig("DOWNLOAD").save();
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
+            SubConfiguration.getConfig("DOWNLOAD").save();
             // simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed2) {
             int speed = getPluginConfig().getIntegerProperty("SPEED2", 200);
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
-            JDUtilities.getSubConfig("DOWNLOAD").save();
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
+            SubConfiguration.getConfig("DOWNLOAD").save();
             // simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed3) {
             int speed = getPluginConfig().getIntegerProperty("SPEED3", 300);
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
-            JDUtilities.getSubConfig("DOWNLOAD").save();
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
+            SubConfiguration.getConfig("DOWNLOAD").save();
             // simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed4) {
             int speed = getPluginConfig().getIntegerProperty("SPEED4", 400);
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
-            JDUtilities.getSubConfig("DOWNLOAD").save();
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
+            SubConfiguration.getConfig("DOWNLOAD").save();
             // simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed5) {
             int speed = getPluginConfig().getIntegerProperty("SPEED5", 500);
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
-            JDUtilities.getSubConfig("DOWNLOAD").save();
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
+            SubConfiguration.getConfig("DOWNLOAD").save();
             // simplegui.setSpeedStatusBar(speed);
         }
     }

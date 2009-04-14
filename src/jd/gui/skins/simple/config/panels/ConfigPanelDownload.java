@@ -67,7 +67,7 @@ public class ConfigPanelDownload extends ConfigPanel {
 
     public ConfigContainer setupContainer() {
         ConfigContainer container = new ConfigContainer(this);
-        config = JDUtilities.getSubConfig("DOWNLOAD");
+        config = SubConfiguration.getConfig("DOWNLOAD");
 
         setupGeneral(container);
 
@@ -236,7 +236,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, config, Configuration.PARAM_FILE_EXISTS, fileExists, JDLocale.L("system.download.triggerfileexists", "Wenn eine Datei schon vorhanden ist:")));
         ce.setDefaultValue(fileExists[1]);
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME), SimpleGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, JDLocale.L("gui.config.download.startDownloadsOnStartUp", "Download beim Programmstart beginnen")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME), SimpleGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, JDLocale.L("gui.config.download.startDownloadsOnStartUp", "Download beim Programmstart beginnen")));
         ce.setDefaultValue(false);
 
     }

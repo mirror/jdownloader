@@ -25,6 +25,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.http.requests.Request;
 import jd.nutils.JDHash;
@@ -140,7 +141,7 @@ public class RAFDownload extends DownloadInterface {
     public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
 
         super(plugin, downloadLink, request);
-        writeType = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("USEWRITERTHREAD", false);
+        writeType = SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("USEWRITERTHREAD", false);
 
     }
 
@@ -203,7 +204,7 @@ public class RAFDownload extends DownloadInterface {
             }
             DownloadLink sfv;
 
-            if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false) && (sfv = downloadLink.getFilePackage().getSFV()) != null) {
+            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false) && (sfv = downloadLink.getFilePackage().getSFV()) != null) {
                 if (sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                     downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2", "CRC-Check running(%s)", "CRC32"));
                     downloadLink.requestGuiUpdate();
@@ -238,7 +239,7 @@ public class RAFDownload extends DownloadInterface {
                     }
                 }
 
-            } else if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false)) {
+            } else if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false)) {
 
                 String linkHash = null;
                 String localHash = null;
@@ -469,10 +470,10 @@ public class RAFDownload extends DownloadInterface {
         downloadLink.getPlugin().setDownloadInterface(dl);
         dl.setResume(b);
         if (i == 0) {
-            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+            dl.setChunkNum(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
 
         } else {
-            dl.setChunkNum(i < 0 ? Math.min(i * -1, JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)) : i);
+            dl.setChunkNum(i < 0 ? Math.min(i * -1, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)) : i);
 
         }
 

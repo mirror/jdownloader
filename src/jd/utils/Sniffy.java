@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.nutils.Executer;
 import jd.nutils.JDHash;
@@ -80,7 +81,7 @@ public final class Sniffy {
                 JDLogger.getLogger().warning("Sniffy(forbidden sniffer):2" + r);
                 check2 = true;
             }
-            if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false) || JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
+            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false) || SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
 
                 if ((r = new Regex(list, blackListproxy).getMatch(0)) != null) {
                     JDLogger.getLogger().warning("Sniffy:(forbidden proxytools)" + r);

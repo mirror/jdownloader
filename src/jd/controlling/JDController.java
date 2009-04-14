@@ -772,7 +772,7 @@ public class JDController implements ControlListener {
                 }
                 progress.setStatusText(downloadLinks.size() + " links found");
                 if (downloadLinks.size() > 0) {
-                    if (JDUtilities.getSubConfig("GUI").getBooleanProperty(Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, false)) {
+                    if (SubConfiguration.getConfig("GUI").getBooleanProperty(Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, false)) {
                         String html = "<style>p { font-size:9px;margin:1px; padding:0px;}div {font-family:Geneva, Arial, Helvetica, sans-serif; width:400px;background-color:#ffffff; padding:2px;}h1 { vertical-align:top; text-align:left;font-size:10px; margin:0px; display:block;font-weight:bold; padding:0px;}</style><div> <div align='center'> <p><img src='http://jdownloader.org/img/%s.gif'> </p> </div> <h1>%s</h1><hr> <table width='100%%' border='0' cellspacing='5'> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> </table> </div>";
                         String app;
                         String uploader;
@@ -804,7 +804,7 @@ public class JDController implements ControlListener {
         String xml = JDUtilities.createContainerString(links, "dlc");
         String cipher = encryptDLC(xml);
         if (cipher != null) {
-            SubConfiguration cfg = JDUtilities.getSubConfig("DLCrypt");
+            SubConfiguration cfg = SubConfiguration.getConfig("DLCrypt");
             JDIO.writeLocalFile(file, cipher);
             if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false))
             // Nur Falls Die Meldung nicht deaktiviert wurde

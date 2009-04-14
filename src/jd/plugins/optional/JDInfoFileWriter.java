@@ -64,7 +64,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
 
     public JDInfoFileWriter(PluginWrapper wrapper) {
         super(wrapper);
-        subConfig = JDUtilities.getSubConfig("JDInfoFileWriter");
+        subConfig = SubConfiguration.getConfig("JDInfoFileWriter");
         initConfig();
     }
 

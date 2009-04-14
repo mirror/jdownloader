@@ -185,7 +185,7 @@ public class JLinkButton extends JButton {
     }
 
     public static void openURL(URL url) throws Exception {
-        SubConfiguration cfg = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
+        SubConfiguration cfg = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
         if (cfg.getBooleanProperty(SimpleGuiConstants.PARAM_CUSTOM_BROWSER_USE, false)) {
 
             Executer exec = new Executer(cfg.getStringProperty(SimpleGuiConstants.PARAM_CUSTOM_BROWSER));
@@ -198,7 +198,7 @@ public class JLinkButton extends JButton {
         } else {
 
             if (url != null) {
-                String Browser = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_BROWSER, null);
+                String Browser = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_BROWSER, null);
                 if (Browser == null) {
                     BrowserLauncher launcher;
                     List<?> ar = null;
@@ -206,7 +206,7 @@ public class JLinkButton extends JButton {
                     launcher = new BrowserLauncher();
                     ar = launcher.getBrowserList();
 
-                    Object[] BrowserArray = (Object[]) JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, null);
+                    Object[] BrowserArray = (Object[]) SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, null);
 
                     if (BrowserArray == null) {
                         if (ar.size() < 2) {
@@ -218,10 +218,10 @@ public class JLinkButton extends JButton {
                             }
                             BrowserArray[BrowserArray.length - 1] = "JavaBrowser";
                         }
-                        JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, BrowserArray);
-                        JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty(SimpleGuiConstants.PARAM_BROWSER, BrowserArray[0]);
+                        SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, BrowserArray);
+                        SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty(SimpleGuiConstants.PARAM_BROWSER, BrowserArray[0]);
                         Browser = (String) BrowserArray[0];
-                        JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).save();
+                        SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).save();
                     }
                 }
                 if (Browser.equals("JavaBrowser")) {

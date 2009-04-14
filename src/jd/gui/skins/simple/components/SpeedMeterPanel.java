@@ -19,6 +19,7 @@ import javax.swing.UIManager;
 import javax.swing.plaf.FontUIResource;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGuiConstants;
@@ -42,7 +43,7 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
         // Set background color for the applet's panel.
         this.i = 0;
 
-        this.window = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getIntegerProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
+        this.window = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getIntegerProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
 
         this.setOpaque(false);
         this.setBorder(BorderFactory.createEtchedBorder());
@@ -113,7 +114,7 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
         Color col2 = new Color(0x339933);
 
         int id = i;
-        int limit = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
+        int limit = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
         int max = Math.max(10, limit);
         for (int x = 0; x < cache.length; x++) {
             max = Math.max(cache[x], max);
@@ -182,7 +183,7 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
                 update();
             }
             if (event.getParameter().equals(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE)) {
-                window = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getIntegerProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
+                window = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getIntegerProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
             }
         }
 

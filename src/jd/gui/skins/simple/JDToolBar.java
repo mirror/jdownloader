@@ -14,6 +14,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -205,7 +206,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
     private void addSpeedMeter() {
         speedmeter = new SpeedMeterPanel();
         speedmeter.setPreferredSize(new Dimension(100, 30));
-        if (JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, true)) {
+        if (SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, true)) {
             add(speedmeter, "cell 0 13,dock east,hidemode 3,height 30,width 30:200:300");
         }
 
@@ -214,12 +215,12 @@ public class JDToolBar extends JToolBar implements ControlListener {
     private void setPause(boolean b) {
         if (b) {
             pauseButton.setSelected(true);
-            JDToolBar.this.pause = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 1);
+            JDToolBar.this.pause = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 1);
 
         } else {
             pauseButton.setSelected(false);
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, Math.max(JDToolBar.this.pause, 0));
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, Math.max(JDToolBar.this.pause, 0));
             JDToolBar.this.pause = -1;
 
         }

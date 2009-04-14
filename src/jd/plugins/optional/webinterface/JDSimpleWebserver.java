@@ -286,7 +286,7 @@ public class JDSimpleWebserver extends Thread {
     }
 
     public JDSimpleWebserver() {
-        SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
+        SubConfiguration subConfig = SubConfiguration.getConfig("WEBINTERFACE");
         Boolean https = subConfig.getBooleanProperty(JDWebinterface.PROPERTY_HTTPS, false);
         AuthUser = "Basic " + Encoding.Base64Encode(subConfig.getStringProperty(JDWebinterface.PROPERTY_USER, "JD") + ":" + subConfig.getStringProperty(JDWebinterface.PROPERTY_PASS, "JD"));
         NeedAuth = subConfig.getBooleanProperty(JDWebinterface.PROPERTY_LOGIN, true);

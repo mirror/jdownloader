@@ -26,12 +26,15 @@ public class Account extends Property {
 
     private boolean enabled = true;
     private String status = null;
+    private int tmpDisabledInterval;
+
     private transient boolean tempDisabled = false;
+    private transient long tmpDisabledTime = 0;
 
     public Account(String user, String pass) {
         this.user = user;
         this.pass = pass;
-
+        this.setTmpDisabledInterval(10 * 60 * 1000);
         if (this.user != null) this.user = this.user.trim();
         if (this.pass != null) this.pass = this.pass.trim();
     }
@@ -55,6 +58,7 @@ public class Account extends Property {
     }
 
     public boolean isTempDisabled() {
+        if (tempDisabled && (System.currentTimeMillis() - tmpDisabledTime) > this.getTmpDisabledInterval()) tempDisabled = false;
         return tempDisabled;
     }
 
@@ -72,6 +76,7 @@ public class Account extends Property {
     }
 
     public void setTempDisabled(boolean tempDisabled) {
+        this.tmpDisabledTime = System.currentTimeMillis();
         this.tempDisabled = tempDisabled;
     }
 
@@ -79,8 +84,22 @@ public class Account extends Property {
         this.user = user;
         if (this.user != null) this.user = this.user.trim();
     }
-    
-    public String toString(){
-        return user+":"+pass+" "+status+" "+enabled+" "+super.toString();
+
+    public String toString() {
+        return user + ":" + pass + " " + status + " " + enabled + " " + super.toString();
+    }
+
+    /**
+     * returns how lon a premiumaccount will stay disabled if he got temporary
+     * disabled
+     * 
+     * @return
+     */
+    public int getTmpDisabledInterval() {
+        return tmpDisabledInterval;
+    }
+
+    public void setTmpDisabledInterval(int tmpDisabledInterval) {
+        this.tmpDisabledInterval = tmpDisabledInterval;
     }
 }

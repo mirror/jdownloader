@@ -370,7 +370,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
 
-        if (!JDUtilities.getSubConfig("ADDONS_NEWSFEEDS").getBooleanProperty(PROPERTY_ENABLED, false)) {
+        if (!SubConfiguration.getConfig("ADDONS_NEWSFEEDS").getBooleanProperty(PROPERTY_ENABLED, false)) {
 
             menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.newsfeeds.manageFeeds", "Manage Feeds"), 0).setActionListener(this));
             menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.newsfeeds.manageDownloadSubscriptions", "Manage Download Subscriptions"), 1).setActionListener(this));
@@ -450,7 +450,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     }
 
     public boolean initAddon() {
-        subConfig = JDUtilities.getSubConfig("ADDONS_NEWSFEEDS");
+        subConfig = SubConfiguration.getConfig("ADDONS_NEWSFEEDS");
         return true;
     }
 

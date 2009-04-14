@@ -20,13 +20,16 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import jd.controlling.JDLogger;
 import jd.utils.JDUtilities;
 
 public class SubConfiguration extends Property implements Serializable {
 
     private static final long serialVersionUID = 7803718581558607222L;
+    transient private static boolean SUBCONFIG_LOCK = false;
     protected String name;
     transient private ArrayList<ConfigurationListener> listener = null;
+    transient private static HashMap<String, SubConfiguration> SUB_CONFIGS = new HashMap<String, SubConfiguration>();
 
     public void addConfigurationListener(ConfigurationListener listener) {
         if (this.listener == null) {
@@ -81,4 +84,36 @@ public class SubConfiguration extends Property implements Serializable {
         JDUtilities.getDatabaseConnector().saveConfiguration(name, this.getProperties());
         this.fireEventPostSave();
     }
+
+    public synchronized static SubConfiguration getConfig(String name) {
+        if (SUBCONFIG_LOCK) {
+
+            JDLogger.exception(new Exception("Static Database init error!!"));
+        }
+        SUBCONFIG_LOCK = true;
+        try {
+
+            if (SUB_CONFIGS.containsKey(name)) { return SUB_CONFIGS.get(name); }
+
+            SubConfiguration cfg = new SubConfiguration(name);
+
+            SUB_CONFIGS.put(name, cfg);
+            cfg.save();
+            return cfg;
+
+        } finally {
+            SubConfiguration.SUBCONFIG_LOCK = false;
+        }
+
+    }
+/**
+ * Gets a Subconfiguration for this class
+ * @param object
+ * @return
+ */
+    public static SubConfiguration getConfig(Object object) {
+
+        return getConfig(object.getClass().getSimpleName());
+    }
+
 }

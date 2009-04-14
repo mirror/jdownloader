@@ -29,6 +29,7 @@ import java.util.Vector;
 
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
@@ -385,8 +386,8 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         }
         t.setParam("config_current_speed", JDUtilities.getController().getSpeedMeter() / 1024);
 
-        t.setParam("config_max_downloads", JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
-        t.setParam("config_max_speed", JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
+        t.setParam("config_max_downloads", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
+        t.setParam("config_max_speed", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
 
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false) == true) {
             t.setParam("config_autoreconnect", "");

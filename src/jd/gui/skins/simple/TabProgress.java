@@ -30,6 +30,7 @@ import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.JSeparator;
 
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -73,7 +74,7 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         this.addMouseListener(this);
         this.setVisible(false);
         lines = new ProgressEntry[MAX_BARS];
-        this.setCollapsed(JDUtilities.getSubConfig("gui").getBooleanProperty(TabProgress.COLLAPSED, false));
+        this.setCollapsed(SubConfiguration.getConfig("gui").getBooleanProperty(TabProgress.COLLAPSED, false));
         this.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
         this.setTitle(JDLocale.LF("gui.progresspane.title", "%s modules running", 0));
         initGUI();
@@ -230,8 +231,8 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
 
     public void mouseReleased(MouseEvent e) {
         System.out.println("Task is :" + this.isCollapsed());
-        JDUtilities.getSubConfig("gui").setProperty(TabProgress.COLLAPSED, this.isCollapsed());
-        JDUtilities.getSubConfig("gui").save();
+        SubConfiguration.getConfig("gui").setProperty(TabProgress.COLLAPSED, this.isCollapsed());
+        SubConfiguration.getConfig("gui").save();
     }
 
 }

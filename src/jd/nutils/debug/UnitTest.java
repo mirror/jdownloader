@@ -48,7 +48,7 @@ public abstract class UnitTest {
     }
 
     public String getStringProperty(String string) {
-        SubConfiguration cfg = JDUtilities.getSubConfig("UNITTEST");
+        SubConfiguration cfg = SubConfiguration.getConfig("UNITTEST");
         String ret = cfg.getStringProperty(string);
 
         ret = JOptionPane.showInputDialog(frame, "Enter " + string, ret);
@@ -58,7 +58,7 @@ public abstract class UnitTest {
     }
 
     public int getIntegerProperty(String string) {
-        SubConfiguration cfg = JDUtilities.getSubConfig("UNITTEST");
+        SubConfiguration cfg = SubConfiguration.getConfig("UNITTEST");
         int ret = cfg.getIntegerProperty(string);
 
         ret = Integer.parseInt(JOptionPane.showInputDialog(frame, "Enter " + string, ret + ""));

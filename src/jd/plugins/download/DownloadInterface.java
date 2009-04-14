@@ -35,6 +35,7 @@ import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
@@ -115,7 +116,7 @@ abstract public class DownloadInterface {
             this.connection = connection;
             this.dl = dl;
             setPriority(Thread.MIN_PRIORITY);
-            MAX_BUFFERSIZE = (long) JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("MAX_BUFFER_SIZE", 4) * 1024 * 1024l;
+            MAX_BUFFERSIZE = (long) SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("MAX_BUFFER_SIZE", 4) * 1024 * 1024l;
         }
 
         private void addChunkBytesLoaded(long limit) {
@@ -1022,15 +1023,15 @@ abstract public class DownloadInterface {
 
         downloadLink.setDownloadInstance(this);
         this.plugin = plugin;
-        requestTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
-        readTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
+        requestTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
+        readTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
     }
 
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
         this(plugin, downloadLink);
         this.request = request;
-        requestTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
-        readTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
+        requestTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
+        readTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
     }
 
     /**
@@ -1697,7 +1698,7 @@ abstract public class DownloadInterface {
                     return true;
                 }
             }
-            if (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 0) {
+            if (SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 0) {
                 if (!new File(downloadLink.getFileOutput()).delete()) {
                     linkstatus.addStatus(LinkStatus.ERROR_FATAL);
                     linkstatus.setErrorMessage(JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));

@@ -23,6 +23,7 @@ import java.net.UnknownHostException;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.controlling.reconnect.Reconnecter;
@@ -383,7 +384,7 @@ public class SingleDownloadController extends Thread {
     private void onErrorFileExists(DownloadLink downloadLink, PluginForHost plugin) {
         LinkStatus status = downloadLink.getLinkStatus();
 
-        if (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 1) {
+        if (SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 1) {
             downloadLink.setEnabled(false);
             status.setErrorMessage(JDLocale.L("controller.status.fileexists.skip", "File already exists."));
             DownloadController.getDownloadController().fireRefresh_Specific(downloadLink);
@@ -420,7 +421,7 @@ public class SingleDownloadController extends Thread {
     private void onErrorNoConnection(DownloadLink downloadLink, PluginForHost plugin) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         logger.severe("Error occurred: No Server connection");
-        long milliSeconds = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(WAIT_TIME_ON_CONNECTION_LOSS, 5 * 60) * 1000;
+        long milliSeconds = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(WAIT_TIME_ON_CONNECTION_LOSS, 5 * 60) * 1000;
         linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         linkStatus.setWaitTime(milliSeconds);
 

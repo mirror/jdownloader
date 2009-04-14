@@ -165,7 +165,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
      */
     private SimpleGUI() {
         super("");
-        SimpleGuiConstants.GUI_CONFIG = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
+        SimpleGuiConstants.GUI_CONFIG = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
         JDLookAndFeelManager.setUIManager();
 
         // menuBar = new JDMenuBar();

@@ -132,14 +132,10 @@ public class JDUtilities {
 
     private static File JD_HOME = null;
 
-    private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
-
     /**
      * nur 1 UserIO Dialog gleichzeitig (z.b.PW,Captcha)
      */
     private static Semaphore userio_sem = new Semaphore(1);
-
-    private static boolean SUBCONFIG_LOCK;
 
     /**
      * Der Logger für Meldungen
@@ -435,30 +431,32 @@ public class JDUtilities {
 
     public static String formatKbReadable(long value) {
         DecimalFormat c = new DecimalFormat("0.00");
+        if (value >= 1024 * 1024*1024) return c.format(value / (1024*1024 * 1024.0)) + " TB";
         if (value >= 1024 * 1024) return c.format(value / (1024 * 1024.0)) + " GB";
         if (value >= 1024) return c.format(value / 1024.0) + " MB";
+       
         return value + " KB";
     }
-    
+
     public static String formatFilesize(double value, int size) {
-    	if(value > 1024 && size < 5) {
-    		 return formatFilesize(value / 1024.0, ++size);
-    	} else {
-    		DecimalFormat c = new DecimalFormat("0.00");
-    		switch(size) {
-    			case 0:
-    				return c.format(value) + " B";
-    			case 1:
-    				return c.format(value) + " KB";
-    			case 2:
-    				return c.format(value) + " MB";
-    			case 3:
-    				return c.format(value) + " GB";
-    			case 4:
-    				return c.format(value) + " TB";
-    		}
-    	}
-    	return null;
+        if (value > 1024 && size < 5) {
+            return formatFilesize(value / 1024.0, ++size);
+        } else {
+            DecimalFormat c = new DecimalFormat("0.00");
+            switch (size) {
+            case 0:
+                return c.format(value) + " B";
+            case 1:
+                return c.format(value) + " KB";
+            case 2:
+                return c.format(value) + " MB";
+            case 3:
+                return c.format(value) + " GB";
+            case 4:
+                return c.format(value) + " TB";
+            }
+        }
+        return null;
     }
 
     /**
@@ -624,7 +622,7 @@ public class JDUtilities {
                 }
                 // window.pack();
                 jd.controlling.JDLogger.getLogger().info("worst letter: " + vp);
-                if (plugin.useUserinputIfCaptchaUnknown() && vp > (double) JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)) {
+                if (plugin.useUserinputIfCaptchaUnknown() && vp > (double) SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)) {
                     plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
                     acquireUserIOSemaphore();
                     code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
@@ -778,13 +776,13 @@ public class JDUtilities {
             br.setConnectTimeout(5000);
             br.setReadTimeout(5000);
         }
-        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             jd.controlling.JDLogger.getLogger().finer("IP Check is disabled. return current Milliseconds");
             return System.currentTimeMillis() + "";
         }
 
-        String site = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://checkip.dyndns.org");
-        String patt = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
+        String site = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://checkip.dyndns.org");
+        String patt = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
 
         try {
             jd.controlling.JDLogger.getLogger().finer("IP Check via " + site);
@@ -1098,28 +1096,6 @@ public class JDUtilities {
 
     }
 
-    public synchronized static SubConfiguration getSubConfig(String name) {
-        if (SUBCONFIG_LOCK) {
-
-            JDLogger.exception(new Exception("Static Database init error!!"));
-        }
-        SUBCONFIG_LOCK = true;
-        try {
-
-            if (subConfigs.containsKey(name)) { return subConfigs.get(name); }
-
-            SubConfiguration cfg = new SubConfiguration(name);
-
-            subConfigs.put(name, cfg);
-            cfg.save();
-            return cfg;
-
-        } finally {
-            SUBCONFIG_LOCK = false;
-        }
-
-    }
-
     public static void restartJD() {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
         jd.controlling.JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", }, getResourceFile(".").getAbsolutePath(), 0));
@@ -1263,7 +1239,7 @@ public class JDUtilities {
      * @return
      */
     public static boolean validateIP(String ip) {
-        return Pattern.compile(JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b")).matcher(ip).matches();
+        return Pattern.compile(SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b")).matcher(ip).matches();
     }
 
     public static String removeEndingPoints(String name) {

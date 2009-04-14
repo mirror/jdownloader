@@ -53,14 +53,14 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         lblSimu = new JLabel(JDLocale.L("gui.statusbar.sim_ownloads", "Max.Dls."));
 
         spMax = new JSpinner();
-        spMax.setModel(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
+        spMax.setModel(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
         spMax.setPreferredSize(new Dimension(60, 20));
         spMax.setToolTipText(JDLocale.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen(kb/s) [0:unendlich]"));
         spMax.addChangeListener(this);
         colorizeSpinnerSpeed();
 
         spMaxDls = new JSpinner();
-        spMaxDls.setModel(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
+        spMaxDls.setModel(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
         spMaxDls.setPreferredSize(new Dimension(60, 20));
         spMaxDls.setToolTipText(JDLocale.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
         spMaxDls.addChangeListener(this);
@@ -136,12 +136,12 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
 
         if (e.getSource() == spMax) {
             colorizeSpinnerSpeed();
-            SubConfiguration subConfig = JDUtilities.getSubConfig("DOWNLOAD");
+            SubConfiguration subConfig = SubConfiguration.getConfig("DOWNLOAD");
             subConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, (Integer) spMax.getValue());
             subConfig.save();
 
         } else if (e.getSource() == spMaxDls) {
-            SubConfiguration subConfig = JDUtilities.getSubConfig("DOWNLOAD");
+            SubConfiguration subConfig = SubConfiguration.getConfig("DOWNLOAD");
             subConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, (Integer) spMaxDls.getValue());
             subConfig.save();
 

@@ -427,7 +427,7 @@ public abstract class Plugin implements ActionListener {
      * @return internes property objekt
      */
     public SubConfiguration getPluginConfig() {
-        return JDUtilities.getSubConfig(wrapper.getConfigName());
+        return SubConfiguration.getConfig(wrapper.getConfigName());
     }
 
     /**

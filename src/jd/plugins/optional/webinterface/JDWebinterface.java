@@ -49,7 +49,7 @@ public class JDWebinterface extends PluginOptional {
     public JDWebinterface(PluginWrapper wrapper) {
         super(wrapper);
         instance = this;
-        SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
+        SubConfiguration subConfig = SubConfiguration.getConfig("WEBINTERFACE");
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_REFRESH, JDLocale.L("plugins.optional.webinterface.refresh", "AutoRefresh")));
         cfg.setDefaultValue(true);
@@ -100,7 +100,7 @@ public class JDWebinterface extends PluginOptional {
     }
 
     static public int getRefreshRate() {
-        SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
+        SubConfiguration subConfig = SubConfiguration.getConfig("WEBINTERFACE");
         if (subConfig.getBooleanProperty(JDWebinterface.PROPERTY_REFRESH, true)) {
             return subConfig.getIntegerProperty(JDWebinterface.PROPERTY_REFRESH_INTERVAL, 5);
         } else {

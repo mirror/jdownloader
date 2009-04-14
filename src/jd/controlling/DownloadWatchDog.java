@@ -22,6 +22,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
@@ -30,7 +31,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 /**
  * Dieser Controller verwaltet die downloads. Während StartDownloads.java für
@@ -284,7 +284,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
      * @return
      */
     public int getSimultanDownloadNum() {
-        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
+        return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
     }
 
     /**
@@ -294,7 +294,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
      * @return
      */
     public int getSimultanDownloadNumPerHost() {
-        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, 0);
+        return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, 0);
     }
 
     /**
@@ -426,7 +426,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     for (FilePackage filePackage : fps) {
 
                         Iterator<DownloadLink> iter = filePackage.getDownloadLinks().iterator();
-                        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
+                        int maxspeed = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
                         if (maxspeed == 0) {
                             maxspeed = Integer.MAX_VALUE;
                         }

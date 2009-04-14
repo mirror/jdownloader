@@ -99,7 +99,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
-        guiConfig = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
+        guiConfig = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
         internalTreeTable = new LinkGrabberTreeTable(new LinkGrabberTreeTableModel(this), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
         this.add(scrollPane, "cell 0 0");

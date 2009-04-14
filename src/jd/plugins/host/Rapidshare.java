@@ -34,6 +34,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.interaction.PackageManager;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.TextAreaDialog;
@@ -607,7 +608,7 @@ public class Rapidshare extends PluginForHost {
             // Premiumdownloads sind resumefähig
             dl.setResume(true);
             // Premiumdownloads erlauben chunkload
-            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+            dl.setChunkNum(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
             URLConnectionAdapter urlConnection;
             try {
                 urlConnection = dl.connect(br);
@@ -620,7 +621,7 @@ public class Rapidshare extends PluginForHost {
                 // Premiumdownloads sind resumefähig
                 dl.setResume(true);
                 // Premiumdownloads erlauben chunkload
-                dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+                dl.setChunkNum(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
 
                 urlConnection = dl.connect(br);
             }

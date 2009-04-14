@@ -38,6 +38,7 @@ import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
@@ -148,7 +149,7 @@ public class JDRRGui extends JDialog implements ActionListener {
             JDRR.startServer(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null));
 
             try {
-                JLinkButton.openURL("http://localhost:" + (JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972)));
+                JLinkButton.openURL("http://localhost:" + (SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972)));
 
             } catch (Exception e1) {
                 // TODO Auto-generated catch block

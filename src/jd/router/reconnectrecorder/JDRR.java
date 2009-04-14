@@ -20,7 +20,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Vector;
 
-import jd.utils.JDUtilities;
+import jd.config.SubConfiguration;
 
 public class JDRR {
 
@@ -37,8 +37,8 @@ public class JDRR {
         running = true;
         steps.add("[[[HSRC]]]");
         try {
-            Server_Socket_HTTP = new ServerSocket(JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
-            Server_Socket_HTTPS = new ServerSocket(JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + 1);
+            Server_Socket_HTTP = new ServerSocket(SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
+            Server_Socket_HTTPS = new ServerSocket(SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + 1);
             new JDRRServer(Server_Socket_HTTP, serverip, 80, false).start();
             new JDRRServer(Server_Socket_HTTPS, serverip, 443, true).start();
         } catch (Exception e) {

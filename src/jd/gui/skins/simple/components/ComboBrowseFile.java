@@ -34,8 +34,8 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 
+import jd.config.SubConfiguration;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 class ComboBrowseFileEditor implements TableCellEditor, ActionListener {
@@ -115,7 +115,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     public ComboBrowseFile(String string) {
         Vector<String> list;
         try {
-            list = (Vector<String>) JDUtilities.getSubConfig("GUI").getProperty(string, new Vector<String>());
+            list = (Vector<String>) SubConfiguration.getConfig("GUI").getProperty(string, new Vector<String>());
         } catch (Exception e) {
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             list = new Vector<String>();
@@ -258,8 +258,8 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         files.remove(item);
         files.add(0, item);
 
-        JDUtilities.getSubConfig("GUI").setProperty(getName(), new Vector<String>(files.subList(0, Math.min(files.size(), 20))));
-        JDUtilities.getSubConfig("GUI").save();
+        SubConfiguration.getConfig("GUI").setProperty(getName(), new Vector<String>(files.subList(0, Math.min(files.size(), 20))));
+        SubConfiguration.getConfig("GUI").save();
 
         cmboInput.invalidate();
         cmboInput.setSelectedIndex(0);

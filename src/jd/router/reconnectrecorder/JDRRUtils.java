@@ -25,6 +25,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.http.Encoding;
 import jd.parser.Regex;
@@ -139,15 +140,15 @@ public class JDRRUtils {
                 location = new Regex(location, "https?://.*?/(.+)", Pattern.DOTALL).getMatch(0);
                 if (!oldlocation.startsWith("https")) {
                     if (location != null) {
-                        location = "http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + "/" + location;
+                        location = "http://localhost:" + SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + "/" + location;
                     } else {
-                        location = "http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + "/";
+                        location = "http://localhost:" + SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + "/";
                     }
                 } else {
                     if (location != null) {
-                        location = "https://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + "/" + location;
+                        location = "https://localhost:" + SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + "/" + location;
                     } else {
-                        location = "https://localhost:" + (JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + 1) + "/";
+                        location = "https://localhost:" + (SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + 1) + "/";
                     }
                 }
                 instance.buffer = instance.buffer.replaceAll(JDHexUtils.getHexString("Location: " + oldlocation), JDHexUtils.getHexString("Location: " + location));

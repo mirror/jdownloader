@@ -138,7 +138,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     public JDChat(PluginWrapper wrapper) {
         super(wrapper);
-        subConfig = JDUtilities.getSubConfig("JDCHAT");
+        subConfig = SubConfiguration.getConfig("JDCHAT");
 
         CHANNEL = this.getPluginConfig().getStringProperty("CHANNEL", CHANNEL);
         COMMANDS.add("/msg ");
@@ -1109,7 +1109,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     private void initChannel() {
-        String id = JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, JDLocale.isGerman() ? "german" : "english");
+        String id = SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, JDLocale.isGerman() ? "german" : "english");
 
         String lng = "english";
         if (id.contains("spanish")) {
@@ -1346,7 +1346,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
                 public void actionPerformed(ActionEvent e) {
                     SimpleGUI.CURRENTGUI.getContentPane().display(frame);
-                    SimpleGUI.CURRENTGUI.getTaskPane().switcher(tp);
+                  
                 }
 
             });

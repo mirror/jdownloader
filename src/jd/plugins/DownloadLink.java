@@ -29,6 +29,7 @@ import javax.swing.ImageIcon;
 
 import jd.config.Configuration;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.SingleDownloadController;
 import jd.controlling.SpeedMeter;
@@ -682,7 +683,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public boolean isLimited() {
         if (this.localSpeedLimit > 0) return true;
-        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0;
+        return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0;
     }
 
     public boolean isMirror() {

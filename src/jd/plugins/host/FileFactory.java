@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.reconnect.Reconnecter;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -100,7 +101,7 @@ public class FileFactory extends PluginForHost {
 
         br.setCookie(br.getURL(), "viewad11", "yes");
         String captchaCode = null;
-        int vp = JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18);
+        int vp = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18);
         int i = 30;
         File captchaFile = null;
 
@@ -138,7 +139,7 @@ public class FileFactory extends PluginForHost {
         Thread.sleep(2000);
         parameter.getLinkStatus().setStatusText(JDLocale.LF("plugin.filefactory.jac.send", "JAC send: %s", captchaCode));
         parameter.requestGuiUpdate();
-        JDUtilities.getSubConfig("JAC").setProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, vp);
+        SubConfiguration.getConfig("JAC").setProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, vp);
         Form captchaForm = br.getForm(1);
         captchaForm.put("captchaText", captchaCode);
         br.submitForm(captchaForm);

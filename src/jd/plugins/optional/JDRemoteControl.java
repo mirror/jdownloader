@@ -34,6 +34,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.Reconnecter;
@@ -181,7 +182,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 response.addContent("<pre>");
                 if (request.getParameters().containsKey("sub")) {
 
-                    config = JDUtilities.getSubConfig(((String) request.getParameters().get("sub")).toUpperCase());
+                    config = SubConfiguration.getConfig(((String) request.getParameters().get("sub")).toUpperCase());
                 }
                 Entry<String, Object> next;
                 for (Iterator<Entry<String, Object>> it = config.getProperties().entrySet().iterator(); it.hasNext();) {
@@ -203,7 +204,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
             // Get SpeedLimit
             else if (request.getRequestUrl().equals("/get/speedlimit")) {
-                response.addContent(JDUtilities.getSubConfig("DOWNLOAD").getProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, "0"));
+                response.addContent(SubConfiguration.getConfig("DOWNLOAD").getProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, "0"));
             }
 
             // Get Current DLs COUNT
@@ -527,8 +528,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             else if (request.getRequestUrl().matches("(?is).*/action/set/download/limit/[0-9]+.*")) {
                 Integer newdllimit = Integer.parseInt(new Regex(request.getRequestUrl(), "[\\s\\S]*/action/set/download/limit/([0-9]+).*").getMatch(0));
                 logger.fine("RemoteControl - Set max. Downloadspeed: " + newdllimit.toString());
-                JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, newdllimit.toString());
-                JDUtilities.getSubConfig("DOWNLOAD").save();
+                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, newdllimit.toString());
+                SubConfiguration.getConfig("DOWNLOAD").save();
                 response.addContent("newlimit=" + newdllimit);
             }
 
@@ -536,8 +537,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             else if (request.getRequestUrl().matches("(?is).*/action/set/download/max/[0-9]+.*")) {
                 Integer newsimdl = Integer.parseInt(new Regex(request.getRequestUrl(), "[\\s\\S]*/action/set/download/max/([0-9]+).*").getMatch(0));
                 logger.fine("RemoteControl - Set max. sim. Downloads: " + newsimdl.toString());
-                JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
-                JDUtilities.getSubConfig("DOWNLOAD").save();
+                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
+                SubConfiguration.getConfig("DOWNLOAD").save();
                 response.addContent("newmax=" + newsimdl);
             }
 

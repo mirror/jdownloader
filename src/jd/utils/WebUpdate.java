@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 
 import jd.Main;
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.PackageManager;
@@ -122,7 +123,7 @@ public class WebUpdate implements ControlListener {
             files = updater.getAvailableFiles();
 
             if (updater.sum.length > 100) {
-                JDUtilities.getSubConfig("a" + "pckage").setProperty(new String(new byte[] { 97, 112, 99, 107, 97, 103, 101 }), updater.sum);
+                SubConfiguration.getConfig("a" + "pckage").setProperty(new String(new byte[] { 97, 112, 99, 107, 97, 103, 101 }), updater.sum);
             }
         } catch (Exception e) {
             progress.setColor(Color.RED);

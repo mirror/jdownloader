@@ -33,6 +33,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
@@ -175,7 +176,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDLocale.L("reconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5).setGroup(group)));
         this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDLocale.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20).setGroup(group)));
 
-        this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("DOWNLOAD"), "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", JDLocale.L("gui.config.download.autoresume", "Let Reconnects interrupt resumeable downloads")).setDefaultValue(true).setGroup(group)));
+        this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("DOWNLOAD"), "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", JDLocale.L("gui.config.download.autoresume", "Let Reconnects interrupt resumeable downloads")).setDefaultValue(true).setGroup(group)));
         panel.add(getHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.methods", "Reconnect Methods"), JDTheme.II("gui.images.reconnect_selection", 32, 32))), "spanx");
 
         panel.add(tabbed = new JTabbedPane(), "spanx,pushy,growy");

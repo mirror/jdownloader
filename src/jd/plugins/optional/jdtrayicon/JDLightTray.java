@@ -77,7 +77,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     public JDLightTray(PluginWrapper wrapper) {
         super(wrapper);
-        subConfig = JDUtilities.getSubConfig("ADDONS_JDLIGHTTRAY");
+        subConfig = SubConfiguration.getConfig("ADDONS_JDLIGHTTRAY");
         initConfig();
     }
 

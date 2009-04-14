@@ -21,6 +21,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.plugins.DownloadLink;
@@ -62,7 +63,7 @@ public class Reconnecter {
         IS_RECONNECTING = true;
         if (Reconnecter.isGlobalDisabled()) {
             
-            if (System.currentTimeMillis() - lastIPUpdate > 1000 * JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) {
+            if (System.currentTimeMillis() - lastIPUpdate > 1000 * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) {
                 ipChangeSuccess = Reconnecter.checkExternalIPChange();
                 JDUtilities.getGUI().displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."), 60000);
             }
@@ -85,7 +86,7 @@ public class Reconnecter {
             int type = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER);
             IS_RECONNECTING = true;
             logger.info("DO RECONNECT NOW");
-            boolean interrupt = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);
+            boolean interrupt = SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);
             if (interrupt) {
                 controller.pauseDownloads(true);
 

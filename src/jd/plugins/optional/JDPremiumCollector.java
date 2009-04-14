@@ -28,6 +28,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountManager;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
@@ -55,7 +56,7 @@ public class JDPremiumCollector extends PluginOptional {
 
     public JDPremiumCollector(PluginWrapper wrapper) {
         super(wrapper);
-        subConfig = JDUtilities.getSubConfig("JDPREMIUMCOLLECTOR");
+        subConfig = SubConfiguration.getConfig("JDPREMIUMCOLLECTOR");
         initConfigEntries();
     }
 
@@ -264,10 +265,12 @@ public class JDPremiumCollector extends PluginOptional {
 
                     }
                 }
-                plg.getPlugin().setPremiumAccounts(accounts);
+             
+                AccountManager.getInstance().setAccountsForHost( plg.getPlugin(),accounts);
                 logger.finer(plg.getHost() + " : " + accounts.size() + " accounts inserted");
             } else {
-                plg.getPlugin().setPremiumAccounts(oldaccounts);
+        
+                AccountManager.getInstance().setAccountsForHost( plg.getPlugin(),oldaccounts);
                 logger.finer(plg.getHost() + " : " + oldaccounts.size() + " accounts inserted");
             }
             pc.increase(1);

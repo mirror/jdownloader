@@ -40,7 +40,7 @@ public class BatchReconnect extends ReconnectMethod {
     private static final String PROPERTY_BATCHTEXT = "BATCH_TEXT";
 
     public BatchReconnect() {
-        configuration = JDUtilities.getSubConfig("BATCHRECONNECT");
+        configuration = SubConfiguration.getConfig("BATCHRECONNECT");
     }
 
     @Override

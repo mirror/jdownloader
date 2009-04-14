@@ -21,7 +21,6 @@ import java.util.LinkedList;
 
 import jd.config.SubConfiguration;
 import jd.parser.Regex;
-import jd.utils.JDUtilities;
 
 public class PasswordList {
     public static LinkedList<String> PASSWORDLIST;
@@ -30,7 +29,7 @@ public class PasswordList {
     public static final String PROPERTY_PASSWORDLIST = "PASSWORDLIST";
 
     private static SubConfiguration getConfig() {
-        if (CONFIG == null) CONFIG = JDUtilities.getSubConfig(PROPERTY_PASSWORDLIST);
+        if (CONFIG == null) CONFIG = SubConfiguration.getConfig(PROPERTY_PASSWORDLIST);
         return CONFIG;
     }
 
@@ -44,13 +43,13 @@ public class PasswordList {
     public static ArrayList<String> getPasswordList() {
         if (LIST != null) return LIST;
 
-        LinkedList<String> oldList = (LinkedList<String>) JDUtilities.getSubConfig("unrarPasswords").getProperty("PASSWORDLIST");
+        LinkedList<String> oldList = (LinkedList<String>) SubConfiguration.getConfig("unrarPasswords").getProperty("PASSWORDLIST");
 
         if (oldList != null) {
-            JDUtilities.getSubConfig("unrarPasswords").setProperty("PASSWORDLIST", null);
+            SubConfiguration.getConfig("unrarPasswords").setProperty("PASSWORDLIST", null);
             addPasswords(oldList);
 
-            JDUtilities.getSubConfig("unrarPasswords").save();
+            SubConfiguration.getConfig("unrarPasswords").save();
             save();
         }
         ArrayList<String> list = new ArrayList<String>();

@@ -60,7 +60,7 @@ public class ConfigPanelGUI extends ConfigPanel {
 
     public ConfigPanelGUI(Configuration configuration) {
         super();
-        subConfig = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
+        subConfig = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
         initPanel();
 
         load();
@@ -76,9 +76,9 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         ConfigContainer look = new ConfigContainer(this, JDLocale.L("gui.config.gui.look.tab", "Anzeige & Bedienung"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, look));
-        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.LF("gui.config.gui.languageFileInfo", "Current Language File: %s from %s in version %s", JDUtilities.getSubConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, Locale.getDefault().toString()), JDLocale.getTranslater(), JDLocale.getVersion())).setGroup(langGroup));
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.LF("gui.config.gui.languageFileInfo", "Current Language File: %s from %s in version %s", SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, Locale.getDefault().toString()), JDLocale.getTranslater(), JDLocale.getVersion())).setGroup(langGroup));
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getSubConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}), "").setGroup(langGroup));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}), "").setGroup(langGroup));
         ce.setDefaultValue(Locale.getDefault());
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 /*LOOK*/
@@ -119,7 +119,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER, JDLocale.L("gui.config.reloadContainer", "Heruntergeladene Container einlesen")));
         ce.setDefaultValue(true);
 
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("GUI"), Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, JDLocale.L("gui.config.showContainerOnLoadInfo", "Detailierte Containerinformationen beim Öffnen anzeigen")));
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("GUI"), Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, JDLocale.L("gui.config.showContainerOnLoadInfo", "Detailierte Containerinformationen beim Öffnen anzeigen")));
         ce.setDefaultValue(false);
         
         /*Speedmeter*/
