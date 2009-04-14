@@ -48,7 +48,7 @@ public class WrzutaPl extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Nie odnaleziono pliku.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("anie</h3><h2>(.*?)</h2><div", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+        filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("anie</h3>\\s+<h2>(.*?)</h2>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
         String filesize = br.getRegex(Pattern.compile("Rozmiar: <strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filetype = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/([^/]*)").getMatch(0);
@@ -69,24 +69,31 @@ public class WrzutaPl extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
+        boolean addext = true;
         String fileid = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/" + filetype + "/([^/]*)").getMatch(0);
         if (fileid == null || filetype == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String linkurl = null;
         if (filetype.equalsIgnoreCase("audio")) {
-            linkurl = "http://wrzuta.pl/aud/file/" + fileid + "/";
+            linkurl = br.getRegex("wrzuta_flv=(.*?)&wrzuta_mini").getMatch(0);
+            if (linkurl == null) linkurl = "http://wrzuta.pl/aud/file/" + fileid + "/";
+            else addext=false;
         }
         if (filetype.equalsIgnoreCase("film")) {
-            linkurl = "http://wrzuta.pl/vid/file/" + fileid + "/";
+            linkurl = br.getRegex("wrzuta_flv=(.*?)&wrzuta_mini").getMatch(0);
+            if (linkurl == null) linkurl = "http://wrzuta.pl/vid/file/" + fileid + "/";
+            else addext=false;
         }
         if (filetype.equalsIgnoreCase("obraz")) {
-            linkurl = "http://wrzuta.pl/img/file/" + fileid + "/";
-        }
+            linkurl = br.getRegex("wrzuta_flv=(.*?)&wrzuta_mini").getMatch(0);
+            if (linkurl == null) linkurl = "http://wrzuta.pl/img/file/" + fileid + "/";
+            else addext=false;
+        } 
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setDebug(true);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, linkurl);
         URLConnectionAdapter con = dl.getConnection();
-        if (!con.getContentType().equalsIgnoreCase("unknown")) {
+        if (!con.getContentType().equalsIgnoreCase("unknown") && addext != false ) {
             if (con.getContentType().contains("mpeg3")) {
                 downloadLink.setFinalFileName(filename.trim() + ".mp3");
             } else if (con.getContentType().contains("flv")) {
