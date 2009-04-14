@@ -50,12 +50,11 @@ public class Cryptlinkws extends PluginForDecrypt {
             br.getPage(parameter);
             String link = br.getRegex("unescape\\(('|\")(.*?)('|\")\\)").getMatch(1);
             link = fixLink(Encoding.htmlDecode(link));
-
+            
             br.getPage("http://www.cryptlink.ws/" + link);
             link = br.getRegex("unescape\\(('|\")(.*?)('|\")\\)").getMatch(1);
-            link = fixLink(link);
+            link = fixLink(Encoding.htmlDecode(link));
 
-            // link = Encoding.htmlDecode(Encoding.htmlDecode(link));
             if (link.startsWith("cryptfiles/")) {
                 /* Weiterleitung durch Server */
                 br.getPage("http://www.cryptlink.ws/" + link);
