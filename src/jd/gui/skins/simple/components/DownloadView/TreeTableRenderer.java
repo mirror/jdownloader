@@ -199,7 +199,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 progress.setForeground(COL_PROGRESS_ERROR);
                 progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
                 clearSB();
-                col = ((TableColumnExt) table.getColumnModel().getColumn(column));
+                col = this.table.getCols()[column];
                 if (col.getWidth() < 60) {
 
                 } else if (col.getWidth() < 170) {
