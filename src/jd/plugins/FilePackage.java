@@ -35,7 +35,7 @@ class FilePackageBroadcaster extends JDBroadcaster<FilePackageListener, FilePack
 
     @Override
     protected void fireEvent(FilePackageListener listener, FilePackageEvent event) {
-        listener.handle_FilePackageEvent(event);
+        listener.onFilePackageEvent(event);
     }
 
 }
@@ -126,7 +126,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 downloadLinks.add(link);
                 link.setFilePackage(this);
                 link.getBroadcaster().addListener(this);
-                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DL_ADDED));
+                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED));
             }
             link.setFilePackage(this);
         }
@@ -139,12 +139,12 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 downloadLinks.add(index, link);
                 link.setFilePackage(this);
                 link.getBroadcaster().addListener(this);
-                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FP_UPDATE));
+                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
             } else {
                 downloadLinks.add(index, link);
                 link.setFilePackage(this);
                 link.getBroadcaster().addListener(this);
-                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DL_ADDED));
+                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED));
             }
         }
     }
@@ -440,8 +440,8 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             if (ret) {
                 link.setFilePackage(null);
                 link.getBroadcaster().removeListener(this);
-                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DL_REMOVED));
-                if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FP_EMPTY));
+                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_REMOVED));
+                if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_EMPTY));
             }
         }
     }
@@ -534,7 +534,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 }
             });
         }
-        getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FP_UPDATE));
+        getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
     }
 
     /**

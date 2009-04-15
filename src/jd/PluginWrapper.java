@@ -156,7 +156,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     public void setUsePlugin(boolean bool) {
         getPluginConfig().setProperty("USE_PLUGIN", bool);
         getPluginConfig().save();
-        if (JDUtilities.getController() != null) DownloadController.getDownloadController().fireRefresh();
+        if (JDUtilities.getController() != null) DownloadController.getDownloadController().fireGlobalUpdate();
     }
 
     public boolean canHandle(String data) {

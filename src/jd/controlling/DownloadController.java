@@ -30,7 +30,7 @@ class DownloadControllerBroadcaster extends JDBroadcaster<DownloadControllerList
 
     @Override
     protected void fireEvent(DownloadControllerListener listener, DownloadControllerEvent event) {
-        listener.handle_DownloadControllerEvent(event);
+        listener.onDownloadControllerEvent(event);
 
     }
 
@@ -47,10 +47,10 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     private transient DownloadControllerBroadcaster broadcaster = new DownloadControllerBroadcaster();
 
-    private Timer Save_Async; /*
-                               * Async-Save, Linkliste wird verzögert
-                               * gespeichert
-                               */
+    private Timer asyncSaveIntervalTimer; /*
+                                           * Async-Save, Linkliste wird
+                                           * verzögert gespeichert
+                                           */
 
     public synchronized static DownloadController getDownloadController() {
         /* darf erst nachdem der JDController init wurde, aufgerufen werden */
@@ -69,9 +69,9 @@ public class DownloadController implements FilePackageListener, DownloadControll
         logger = jd.controlling.JDLogger.getLogger();
         controller = JDUtilities.getController();
         initDownloadLinks();
-        Save_Async = new Timer(2000, this);
-        Save_Async.setInitialDelay(2000);
-        Save_Async.setRepeats(false);
+        asyncSaveIntervalTimer = new Timer(2000, this);
+        asyncSaveIntervalTimer.setInitialDelay(2000);
+        asyncSaveIntervalTimer.setRepeats(false);
         broadcaster.addListener(this);/*
                                        * erst nachdem die packages geinit
                                        * wurden!
@@ -94,14 +94,14 @@ public class DownloadController implements FilePackageListener, DownloadControll
             packages = new Vector<FilePackage>();
             File file = JDUtilities.getResourceFile("backup/links.linkbackup");
             if (file.exists()) {
-                logger.severe("Strange: No Linklist,Try to restore from backup file");
+                logger.warning("Strange: No Linklist,Try to restore from backup file");
                 controller.loadContainerFile(file);
             }
             return;
         } else if (packages.size() == 0 && Main.returnedfromUpdate()) {
             File file = JDUtilities.getResourceFile("backup/links.linkbackup");
             if (file.exists() && file.lastModified() >= System.currentTimeMillis() - 10 * 60 * 1000l) {
-                logger.severe("Strange: Empty Linklist,Try to restore from backup file");
+                logger.warning("Strange: Empty Linklist,Try to restore from backup file");
                 controller.loadContainerFile(file);
             }
             return;
@@ -117,7 +117,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
     }
 
     public void saveDownloadLinksAsync() {
-        Save_Async.restart();
+        asyncSaveIntervalTimer.restart();
     }
 
     /**
@@ -128,7 +128,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
      */
     public void saveDownloadLinksSync() {
         synchronized (packages) {
-            System.out.println("DOWNLOADCONTROLLER: Save LinkList (Sync)");
+
             JDUtilities.getDatabaseConnector().saveLinks(packages);
         }
     }
@@ -263,7 +263,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                 added = true;
                 fp.getBroadcaster().addListener(this);
                 packages.add(fp);
-                if (added) broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FP));
+                if (added) broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE));
             }
         }
     }
@@ -286,7 +286,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
             }
             packages.add(index, fp);
         }
-        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
     }
 
     public void removePackage(FilePackage fp2) {
@@ -295,7 +295,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
             fp2.abortDownload();
             fp2.getBroadcaster().removeListener(this);
             packages.remove(fp2);
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REMOVE_FP));
+            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REMOVE_FILPACKAGE));
         }
     }
 
@@ -380,14 +380,13 @@ public class DownloadController implements FilePackageListener, DownloadControll
                              * fertige datei sollte auch auf der platte sein und
                              * nicht nur als fertig in der liste
                              */
-                            logger.info("Link owner: " + nextDownloadLink.getHost() + nextDownloadLink);
+
                             return nextDownloadLink;
                         }
                     }
                     if ((nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || nextDownloadLink.getLinkStatus().isPluginActive()) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
                         if (nextDownloadLink.getFinalFileName() != null) {
                             /* Dateiname muss fertig geholt sein */
-                            logger.info("Link owner: " + nextDownloadLink.getHost() + nextDownloadLink);
                             return nextDownloadLink;
                         }
                     }
@@ -398,51 +397,51 @@ public class DownloadController implements FilePackageListener, DownloadControll
     }
 
     public void actionPerformed(ActionEvent arg0) {
-        if (arg0.getSource() == Save_Async) {
+        if (arg0.getSource() == asyncSaveIntervalTimer) {
             this.saveDownloadLinksSync();
         }
     }
 
-    public void fireUpdate() {
-        this.getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+    public void fireStructureUpdate() {
+        this.getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
     }
 
-    public void fireRefresh() {
+    public void fireGlobalUpdate() {
         this.getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_ALL));
     }
 
-    public void fireRefresh_Specific(Object param) {
+    public void fireDownloadLinkUpdate(Object param) {
         this.getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_SPECIFIC, param));
     }
 
-    public void handle_DownloadControllerEvent(DownloadControllerEvent event) {
+    public void onDownloadControllerEvent(DownloadControllerEvent event) {
         switch (event.getID()) {
-        case DownloadControllerEvent.ADD_FP:
-            this.fireUpdate();
+        case DownloadControllerEvent.ADD_FILEPACKAGE:
+            this.fireStructureUpdate();
             break;
-        case DownloadControllerEvent.REMOVE_FP:
-            this.fireUpdate();
+        case DownloadControllerEvent.REMOVE_FILPACKAGE:
+            this.fireStructureUpdate();
             break;
-        case DownloadControllerEvent.UPDATE:
+        case DownloadControllerEvent.REFRESH_STRUCTURE:
             this.saveDownloadLinksAsync();
             break;
         }
     }
 
-    public void handle_FilePackageEvent(FilePackageEvent event) {
+    public void onFilePackageEvent(FilePackageEvent event) {
         switch (event.getID()) {
-        case FilePackageEvent.DL_ADDED:
-            this.fireUpdate();
+        case FilePackageEvent.DOWNLOADLINK_ADDED:
+            this.fireStructureUpdate();
             break;
-        case FilePackageEvent.DL_REMOVED:
-            this.fireUpdate();
+        case FilePackageEvent.DOWNLOADLINK_REMOVED:
+            this.fireStructureUpdate();
             break;
-        case FilePackageEvent.FP_UPDATE:
-            this.fireUpdate();
+        case FilePackageEvent.FILEPACKAGE_UPDATE:
+            this.fireStructureUpdate();
             break;
-        case FilePackageEvent.FP_EMPTY:
+        case FilePackageEvent.FILEPACKAGE_EMPTY:
             this.removePackage((FilePackage) event.getSource());
-            this.fireUpdate();
+            this.fireStructureUpdate();
             break;
 
         }

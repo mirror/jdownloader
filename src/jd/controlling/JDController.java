@@ -721,7 +721,7 @@ public class JDController implements ControlListener {
 
                 }
             }
-            DownloadController.getDownloadController().fireRefresh_Specific(al);
+            DownloadController.getDownloadController().fireDownloadLinkUpdate(al);
         }
 
     }

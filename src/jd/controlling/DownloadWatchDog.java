@@ -88,7 +88,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                 al.add(singleDownloadController.abortDownload().getDownloadLink());
             }
 
-            DownloadController.getDownloadController().fireRefresh_Specific(al);
+            DownloadController.getDownloadController().fireDownloadLinkUpdate(al);
             boolean check = true;
             // Warteschleife bis alle activelinks abgebrochen wurden
             logger.finer("Warten bis alle activeLinks abgebrochen wurden.");
@@ -113,7 +113,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         }
         logger.info("Active links abgebrochen");
 
-        DownloadController.getDownloadController().fireRefresh_Specific(al);
+        DownloadController.getDownloadController().fireDownloadLinkUpdate(al);
 
         progress.finalize();
         logger.finer("Abbruch komplett");
@@ -162,7 +162,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
             }
         }        
-        DownloadController.getDownloadController().fireRefresh();
+        DownloadController.getDownloadController().fireGlobalUpdate();
 
     }
 
@@ -448,7 +448,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     totalSpeed = 0;
                 }
                 if (updates.size() > 0) {
-                    DownloadController.getDownloadController().fireRefresh_Specific(updates);
+                    DownloadController.getDownloadController().fireDownloadLinkUpdate(updates);
                 }
                 int ret = 0;
                 if (Interaction.areInteractionsInProgress() && activeDownloadControllers.size() < getSimultanDownloadNum() && !pause) {

@@ -691,7 +691,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void requestGuiUpdate() {
-        DownloadController.getDownloadController().fireRefresh_Specific(this);
+        DownloadController.getDownloadController().fireDownloadLinkUpdate(this);
     }
 
     // Setzt alle DownloadWErte zurück

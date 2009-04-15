@@ -367,7 +367,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
             for (int i = 0; i < selected_links.size(); i++) {
                 selected_links.get(i).setEnabled(b);
             }
-            JDUtilities.getDownloadController().getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.UPDATE));
+            JDUtilities.getDownloadController().getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
             return;
         }
         case TreeTableAction.NEW_PACKAGE: {
@@ -439,12 +439,12 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
             });
         }
-        JDUtilities.getDownloadController().fireUpdate();
+        JDUtilities.getDownloadController().fireStructureUpdate();
     }
 
-    public void handle_DownloadControllerEvent(DownloadControllerEvent event) {
+    public void onDownloadControllerEvent(DownloadControllerEvent event) {
         switch (event.getID()) {
-        case DownloadControllerEvent.UPDATE:
+        case DownloadControllerEvent.REFRESH_STRUCTURE:
             updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
             break;
         case DownloadControllerEvent.REFRESH_SPECIFIC:
