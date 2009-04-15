@@ -109,7 +109,7 @@ public class FileloadUs extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage("http://fileload.us/?op=change_lang&lang=english");
+        br.setCookie("http://www.fileload.us/", "lang", "english");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("You\\s+have\\s+requested:\\s+(.*?)\\s+-").getMatch(0));

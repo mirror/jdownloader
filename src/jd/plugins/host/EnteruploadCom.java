@@ -109,7 +109,7 @@ public class EnteruploadCom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage("http://www.enterupload.com/?op=change_lang&lang=english");
+        br.setCookie("http://www.enterupload.com/", "lang", "english");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("You\\s+have\\s+requested\\s+<font\\s+color=\"red\">http://[\\w\\.]*?enterupload\\.com/[a-z0-9]+/(.*?)</font>").getMatch(0));

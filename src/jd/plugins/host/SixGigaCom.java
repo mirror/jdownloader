@@ -109,7 +109,7 @@ public class SixGigaCom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage("http://6giga.com/?op=change_lang&lang=english");
+        br.setCookie("http://www.6giga.com/", "lang", "english");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("You\\s+have\\s+requested\\s+<font\\s+color=\"red\">http://[\\w\\.]*?6giga\\.com/[a-z0-9]+/(.*?)</font>").getMatch(0));
