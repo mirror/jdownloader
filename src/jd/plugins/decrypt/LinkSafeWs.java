@@ -38,11 +38,16 @@ public class LinkSafeWs extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        String[][] files = br.getRegex(Pattern.compile("<input type='hidden' name='id' value='(.*?)' />(.*?)<input type='hidden' name='f' value='(.*?)' />", Pattern.DOTALL)).getMatches();
+        String[][] files = br.getRegex(Pattern.compile("name='id' value='(.*?)'(.*?)name='f' value='(.*?)' />", Pattern.DOTALL)).getMatches();
         progress.setRange(files.length);
         for (String[] elements : files) {
             br.postPage("http://www.linksafe.ws/go/", "id=" + elements[0] + "&f=" + elements[2] + "&Download.x=5&Download.y=10&Download=Download");
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(br.getRegex("src=\"(.*?)\">").getMatch(0))));
+            String codedlink = br.getRegex("iframe.*?src=\"(.*?)\">").getMatch(0);
+            codedlink = codedlink.replaceAll("&#", ";&#");
+            codedlink = codedlink.replaceFirst(";&", "&");
+            codedlink = codedlink + ";";
+            System.out.println(codedlink);
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(codedlink)));
             progress.increase(1);
         }
 
