@@ -32,9 +32,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-public class FileloadUs extends PluginForHost {
+public class SixGigaCom extends PluginForHost {
 
-    public FileloadUs(PluginWrapper wrapper) {
+    public SixGigaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -48,7 +48,7 @@ public class FileloadUs extends PluginForHost {
         form.remove("method_premium");
         form.put("referer", Encoding.urlEncode(downloadLink.getDownloadURL()));
         br.submitForm(form);
-        if (br.containsHTML("You have to wait")) {
+        if (br.containsHTML("You have reached")) {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs != null) hours = Integer.parseInt(tmphrs);
@@ -66,11 +66,11 @@ public class FileloadUs extends PluginForHost {
             URLConnectionAdapter con = br.openGetConnection(captchaurl);
             File file = this.getLocalCaptchaFile(this);
             Browser.download(file, con);
-            String code = Plugin.getCaptchaCode(file, this, downloadLink);
+            String code = Plugin.getCaptchaCode(this, "fileload.us", file, false, downloadLink);
             form.put("code", code);
             form.setAction(downloadLink.getDownloadURL());
             // Ticket Time
-            this.sleep(15000, downloadLink, "Download Ticket: ");
+            this.sleep(30000, downloadLink, "Download Ticket: ");
             br.submitForm(form);
             URLConnectionAdapter con2 = br.getHttpConnection();
             String dllink = br.getRedirectLocation();
@@ -103,17 +103,17 @@ public class FileloadUs extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://fileload.us/tos.html";
+        return "http://6giga.com/tos.html";
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage("http://fileload.us/?op=change_lang&lang=english");
+        br.getPage("http://6giga.com/?op=change_lang&lang=english");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("You\\s+have\\s+requested:\\s+(.*?)\\s+-").getMatch(0));
-        String filesize = br.getRegex("Size\\s+\\((.*?)\\)</font>").getMatch(0);
+        if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex("You\\s+have\\s+requested\\s+<font\\s+color=\"red\">http://[\\w\\.]*?6giga\\.com/[a-z0-9]+/(.*?)</font>").getMatch(0));
+        String filesize = br.getRegex("\\s+\\((.*?)\\)</font>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
@@ -122,7 +122,7 @@ public class FileloadUs extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision$");
+        return getVersion("$Revision: 5249 $");
     }
 
     @Override

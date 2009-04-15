@@ -49,12 +49,14 @@ public class EnteruploadCom extends PluginForHost {
         form.put("referer", Encoding.urlEncode(downloadLink.getDownloadURL()));
         br.submitForm(form);
         if (br.containsHTML("You have reached")) {
-            int minutes = 0, seconds = 0;
+            int minutes = 0, seconds = 0, hours = 0;
+            String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
+            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
             String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
             if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-            String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?\\)").getMatch(0);
+            String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
             if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-            int waittime = ((60 * minutes) + seconds + 1) * 1000;
+            int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         } else {
             form = br.getFormbyProperty("name", "F1");
@@ -67,19 +69,25 @@ public class EnteruploadCom extends PluginForHost {
             String code = Plugin.getCaptchaCode(this, "fileload.us", file, false, downloadLink);
             form.put("code", code);
             form.setAction(downloadLink.getDownloadURL());
-            this.sleep(40000, downloadLink);
+            // Ticket Time
+            this.sleep(40000, downloadLink, "Download Ticket: ");
             br.submitForm(form);
             URLConnectionAdapter con2 = br.getHttpConnection();
-            if (con2.getContentType().contains("html")) {
+            String dllink = br.getRedirectLocation();
+            if (con2.getContentType().contains("html")) {               
                 String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
-                logger.warning(error);
-                if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
-                }
+                if (error != null) {
+                    logger.warning(error);
+                    if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
+                    }
+                }                
+                if (br.containsHTML("Download Link Generated"))
+                    dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);                
             }
-            dl = br.openDownload(downloadLink, br.getRedirectLocation());
+            dl = br.openDownload(downloadLink, dllink);
             dl.startDownload();
         }
     }
