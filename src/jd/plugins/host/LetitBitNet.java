@@ -85,32 +85,31 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        Form forms[] = br.getForms();
+        Form dl1 = br.getFormbyProperty("id", "dvifree");
         String captchaurl = null;
-        if (forms.length != 8) {
+        if (dl1 == null) {
             // first trying to bypass block using webproxy:
             br.setFollowRedirects(true);
             String randomain = String.valueOf((int) (Math.random() * 9 + 1));
             br.getPage("http://www.gur" + randomain + ".info/index.php");
             br.postPage("http://www.gur" + randomain + ".info/index.php", "q=" + downloadLink.getDownloadURL() + "&hl[include_form]=0&hl[remove_scripts]=0&hl[accept_cookies]=1&hl[show_images]=1&hl[show_referer]=0&hl[strip_meta]=0&hl[strip_title]=0&hl[session_cookies]=0");
-            forms = br.getForms();
             captchaurl = br.getRegex(Pattern.compile("<div\\sclass=\"cont\\sc2[^>]*>\\s+<br /><br />\\s+<img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
 
             // formaction = forms[3].action;
             if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.letitbitnet.errors.countryblock", "Letitbit forbidden downloading this file in your country"));
 
         } else {
-            String id = forms[3].getVarsMap().get("uid");
+            String id = dl1.getVarsMap().get("uid");
             captchaurl = "http://letitbit.net/cap.php?jpg=" + id + ".jpg";
 
         }
-        Form down = br.getFormbyProperty("id", "Premium");
+        Form down = br.getFormbyProperty("id", "dvifree");
         URLConnectionAdapter con = br.openGetConnection(captchaurl);
         File file = this.getLocalCaptchaFile(this);
         Browser.download(file, con);
         down.setMethod(Form.MethodType.POST);
         down.put("frameset", "Download+file");
-        String id2 = forms[3].getVarsMap().get("uid");
+        String id2 = dl1.getVarsMap().get("uid");
         // first trying to bypass captcha
         down.put("cap", "2f2411");
         down.put("uid2", "c0862b659695");
