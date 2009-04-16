@@ -17,8 +17,10 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
+import java.util.Vector;
 
 import jd.PluginWrapper;
+import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -39,23 +41,9 @@ public class XenonLinkNet extends PluginForDecrypt {
 
         br.getPage("http://www.xenonlink.net/index.php?p=2&dg=" + dataCode);
 
-        String password = br.getRegex("Passwort:.*<br>(.*?)</font>").getMatch(0);
-
-        /*
-         * Will diesen Namen als Namen für das Package benutzen.
-         */
-        // String name =
-        // br.getRegex("<font color=white size=4>(.*?)</font>").getMatch(0);
-        String[] links = br.getRegex("<br>(http://.*?)\\s").getColumn(0);
-
-        progress.setRange(links.length);
-        for (String element : links) {
-            DownloadLink dLink = createDownloadlink(element);
-            dLink.addSourcePluginPassword(password);
-            decryptedLinks.add(dLink);
-
-            progress.increase(1);
-        }
+        String jdlist = br.getRegex("<body bgcolor=#3366CC>(.*)").getMatch(0);
+        Vector<DownloadLink> links = new DistributeData(jdlist).findLinks();
+        decryptedLinks.addAll(links);
 
         return decryptedLinks;
     }
