@@ -251,7 +251,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         }
     }
 
-    private void stopLinkGatherer() {
+    private void stopLinkGatherer() {        
         lc.getBroadcaster().removeListener(this);
         if (gatherer != null && gatherer.isAlive()) {
             gatherer_running = false;
@@ -436,6 +436,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                     break;
                 case LinkGrabberTreeTableAction.CLEAR:
                     stopLinkGatherer();
+                    lc.abortLinkCheck();
                     selected_packages = new Vector<LinkGrabberFilePackage>(packages);
                     break;
                 case LinkGrabberTreeTableAction.ADD_SELECTED:
@@ -720,7 +721,13 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     public void handle_LinkCheckEvent(LinkCheckEvent event) {
         switch (event.getID()) {
         case LinkCheckEvent.AFTER_CHECK:
-            afterLinkGrabber((Vector<DownloadLink>) event.getParameter());
+            if (event.getParameter() instanceof Vector) {
+                afterLinkGrabber((Vector<DownloadLink>) event.getParameter());
+            } else if (event.getParameter() instanceof DownloadLink) {
+                Vector<DownloadLink> links = new Vector<DownloadLink>();
+                links.add((DownloadLink) event.getParameter());
+                afterLinkGrabber(links);
+            }
             break;
         case LinkCheckEvent.ABORT:
             stopLinkGatherer();
