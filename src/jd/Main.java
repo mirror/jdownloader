@@ -242,7 +242,7 @@ public class Main {
 
             }
         }
-        if(JDUtilities.getJavaVersion()>=1.6)UIManager.put(LafWidget.ANIMATION_KIND, AnimationKind.SLOW);
+        if(JDUtilities.getJavaVersion()>=1.6)UIManager.put(LafWidget.ANIMATION_KIND, AnimationKind.REGULAR);
         LOGGER.info("init Eventmanager");
         Interaction.initTriggers();
         LOGGER.info("init Localisation");

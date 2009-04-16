@@ -58,9 +58,9 @@ public class JDProgressBar extends JProgressBar {
     }
 
     public void paintComponent(Graphics g) {
-super.paintComponent(g);
-if(icon!=null){
-    g.drawImage(icon.getImage(),2, (getHeight()-icon.getIconHeight())/2, null); 
-}
+        super.paintComponent(g);
+        if (icon != null) {
+            g.drawImage(icon.getImage(), 0, (getHeight() - icon.getIconHeight()) / 2+1, null);
+        }
     }
 }

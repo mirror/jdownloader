@@ -180,6 +180,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             this.noTitlePane = true;
 
         }
+        noTitlePane=false;
         toolBar = new JDToolBar(noTitlePane);
 
         System.out.println(ui);
@@ -547,7 +548,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // panel.add(this.statusBar, "cell 0 4,spanx");
         // logDialog = new LogDialog(this, logger);
 
-        JPanel panel = new JPanel(new MigLayout("ins 0,wrap 3", "[fill]0[shrink]0[fill,grow 100]", "[]0[grow,fill]0[]0[]0[]"));
+        JPanel panel = new JPanel(new MigLayout("ins 0,wrap 3", "[fill]0[shrink]0[fill,grow 100]", "[]0[grow,fill]0[]0[]0[]0[]"));
 
         setContentPane(panel);
         panel.add(this.toolBar, "spanx");
@@ -568,7 +569,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // panel.add(generalPurposeTasks, "cell 0 2");
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
         panel.add(progressBar, "spanx,hidemode 3,cell 0 3");
-        panel.add(this.statusBar, "spanx, cell 0 4");
+      
+        panel.add(new PremiumStatus(), "spanx, cell 0 4");
+        panel.add(this.statusBar, "spanx, cell 0 5");
 
     }
 

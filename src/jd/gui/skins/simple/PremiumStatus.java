@@ -101,7 +101,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
             });
             pg.setStringPainted(true);
             pg.setVisible(false);
-            add(pg, "width 100!,height 16!,hidemode 3");
+            add(pg, "width 80!,height 16!,hidemode 3");
 
         }
         config = SubConfiguration.getConfig("PREMIUMSTATUS");
@@ -229,7 +229,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                 left += ai.getTrafficLeft();
             }
             bars[i].setVisible(true);
-            bars[i].setIcon(JDImage.getScaledImageIcon(plugin.getHosterIcon(), 12, 12));
+            bars[i].setIcon(plugin.getHosterIcon());
             bars[i].setMaximum(max);
             bars[i].setAlignmentX(RIGHT_ALIGNMENT);
             bars[i].setValue(left);
@@ -240,7 +240,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
             } else {
                 bars[i].setMaximum(10);
                 bars[i].setValue(10);
-                bars[i].setString(host);
+                bars[i].setString("∞");
                 bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.unlimited_traffic.tooltip", "%s -- Unlimited traffic! You can download as much as you want to.", host));
 
             }

@@ -743,10 +743,10 @@ public abstract class PluginForHost extends Plugin {
         if (dummy.length() > 2) dummy = dummy.substring(0, 2);
         g.setFont(new Font("Arial", Font.BOLD, size));
         int ww = g.getFontMetrics().stringWidth(dummy);
-        g.setColor(Color.BLACK);
-        g.drawRect(0, 0, w - 1, h - 1);
+//        g.setColor(Color.BLACK);
+//        g.drawRect(0, 0, w - 1, h - 1);
 
-        g.setColor(Color.GRAY.brighter());
+        g.setColor(Color.WHITE);
         g.fillRect(1, 1, w - 2, h - 2);
         g.setColor(Color.BLACK);
         g.drawString(dummy, (w - ww) / 2, 2 + size);
