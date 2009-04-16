@@ -1208,7 +1208,12 @@ public class Serienjunkies extends PluginForDecrypt {
                             getPage(br2k, "http://serienjunkies.org/?s=" + cryptedLink.getCryptedUrl().replaceFirst(".*/", "").replaceFirst("\\.html?$", ""));
                             String[] info = getLinkName(cryptedLink.getCryptedUrl(), br2k.toString());
                             logger.warning("use Mirror");
-                            mirrors = getMirrors(cryptedLink.getCryptedUrl(), info[2]);
+                            try {
+                                mirrors = getMirrors(cryptedLink.getCryptedUrl(), info[2]);
+							} catch (Exception e) {
+								// TODO: handle exception
+							}
+
                         }
                         if (mirrors != null) {
                             for (String element : mirrors) {
