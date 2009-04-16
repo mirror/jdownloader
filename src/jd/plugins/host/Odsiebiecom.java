@@ -44,6 +44,15 @@ public class Odsiebiecom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             br.getPage(downloadLink.getDownloadURL());
+            /* several redirects possible if not correct link at the beginnging */
+            if (br.getRedirectLocation() != null) {
+                downloadLink.setUrlDownload(br.getRedirectLocation());
+                br.getPage(downloadLink.getDownloadURL());
+            }
+            if (br.getRedirectLocation() != null) {
+                downloadLink.setUrlDownload(br.getRedirectLocation());
+                br.getPage(downloadLink.getDownloadURL());
+            }
             if (br.getRedirectLocation() == null) {
                 String filename = br.getRegex("Nazwa\\s+pliku:</dt>\\s+<dd[^>]*?>(.*?)dd>").getMatch(0);
                 filename = filename.replaceAll("<!--.*?-->", " ");
@@ -54,7 +63,7 @@ public class Odsiebiecom extends PluginForHost {
                 return true;
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         downloadLink.setAvailable(false);
         return false;

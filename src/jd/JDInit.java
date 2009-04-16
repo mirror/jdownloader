@@ -518,7 +518,7 @@ public class JDInit {
         new HostPluginWrapper("Mediafire.Com", "MediafireCom", "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?.+|file/.+)");
         new HostPluginWrapper("MySpace.Com", "MySpaceCom", "myspace://.+");
         new HostPluginWrapper("MyVideo.de", "MyVideo", "http://[\\w\\.]*?myvideo.*?\\.llnwd\\.net/d[\\d]+/(movie[\\d]+/.+/|movies/.+/)[\\d]+\\.flv");
-        new HostPluginWrapper("Odsiebie.com", "Odsiebiecom", "http://[\\w\\.]*?odsiebie\\.com/pokaz/\\d+---[a-zA-Z0-9]+.html");
+        new HostPluginWrapper("Odsiebie.com", "Odsiebiecom", "http://[\\w\\.]*?odsiebie\\.com/(pokaz|pobierz)/\\d+---[a-zA-Z0-9]+");
         new HostPluginWrapper("Przeslij.net", "Przeslijnet", "http://www[\\d]?\\.przeslij\\.net/download\\.php\\?file=(.*)");
         new HostPluginWrapper("rappers.in", "RappersIn", "(httpRappersIn://[\\w\\.]*?.+)");
         new HostPluginWrapper("R-b-a.De", "RbaDe", "http://[\\w\\.]*?r-b-a\\.de/download\\.php\\?FILE=(\\d+)-(\\d)\\.mp3&PATH=(\\d)");
