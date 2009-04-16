@@ -105,8 +105,8 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         this.add(scrollPane, "cell 0 0");
         FilePackageInfo = new LinkGrabberFilePackageInfo();
 
-        Update_Async = new Timer(50, this);
-        Update_Async.setInitialDelay(50);
+        Update_Async = new Timer(200, this);
+        Update_Async.setInitialDelay(200);
         Update_Async.setRepeats(false);
         gathertimer = new Timer(2000, LinkGrabberPanel.this);
         gathertimer.setInitialDelay(2000);
@@ -251,7 +251,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         }
     }
 
-    private void stopLinkGatherer() {        
+    private void stopLinkGatherer() {
         lc.getBroadcaster().removeListener(this);
         if (gatherer != null && gatherer.isAlive()) {
             gatherer_running = false;
