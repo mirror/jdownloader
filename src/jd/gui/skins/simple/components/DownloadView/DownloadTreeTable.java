@@ -150,11 +150,11 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         // JDTheme.C("gui.color.downloadlist.row_package", "fffa7c"),
         // Color.BLACK));
 
-//        addFinishedHighlighter();
+        // addFinishedHighlighter();
         addDisabledHighlighter();
         addPostErrorHighlighter();
         addWaitHighlighter();
-//        addErrorHighlighter();
+        // addErrorHighlighter();
 
         // addHighlighter(new FilepackageRowHighlighter(this, Color.RED,
         // Color.BLUE, Color.RED, Color.BLUE) {
@@ -302,9 +302,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             TableColumnExt tableColumn = getColumnFactory().createAndConfigureTableColumn(getModel(), i);
             cols[i] = tableColumn;
 
-   
-
-        
             cols[i] = tableColumn;
             if (i > 0) {
                 tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
@@ -321,11 +318,11 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 });
 
                 tableColumn.setVisible(config.getBooleanProperty("VISABLE_COL_" + i, true));
-                if(i==DownloadTreeTableModel.COL_STATUS_ICON){
+                if (i == DownloadTreeTableModel.COL_STATUS_ICON) {
                     tableColumn.setMinWidth(20);
                     tableColumn.setMaxWidth(20);
-                }else{
-                tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + i, tableColumn.getWidth()));
+                } else {
+                    tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + i, tableColumn.getWidth()));
                 }
                 if (tableColumn != null) {
                     getColumnModel().addColumn(tableColumn);
@@ -333,8 +330,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             } else {
                 tableColumn.setVisible(false);
             }
-}
-        
+        }
 
     }
 
@@ -348,7 +344,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         switch (id) {
         case DownloadLinksPanel.REFRESH_SPECIFIED_LINKS:
             ArrayList<DownloadLink> links = ((ArrayList<DownloadLink>) param);
-            logger.info("REFRESH SPECS COMPLETE");
             HashMap<Object, TreePath> map = this.getPathMap();
             for (DownloadLink dl : links) {
                 TreePath path = map.remove(dl);
@@ -360,11 +355,9 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             }
             break;
         case DownloadLinksPanel.REFRESH_ALL_DATA_CHANGED:
-            logger.finest("Updatecomplete");
             supporter.fireChildrenChanged(new TreePath(model.getRoot()), null, null);
             break;
         case DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED:
-            logger.finest("REFRESH GUI COMPLETE");
             supporter.fireTreeStructureChanged(new TreePath(model.getRoot()));
             updateSelectionAndExpandStatus();
             break;

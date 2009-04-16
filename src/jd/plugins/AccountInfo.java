@@ -27,32 +27,32 @@ public class AccountInfo extends Property {
     public static final String PARAM_INSTANCE = "accountinfo";
     private transient PluginForHost plugin;
     private Account account;
-    private boolean valid = true;
-    private  long validUntil = -1;
-    private  long trafficLeft = -1;
-    private  long trafficMax = -1;
-    private  long filesNum = -1;
-    private  long premiumPoints = -1;
-    private  long newPremiumPoints = -1;
-    private  long accountBalance = -1;
-    private  long usedSpace = -1;
-    private  long trafficShareLeft = -1;
-    private  boolean expired = false;
-    private  String status;
-    private  long createTime;
+    private boolean account_valid = true;
+    private long account_validUntil = -1;
+    private long account_trafficLeft = -1;
+    private long account_trafficMax = -1;
+    private long account_filesNum = -1;
+    private long account_premiumPoints = -1;
+    private long account_newPremiumPoints = -1;
+    private long account_accountBalance = -1;
+    private long account_usedSpace = -1;
+    private long account_trafficShareLeft = -1;
+    private boolean account_expired = false;
+    private String account_status;
+    private long account_createTime;
 
     public AccountInfo(PluginForHost plugin, Account account) {
         this.plugin = plugin;
         this.account = account;
-        this.createTime = System.currentTimeMillis();
+        this.account_createTime = System.currentTimeMillis();
     }
 
     public long getCreateTime() {
-        return createTime;
+        return account_createTime;
     }
 
     public void setCreateTime(long createTime) {
-        this.createTime = createTime;
+        this.account_createTime = createTime;
     }
 
     public Account getAccount() {
@@ -65,7 +65,7 @@ public class AccountInfo extends Property {
      * @return
      */
     public long getAccountBalance() {
-        return accountBalance;
+        return account_accountBalance;
     }
 
     /**
@@ -74,11 +74,11 @@ public class AccountInfo extends Property {
      * @return
      */
     public long getFilesNum() {
-        return filesNum;
+        return account_filesNum;
     }
 
     public long getNewPremiumPoints() {
-        return newPremiumPoints;
+        return account_newPremiumPoints;
     }
 
     public PluginForHost getPlugin() {
@@ -91,11 +91,11 @@ public class AccountInfo extends Property {
      * @return
      */
     public long getPremiumPoints() {
-        return premiumPoints;
+        return account_premiumPoints;
     }
 
     public String getStatus() {
-        return status;
+        return account_status;
     }
 
     /**
@@ -104,11 +104,11 @@ public class AccountInfo extends Property {
      * @return
      */
     public long getTrafficLeft() {
-        return trafficLeft;
+        return account_trafficLeft;
     }
 
     public long getTrafficMax() {
-        return trafficMax;
+        return account_trafficMax;
     }
 
     /**
@@ -119,7 +119,7 @@ public class AccountInfo extends Property {
      * @return
      */
     public long getTrafficShareLeft() {
-        return trafficShareLeft;
+        return account_trafficShareLeft;
     }
 
     /**
@@ -128,7 +128,7 @@ public class AccountInfo extends Property {
      * @return
      */
     public long getUsedSpace() {
-        return usedSpace;
+        return account_usedSpace;
     }
 
     /**
@@ -138,7 +138,7 @@ public class AccountInfo extends Property {
      * @return
      */
     public long getValidUntil() {
-        return validUntil;
+        return account_validUntil;
     }
 
     /**
@@ -147,7 +147,7 @@ public class AccountInfo extends Property {
      * @return
      */
     public boolean isExpired() {
-        return expired || (this.getValidUntil() != -1 && this.getValidUntil() < new Date().getTime());
+        return account_expired || (this.getValidUntil() != -1 && this.getValidUntil() < new Date().getTime());
     }
 
     /**
@@ -157,7 +157,7 @@ public class AccountInfo extends Property {
      * @return
      */
     public boolean isValid() {
-        return valid;
+        return account_valid;
     }
 
     public void setAccount(Account account) {
@@ -165,7 +165,7 @@ public class AccountInfo extends Property {
     }
 
     public void setAccountBalance(long parseInt) {
-        this.accountBalance = parseInt;
+        this.account_accountBalance = parseInt;
     }
 
     public void setAccountBalance(String string) {
@@ -173,16 +173,16 @@ public class AccountInfo extends Property {
     }
 
     public void setExpired(boolean b) {
-        this.expired = b;
+        this.account_expired = b;
         if (b) this.setTrafficLeft(-1);
     }
 
     public void setFilesNum(long parseInt) {
-        this.filesNum = parseInt;
+        this.account_filesNum = parseInt;
     }
 
     public void setNewPremiumPoints(long newPremiumPoints) {
-        this.newPremiumPoints = newPremiumPoints;
+        this.account_newPremiumPoints = newPremiumPoints;
     }
 
     public void setPlugin(PluginForHost plugin) {
@@ -190,7 +190,7 @@ public class AccountInfo extends Property {
     }
 
     public void setPremiumPoints(long parseInt) {
-        this.premiumPoints = parseInt;
+        this.account_premiumPoints = parseInt;
     }
 
     public void setPremiumPoints(String string) {
@@ -198,11 +198,11 @@ public class AccountInfo extends Property {
     }
 
     public void setStatus(String string) {
-        this.status = string;
+        this.account_status = string;
     }
 
     public void setTrafficLeft(long size) {
-        this.trafficLeft = size;
+        this.account_trafficLeft = size;
     }
 
     public void setTrafficLeft(String freeTraffic) {
@@ -210,15 +210,15 @@ public class AccountInfo extends Property {
     }
 
     public void setTrafficMax(long trafficMax) {
-        this.trafficMax = trafficMax;
+        this.account_trafficMax = trafficMax;
     }
 
     public void setTrafficShareLeft(long size) {
-        this.trafficShareLeft = size;
+        this.account_trafficShareLeft = size;
     }
 
     public void setUsedSpace(long usedSpace) {
-        this.usedSpace = usedSpace;
+        this.account_usedSpace = usedSpace;
     }
 
     public void setUsedSpace(String string) {
@@ -226,7 +226,7 @@ public class AccountInfo extends Property {
     }
 
     public void setValid(boolean b) {
-        this.valid = b;
+        this.account_valid = b;
     }
 
     /**
@@ -235,7 +235,7 @@ public class AccountInfo extends Property {
      * @param validUntil
      */
     public void setValidUntil(long validUntil) {
-        this.validUntil = validUntil;
+        this.account_validUntil = validUntil;
         if (validUntil != -1 && validUntil < new Date().getTime()) this.setExpired(true);
     }
 }

@@ -163,7 +163,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
             }
         }
         }
-        if (!changed && (System.currentTimeMillis() - last_async_update > UPDATE_TIMING + 100)) {            
+        if (!changed && (System.currentTimeMillis() - last_async_update > UPDATE_TIMING + 100)) {
             fireTableTask();
         }
         Update_Async.restart();

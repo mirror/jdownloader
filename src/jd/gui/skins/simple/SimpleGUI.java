@@ -483,9 +483,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
             @Override
             public Object runSave() {
-                logger.info("Add links to Linkgrabber: "+links.size());
+                logger.info("Add links to Linkgrabber: " + links.size());
                 DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
-             
                 linkGrabber.addLinks(linkList);
                 if (!hideGrabber) taskPane.switcher(lgTaskPane);
                 return null;
@@ -518,7 +517,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         addConfigTask();
         addAddonTask();
-//        addPremiumTask();
+        // addPremiumTask();
 
         addLogTask();
 
@@ -562,10 +561,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         leftcolPane.addPropertyChangeListener(sep);
         panel.add(sep, "gapright 2,spany 2");
 
-   
         panel.add(contentPanel);
-        //sp.setBorder(null);
-        
+        // sp.setBorder(null);
+
         panel.add(JDCollapser.getInstance(), "hidemode 3,gaptop 15,cell 2 2");
         // panel.add(generalPurposeTasks, "cell 0 2");
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
@@ -576,8 +574,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private void addAddonTask() {
         AddonTaskPane pane = new AddonTaskPane(JDLocale.L("gui.taskpanes.addons", "Addons"), JDTheme.II("gui.images.taskpanes.addons", 24, 24));
-        
-        addonPanel = new SingletonPanel(AddonPane.class, new Object[]{});
+
+        addonPanel = new SingletonPanel(AddonPane.class, new Object[] {});
         pane.addPanel(addonPanel);
         taskPane.add(pane);
     }
@@ -586,7 +584,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         LogTaskPane logTask = new LogTaskPane(JDLocale.L("gui.taskpanes.log", "Log"), JDTheme.II("gui.images.terminal", 24, 24));
 
-        logPanel = new SingletonPanel(LogPane.class, new Object[]{logger});
+        logPanel = new SingletonPanel(LogPane.class, new Object[] { logger });
         logTask.addPanel(logPanel);
         logTask.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -602,20 +600,24 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         taskPane.add(logTask);
     }
 
-//    private void addPremiumTask() {
-//        PremiumTaskPane premTskPane = new PremiumTaskPane(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"), JDTheme.II("gui.images.taskpanes.premium", 24, 24));
-//
-//        premTskPane.addPanel(new SingletonPanel(PremiumPane.class, new Object[] {}));
-//        premTskPane.addActionListener(new ActionListener() {
-//            public void actionPerformed(ActionEvent e) {
-//                if (!(e.getSource() instanceof JButton)) return;
-//                contentPanel.display(new SingletonPanel(PremiumPane.class, new Object[] { ((JButton) e.getSource()).getText() }).getPanel());
-//            }
-//        });
-//
-//        taskPane.add(premTskPane);
-//
-//    }
+    // private void addPremiumTask() {
+    // PremiumTaskPane premTskPane = new
+    // PremiumTaskPane(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"),
+    // JDTheme.II("gui.images.taskpanes.premium", 24, 24));
+    //
+    // premTskPane.addPanel(new SingletonPanel(PremiumPane.class, new Object[]
+    // {}));
+    // premTskPane.addActionListener(new ActionListener() {
+    // public void actionPerformed(ActionEvent e) {
+    // if (!(e.getSource() instanceof JButton)) return;
+    // contentPanel.display(new SingletonPanel(PremiumPane.class, new Object[] {
+    // ((JButton) e.getSource()).getText() }).getPanel());
+    // }
+    // });
+    //
+    // taskPane.add(premTskPane);
+    //
+    // }
 
     private void addConfigTask() {
         cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 24, 24));
@@ -769,7 +771,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 case ControlEvent.CONTROL_PLUGIN_ACTIVE:
                     logger.info("Module started: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
-                        
 
                         setTitle(JDUtilities.JD_TITLE + " | " + JDLocale.L("gui.titleaddaction", "Action: ") + " " + ((Interaction) event.getSource()).getInteractionName());
                     }
@@ -781,7 +782,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 case ControlEvent.CONTROL_PLUGIN_INACTIVE:
                     logger.info("Module finished: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
-                      
+
                         if (Interaction.areInteractionsInProgress()) {
 
                             setTitle(JDUtilities.getJDTitle());
@@ -1288,7 +1289,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             @Override
             public Object runSave() {
                 JDCollapser.getInstance().setContentPanel(new ConfigEntriesPanel(container));
-           
+
                 if (container.getGroup() != null) {
                     JDCollapser.getInstance().setTitle(container.getGroup().getName());
                     JDCollapser.getInstance().setIcon(container.getGroup().getIcon());
