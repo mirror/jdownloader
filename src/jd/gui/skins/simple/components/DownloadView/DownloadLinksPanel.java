@@ -68,7 +68,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;
     public static final int REFRESH_SPECIFIED_LINKS = 2;
 
-    private final static int UPDATE_TIMING = 100;
+    private final static int UPDATE_TIMING = 250;
 
     private int job_ID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
     private ArrayList<DownloadLink> job_links = new ArrayList<DownloadLink>();
@@ -82,6 +82,8 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     private Timer Update_Async;
 
     private long last_async_update;
+
+    private boolean visible = true;
 
     public DownloadLinksPanel() {
         super(new BorderLayout());
@@ -106,62 +108,72 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     public void onDisplay() {
         internalTreeTable.removeKeyListener(internalTreeTable);
         internalTreeTable.addKeyListener(internalTreeTable);
+        visible = true;
+        updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
     }
 
     @Override
     public void onHide() {
         internalTreeTable.removeKeyListener(internalTreeTable);
+        visible = false;
+        updateTableTask(NO_JOB, null);
     }
 
     @SuppressWarnings("unchecked")
     private synchronized void updateTableTask(int id, Object Param) {
+        if (!visible) {
+            Update_Async.stop();
+            return;
+        }
         boolean changed = false;
         Update_Async.stop();
-        switch (id) {
-        case REFRESH_DATA_AND_STRUCTURE_CHANGED: {
-            changed = true;
-            this.job_ID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
-            this.job_links.clear();
-            break;
-        }
-        case REFRESH_ALL_DATA_CHANGED: {
-            switch (this.job_ID) {
-            case REFRESH_DATA_AND_STRUCTURE_CHANGED:
-            case REFRESH_ALL_DATA_CHANGED:
-                break;
-            case NO_JOB:
-            case REFRESH_SPECIFIED_LINKS:
+        synchronized (job_links) {
+            switch (id) {
+            case REFRESH_DATA_AND_STRUCTURE_CHANGED: {
                 changed = true;
-                this.job_ID = REFRESH_ALL_DATA_CHANGED;
+                this.job_ID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
                 this.job_links.clear();
                 break;
             }
-            break;
-        }
-        case REFRESH_SPECIFIED_LINKS: {
-            switch (this.job_ID) {
-            case REFRESH_DATA_AND_STRUCTURE_CHANGED:
-            case REFRESH_ALL_DATA_CHANGED:
-                break;
-            case NO_JOB:
-            case REFRESH_SPECIFIED_LINKS:
-                this.job_ID = REFRESH_SPECIFIED_LINKS;
-                if (Param instanceof DownloadLink) {
-                    if (!job_links.contains(Param)) {
-                        changed = true;
-                        job_links.add((DownloadLink) Param);
-                    }
-                } else if (Param instanceof ArrayList) {
-                    for (DownloadLink dl : (ArrayList<DownloadLink>) Param) {
-                        if (!job_links.contains(dl)) {
-                            changed = true;
-                            job_links.add(dl);
-                        }
-                    }
+            case REFRESH_ALL_DATA_CHANGED: {
+                switch (this.job_ID) {
+                case REFRESH_DATA_AND_STRUCTURE_CHANGED:
+                case REFRESH_ALL_DATA_CHANGED:
+                    break;
+                case NO_JOB:
+                case REFRESH_SPECIFIED_LINKS:
+                    changed = true;
+                    this.job_ID = REFRESH_ALL_DATA_CHANGED;
+                    this.job_links.clear();
+                    break;
                 }
                 break;
             }
-        }
+            case REFRESH_SPECIFIED_LINKS: {
+                switch (this.job_ID) {
+                case REFRESH_DATA_AND_STRUCTURE_CHANGED:
+                case REFRESH_ALL_DATA_CHANGED:
+                    break;
+                case NO_JOB:
+                case REFRESH_SPECIFIED_LINKS:
+                    this.job_ID = REFRESH_SPECIFIED_LINKS;
+                    if (Param instanceof DownloadLink) {
+                        if (!job_links.contains(Param)) {
+                            changed = true;
+                            job_links.add((DownloadLink) Param);
+                        }
+                    } else if (Param instanceof ArrayList) {
+                        for (DownloadLink dl : (ArrayList<DownloadLink>) Param) {
+                            if (!job_links.contains(dl)) {
+                                changed = true;
+                                job_links.add(dl);
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+            }
         }
         if (!changed && (System.currentTimeMillis() - last_async_update > UPDATE_TIMING + 100)) {
             fireTableTask();
@@ -171,9 +183,11 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     private synchronized void fireTableTask() {
         last_async_update = System.currentTimeMillis();
-        fireTableChanged(this.job_ID, this.job_links);
-        this.job_ID = this.NO_JOB;
-        this.job_links.clear();
+        synchronized (job_links) {
+            if (visible && job_ID != NO_JOB) fireTableChanged(this.job_ID, this.job_links);
+            this.job_ID = this.NO_JOB;
+            this.job_links.clear();
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -83,6 +83,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     private static LinkGrabberPanel INSTANCE;
 
     private transient LinkGrabberBroadcaster broadcaster = new LinkGrabberBroadcaster();
+    private boolean visible = true;
 
     public static synchronized LinkGrabberPanel getLinkGrabber() {
         if (INSTANCE == null) INSTANCE = new LinkGrabberPanel();
@@ -105,8 +106,8 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         this.add(scrollPane, "cell 0 0");
         FilePackageInfo = new LinkGrabberFilePackageInfo();
 
-        Update_Async = new Timer(200, this);
-        Update_Async.setInitialDelay(200);
+        Update_Async = new Timer(250, this);
+        Update_Async.setInitialDelay(250);
         Update_Async.setRepeats(false);
         gathertimer = new Timer(2000, LinkGrabberPanel.this);
         gathertimer.setInitialDelay(2000);
@@ -145,7 +146,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     @Override
     public void onHide() {
-        // TODO Auto-generated method stub
+        visible = false;
 
     }
 
@@ -390,8 +391,8 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     @Override
     public void onDisplay() {
-        // TODO Auto-generated method stub
-
+        visible = true;
+        Update_Async.restart();
     }
 
     public Set<String> getHosterList(Vector<DownloadLink> links) {
@@ -407,7 +408,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent arg0) {
         if (arg0.getSource() == this.Update_Async) {
-            fireTableChanged(1, null);
+            if (visible) fireTableChanged(1, null);
             return;
         }
 
