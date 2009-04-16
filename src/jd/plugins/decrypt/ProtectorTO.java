@@ -45,6 +45,23 @@ public class ProtectorTO extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        
+        // Falls es wen interessiert, wie man an die Container kommt,
+        // falls welche existieren.
+        // Fiel mir gerade auf und wollte es mal hinzufügen.
+        /*
+        // Datum erzeugen
+        SimpleDateFormat formatter = new SimpleDateFormat ("yyyyMMdd");
+        Date currentTime = new Date();
+        String currentDate = formatter.format(currentTime);
+        
+        // ID des Ordners md5ieren ;)
+        String folderID3 = JDHash.getMD5(new Regex(parameter, PATTERN_FOLDER_ID).getMatch(0).substring(1));
+        
+        String link = "dlc://protector.to/container/" + currentDate + "/" + folderID + "_1.dlc";
+        decryptedLinks.add(createDownloadlink(link));
+        */
+        
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
