@@ -104,3 +104,27 @@ gui.color.linkgrabber.package_online=c4ffd2
 #Note: These colors are only for java <1.5
 gui.color.downloadlist.package=4c4c4c
 gui.color.linkgrabber.package=4c4c4c
+
+
+##plaf screenshots
+plaf.screenshot.com.jgoodies.looks.windows.WindowsLookAndFeel=default/screenshots/plaf-jgoodies
+plaf.screenshot.org.jvnet.substance.skin.SubstanceBusinessBlackSteelLookAndFeel=default/screenshots/plaf-substance-BusinessBlackSteel
+plaf.screenshot.org.jvnet.substance.skin.SubstanceAutumnLookAndFeel=default/screenshots/plaf-substance-Autumn
+plaf.screenshot.org.jvnet.substance.skin.SubstanceBusinessBlueSteelLookAndFeel=default/screenshots/plaf-substance-BusinessBlueSteel
+plaf.screenshot.org.jvnet.substance.skin.SubstanceChallengerDeepLookAndFeel=default/screenshots/plaf-substance-ChallengerDeep
+plaf.screenshot.org.jvnet.substance.skin.SubstanceCremeCoffeeLookAndFeel=default/screenshots/plaf-substance-CremeCoffee
+plaf.screenshot.org.jvnet.substance.skin.SubstanceCremeLookAndFeel=default/screenshots/plaf-substance-Creme
+plaf.screenshot.org.jvnet.substance.skin.SubstanceEmeraldDuskLookAndFeel=default/screenshots/plaf-substance-EmeraldDusk
+plaf.screenshot.org.jvnet.substance.skin.SubstanceMagmaLookAndFeel=default/screenshots/plaf-substance-Magma
+plaf.screenshot.org.jvnet.substance.skin.SubstanceMistAquaLookAndFeel=default/screenshots/plaf-substance-MistAqua
+plaf.screenshot.org.jvnet.substance.skin.SubstanceMistSilverLookAndFeel=default/screenshots/plaf-substance-MistSilver
+plaf.screenshot.org.jvnet.substance.skin.SubstanceModerateLookAndFeel=default/screenshots/plaf-substance-Moderate
+plaf.screenshot.org.jvnet.substance.skin.SubstanceNebulaBrickWallLookAndFeel=default/screenshots/plaf-substance-NebulaBrickWall
+plaf.screenshot.org.jvnet.substance.skin.SubstanceNebulaLookAndFeel=default/screenshots/plaf-substance-Nebula
+plaf.screenshot.org.jvnet.substance.skin.SubstanceOfficeBlue2007LookAndFeel=default/screenshots/plaf-substance-OfficeBlue2007
+plaf.screenshot.org.jvnet.substance.skin.SubstanceOfficeSilver2007LookAndFeel=default/screenshots/plaf-substance-OfficeSilver2007
+plaf.screenshot.org.jvnet.substance.skin.SubstanceRavenGraphiteGlassLookAndFeel=default/screenshots/plaf-substance-RavenGraphiteGlass
+plaf.screenshot.org.jvnet.substance.skin.SubstanceRavenGraphiteLookAndFeel=default/screenshots/plaf-substance-RavenGraphite
+plaf.screenshot.org.jvnet.substance.skin.SubstanceRavenLookAndFeel=default/screenshots/plaf-substance-Raven
+plaf.screenshot.org.jvnet.substance.skin.SubstanceSaharaLookAndFeel=default/screenshots/plaf-substance-Sahara
+plaf.screenshot.org.jvnet.substance.skin.SubstanceBusinessLookAndFeel=default/screenshots/plaf-substance-Business
