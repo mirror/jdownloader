@@ -21,7 +21,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -36,15 +35,26 @@ public class FileFactoryFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.getPage(parameter);
+        String pages[] = br.getRegex(Pattern.compile("<a href=\"\\?page=(\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        progress.setRange(0);
+        add(decryptedLinks, progress);
+        if (pages.length > 1) {
+            for (int i = 2; i <= Integer.parseInt(pages[pages.length - 1]); i++) {
+                br.getPage(parameter + "/?page=" + i);
+                add(decryptedLinks, progress);
+            }
+        }
+        return decryptedLinks;
+    }
 
-        String links[] = new Regex(br.getPage(parameter), Pattern.compile("href=\"http://www.filefactory.com/file/(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
-        progress.setRange(links.length);
+    private void add(ArrayList<DownloadLink> declinks, ProgressController progress) {
+        String links[] = br.getRegex(Pattern.compile("<td class=\"name\"><a href=\"(/file/.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        progress.increase(links.length);
         for (String element : links) {
-            decryptedLinks.add(createDownloadlink("http://www.filefactory.com/file/" + element));
+            declinks.add(createDownloadlink("http://www.filefactory.com" + element));
             progress.increase(1);
         }
-
-        return decryptedLinks;
     }
 
     @Override
