@@ -245,42 +245,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
         this.add(cep = new ConfigEntriesPanel(container));
-        ((JComboBox) ((GUIConfigEntry) plaf.getGuiListener()).getInput()[0]).addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                String plafName = ((JComboBox) e.getSource()).getSelectedItem().toString();
-                final Object old = plaf.getPropertyInstance().getProperty(plaf.getPropertyName());
-
-                plaf.getPropertyInstance().setProperty(plaf.getPropertyName(), plafName);
-                new Thread() {
-                    public void run() {
-
-                        new GuiRunnable<Object>() {
-
-                            public Object runSave() {
-                                try {
-                                    try {
-                                        UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
-                                    } catch (Exception e1) {
-                                        // TODO Auto-generated catch block
-                                        JDLogger.exception(e1);
-                                    }
-                                    // SimpleGUI.CURRENTGUI.updateDecoration();
-                                    SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
-                                } catch (Exception e) {
-                                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
-                                }
-                                return null;
-                            }
-                        }.waitForEDT();
-                        plaf.getPropertyInstance().setProperty(plaf.getPropertyName(), old);
-                    }
-                }.start();
-                // 
-
-            }
-
-        });
+     
     }
 
     @Override

@@ -26,16 +26,20 @@ import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import javax.swing.ImageIcon;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 
 import jd.config.SubConfiguration;
+import jd.config.container.JDLabelContainer;
 import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.nutils.JDImage;
 import jd.parser.Regex;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel;
 
-public class JDLookAndFeelManager implements Serializable {
+public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
 
     private static final long serialVersionUID = -8056003135389551814L;
     public static final String PARAM_PLAF = "PLAF";
@@ -159,10 +163,10 @@ public class JDLookAndFeelManager implements Serializable {
     public static void setUIManager() {
         if (uiInitated) return;
         uiInitated = true;
-        
+
         installJGoodies();
         if (JDUtilities.getJavaVersion() >= 1.6) installSubstance();
-   
+
         // installSynthetica();
         try {
             UIManager.setLookAndFeel(getPlaf().getClassName());
@@ -267,6 +271,22 @@ public class JDLookAndFeelManager implements Serializable {
         if (className == null) return null;
         if (staticName != null) return staticName;
         return className.substring(className.lastIndexOf(".") + 1, className.length() - 11).replace("Substance", "");
+    }
+
+    public ImageIcon getIcon() {
+        try {
+         
+           ImageIcon img = JDImage.getImageIcon(JDTheme.V("plaf.screenshot." + this.getClassName()));
+//        if(img!=null)img=JDImage.getScaledImageIcon(img,100,100);
+        return img;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public String getLabel() {
+
+        return toString();
     }
 
 }

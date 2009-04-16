@@ -45,6 +45,7 @@ import javax.swing.text.PlainDocument;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.container.JDLabelContainer;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.gui.skins.simple.components.JDTextArea;
@@ -182,6 +183,15 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_COMBOBOX_INDEX:
             decoration = new JLabel(configEntry.getLabel());
             input[0] = new JComboBox(configEntry.getList());
+            if(configEntry.getList().length>0){
+                if(configEntry.getList()[0] instanceof JDLabelContainer){
+                    ((JComboBox)input[0]).setRenderer(new JDLabelListRenderer());
+                    ((JComboBox)input[0]).setMaximumRowCount(3);
+
+                }
+            }
+                
+                
             ((JComboBox) input[0]).addActionListener(this);
             for (int i = 0; i < configEntry.getList().length; i++) {
 
@@ -192,7 +202,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
                 }
             }
             input[0].setEnabled(configEntry.isEnabled());
-
+//            org.jvnet.substance.skin.BusinessBlueSteelSkin
             break;
         case ConfigContainer.TYPE_RADIOFIELD:
 
