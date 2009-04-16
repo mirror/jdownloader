@@ -371,7 +371,7 @@ public class Rapidshare extends PluginForHost {
                         waitfor = new Regex(br, "Or try again in about(.*?)minutes").getMatch(0);
 
                     }
-                    long waitTime = 60 * 60 * 1000l;
+                    long waitTime = 15 * 60 * 1000l;
                     try {
                         waitTime = new Long(waitfor.trim()) * 60 * 1000l;
                     } catch (Exception e) {
@@ -408,11 +408,11 @@ public class Rapidshare extends PluginForHost {
             if (ticketCode.contains("Leider sind derzeit keine freien Slots ")) {
                 downloadLink.getLinkStatus().setStatusText("All free slots in use: try to download again after 2 minutes");
                 logger.warning("All free slots in use: try to download again after 2 minutes");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120000);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120000l);
             }
             if (new Regex(ticketCode, ".*download.{0,3}limit.{1,50}free.{0,3}users.*").matches()) {
                 String waitfor = new Regex(ticketCode, "Or try again in about(.*?)minutes").getMatch(0);
-                long waitTime = 60 * 60 * 1000l;
+                long waitTime = 15 * 60 * 1000l;
                 try {
                     waitTime = new Long(waitfor.trim()) * 60 * 1000l;
                 } catch (Exception e) {
