@@ -24,6 +24,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Vector;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 
@@ -37,6 +38,7 @@ import jd.event.JDBroadcaster;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
+import jd.parser.Regex;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -968,6 +970,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public void setFinalFileName(String newfinalFileName) {
         setName(newfinalFileName);
         if (newfinalFileName != null && newfinalFileName.length() > 0) {
+            if (new Regex(newfinalFileName, Pattern.compile("r..\\.htm.?$", Pattern.CASE_INSENSITIVE)).matches()) {
+                logger.info("Use Workaround for stupid >>rar.html<< uploaders!");
+                newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - new Regex(newfinalFileName, Pattern.compile("r..(\\.htm.?)$", Pattern.CASE_INSENSITIVE)).getMatch(0).length());
+            }
             finalFileName = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(newfinalFileName));
         } else {
             finalFileName = null;
