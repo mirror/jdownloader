@@ -314,7 +314,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -508,18 +508,11 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         contentPanel = new ContentPanel();
 
         taskPane = new TaskPane();
-        // taskPane.setBackgroundPainter(null);
-        addDownloadTask();
-        // dlTskPane.setEnabled(false);
-        // taskPane.add(new
-        // JLabel(JDImage.getImageIcon("default/minimize_top")),
-        // "alignx center,wrap,gaptop 0");
-        addLinkgrabberTask();
 
+        addDownloadTask();
+        addLinkgrabberTask();
         addConfigTask();
         addAddonTask();
-        // addPremiumTask();
-
         addLogTask();
 
         progressBar = new TabProgress();
@@ -527,26 +520,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         contentPanel.display(linkListPane);
 
         taskPane.switcher(dlTskPane);
-
-        // JPanel panel = new JPanel(new MigLayout("ins 0,wrap 2",
-        // "[fill]0[fill,grow 100]", "[]0[grow,fill]0[]0[]0[]"));
-        //
-        // setContentPane(panel);
-        // panel.add(this.toolBar, "cell 0 0,spanx");
-        // panel.add(taskPane, "cell 0 1,aligny top");
-        // GeneralPurposeTaskPanel generalPurposeTasks = new
-        // GeneralPurposeTaskPanel(JDLocale.L("gui.taskpanes.generalpurpose",
-        // "Quick Config"), JDTheme.II("gui.images.taskpanes.generalpurpose",
-        // 16, 16));
-        //
-        // // taskPane.setBorder(BorderFactory.createLineBorder(Color.RED));
-        // panel.add(contentPanel, "cell 1 1,spany 2");
-        // panel.add(generalPurposeTasks, "cell 0 2");
-        // //
-        // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
-        // panel.add(progressBar, "cell 0 3,span,hidemode 3");
-        // panel.add(this.statusBar, "cell 0 4,spanx");
-        // logDialog = new LogDialog(this, logger);
 
         JPanel panel = new JPanel(new MigLayout("ins 0,wrap 3", "[fill]0[shrink]0[fill,grow 100]", "[]0[grow,fill]0[]0[]0[]0[]"));
 
@@ -578,7 +551,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     private void addAddonTask() {
         AddonTaskPane pane = new AddonTaskPane(JDLocale.L("gui.taskpanes.addons", "Addons"), JDTheme.II("gui.images.taskpanes.addons", 24, 24));
 
-        addonPanel = new SingletonPanel(AddonPane.class, new Object[] {});
+        addonPanel = new SingletonPanel(AddonPane.class);
         pane.addPanel(addonPanel);
         taskPane.add(pane);
     }
@@ -603,25 +576,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         taskPane.add(logTask);
     }
 
-    // private void addPremiumTask() {
-    // PremiumTaskPane premTskPane = new
-    // PremiumTaskPane(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"),
-    // JDTheme.II("gui.images.taskpanes.premium", 24, 24));
-    //
-    // premTskPane.addPanel(new SingletonPanel(PremiumPane.class, new Object[]
-    // {}));
-    // premTskPane.addActionListener(new ActionListener() {
-    // public void actionPerformed(ActionEvent e) {
-    // if (!(e.getSource() instanceof JButton)) return;
-    // contentPanel.display(new SingletonPanel(PremiumPane.class, new Object[] {
-    // ((JButton) e.getSource()).getText() }).getPanel());
-    // }
-    // });
-    //
-    // taskPane.add(premTskPane);
-    //
-    // }
-
     private void addConfigTask() {
         cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 24, 24));
 
@@ -629,11 +583,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_ADDONS, new SingletonPanel(ConfigPanelAddons.class, configConstructorObjects));
         cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_CAPTCHA, new SingletonPanel(ConfigPanelCaptcha.class, configConstructorObjects));
-
-        // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_DECRYPT, new
-        // SingletonPanel(ConfigPanelPluginForDecrypt.class,
-        // configConstructorObjects));
-
         cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_DOWNLOAD, new SingletonPanel(ConfigPanelDownload.class, configConstructorObjects));
         cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_EVENTMANAGER, new SingletonPanel(ConfigPanelEventmanager.class, configConstructorObjects));
         cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GENERAL, new SingletonPanel(ConfigPanelGeneral.class, configConstructorObjects));
@@ -671,7 +620,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
                 case ConfigTaskPane.ACTION_ADDONS:
                 case ConfigTaskPane.ACTION_CAPTCHA:
-                    // case ConfigTaskPane.ACTION_DECRYPT:
                 case ConfigTaskPane.ACTION_DOWNLOAD:
                 case ConfigTaskPane.ACTION_EVENTMANAGER:
                 case ConfigTaskPane.ACTION_GENERAL:
@@ -890,7 +838,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);
@@ -960,166 +908,11 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     }
 
-    // /**
-    // * Die Aktionen werden initialisiert
-    // */
-    // public void initActions() {
-    // // actionStartStopDownload = new JDAction(this,
-    // // getStartStopDownloadImage(), "action.start",
-    // // JDAction.APP_START_STOP_DOWNLOADS);
-    // // actionPause = new JDAction(this, getPauseImage(), "action.pause",
-    // // JDAction.APP_PAUSE_DOWNLOADS);
-    // // actionItemsAdd = new JDAction(this, JDTheme.V("gui.images.add"),
-    // // "action.add", JDAction.ITEMS_ADD);
-    // // actionRemoveLinks = new JDAction(this,
-    // // JDTheme.V("gui.images.delete"), "action.remove.links",
-    // // JDAction.ITEMS_REMOVE_LINKS);
-    // // actionRemovePackages = new JDAction(this,
-    // // JDTheme.V("gui.images.delete"), "action.remove.packages",
-    // // JDAction.ITEMS_REMOVE_PACKAGES);
-    // actionOptionalConfig = new JDAction(this,
-    // JDTheme.V("gui.images.config.packagemanager"), "action.optconfig",
-    // JDAction.APP_OPEN_OPT_CONFIG);
-    // actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"),
-    // "action.save", JDAction.APP_SAVE_DLC);
-    // actionExit = new JDAction(this, JDTheme.V("gui.images.exit"),
-    // "action.exit", JDAction.APP_EXIT);
-    // actionRestart = new JDAction(this, JDTheme.V("gui.images.exit"),
-    // "action.restart", JDAction.APP_RESTART);
-    // actionLog = new JDAction(this, JDTheme.V("gui.images.terminal"),
-    // "action.viewlog", JDAction.APP_LOG);
-    // actionBackup = new JDAction(this, JDTheme.V("gui.images.save"),
-    // "action.backup", JDAction.APP_BACKUP);
-    // // actionClipBoard = new JDAction(this, getClipBoardImage(),
-    // // "action.clipboard", JDAction.APP_CLIPBOARD);
-    // // actionConfig = new JDAction(this,
-    // // JDTheme.V("gui.images.configuration"), "action.configuration",
-    // // JDAction.APP_CONFIGURATION);
-    // // actionReconnect = new JDAction(this,
-    // // JDTheme.V("gui.images.reconnect"), "action.reconnect",
-    // // JDAction.APP_RECONNECT);
-    // // actionUpdate = new JDAction(this,
-    // // JDTheme.V("gui.images.update_manager"), "action.update",
-    // // JDAction.APP_UPDATE);
-    // // actionItemsDelete = new JDAction(this,
-    // // JDTheme.V("gui.images.delete"), "action.edit.items_remove",
-    // // JDAction.ITEMS_REMOVE);
-    // // actionItemsTop = new JDAction(this, JDTheme.V("gui.images.go_top"),
-    // // "action.edit.items_top", JDAction.ITEMS_MOVE_TOP);
-    // // actionItemsUp = new JDAction(this, JDTheme.V("gui.images.top"),
-    // // "action.edit.items_up", JDAction.ITEMS_MOVE_UP);
-    // // actionItemsDown = new JDAction(this, JDTheme.V("gui.images.down"),
-    // // "action.edit.items_down", JDAction.ITEMS_MOVE_DOWN);
-    // // actionItemsBottom = new JDAction(this,
-    // // JDTheme.V("gui.images.go_bottom"), "action.edit.items_bottom",
-    // // JDAction.ITEMS_MOVE_BOTTOM);
-    // // doReconnect = new JDAction(this, getDoReconnectImage(),
-    // // "action.doReconnect", JDAction.APP_ALLOW_RECONNECT);
-    // actionHelp = new JDAction(this, JDTheme.V("gui.images.help"),
-    // "action.help", JDAction.HELP);
-    // actionWiki = new JDAction(this, JDTheme.V("gui.images.help"),
-    // "action.wiki", JDAction.WIKI);
-    // actionAbout = new JDAction(this, JDTheme.V("gui.images.jd_logo"),
-    // "action.about", JDAction.ABOUT);
-    // actionChanges = new JDAction(this,
-    // JDTheme.V("gui.images.update_manager"), "action.changes",
-    // JDAction.CHANGES);
-    // }
-    //
-    // /**
-    // * Das Menü wird hier initialisiert
-    // */
-    // public void initMenuBar() {
-    // JMenu menFile = new JMenu(JDLocale.L("gui.menu.file", "File"));
-    // // JMenu menExtra = new JMenu(JDLocale.L("gui.menu.extra", "Extras"));
-    // menAddons = OptionalMenuMenu.getMenu(JDLocale.L("gui.menu.addons",
-    // "Addons"), actionOptionalConfig);
-    // JMenu menHelp = new JMenu(JDLocale.L("gui.menu.plugins.help", "?"));
-    // // createOptionalPluginsMenuEntries();
-    // menViewLog = JDMenu.createMenuItem(actionLog);
-    // createBackup = JDMenu.createMenuItem(actionBackup);
-    //
-    // // Adds the menus from the Addons
-    //
-    // // JMenu menRemove = createMenu(JDLocale.L("gui.menu.remove", "Remove"),
-    // // "gui.images.delete");
-    // // menRemove.add(JDMenu.createMenuItem(actionItemsDelete));
-    // // menRemove.addSeparator();
-    // // menRemove.add(JDMenu.createMenuItem(actionRemoveLinks));
-    // // menRemove.add(JDMenu.createMenuItem(actionRemovePackages));
-    // // menFile.add(menRemove);
-    // // menFile.addSeparator();
-    // menFile.add(JDMenu.createMenuItem(actionSaveDLC));
-    // menFile.addSeparator();
-    // menFile.add(JDMenu.createMenuItem(actionRestart));
-    // menFile.add(JDMenu.createMenuItem(actionExit));
-    //
-    // // menExtra.add(JDMenu.createMenuItem(actionConfig));
-    // // menExtra.addSeparator();
-    //
-    // menHelp.add(menViewLog);
-    // menHelp.add(createBackup);
-    // menHelp.addSeparator();
-    // menHelp.add(JDMenu.createMenuItem(actionHelp));
-    // menHelp.add(JDMenu.createMenuItem(actionWiki));
-    // menHelp.addSeparator();
-    // menHelp.add(JDMenu.createMenuItem(actionChanges));
-    // menHelp.add(JDMenu.createMenuItem(actionAbout));
-    //
-    // menuBar.setLayout(new GridBagLayout());
-    // Insets insets = new Insets(1, 1, 1, 1);
-    //
-    // int m = 0;
-    // JDUtilities.addToGridBag(menuBar, menFile, m++, 0, 1, 1, 0, 0, insets,
-    // GridBagConstraints.NONE, GridBagConstraints.WEST);
-    // // JDUtilities.addToGridBag(menuBar, menExtra, m++, 0, 1, 1, 0, 0,
-    // // insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    // JDUtilities.addToGridBag(menuBar, menAddons, m++, 0, 1, 1, 0, 0, insets,
-    // GridBagConstraints.NONE, GridBagConstraints.WEST);
-    // JDUtilities.addToGridBag(menuBar, menHelp, m++, 0, 1, 1, 0, 0, insets,
-    // GridBagConstraints.NONE, GridBagConstraints.WEST);
-    // JDUtilities.addToGridBag(menuBar, new JLabel(""), m++, 0, 1, 1, 1, 0,
-    // insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    //
-    // warning = new JLabel("", JDTheme.II("gui.images.warning", 16, 16),
-    // SwingConstants.RIGHT);
-    // warning.setVisible(false);
-    // warning.setIconTextGap(10);
-    // warning.setHorizontalTextPosition(SwingConstants.RIGHT);
-    // JDUtilities.addToGridBag(menuBar, warning, m++, 0, 1, 1, 0, 0, insets,
-    // GridBagConstraints.NONE, GridBagConstraints.EAST);
-    //
-    // try {
-    // ImageIcon icon = JDTheme.II("gui.images.update_manager", 16, 16);
-    // JLinkButton linkButton = new JLinkButton(JDLocale.L("jdownloader.org",
-    // "jDownloader.org"), icon, new URL(JDLocale.L("jdownloader.localnewsurl",
-    // "http://jdownloader.org/news?lng=en")));
-    // linkButton.setHorizontalTextPosition(SwingConstants.LEFT);
-    // linkButton.setBorder(null);
-    // Dimension d = new Dimension(10, 0);
-    // JDUtilities.addToGridBag(menuBar, new Box.Filler(d, d, d), m++, 0, 1, 1,
-    // 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    // JDUtilities.addToGridBag(menuBar, linkButton, m++, 0, 1, 1, 0, 0, insets,
-    // GridBagConstraints.NONE, GridBagConstraints.EAST);
-    // d = new Dimension(1, 0);
-    // JDUtilities.addToGridBag(menuBar, new Box.Filler(d, d, d), m++, 0, 1, 1,
-    // 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    // } catch (MalformedURLException e1) {
-    // }
-    //
-    // frame.setJMenuBar(menuBar);
-    // }
-
     /**
      * Diese Funktion wird in einem 1000 ms interval aufgerufen und kann dazu
      * verwendet werden die GUI zu aktuelisieren TODO
      */
     private void interval() {
-
-        // if (JDUtilities.getController() != null) {
-        // statusBar.setSpeed(JDUtilities.getController().getSpeedMeter());
-        // }
-
         setTitle(JDUtilities.getJDTitle());
     }
 
@@ -1476,7 +1269,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public JTabbedPanel getDownloadPanel() {
-        // TODO Auto-generated method stub
         return this.linkListPane;
     }
 

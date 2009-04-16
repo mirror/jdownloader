@@ -22,7 +22,6 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
-import jd.nutils.JDImage;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;

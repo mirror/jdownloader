@@ -58,13 +58,16 @@ public class CryptedLink extends Property {
         return this.progress;
     }
 
-    // Gibt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
+    /**
+     * Gibt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
+     */
     public String getCryptedUrl() {
         return this.cryptedUrl;
     }
 
-    // Setzt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
-
+    /**
+     * Setzt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
+     */
     public void setCryptedUrl(String url) {
         this.cryptedUrl = url;
     }

@@ -1,17 +1,13 @@
 package jd.gui.skins.simple.tasks;
 
 import java.awt.Cursor;
-import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.font.TextAttribute;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
-import java.util.Map;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -21,6 +17,7 @@ import javax.swing.event.EventListenerList;
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SingletonPanel;
+import jd.gui.skins.simple.components.JDUnderlinedText;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTaskPane;
@@ -175,30 +172,7 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
         bt.setBorderPainted(false);
         bt.setHorizontalAlignment(JButton.LEFT);
         bt.addActionListener(this);
-        bt.addMouseListener(new MouseAdapter() {
-
-            private Font originalFont;
-
-            @SuppressWarnings("unchecked")
-            @Override
-            public void mouseEntered(MouseEvent evt) {
-                JButton src = (JButton) evt.getSource();
-
-                originalFont = src.getFont();
-                if (src.isEnabled()) {
-                    Map attributes = originalFont.getAttributes();
-                    attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                    src.setFont(originalFont.deriveFont(attributes));
-                }
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent evt) {
-                JButton src = (JButton) evt.getSource();
-                src.setFont(originalFont);
-            }
-        });
+        bt.addMouseListener(new JDUnderlinedText());
         return bt;
     }
 

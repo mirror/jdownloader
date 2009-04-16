@@ -1,5 +1,6 @@
 package jd.gui.skins.simple.tasks;
 
+import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.gui.skins.simple.components.JDUnderlinedText;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -40,7 +42,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
     }
 
     private void initGUI() {
-        for (final OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
+        for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
             if (!wrapper.isEnabled()) continue;
             ArrayList<MenuItem> menuItems = wrapper.getPlugin().createMenuitems();
             if (menuItems != null && JDUtilities.getConfiguration().getBooleanProperty(wrapper.getConfigParamKey(), false)) {
@@ -164,7 +166,11 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
 
         case MenuItem.TOGGLE:
             JCheckBox ch = new JCheckBox(entry.getTitle(), entry.isSelected());
-
+            ch.setContentAreaFilled(false);
+            ch.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            ch.setFocusPainted(false);
+            ch.setBorderPainted(false);
+            ch.addMouseListener(new JDUnderlinedText());
             ch.addActionListener(new ActionListener() {
 
                 public void actionPerformed(ActionEvent arg0) {
