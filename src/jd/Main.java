@@ -17,6 +17,10 @@
 
 package jd;
 
+import it.sauronsoftware.junique.AlreadyLockedException;
+import it.sauronsoftware.junique.JUnique;
+import it.sauronsoftware.junique.MessageHandler;
+
 import java.awt.AWTException;
 import java.awt.EventQueue;
 import java.awt.Image;
@@ -24,13 +28,12 @@ import java.awt.MediaTracker;
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
-import java.rmi.Naming;
-import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.TreeSet;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -74,6 +77,8 @@ public class Main {
 
     private static Logger LOGGER;
     private static SplashScreen splashScreen;
+    private static String instanceID = Main.class.getName();
+    private static boolean instanceStarted = false;
 
     public static String getCaptcha(String path, String host) {
 
@@ -177,7 +182,7 @@ public class Main {
 
             } else if (args[i].equals("--help") || args[i].equals("-h")) {
 
-                Server.showCmdHelp();
+                ParameterManager.showCmdHelp();
                 System.exit(0);
 
             } else if (args[i].equals("--captcha") || args[i].equals("-c")) {
@@ -212,116 +217,112 @@ public class Main {
             }
 
         }
-        splashScreen = null;
-        JDTheme.setTheme("default");
-        if (JDInitFlags.SHOW_SPLASH) {
-            if (SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPLASH, true)) {
-                LOGGER.info("init Splash");
-                new GuiRunnable<Object>() {
+        try {
+            JUnique.acquireLock(instanceID, new MessageHandler() {
+                private int Counter = -1;
+                private Vector<String> params = new Vector<String>();
 
-                    @Override
-                    public Object runSave() {
+                public String handle(String message) {
+                    if (Counter == -2) return null;
+                    if (Counter == -1) {
                         try {
-                            splashScreen = new SplashScreen(JDTheme.I("gui.splash"));
-                            splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.languages", 32, 32)));
-                            splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.settings", 32, 32)));
-                            splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.controller", 32, 32)));
-                            splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.update", 32, 32)));
-                            splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.plugins", 32, 32)));
-                            splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.screen", 32, 32)));
-                            splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.dllist", 32, 32)));
-                        } catch (IOException e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-                        } catch (AWTException e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            Counter = Integer.parseInt(message.trim());
+                        } catch (Exception e) {
+                            Counter = -2;
+                            return null;
                         }
-                        return null;
+                        if (Counter == -1) Counter = -2;/* Abort */
+                    } else {
+                        params.add(message);
+                        Counter--;
+                        if (Counter == 0) {
+                            String[] args = (String[]) params.toArray(new String[params.size()]);
+                            ParameterManager.processParameters(args);
+                            Counter = -1;
+                            params = new Vector<String>();
+                        }
                     }
-
-                }.waitForEDT();
-
-            }
+                    return null;
+                }
+            });
+            instanceStarted = true;
+        } catch (AlreadyLockedException e) {
+            LOGGER.info("existing jD instance found!");
+            instanceStarted = false;
         }
-        if(JDUtilities.getJavaVersion()>=1.6)UIManager.put(LafWidget.ANIMATION_KIND, AnimationKind.REGULAR);
-        LOGGER.info("init Eventmanager");
-        Interaction.initTriggers();
-        LOGGER.info("init Localisation");
-        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadLanguage", "lade Sprachen"));
+        if (instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
+            splashScreen = null;
+            JDTheme.setTheme("default");
+            if (JDInitFlags.SHOW_SPLASH) {
+                if (SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPLASH, true)) {
+                    LOGGER.info("init Splash");
+                    new GuiRunnable<Object>() {
 
-        JDSounds.setSoundTheme("default");
-
-        if (!JDInitFlags.SWITCH_NEW_INSTANCE && Main.tryConnectToServer(args)) {
-
-            if (args.length > 0) {
-
-                LOGGER.info("Send parameters to existing jD instance and exit");
-                System.exit(0);
-
-            } else {
-
-                LOGGER.info("There is already a running jD instance");
-                Main.tryConnectToServer(new String[] { "--focus" });
-                System.exit(0);
-
-            }
-
-        } else {
-
-            if (!JDInitFlags.STOP && !JDInitFlags.ENOUGH_MEMORY) {
-                JDUtilities.restartJD(args);
-            }
-
-            try {
-
-                // listen for command line arguments from new jD instances //
-                final Server server = new Server();
-                server.go();
-                final String[] processArgs = args;
-
-                if (!JDInitFlags.STOP) {
-
-                    final Main main = new Main();
-
-                    EventQueue.invokeLater(new Runnable() {
-                        public void run() {
-
-                            Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
-                            main.go();
-                            for (String p : processArgs) {
-                                LOGGER.finest("Param: " + p);
-                            }
-                            // post start parameters //
+                        @Override
+                        public Object runSave() {
                             try {
-                                server.processParameters(processArgs);
-                            } catch (RemoteException e) {
+                                splashScreen = new SplashScreen(JDTheme.I("gui.splash"));
+                                splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.languages", 32, 32)));
+                                splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.settings", 32, 32)));
+                                splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.controller", 32, 32)));
+                                splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.update", 32, 32)));
+                                splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.plugins", 32, 32)));
+                                splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.screen", 32, 32)));
+                                splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.dllist", 32, 32)));
+                            } catch (IOException e) {
+                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            } catch (AWTException e) {
                                 jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                             }
-
+                            return null;
                         }
-                    });
 
+                    }.waitForEDT();
                 }
+            }
+            if (JDUtilities.getJavaVersion() >= 1.6) UIManager.put(LafWidget.ANIMATION_KIND, AnimationKind.REGULAR);
+            LOGGER.info("init Eventmanager");
+            Interaction.initTriggers();
+            LOGGER.info("init Localisation");
+            Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadLanguage", "lade Sprachen"));
 
-            } catch (RemoteException e) {
+            JDSounds.setSoundTheme("default");
+            start(args);
+        } else {
+            if (args.length > 0) {
+                LOGGER.info("Send parameters to existing jD instance and exit");
+                JUnique.sendMessage(instanceID, "" + args.length);
+                for (int i = 0; i < args.length; i++) {
+                    JUnique.sendMessage(instanceID, args[i]);
+                }
+            } else {
+                LOGGER.info("There is already a running jD instance");
+                JUnique.sendMessage(instanceID, "1");
+                JUnique.sendMessage(instanceID, "--focus");
+            }
+            System.exit(0);
+        }
+    }
 
-                LOGGER.severe("Server could not be started - ignore parameters");
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-
-                if (!JDInitFlags.STOP) {
-
-                    Main main = new Main();
+    private static void start(String args[]) {
+        if (!JDInitFlags.STOP && !JDInitFlags.ENOUGH_MEMORY) {
+            JDUtilities.restartJD(args);
+            return;
+        }
+        final String[] processArgs = args;
+        if (!JDInitFlags.STOP) {
+            final Main main = new Main();
+            EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
                     main.go();
-
-                    for (String p : args) {
+                    for (String p : processArgs) {
                         LOGGER.finest("Param: " + p);
                     }
-
+                    ParameterManager.processParameters(processArgs);
                 }
-
-            }
-
+            });
         }
-
     }
 
     private static void preInitChecks() {
@@ -374,25 +375,6 @@ public class Main {
         splashScreen.setNextImage();
         // splashScreen.setText(l);
         // splashScreen.setValue(splashScreen.getValue() + i);
-
-    }
-
-    private static Boolean tryConnectToServer(String args[]) {
-
-        String url = "//127.0.0.1/jDownloader";
-
-        try {
-            Properties p = System.getProperties();
-            p.setProperty("sun.rmi.transport.tcp.handshakeTimeout", "100");
-            ServerInterface server = (ServerInterface) Naming.lookup(url);
-            server.processParameters(args);
-            return true;
-
-        } catch (Exception ex) {
-
-            return false;
-
-        }
 
     }
 

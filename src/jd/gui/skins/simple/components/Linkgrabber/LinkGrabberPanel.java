@@ -228,7 +228,9 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 fp = it.next();
                 for (Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator(); it2.hasNext();) {
                     dl = it2.next();
-                    if (dl.getDownloadURL().trim().equalsIgnoreCase(link.getDownloadURL().trim())) return true;
+                    if (dl.getDownloadURL().trim().replaceAll("httpviajd", "http").equalsIgnoreCase(link.getDownloadURL().trim().replaceAll("httpviajd", "http"))){
+                        return true;
+                    }
                 }
             }
             return false;

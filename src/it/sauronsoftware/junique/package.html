@@ -1,0 +1,75 @@
+<html>
+<body>
+<p>The JUnique library can perform cross-JVM lock operations. It is
+mainly intended to prevent a user to run simultaneously more instances
+of the same Java application, and it also offers a communication layer
+enabling message exchange between different JVMs.</p>
+<p>JUnique is based on a <em>user related cross-JVM exclusive
+lock</em> concept. Suppose you want to avoid your Java desktop application to
+be started more than once by the same user. When the <em>main()</em>
+method of your application is called, you can require to JUnique a lock
+on a certain ID, i.e. <em>myapplicationid</em>. At the first application
+launch that ID will be surely available, and so the lock will be taken.
+The obtained lock can be explicitly released with a <em>JUnique.releaseLock()</em>
+call, otherwise it will be automatically released when JVM halts. If
+another JVM instance (or even the same one) will try to impose a lock on
+the same ID, JUnique will return with an <em>AlreadyLockedException</em>,
+notifying the instance that another one is currently running. Then
+the second instance can choose to abort its start sequence, and
+optionally it can send one or more messages to the active one before
+exiting.</p>
+<p>Please note that a JUnique lock is user-related: two different
+users accessing the system at the same time can still run two separate
+instances of the same application, since JUnique IDs reside in a user
+scope.</p>
+<h1>Quickstart</h1>
+<p>A sample <em>main()</em> method preventing multiple running
+instances of the same application for the same user:</p>
+<pre>public static void main(String[] args) {
+	String appId = &quot;myapplicationid&quot;;
+	boolean alreadyRunning;
+	try {
+		JUnique.acquireLock(appId);
+		alreadyRunning = false;
+	} catch (AlreadyLockedException e) {
+		alreadyRunning = true;
+	}
+	if (!alreadyRunning) {
+		// Start sequence here
+	}
+}</pre>
+<p>A message handling example, transfering arguments from the
+aborting instance to the active one:</p>
+<pre>public static void main(String[] args) {
+	String appId = &quot;myapplicationid&quot;;
+	boolean alreadyRunning;
+	try {
+		JUnique.acquireLock(appId, new MessageHandler() {
+			public String handle(String message) {
+				// A brand new argument received! Handle it!
+				return null;
+			}
+		});
+		alreadyRunning = false;
+	} catch (AlreadyLockedException e) {
+		alreadyRunning = true;
+	}
+	if (!alreadyRunning) {
+		// Start sequence here
+	} else {
+		for (int i = 0; i &lt; args.length; i++) {
+			JUnique.sendMessage(appId, args[0]));
+		}
+	}
+}</pre>
+<p>Real-world examples can be found inside the JUnique distribution
+archive.</p>
+<h1>Lock ID strategies</h1>
+<p>To avoid potential conflicts, it is advisable to choose a fully
+qualifying lock ID for each application using JUnique. Using a generic
+ID, such &quot;notepad&quot;, &quot;chat&quot; or &quot;myapp&quot;, is
+not a good idea. Better to use something like
+&quot;myName.myAppName&quot;, and even better it's to pick your
+application main class full name as the JUnique lock ID.</p>
+</body>
+</html>
