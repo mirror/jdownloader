@@ -33,6 +33,7 @@ public class NewsUrlDe extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setDebug(true);
         br.getPage(parameter);
         String link = br.getRedirectLocation();
         if (link == null) link = br.getRegex("<a href=\"([^\"]*)\" style").getMatch(0);

@@ -108,6 +108,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     public static final String STYLE_SYSTEM_MESSAGE = "system";
     private static final int TEXT_BUFFER = 1024 * 600;
     public static final String USERLIST_STYLE = JDIO.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
+    private static final String DEBUG = "";
 
     public static int getAddonInterfaceVersion() {
         return 2;
@@ -135,6 +136,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private JComboBox lang;
 
     private SubConfiguration subConfig;
+    private JDChatTaskPane tp;
 
     public JDChat(PluginWrapper wrapper) {
         super(wrapper);
@@ -617,15 +619,17 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (frame == null || !frame.isVisible() || conn == null || !conn.isConnected()) {
-            if (conn != null) {
-                conn.close();
-            }
+
+        if (!((MenuItem) e.getSource()).isSelected()) {
+
+            if (conn != null) conn.close();
+
             setEnabled(true);
 
         } else {
             setEnabled(false);
         }
+        ((MenuItem) e.getSource()).setSelected(!((MenuItem) e.getSource()).isSelected());
     }
 
     public void addToText(final User user, String style, String msg) {
@@ -914,7 +918,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         };
 
-        frame.setLayout(new BorderLayout());
+        frame.setLayout(new MigLayout(DEBUG + "ins 0", "[grow,fill]", "[grow,fill]"));
         top = new JLabel();
         textArea = new JTextPane();
         HyperlinkListener hyp = new HyperlinkListener() {
@@ -1095,7 +1099,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                 break;
             } catch (IOException e) {
                 addToText(null, STYLE_SYSTEM_MESSAGE, "Connect Timeout. Server not reachable...");
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 try {
                     Thread.sleep(15000);
                 } catch (InterruptedException e1) {
@@ -1340,13 +1344,13 @@ public class JDChat extends PluginOptional implements ControlListener {
         if (b) {
 
             initGUI();
-            final JDChatTaskPane tp = new JDChatTaskPane(JDLocale.L("plugins.optional.jdChat.gui.title", "JD Chat"), JDTheme.II("gui.images.config.tip"));
+            tp = new JDChatTaskPane(JDLocale.L("plugins.optional.jdChat.gui.title", "JD Chat"), JDTheme.II("gui.images.config.tip", 24, 24));
             SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
             tp.addActionListener(new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
                     SimpleGUI.CURRENTGUI.getContentPane().display(frame);
-                  
+
                 }
 
             });
@@ -1361,6 +1365,13 @@ public class JDChat extends PluginOptional implements ControlListener {
             }.start();
         } else {
             if (frame != null) {
+                SimpleGUI.CURRENTGUI.getTaskPane().remove(tp);
+                if(SimpleGUI.CURRENTGUI.getContentPane().getDisplay()==frame){
+                    SimpleGUI.CURRENTGUI.getTaskPane().switcher(SimpleGUI.CURRENTGUI.getDlTskPane());
+                }
+              
+                
+                this.onExit();
                 // frame.setVisible(false);
                 // TODO
                 // frame.dispose();
@@ -1421,7 +1432,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                     try {
                         Thread.sleep(10000);
                     } catch (InterruptedException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     }
                 }
             }
@@ -1461,15 +1472,15 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         public JDChatTaskPane(String string, ImageIcon ii) {
             super(string, ii, "jdchataddon");
-            this.setLayout(new MigLayout("ins 5, wrap 1", "[grow,fill]"));
+            this.setLayout(new MigLayout(DEBUG + "ins 0, wrap 1", "[grow,fill]"));
 
             initGUI();
         }
 
         private void initGUI() {
             JScrollPane sp = new JScrollPane(right);
-            sp.setMaximumSize(new Dimension(300, 300));
-            this.add(sp);
+            // sp.setMaximumSize(new Dimension(300, 300));
+            this.add(right);
         }
 
         public void actionPerformed(ActionEvent e) {

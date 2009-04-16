@@ -28,8 +28,6 @@ import net.miginfocom.swing.MigLayout;
 public class JDStatusBar extends JPanel implements ChangeListener, ControlListener {
     private static final long serialVersionUID = 3676496738341246846L;
 
-  
-
     private JLabel lblSimu;
 
     private JLabel lblSpeed;
@@ -38,20 +36,21 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
 
     protected JSpinner spMaxDls;
 
-    public JDStatusBar() {
-        setLayout(new MigLayout("ins 0 3 0 3,", "[shrink,right][shrink,right][shrink,right][shrink,right]", "[20px!]"));
+    private JSpinner spMaxChunks;
 
-      
+    private JLabel maxChunks;
+
+    public JDStatusBar() {
+        setLayout(new MigLayout("ins 0 0 0 0,", "[fill,grow,left][shrink,right][shrink,right][shrink,right][shrink,right][shrink,right]", "[21px!]"));
 
         // lblMessage.setIcon(statusIcon);
         // statusBarHandler = new LabelHandler(lblMessage,
         // JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
 
-   
         JDUtilities.getController().addControlListener(this);
         lblSpeed = new JLabel(JDLocale.L("gui.statusbar.speed", "Max. Speed"));
         lblSimu = new JLabel(JDLocale.L("gui.statusbar.sim_ownloads", "Max.Dls."));
-
+        maxChunks = new JLabel(JDLocale.L("gui.statusbar.maxChunks", "Max.Con."));
         spMax = new JSpinner();
         spMax.setModel(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
         spMax.setPreferredSize(new Dimension(60, 20));
@@ -65,14 +64,20 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         spMaxDls.setToolTipText(JDLocale.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
         spMaxDls.addChangeListener(this);
 
-      
-       
-      add(lblSimu);
-      add(spMaxDls,"width 90!,height 16!");
-      add(lblSpeed);
-      add(spMax,"width 90!,height 16!");
-     
-   
+        spMaxChunks = new JSpinner();
+        spMaxChunks.setModel(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
+        spMaxChunks.setPreferredSize(new Dimension(60, 20));
+        spMaxChunks.setToolTipText(JDLocale.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
+        spMaxChunks.addChangeListener(this);
+
+        add(new PremiumStatus(), "gaptop 1");
+        add(maxChunks);
+        add(spMaxChunks, "width 90!,height 20!");
+        add(lblSimu);
+        add(spMaxDls, "width 90!,height 20!");
+        add(lblSpeed);
+        add(spMax, "width 90!,height 20!");
+
     }
 
     void addItem(boolean seperator, JComponent where, Component component) {
@@ -86,7 +91,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
     }
 
     private void colorizeSpinnerSpeed() {
-        /* färbt den spinner ein, falls speedbegrenzung aktiv */
+        /* fÃ¤rbt den spinner ein, falls speedbegrenzung aktiv */
         JSpinner.DefaultEditor spMaxEditor = (JSpinner.DefaultEditor) spMax.getEditor();
         if ((Integer) spMax.getValue() > 0) {
             lblSpeed.setForeground(JDTheme.C("gui.color.statusbar.maxspeedhighlight", "ff0c03"));
@@ -145,6 +150,6 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
             subConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, (Integer) spMaxDls.getValue());
             subConfig.save();
 
-        } 
+        }
     }
 }

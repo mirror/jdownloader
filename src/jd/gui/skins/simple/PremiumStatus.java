@@ -20,7 +20,6 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -37,7 +36,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
     private static final int BARCOUNT = 8;
     private TreeMap<String, ArrayList<AccountInfo>> map;
     private TreeMap<String, Long> mapSize;
-    private JDProgressBar[] bars;
+    private TinyProgressBar[] bars;
 
     private long trafficTotal = 0l;
     private Thread refresher;
@@ -51,7 +50,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
     @SuppressWarnings("unchecked")
     public PremiumStatus() {
         super();
-        bars = new JDProgressBar[BARCOUNT];
+        bars = new TinyProgressBar[BARCOUNT];
         logger = JDLogger.getLogger();
 
         this.setLayout(new MigLayout(DEBUG + "ins 0", "[]", "[]"));
@@ -59,7 +58,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         JDController.getInstance().addControlListener(this);
         AccountManager.getInstance().addAccountListener(this);
         for (int i = 0; i < BARCOUNT; i++) {
-            JDProgressBar pg = new JDProgressBar();
+            TinyProgressBar pg = new TinyProgressBar();
             bars[i] = pg;
             bars[i].addMouseListener(new MouseListener() {
 
@@ -98,9 +97,9 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                 }
 
             });
-            pg.setStringPainted(true);
+
             pg.setVisible(false);
-            add(pg, "width 80!,height 16!,hidemode 3");
+            add(pg, "hidemode 3");
 
         }
         config = SubConfiguration.getConfig("PREMIUMSTATUS");
@@ -234,12 +233,12 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
             bars[i].setValue(left);
 
             if (left >= 0) {
-                bars[i].setString(JDUtilities.formatKbReadable(left / 1024));
+                // bars[i].setString(JDUtilities.formatKbReadable(left / 1024));
                 bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), JDUtilities.formatKbReadable(left / 1024)));
             } else {
                 bars[i].setMaximum(10);
                 bars[i].setValue(10);
-                bars[i].setString("∞");
+
                 bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.unlimited_traffic.tooltip", "%s -- Unlimited traffic! You can download as much as you want to.", host));
 
             }

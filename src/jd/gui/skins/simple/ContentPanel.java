@@ -43,4 +43,9 @@ public class ContentPanel extends JXPanel {
         return rightPanel;
     }
 
+    public JTabbedPanel getDisplay() {
+      return rightPanel;
+        
+    }
+
 }

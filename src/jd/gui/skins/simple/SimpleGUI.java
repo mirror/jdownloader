@@ -140,6 +140,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private DownloadTaskPane dlTskPane;
 
+    public DownloadTaskPane getDlTskPane() {
+        return dlTskPane;
+    }
+
     private LinkGrabberTaskPane lgTaskPane;
 
     private JDToolBar toolBar;
@@ -543,7 +547,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
         panel.add(progressBar, "spanx,hidemode 3,cell 0 3");
       
-        panel.add(new PremiumStatus(), "spanx, cell 0 4");
+//        panel.add(new PremiumStatus(), "spanx, cell 0 4");
         panel.add(this.statusBar, "spanx, cell 0 5");
 
     }

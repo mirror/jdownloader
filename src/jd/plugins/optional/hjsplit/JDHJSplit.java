@@ -139,11 +139,11 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.hjsplit.menu.toggle", "Activate"), 1).setActionListener(this));
         m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
 
-        menu.add(new MenuItem(MenuItem.SEPARATOR));
+      
 
         menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.hjsplit.menu.extract.singlefils", "Merge archive(s)"), 21).setActionListener(this));
 
-        menu.add(new MenuItem(MenuItem.SEPARATOR));
+       
 
         menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.hjsplit.menu.config", "Settings"), 4).setActionListener(this));
 

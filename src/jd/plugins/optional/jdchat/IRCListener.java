@@ -185,7 +185,6 @@ class IRCListener implements IRCEventListener {
 
         }
 
-        logger.info(chan + ">" + user.rank + " " + u.getNick() + ": " + msg);
     }
 
     public void onQuit(IRCUser u, String msg) {
