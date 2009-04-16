@@ -35,6 +35,15 @@ public class JokeAroundOrg extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setCookiesExclusive(true);
+        br.clearCookies("http://joke-around.org");
+        if (param.getStringProperty("phpsessid", null) != null) {
+            br.setCookie("http://joke-around.org", "PHPSESSID", param.getStringProperty("phpsessid", null));
+        }
+        if (param.getStringProperty("referer", null) != null) {
+            br.getHeaders().put("Referer", param.getStringProperty("referer", null));
+        }
+        br.setDebug(true);
         br.getPage(parameter);
         String wait = br.getRegex(";sec=(\\d+);var").getMatch(0);
         if (wait != null) {
@@ -42,7 +51,10 @@ public class JokeAroundOrg extends PluginForDecrypt {
         }
         String forward = br.getRegex("document.location='(/!.*?-.*?/)';").getMatch(0);
         if (forward != null) {
-            decryptedLinks.add(createDownloadlink("http://joke-around.org" + forward));
+            DownloadLink dl;
+            decryptedLinks.add(dl = createDownloadlink("http://joke-around.org" + forward));
+            dl.setProperty("phpsessid", br.getCookie("http://joke-around.org", "PHPSESSID"));
+            dl.setProperty("referer", param.getCryptedUrl());
             return decryptedLinks;
         }
         Form form = br.getForm(0);

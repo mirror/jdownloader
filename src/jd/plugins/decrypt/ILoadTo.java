@@ -38,7 +38,7 @@ public class ILoadTo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
+        br.setDebug(true);
         if (parameter.matches(patternSupported_Info)) {
             br.getPage(parameter);
             String password = br.getRegex("Passwort:</td><td><input.*?value='(.*?)'").getMatch(0);
@@ -52,7 +52,9 @@ public class ILoadTo extends PluginForDecrypt {
             }
         } else {
             br.getPage(parameter);
-            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            DownloadLink dl;
+            decryptedLinks.add(dl = createDownloadlink(br.getRedirectLocation()));
+            dl.setUrlDownload(br.getRedirectLocation());
         }
         return decryptedLinks;
     }

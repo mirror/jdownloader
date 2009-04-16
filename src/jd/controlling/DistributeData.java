@@ -167,6 +167,11 @@ public class DistributeData extends Thread {
                                 cLink.setDecrypterPassword(link.getDecrypterPassword());
                             }
 
+                            // Reiche Properties weiter
+                            for (CryptedLink cLink : decryptableLinks) {
+                                cLink.setProperties(link.getProperties());
+                            }
+
                             ArrayList<DownloadLink> dLinks = plg.decryptLinks(decryptableLinks);
                             // Reicht die Passwörter weiter
                             for (DownloadLink dLink : dLinks) {
@@ -179,7 +184,7 @@ public class DistributeData extends Thread {
                             }
                             break;
                         } catch (Exception e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                         }
                     }
                 }
@@ -277,7 +282,7 @@ public class DistributeData extends Thread {
                     }
                 } catch (Exception e) {
                     logger.severe("Decrypter/Search Fehler: " + e.getMessage());
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
         }
@@ -349,7 +354,7 @@ public class DistributeData extends Thread {
                     DThread dthread = new DThread(plg, decryptableLinks);
                     decryptJobbers.add(dthread);
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
         }
