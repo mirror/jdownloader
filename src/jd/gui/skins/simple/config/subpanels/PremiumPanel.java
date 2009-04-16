@@ -359,7 +359,7 @@ public class PremiumPanel extends JPanel {
                     AccountInfo ai;
                     try {
                         ai = host.getAccountInformation(account);
-
+                        if (ai == null) return;
                         Container details = info.getContentPane();
                         info.getContentPane().setLayout(new MigLayout("ins 0 150 0 0, wrap 3", "[fill]15[grow, fill][]", "[][][][][][][][][][][fill,grow]"));
                         details.removeAll();
@@ -430,13 +430,13 @@ public class PremiumPanel extends JPanel {
                         // SimpleGUI.CURRENTGUI.pack();
                         PremiumPanel.this.getParent().getParent().getParent().invalidate();
                         PremiumPanel.this.getParent().getParent().getParent().repaint();
-//
-//                        Container c = PremiumPanel.this;
-//                        while (c != null) {
-//
-//                            c = c.getParent();
-//                            System.out.println(c);
-//                        }
+                        //
+                        // Container c = PremiumPanel.this;
+                        // while (c != null) {
+                        //
+                        // c = c.getParent();
+                        // System.out.println(c);
+                        // }
                     }
                 }.execute();
 

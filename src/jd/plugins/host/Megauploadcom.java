@@ -563,8 +563,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     @Override
-    public void reset_downloadlink(DownloadLink link) {
-        // link.setProperty("pass", null);
+    public void reset_downloadlink(DownloadLink link) {        
     }
 
     private void setConfigElements() {

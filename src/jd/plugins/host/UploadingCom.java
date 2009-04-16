@@ -1,6 +1,7 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -26,9 +27,11 @@ public class UploadingCom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie("http://www.uploading.com/", "_lang", "en");
+        br.setCookie("http://www.uploading.com/", "setlang", "en");
         br.getPage(downloadLink.getDownloadURL());
-        String filesize = br.getRegex("File\\ssize:\\s(.*?)<br/>").getMatch(0);
-        String filename = br.getRegex("File\\sname:\\s<span[^>]*>(.*?)</span>").getMatch(0);
+        String filesize = br.getRegex("File size:(.*?)<br").getMatch(0);
+        String filename = br.getRegex(Pattern.compile("Download file.*?<b>(.*?)</b>", Pattern.DOTALL)).getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
