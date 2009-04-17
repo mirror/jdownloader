@@ -160,7 +160,7 @@ public abstract class PluginForDecrypt extends Plugin {
             tmpLinks = new ArrayList<DownloadLink>();
         } catch (Exception e) {
             progress.finalize();
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         if (tmpLinks == null) {
             logger.severe("Decrypter out of date: " + this);
@@ -186,37 +186,35 @@ public abstract class PluginForDecrypt extends Plugin {
     private void tryClickNLoad(CryptedLink cryptedLink) {
 
         if (this.isClickNLoadEnabled() && OPEN_CLICK_N_LOAD >= 0 && OPEN_CLICK_N_LOAD <= 25) {
-            try {
-                JDUtilities.acquireUserIOSemaphore();
-            } catch (InterruptedException e1) {
-                return;
-            }
-            if (OPEN_CLICK_N_LOAD < 0) return;
-            boolean open = JDUtilities.getGUI().showConfirmDialog(JDLocale.LF("gui.plugins.decrypt.askclicknload", "The decrypter %s seems to be outdated, but supports Click'n'Load. Open the website now?", this.getHost()));
-            if (open) {
-                try {
+            synchronized (JDUtilities.userio_lock) {
+                if (OPEN_CLICK_N_LOAD < 0) return;
+                boolean open = JDUtilities.getGUI().showConfirmDialog(JDLocale.LF("gui.plugins.decrypt.askclicknload", "The decrypter %s seems to be outdated, but supports Click'n'Load. Open the website now?", this.getHost()));
+                if (open) {
+                    try {
 
-                    JLinkButton.openURL(cryptedLink.getCryptedUrl());
-                    // JLinkButton.openURL(
-                    // "http://jdownloader.org/clicknload-redirect/"
-                    // +Encoding.urlEncode
-                    // (cryptedLink.getCryptedUrl().replace("http://", "")));
+                        JLinkButton.openURL(cryptedLink.getCryptedUrl());
+                        // JLinkButton.openURL(
+                        // "http://jdownloader.org/clicknload-redirect/"
+                        // +Encoding.urlEncode
+                        // (cryptedLink.getCryptedUrl().replace("http://",
+                        // "")));
 
-                    // JLinkButton.openURL(
-                    // "http://jdownloader.org/clicknload-redirect/" +
-                    // Encoding.urlEncode
-                    // (cryptedLink.getCryptedUrl().replace("http://", "")));
+                        // JLinkButton.openURL(
+                        // "http://jdownloader.org/clicknload-redirect/" +
+                        // Encoding.urlEncode
+                        // (cryptedLink.getCryptedUrl().replace("http://",
+                        // "")));
 
-                    OPEN_CLICK_N_LOAD++;
-                } catch (Exception e) {
-                    open = false;
+                        OPEN_CLICK_N_LOAD++;
+                    } catch (Exception e) {
+                        open = false;
+                    }
+                }
+                if (!open) {
+                    OPEN_CLICK_N_LOAD = -1;
+
                 }
             }
-            if (!open) {
-                OPEN_CLICK_N_LOAD = -1;
-
-            }
-            JDUtilities.releaseUserIOSemaphore();
         }
 
     }

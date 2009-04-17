@@ -445,8 +445,10 @@ public class JDController implements ControlListener {
      * @return Text des Captchas
      */
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress, String def) {
+        synchronized (JDUtilities.userio_lock) {
         String captchaCode = uiInterface.showCountdownCaptchaDialog(plugin, captchaAddress, def);
         return captchaCode;
+        }
     }
 
     /**

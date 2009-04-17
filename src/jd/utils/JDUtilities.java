@@ -53,7 +53,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.SimpleTimeZone;
 import java.util.Vector;
-import java.util.concurrent.Semaphore;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -135,7 +134,7 @@ public class JDUtilities {
     /**
      * nur 1 UserIO Dialog gleichzeitig (z.b.PW,Captcha)
      */
-    private static Semaphore userio_sem = new Semaphore(1);
+    public static Integer userio_lock = new Integer(0);
 
     /**
      * Der Logger für Meldungen
@@ -188,21 +187,6 @@ public class JDUtilities {
             result.put(entry.getKey(), entry.getValue());
         }
         return result;
-    }
-
-    public static void acquireUserIOSemaphore() throws InterruptedException {
-        try {
-            userio_sem.acquire();
-        } catch (InterruptedException e) {
-            userio_sem.drainPermits();
-            userio_sem.release(1);
-            throw e;
-        }
-    }
-
-    public static void releaseUserIOSemaphore() {
-        userio_sem.drainPermits();
-        userio_sem.release(1);
     }
 
     /**
@@ -431,10 +415,10 @@ public class JDUtilities {
 
     public static String formatKbReadable(long value) {
         DecimalFormat c = new DecimalFormat("0.00");
-        if (value >= 1024 * 1024*1024) return c.format(value / (1024*1024 * 1024.0)) + " TB";
+        if (value >= 1024 * 1024 * 1024) return c.format(value / (1024 * 1024 * 1024.0)) + " TB";
         if (value >= 1024 * 1024) return c.format(value / (1024 * 1024.0)) + " GB";
         if (value >= 1024) return c.format(value / 1024.0) + " MB";
-       
+
         return value + " KB";
     }
 
@@ -524,20 +508,20 @@ public class JDUtilities {
     }
 
     public static String getUserInput(String message) throws InterruptedException {
-        acquireUserIOSemaphore();
-        if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
-        String password = JDUtilities.getGUI().showCountdownUserInputDialog(message, null);
-        releaseUserIOSemaphore();
-        return password;
+        synchronized (userio_lock) {
+            if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
+            String password = JDUtilities.getGUI().showCountdownUserInputDialog(message, null);
+            return password;
+        }
     }
 
     public static String getUserInput(String message, String defaultmessage) throws InterruptedException {
-        acquireUserIOSemaphore();
-        if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
-        if (defaultmessage == null) defaultmessage = "";
-        String password = JDUtilities.getGUI().showCountdownUserInputDialog(message, defaultmessage);
-        releaseUserIOSemaphore();
-        return password;
+        synchronized (userio_lock) {
+            if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
+            if (defaultmessage == null) defaultmessage = "";
+            String password = JDUtilities.getGUI().showCountdownUserInputDialog(message, defaultmessage);
+            return password;
+        }
     }
 
     /**
@@ -585,10 +569,8 @@ public class JDUtilities {
                 String captchaCode = jac.checkCaptcha(captcha);
                 if (jac.isExtern()) {
                     if (captchaCode == null || captchaCode.trim().length() == 0) {
-                        plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
-                        acquireUserIOSemaphore();
-                        captchaCode = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
-                        releaseUserIOSemaphore();
+                        plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);                        
+                            captchaCode = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);                        
                     }
                     return captchaCode;
 
@@ -623,10 +605,8 @@ public class JDUtilities {
                 // window.pack();
                 jd.controlling.JDLogger.getLogger().info("worst letter: " + vp);
                 if (plugin.useUserinputIfCaptchaUnknown() && vp > (double) SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)) {
-                    plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
-                    acquireUserIOSemaphore();
-                    code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
-                    releaseUserIOSemaphore();
+                    plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);                    
+                    code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);                    
                 } else {
                     return captchaCode;
                 }
@@ -640,11 +620,9 @@ public class JDUtilities {
             }
         }
 
-        else {
-            acquireUserIOSemaphore();
+        else {            
             plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
-            String code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, null);
-            releaseUserIOSemaphore();
+            String code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, null);            
             return code;
         }
     }

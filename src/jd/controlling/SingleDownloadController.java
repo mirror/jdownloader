@@ -254,7 +254,7 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onErrorPluginDefect(DownloadLink downloadLink2, PluginForHost currentPlugin2) {
-        logger.warning("The Plugin for " + currentPlugin.getHost() + " seems to be out of date(rev"+downloadLink.getPlugin().getVersion()+"). Please inform the Support-team http://jdownloader.org/support.");
+        logger.warning("The Plugin for " + currentPlugin.getHost() + " seems to be out of date(rev" + downloadLink.getPlugin().getVersion() + "). Please inform the Support-team http://jdownloader.org/support.");
         logger.warning(downloadLink2.getLinkStatus().getErrorMessage());
         // Dieser Exception deutet meistens auf einen PLuginfehler hin. Deshalb
         // wird in diesem Fall die zuletzt geladene browserseite aufgerufen.
@@ -292,14 +292,14 @@ public class SingleDownloadController extends Thread {
 
         downloadLink2.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos", "TOS haven't been accepted."));
 
-        JDUtilities.acquireUserIOSemaphore();
         if (!plugin.isAGBChecked()) {
-            showAGBDialog(downloadLink2);
+            synchronized (JDUtilities.userio_lock) {
 
+                showAGBDialog(downloadLink2);
+            }
         } else {
             downloadLink2.getLinkStatus().reset();
         }
-        JDUtilities.releaseUserIOSemaphore();
 
         DownloadController.getDownloadController().fireDownloadLinkUpdate(downloadLink);
 
@@ -371,7 +371,7 @@ public class SingleDownloadController extends Thread {
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
                 return;
-           }
+            }
             retry(downloadLink, plugin);
         }
     }
@@ -499,12 +499,12 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorWaittime(DownloadLink downloadLink, PluginForHost plugin) {
-    
+
         LinkStatus status = downloadLink.getLinkStatus();
         long milliSeconds = downloadLink.getLinkStatus().getValue();
 
         if (milliSeconds <= 0) {
-       
+
             logger.severe(JDLocale.L("plugins.errors.pluginerror", "Plugin error. Please inform Support"));
             milliSeconds = 3600000l;
         }

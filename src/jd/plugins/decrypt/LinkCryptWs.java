@@ -40,10 +40,14 @@ public class LinkCryptWs extends PluginForDecrypt {
     public LinkCryptWs(PluginWrapper wrapper) {
         super(wrapper);
     }
-/*
-TODO: könntet ihr aus linkcrypt.ws/dirl/id linkcrypt.ws/dlc/id machen?  (bezogen auf CNL Links im browser)
-* @see jd.plugins.PluginForDecrypt#decryptIt(jd.plugins.CryptedLink, jd.controlling.ProgressController)
- */
+
+    /*
+     * TODO: könntet ihr aus linkcrypt.ws/dirl/id linkcrypt.ws/dlc/id machen?
+     * (bezogen auf CNL Links im browser)
+     * 
+     * @see jd.plugins.PluginForDecrypt#decryptIt(jd.plugins.CryptedLink,
+     * jd.controlling.ProgressController)
+     */
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -62,10 +66,8 @@ TODO: könntet ihr aus linkcrypt.ws/dirl/id linkcrypt.ws/dlc/id machen?  (bezoge
                 File file = this.getLocalCaptchaFile(this);
                 Form form = br.getForm(0);
                 Browser.download(file, br.cloneBrowser().openGetConnection("http://linkcrypt.ws/captx.php"));
-                JDUtilities.acquireUserIOSemaphore();
-                ClickPositionDialog d = new ClickPositionDialog(SimpleGUI.CURRENTGUI, file, "Captcha", JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"), 20, null);
+                ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, "Captcha", JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"), 20, null);
                 if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
-                JDUtilities.releaseUserIOSemaphore();
                 Point p = d.result;
                 form.put("x", p.x + "");
                 form.put("y", p.y + "");

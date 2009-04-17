@@ -64,7 +64,13 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
     private String titleText;
     private JLabel button;
 
-    public ClickPositionDialog(final Frame owner, final File image, final String title, final String msg, final int countdown, final Point defaultResult) {
+    public static ClickPositionDialog show(final Frame owner, final File image, final String title, final String msg, final int countdown, final Point defaultResult) {
+        synchronized (JDUtilities.userio_lock) {
+            return new ClickPositionDialog(owner, image, title, msg, countdown, defaultResult);
+        }
+    }
+
+    private ClickPositionDialog(final Frame owner, final File image, final String title, final String msg, final int countdown, final Point defaultResult) {
         super(owner);
         setModal(true);
 
@@ -79,7 +85,7 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     }
                 }
                 int c = countdown;

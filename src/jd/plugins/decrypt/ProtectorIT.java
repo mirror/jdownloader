@@ -61,10 +61,8 @@ public class ProtectorIT extends PluginForDecrypt {
                 File file = this.getLocalCaptchaFile(this);
                 Form form = br.getForm(0);
                 Browser.download(file, br.cloneBrowser().openGetConnection("http://" + br.getHost() + br.getRegex("<input type=\"image\" src=\"\\.([^\"]*)\" name=\"captcha\" alt=\"Captcha\">").getMatch(0)));
-                JDUtilities.acquireUserIOSemaphore();
-                ClickPositionDialog d = new ClickPositionDialog(SimpleGUI.CURRENTGUI, file, "Captcha", "", 20, null);
+                ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, "Captcha", "", 20, null);
                 if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
-                JDUtilities.releaseUserIOSemaphore();
                 Point p = d.result;
                 form.remove("captcha");
                 form.put("captcha.x", p.x + "");
@@ -89,18 +87,17 @@ public class ProtectorIT extends PluginForDecrypt {
                     decryptedLinks.add(downloadLink);
                 }
                 container.delete();
-                if (decryptedLinks.size() > 0)
-                return decryptedLinks;
+                if (decryptedLinks.size() > 0) return decryptedLinks;
             } catch (Exception e) {
                 decryptedLinks = new ArrayList<DownloadLink>();
             }
         }
-            String[] matches = br.getRegex("(http://protect-it.org//?\\?de=[^\"']*)[\"']").getColumn(0);
-            for (String string : matches) {
-                br.openGetConnection(string);
-                decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
-                br.getHttpConnection().disconnect();
-            }
+        String[] matches = br.getRegex("(http://protect-it.org//?\\?de=[^\"']*)[\"']").getColumn(0);
+        for (String string : matches) {
+            br.openGetConnection(string);
+            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            br.getHttpConnection().disconnect();
+        }
         return decryptedLinks;
     }
 

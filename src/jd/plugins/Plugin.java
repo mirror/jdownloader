@@ -93,11 +93,11 @@ public abstract class Plugin implements ActionListener {
 
     public static ConversionMode DisplayDialog(ArrayList<ConversionMode> displaymodes, String name, CryptedLink link) throws InterruptedException {
         link.getProgressController().setStatusText(JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
-        JDUtilities.acquireUserIOSemaphore();
-        ConversionMode temp = ConvertDialog.DisplayDialog(displaymodes, name);
-        JDUtilities.releaseUserIOSemaphore();
-        link.getProgressController().setStatusText(null);
-        return temp;
+        synchronized (JDUtilities.userio_lock) {
+            ConversionMode temp = ConvertDialog.DisplayDialog(displaymodes, name);
+            link.getProgressController().setStatusText(null);
+            return temp;
+        }
     }
 
     public static String getCaptchaCode(Plugin plugin, String method, File file, boolean forceJAC, DownloadLink link) throws PluginException, InterruptedException {
