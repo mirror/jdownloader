@@ -544,9 +544,7 @@ public class JDInit {
         new HostPluginWrapper("speedyshare.com", "SpeedyShareCom", "http://[\\w\\.]*?speedyshare\\.com/[0-9]+.*");
         new HostPluginWrapper("fileshaker.com", "FileshakerCom", "http://[\\w\\.]*?fileshaker\\.com/.+");
         new HostPluginWrapper("adrive.com", "AdriveCom", "http://[\\w\\.].*?adrive\\.com/public/[0-9a-zA-Z]+.*");
-
         new HostPluginWrapper("hotfile.com", "HotFileCom", "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/");
-
         new HostPluginWrapper("przeklej.pl", "PrzeklejPl", "http://[\\w\\.]*?przeklej\\.pl/(d/\\w+/|\\d+).+");
         new HostPluginWrapper("wrzuta.pl", "WrzutaPl", "http://[\\w\\.]*?wrzuta\\.pl/(audio|film|obraz)/\\w+.+");
         new HostPluginWrapper("filefactory.pl", "FileFactoryPl", "http://[\\w\\.]*?filefactory\\.pl/showfile-\\d+.+");
@@ -570,6 +568,7 @@ public class JDInit {
         new HostPluginWrapper("fileqube.com", "FileQubeCom", "http://[\\w\\.]*?fileqube\\.com/(file|shared)/.*");
         new HostPluginWrapper("megashare.com", "MegaShareCom", "http://[\\w\\.]*?megashare\\.com/[0-9]+");
         new HostPluginWrapper("rapidshark.pl", "RapidSharkPl", "http://[\\w\\.]*?rapidshark\\.pl/.*");
+        new HostPluginWrapper("milledrive.com", "MilleDriveCom", "http://.*?milledrive\\.com/(music|files|videos|files/video|files/music)/\\d+/.*");
 
         // Hoster from Extern
         new HostPluginWrapper("ifolder.ru", "IfolderRu", "http://[\\w\\.]*?ifolder\\.ru/\\d+");
