@@ -228,9 +228,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 fp = it.next();
                 for (Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator(); it2.hasNext();) {
                     dl = it2.next();
-                    if (dl.getDownloadURL().trim().replaceAll("httpviajd", "http").equalsIgnoreCase(link.getDownloadURL().trim().replaceAll("httpviajd", "http"))){
-                        return true;
-                    }
+                    if (dl.getDownloadURL().trim().replaceAll("httpviajd", "http").equalsIgnoreCase(link.getDownloadURL().trim().replaceAll("httpviajd", "http"))) { return true; }
                 }
             }
             return false;
@@ -499,6 +497,9 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 }
             } else if (arg0.getSource() instanceof LinkGrabberTreeTableAction) {
                 switch (arg0.getID()) {
+                case LinkGrabberTreeTableAction.DELETE:
+                    selected_links = (Vector<DownloadLink>) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("links");
+                    break;
                 case LinkGrabberTreeTableAction.SORT_ALL:
                     col = (Integer) ((LinkGrabberTreeTableAction) arg0.getSource()).getProperty().getProperty("col");
                     break;
@@ -617,7 +618,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         Vector<DownloadLink> linkList = fpv2.getDownloadLinks();
         if (linkList.isEmpty()) return;
 
-        FilePackage fp = new FilePackage();
+        FilePackage fp = FilePackage.getInstance();
         fp.setName(fpv2.getName());
         fp.setComment(fpv2.getComment());
         fp.setPassword(fpv2.getPassword());

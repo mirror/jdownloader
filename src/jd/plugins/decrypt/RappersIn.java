@@ -71,7 +71,7 @@ public class RappersIn extends PluginForDecrypt {
             String[] titel = br.getRegex(PATTERN_TITEL).getColumn(0);
             assert titel.length == dUrls.length : "ungültiges xml";
             parseTitelNames(titel, nick);
-            FilePackage fp = new FilePackage();
+            FilePackage fp = FilePackage.getInstance();
             fp.setName("rappers.in - " + nick);
             for (int i = 0; i < dUrls.length; i++) {
                 DownloadLink dlLink = createDownloadlink(dUrls[i].replaceAll("http://", "httpRappersIn://").replaceAll("rappers.in", "viaRappersIn"));

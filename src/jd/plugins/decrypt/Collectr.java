@@ -71,7 +71,7 @@ public class Collectr extends PluginForDecrypt {
         } else if (new Regex(url, PAT_SUPPORTED_FOLDER).matches()) {
             String saptcha = new Regex(page, PATTERN_SAPCHA).getMatch(0);
             String ordner = new Regex(url, PAT_SUPPORTED_FOLDER).getMatch(0);
-            FilePackage fp = new FilePackage();
+            FilePackage fp = FilePackage.getInstance();
             fp.setName(new Regex(page, PATTERN_FOLDERNAME).getMatch(0));
             if (saptcha != null) {
                 // Captcha on

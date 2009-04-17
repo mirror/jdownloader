@@ -388,7 +388,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
             fp = selected_links.get(0).getFilePackage();
             String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
             if (name != null) {
-                FilePackage nfp = new FilePackage();
+                FilePackage nfp = FilePackage.getInstance();
                 nfp.setName(name);
                 for (int i = 0; i < selected_links.size(); i++) {
                     selected_links.elementAt(i).setFilePackage(nfp);

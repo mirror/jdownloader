@@ -41,7 +41,7 @@ public class WrzutaPl extends PluginForDecrypt {
         String user = br.getRegex("<h3><strong>U.ytkownik</strong>/(.*?)</h3>").getMatch(0);
         if (user == null) return null;
         user = user.trim();
-        FilePackage fp = new FilePackage();
+        FilePackage fp = FilePackage.getInstance();
         fp.setName(user);
         String id = new Regex(parameter.getCryptedUrl(), "katalog/(\\w+)/?").getMatch(0);
         if (id == null) return null;

@@ -843,13 +843,19 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      *            Soll dieser DownloadLink aktiviert sein oder nicht
      */
     public void setEnabled(boolean isEnabled) {
-        this.isEnabled = isEnabled;
+        if (this.isEnabled != isEnabled) {
+            if (!isEnabled) {
+                this.getBroadcaster().fireEvent(new DownloadLinkEvent(this, DownloadLinkEvent.DISABLED));
+            } else {
+                this.getBroadcaster().fireEvent(new DownloadLinkEvent(this, DownloadLinkEvent.ENABLED));
+            }
+        }
 
+        this.isEnabled = isEnabled;
         if (!isEnabled) {
             setAborted(true);
         } else {
             setAborted(false);
-
         }
         if (isEnabled == true) {
 

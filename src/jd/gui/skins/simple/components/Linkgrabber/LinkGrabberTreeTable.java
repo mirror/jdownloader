@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -34,6 +36,7 @@ import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.DownloadView.DownloadLinkRowHighlighter;
 import jd.gui.skins.simple.components.DownloadView.DownloadTreeTable;
 import jd.gui.skins.simple.components.DownloadView.JColumnControlButton;
+import jd.gui.skins.simple.components.DownloadView.TreeTableAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
@@ -47,7 +50,7 @@ import org.jdesktop.swingx.decorator.PainterHighlighter;
 import org.jdesktop.swingx.table.TableColumnExt;
 import org.jdesktop.swingx.tree.TreeModelSupport;
 
-public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, MouseMotionListener, TreeExpansionListener {
+public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, MouseMotionListener, TreeExpansionListener, KeyListener {
 
     /**
      * 
@@ -80,6 +83,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         setColumnControl(new JColumnControlButton(this));
         addTreeExpansionListener(this);
         addMouseListener(this);
+        addKeyListener(this);
         addMouseMotionListener(this);
         this.getTableHeader().addMouseListener(this);
         UIManager.put("Table.focusCellHighlightBorder", null);
@@ -90,7 +94,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         // new PainterHighlighter(HighlightPredicate.IS_FOLDER,
         // DownloadTreeTable.getFolderPainter());
         addPackageHighlighter();
-//        addOfflineHighlighter();
+        // addOfflineHighlighter();
         // addOnlineHighlighter();
         addDisabledHighlighter();
 
@@ -131,7 +135,9 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         Vector<DownloadLink> links = getSelectedDownloadLinks();
         Vector<LinkGrabberFilePackage> fps = getSelectedFilePackages();
         for (LinkGrabberFilePackage filePackage : fps) {
-            links.addAll(filePackage.getDownloadLinks());
+            for (DownloadLink dl : filePackage.getDownloadLinks()) {
+                if (!links.contains(dl)) links.add(dl);
+            }
         }
         return links;
     }
@@ -453,6 +459,24 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
                 tableColumn.setVisible(false);
             }
         }
+    }
+
+    public void keyReleased(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+            Vector<DownloadLink> alllinks = getAllSelectedDownloadLinks();
+            LinkGrabberTreeTableAction test = new LinkGrabberTreeTableAction(linkgrabber, JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", LinkGrabberTreeTableAction.DELETE, new Property("links", alllinks));
+            test.actionPerformed(new ActionEvent(test, 0, ""));
+        }
+    }
+
+    public void keyPressed(KeyEvent arg0) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void keyTyped(KeyEvent arg0) {
+        // TODO Auto-generated method stub
+
     }
 
 }

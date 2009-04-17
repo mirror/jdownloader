@@ -108,6 +108,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
         }
         for (FilePackage filePackage : packages) {
             filePackage.getBroadcaster().addListener(this);
+            filePackage.update_linksDisabled();
             for (DownloadLink downloadLink : filePackage.getDownloadLinks()) {
                 downloadLink.setProperty(DownloadTreeTable.PROPERTY_SELECTED, false);
                 downloadLink.getBroadcaster().addListener(filePackage);

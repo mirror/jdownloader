@@ -386,7 +386,9 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         Vector<DownloadLink> links = getSelectedDownloadLinks();
         Vector<FilePackage> fps = getSelectedFilePackages();
         for (FilePackage filePackage : fps) {
-            links.addAll(filePackage.getDownloadLinks());
+            for (DownloadLink dl : filePackage.getDownloadLinks()) {
+                if (!links.contains(dl)) links.add(dl);
+            }
         }
         return links;
     }

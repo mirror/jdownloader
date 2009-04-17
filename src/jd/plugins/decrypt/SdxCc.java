@@ -59,7 +59,7 @@ public class SdxCc extends PluginForDecrypt {
         for (String link : new Regex(new Regex(page, PATTERN_BETWEEN_NAME_UPLOADER).getMatch(1), PATTERN_ANYLINK).getColumn(1)) {
             decryptedLinks.add(createDownloadlink(link));
         }
-        FilePackage fp = new FilePackage();
+        FilePackage fp = FilePackage.getInstance();
         fp.setName(name);
         for (DownloadLink dlLink : decryptedLinks) {
             dlLink.setFilePackage(fp);

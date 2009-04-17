@@ -114,7 +114,7 @@ public class LinkProtectIn extends PluginForDecrypt {
         if (lp_continue == true) {
             /* Links extrahieren */
             String[] links = jd.parser.html.HTMLParser.getHttpLinks(br + "", "linkprotect.in");
-            FilePackage fp = new FilePackage();
+            FilePackage fp = FilePackage.getInstance();
             matcher = patternName.matcher(br + "");
             if (matcher.find()) fp.setName(new Regex(br + "", patternName.pattern()).getMatch(0));
             br.setFollowRedirects(false);

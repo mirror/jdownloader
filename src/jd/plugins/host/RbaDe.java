@@ -108,7 +108,7 @@ public class RbaDe extends PluginForHost {
             String fileName = getFileName(herausforderer, gegner, rundenId, battleId);
             link.setName(fileName);
             link.setFinalFileName(fileName);
-            FilePackage filePackage = new FilePackage();
+            FilePackage filePackage = FilePackage.getInstance();
             String packageName = new StringBuilder().append(herausforderer).append("-vs-").append(gegner).append(" (").append(battleId).append(")").toString();
             link.addSubdirectory(DOWNLOAD_DIR);
             link.addSubdirectory(packageName);

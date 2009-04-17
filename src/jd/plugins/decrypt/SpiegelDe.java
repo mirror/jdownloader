@@ -124,7 +124,7 @@ public class SpiegelDe extends PluginForDecrypt {
             String url = cryptedLink.getCryptedUrl();
             String title = new Regex(br.getPage(url), PATTERN_IMG_TITLE).getMatch(0);
             int count = 1;
-            FilePackage filePackage = new FilePackage();
+            FilePackage filePackage = FilePackage.getInstance();
             filePackage.setName(title);
             while (url != null) {
                 String page = br.getPage(url);

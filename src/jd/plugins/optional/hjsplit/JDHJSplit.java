@@ -512,7 +512,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
         DownloadLink link = new DownloadLink(null, archiveStartFile.getName(), DUMMY_HOSTER, "", true);
         link.setDownloadSize(archiveStartFile.length());
-        FilePackage fp = new FilePackage();
+        FilePackage fp = FilePackage.getInstance();
         fp.setDownloadDirectory(archiveStartFile.getParent());
         link.setFilePackage(fp);
         return link;

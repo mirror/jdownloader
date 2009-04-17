@@ -41,7 +41,7 @@ public class RaidrushOrg extends PluginForDecrypt {
         br.getPage(parameter);
         String title = br.getRegex("<big><strong>(.*?)</strong></big>").getMatch(0);
         String pass = br.getRegex("<strong>Passwort\\:</strong> <small>(.*?)</small>").getMatch(0);
-        FilePackage fp = new FilePackage();
+        FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         fp.setPassword(pass);
 

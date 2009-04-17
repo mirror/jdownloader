@@ -63,7 +63,7 @@ public class Charts4You extends PluginForDecrypt {
         form.put("button.y", p.y + "");
         br.submitForm(form);
         String[] links = br.getRegex("url=(.*?)\"").getColumn(0);
-        FilePackage fp = new FilePackage();
+        FilePackage fp = FilePackage.getInstance();
         fp.setName(name);
         for (int i = 0; i < links.length; i++) {
             DownloadLink link = this.createDownloadlink(links[i]);

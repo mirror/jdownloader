@@ -134,10 +134,10 @@ public class MySpaceCom extends PluginForDecrypt {
 
         if (titles.length != dUrls.length) logger.warning("Fehler Anzahl-Titel und Anzahl-Downloads stimmen nicht überein!");
         // Erstelle DownloadLinks
-        FilePackage filePackage = new FilePackage();
+        FilePackage filePackage = FilePackage.getInstance();
         filePackage.setName(nick);
 
-        FilePackage filePackagehq = new FilePackage();
+        FilePackage filePackagehq = FilePackage.getInstance();
         filePackagehq.setName(nick + "[HQ]");
 
         for (int i = 0; i < titles.length; i++) {

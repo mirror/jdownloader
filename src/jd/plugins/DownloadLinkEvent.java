@@ -12,4 +12,8 @@ public class DownloadLinkEvent extends JDEvent {
     public static final int UPDATE = 1;
 
     public static final int UPDATE_LOADING_PROGRESS = 2;
+
+    public static final int ENABLED = 3;
+
+    public static final int DISABLED = 4;
 }

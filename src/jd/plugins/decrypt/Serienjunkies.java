@@ -825,7 +825,7 @@ public class Serienjunkies extends PluginForDecrypt {
                             size = size.substring(0, size.indexOf("."));
                         } catch (Exception e) {
                         }
-                        FilePackage fp = new FilePackage();
+                        FilePackage fp = FilePackage.getInstance();
                         fp.setName(title + (b > 1 ? " " + b : ""));
                         b++;
                         fp.setPassword(JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()])));

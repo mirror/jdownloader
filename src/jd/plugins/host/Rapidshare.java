@@ -950,7 +950,7 @@ public class Rapidshare extends PluginForHost {
                 if (!canHandle(link)) {
                     link = url;
                 }
-                FilePackage fp = new FilePackage();
+                FilePackage fp = FilePackage.getInstance();
                 fp.setName("RS Speedtest");
                 for (Iterator<Entry<String, String>> it = serverMap.entrySet().iterator(); it.hasNext();) {
                     Entry<String, String> n = it.next();

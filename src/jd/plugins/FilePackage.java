@@ -62,7 +62,10 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     private transient static FilePackage FP = null;
 
     public static FilePackage getDefaultFilePackage() {
-        if (FP == null) FP = new FilePackage(JDLocale.L("controller.packages.defaultname", "various"));
+        if (FP == null) {
+            FP = new FilePackage();
+            FP.setName(JDLocale.L("controller.packages.defaultname", "various"));
+        }
         return FP;
     }
 
@@ -96,23 +99,29 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private transient FilePackageBroadcaster broadcaster = new FilePackageBroadcaster();
 
-    private int linksDisabled;
+    private Integer links_Disabled;
 
     public synchronized JDBroadcaster<FilePackageListener, FilePackageEvent> getBroadcaster() {
         if (broadcaster == null) broadcaster = new FilePackageBroadcaster();
         return broadcaster;
     }
 
-    public FilePackage() {
+    public static FilePackage getInstance() {
+        return new FilePackage();
+    }
+
+    private FilePackage() {
+        links_Disabled = new Integer(0);
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
         counter++;
         id = System.currentTimeMillis() + "_" + counter;
         downloadLinks = new Vector<DownloadLink>();
     }
 
-    public FilePackage(String name) {
-        this();
-        this.setName(name);
+    private void readObject(java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
+        /* nach dem deserialisieren sollen die transienten neu geholt werden */
+        stream.defaultReadObject();
+        links_Disabled = new Integer(0);
     }
 
     /**
@@ -125,10 +134,12 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             if (!downloadLinks.contains(link)) {
                 downloadLinks.add(link);
                 link.setFilePackage(this);
+                if (!link.isEnabled()) synchronized (links_Disabled) {
+                    links_Disabled++;
+                }
                 link.getBroadcaster().addListener(this);
                 getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED));
             }
-            link.setFilePackage(this);
         }
     }
 
@@ -137,11 +148,12 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             if (downloadLinks.contains(link)) {
                 downloadLinks.remove(link);
                 downloadLinks.add(index, link);
-                link.setFilePackage(this);
-                link.getBroadcaster().addListener(this);
                 getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
             } else {
                 downloadLinks.add(index, link);
+                if (!link.isEnabled()) synchronized (links_Disabled) {
+                    links_Disabled++;
+                }
                 link.setFilePackage(this);
                 link.getBroadcaster().addListener(this);
                 getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED));
@@ -438,8 +450,11 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         synchronized (downloadLinks) {
             boolean ret = downloadLinks.remove(link);
             if (ret) {
-                link.setFilePackage(null);
+                if (!link.isEnabled()) synchronized (links_Disabled) {
+                    links_Disabled--;
+                }
                 link.getBroadcaster().removeListener(this);
+                link.setFilePackage(null);
                 getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_REMOVED));
                 if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_EMPTY));
             }
@@ -554,7 +569,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             linksInProgress = 0;
             linksFailed = 0;
             totalBytesLoaded = 0;
-            linksDisabled=0;
             long avg = 0;
             DownloadLink next;
             int i = 0;
@@ -566,8 +580,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
                     if (next.isEnabled()) {
                         totalEstimatedPackageSize += next.getDownloadSize() / 1024;
-                    }else{
-                        linksDisabled++;
                     }
 
                     avg = (i * avg + next.getDownloadSize() / 1024) / (i + 1);
@@ -578,8 +590,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                     if (it.hasNext()) {
                         if (next.isEnabled()) {
                             totalEstimatedPackageSize += avg;
-                        }else{
-                            linksDisabled++;
                         }
 
                         // logger.info(i+"+avg "+avg+" kb
@@ -590,8 +600,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                             totalEstimatedPackageSize += avg / 2;
                             // logger.info(i+"+avg "+(avg/2)+" kb
                             // =+"+totalEstimatedPackageSize);
-                        }else{
-                            linksDisabled++;
                         }
                     }
                 }
@@ -611,18 +619,37 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public int getLinksDisabled() {
-        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
-            updateCollectives();
+        synchronized (links_Disabled) {
+            return links_Disabled;
         }
-        return linksDisabled;
     }
-public boolean isEnabled(){
-    if(downloadLinks.size()<=getLinksDisabled())return false;
-    return true;
-}
+
+    public boolean isEnabled() {
+        if (downloadLinks.size() <= getLinksDisabled()) return false;
+        return true;
+    }
+
+    public void update_linksDisabled() {
+        synchronized (links_Disabled) {
+            links_Disabled = 0;
+            synchronized (downloadLinks) {
+                for (DownloadLink dl : downloadLinks) {
+                    if (!dl.isEnabled()) links_Disabled++;
+                }
+            }
+        }
+    }
+
     public void handle_DownloadLinkEvent(DownloadLinkEvent event) {
-        System.out.println("got downloadlinkevent");
-
+        synchronized (links_Disabled) {
+            switch (event.getID()) {
+            case DownloadLinkEvent.DISABLED:
+                links_Disabled++;
+                break;
+            case DownloadLinkEvent.ENABLED:
+                links_Disabled--;
+                break;
+            }
+        }
     }
-
 }

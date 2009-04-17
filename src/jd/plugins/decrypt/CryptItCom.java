@@ -163,7 +163,7 @@ public class CryptItCom extends PluginForDecrypt {
             br.postPageRaw("http://crypt-it.com/engine/", postdata);
             String[] ciphers = br.getRegex(Pattern.compile("url(.*?)size", Pattern.CASE_INSENSITIVE)).getColumn(0);
             br.getHeaders().remove("Content-Type");
-            FilePackage fp = new FilePackage();
+            FilePackage fp = FilePackage.getInstance();
             fp.setName(packagename);
             fp.setPassword(password);
 

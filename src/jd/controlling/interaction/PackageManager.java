@@ -82,7 +82,7 @@ public class PackageManager extends Interaction implements Serializable {
 
         SubConfiguration config = WebUpdater.getConfig("JDU");
         boolean oldUpdatePackage = false;
-        FilePackage fp = new FilePackage();
+        FilePackage fp = FilePackage.getInstance();
         fp.setName(JDLocale.L("modules.packagemanager.packagename", "JD-Update"));
         fp.setDownloadDirectory(JDUtilities.getResourceFile("packages").getAbsolutePath());
 

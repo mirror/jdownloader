@@ -86,9 +86,9 @@ public class BrazilSeriesCom extends PluginForDecrypt {
             String rmvbLinks = new Regex(page, PATTERN_RMVB_LINKS).getMatch(0);
             String legendasLinks = new Regex(page, PATTERN_Legendas_LINKS).getMatch(0);
 
-            FilePackage fpAvi = new FilePackage();
-            FilePackage fpRmvb = new FilePackage();
-            FilePackage fpLegendas = new FilePackage();
+            FilePackage fpAvi = FilePackage.getInstance();
+            FilePackage fpRmvb = FilePackage.getInstance();
+            FilePackage fpLegendas = FilePackage.getInstance();
 
             fpAvi.setName(titel + " (Formato : AVI sem Legenda)");
             fpRmvb.setName(titel + " (Formato : RMVB Legendado)");

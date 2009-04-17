@@ -86,7 +86,7 @@ public class ImageFap extends PluginForHost {
                 gallery_name = gallery_name.trim();
             }
             if (picture_name != null) {
-                FilePackage fp = new FilePackage();
+                FilePackage fp = FilePackage.getInstance();
                 fp.setName(uploader_name);
                 if (gallery_name != null) {
                     downloadLink.setName(gallery_name + " + " + picture_name);

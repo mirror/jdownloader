@@ -33,7 +33,7 @@ public class JamendoCom extends PluginForDecrypt {
             String Album = br.getRegex("<div class='page_title' style=''>(.*?)</div>").getMatch(0);
             String Artist = br.getRegex("<div class='page_title' style=''>.*?</div>.*?class=\"g_artist_name\" title=\"\" >(.*?)</a").getMatch(0);
             String Tracks[][] = br.getRegex("<a href=\"/en/track/(\\d+)\" title=\"\" >(.*?)</a>").getMatches();
-            FilePackage fp = new FilePackage();
+            FilePackage fp = FilePackage.getInstance();
             fp.setName(Artist);
             for (String Track[] : Tracks) {
                 DownloadLink link = createDownloadlink("http://www.jamendo.com/en/track/" + Track[0]);

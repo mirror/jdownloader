@@ -4,23 +4,108 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 public class UploadingCom extends PluginForHost {
+    private static int simultanpremium = 1;
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.setStartIntervall(5000l);
+        this.setStartIntervall(1000l);
+        this.enablePremium("http://www.uploading.com/premium/");
     }
 
     @Override
     public String getAGBLink() {
         return "http://uploading.com/terms/";
+    }
+
+    public boolean isPremium() throws IOException {
+        br.getPage("http://www.uploading.com/");
+        if (br.containsHTML("UPGRADE TO PREMIUM")) return false;
+        if (br.containsHTML("Premium account")) return true;
+        return false;
+    }
+
+    public void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCookie("http://www.uploading.com/", "_lang", "en");
+        br.setCookie("http://www.uploading.com/", "setlang", "en");
+        br.getPage("http://www.uploading.com/login/");
+        br.postPage("http://www.uploading.com/login/", "log_ref=&login=" + Encoding.urlEncode(account.getUser()) + "&pwd=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie("http://www.uploading.com/", "ulogin") == null || br.getCookie("http://www.uploading.com/", "upass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        this.setBrowserExclusive();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        if (!isPremium()) {
+            ai.setValid(true);
+            ai.setStatus("Free Membership");
+            return ai;
+        }
+        br.getPage("http://www.uploading.com/profile/");
+        String validUntil = br.getRegex("Premium Account access is valid until (.*?)\\.").getMatch(0);
+        ai.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyy-MM-dd", null));
+        ai.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        getFileInformation(link);
+        login(account);
+        if (!isPremium()) {
+            simultanpremium = 1;
+            handleFree0(link);
+            return;
+        } else {
+            if (simultanpremium + 1 > 20) {
+                simultanpremium = 20;
+            } else {
+                simultanpremium++;
+            }
+        }
+        br.getPage(link.getDownloadURL());
+        Form form = br.getForm(2);
+        br.setFollowRedirects(true);
+        dl = br.openDownload(link, form, true, 0);
+        dl.startDownload();
+    }
+
+    public void handleFree0(DownloadLink link) throws Exception {
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("YOU REACHED YOUR COUNTRY DAY LIMIT")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "YOU REACHED YOUR COUNTRY DAY LIMIT", 60 * 60 * 1000l);
+        Form form = br.getFormbyProperty("id", "downloadform");
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            return;
+        }
+        br.submitForm(form);
+        this.sleep(70000l, link);
+        br.setFollowRedirects(false);
+        form = br.getFormbyProperty("id", "downloadform");
+        br.submitForm(form);
+        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        br.setFollowRedirects(true);
+        dl = br.openDownload(link, br.getRedirectLocation(), false, 1);
+        dl.startDownload();
     }
 
     @Override
@@ -77,6 +162,10 @@ public class UploadingCom extends PluginForHost {
 
     @Override
     public void reset() {
+    }
+
+    public int getMaxSimultanPremiumDownloadNum() {
+        return simultanpremium;
     }
 
     @Override
