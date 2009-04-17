@@ -169,6 +169,14 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
             }
 
         });
+        Collections.sort(controllers, new Comparator<ProgressController>() {
+
+            public int compare(ProgressController o1, ProgressController o2) {
+                if (o1.isFinalizing()) return 1;
+                return 0;
+            }
+
+        });
     }
 
     private class ProgressEntry extends JXPanel implements ActionListener {

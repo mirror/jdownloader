@@ -46,6 +46,7 @@ public class ProgressController {
     private static int idCounter = 0;
     private long currentValue;
     private boolean finished;
+    private boolean finalizing = false;
 
     private int id;
 
@@ -109,25 +110,37 @@ public class ProgressController {
 
     @Override
     public void finalize() {
+        if (finalizing) return;
         finished = true;
         currentValue = max;
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
 
     }
 
-    public void finalize(long timer) {
-        this.setRange(timer);
-        while (timer > 0) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
+    public boolean isFinalizing() {
+        return this.finalizing;
+    }
+
+    public void finalize(final long waittimer) {
+        finalizing = true;
+        final ProgressController instance = this;
+        new Thread() {
+            public void run() {
+                long timer = waittimer;
+                instance.setRange(timer);
+                while (timer > 0) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                    }
+                    timer -= 1000;
+                    instance.increase(1000l);
+                }
+                finished = true;
+                currentValue = max;
+                if (JDUtilities.getController() != null) JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
             }
-            timer -= 1000;
-            this.increase(1000l);
-        }
-        finished = true;
-        currentValue = max;
-        if (JDUtilities.getController() != null) JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
+        }.start();
     }
 
     public void fireChanges() {
