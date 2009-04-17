@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypt;
+
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -24,6 +25,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class NewsUrlDe extends PluginForDecrypt {
+    private static Integer lock = new Integer(0);
+    private DownloadLink dl;
 
     public NewsUrlDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -32,16 +35,19 @@ public class NewsUrlDe extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.setDebug(true);
-        br.getPage(parameter);
-        String link = br.getRedirectLocation();
-        if (link == null) link = br.getRegex("<a href=\"([^\"]*)\" style").getMatch(0);
-        if (link == null) link = br.getRegex("<META HTTP-EQUIV=\"Refresh\" .*? URL=(.*?)\">").getMatch(0);
-        if (link == null) link = br.getRegex("onClick=\"top\\.location='(.*?)'\">").getMatch(0);
-        if (link == null) link = br.getRegex("<iframe name='redirectframe' id='redirectframe'.*?src='(.*?)'.*?></iframe>").getMatch(0);
-        if (link == null) return null;
-        decryptedLinks.add(createDownloadlink(link));
+        String parameter = param.toString();       
+        synchronized (lock) {
+            br.getPage(parameter);
+            String link = br.getRedirectLocation();
+            if (link == null) link = br.getRegex("<a href=\"([^\"]*)\" style").getMatch(0);
+            if (link == null) link = br.getRegex("<META HTTP-EQUIV=\"Refresh\" .*? URL=(.*?)\">").getMatch(0);
+            if (link == null) link = br.getRegex("onClick=\"top\\.location='(.*?)'\">").getMatch(0);
+            if (link == null) link = br.getRegex("<iframe name='redirectframe' id='redirectframe'.*?src='(.*?)'.*?></iframe>").getMatch(0);
+            if (link == null) return null;
+            decryptedLinks.add(dl = createDownloadlink(link));
+            dl.setProperties(param.getProperties());
+            dl.setProperty("referer", param.getCryptedUrl());
+        }
         return decryptedLinks;
     }
 
