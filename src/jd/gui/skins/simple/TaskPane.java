@@ -17,6 +17,7 @@ public class TaskPane extends JXTaskPaneContainer implements ActionListener {
 
     public TaskPane() {
         panels = new ArrayList<TaskPanel>();
+        this.setBackgroundPainter(null);
         this.setLayout(new MigLayout("ins 2, wrap 1", "[fill,grow]", "[]2[]2[]2[]2[]2[]2[]2[]2[fill,grow]"));
     }
 

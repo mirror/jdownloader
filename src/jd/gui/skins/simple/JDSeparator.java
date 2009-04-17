@@ -1,12 +1,13 @@
 package jd.gui.skins.simple;
 
 import java.awt.Cursor;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
-import javax.swing.JButton;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -14,11 +15,14 @@ import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 
-public class JDSeparator extends JXCollapsiblePane implements PropertyChangeListener {
+public class JDSeparator extends JXCollapsiblePane implements PropertyChangeListener, MouseListener {
 
     private static final long serialVersionUID = 3007033193590223026L;
-    private JButton minimize;
-    private JButton maximize;
+    private JLabel minimize;
+    private ImageIcon left;
+    private ImageIcon right;
+    private boolean minimized;
+    private boolean mouseover;
 
     public JDSeparator() {
 
@@ -28,7 +32,8 @@ public class JDSeparator extends JXCollapsiblePane implements PropertyChangeList
         // add(dlLIst = new JButton(JDTheme.II("gui.list", 5, 10)),
         // "width 4!,gapright 1");
         //
-        // dlLIst.setToolTipText(JDLocale.L("gui.sidebar.splitbuttons.download.tooltip",
+        // dlLIst.setToolTipText(JDLocale.L(
+        // "gui.sidebar.splitbuttons.download.tooltip",
         // "Switch to Downloadlist"));
         // dlLIst.setBorderPainted(false);
         // dlLIst.setOpaque(false);
@@ -39,57 +44,84 @@ public class JDSeparator extends JXCollapsiblePane implements PropertyChangeList
         // dlLIst.addActionListener(new ActionListener() {
         //
         // public void actionPerformed(ActionEvent e) {
-        // SimpleGUI.CURRENTGUI.getContentPane().display(SimpleGUI.CURRENTGUI.getDownloadPanel());
+        // SimpleGUI.CURRENTGUI.getContentPane().display(SimpleGUI.CURRENTGUI.
+        // getDownloadPanel());
         // }
         //
         // });
-
-        add(minimize = new JButton(JDTheme.II("gui.images.minimize.left", 5, 10)), "width 4!,gapright 1");
+        this.addMouseListener(this);
+        SimpleGUI.CURRENTGUI.getLeftcolPane().addMouseListener(this);
+        left = JDTheme.II("gui.images.minimize.left", 5, 10);
+        right = JDTheme.II("gui.images.minimize.right", 5, 10);
+        add(minimize = new JLabel(left), "width 4!,gapright 1");
 
         minimize.setToolTipText(JDLocale.L("gui.sidebar.splitbuttons.hide.tooltip", "Hide the Sidebar"));
-        minimize.setBorderPainted(false);
+
         minimize.setOpaque(false);
-        minimize.setContentAreaFilled(false);
-        minimize.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        minimize.setFocusPainted(false);
-        minimize.setBorderPainted(false);
-        minimize.addActionListener(new ActionListener() {
 
-            public void actionPerformed(ActionEvent e) {
-                SimpleGUI.CURRENTGUI.hideSideBar(true);
-            }
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        setMinimized(false);
 
-        });
-        add(maximize = new JButton(JDTheme.II("gui.images.minimize.right", 5, 10)), "width 4!,gapright 1");
+        // 
 
-        maximize.setBorderPainted(false);
-        maximize.setToolTipText(JDLocale.L("gui.sidebar.splitbuttons.show.tooltip", "Show the Sidebar"));
-        maximize.setOpaque(false);
-        maximize.setContentAreaFilled(false);
-        maximize.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        maximize.setFocusPainted(false);
-        maximize.setBorderPainted(false);
-        maximize.setEnabled(false);
-        maximize.addActionListener(new ActionListener() {
+    }
 
-            public void actionPerformed(ActionEvent e) {
-                SimpleGUI.CURRENTGUI.hideSideBar(false);
-            }
+    private void setMinimized(boolean b) {
+        this.minimized = b;
+        if (b) {
+            minimize.setIcon(right);
+            minimize.setToolTipText(JDLocale.L("gui.sidebar.splitbuttons.show.tooltip", "Show the Sidebar"));
 
-        });
+        } else {
+            minimize.setIcon(left);
+            minimize.setToolTipText(JDLocale.L("gui.sidebar.splitbuttons.hide.tooltip", "Hide the Sidebar"));
+
+        }
     }
 
     public void propertyChange(PropertyChangeEvent evt) {
         if (evt.getSource() instanceof JXCollapsiblePane && evt.getPropertyName().equals("collapsed")) {
             if (((JXCollapsiblePane) evt.getSource()).isCollapsed()) {
-                maximize.setEnabled(true);
-                minimize.setEnabled(false);
+                setMinimized(true);
+
             } else {
-                maximize.setEnabled(false);
-                minimize.setEnabled(true);
+                setMinimized(false);
+
             }
 
         }
+
+    }
+
+    public void mouseClicked(MouseEvent e) {
+        if (e.getSource() == this) {
+            if (minimized) {
+                SimpleGUI.CURRENTGUI.hideSideBar(false);
+            } else {
+                SimpleGUI.CURRENTGUI.hideSideBar(true);
+            }
+            mouseover = false;
+        }
+
+    }
+
+    public void mouseEntered(MouseEvent e) {
+       
+
+    }
+
+    public void mouseExited(MouseEvent e) {
+      
+      
+    }
+
+    public void mousePressed(MouseEvent e) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void mouseReleased(MouseEvent e) {
+        // TODO Auto-generated method stub
 
     }
 

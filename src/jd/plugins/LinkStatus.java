@@ -238,7 +238,7 @@ public class LinkStatus implements Serializable {
             if (downloadLink.isAborted()) {
                 ret += JDLocale.L("gui.downloadlink.aborted", "[interrupted]");
             } else {
-                ret += JDLocale.L("gui.downloadlink.disabled", "[deaktiviert]");
+//                ret += JDLocale.L("gui.downloadlink.disabled", "[deaktiviert]");
             }
             if (errorMessage != null) {
 

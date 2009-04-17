@@ -20,6 +20,7 @@ public class TinyProgressBar extends JPanel {
         prg.setOrientation(SwingConstants.VERTICAL);
         this.setBorder(prg.getBorder());
         prg.setBorder(null);
+        prg.setEnabled(false);
         
     }
 

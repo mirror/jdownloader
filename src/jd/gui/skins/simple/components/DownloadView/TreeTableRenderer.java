@@ -101,7 +101,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         imgFinished = JDTheme.II("gui.images.ok", 16, 16);
         imgFailed = JDTheme.II("gui.images.bad", 16, 16);
         imgExtract = JDTheme.II("gui.images.update_manager", 16, 16);
-        
+
     }
 
     private void initLocale() {
@@ -122,7 +122,10 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             co = getFilePackageCell(table, value, isSelected, hasFocus, row, column);
             if (!((FilePackage) value).isEnabled()) {
                 co.setEnabled(false);
-            }else{
+            
+                progress.setString("");
+            } else {
+           
                 co.setEnabled(true);
             }
             return co;
@@ -130,7 +133,9 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             co = getDownloadLinkCell(table, value, isSelected, hasFocus, row, column);
             if (!((DownloadLink) value).isEnabled()) {
                 co.setEnabled(false);
-            }else{
+                progress.setString("");
+            } else {
+          
                 co.setEnabled(true);
             }
             return co;
@@ -138,7 +143,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             co.setEnabled(true);
         }
-       
+
         return co;
 
     }
@@ -164,7 +169,9 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             sb.append(dLink.getPlugin().getHost());
             sb.append(dLink.getPlugin().getSessionInfo());
             ((JRendererLabel) co).setText(sb.toString());
-          //  ((JRendererLabel) co).setIcon(JDImage.getScaledImageIcon(dLink.getPlugin().getHosterIcon(),16,16));
+            // ((JRendererLabel)
+            // co).setIcon(JDImage.getScaledImageIcon(dLink.getPlugin
+            // ().getHosterIcon(),16,16));
             return co;
 
         case DownloadTreeTableModel.COL_PROGRESS:
@@ -220,7 +227,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                         } else if (col.getWidth() < 170) {
                             sb.append("100%");
                         } else {
-                            sb.append("100% (").append(JDUtilities.formatBytesToMB(dLink.getDownloadCurrent())).append('/').append(JDUtilities.formatBytesToMB(Math.max(1, dLink.getDownloadSize()))).append(')');
+                            sb.append("100% (").append(JDUtilities.formatBytesToMB(dLink.getDownloadCurrent())).append('/').append(JDUtilities.formatBytesToMB(Math.max(0, dLink.getDownloadSize()))).append(')');
                         }
                         progress.setString(sb.toString());
 
@@ -239,7 +246,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                         } else if (col.getWidth() < 170) {
                             sb.append(c.format(dLink.getPercent() / 100.0)).append('%');
                         } else {
-                            sb.append(c.format(dLink.getPercent() / 100.0)).append("% (").append(JDUtilities.formatBytesToMB(dLink.getDownloadCurrent())).append('/').append(JDUtilities.formatBytesToMB(Math.max(1, dLink.getDownloadSize()))).append(')');
+                            sb.append(c.format(dLink.getPercent() / 100.0)).append("% (").append(JDUtilities.formatBytesToMB(dLink.getDownloadCurrent())).append('/').append(JDUtilities.formatBytesToMB(Math.max(0, dLink.getDownloadSize()))).append(')');
                         }
                         progress.setString(sb.toString());
                     }
@@ -249,25 +256,36 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 progress.setValue(dLink.getPercent());
                 return progress;
             }
-            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ((JRendererLabel) co).setIcon(null);
-            ((JRendererLabel) co).setText("");
-            ((JRendererLabel) co).setBorder(null);
-            return co;
+            progress.setMaximum(10000);
+            progress.setValue(0);
+            if (dLink.getDownloadSize() > 1) {
+                progress.setString(JDUtilities.formatBytesToMB(Math.max(0, dLink.getDownloadSize())));
+            } else {
+                progress.setString("");
+            }
+
+            return progress;
+
+            // co = super.getTableCellRendererComponent(table, value,
+            // isSelected, hasFocus, row, column);
+            // ((JRendererLabel) co).setIcon(null);
+            // ((JRendererLabel) co).setText("");
+            // ((JRendererLabel) co).setBorder(null);
+            // return co;
         case DownloadTreeTableModel.COL_STATUS_ICON:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             ((JRendererLabel) co).setText("");
             if (dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
                 ((JRendererLabel) co).setIcon(imgExtract);
-               
+
             } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 ((JRendererLabel) co).setIcon(imgFinished);
-         
+
             } else if (dLink.getLinkStatus().isFailed()) {
                 ((JRendererLabel) co).setIcon(imgFailed);
-               
+
             } else {
-             
+
                 ((JRendererLabel) co).setIcon(null);
             }
 
@@ -275,22 +293,21 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
             return co;
 
-        
         case DownloadTreeTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             ((JRendererLabel) co).setIcon(null);
             if (dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
-             
+
                 ((JRendererLabel) co).setText(dLink.getLinkStatus().getStatusString());
             } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-    
+
                 ((JRendererLabel) co).setText("");
             } else if (dLink.getLinkStatus().isFailed()) {
-            
+
                 ((JRendererLabel) co).setText("");
             } else {
                 ((JRendererLabel) co).setText(dLink.getLinkStatus().getStatusString());
-            
+
             }
 
             ((JRendererLabel) co).setBorder(null);
@@ -330,7 +347,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 } else if (col.getWidth() < 170) {
                     sb.append("100%");
                 } else {
-                    sb.append("100% (").append(JDUtilities.formatKbReadable(progress.getValue())).append('/').append(JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize()))).append(')');
+                    sb.append("100% (").append(JDUtilities.formatKbReadable(progress.getValue())).append('/').append(JDUtilities.formatKbReadable(Math.max(0, fp.getTotalEstimatedPackageSize()))).append(')');
                 }
                 progress.setString(sb.toString());
             } else {
@@ -343,7 +360,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 } else if (col.getWidth() < 170) {
                     sb.append(c.format(fp.getPercent())).append('%');
                 } else {
-                    sb.append(c.format(fp.getPercent())).append("% (").append(JDUtilities.formatKbReadable(progress.getValue())).append('/').append(JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize()))).append(')');
+                    sb.append(c.format(fp.getPercent())).append("% (").append(JDUtilities.formatKbReadable(progress.getValue())).append('/').append(JDUtilities.formatKbReadable(Math.max(0, fp.getTotalEstimatedPackageSize()))).append(')');
                 }
                 progress.setString(sb.toString());
             }
@@ -356,15 +373,15 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             if (fp.isFinished()) {
                 ((JRendererLabel) co).setIcon(this.imgFinished);
             } else if (fp.getTotalDownloadSpeed() > 0) {
-                
+
             } else if (fp.getLinksInProgress() > 0) {
-            
+
             } else {
-               
+
             }
             ((JRendererLabel) co).setBorder(null);
             return co;
-        
+
         case DownloadTreeTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (fp.isFinished()) {

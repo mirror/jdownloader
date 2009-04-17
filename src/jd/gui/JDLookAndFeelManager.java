@@ -194,6 +194,9 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
 
     private static void installJGoodies() {
         UIManager.installLookAndFeel("JGoodie", "com.jgoodies.looks.windows.WindowsLookAndFeel");
+//        UIManager.installLookAndFeel("JGoodie Plastic", "com.jgoodies.looks.plastic.PlasticLookAndFeel");
+//        UIManager.installLookAndFeel("JGoodie Plastic 3D", "com.jgoodies.looks.plastic.Plastic3DLookAndFeel");
+//        UIManager.installLookAndFeel("JGoodie Plastic XP", "com.jgoodies.looks.plastic.PlasticXPLookAndFeel");
 
     }
 
@@ -275,10 +278,10 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
 
     public ImageIcon getIcon() {
         try {
-         
-           ImageIcon img = JDImage.getImageIcon(JDTheme.V("plaf.screenshot." + this.getClassName()));
-//        if(img!=null)img=JDImage.getScaledImageIcon(img,100,100);
-        return img;
+
+            ImageIcon img = JDImage.getImageIcon(JDTheme.V("plaf.screenshot." + this.getClassName()));
+            // if(img!=null)img=JDImage.getScaledImageIcon(img,100,100);
+            return img;
         } catch (Exception e) {
             return null;
         }
@@ -296,7 +299,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
 
     public boolean isSubstance() {
         return this.className.contains("substance");
-       
+
     }
 
 }
