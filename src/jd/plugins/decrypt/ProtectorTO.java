@@ -71,7 +71,7 @@ public class ProtectorTO extends PluginForDecrypt {
             if (param.getProperty("protector_cookies", null) != null) {
                 br.getCookies().putAll((HashMap<String, HashMap<String, Cookie>>) param.getProperty("protector_cookies", null));
             }
-            br.getPage(parameter);
+            br.getPage(parameter+"?jd=1");
             if (br.getRedirectLocation() != null) {
                 DownloadLink dl;
                 decryptedLinks.add(dl = createDownloadlink(br.getRedirectLocation()));

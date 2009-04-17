@@ -3,6 +3,7 @@ package jd;
 import java.awt.AWTException;
 import java.awt.AlphaComposite;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Container;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
@@ -27,6 +28,8 @@ import jd.gui.JDLookAndFeelManager;
 
 public class SplashScreen implements ActionListener {
 
+  
+
     private float duration = 500.0f;
 
     private BufferedImage image;
@@ -39,7 +42,7 @@ public class SplashScreen implements ActionListener {
     private Timer timer;
     private JWindow window;
 
-    private BufferedImage screenshot;
+//    private BufferedImage screenshot;
 
     private ArrayList<SplashProgressImage> progressimages;
 
@@ -81,7 +84,7 @@ public class SplashScreen implements ActionListener {
         y = (int) (screenHeight / 2 - image.getHeight(null) / 2);
         w = image.getWidth(null);
         h = image.getHeight(null);
-        createScreenshot();
+//        createScreenshot();
         initGui();
         annimate();
     }
@@ -111,11 +114,11 @@ public class SplashScreen implements ActionListener {
 
     }
 
-    private void createScreenshot() throws AWTException {
-        final Robot robot = new Robot();
-        final Rectangle rectangle = new Rectangle(x, y, w, h);
-        screenshot = robot.createScreenCapture(rectangle);
-    }
+//    private void createScreenshot() throws AWTException {
+//        final Robot robot = new Robot();
+//        final Rectangle rectangle = new Rectangle(x, y, w, h);
+//        screenshot = robot.createScreenCapture(rectangle);
+//    }
 
     public void actionPerformed(final ActionEvent e) {
         edtAction(e);
@@ -142,7 +145,7 @@ public class SplashScreen implements ActionListener {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice gd = ge.getDefaultScreenDevice();
         GraphicsConfiguration gc = gd.getDefaultConfiguration();
-        BufferedImage res = gc.createCompatibleImage(screenshot.getWidth(), screenshot.getHeight(), Transparency.BITMASK);
+        BufferedImage res = gc.createCompatibleImage(w, h, Transparency.BITMASK);
         Graphics2D g2d = res.createGraphics();
         // RenderingHints qualityHints = new
         // RenderingHints(RenderingHints.KEY_ANTIALIASING,
@@ -151,7 +154,12 @@ public class SplashScreen implements ActionListener {
         // RenderingHints.VALUE_RENDER_QUALITY);
         // g2d.setRenderingHints(qualityHints);
 
-        g2d.drawImage(screenshot, 0, 0, null);
+       // g2d.drawImage(screenshot, 0, 0, null);
+        g2d.setColor(Color.WHITE);
+        g2d.fillRect(1, 1, w-2, h-2);
+        g2d.setColor(Color.BLACK.brighter());
+        g2d.drawRect(0, 0, w-1, h-1);
+  
         g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alphaValue));
         g2d.drawImage(image, 0, 0, null);
         if (progressimages.size() > 0) {

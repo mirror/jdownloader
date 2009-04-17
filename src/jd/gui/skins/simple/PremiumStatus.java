@@ -33,7 +33,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
     private static final long serialVersionUID = 7290466989514173719L;
     private static final long UNLIMITED = 10l * 1024l * 1024l * 1024l;
     private static final String DEBUG = "";
-    private static final int BARCOUNT = 8;
+    private static final int BARCOUNT = 10;
     private TreeMap<String, ArrayList<AccountInfo>> map;
     private TreeMap<String, Long> mapSize;
     private TinyProgressBar[] bars;

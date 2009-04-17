@@ -289,4 +289,14 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
         return toString();
     }
 
+    public boolean isJGoodies() {
+        // TODO Auto-generated method stub
+        return this.className.contains("jgoodie");
+    }
+
+    public boolean isSubstance() {
+        return this.className.contains("substance");
+       
+    }
+
 }
