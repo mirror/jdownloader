@@ -511,9 +511,6 @@ public class JDInit {
         new HostPluginWrapper("R-b-a.De", "RbaDe", "http://[\\w\\.]*?r-b-a\\.de/download\\.php\\?FILE=(\\d+)-(\\d)\\.mp3&PATH=(\\d)");
         new HostPluginWrapper("Roms.Zophar.Net", "RomsZopharNet", "http://[\\w.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}");
         new HostPluginWrapper("RomHustler.Net", "RomHustlerNet", "http://[\\w.]*?romhustler\\.net/download/.*?/\\d+");
-        // site down -> new HostPluginWrapper("SharedZilla.com",
-        // "SharedZillacom",
-        // "http://[\\w\\.]*?sharedzilla\\.com/(en|ru)/get\\?id=\\d+");
         new HostPluginWrapper("Shareplace.com", "Shareplacecom", "http://[\\w\\.]*?shareplace\\.com/\\?[a-zA-Z0-9]+(/.*?)?");
         new HostPluginWrapper("Shareplace.com", "Shareplacecom", "http://[\\w\\.]*?datei\\.in/\\?[a-zA-Z0-9]+(/.*?)?");
         new HostPluginWrapper("Spiegel.de", "SpiegelDe", "http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)|http://www.spiegel.de/img/.+?(\\.\\w+)");
@@ -521,9 +518,6 @@ public class JDInit {
         new HostPluginWrapper("2shared.com", "TwoSharedCom", "http://[\\w\\.]*?2shared\\.com/file/\\d+/[a-zA-Z0-9]+");
         new HostPluginWrapper("UploadService.info", "UploadServiceinfo", "http://[\\w\\.]*?uploadservice\\.info/file/[a-zA-Z0-9]+\\.html");
         new HostPluginWrapper("UploadStube.de", "UploadStube", "http://[\\w\\.]*?uploadstube\\.de/download\\.php\\?file=.*");
-        // service closed -> new HostPluginWrapper("Upshare.net", "Upsharenet",
-        // "http://[\\w\\.]*?upshare\\.(net|eu)/download\\.php\\?id=[a-zA-Z0-9]+"
-        // );
         new HostPluginWrapper("Xup.In", "XupIn", "http://[\\w\\.]*?xup\\.in/dl,\\d+/?.+?");
         new HostPluginWrapper("xup.raidrush.ws", "XupInRaidrush", "http://xup.raidrush.ws/.*?/");
         new HostPluginWrapper("YouPorn.Com", "YouPornCom", "http://download\\.youporn\\.com/download/\\d+.*");
@@ -533,10 +527,6 @@ public class JDInit {
         new HostPluginWrapper("zshare.net", "ZShareNet", "http://[\\w\\.]*?zshare\\.net/(download|video|image|audio|flash)/.*");
         new HostPluginWrapper("sendspace.pl", "SendSpacePl", "http://[\\w\\.]*?sendspace.pl/file/[a-zA-Z0-9]+/?");
         new HostPluginWrapper("dl.free.fr", "DlFreeFr", "http://[\\w\\.]*?dl\\.free\\.fr/(getfile\\.pl\\?file=/[a-zA-Z0-9]+|[a-zA-Z0-9]+/?)");
-        // site down -> new HostPluginWrapper("dosyakaydet.com",
-        // "DosyakaydetCom",
-        // "http://[\\w\\.]*?dosyakaydet\\.com/(download/[a-zA-Z0-9]+/?|index/p_download/hash_[a-zA-Z0-9]+/)"
-        // );
         new HostPluginWrapper("egoshare.com", "EgoshareCom", "http://[\\w\\.]*?egoshare\\.com/download\\.php\\?id=[a-zA-Z0-9]+");
         new HostPluginWrapper("speedshare.org", "SpeedShareOrg", "http://[\\w\\.]*?speedshare\\.org/download\\.php\\?id=[a-zA-Z0-9]+");
         new HostPluginWrapper("vimeo.com", "VimeoCom", "http://[\\w\\.]*?vimeo\\.com/[0-9]+");
@@ -565,12 +555,9 @@ public class JDInit {
         new HostPluginWrapper("hostplik.com", "HostPlikCom", "http://[\\w\\.]*?hostplik\\.com/.*");
         new HostPluginWrapper("upload-drive.com", "UploadDriveCom", "http://[\\w\\.]*?upload-drive\\.com/\\d+/.+");
         new HostPluginWrapper("pliczek.net", "PliczekNet", "http://[\\w\\.]*?pliczek\\.net/index\\.php\\?p=\\d+");
-        // site down-> new HostPluginWrapper("plikos.pl", "PlikosPl",
-        // "http://[\\w\\.]*?plikos\\.pl/\\w+/.+");
+        new HostPluginWrapper("plikos.pl", "PlikosPl", "http://[\\w\\.]*?plikos\\.pl/\\w+/.+");
         new HostPluginWrapper("remixshare.com", "RemixShareCom", "http://[\\w\\.]*?remixshare\\.com/.*?\\?file=[a-z0-9]+");
         new HostPluginWrapper("filesend.net", "FileSendNet", "http://[\\w\\.]*?filesend\\.net/download\\.php\\?f=[a-z0-9]+");
-        // site down-> new HostPluginWrapper("filelocity.com", "FilelocityCom",
-        // "http://[\\w\\.]*?filelocity\\.com/\\?act=download&file=[a-z0-9]+");
         new HostPluginWrapper("uploadbox.com", "UploadBoxCom", "http://[\\w\\.]*?uploadbox\\.com/.*?files/[0-9a-zA-Z]+");
         new HostPluginWrapper("jamendo.com", "JamendoCom", "http://[\\w\\.]*?jamendo\\.com/.*.*/?(track|download/album)/\\d+");
         new HostPluginWrapper("fileload.us", "FileloadUs", "http://[\\w\\.]*?fileload\\.us/.*");

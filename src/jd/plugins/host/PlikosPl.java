@@ -61,12 +61,10 @@ public class PlikosPl extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         String linkurl = br.getRegex("</script>\\s*</div>\\s*<p style[^>]*><a href=\"(.*?)\">Pobierz plik</a></p").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        logger.info(linkurl);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);        
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, linkurl);
         dl.startDownload();
-
     }
 
     public int getMaxSimultanFreeDownloadNum() {
