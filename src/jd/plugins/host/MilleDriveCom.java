@@ -95,7 +95,7 @@ public class MilleDriveCom extends PluginForHost {
        else
        {
            String finalfilename = downloadLink.getName();
-           dl = br.openDownload(downloadLink, directlink, true, 20);
+           dl = br.openDownload(downloadLink, directlink, true, 0);
            downloadLink.setFinalFileName(finalfilename);
        }
        dl.startDownload();
