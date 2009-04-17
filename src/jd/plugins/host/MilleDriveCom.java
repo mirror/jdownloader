@@ -17,7 +17,6 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -56,7 +55,7 @@ public class MilleDriveCom extends PluginForHost {
             filename = br.getRegex("id=\"free-down\" action=\".*milledrive.com/files/\\d+/(.*?)\"").getMatch(0);
             filesize = br.getRegex("\\|\\s+<span style=[^>]*>(.*?)</span>").getMatch(0);
         }
-        System.out.println(filename+" "+filesize);
+        //System.out.println(filename+" "+filesize);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
@@ -71,26 +70,35 @@ public class MilleDriveCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String  firstlink = downloadLink.getDownloadURL();
-        if (!firstlink.contains("/files/"))
+        String directlink = br.getRegex("file:\"(.*?)\"").getMatch(0);
+        if (directlink == null)
         {
-            firstlink = br.getRegex("id=\"down-direct\"\\s+href=\"(.*?)\"").getMatch(0);
-            if (firstlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            br.getPage(firstlink);
-        }
-        Form down1 = br.getFormbyProperty("id", "free-down");
-        if(down1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        this.sleep(30001, downloadLink);
-        br.setDebug(true);
-        br.submitForm(down1);
-        Form down2 = br.getFormbyProperty("id", "free-down");
-        String downurl = br.getRegex("name=\"down-url\" value=\"(.*?)\"").getMatch(0);
-        String ticket = br.getRegex("name=\"ticket\" value=\"(.*?)\"").getMatch(0);
-        if (downurl == null || ticket == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        //dl = br.openDownload(downloadLink, down2.getAction(), "ticket="+ticket+"&down-url="+downurl);
-        dl = br.openDownload(downloadLink, down2, true, 1);
-        dl.startDownload();
-
+            String  firstlink = downloadLink.getDownloadURL();
+            if (!firstlink.contains("/files/"))
+            {
+                firstlink = br.getRegex("id=\"down-direct\"\\s+href=\"(.*?)\"").getMatch(0);
+                if (firstlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                br.getPage(firstlink);
+            }
+            Form down1 = br.getFormbyProperty("id", "free-down");
+            if(down1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            this.sleep(30001, downloadLink);
+            br.submitForm(down1);
+            Form down2 = br.getFormbyProperty("id", "free-down");
+            String downurl = br.getRegex("name=\"down-url\" value=\"(.*?)\"").getMatch(0);
+            String ticket = br.getRegex("name=\"ticket\" value=\"(.*?)\"").getMatch(0);
+            if (downurl == null || ticket == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            //dl = br.openDownload(downloadLink, down2.getAction(), "ticket="+ticket+"&down-url="+downurl);
+            dl = br.openDownload(downloadLink, down2, true, 1);
+            
+       }
+       else
+       {
+           String finalfilename = downloadLink.getName();
+           dl = br.openDownload(downloadLink, directlink, true, 20);
+           downloadLink.setFinalFileName(finalfilename);
+       }
+       dl.startDownload();
     }
 
     @Override
