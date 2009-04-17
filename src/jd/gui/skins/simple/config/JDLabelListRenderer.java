@@ -8,12 +8,15 @@ import javax.swing.ListCellRenderer;
 
 import jd.config.container.JDLabelContainer;
 import jd.gui.skins.simple.SimpleGUI;
+
 /**
  * Cellrenderer für Copmboboxen mit Bildern
+ * 
  * @author coalado
- *
  */
 public class JDLabelListRenderer extends JLabel implements ListCellRenderer {
+
+    private static final long serialVersionUID = 3607383089555373774L;
 
     public JDLabelListRenderer() {
         if (SimpleGUI.isSubstance()) {

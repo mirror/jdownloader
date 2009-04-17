@@ -1366,11 +1366,10 @@ public class JDChat extends PluginOptional implements ControlListener {
         } else {
             if (frame != null) {
                 SimpleGUI.CURRENTGUI.getTaskPane().remove(tp);
-                if(SimpleGUI.CURRENTGUI.getContentPane().getDisplay()==frame){
+                if (SimpleGUI.CURRENTGUI.getContentPane().getDisplay() == frame) {
                     SimpleGUI.CURRENTGUI.getTaskPane().switcher(SimpleGUI.CURRENTGUI.getDlTskPane());
                 }
-              
-                
+
                 this.onExit();
                 // frame.setVisible(false);
                 // TODO
@@ -1478,7 +1477,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
 
         private void initGUI() {
-            JScrollPane sp = new JScrollPane(right);
             // sp.setMaximumSize(new Dimension(300, 300));
             this.add(right);
         }

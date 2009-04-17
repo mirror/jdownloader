@@ -25,30 +25,8 @@ public class JDSeparator extends JXCollapsiblePane implements PropertyChangeList
     private boolean mouseover;
 
     public JDSeparator() {
-
         setLayout(new MigLayout("ins 0,wrap 1"));
 
-        //      
-        // add(dlLIst = new JButton(JDTheme.II("gui.list", 5, 10)),
-        // "width 4!,gapright 1");
-        //
-        // dlLIst.setToolTipText(JDLocale.L(
-        // "gui.sidebar.splitbuttons.download.tooltip",
-        // "Switch to Downloadlist"));
-        // dlLIst.setBorderPainted(false);
-        // dlLIst.setOpaque(false);
-        // dlLIst.setContentAreaFilled(false);
-        // dlLIst.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        // dlLIst.setFocusPainted(false);
-        // dlLIst.setBorderPainted(false);
-        // dlLIst.addActionListener(new ActionListener() {
-        //
-        // public void actionPerformed(ActionEvent e) {
-        // SimpleGUI.CURRENTGUI.getContentPane().display(SimpleGUI.CURRENTGUI.
-        // getDownloadPanel());
-        // }
-        //
-        // });
         this.addMouseListener(this);
         SimpleGUI.CURRENTGUI.getLeftcolPane().addMouseListener(this);
         left = JDTheme.II("gui.images.minimize.left", 5, 10);
@@ -61,9 +39,6 @@ public class JDSeparator extends JXCollapsiblePane implements PropertyChangeList
 
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setMinimized(false);
-
-        // 
-
     }
 
     private void setMinimized(boolean b) {
@@ -106,23 +81,15 @@ public class JDSeparator extends JXCollapsiblePane implements PropertyChangeList
     }
 
     public void mouseEntered(MouseEvent e) {
-       
-
     }
 
     public void mouseExited(MouseEvent e) {
-      
-      
     }
 
     public void mousePressed(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseReleased(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
 }

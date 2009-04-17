@@ -33,7 +33,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class Charts4You extends PluginForDecrypt {
 

@@ -50,7 +50,7 @@ public class MegaShareCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 5109 $");
+        return getVersion("$Revision$");
     }
 
     @Override

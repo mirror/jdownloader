@@ -36,7 +36,6 @@ import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.DownloadView.DownloadLinkRowHighlighter;
 import jd.gui.skins.simple.components.DownloadView.DownloadTreeTable;
 import jd.gui.skins.simple.components.DownloadView.JColumnControlButton;
-import jd.gui.skins.simple.components.DownloadView.TreeTableAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;

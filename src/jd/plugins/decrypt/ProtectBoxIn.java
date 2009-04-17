@@ -31,7 +31,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class ProtectBoxIn extends PluginForDecrypt {
 

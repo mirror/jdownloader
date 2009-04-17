@@ -122,7 +122,7 @@ public class SixGigaCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 5249 $");
+        return getVersion("$Revision$");
     }
 
     @Override
