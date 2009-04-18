@@ -15,6 +15,7 @@ import javax.swing.JButton;
 import javax.swing.event.EventListenerList;
 
 import jd.config.SubConfiguration;
+import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SingletonPanel;
 import jd.gui.skins.simple.components.JDUnderlinedText;
@@ -159,21 +160,8 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     }
 
     public JButton createButton(String string, Icon i) {
-        JButton bt;
-        if (i != null) {
-            bt = new JButton(string, i);
-        } else {
-            bt = new JButton(string);
-        }
-
-        bt.setContentAreaFilled(false);
-        bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        bt.setFocusPainted(false);
-        bt.setBorderPainted(false);
-        bt.setHorizontalAlignment(JButton.LEFT);
-        bt.addActionListener(this);
-        bt.addMouseListener(new JDUnderlinedText());
-        return bt;
+       return  Factory.createButton(string,i,this);
+     
     }
 
     public void propertyChange(PropertyChangeEvent evt) {

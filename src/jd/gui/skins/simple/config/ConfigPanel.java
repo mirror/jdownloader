@@ -16,16 +16,12 @@
 
 package jd.gui.skins.simple.config;
 
-import java.awt.Component;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -35,10 +31,8 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.JTabbedPanel;
-import jd.gui.skins.simple.components.JLinkButton;
-import jd.http.Encoding;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 public abstract class ConfigPanel extends JTabbedPanel {
@@ -96,7 +90,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
             if (currentGroup != group) {
 
-                panel.add(getHeader(group), "spanx");
+                panel.add(Factory.createHeader(group), "spanx");
                 currentGroup = group;
             }
             if (entry.getDecoration() != null) {
@@ -119,22 +113,6 @@ public abstract class ConfigPanel extends JTabbedPanel {
         }
         entries.add(entry);
 
-    }
-
-    public Component getHeader(ConfigGroup group) {
-        JPanel ret = new JPanel(new MigLayout("ins 0", "[]10[grow,fill]3[]"));
-        JLinkButton label;
-        try {
-
-            ret.add(label = new JLinkButton("<html><u><b>" + group.getName() + "</b></u></html>", group.getIcon(), new URL("http://wiki.jdownloader.org/?do=search&id=" + Encoding.urlEncode(group.getName()))));
-            label.setIconTextGap(8);
-            label.setBorder(null);
-        } catch (MalformedURLException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-        }
-        ret.add(new JSeparator());
-        ret.add(new JLabel(JDTheme.II("gui.images.config.tip", 16, 16)));
-        return ret;
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry) {

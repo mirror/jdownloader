@@ -10,6 +10,7 @@ import javax.swing.JLabel;
 import javax.swing.JSeparator;
 import javax.swing.Timer;
 
+import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberEvent;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberListener;
@@ -29,7 +30,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     private JButton lg_add_selected;
     private JButton lg_clear;
 
-    private boolean lg_buttons_visible = false;
+    private boolean linkgrabberButtonsEnabled = false;
 
     private JLabel linkgrabber;
 
@@ -41,7 +42,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     public LinkGrabberTaskPane(String string, ImageIcon ii) {
         super(string, ii, "linkgrabber");
 
-        lg_buttons_visible = false;
+        linkgrabberButtonsEnabled = false;
         initGUI();
         fadeTimer = new Timer(2000, this);
         fadeTimer.setInitialDelay(0);
@@ -61,28 +62,28 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         add(downloadlinks, D2_LABEL);
         add(totalsize, D2_LABEL);
     }
-    
+
     private void update() {/* TODO: soll man über events aktuallisiert werden */
         LinkGrabberPanel lg = LinkGrabberPanel.getLinkGrabber();
-        packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", lg.getPackages().size()));        
+        packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", lg.getPackages().size()));
         long tot = 0;
         long links = 0;
-        synchronized(lg.getPackages()){
-            for (LinkGrabberFilePackage fp: lg.getPackages()){
+        synchronized (lg.getPackages()) {
+            for (LinkGrabberFilePackage fp : lg.getPackages()) {
                 for (DownloadLink l : fp.getDownloadLinks()) {
                     tot += l.getDownloadSize();
                     links++;
                 }
-            }        
+            }
         }
         downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", links));
-        totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", JDUtilities.formatKbReadable(tot / 1024)));        
+        totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", JDUtilities.formatKbReadable(tot / 1024)));
     }
 
     private void initGUI() {
 
         this.panel_add_links = (this.createButton(JDLocale.L("gui.linkgrabberv2.addlinks", "Add Links"), JDTheme.II("gui.images.add", 16, 16)));
-        this.panel_add_containers = (this.createButton(JDLocale.L("gui.linkgrabberv2.addcontainers", "Add Containers"), JDTheme.II("gui.images.load", 16, 16)));
+        this.panel_add_containers = (this.createButton(JDLocale.L("gui.linkgrabberv2.addcontainers", "Open Containers"), JDTheme.II("gui.images.load", 16, 16)));
 
         lg_add_all = (createButton(JDLocale.L("gui.linkgrabberv2.lg.addall", "Add all packages"), JDTheme.II("gui.images.add_all", 16, 16)));
         lg_add_selected = (createButton(JDLocale.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)"), JDTheme.II("gui.images.add_package", 16, 16)));
@@ -131,7 +132,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         }
     }
 
-    public void handle_LinkGrabberEvent(LinkGrabberEvent event) {
+    public void onLinkgrabberEvent(LinkGrabberEvent event) {
         if (event.getID() == LinkGrabberEvent.EMPTY_EVENT) {
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
@@ -139,12 +140,12 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
                     lg_add_selected.setEnabled(false);
                     lg_clear.setEnabled(false);
                     revalidate();
-                    lg_buttons_visible = false;
+                    linkgrabberButtonsEnabled = false;
                 }
             });
         }
-        if (event.getID() == LinkGrabberEvent.UPDATE_EVENT && lg_buttons_visible == false) {
-            lg_buttons_visible = true;
+        if (event.getID() == LinkGrabberEvent.UPDATE_EVENT && linkgrabberButtonsEnabled == false) {
+            linkgrabberButtonsEnabled = true;
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     lg_add_all.setEnabled(true);
@@ -154,6 +155,36 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
                 }
             });
         }
+    }
+
+    public void setPanelID(int i) {
+        SimpleGUI.CURRENTGUI.getContentPane().display(getPanel(i));
+        switch (i) {
+        case 0:
+            lg_add_all.setEnabled(false);
+            lg_add_selected.setEnabled(false);
+            lg_clear.setEnabled(false);
+            panel_add_links.setEnabled(false);
+
+            linkgrabber.setEnabled(false);
+            packages.setEnabled(false);
+            downloadlinks.setEnabled(false);
+            totalsize.setEnabled(false);
+            break;
+        case 1:
+            linkgrabber.setEnabled(true);
+            packages.setEnabled(true);
+            downloadlinks.setEnabled(true);
+            totalsize.setEnabled(true);
+            panel_add_links.setEnabled(true);
+            if (linkgrabberButtonsEnabled) {
+                lg_add_all.setEnabled(true);
+                lg_add_selected.setEnabled(true);
+                lg_clear.setEnabled(true);
+            }
+            break;
+        }
+
     }
 
 }

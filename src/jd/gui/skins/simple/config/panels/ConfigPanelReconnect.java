@@ -42,6 +42,7 @@ import jd.controlling.reconnect.ExternReconnect;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
+import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
@@ -177,7 +178,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDLocale.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20).setGroup(group)));
 
         this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("DOWNLOAD"), "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", JDLocale.L("gui.config.download.autoresume", "Let Reconnects interrupt resumeable downloads")).setDefaultValue(true).setGroup(group)));
-        panel.add(getHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.methods", "Reconnect Methods"), JDTheme.II("gui.images.reconnect_selection", 32, 32))), "spanx");
+        panel.add(Factory.createHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.methods", "Reconnect Methods"), JDTheme.II("gui.images.reconnect_selection", 32, 32))), "spanx");
 
         panel.add(tabbed = new JTabbedPane(), "spanx,pushy,growy");
         tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
@@ -196,7 +197,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         addBatch();
         addCLR();
         tabbed.setSelectedIndex(configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER));
-        panel.add(getHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.test", "Showcase"), JDTheme.II("gui.images.config.network_local", 32, 32))), "spanx,gaptop 15");
+        panel.add(Factory.createHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.test", "Showcase"), JDTheme.II("gui.images.config.network_local", 32, 32))), "spanx,gaptop 15");
         JPanel p = new JPanel(new MigLayout(" ins 0,wrap 7", "[]5[fill]5[align right]20[align right]20[align right]20[align right]20[align right]", "[][]"));
         panel.add(p, "spanx,gapright 20");
         btn = new JButton(JDLocale.L("gui.config.reconnect.showcase.reconnect", "Change IP"));

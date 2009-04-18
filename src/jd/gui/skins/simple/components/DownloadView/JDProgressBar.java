@@ -19,7 +19,10 @@ package jd.gui.skins.simple.components.DownloadView;
 import java.awt.Graphics;
 
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JProgressBar;
+import javax.swing.plaf.ProgressBarUI;
+import javax.swing.plaf.basic.BasicProgressBarUI;
 
 /**
  * Diese Klasse skaliert die Werte der JProgressbar auf Integer ranges herunter
@@ -31,6 +34,13 @@ public class JDProgressBar extends JProgressBar {
     private int faktor = 1;
 
     private ImageIcon icon;
+
+
+
+    public JDProgressBar() {
+        super();
+
+    }
 
     public void setMaximum(long value) {
         while ((value / faktor) >= Integer.MAX_VALUE) {
@@ -60,7 +70,7 @@ public class JDProgressBar extends JProgressBar {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         if (icon != null) {
-            g.drawImage(icon.getImage(), 0, (getHeight() - icon.getIconHeight()) / 2+1, null);
+            g.drawImage(icon.getImage(), 0, (getHeight() - icon.getIconHeight()) / 2 + 1, null);
         }
     }
 }

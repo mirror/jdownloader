@@ -24,6 +24,8 @@ import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.table.TableCellRenderer;
@@ -56,22 +58,21 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
      */
     private static final long serialVersionUID = 1L;
     private LinkGrabberTreeTableModel model;
-    private LinkGrabberPanel linkgrabber;
+    protected LinkGrabberPanel linkgrabber;
     private LinkGrabberTreeTableRenderer cellRenderer;
     private TableColumnExt[] cols;
-    private int neededclicks = 1;
 
     public static final String PROPERTY_EXPANDED = "lg_expanded";
     public static final String PROPERTY_SELECTED = "lg_selected";
 
-    public LinkGrabberTreeTable(LinkGrabberTreeTableModel treeModel, LinkGrabberPanel linkgrabber) {
+    public LinkGrabberTreeTable(LinkGrabberTreeTableModel treeModel, final LinkGrabberPanel linkgrabber) {
         super(treeModel);
         this.linkgrabber = linkgrabber;
         SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
         cellRenderer = new LinkGrabberTreeTableRenderer(this);
         model = treeModel;
         createColumns();
-        if (SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DCLICKPACKAGE, false)) neededclicks = 2;
+
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
@@ -100,7 +101,30 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         // addPackageOfflineHighlighter();
         addExistsHighlighter();
         addUncheckedHighlighter();
+      
+        getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
+            public void valueChanged(ListSelectionEvent e) {
+                if(getSelectedRow()<0)return;
+                if(getPathForRow(getSelectedRow())==null)return;
+                Object obj = getPathForRow(getSelectedRow()).getLastPathComponent();
+
+                if(obj==null){
+                    linkgrabber.hideFilePackageInfo();   
+                }
+             
+                LinkGrabberFilePackage pkg = null;
+                if (obj instanceof LinkGrabberFilePackage) {
+                    pkg=(LinkGrabberFilePackage) obj;
+                   
+                } else {
+                    pkg=   linkgrabber.getFPwithLink((DownloadLink) obj);;
+               
+                }
+                linkgrabber.showFilePackageInfo(pkg);
+                
+            }
+        });
     }
 
     public TableCellRenderer getCellRenderer(int row, int col) {
@@ -200,18 +224,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
             test.actionPerformed(new ActionEvent(test, 0, ""));
             return;
         }
-        Point point = e.getPoint();
-        int row = rowAtPoint(point);
-        int col = getRealcolumnAtPoint(e.getX());
-        if (getPathForRow(row) == null) { return; }
-        Object obj = getPathForRow(row).getLastPathComponent();
-        if (col > 1) {
-            if (obj instanceof LinkGrabberFilePackage) {
-                linkgrabber.showFilePackageInfo((LinkGrabberFilePackage) obj);
-            } else {
-                linkgrabber.hideFilePackageInfo();
-            }
-        }
+    
     }
 
     public void mouseEntered(MouseEvent arg0) {
@@ -222,13 +235,16 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
 
     public void mouseReleased(MouseEvent e) {
         /* nicht auf headerclicks reagieren */
-        if (e.getSource() != this) return;
-        TreePath path = getPathForLocation(e.getX(), e.getY());
-        if (path == null) return;
-        int column = getRealcolumnAtPoint(e.getX());
-        if (path != null && path.getLastPathComponent() instanceof LinkGrabberFilePackage) {
-            if (column == 1 && e.getButton() == MouseEvent.BUTTON1) {
-                if (e.getClickCount() >= neededclicks) {
+        if (e.getClickCount() == 1) {
+
+            if (e.getSource() != this) return;
+            TreePath path = getPathForLocation(e.getX(), e.getY());
+            if (path == null) return;
+            int column = getRealcolumnAtPoint(e.getX());
+            if (path != null && path.getLastPathComponent() instanceof LinkGrabberFilePackage) {
+                if (column == 1 && e.getButton() == MouseEvent.BUTTON1) {
+                    System.out.println(e.getClickCount());
+
                     LinkGrabberFilePackage fp = (LinkGrabberFilePackage) path.getLastPathComponent();
                     if (fp.getBooleanProperty(PROPERTY_EXPANDED, false)) {
                         collapsePath(path);

@@ -34,6 +34,7 @@ import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.utils.JDLocale;
@@ -135,7 +136,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
             }
         }
         JScrollPane sp = new JScrollPane(table);
-        panel.add(getHeader(new ConfigGroup(JDLocale.L("gui.config.captcha.list", "Captcha Methods"), JDTheme.II("gui.images.captcha.methods", 32, 32))), "spanx,gaptop 15,gapleft 20, gapright 20");
+        panel.add(Factory.createHeader(new ConfigGroup(JDLocale.L("gui.config.captcha.list", "Captcha Methods"), JDTheme.II("gui.images.captcha.methods", 32, 32))), "spanx,gaptop 15,gapleft 20, gapright 20");
 
         panel.add(sp, "spanx,gapleft 55, gapright 40");
         add(panel);

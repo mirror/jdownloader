@@ -96,7 +96,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     public int mouseOverRow = -1;
 
-    private int neededclicks = 1;
+
 
     private Timer timer;
 
@@ -122,8 +122,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         if (JDUtilities.getJavaVersion() >= 1.6) {
             setDropMode(DropMode.ON_OR_INSERT_ROWS);
         }
-        if (SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DCLICKPACKAGE, false)) neededclicks = 2;
-        setDragEnabled(true);
+       setDragEnabled(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setColumnControlVisible(true);
@@ -610,7 +609,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         int column = getRealcolumnAtPoint(e.getX());
         if (path != null && path.getLastPathComponent() instanceof FilePackage) {
             if (column == 1 && e.getButton() == MouseEvent.BUTTON1) {
-                if (e.getClickCount() >= neededclicks) {
+                if (e.getClickCount() == 1) {
                     FilePackage fp = (FilePackage) path.getLastPathComponent();
                     if (fp.getBooleanProperty(PROPERTY_EXPANDED, false)) {
                         collapsePath(path);

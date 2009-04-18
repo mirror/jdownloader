@@ -46,7 +46,7 @@ class LinkGrabberBroadcaster extends JDBroadcaster<LinkGrabberListener, LinkGrab
 
     @Override
     protected void fireEvent(LinkGrabberListener listener, LinkGrabberEvent event) {
-        listener.handle_LinkGrabberEvent(event);
+        listener.onLinkgrabberEvent(event);
 
     }
 
@@ -206,7 +206,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         }
     }
 
-    private LinkGrabberFilePackage getFPwithLink(DownloadLink link) {
+    public LinkGrabberFilePackage getFPwithLink(DownloadLink link) {
         synchronized (packages) {
             if (link == null) return null;
             LinkGrabberFilePackage fp = null;
@@ -443,17 +443,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 case LinkGrabberTreeTableAction.ADD_SELECTED:
                     selected_packages = new Vector<LinkGrabberFilePackage>(this.internalTreeTable.getSelectedFilePackages());
                     break;
-                case LinkGrabberTreeTableAction.GUI_ADD:
-                    String cb = "";
-                    try {
-                        cb = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
-                    } catch (Exception e1) {
-                    }
-                    String data = LinkInputDialog.showDialog(null, cb);
-                    if (data != null && data.length() > 0) {
-                        JDUtilities.getController().distributeLinks(data);
-                    }
-                    return;
+        
                 case LinkGrabberTreeTableAction.GUI_LOAD:
                     fc = new JDFileChooser("_LOADSAVEDLC");
                     fc.setDialogTitle(JDLocale.L("gui.filechooser.loaddlc", "Load DLC file"));
@@ -746,5 +736,10 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             this.stopLinkGatherer();
             return;
         }
+    }
+
+    public boolean hasLinks() {
+        return waitingList.size() > 0 || packages.size() > 0;
+
     }
 }
