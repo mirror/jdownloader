@@ -126,72 +126,79 @@ public class ConvertDialog extends JFrame {
      * Zeigt Auswahldialog an. wenn keepformat aktiviert ist wird gespeichtertes
      * Input zurückgegeben, es sei denn, andere Formate stehen zur Auswahl
      */
-    public static ConversionMode DisplayDialog(ArrayList<ConversionMode> displaymodes, String name) {
+    public static ConversionMode DisplayDialog(final ArrayList<ConversionMode> displaymodes, final String name) {
         logger.fine(displaymodes.size() + " Convertmodi zur Auswahl.");
 
         if (displaymodes.size() == 1) // Bei einer einzigen Auswahl
         { return displaymodes.get(0); } // diese zurückgeben
+        GuiRunnable<ConversionMode> run = new GuiRunnable<ConversionMode>() {
+            @Override
+            public ConversionMode runSave() {
+                if (ConvertDialog.keepformat) {
+                    boolean newFormatChoosable = false;
+                    if (!ConvertDialog.forcekeep) {
+                        for (int i = 0; i < displaymodes.size(); i++) {
+                            if (!keeped_availablemodes.contains(displaymodes.get(i))) // Neues
+                            // Element
+                            // in
+                            // der
+                            // Liste
+                            {
+                                newFormatChoosable = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!newFormatChoosable) // Wenn kein neues Format verfügbar
+                    // ist
+                    // oder forcekeep = 1
+                    { // (newFormatChoosable kann bei forcekeep=true nicht auf
+                        // true
+                        // gesetzt werden)
 
-        if (ConvertDialog.keepformat) {
-            boolean newFormatChoosable = false;
-            if (!ConvertDialog.forcekeep) {
-                for (int i = 0; i < displaymodes.size(); i++) {
-                    if (!keeped_availablemodes.contains(displaymodes.get(i))) // Neues
-                                                                              // Element
-                                                                              // in
-                                                                              // der
-                                                                              // Liste
-                    {
-                        newFormatChoosable = true;
-                        break;
+                        for (int i = 0; i < keeped.size(); i++) {
+                            if (displaymodes.contains(keeped.get(i))) { return keeped.get(i); }
+                        }
                     }
                 }
-            }
-            if (!newFormatChoosable) // Wenn kein neues Format verfügbar ist
-                                     // oder forcekeep = 1
-            { // (newFormatChoosable kann bei forcekeep=true nicht auf true
-              // gesetzt werden)
 
-                for (int i = 0; i < keeped.size(); i++) {
-                    if (displaymodes.contains(keeped.get(i))) { return keeped.get(i); }
+                // -.-.-.-.-.-.-.-.-.-.
+
+                JPanel boxes = new JPanel();
+                JCheckBox CheckBoxKeepFormat = new JCheckBox(JDLocale.L("convert.dialog.keepformat", "Format für diese Sitzung beibehalten"));
+                JCheckBox CheckBoxForceKeep = new JCheckBox(JDLocale.L("convert.dialog.forcekeep", "Beibehalten erzwingen"));
+                JCheckBox CheckBoxTopPriority = new JCheckBox(JDLocale.L("convert.dialog.toppriority", "Diese Auswahl vorherigen immer vorziehen"));
+
+                CheckBoxForceKeep.setSelected(ConvertDialog.forcekeep);
+                CheckBoxKeepFormat.setSelected(ConvertDialog.hasKeeped());
+
+                if (ConvertDialog.hasKeeped()) {
+                    CheckBoxKeepFormat.setText(JDLocale.L("convert.dialog.staykeepingformat", "Formate weiterhin beibehalten"));
+                    boxes.add(CheckBoxTopPriority);
                 }
+
+                boxes.add(CheckBoxKeepFormat);
+                boxes.add(CheckBoxForceKeep);
+
+                ConversionMode selectedValue = (ConversionMode) JOptionPane.showInputDialog(null, boxes, /*
+                                                                                                          * Enthält
+                                                                                                          * die
+                                                                                                          * Checkboxen
+                                                                                                          */
+                JDLocale.L("convert.dialog.chooseformat", "Wähle das Dateiformat:") + " [" + name + "]", JOptionPane.QUESTION_MESSAGE, null, displaymodes.toArray(), displaymodes.get(0));
+
+                if ((CheckBoxKeepFormat.isSelected()) || (CheckBoxForceKeep.isSelected())) {
+                    ConvertDialog.setKeepformat(true);
+                    ConvertDialog.addKeeped(selectedValue, displaymodes, CheckBoxTopPriority.isSelected());
+                    ConvertDialog.setForceKeep(CheckBoxForceKeep.isSelected());
+                } else {
+                    ConvertDialog.setKeepformat(false);
+                }
+                return selectedValue;
             }
-        }
+        };
 
-        // -.-.-.-.-.-.-.-.-.-.
-
-        JPanel boxes = new JPanel();
-        JCheckBox CheckBoxKeepFormat = new JCheckBox(JDLocale.L("convert.dialog.keepformat", "Format für diese Sitzung beibehalten"));
-        JCheckBox CheckBoxForceKeep = new JCheckBox(JDLocale.L("convert.dialog.forcekeep", "Beibehalten erzwingen"));
-        JCheckBox CheckBoxTopPriority = new JCheckBox(JDLocale.L("convert.dialog.toppriority", "Diese Auswahl vorherigen immer vorziehen"));
-
-        CheckBoxForceKeep.setSelected(ConvertDialog.forcekeep);
-        CheckBoxKeepFormat.setSelected(ConvertDialog.hasKeeped());
-
-        if (ConvertDialog.hasKeeped()) {
-            CheckBoxKeepFormat.setText(JDLocale.L("convert.dialog.staykeepingformat", "Formate weiterhin beibehalten"));
-            boxes.add(CheckBoxTopPriority);
-        }
-
-        boxes.add(CheckBoxKeepFormat);
-        boxes.add(CheckBoxForceKeep);
-
-        ConversionMode selectedValue = (ConversionMode) JOptionPane.showInputDialog(null, boxes, /*
-                                                                                                  * Enthält
-                                                                                                  * die
-                                                                                                  * Checkboxen
-                                                                                                  */
-        JDLocale.L("convert.dialog.chooseformat", "Wähle das Dateiformat:") + " [" + name + "]", JOptionPane.QUESTION_MESSAGE, null, displaymodes.toArray(), displaymodes.get(0));
-
-        if ((CheckBoxKeepFormat.isSelected()) || (CheckBoxForceKeep.isSelected())) {
-            ConvertDialog.setKeepformat(true);
-            ConvertDialog.addKeeped(selectedValue, displaymodes, CheckBoxTopPriority.isSelected());
-            ConvertDialog.setForceKeep(CheckBoxForceKeep.isSelected());
-        } else {
-            ConvertDialog.setKeepformat(false);
-        }
-
-        return selectedValue;
+        return run.getReturnValue();
     }
 
     /*
