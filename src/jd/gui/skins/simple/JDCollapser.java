@@ -2,10 +2,13 @@ package jd.gui.skins.simple;
 
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingworker.SwingWorker;
+import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.JXTaskPane;
 
 public class JDCollapser extends JXTaskPane implements MouseListener {
@@ -26,6 +29,20 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
         this.setCollapsed(true);
         this.addMouseListener(this);
         getContentPane().setLayout(new MigLayout("ins 0,wrap 1", "[grow, fill]", "[grow,fill]"));
+
+        this.addPropertyChangeListener(new PropertyChangeListener() {
+
+            public void propertyChange(PropertyChangeEvent evt) {
+                if(evt.getPropertyName()==JXCollapsiblePane.ANIMATION_STATE_KEY){
+                    if(evt.getNewValue().equals("collapsed")){
+                        JDCollapser.this.setVisible(false);
+                    }
+                }
+         
+                
+            }
+
+        });
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -55,19 +72,7 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
                 panel = null;
             }
 
-            new SwingWorker<Object, Object>() {
-
-                @Override
-                protected Object doInBackground() throws Exception {
-                    Thread.sleep(500);
-                    return null;
-                }
-
-                protected void done() {
-                    setVisible(false);
-
-                }
-            }.execute();
+  
         }
     }
 

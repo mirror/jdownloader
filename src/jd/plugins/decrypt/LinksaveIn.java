@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.captcha.specials.Linksave;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -46,13 +47,15 @@ public class LinksaveIn extends PluginForDecrypt {
 
         br.getPage(param.getCryptedUrl());
         br.forceDebug(true);
-        //Linksave_Besucherpasswort=%FEd10fb83.64625
-   
+        // Linksave_Besucherpasswort=%FEd10fb83.64625
+
         Form form = br.getFormbyProperty("name", "form");
         while (form != null) {
-            String url = "captcha/cap.php?hsh="+form.getRegex("\\/captcha\\/cap\\.php\\?hsh=([^\"]+)").getMatch(0);
+            String url = "captcha/cap.php?hsh=" + form.getRegex("\\/captcha\\/cap\\.php\\?hsh=([^\"]+)").getMatch(0);
             File captchaFile = this.getLocalCaptchaFile(this);
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(url));
+
+            Linksave.prepareCaptcha(captchaFile);
 
             String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
             if (captchaCode == null) return null;
@@ -65,18 +68,17 @@ public class LinksaveIn extends PluginForDecrypt {
                 break;
             }
         }
-       
+
         String[] container = br.getRegex("link\\'\\)\\.href\\=unescape\\(\\'(.*?)\\'\\)\\;").getColumn(0);
         if (container != null && container.length > 0) {
-            
-       
-            
+
             File file = null;
             for (String c : container) {
                 /*Context cx = Context.enter();
                 Scriptable scope = cx.initStandardObjects();
                 String fun = "function f(){ \nreturn '" + c + "';} f()";
                 Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+
                 c=result.toString();*/
             	String test = Encoding.htmlDecode(c);
             	if (test.endsWith(".cnl")) {
@@ -89,6 +91,7 @@ public class LinksaveIn extends PluginForDecrypt {
 	                    con.disconnect();
 	                }
             	}
+
             }
             if (file != null && file.exists() && file.length() > 100) {
                 JDUtilities.getController().loadContainerFile(file);
