@@ -191,7 +191,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     }
 
     @SuppressWarnings("unchecked")
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(ActionEvent e) {        
         if (e.getSource() == this.Update_Async) {
             fireTableTask();
             return;

@@ -30,6 +30,7 @@ public abstract class JDBroadcaster<T extends EventListener, TT extends JDEvent>
     }
 
     public void fireEvent(TT event) {
+        // System.out.println("Broadcast start" + this.getClass());
         synchronized (callList) {
             synchronized (removeList) {
                 callList.removeAll(removeList);
@@ -39,6 +40,7 @@ public abstract class JDBroadcaster<T extends EventListener, TT extends JDEvent>
                 this.fireEvent(callList.get(i), event);
             }
         }
+        // System.out.println("Broadcast stop" + this.getClass());
     }
 
     protected abstract void fireEvent(T listener, TT event);

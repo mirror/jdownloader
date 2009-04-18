@@ -258,13 +258,11 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     public void addPackage(FilePackage fp) {
         if (fp == null) return;
-        boolean added = false;
         synchronized (packages) {
             if (!packages.contains(fp)) {
-                added = true;
                 fp.getBroadcaster().addListener(this);
                 packages.add(fp);
-                if (added) broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE));
+                broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE));
             }
         }
     }
@@ -284,10 +282,14 @@ public class DownloadController implements FilePackageListener, DownloadControll
             }
             if (packages.contains(fp)) {
                 packages.remove(fp);
+                packages.add(index, fp);
+                broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
+            } else {
+                packages.add(index, fp);
+                fp.getBroadcaster().addListener(this);
+                broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE));
             }
-            packages.add(index, fp);
         }
-        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
     }
 
     public void removePackage(FilePackage fp2) {
@@ -404,6 +406,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
     }
 
     public void fireStructureUpdate() {
+        /* speichern der downloadliste + aktuallisierung der gui */
         this.getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
     }
 

@@ -118,7 +118,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
         // this.setExpandsSelectedPaths(true);
-        setToggleClickCount(1);
+        
         if (JDUtilities.getJavaVersion() >= 1.6) {
             setDropMode(DropMode.ON_OR_INSERT_ROWS);
         }

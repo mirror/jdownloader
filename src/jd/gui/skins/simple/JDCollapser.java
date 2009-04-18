@@ -7,7 +7,6 @@ import java.beans.PropertyChangeListener;
 
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingworker.SwingWorker;
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.JXTaskPane;
 
@@ -71,7 +70,7 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
                 panel.onHide();
                 panel = null;
             }
-
+            
   
         }
     }
