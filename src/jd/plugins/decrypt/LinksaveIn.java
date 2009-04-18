@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -65,26 +66,29 @@ public class LinksaveIn extends PluginForDecrypt {
             }
         }
        
-        String[] container = br.getRegex("link\\'\\)\\.href\\=\\'(.*?)\\'\\;").getColumn(0);
+        String[] container = br.getRegex("link\\'\\)\\.href\\=unescape\\(\\'(.*?)\\'\\)\\;").getColumn(0);
         if (container != null && container.length > 0) {
             
        
             
             File file = null;
             for (String c : container) {
-                Context cx = Context.enter();
+                /*Context cx = Context.enter();
                 Scriptable scope = cx.initStandardObjects();
                 String fun = "function f(){ \nreturn '" + c + "';} f()";
                 Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                c=result.toString();
-                URLConnectionAdapter con = br.openGetConnection("http://linksave.in/" + c.replace("dlc://linksave.in/", ""));
-                if (con.getResponseCode() == 200) {
-                    file = JDUtilities.getResourceFile("tmp/linksave/" + c.replace(".cnl", ".dlc").replace("dlc://", "http://").replace("http://linksave.in", ""));
-                    br.downloadConnection(file, con);
-                    break;
-                } else {
-                    con.disconnect();
-                }
+                c=result.toString();*/
+            	String test = Encoding.htmlDecode(c);
+            	if (test.endsWith(".cnl")) {
+	                URLConnectionAdapter con = br.openGetConnection("http://linksave.in/" + test.replace("dlc://linksave.in/", ""));
+	                if (con.getResponseCode() == 200) {
+	                    file = JDUtilities.getResourceFile("tmp/linksave/" + test.replace(".cnl", ".dlc").replace("dlc://", "http://").replace("http://linksave.in", ""));
+	                    br.downloadConnection(file, con);
+	                    break;
+	                } else {
+	                    con.disconnect();
+	                }
+            	}
             }
             if (file != null && file.exists() && file.length() > 100) {
                 JDUtilities.getController().loadContainerFile(file);
