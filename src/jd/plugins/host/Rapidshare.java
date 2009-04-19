@@ -232,8 +232,7 @@ public class Rapidshare extends PluginForHost {
                 }
                 if (!checkLinksIntern(links.toArray(new DownloadLink[] {}))) return false;
             }
-        } catch (Exception e) {
-            System.gc();
+        } catch (Exception e) {            
             return false;
         }
         return true;
@@ -292,8 +291,7 @@ public class Rapidshare extends PluginForHost {
                 i++;
             }
             return true;
-        } catch (Exception e) {
-            System.gc();
+        } catch (Exception e) {            
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             System.err.println(br);
             return false;

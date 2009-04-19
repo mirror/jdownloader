@@ -170,10 +170,7 @@ public class RAFDownload extends DownloadInterface {
                     jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
             }
-        }
-
-        System.gc();
-        System.runFinalization();
+        }       
         //
         logger.info("CLOSE HD FILE");
         try {

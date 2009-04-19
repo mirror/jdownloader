@@ -168,8 +168,7 @@ public class BluehostTo extends PluginForHost {
                 }
             }
 
-        } catch (Exception e) {
-            System.gc();
+        } catch (Exception e) {            
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
             return false;
         }

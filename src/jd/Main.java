@@ -286,7 +286,7 @@ public class Main {
             LOGGER.info("init Localisation");
             Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadLanguage", "lade Sprachen"));
 
-            JDSounds.setSoundTheme("default");
+            JDSounds.setSoundTheme("default");            
             start(args);
         } else {
             if (args.length > 0) {
@@ -415,6 +415,7 @@ public class Main {
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.initcontroller", "Starte Controller"));
 
         final JDController controller = init.initController();
+        GarbageThread.getInstance();
 
         // if (JDInitFlags.SWITCH_DEBUG ||
         // JDUtilities.getConfiguration().getBooleanProperty

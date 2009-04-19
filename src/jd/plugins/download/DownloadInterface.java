@@ -497,9 +497,6 @@ abstract public class DownloadInterface {
                 logger.finer("Finalized: " + downloadLink + " : " + getID());
             }
             buffer = null;
-            System.gc();
-            System.runFinalization();
-
         }
 
         /**

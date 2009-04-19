@@ -207,9 +207,7 @@ public abstract class Plugin implements ActionListener {
 
     public void clean() {
         lastCaptcha = null;
-        br = new Browser();
-        System.gc();
-        System.runFinalization();
+        br = new Browser();        
     }
 
     /**
