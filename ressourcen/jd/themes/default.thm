@@ -76,9 +76,11 @@ gui.images.abort=default/emblem-unreadable
 gui.images.taskpanes.linkgrabber=default/system-search-add
 gui.images.taskpanes.configuration=default/applications-system
 gui.images.taskpanes.generalpurpose=default/go-bottom
-gui.images.taskpanes.premium=default/premium
+gui.images.taskpanes.premium=default/contact-new
+gui.images.vip=default/contact-new
 gui.images.buy=default/premium
-gui.list=default/list
+gui.images.accounts=default/accounts
+
 gui.images.taskpanes.download=default/go-down
 gui.images.break=default/media-playback-pause
 gui.images.ok=default/ok
@@ -88,6 +90,8 @@ gui.images.unselected=default/face-sad
 gui.images.minimize.left=default/minimize_left
 gui.images.minimize.right=default/minimize_right
 gui.images.chat=default/internet-group-chat
+gui.images.enabled=default/enabled
+gui.images.disabled=default/disabled
 #colors
 gui.color.statusbar.maxspeedhighlight=ff0c03
 gui.color.htmlTooltip_background=94baff
