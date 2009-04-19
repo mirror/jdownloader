@@ -94,7 +94,7 @@ public class Captcha extends PixelGrid {
         try {
             pg.grabPixels();
         } catch (Exception e) {
-           
+
             return null;
         }
 
@@ -809,6 +809,11 @@ public class Captcha extends PixelGrid {
             letters[i].clean();
             i++;
         }
+        for (i = 0; i < letters.length; i++) {
+            owner.getJas().executeLetterPrepareCommands(letters[i]);
+            letters[i] = letters[i].getSimplified(owner.getJas().getDouble("simplifyFaktor"));
+
+        }
         return letters;
     }
 
@@ -924,7 +929,7 @@ public class Captcha extends PixelGrid {
                 if (JAntiCaptcha.isLoggerActive()) {
                     logger.severe("Fehler in useLetterFilter:" + e.getLocalizedMessage() + " / " + owner.getJas().getString("useSpecialGetLetters"));
                 }
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
             seperatedLetters = ret;
             return ret;
@@ -956,12 +961,16 @@ public class Captcha extends PixelGrid {
             PixelObject obj = letters.elementAt(i);
 
             Letter l = obj.toLetter();
-            // l.removeSmallObjects(owner.getJas().getDouble("ObjectColorContrast"),
+            //l.removeSmallObjects(owner.getJas().getDouble("ObjectColorContrast"
+            // ),
             // owner.getJas().getDouble("ObjectDetectionContrast"));
             owner.getJas().executeLetterPrepareCommands(l);
             // if(owner.getJas().getInteger("leftAngle")!=0 ||
             // owner.getJas().getInteger("rightAngle")!=0) l =
-            // l.align(owner.getJas().getDouble("ObjectDetectionContrast"),owner.getJas().getInteger("leftAngle"),owner.getJas().getInteger("rightAngle"));
+            //l.align(owner.getJas().getDouble("ObjectDetectionContrast"),owner.
+            // getJas
+            // ().getInteger("leftAngle"),owner.getJas().getInteger("rightAngle"
+            // ));
             // l.reduceWhiteNoise(2);
             // l.toBlackAndWhite(0.6);
 
@@ -999,7 +1008,9 @@ public class Captcha extends PixelGrid {
                 // if(owner.getJas().getInteger("leftAngle")!=0 ||
                 // owner.getJas().getInteger("rightAngle")!=0) ret[letterId] =
                 // ret[letterId].align(
-                // owner.getJas().getDouble("ObjectDetectionContrast"),owner.getJas().getInteger("leftAngle"),owner.getJas().getInteger("rightAngle"));
+                // owner.getJas().getDouble("ObjectDetectionContrast"),owner.
+                // getJas().getInteger("leftAngle"),owner.getJas().getInteger(
+                // "rightAngle"));
                 owner.getJas().executeLetterPrepareCommands(ret[letterId]);
 
                 ret[letterId] = ret[letterId].getSimplified(owner.getJas().getDouble("simplifyFaktor"));
@@ -1077,7 +1088,7 @@ public class Captcha extends PixelGrid {
                 if (JAntiCaptcha.isLoggerActive()) {
                     logger.severe("Fehler in useSpecialGetLetters:" + e.getLocalizedMessage() + " / " + owner.getJas().getString("useSpecialGetLetters"));
                 }
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
             return null;
         }
@@ -1141,7 +1152,9 @@ public class Captcha extends PixelGrid {
                 // if(owner.getJas().getInteger("leftAngle")!=0 ||
                 // owner.getJas().getInteger("rightAngle")!=0) ret[letterId] =
                 // ret[letterId].align(
-                // owner.getJas().getDouble("ObjectDetectionContrast"),owner.getJas().getInteger("leftAngle"),owner.getJas().getInteger("rightAngle"));
+                // owner.getJas().getDouble("ObjectDetectionContrast"),owner.
+                // getJas().getInteger("leftAngle"),owner.getJas().getInteger(
+                // "rightAngle"));
 
                 ret[letterId] = ret[letterId].getSimplified(owner.getJas().getDouble("simplifyFaktor"));
 
@@ -1536,8 +1549,10 @@ public class Captcha extends PixelGrid {
 
         // Letter letter = pixelObject.toLetter();
         // Captcha remImage =
-        // owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(removeObjectsContainingImage)));
-        // letter.removeObjectFromGrid(owner.getLetter(letter).getB().toPixelObject(1));
+        // owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(
+        // removeObjectsContainingImage)));
+        // letter.removeObjectFromGrid(owner.getLetter(letter).getB().
+        // toPixelObject(1));
 
         if (jac.getLetter(pixelObject.toLetter()).getDecodedValue().equals("k")) {
             return false;
@@ -1583,13 +1598,13 @@ public class Captcha extends PixelGrid {
             fos.close();
         } catch (FileNotFoundException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (ImageFormatException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (IOException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
     }
 
@@ -1650,7 +1665,7 @@ public class Captcha extends PixelGrid {
 
                     pixel[i] = ((IndexColorModel) colorModel).getRGB(bpixel[i] & pixel_mask);
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     pixel[i] = 0;
                 }
 
