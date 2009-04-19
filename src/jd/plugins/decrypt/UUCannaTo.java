@@ -40,14 +40,14 @@ public class UUCannaTo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         boolean valid = false;
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-            String captchaUrl = br.getRegex("<img src=\"(captcha/captcha\\.php\\?id=[\\d]+)\"").getMatch(0);
-
-            File captchaFile = this.getLocalCaptchaFile(this);
-            Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://uu.canna.to/cpuser/" + captchaUrl));
-            String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
             Form captchaForm = br.getFormbyProperty("name", "download_form");
+            String captchaUrl = br.getRegex("<img\\s+src=\"(captcha/captcha\\.php\\?id=[\\d]+)\"").getMatch(0);
+            File captchaFile = this.getLocalCaptchaFile(this);
+            Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
+            String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);            
             captchaForm.put("sicherheitscode", captchaCode);
             br.submitForm(captchaForm);
 
