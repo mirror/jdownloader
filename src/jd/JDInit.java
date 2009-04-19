@@ -572,6 +572,7 @@ public class JDInit {
         new HostPluginWrapper("rapidshark.pl", "RapidSharkPl", "http://[\\w\\.]*?rapidshark\\.pl/.*");
         new HostPluginWrapper("milledrive.com", "MilleDriveCom", "http://.*?milledrive\\.com/(music|files|videos|files/video|files/music)/\\d+/.*");
         new HostPluginWrapper("up-file.com", "UpFileCom", "http://.*?up-file\\.com/download/[a-z0-9]+");
+        new HostPluginWrapper("4freeload.net", "FourFreeLoadNet", "http://.*?4freeload\\.net/download\\.php\\?id=[A-Fa-f0-9]+");
 
         // Hoster from Extern
         new HostPluginWrapper("ifolder.ru", "IfolderRu", "http://[\\w\\.]*?ifolder\\.ru/\\d+");
