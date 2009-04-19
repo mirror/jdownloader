@@ -71,9 +71,11 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         this.queue = new Jobber(1);
         initConfig();
     }
-    public String getIconKey(){
+
+    public String getIconKey() {
         return "gui.images.addons.merge";
     }
+
     /**
      * Das controllevent fängt heruntergeladene file ab und wertet sie aus.
      * CONTROL_PLUGIN_INACTIVE: Wertet die frisch fertig gewordenen Downloads
@@ -139,11 +141,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.hjsplit.menu.toggle", "Activate"), 1).setActionListener(this));
         m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
 
-      
-
         menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.hjsplit.menu.extract.singlefils", "Merge archive(s)"), 21).setActionListener(this));
-
-       
 
         return menu;
     }
@@ -183,9 +181,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                 if (list == null) return;
                 addFileList(list);
             }
-            break;
-        case 4:
-            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, config);
             break;
 
         case 1000:

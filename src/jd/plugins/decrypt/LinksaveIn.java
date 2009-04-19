@@ -33,9 +33,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
-
 public class LinksaveIn extends PluginForDecrypt {
 
     public LinksaveIn(PluginWrapper wrapper) {
@@ -74,23 +71,25 @@ public class LinksaveIn extends PluginForDecrypt {
 
             File file = null;
             for (String c : container) {
-                /*Context cx = Context.enter();
-                Scriptable scope = cx.initStandardObjects();
-                String fun = "function f(){ \nreturn '" + c + "';} f()";
-                Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-
-                c=result.toString();*/
-            	String test = Encoding.htmlDecode(c);
-            	if (test.endsWith(".cnl")) {
-	                URLConnectionAdapter con = br.openGetConnection("http://linksave.in/" + test.replace("dlc://linksave.in/", ""));
-	                if (con.getResponseCode() == 200) {
-	                    file = JDUtilities.getResourceFile("tmp/linksave/" + test.replace(".cnl", ".dlc").replace("dlc://", "http://").replace("http://linksave.in", ""));
-	                    br.downloadConnection(file, con);
-	                    break;
-	                } else {
-	                    con.disconnect();
-	                }
-            	}
+                /*
+                 * Context cx = Context.enter(); Scriptable scope =
+                 * cx.initStandardObjects(); String fun =
+                 * "function f(){ \nreturn '" + c + "';} f()"; Object result =
+                 * cx.evaluateString(scope, fun, "<cmd>", 1, null);
+                 * 
+                 * c=result.toString();
+                 */
+                String test = Encoding.htmlDecode(c);
+                if (test.endsWith(".cnl")) {
+                    URLConnectionAdapter con = br.openGetConnection("http://linksave.in/" + test.replace("dlc://linksave.in/", ""));
+                    if (con.getResponseCode() == 200) {
+                        file = JDUtilities.getResourceFile("tmp/linksave/" + test.replace(".cnl", ".dlc").replace("dlc://", "http://").replace("http://linksave.in", ""));
+                        br.downloadConnection(file, con);
+                        break;
+                    } else {
+                        con.disconnect();
+                    }
+                }
 
             }
             if (file != null && file.exists() && file.length() > 100) {

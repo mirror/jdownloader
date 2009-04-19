@@ -1,6 +1,5 @@
 package jd.gui.skins.simple.tasks;
 
-import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -18,7 +17,6 @@ import jd.config.SubConfiguration;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SingletonPanel;
-import jd.gui.skins.simple.components.JDUnderlinedText;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTaskPane;
@@ -161,8 +159,8 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     }
 
     public JButton createButton(String string, Icon i) {
-       return  Factory.createButton(string,i,this);
-     
+        return Factory.createButton(string, i, this);
+
     }
 
     public void propertyChange(PropertyChangeEvent evt) {

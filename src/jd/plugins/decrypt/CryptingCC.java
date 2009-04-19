@@ -125,6 +125,6 @@ public class CryptingCC extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4812 $");
+        return getVersion("$Revision$");
     }
 }

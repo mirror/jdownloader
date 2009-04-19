@@ -55,31 +55,33 @@ public class Schedule extends PluginOptional {
     private Timer status;
 
     private Vector<String> listData = new Vector<String>();
-    private Vector<ScheduleFrame> schedules=null;
+    private Vector<ScheduleFrame> schedules = null;
 
     private JTabbedPanel tabbedPanel;
 
     public Schedule(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     public String getIconKey() {
-   
+
         return "gui.images.config.eventmanager";
     }
+
     @SuppressWarnings("unchecked")
     private void initGUI() {
-        if(schedules!=null)return;
-    
+        if (schedules != null) return;
+
         schedules = (Vector<ScheduleFrame>) getPluginConfig().getProperty(PROPERTY_SCHEDULES, new Vector<ScheduleFrame>());
         logger.finer("Scheduler: restored " + schedules.size() + " schedules");
         reloadList();
 
         tabbedPanel = new JTabbedPanel() {
 
+            private static final long serialVersionUID = 4758934444244058336L;
+
             @Override
             public void onDisplay() {
-                // TODO Auto-generated method stub
-
             }
 
             @Override
@@ -88,7 +90,6 @@ public class Schedule extends PluginOptional {
                 getPluginConfig().save();
 
                 status.stop();
-
             }
 
         };

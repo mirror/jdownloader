@@ -1,8 +1,6 @@
 package jd.gui.skins.simple.components.Linkgrabber;
 
 import java.awt.EventQueue;
-import java.awt.Toolkit;
-import java.awt.datatransfer.DataFlavor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -27,7 +25,6 @@ import jd.controlling.ProgressControllerListener;
 import jd.event.JDBroadcaster;
 import jd.gui.skins.simple.JDCollapser;
 import jd.gui.skins.simple.JTabbedPanel;
-import jd.gui.skins.simple.LinkInputDialog;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JDFileChooser;
@@ -443,7 +440,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 case LinkGrabberTreeTableAction.ADD_SELECTED:
                     selected_packages = new Vector<LinkGrabberFilePackage>(this.internalTreeTable.getSelectedFilePackages());
                     break;
-        
+
                 case LinkGrabberTreeTableAction.GUI_LOAD:
                     fc = new JDFileChooser("_LOADSAVEDLC");
                     fc.setDialogTitle(JDLocale.L("gui.filechooser.loaddlc", "Load DLC file"));

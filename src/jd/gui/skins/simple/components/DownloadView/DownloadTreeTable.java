@@ -59,7 +59,6 @@ import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.JDMenu;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.Colors;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -96,8 +95,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     public int mouseOverRow = -1;
 
-
-
     private Timer timer;
 
     private TableColumnExt[] cols;
@@ -118,11 +115,11 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
         // this.setExpandsSelectedPaths(true);
-        
+
         if (JDUtilities.getJavaVersion() >= 1.6) {
             setDropMode(DropMode.ON_OR_INSERT_ROWS);
         }
-       setDragEnabled(true);
+        setDragEnabled(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setColumnControlVisible(true);

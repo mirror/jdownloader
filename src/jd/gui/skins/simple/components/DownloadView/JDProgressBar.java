@@ -19,10 +19,7 @@ package jd.gui.skins.simple.components.DownloadView;
 import java.awt.Graphics;
 
 import javax.swing.ImageIcon;
-import javax.swing.JComponent;
 import javax.swing.JProgressBar;
-import javax.swing.plaf.ProgressBarUI;
-import javax.swing.plaf.basic.BasicProgressBarUI;
 
 /**
  * Diese Klasse skaliert die Werte der JProgressbar auf Integer ranges herunter
@@ -34,8 +31,6 @@ public class JDProgressBar extends JProgressBar {
     private int faktor = 1;
 
     private ImageIcon icon;
-
-
 
     public JDProgressBar() {
         super();

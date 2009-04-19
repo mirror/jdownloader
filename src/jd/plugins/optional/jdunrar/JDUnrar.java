@@ -145,7 +145,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     }
 
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
             break;
@@ -446,7 +446,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
             return new File(ret, path);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             return ret;
         }
     }
@@ -454,12 +454,13 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     public String getIconKey() {
         return "gui.images.addons.unrar";
     }
+
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
         menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.jdunrar.menu.toggle", "Activate"), 1).setActionListener(this));
-        m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));   
+        m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
 
         menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.extract.singlefils", "Extract archive(s)"), 21).setActionListener(this));
 
@@ -526,13 +527,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     }.start();
                 }
             }
-            break;
-
-        case 4:
-            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, config);
-            break;
-        case 5:
-            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, passwordConfig);
             break;
 
         case 1000:
@@ -762,7 +756,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     // n.getKey()));
                 }
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
         }
 

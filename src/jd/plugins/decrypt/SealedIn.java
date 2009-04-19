@@ -47,11 +47,11 @@ public class SealedIn extends PluginForDecrypt {
         String page = br.getPage(parameter);
         Form f = br.getForm(0);
         boolean do_continue = false;
-        
-        if (f != null) {           
+
+        if (f != null) {
             for (int retrycnt = 1; retrycnt <= 5; retrycnt++) {
-                
-                /* Captcha */                
+
+                /* Captcha */
                 if (f.hasInputFieldByName("captcha")) {
                     String url = br.getRegex("(captcha\\-.*?\\.gif)").getMatch(0);
                     File captchaFile = this.getLocalCaptchaFile(this);
@@ -60,43 +60,47 @@ public class SealedIn extends PluginForDecrypt {
                     if (captchaCode == null) return null;
                     f.put("captcha", captchaCode);
                 }
-                
+
                 /* Folder password */
                 if (f.hasInputFieldByName("passw")) {
                     String pass = getUserInput(null, param);
                     f.put("passw", pass);
                 }
-                
+
                 page = br.submitForm(f);
-                
+
                 if (!br.containsHTML("class=\"error\">")) {
                     do_continue = true;
                     break;
-                }           
+                }
             }
         }
-        
-        
+
         if (do_continue || f == null) {
             /* Container */
             if (!getContainer(page, parameter, "dlc", decryptedLinks)) {
-               if (!getContainer(page, parameter, "ccf", decryptedLinks)) {
-                  if (getContainer(page, parameter, "rsdf", decryptedLinks)); 
-               }
+                if (!getContainer(page, parameter, "ccf", decryptedLinks)) {
+                    if (getContainer(page, parameter, "rsdf", decryptedLinks))
+                    ;
+                }
             }
             /* No Container */
             if (decryptedLinks.size() == 0) {
                 String[] ids = br.getRegex("startDownload\\(\\'(.*?)\\'\\)").getColumn(0);
                 if (ids.length > 0) {
                     /* Use if decrypter uses iframes one day */
-                    //Browser tab;
-                    //tab = br.cloneBrowser();
+                    // Browser tab;
+                    // tab = br.cloneBrowser();
                     progress.setRange(ids.length);
-                    for (String id : ids) { 
+                    for (String id : ids) {
                         decryptedLinks.add(createDownloadlink(DecodeLink(br.getPage("http://sealed.in/encd_" + id))));
-                        /* Use next 2 lines instead of last line if decrypter uses iframes */
-                        //String link = tab.getRegex("<iframe .*? src=\"(.*?)\">").getMatch(0);
-                        //decryptedLinks.add(createDownloadlink(link));
+                        /*
+                         * Use next 2 lines instead of last line if decrypter
+                         * uses iframes
+                         */
+                        // String link =
+                        // tab.getRegex("<iframe .*? src=\"(.*?)\">").getMatch(0);
+                        // decryptedLinks.add(createDownloadlink(link));
                         progress.increase(1);
 
                     }
@@ -109,20 +113,20 @@ public class SealedIn extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-    
+
     private boolean getContainer(String page, String cryptedLink, String containerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {
         String container_link = new Regex(page, "href=\"(" + containerFormat + "/[a-z0-9]+)\"").getMatch(0);
         if (container_link != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
             Browser browser = br.cloneBrowser();
             browser.getDownload(container, "http://sealed.in/" + Encoding.htmlDecode(container_link));
-            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));            
+            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
             container.delete();
             return true;
         }
         return false;
     }
-    
+
     /**
      * 
      * Nachbau der Javascript Entschlüsselung auf xink.it (u.a.
@@ -209,6 +213,6 @@ public class SealedIn extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4812 $");
+        return getVersion("$Revision$");
     }
 }

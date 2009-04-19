@@ -32,7 +32,6 @@ import jd.controlling.AccountManager;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.Account;
@@ -116,11 +115,8 @@ public class JDPremiumCollector extends PluginOptional {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() instanceof MenuItem) {
-            MenuItem mi = (MenuItem) e.getSource();
-            if (mi.getActionID() == 0) {
-                fetchAccounts();
-            }
+        if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
+            fetchAccounts();
         }
     }
 
@@ -164,7 +160,7 @@ public class JDPremiumCollector extends PluginOptional {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
 
         menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.premiumcollector.fetchAccounts", "Fetch Accounts"), 0).setActionListener(this));
-     
+
         return menu;
     }
 
@@ -261,12 +257,12 @@ public class JDPremiumCollector extends PluginOptional {
 
                     }
                 }
-             
-                AccountManager.getInstance().setAccountsForHost( plg.getPlugin(),accounts);
+
+                AccountManager.getInstance().setAccountsForHost(plg.getPlugin(), accounts);
                 logger.finer(plg.getHost() + " : " + accounts.size() + " accounts inserted");
             } else {
-        
-                AccountManager.getInstance().setAccountsForHost( plg.getPlugin(),oldaccounts);
+
+                AccountManager.getInstance().setAccountsForHost(plg.getPlugin(), oldaccounts);
                 logger.finer(plg.getHost() + " : " + oldaccounts.size() + " accounts inserted");
             }
             pc.increase(1);

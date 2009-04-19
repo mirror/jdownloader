@@ -21,8 +21,6 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Image;
-import java.awt.Toolkit;
-import java.awt.datatransfer.DataFlavor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -190,7 +188,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             this.noTitlePane = true;
 
         }
-        noTitlePane=false;
+        noTitlePane = false;
         toolBar = new JDToolBar(noTitlePane);
 
         System.out.println(ui);
@@ -497,7 +495,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 logger.info("Add links to Linkgrabber: " + links.size());
                 DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
                 linkGrabber.addLinks(linkList);
-          
+
                 if (!hideGrabber) taskPane.switcher(lgTaskPane);
                 return null;
             }
@@ -553,8 +551,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // panel.add(generalPurposeTasks, "cell 0 2");
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
         panel.add(progressBar, "spanx,hidemode 3,cell 0 3");
-      
-//        panel.add(new PremiumStatus(), "spanx, cell 0 4");
+
+        // panel.add(new PremiumStatus(), "spanx, cell 0 4");
         panel.add(this.statusBar, "spanx, cell 0 5");
 
     }
@@ -662,10 +660,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     private void addLinkgrabberTask() {
         linkGrabber = LinkGrabberPanel.getLinkGrabber();
         lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 24, 24));
-        lgTaskPane.addPanel(new SingletonPanel(LinkAdder.class,new Object[]{}));
-     
+        lgTaskPane.addPanel(new SingletonPanel(LinkAdder.class));
+
         lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
-       
+
         linkGrabber.getBroadcaster().addListener(lgTaskPane);
         lgTaskPane.addActionListener(linkGrabber);
         lgTaskPane.addActionListener(new ActionListener() {
@@ -673,17 +671,17 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 System.out.println(e.getActionCommand());
                 switch (e.getID()) {
                 case DownloadTaskPane.ACTION_CLICK:
-                    if(linkGrabber.hasLinks()){
-                 
-                    lgTaskPane.setPanelID(1);
-                    }else{
+                    if (linkGrabber.hasLinks()) {
+
+                        lgTaskPane.setPanelID(1);
+                    } else {
                         lgTaskPane.setPanelID(0);
-                         
+
                     }
                     break;
                 case LinkGrabberTreeTableAction.GUI_ADD:
                     lgTaskPane.setPanelID(0);
-               
+
                     return;
                 }
             }
