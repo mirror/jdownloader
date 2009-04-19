@@ -485,7 +485,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             } else if (arg0.getSource() instanceof LinkGrabberTreeTableAction) {
                 switch (arg0.getID()) {
                 case LinkGrabberTreeTableAction.DELETE:
-                    selected_links = (Vector<DownloadLink>) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("links");
+                    selected_links = (Vector<DownloadLink>) ((LinkGrabberTreeTableAction) arg0.getSource()).getProperty().getProperty("links");
                     break;
                 case LinkGrabberTreeTableAction.SORT_ALL:
                     col = (Integer) ((LinkGrabberTreeTableAction) arg0.getSource()).getProperty().getProperty("col");

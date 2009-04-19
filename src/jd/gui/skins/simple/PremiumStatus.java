@@ -137,12 +137,15 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         // System.out.println("Show detaoils to " + wrapper.getClassName());
         // SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI,
         // wrapper.getPlugin().getConfig());
+        logger.info("start info 1");
         ConfigEntriesPanel panel = new ConfigEntriesPanel(wrapper.getPlugin().getConfig());
+        logger.info("start info 2");
         Component comp = panel.getComponent(0);
         if (comp instanceof JTabbedPane) {
             ((JTabbedPane) comp).setSelectedIndex(((JTabbedPane) comp).getTabCount() - 1);
         }
         SimpleGUI.CURRENTGUI.getContentPane().display(panel);
+        logger.info("start info 3");
     }
 
     private void updatePremium() {

@@ -119,6 +119,7 @@ public class MeinUpload extends PluginForHost {
         br.clearCookies("mein-upload.com");
         br.getPage("http://www.mein-upload.com/");
         Form login = br.getForm(0);
+    
         login.put("login", Encoding.urlEncode(account.getUser()));
         login.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(login);
@@ -137,7 +138,7 @@ public class MeinUpload extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
         try {
             login(account);
-        } catch (PluginException e) {
+        } catch (Exception e) {
             ai.setValid(false);
             return ai;
         }

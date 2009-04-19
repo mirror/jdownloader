@@ -27,6 +27,7 @@ import java.util.Comparator;
 
 import javax.swing.AbstractButton;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JSeparator;
 
@@ -39,7 +40,6 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTaskPane;
 
 /**
@@ -179,7 +179,7 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         });
     }
 
-    private class ProgressEntry extends JXPanel implements ActionListener {
+    private class ProgressEntry extends JPanel implements ActionListener {
 
         private static final long serialVersionUID = 2676301394570621548L;
         private JLabel label;

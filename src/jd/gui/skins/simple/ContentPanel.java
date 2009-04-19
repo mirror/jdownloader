@@ -1,10 +1,10 @@
 package jd.gui.skins.simple;
 
+import javax.swing.JPanel;
+
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXPanel;
-
-public class ContentPanel extends JXPanel {
+public class ContentPanel extends JPanel {
     /**
      * 
      */
@@ -29,7 +29,7 @@ public class ContentPanel extends JXPanel {
             rightPanel.onHide();
         }
         rightPanel = panel;
-      
+
         this.add(rightPanel, "cell 0 0");
         rightPanel.setEnabled(true);
         rightPanel.setVisible(true);
@@ -44,8 +44,8 @@ public class ContentPanel extends JXPanel {
     }
 
     public JTabbedPanel getDisplay() {
-      return rightPanel;
-        
+        return rightPanel;
+
     }
 
 }

@@ -108,7 +108,7 @@ public class AccountInfo extends Property {
     }
 
     public long getTrafficMax() {
-        return account_trafficMax;
+        return Math.max(account_trafficLeft,account_trafficMax);
     }
 
     /**

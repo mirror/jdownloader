@@ -45,23 +45,23 @@ public class LinkAdder extends JTabbedPanel {
 
             public void changedUpdate(DocumentEvent e) {
                 String[] links = HTMLParser.getHttpLinks(text.getText(), null);
-                lbl.setText(JDLocale.LF("gui.linkgrabber.adder.links.status", "...contains %s links", links.length));
+                lbl.setText(JDLocale.LF("gui.linkgrabber.adder.links.status", "...contains %s link(s)", links.length));
             }
 
             public void insertUpdate(DocumentEvent e) {
                 String[] links = HTMLParser.getHttpLinks(text.getText(), null);
-                lbl.setText(JDLocale.LF("gui.linkgrabber.adder.links.status", "...contains %s links", links.length));
+                lbl.setText(JDLocale.LF("gui.linkgrabber.adder.links.status", "...contains %s link(s)", links.length));
 
             }
 
             public void removeUpdate(DocumentEvent e) {
                 String[] links = HTMLParser.getHttpLinks(text.getText(), null);
-                lbl.setText(JDLocale.LF("gui.linkgrabber.adder.links.status", "...contains %s links", links.length));
+                lbl.setText(JDLocale.LF("gui.linkgrabber.adder.links.status", "...contains %s link(s)", links.length));
 
             }
 
         });
-        add(lbl = new JLabel(JDLocale.LF("gui.linkgrabber.adder.links.status", "...contains %s links", 0)), "alignx left, split 3,growx");
+        add(lbl = new JLabel(JDLocale.LF("gui.linkgrabber.adder.links.status", "...contains %s link(s)", 0)), "alignx left, split 3,growx");
         JButton bt;
 
         add(bt = new JButton(JDLocale.L("gui.linkgrabber.adder.links.cancel", "Cancel"), JDTheme.II("gui.images.abort", 16, 16)), "alignx right");

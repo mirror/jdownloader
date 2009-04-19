@@ -28,11 +28,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.logging.Logger;
 
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -40,20 +43,23 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
-import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
+import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.JDLogger;
+import jd.gui.JDLookAndFeelManager;
+import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.components.ChartAPIEntity;
-import jd.gui.skins.simple.components.ChartAPI_GOM;
 import jd.gui.skins.simple.components.JDTextField;
 import jd.gui.skins.simple.components.JDUnderlinedText;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.PieChartAPI;
+import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.http.Encoding;
 import jd.plugins.Account;
@@ -64,7 +70,6 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingworker.SwingWorker;
 import org.jdesktop.swingx.JXCollapsiblePane;
 
 public class PremiumPanel extends JPanel {
@@ -75,13 +80,17 @@ public class PremiumPanel extends JPanel {
     private static final Color INACTIVE = new Color(0xa40604);
     private static final Color DISABLED = new Color(0xaff0000);
 
+    private static final int PIE_WIDTH = 450;
+
+    private static final int PIE_HEIGHT = 70;
+
     private static boolean premiumActivated = true;
 
     private PluginForHost host;
 
     private ArrayList<AccountPanel> accs;
 
-    private PieChartAPI freeTrafficChart = new PieChartAPI("", 450, 70);
+    private PieChartAPI freeTrafficChart = new PieChartAPI("", PIE_WIDTH, PIE_HEIGHT);
 
     private ConfigEntry ce;
 
@@ -89,11 +98,12 @@ public class PremiumPanel extends JPanel {
 
     private ArrayList<Account> list;
 
+    private Logger logger;
+
     public PremiumPanel(GUIConfigEntry gce) {
         ce = gce.getConfigEntry();
         host = (PluginForHost) gce.getConfigEntry().getActionListener();
-
-        setLayout(new MigLayout("ins 5", "[fill, grow]", "[fill, grow]"));
+        logger = JDLogger.getLogger();
         premiumActivated = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
 
     }
@@ -128,6 +138,7 @@ public class PremiumPanel extends JPanel {
             if (accounts.get(i) != null) accs.get(i).setAccount(accounts.get(i));
         }
         createDataset();
+        logger.info("create 3");
     }
 
     private void createDataset() {
@@ -135,16 +146,22 @@ public class PremiumPanel extends JPanel {
     }
 
     private void createPanel(int j) {
+        logger.info("create 1");
         accs = new ArrayList<AccountPanel>();
-        JPanel panel = new JPanel(new MigLayout("ins 0, wrap 2", "[grow, fill][grow, fill]", "[grow, fill]"));
+
+        JPanel panel = new JPanel();
         removeAll();
-        JScrollPane sp;
-        add(sp = new JScrollPane(panel));
-        sp.setBorder(null);
+
+        setLayout(new MigLayout("ins ", "[fill,grow]", "[fill,grow]"));
+        panel.setLayout(new MigLayout(" ins 0, wrap 2", "[grow, fill][grow, fill]", "[fill]"));
+        panel.add(Factory.createHeader(JDLocale.L("plugins.premium.accounts", "Accounts"), JDTheme.II("gui.images.accounts",32,32)),"spanx");
+
+        add(panel);
+        // sp.setBorder(null);
         for (int i = 0; i < j; i++) {
             AccountPanel p = new AccountPanel(i);
 
-            panel.add(p, "spanx");
+            panel.add(p, "spanx,gapleft 25");
             accs.add(p);
         }
 
@@ -173,12 +190,11 @@ public class PremiumPanel extends JPanel {
             }
 
         });
-
-        panel.add(add, "alignx left");
-        panel.add(freeTrafficChart, "spany 2");
-        panel.add(buy, "alignx left");
-        this.getParent().invalidate();
-        this.getParent().repaint();
+        panel.add(Factory.createHeader(JDLocale.L("plugins.premium.options", "Premium options"), JDTheme.II("gui.images.vip",32,32)),"spanx");
+        panel.add(add, "alignx left,gapleft 30");
+        panel.add(freeTrafficChart, "spany 2,height " + PIE_HEIGHT + "!");
+        panel.add(buy, "alignx left,aligny top,gapleft 30");
+        logger.info("create 2");
     }
 
     public JButton createButton(String string, Icon i) {
@@ -202,7 +218,7 @@ public class PremiumPanel extends JPanel {
     private class AccountPanel extends JPanel implements ChangeListener, ActionListener, FocusListener {
 
         private static final long serialVersionUID = 6448121932852086853L;
-        private JCheckBox chkEnable;
+        private JToggleButton chkEnable;
         private JLabel lblUsername;
         private JLabel lblPassword;
         private JDTextField txtUsername;
@@ -250,12 +266,34 @@ public class PremiumPanel extends JPanel {
 
         public void createPanel(int nr) {
             this.setLayout(new MigLayout("ins 5, wrap 4", "[shrink][grow 20][shrink][grow 20]"));
-            if (premiumActivated) {
-                chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
-                chkEnable.setForeground(INACTIVE);
+            /**
+             * JGoodioes seems to have a performance bug rendering jCHeckboxes.
+             * which
+             */
+            if (JDLookAndFeelManager.getPlaf().isJGoodies()) {
+                if (premiumActivated) {
+                    chkEnable = new JToggleButton(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
+                     chkEnable.setForeground(INACTIVE);
+                } else {
+                    chkEnable = new JToggleButton(JDLocale.LF("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>", nr));
+                     chkEnable.setForeground(DISABLED);
+                }
+                chkEnable.setIcon(JDTheme.II("gui.images.disabled",16,16));
+                chkEnable.setSelectedIcon(JDTheme.II("gui.images.enabled",16,16));
+   
+                chkEnable.setOpaque(false);
+                chkEnable.setContentAreaFilled(false);               
+                chkEnable.setFocusPainted(false);
+                chkEnable.setBorderPainted(false);
             } else {
-                chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>", nr));
-                chkEnable.setForeground(DISABLED);
+                if (premiumActivated) {
+                    chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
+                    chkEnable.setForeground(INACTIVE);
+                } else {
+                    chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>", nr));
+                    chkEnable.setForeground(DISABLED);
+                }
+
             }
             add(chkEnable, "alignx left");
             chkEnable.addChangeListener(this);
@@ -295,8 +333,16 @@ public class PremiumPanel extends JPanel {
             account.setEnabled(chkEnable.isSelected());
             info = new JXCollapsiblePane();
             info.setCollapsed(true);
+            info.addPropertyChangeListener(new PropertyChangeListener() {
 
-            add(info, "spanx,growx,newline");
+                public void propertyChange(PropertyChangeEvent evt) {
+                    PremiumPanel.this.getParent().getParent().getParent().invalidate();
+                    PremiumPanel.this.getParent().getParent().getParent().repaint();
+
+                }
+            });
+
+            add(info, "skip,spanx,growx,newline");
         }
 
         public void stateChanged(ChangeEvent e) {
@@ -305,17 +351,22 @@ public class PremiumPanel extends JPanel {
             if (this.account.isEnabled() != sel) {
                 ce.setChanges(true);
             }
-            if (premiumActivated) {
-                chkEnable.setForeground((sel) ? ACTIVE : INACTIVE);
-            } else {
-                chkEnable.setForeground(DISABLED);
-            }
+       
+                if (premiumActivated) {
+                    chkEnable.setForeground((sel) ? ACTIVE : INACTIVE);
+                } else {
+                    chkEnable.setForeground(DISABLED);
+                }
+            
             txtPassword.setEnabled(sel);
             txtUsername.setEnabled(sel);
             txtStatus.setEnabled(sel);
             btnCheck.setEnabled(sel);
             lblPassword.setEnabled(sel);
             lblUsername.setEnabled(sel);
+            if(!sel)
+            info.setCollapsed(true);
+
         }
 
         private JTextField getTextField(String text) {
@@ -334,7 +385,7 @@ public class PremiumPanel extends JPanel {
                         ai = host.getAccountInformation(account);
                         if (ai == null) return;
                         Container details = info.getContentPane();
-                        info.getContentPane().setLayout(new MigLayout("ins 0 150 0 0, wrap 3", "[fill]15[grow, fill][]", "[][][][][][][][][][][fill,grow]"));
+                        details.setLayout(new MigLayout("ins 0 0 0 0, wrap 3,aligny top", "[][fill,align right]15[grow, fill,align left]"));
                         details.removeAll();
 
                         if (!ai.isValid()) {
@@ -343,40 +394,61 @@ public class PremiumPanel extends JPanel {
                         }
 
                         DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
-                        ChartAPI_GOM freeTraffic = new ChartAPI_GOM("", 200, 100);
-                        double procent = ((double) ai.getTrafficLeft() / (double) ai.getTrafficMax() * 100);
-                        freeTraffic.addEntity(new ChartAPIEntity(JDUtilities.formatBytesToMB(ai.getTrafficLeft()) + " free", String.valueOf(procent), new Color(50, 200, 50)));
-                        freeTraffic.fetchImage();
-                        details.add(freeTraffic, "cell 2 0,spany,aligny center");
+                        // ChartAPI_GOM freeTraffic = new ChartAPI_GOM("", 200,
+                        // 100);
+                        // double procent = ((double) ai.getTrafficLeft() /
+                        // (double) ai.getTrafficMax() * 100);
+                        // freeTraffic.addEntity(new
+                        // ChartAPIEntity(JDUtilities.formatBytesToMB
+                        // (ai.getTrafficLeft()) + " free",
+                        // String.valueOf(procent), new Color(50, 200, 50)));
+                        // freeTraffic.fetchImage();
+
+                        JDProgressBar bar = new JDProgressBar();
+        bar.setOrientation(SwingConstants.VERTICAL);
+//                        bar.setBorder(null);
+                      
+                        bar.setStringPainted(true);
+
+                        if (ai.getTrafficMax() <= 0) {
+                            bar.setValue(1);
+                            bar.setMaximum(1);
+                            bar.setString(JDLocale.L("gui.premiumpanel.bartext.unlimited", "< ∞ >"));
+                        }else{
+                            bar.setMaximum(Math.max(1, ai.getTrafficMax()));
+                            bar.setValue(ai.getTrafficLeft());
+                        }
+
+                        details.add(bar, "cell 0 0,spany,aligny top, height n:40:n, growy,width 30!");
 
                         if (ai.getValidUntil() > -1) {
-                            details.add(new JLabel("Valid until"), " alignright, w 15%:pref, growx");
-                            details.add(getTextField(formater.format(new Date(ai.getValidUntil()))), "alignleft");
+                            details.add(new JLabel("Valid until"), "");
+                            details.add(getTextField(formater.format(new Date(ai.getValidUntil()))), "");
                         }
 
                         if (ai.getAccountBalance() > -1) {
-                            details.add(new JLabel("Balance"), " alignright, w 15%:pref, growx");
-                            details.add(getTextField(String.valueOf(ai.getAccountBalance() / 100) + " €"), "alignleft");
+                            details.add(new JLabel("Balance"), "");
+                            details.add(getTextField(String.valueOf(ai.getAccountBalance() / 100) + " €"), "");
                         }
                         if (ai.getFilesNum() > -1) {
-                            details.add(new JLabel("Files stored"), " alignright, w 15%:pref, growx");
-                            details.add(getTextField(String.valueOf(ai.getFilesNum())), "alignleft");
+                            details.add(new JLabel("Files stored"), "");
+                            details.add(getTextField(String.valueOf(ai.getFilesNum())), "");
                         }
                         if (ai.getUsedSpace() > -1) {
-                            details.add(new JLabel("Used Space"), " alignright, w 15%:pref, growx");
-                            details.add(getTextField(JDUtilities.formatBytesToMB(ai.getUsedSpace())), "alignleft");
+                            details.add(new JLabel("Used Space"), "");
+                            details.add(getTextField(JDUtilities.formatBytesToMB(ai.getUsedSpace())), "");
                         }
                         if (ai.getPremiumPoints() > -1) {
-                            details.add(new JLabel("PremiumPoints"), " alignright, w 15%:pref, growx");
-                            details.add(getTextField(String.valueOf(ai.getPremiumPoints())), "alignleft");
+                            details.add(new JLabel("PremiumPoints"), "");
+                            details.add(getTextField(String.valueOf(ai.getPremiumPoints())), "");
                         }
                         if (ai.getTrafficShareLeft() > -1) {
-                            details.add(new JLabel("Trafficshare left"), " alignright, w 15%:pref, growx");
-                            details.add(getTextField(JDUtilities.formatBytesToMB(ai.getTrafficShareLeft())), "alignleft");
+                            details.add(new JLabel("Trafficshare left"), "");
+                            details.add(getTextField(JDUtilities.formatBytesToMB(ai.getTrafficShareLeft())), "");
                         }
                         if (ai.getTrafficLeft() > -1) {
-                            details.add(new JLabel("Traffic left"), " alignright, w 15%:pref, growx");
-                            details.add(getTextField(JDUtilities.formatBytesToMB(ai.getTrafficLeft())), "alignleft");
+                            details.add(new JLabel("Traffic left"), "aligny top");
+                            details.add(getTextField(JDUtilities.formatBytesToMB(ai.getTrafficLeft())), "aligny top");
 
                         }
                         info.setCollapsed(false);
@@ -389,29 +461,6 @@ public class PremiumPanel extends JPanel {
                     info.setCollapsed(true);
 
                 }
-                new SwingWorker<Object, Object>() {
-
-                    @Override
-                    protected Object doInBackground() throws Exception {
-                        Thread.sleep(500);
-                        return null;
-                    }
-
-                    public void done() {
-                        // SimpleGUI.CURRENTGUI.invalidate();
-                        // SimpleGUI.CURRENTGUI.repaint();
-                        // SimpleGUI.CURRENTGUI.pack();
-                        PremiumPanel.this.getParent().getParent().getParent().invalidate();
-                        PremiumPanel.this.getParent().getParent().getParent().repaint();
-                        //
-                        // Container c = PremiumPanel.this;
-                        // while (c != null) {
-                        //
-                        // c = c.getParent();
-                        // System.out.println(c);
-                        // }
-                    }
-                }.execute();
 
             } else if (e.getSource() == btnDelete) {
                 list.remove(panelID);

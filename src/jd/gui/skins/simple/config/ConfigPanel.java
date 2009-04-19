@@ -77,11 +77,23 @@ public abstract class ConfigPanel extends JTabbedPanel {
             }
 
             for (JComponent c : entry.getInput()) {
-                if (entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) {
+                switch (entry.getConfigEntry().getType()) {
+                case ConfigContainer.TYPE_TEXTAREA:
                     panel.add(new JScrollPane(c), "spanx,gapright 20,growy,pushy");
-                } else {
+                    break;
+                case ConfigContainer.TYPE_PREMIUMPANEL:
+                    this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
+                    panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
+                   
+                    JScrollPane sp;
+                        panel.add(sp=new JScrollPane(c), "spanx,growy,pushy");
+                    sp.setBorder(null);
+                    break;
+                default:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright 20" : "gapright 20");
+                    break;
                 }
+
             }
             entries.add(entry);
             currentGroup = null;
@@ -103,11 +115,27 @@ public abstract class ConfigPanel extends JTabbedPanel {
             }
 
             for (JComponent c : entry.getInput()) {
-                if (entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) {
+                
+                switch (entry.getConfigEntry().getType()) {
+                case ConfigContainer.TYPE_TEXTAREA:
                     panel.add(new JScrollPane(c), "spanx,gapleft 35,gapright 20");
-                } else {
+                 
+                    break;
+                case ConfigContainer.TYPE_PREMIUMPANEL:
+                
+                    this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
+                    panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
+                    JScrollPane sp;
+                        panel.add(sp=new JScrollPane(c), "spanx");
+                        sp.setBorder(null);
+                    break;
+                default:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright 20,gapleft 35" : "gapright 20");
+                    break;
                 }
+                
+                
+         
 
             }
         }
@@ -147,17 +175,24 @@ public abstract class ConfigPanel extends JTabbedPanel {
     }
 
     public void onHide() {
-//        PropertyType changes = this.hasChanges();
-//        if (changes != ConfigEntry.PropertyType.NONE) {
-//            if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.save.doyourealywant", "Do you want to save your changes?"), JDLocale.L("gui.config.save.doyourealywant.title", "Changes"))) {
-                this.save();
-//                if (changes == ConfigEntry.PropertyType.NEEDS_RESTART) {
-//                    if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDLocale.L("gui.config.save.restart.title", "JDownloader restart requested"))) {
-//                        JDUtilities.restartJD();
-//                    }
-//                }
-//            }
-//        }
+        // PropertyType changes = this.hasChanges();
+        // if (changes != ConfigEntry.PropertyType.NONE) {
+        // if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L(
+        // "gui.config.save.doyourealywant",
+        // "Do you want to save your changes?"),
+        // JDLocale.L("gui.config.save.doyourealywant.title", "Changes"))) {
+        this.save();
+        // if (changes == ConfigEntry.PropertyType.NEEDS_RESTART) {
+        // if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L(
+        // "gui.config.save.restart",
+        // "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"
+        // ), JDLocale.L("gui.config.save.restart.title",
+        // "JDownloader restart requested"))) {
+        // JDUtilities.restartJD();
+        // }
+        // }
+        // }
+        // }
 
     }
 

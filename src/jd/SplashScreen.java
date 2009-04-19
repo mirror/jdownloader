@@ -35,7 +35,7 @@ public class SplashScreen implements ActionListener {
 
     private JLabel label;
 
-    private final int speed = 1000 / 20;
+    private final int speed = 1000 / 10;
     private long startTime = 0;
 
     private Timer timer;

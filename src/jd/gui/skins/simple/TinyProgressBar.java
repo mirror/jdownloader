@@ -1,5 +1,7 @@
 package jd.gui.skins.simple;
 
+import java.awt.Cursor;
+
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -22,6 +24,7 @@ public class TinyProgressBar extends JPanel {
         prg.setOrientation(SwingConstants.VERTICAL);
         this.setBorder(prg.getBorder());
         prg.setBorder(null);
+        this.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
      
 
     }
