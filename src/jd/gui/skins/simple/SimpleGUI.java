@@ -188,6 +188,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             this.noTitlePane = true;
 
         }
+        this.
+        setEnabled(false);
+        this.setWaiting(true);
         noTitlePane = false;
         toolBar = new JDToolBar(noTitlePane);
 
@@ -547,7 +550,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         panel.add(contentPanel);
         // sp.setBorder(null);
 
-        panel.add(JDCollapser.getInstance(), "hidemode 3,gaptop 15,cell 2 2");
+        panel.add(JDCollapser.getInstance(), "hidemode 3,gaptop 15,cell 2 2,growx,pushx");
         // panel.add(generalPurposeTasks, "cell 0 2");
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
         panel.add(progressBar, "spanx,hidemode 3,cell 0 3");
@@ -740,6 +743,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 switch (event.getID()) {
                 case ControlEvent.CONTROL_INIT_COMPLETE:
                     setTitle(JDUtilities.getJDTitle());
+                    SimpleGUI.this.setWaiting(false);
+                    SimpleGUI.this.setEnabled(true);
                     try {
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {

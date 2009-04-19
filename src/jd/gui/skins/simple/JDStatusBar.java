@@ -109,6 +109,10 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
                 setSpinnerSpeed(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
             } else if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN)) {
                 spMaxDls.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
+            
+            } else if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS)) {
+                spMaxChunks.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 1));
+           
             } else if (event.getID() == ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED) {
                 // btnStartStop.setIcon(new
                 // ImageIcon(JDImage.getImage(getStartStopDownloadImage())));
@@ -151,5 +155,12 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
             subConfig.save();
 
         }
+        else if (e.getSource() == spMaxChunks) {
+            SubConfiguration subConfig = SubConfiguration.getConfig("DOWNLOAD");
+            subConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, (Integer) spMaxChunks.getValue());
+            subConfig.save();
+
+        }
+        
     }
 }

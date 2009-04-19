@@ -5,6 +5,8 @@ import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import javax.swing.JScrollPane;
+
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
@@ -32,13 +34,12 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
         this.addPropertyChangeListener(new PropertyChangeListener() {
 
             public void propertyChange(PropertyChangeEvent evt) {
-                if(evt.getPropertyName()==JXCollapsiblePane.ANIMATION_STATE_KEY){
-                    if(evt.getNewValue().equals("collapsed")){
+                if (evt.getPropertyName() == JXCollapsiblePane.ANIMATION_STATE_KEY) {
+                    if (evt.getNewValue().equals("collapsed")) {
                         JDCollapser.this.setVisible(false);
                     }
                 }
-         
-                
+
             }
 
         });
@@ -70,8 +71,9 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
                 panel.onHide();
                 panel = null;
             }
-            
-  
+
+        }else{
+            setVisible(true);
         }
     }
 
@@ -83,14 +85,17 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
 
         }
         getContentPane().removeAll();
-        getContentPane().setLayout(new MigLayout("ins 0,wrap 1", "[grow, fill]", "[grow,fill]"));
+        getContentPane().setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[shrink 100]"));
 
         this.panel = panel;
         panel.onDisplay();
 
-        getContentPane().add(this.panel);
+        JScrollPane sp;
+      
+        getContentPane().add(sp=new JScrollPane(this.panel),"height n:n:"+(int)(SimpleGUI.CURRENTGUI.getHeight()*0.65));
+//        sp.setBorder(null);
         this.revalidate();
-    
+
         this.repaint();
 
     }

@@ -267,6 +267,7 @@ public class Rapidshare extends PluginForHost {
                     u.setAvailable(false);
                     break;
                 case 1:
+                    u.getLinkStatus().setStatusText("alles prima");
                     u.setAvailable(true);
                     break;
                 case 2:
@@ -283,9 +284,9 @@ public class Rapidshare extends PluginForHost {
                     u.getLinkStatus().setStatusText("File abused");
                     break;
                 case 5:
-                    u.setAvailable(true);
-//                    u.getLinkStatus().setErrorMessage("Anonymous file");
-//                    u.getLinkStatus().setStatusText("Anonymous file");
+                    u.setAvailable(false);
+                    u.getLinkStatus().setErrorMessage("Anonymous file");
+                    u.getLinkStatus().setStatusText("Anonymous file");
                     break;
                 }
                 i++;

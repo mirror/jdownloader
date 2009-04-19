@@ -138,7 +138,7 @@ public class PremiumPanel extends JPanel {
             if (accounts.get(i) != null) accs.get(i).setAccount(accounts.get(i));
         }
         createDataset();
-        logger.info("create 3");
+     
     }
 
     private void createDataset() {
@@ -146,7 +146,7 @@ public class PremiumPanel extends JPanel {
     }
 
     private void createPanel(int j) {
-        logger.info("create 1");
+        
         accs = new ArrayList<AccountPanel>();
 
         JPanel panel = new JPanel();
@@ -194,7 +194,7 @@ public class PremiumPanel extends JPanel {
         panel.add(add, "alignx left,gapleft 30");
         panel.add(freeTrafficChart, "spany 2,height " + PIE_HEIGHT + "!");
         panel.add(buy, "alignx left,aligny top,gapleft 30");
-        logger.info("create 2");
+     
     }
 
     public JButton createButton(String string, Icon i) {
