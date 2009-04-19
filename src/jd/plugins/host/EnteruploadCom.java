@@ -70,7 +70,7 @@ public class EnteruploadCom extends PluginForHost {
             form.put("code", code);
             form.setAction(downloadLink.getDownloadURL());
             // Ticket Time
-            this.sleep(40000, downloadLink, "Download Ticket: ");
+            this.sleep(40500, downloadLink);
             br.submitForm(form);
             URLConnectionAdapter con2 = br.getHttpConnection();
             String dllink = br.getRedirectLocation();

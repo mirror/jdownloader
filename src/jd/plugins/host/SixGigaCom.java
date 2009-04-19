@@ -70,7 +70,7 @@ public class SixGigaCom extends PluginForHost {
             form.put("code", code);
             form.setAction(downloadLink.getDownloadURL());
             // Ticket Time
-            this.sleep(30000, downloadLink, "Download Ticket: ");
+            this.sleep(30000, downloadLink);
             br.submitForm(form);
             URLConnectionAdapter con2 = br.getHttpConnection();
             String dllink = br.getRedirectLocation();
