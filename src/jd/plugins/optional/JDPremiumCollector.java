@@ -120,8 +120,6 @@ public class JDPremiumCollector extends PluginOptional {
             MenuItem mi = (MenuItem) e.getSource();
             if (mi.getActionID() == 0) {
                 fetchAccounts();
-            } else if (mi.getActionID() == 1) {
-                SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, getConfig());
             }
         }
     }
@@ -166,9 +164,7 @@ public class JDPremiumCollector extends PluginOptional {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
 
         menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.premiumcollector.fetchAccounts", "Fetch Accounts"), 0).setActionListener(this));
-        menu.add(new MenuItem(MenuItem.SEPARATOR));
-        menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("gui.btn_settings", "Einstellungen"), 1).setActionListener(this));
-
+     
         return menu;
     }
 

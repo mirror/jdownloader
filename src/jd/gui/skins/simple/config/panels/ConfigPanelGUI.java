@@ -25,6 +25,8 @@ import java.util.Locale;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+import net.miginfocom.swing.MigLayout;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -235,7 +237,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, SimpleGuiConstants.PARAM_CUSTOM_BROWSER_PARAM, JDLocale.L("gui.config.gui.custom_browser_param", "Parameter %url (one parameter per line)")));
         ce.setDefaultValue(parameter);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
-
+        this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         this.add(cep = new ConfigEntriesPanel(container));
 
     }

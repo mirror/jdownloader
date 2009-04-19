@@ -57,7 +57,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     public JDRemoteControl(PluginWrapper wrapper) {
         super(wrapper);
     }
-
+    public String getIconKey() {
+    
+        return "gui.images.network";
+    }
     class Serverhandler implements Handler {
 
         public void handle(Request request, Response response) {

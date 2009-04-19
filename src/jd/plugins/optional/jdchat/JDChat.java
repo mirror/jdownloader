@@ -1378,7 +1378,11 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         }
     }
-
+    @Override
+    public String getIconKey() {
+       
+        return "gui.images.chat";
+    }
     public void setLoggedIn(boolean loggedIn) {
         this.loggedIn = loggedIn;
     }

@@ -83,11 +83,14 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
 
         }
         getContentPane().removeAll();
+        getContentPane().setLayout(new MigLayout("ins 0,wrap 1", "[grow, fill]", "[grow,fill]"));
+
         this.panel = panel;
         panel.onDisplay();
 
-        getContentPane().add(this.panel, "cell 0 0");
-        this.invalidate();
+        getContentPane().add(this.panel);
+        this.revalidate();
+    
         this.repaint();
 
     }

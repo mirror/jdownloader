@@ -59,7 +59,7 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     public void initPanel() {
         this.setLayout(new MigLayout("ins 0", "[fill,grow]"));
-
+        panel.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         panel.add(tabbed = new JTabbedPane(), "spanx");
         tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
@@ -73,7 +73,7 @@ public class ConfigPanelAddons extends ConfigPanel {
         });
         tabbed.addTab(JDLocale.L("gui.config.addons.settings.tab", "Settings"), JDTheme.II("gui.splash.controller", 16, 16), sppo = new SubPanelPluginsOptional(configuration));
         tabbed.addTab(JDLocale.L("gui.config.addons.install.tab", "Installation & updates"), JDTheme.II("gui.images.taskpanes.download", 16, 16), spr = new SubPanelOptionalInstaller(configuration));
-
+        this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         add(panel);
     }
 

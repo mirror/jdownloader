@@ -145,8 +145,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
        
 
-        menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.hjsplit.menu.config", "Settings"), 4).setActionListener(this));
-
         return menu;
     }
 

@@ -282,7 +282,10 @@ public class JDShutdown extends PluginOptional {
     private void dbusPowerState(String command) {
         JDUtilities.runCommand("dbus-send", new String[] { "--session", "--dest=org.freedesktop.PowerManagement", "--type=method_call", "--print-reply", "--reply-timeout=2000", "/org/freedesktop/PowerManagement", "org.freedesktop.PowerManagement." + command }, null, 0);
     }
-
+    public String getIconKey() {
+        
+        return "gui.images.logout";
+    }
     public void initConfig() {
         SubConfiguration subConfig = getPluginConfig();
         ConfigEntry ce;

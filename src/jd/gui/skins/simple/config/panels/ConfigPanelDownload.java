@@ -28,6 +28,7 @@ import jd.gui.skins.simple.config.ConfigPanel;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 /**
  * @author JD-Team
@@ -48,6 +49,7 @@ public class ConfigPanelDownload extends ConfigPanel {
     }
 
     public void initPanel() {
+        this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         this.add(cep = new ConfigEntriesPanel(setupContainer()));
     }
 

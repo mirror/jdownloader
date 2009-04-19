@@ -36,17 +36,19 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
     public AddonTaskPane(String string, ImageIcon ii) {
         super(string, ii, "addons");
         JDUtilities.getController().addControlListener(this);
-        this.buttonMap = new HashMap<JButton, OptionalPluginWrapper>();
-        this.entries = new ArrayList<CollapseButton>();
+
         initGUI();
     }
 
-    private void initGUI() {
+    public void initGUI() {
+        this.removeAll();
+        this.buttonMap = new HashMap<JButton, OptionalPluginWrapper>();
+        this.entries = new ArrayList<CollapseButton>();
         for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
             if (!wrapper.isEnabled()) continue;
             ArrayList<MenuItem> menuItems = wrapper.getPlugin().createMenuitems();
             if (menuItems != null && JDUtilities.getConfiguration().getBooleanProperty(wrapper.getConfigParamKey(), false)) {
-                if (menuItems.size() > 1) {
+                if (menuItems.size() > 1||   wrapper.getPlugin().getConfig().getEntries().size()>0) {
 
                     CollapseButton bt = new CollapseButton(wrapper.getPlugin().getHost(), JDTheme.II(wrapper.getPlugin().getIconKey(), 16, 16));
                     add(bt, D1_BUTTON_ICON);
@@ -55,7 +57,17 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
 
                         JComponent comp = createMenu(entry, null);
 
-                        bt.getContentPane().add(comp, "gapleft 20");
+                        switch (entry.getID()) {
+                        case MenuItem.CONTAINER:
+                        case MenuItem.NORMAL:
+                        case MenuItem.SEPARATOR:
+                            bt.getContentPane().add(comp, "gapleft 20");
+                            break;
+
+                        case MenuItem.TOGGLE:
+                            bt.getContentPane().add(comp, "gapleft 20");
+                            break;
+                        }
 
                     }
                     bt.getButton().addActionListener(this);
@@ -64,17 +76,32 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
 
                 } else if (menuItems.size() == 1) {
                     JComponent btn = createMenu(menuItems.get(0), JDTheme.II(wrapper.getPlugin().getIconKey(), 16, 16));
-                    add(btn, D1_BUTTON_ICON);
+                    
+                    switch (menuItems.get(0).getID()) {
+                    case MenuItem.CONTAINER:
+                    case MenuItem.NORMAL:
+                    case MenuItem.SEPARATOR:
+                        add(btn, D1_BUTTON_ICON);
+                        break;
+
+                    case MenuItem.TOGGLE:
+                        add(btn, D1_TOGGLEBUTTON_ICON);
+                        break;
+                    }
+                    
+                  
                 }
             }
         }
         add(new JSeparator());
 
         config = createButton(JDLocale.L("gui.tasks.addons.edit", "Addonmanager"), JDTheme.II("gui.images.config.addons", 16, 16));
+       
+        
+        
         add(config, D1_BUTTON_ICON);
 
     }
-
 
     public void actionPerformed(ActionEvent e) {
 
@@ -130,6 +157,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
         // }
 
     }
+
     private JComponent createMenu(final MenuItem entry, final ImageIcon ii) {
 
         JButton bt;
@@ -137,7 +165,20 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
         case MenuItem.CONTAINER:
             CollapseButton col = new CollapseButton(entry.getTitle(), ii);
             for (int i = 0; i < entry.getSize(); i++) {
-                col.getContentPane().add(createMenu(entry.get(i), ii), "gapleft 10");
+                
+                
+                switch (entry.get(i).getID()) {
+                case MenuItem.CONTAINER:
+                case MenuItem.NORMAL:
+                case MenuItem.SEPARATOR:
+                    col.getContentPane().add(createMenu(entry.get(i), ii), "gapleft 10");
+                    break;
+
+                case MenuItem.TOGGLE:
+                    col.getContentPane().add(createMenu(entry.get(i), ii), "gapleft 10");
+                    break;
+                }
+          
             }
 
             col.getButton().addActionListener(new ActionListener() {

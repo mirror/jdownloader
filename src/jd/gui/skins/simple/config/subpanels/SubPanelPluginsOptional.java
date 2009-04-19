@@ -119,6 +119,8 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
                         plgWrapper.getPlugin().onExit();
                     }
                 }
+                configuration.save();
+                SimpleGUI.CURRENTGUI.getAddonPanel().initGUI();
             }
         }
 

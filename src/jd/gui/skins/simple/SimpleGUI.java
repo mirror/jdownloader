@@ -168,6 +168,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private ConfigTaskPane cfgTskPane;
 
+    private AddonTaskPane addonTaskPanel;
+
     /**
      * Das Hauptfenster wird erstellt. Singleton. Use SimpleGUI.createGUI
      */
@@ -558,11 +560,15 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     private void addAddonTask() {
-        AddonTaskPane pane = new AddonTaskPane(JDLocale.L("gui.taskpanes.addons", "Addons"), JDTheme.II("gui.images.taskpanes.addons", 24, 24));
+        addonTaskPanel = new AddonTaskPane(JDLocale.L("gui.taskpanes.addons", "Addons"), JDTheme.II("gui.images.taskpanes.addons", 24, 24));
 
         addonPanel = new SingletonPanel(AddonPane.class);
-        pane.addPanel(addonPanel);
-        taskPane.add(pane);
+        addonTaskPanel.addPanel(addonPanel);
+        taskPane.add(addonTaskPanel);
+    }
+
+    public AddonTaskPane getAddonPanel() {
+        return addonTaskPanel;
     }
 
     private void addLogTask() {

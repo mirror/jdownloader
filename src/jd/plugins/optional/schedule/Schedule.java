@@ -20,15 +20,12 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
@@ -36,14 +33,15 @@ import javax.swing.Timer;
 
 import jd.PluginWrapper;
 import jd.config.MenuItem;
+import jd.gui.skins.simple.JTabbedPanel;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
+import net.miginfocom.swing.MigLayout;
 
 public class Schedule extends PluginOptional {
 
     private static final String PROPERTY_SCHEDULES = "PROPERTY_SCHEDULES";
-
-    private JDialog dialog;
 
     private JPanel panel;
     private JPanel aPanel;
@@ -57,35 +55,43 @@ public class Schedule extends PluginOptional {
     private Timer status;
 
     private Vector<String> listData = new Vector<String>();
-    private Vector<ScheduleFrame> schedules;
+    private Vector<ScheduleFrame> schedules=null;
+
+    private JTabbedPanel tabbedPanel;
 
     public Schedule(PluginWrapper wrapper) {
         super(wrapper);
     }
-
+    public String getIconKey() {
+   
+        return "gui.images.config.eventmanager";
+    }
     @SuppressWarnings("unchecked")
     private void initGUI() {
+        if(schedules!=null)return;
+    
         schedules = (Vector<ScheduleFrame>) getPluginConfig().getProperty(PROPERTY_SCHEDULES, new Vector<ScheduleFrame>());
         logger.finer("Scheduler: restored " + schedules.size() + " schedules");
         reloadList();
 
-        dialog = new JDialog();
-        dialog.addWindowListener(new WindowAdapter() {
+        tabbedPanel = new JTabbedPanel() {
+
             @Override
-            public void windowClosing(WindowEvent e) {
-                logger.finer("Scheduler: saving " + schedules.size() + " schedules");
+            public void onDisplay() {
+                // TODO Auto-generated method stub
+
+            }
+
+            @Override
+            public void onHide() {
                 getPluginConfig().setProperty(PROPERTY_SCHEDULES, schedules);
                 getPluginConfig().save();
-                dialog.setVisible(false);
-                status.stop();
-            }
-        });
 
-        dialog.setTitle(JDLocale.L("addons.schedule.name", "Schedule"));
-        dialog.setModal(true);
-        dialog.setSize(450, 300);
-        dialog.setResizable(false);
-        dialog.setLocation(300, 300);
+                status.stop();
+
+            }
+
+        };
 
         Dimension size = new Dimension(150, 20);
         list = new JComboBox(listData);
@@ -121,19 +127,19 @@ public class Schedule extends PluginOptional {
         panel.add(menu, BorderLayout.NORTH);
         panel.add(aPanel, BorderLayout.CENTER);
 
-        dialog.setContentPane(panel);
-
+        tabbedPanel.setLayout(new MigLayout("ins 0, wrap 1", "[fill,grow]", "[fill,grow]"));
+        tabbedPanel.add(panel);
         status = new Timer(1 * 1000, this);
         status.setInitialDelay(1000);
         status.start();
 
-        dialog.setVisible(true);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
             initGUI();
+            SimpleGUI.CURRENTGUI.getContentPane().display(tabbedPanel);
         } else if (e.getSource() == add) {
             schedules.add(new ScheduleFrame(JDLocale.L("addons.schedule.menu.schedule", "Schedule") + " " + (schedules.size() + 1)));
             reloadList();
