@@ -17,6 +17,7 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -26,13 +27,15 @@ import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
-public class XinkIt extends PluginForDecrypt {
+public class SealedIn extends PluginForDecrypt {
 
-    public XinkIt(PluginWrapper wrapper) {
+    public SealedIn(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -40,58 +43,97 @@ public class XinkIt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
-        br.getPage(parameter);
-
+        br.setFollowRedirects(true);
+        String page = br.getPage(parameter);
+        Form f = br.getForm(0);
         boolean do_continue = false;
-        for (int retry = 1; retry < 5; retry++) {
-
-            if (br.containsHTML("captcha_send")) {
-
-                String captchaAdress = "http://xink.it/captcha-" + br.getRegex("src=\"captcha-(.*?)\"").getMatch(0);
-
-                File captchaFile = getLocalCaptchaFile(this);
-                Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAdress));
-                String captchaCode = Plugin.getCaptchaCode(this, "linkcrypt.com", captchaFile, false, param);
-
-                Form captchaForm = br.getForm(0);
-                captchaForm.put("captcha", captchaCode);
-                br.submitForm(captchaForm);
-
-            } else {
-                do_continue = true;
-                break;
+        
+        if (f != null) {           
+            for (int retrycnt = 1; retrycnt <= 5; retrycnt++) {
+                
+                /* Captcha */                
+                if (f.hasInputFieldByName("captcha")) {
+                    String url = br.getRegex("(captcha\\-.*?\\.gif)").getMatch(0);
+                    File captchaFile = this.getLocalCaptchaFile(this);
+                    Browser.download(captchaFile, br.cloneBrowser().openGetConnection(url));
+                    String captchaCode = Plugin.getCaptchaCode(this, "linkcrypt.com", captchaFile, false, param);
+                    if (captchaCode == null) return null;
+                    f.put("captcha", captchaCode);
+                }
+                
+                /* Folder password */
+                if (f.hasInputFieldByName("passw")) {
+                    String pass = getUserInput(null, param);
+                    f.put("passw", pass);
+                }
+                
+                page = br.submitForm(f);
+                
+                if (!br.containsHTML("class=\"error\">")) {
+                    do_continue = true;
+                    break;
+                }           
             }
         }
-        if (do_continue) {
-            String ids[] = br.getRegex("startDownload\\('(.*?)'\\);").getColumn(0);
-            progress.setRange(ids.length);
-            for (String element : ids) {
-                decryptedLinks.add(createDownloadlink(XinkItDecodeLink(br.getPage("http://xink.it/encd_" + element))));
-                progress.increase(1);
+        
+        
+        if (do_continue || f == null) {
+            /* Container */
+            if (!getContainer(page, parameter, "dlc", decryptedLinks)) {
+               if (!getContainer(page, parameter, "ccf", decryptedLinks)) {
+                  if (getContainer(page, parameter, "rsdf", decryptedLinks)); 
+               }
             }
+            /* No Container */
+            if (decryptedLinks.size() == 0) {
+                String[] ids = br.getRegex("startDownload\\(\\'(.*?)\\'\\)").getColumn(0);
+                if (ids.length > 0) {
+                    /* Use if decrypter uses iframes one day */
+                    //Browser tab;
+                    //tab = br.cloneBrowser();
+                    progress.setRange(ids.length);
+                    for (String id : ids) { 
+                        decryptedLinks.add(createDownloadlink(DecodeLink(br.getPage("http://sealed.in/encd_" + id))));
+                        /* Use next 2 lines instead of last line if decrypter uses iframes */
+                        //String link = tab.getRegex("<iframe .*? src=\"(.*?)\">").getMatch(0);
+                        //decryptedLinks.add(createDownloadlink(link));
+                        progress.increase(1);
+
+                    }
+                    progress.finalize();
+                }
+            }
+        } else {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
         }
 
         return decryptedLinks;
-
     }
-
-    @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
+    
+    private boolean getContainer(String page, String cryptedLink, String containerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {
+        String container_link = new Regex(page, "href=\"(" + containerFormat + "/[a-z0-9]+)\"").getMatch(0);
+        if (container_link != null) {
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
+            Browser browser = br.cloneBrowser();
+            browser.getDownload(container, "http://sealed.in/" + Encoding.htmlDecode(container_link));
+            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));            
+            container.delete();
+            return true;
+        }
+        return false;
     }
-
+    
     /**
      * 
      * Nachbau der Javascript Entschlüsselung auf xink.it (u.a.
-     * http.xink.it/lcv1.js)
+     * http.xink.it/lcv1.js - http.sealed.in/lcv1.js)
      * 
      * @param source
      *            codierte Zeichenkette
      * @return entschlüsselter Link
      * 
      */
-    private String XinkItDecodeLink(String source) {
+    private String DecodeLink(String source) {
 
         // implementiert von js vorlage http.xink.it/lcv1.js
         // l001011l10110101l11010101l101l01l( decodiert Base64
@@ -165,4 +207,8 @@ public class XinkIt extends PluginForDecrypt {
 
     }
 
+    @Override
+    public String getVersion() {
+        return getVersion("$Revision: 4812 $");
+    }
 }
