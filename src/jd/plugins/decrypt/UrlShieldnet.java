@@ -101,7 +101,7 @@ public class UrlShieldnet extends PluginForDecrypt {
                 }
 
                 br.getPage(url);
-                if (br.containsHTML("getkey.php?id")) {
+                if (br.containsHTML("getkey\\.php\\?id")) {
                     String captchaurl = br.getRegex(Pattern.compile("src=\"(/getkey\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                     form = br.getForm(0);
                     /* Captcha zu verarbeiten */
