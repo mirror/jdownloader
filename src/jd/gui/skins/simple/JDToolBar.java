@@ -78,7 +78,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
         add(clipboard = new JToggleButton(JDTheme.II("gui.images.clipboard_disabled", 24, 24)), BUTTON_CONSTRAINTS);
         clipboard.setToolTipText(JDLocale.L("gui.menu.action.clipboard.desc", null));
 
-        clipboard.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+      
         clipboard.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
@@ -99,7 +99,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
         add(premium = new JToggleButton(JDTheme.II("gui.images.premium_disabled", 24, 24)), BUTTON_CONSTRAINTS);
         premium.setToolTipText(JDLocale.L("gui.menu.action.premium.desc", "Enable Premiumusage globaly"));
 
-        premium.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+      
         premium.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
@@ -121,7 +121,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
         /* reconect */
         add(reconnect = new JToggleButton(JDTheme.II("gui.images.reconnect_disabled", 24, 24)), BUTTON_CONSTRAINTS);
 
-        reconnect.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+      
         reconnect.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
@@ -152,7 +152,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
     private void initController() {
         add(playButton = new JButton(JDTheme.II("gui.images.next", 24, 24)), BUTTON_CONSTRAINTS);
         playButton.setToolTipText(JDLocale.L("gui.menu.action.start.desc", null));
-        playButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+     
         playButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -167,7 +167,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
         add(pauseButton = new JToggleButton(JDTheme.II("gui.images.break", 24, 24)), BUTTON_CONSTRAINTS);
         pauseButton.setToolTipText(JDLocale.L("gui.menu.action.break.desc", null));
-        pauseButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+       
         pauseButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -185,7 +185,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
         });
         add(stopButton = new JButton(JDTheme.II("gui.images.stop", 24, 24)), BUTTON_CONSTRAINTS);
         stopButton.setToolTipText(JDLocale.L("gui.menu.action.stop.desc", null));
-        stopButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+      
         stopButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

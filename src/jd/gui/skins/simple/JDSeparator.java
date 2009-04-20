@@ -37,7 +37,7 @@ public class JDSeparator extends JXCollapsiblePane implements PropertyChangeList
 
         minimize.setOpaque(false);
 
-        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+       // setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setMinimized(false);
     }
 

@@ -111,12 +111,12 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                 }
             }
         }
-        logger.info("Active links abgebrochen");
+
 
         DownloadController.getDownloadController().fireDownloadLinkUpdate(al);
 
         progress.finalize();
-        logger.finer("Abbruch komplett");
+        logger.finer("Stopped Downloads");
 
         clearDownloadListStatus();
         aborting = false;
@@ -320,7 +320,11 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
     public void pause(boolean value) {
         pause = value;
-        logger.info("KKK " + value);
+if(value){
+    logger.info("Pause enabled: Reduced Downloadspeed to 1 kb/s");
+}else{
+    logger.info("Pause disabled");
+}
 
     }
 
@@ -460,7 +464,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                         stopCounter--;
                         if (stopCounter == 0) {
                             totalSpeed = 0;
-                            logger.info("Alle Downloads beendet");
+                     
 
                             break;
                         }
@@ -477,14 +481,14 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         }
         aborted = true;
 
-        logger.info("Wait for termination");
+   
         while (aborting) {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
             }
         }
-        logger.info("RUN END");
+   
         deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
         controller.removeControlListener(this);
         Interaction.handleInteraction(Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED, this);
@@ -501,8 +505,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         DownloadLink dlink;
 
         int ret = 0;
-        // logger.info("Gleichzeitige Downloads erlaubt: " +
-        // getSimultanDownloadNum() + " aktiv: " + activeLinks.size());
+    
         while (activeDownloadControllers.size() < getSimultanDownloadNum()) {
             dlink = getNextDownloadLink();
             if (dlink == null) {
@@ -529,7 +532,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         synchronized (activeDownloadControllers) {
             Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_DOWNLOAD, dlink);
             SingleDownloadController download = new SingleDownloadController(controller, dlink);
-            logger.info("start download: " + dlink);
+            logger.info("Start new Download: " + dlink);
             dlink.getLinkStatus().setInProgress(true);
 
             download.start();

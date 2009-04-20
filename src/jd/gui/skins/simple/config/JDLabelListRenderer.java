@@ -60,7 +60,7 @@ public class JDLabelListRenderer extends JLabel implements ListCellRenderer {
             setText(((JDLabelContainer) value).getLabel());
             setFont(list.getFont());
         }
-
+this.setToolTipText(((JDLabelContainer) value).getLabel());
         return this;
     }
 }

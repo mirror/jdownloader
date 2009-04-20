@@ -262,31 +262,31 @@ public class Rapidshare extends PluginForHost {
                 //0=File not found 1=File OK 2=File OK (direct download) 3=Server down 4=File abused 5
                 switch(Integer.parseInt(matches[i][4])){
                 case 0:
-                    u.getLinkStatus().setErrorMessage("File not found");
-                    u.getLinkStatus().setStatusText("File not found");
+                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.filenotfound","File not found"));
+                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.filenotfound","File not found"));
                     u.setAvailable(false);
                     break;
                 case 1:
-                    u.getLinkStatus().setStatusText("alles prima");
+//                    u.getLinkStatus().setStatusText("alles prima");
                     u.setAvailable(true);
                     break;
                 case 2:
                     u.setAvailable(true);
-                    u.getLinkStatus().setStatusText("direct download");
+                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.directdownload","Direct Download"));
                 case 3:
-                    u.getLinkStatus().setErrorMessage("Server temp. down");
-                    u.getLinkStatus().setStatusText("Server temp. down");
+                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.servernotavailable","Server temp. not available. Try later!"));
+                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.servernotavailable","Server temp. not available. Try later!"));
                     u.setAvailable(false);
                     break;
                 case 4:
                     u.setAvailable(false);
-                    u.getLinkStatus().setErrorMessage("File abused");
-                    u.getLinkStatus().setStatusText("File abused");
+                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.abused","File abused"));
+                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.abused","File abused"));
                     break;
                 case 5:
-                    u.setAvailable(false);
-                    u.getLinkStatus().setErrorMessage("Anonymous file");
-                    u.getLinkStatus().setStatusText("Anonymous file");
+                    u.setAvailable(true);
+                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.anonymous","File without Account(annonymous)"));
+                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.anonymous","File without Account(annonymous)"));
                     break;
                 }
                 i++;
@@ -711,6 +711,7 @@ public class Rapidshare extends PluginForHost {
                 selectedServer = null;
                
             }
+            downloadLink.getLinkStatus().setStatusText("Loaded  via "+account.getUser());
 
         }
 

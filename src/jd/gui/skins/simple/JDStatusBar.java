@@ -72,11 +72,11 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
 
         add(new PremiumStatus(), "gaptop 1");
         add(maxChunks);
-        add(spMaxChunks, "width 90!,height 20!");
+        add(spMaxChunks, "width 70!,height 20!");
         add(lblSimu);
-        add(spMaxDls, "width 90!,height 20!");
+        add(spMaxDls, "width 70!,height 20!");
         add(lblSpeed);
-        add(spMax, "width 90!,height 20!");
+        add(spMax, "width 70!,height 20!");
 
     }
 

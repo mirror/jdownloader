@@ -102,6 +102,8 @@ abstract public class DownloadInterface {
 
         private DownloadInterface dl;
 
+   
+
         /**
          * Die Connection wird entsprechend der start und endbytes neu
          * aufgebaut.
@@ -421,7 +423,7 @@ abstract public class DownloadInterface {
                             Thread.sleep(addWait);
                         }
                     } catch (Exception e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+//                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     }
                     deltaTime = System.currentTimeMillis() - timer;
                     if (deltaTime == 0) deltaTime = 1;
@@ -439,7 +441,7 @@ abstract public class DownloadInterface {
                     inputStream.close();
                     source.close();
 
-                    logger.warning(" incomplete download: bytes loaded: " + getCurrentBytesPosition() + "/" + endByte);
+                    logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endByte);
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
                 }
 
@@ -885,7 +887,7 @@ abstract public class DownloadInterface {
             }
 
             if (isInterrupted() || downloadLink.isAborted()) {
-                logger.severe("ABBORTED BY USER");
+                userInterrupt=true;
             }
             addChunksDownloading(+1);
 
@@ -981,7 +983,7 @@ abstract public class DownloadInterface {
     private boolean fatalErrorOccured = false;
 
     private boolean doFileSizeCheck = true;
-
+    public boolean userInterrupt=false;
     private boolean fakeContentRangeHeader_flag = false;
 
     private Request request = null;
@@ -1489,7 +1491,10 @@ abstract public class DownloadInterface {
      * @return
      */
     public boolean handleErrors() {
-
+if(userInterrupt){
+    logger.info("Download interrupted by user input");
+    return false;
+}
         if (this.doFileSizeCheck && (totaleLinkBytesLoaded <= 0 || totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
 
             logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");

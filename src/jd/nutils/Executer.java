@@ -300,7 +300,7 @@ public class Executer extends Thread {
             }
 
         } catch (IOException e1) {
-            JDLogger.exception(e1);
+           
             this.exception = e1;
             return;
         } catch (InterruptedException e) {

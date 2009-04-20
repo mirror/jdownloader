@@ -208,7 +208,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
         case MenuItem.TOGGLE:
             JCheckBox ch = new JCheckBox(entry.getTitle(), entry.isSelected());
             ch.setContentAreaFilled(false);
-            ch.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+          
             ch.setFocusPainted(false);
             ch.setBorderPainted(false);
             ch.addMouseListener(new JDUnderlinedText());

@@ -98,7 +98,7 @@ public class RAFDownload extends DownloadInterface {
 
                     } catch (Exception e) {
 
-                        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                         error(LinkStatus.ERROR_LOCAL_IO, JDUtilities.convertExceptionReadable(e));
 
                         addException(e);
@@ -434,6 +434,9 @@ public class RAFDownload extends DownloadInterface {
                 }
 
             } catch (Exception e) {
+                if(writer==null||writer.isInterrupted())return false;
+           
+                JDLogger.exception(e);
                 error(LinkStatus.ERROR_LOCAL_IO, JDUtilities.convertExceptionReadable(e));
                 addException(e);
                 return false;

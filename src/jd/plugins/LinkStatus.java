@@ -132,7 +132,7 @@ public class LinkStatus implements Serializable {
 
     private int lastestStatus = TODO;
     private int status = TODO;
-    private transient String statusText = null;
+    private String statusText = null;
     private long totalWaitTime = 0;
     private long value = 0;
     private long waitUntil = 0;
@@ -222,17 +222,17 @@ public class LinkStatus implements Serializable {
         String ret = "";
         if (hasStatus(LinkStatus.ERROR_POST_PROCESS)) {
             if (getErrorMessage() != null) {
-                ret += JDLocale.LF("gui.downloadlink.errorpostprocess", "[failed] %s", getErrorMessage());
+                ret += JDLocale.LF("gui.downloadlink.errorpostprocess2", "%s", getErrorMessage());
             } else if (getStatusText() != null) {
-                ret += JDLocale.LF("gui.downloadlink.errorpostprocess", "[failed] %s", getStatusText());
+                ret += JDLocale.LF("gui.downloadlink.errorpostprocess2", "%s", getStatusText());
             } else {
-                ret += JDLocale.L("gui.downloadlink.errorpostprocess2", "[convert failed]");
+                ret += JDLocale.L("gui.downloadlink.errorpostprocess3", "[convert failed]");
             }
             return ret;
         }
         if (hasStatus(LinkStatus.FINISHED)) {
 
-        return JDLocale.L("gui.downloadlink.finished", "[finished]") + (this.getStatusText() != null ? "> " + this.getStatusText() : ""); }
+        return (this.getStatusText() != null ? "> " + this.getStatusText() : ""); }
 
         if (!downloadLink.isEnabled() && !hasStatus(LinkStatus.FINISHED)) {
             if (downloadLink.isAborted()) {
@@ -281,6 +281,7 @@ public class LinkStatus implements Serializable {
 
             }
         }
+      
         if (downloadLink.isAvailabilityChecked() && !downloadLink.isAvailable()) { return JDLocale.L("gui.download.onlinecheckfailed", "[Not available]"); }
         if (this.errorMessage != null) return errorMessage;
         if (statusText != null) { return statusText; }

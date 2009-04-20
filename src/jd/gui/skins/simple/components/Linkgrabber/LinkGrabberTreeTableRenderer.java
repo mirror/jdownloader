@@ -116,6 +116,12 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             if (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
                 sb.append(strExists);
             }
+            if(dLink.getLinkStatus().getErrorMessage()!=null&&dLink.getLinkStatus().getErrorMessage().trim().length()>0){
+                sb.append(">"+dLink.getLinkStatus().getErrorMessage());
+            }else if(dLink.getLinkStatus().getStatusString()!=null&&dLink.getLinkStatus().getStatusString().trim().length()>0){
+                sb.append(">"+dLink.getLinkStatus().getStatusString());
+            }
+                 
             ((JRendererLabel) co).setText(sb.toString());
             ((JRendererLabel) co).setBorder(null);
             return co;

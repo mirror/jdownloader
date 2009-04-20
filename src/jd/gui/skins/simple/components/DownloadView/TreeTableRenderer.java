@@ -283,14 +283,14 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
             } else if (dLink.getLinkStatus().isFailed()) {
                 ((JRendererLabel) co).setIcon(imgFailed);
-
+            
             } else {
 
                 ((JRendererLabel) co).setIcon(null);
             }
 
             ((JRendererLabel) co).setBorder(null);
-
+            ((JRendererLabel) co).setToolTipText("Blabla Leberkäs");
             return co;
 
         case DownloadTreeTableModel.COL_STATUS:
@@ -301,10 +301,13 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 ((JRendererLabel) co).setText(dLink.getLinkStatus().getStatusString());
             } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
 
-                ((JRendererLabel) co).setText("");
+                ((JRendererLabel) co).setText(dLink.getLinkStatus().getStatusString());
             } else if (dLink.getLinkStatus().isFailed()) {
 
-                ((JRendererLabel) co).setText("");
+              
+                    ((JRendererLabel) co).setText(dLink.getLinkStatus().getStatusString());
+                
+                
             } else {
                 ((JRendererLabel) co).setText(dLink.getLinkStatus().getStatusString());
 

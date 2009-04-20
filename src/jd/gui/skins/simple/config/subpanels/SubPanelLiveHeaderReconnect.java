@@ -222,7 +222,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
             // !!! Eclipse Clear Console Icon
 
             JButton reset = new JButton(JDTheme.II("gui.images.undo", 16, 16));
-            reset.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            
             reset.setBorder(null);
             reset.setOpaque(false);
             reset.setContentAreaFilled(false);

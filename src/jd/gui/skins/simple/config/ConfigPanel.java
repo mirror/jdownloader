@@ -50,8 +50,8 @@ public abstract class ConfigPanel extends JTabbedPanel {
     public ConfigPanel() {
 
         panel = new JPanel();
-        this.setLayout(new MigLayout("ins 10", "[fill,grow]", "[fill,grow]"));
-        panel.setLayout(new MigLayout("ins 10,wrap 2", "[fill,grow 10]10[fill,grow]"));
+        this.setLayout(new MigLayout("ins 0 10 10 10", "[fill,grow]", "[fill,grow]"));
+        panel.setLayout(new MigLayout("ins 0 10 10 10,wrap 2", "[fill,grow 10]10[fill,grow]"));
         // this.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1,
         // this.getBackground().darker()));
     }

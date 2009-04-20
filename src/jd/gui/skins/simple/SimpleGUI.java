@@ -52,6 +52,7 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.ClipboardHandler;
+import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.reconnect.Reconnecter;
@@ -92,6 +93,7 @@ import jd.nutils.OSDetector;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
@@ -188,8 +190,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             this.noTitlePane = true;
 
         }
-        this.
-        setEnabled(false);
+        this.setEnabled(false);
         this.setWaiting(true);
         noTitlePane = false;
         toolBar = new JDToolBar(noTitlePane);
@@ -235,11 +236,13 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         setName("MAINFRAME");
         Dimension dim = SimpleGuiUtils.getLastDimension(this, null);
         if (dim == null) {
-            dim = new Dimension(600, 600);
+            dim = new Dimension(800, 600);
         }
         setPreferredSize(dim);
+        this.setMinimumSize(new Dimension(800, 600));
         setLocation(SimpleGuiUtils.getLastLocation(null, null, this));
         pack();
+
         setExtendedState(SimpleGuiConstants.GUI_CONFIG.getIntegerProperty("MAXIMIZED_STATE_OF_" + this.getName(), JFrame.NORMAL));
         this.getLeftcolPane().setAnimated(false);
         this.hideSideBar(SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_SIDEBAR_COLLAPSED, false));
@@ -325,7 +328,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -558,6 +561,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // panel.add(new PremiumStatus(), "spanx, cell 0 4");
         panel.add(this.statusBar, "spanx, cell 0 5");
 
+
     }
 
     private void addAddonTask() {
@@ -777,9 +781,17 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     break;
 
                 case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                    logger.info("All downloads in list finished");
-
+              
                     if (speedmeter != null) speedmeter.stop();
+for(DownloadLink link:DownloadController.getDownloadController().getAllDownloadLinks()){
+    if(link.getLinkStatus().hasStatus(LinkStatus.TODO)){
+        logger.info("Downloads stopped");
+        return;
+    }
+    
+}
+logger.info("All downloads finished");
+                 
 
                     break;
                 case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
@@ -873,7 +885,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);
