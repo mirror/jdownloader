@@ -525,7 +525,7 @@ public class JDInit {
         new HostPluginWrapper("YouPorn.Com", "YouPornCom", "http://download\\.youporn\\.com/download/\\d+.*");
         new HostPluginWrapper("YourFiles.Biz", "YourFilesBiz", "http://[\\w\\.]*?yourfiles\\.(biz|to)/\\?d=[a-zA-Z0-9]+");
         new HostPluginWrapper("YourFileSender.com", "YourFileSendercom", "http://[\\w\\.]*?yourfilesender\\.com/v/\\d+/(.*?\\.html)");
-        new HostPluginWrapper("Zippyshare.com", "Zippycom", "http://www\\d{0,}\\.zippyshare\\.com/v/\\d+/file\\.html");
+        new HostPluginWrapper("Zippyshare.com", "Zippysharecom", "http://www\\d{0,}\\.zippyshare\\.com/(v/\\d+/file\\.html|.*?key=\\d+)");
         new HostPluginWrapper("zshare.net", "ZShareNet", "http://[\\w\\.]*?zshare\\.net/(download|video|image|audio|flash)/.*");
         new HostPluginWrapper("sendspace.pl", "SendSpacePl", "http://[\\w\\.]*?sendspace.pl/file/[a-zA-Z0-9]+/?");
         new HostPluginWrapper("dl.free.fr", "DlFreeFr", "http://[\\w\\.]*?dl\\.free\\.fr/(getfile\\.pl\\?file=/[a-zA-Z0-9]+|[a-zA-Z0-9]+/?)");

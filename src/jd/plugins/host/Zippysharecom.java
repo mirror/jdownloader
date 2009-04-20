@@ -42,7 +42,7 @@ public class Zippysharecom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(downloadLink.getDownloadURL().replaceAll("locale=..", "locale=en"));
         if (br.containsHTML("<title>Zippyshare.com - File does not exist</title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<strong>Name: </strong>(.*?)</font><br", Pattern.CASE_INSENSITIVE)).getMatch(0));
         String filesize = br.getRegex(Pattern.compile("<strong>Size: </strong>(.*?)</font><br", Pattern.CASE_INSENSITIVE)).getMatch(0);
