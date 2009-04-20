@@ -17,6 +17,7 @@
 package jd.plugins.host;
 
 import java.io.File;
+import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -41,32 +42,18 @@ public class Odsiebiecom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
-            br.getPage(downloadLink.getDownloadURL());
-            /* several redirects possible if not correct link at the beginnging */
-            if (br.getRedirectLocation() != null) {
-                downloadLink.setUrlDownload(br.getRedirectLocation());
-                br.getPage(downloadLink.getDownloadURL());
-            }
-            if (br.getRedirectLocation() != null) {
-                downloadLink.setUrlDownload(br.getRedirectLocation());
-                br.getPage(downloadLink.getDownloadURL());
-            }
-            if (br.getRedirectLocation() == null) {
-                String filename = br.getRegex("Nazwa\\s+pliku:</dt>\\s+<dd[^>]*?>(.*?)dd>").getMatch(0);
-                filename = filename.replaceAll("<!--.*?-->", " ");
-                filename = new Regex(filename, "[\\s*?]*(.*?)</").getMatch(0);
-                String filesize = br.getRegex("<dt>Rozmiar pliku:</dt>.*?<dd>(.*?)</dd>").getMatch(0);
-                downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
-                downloadLink.setName(filename);
-                return true;
-            }
-        } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-        }
-        downloadLink.setAvailable(false);
-        return false;
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        String filename = br.getRegex("Nazwa\\s+pliku:</dt>\\s+<dd[^>]*?>(.*?)dd>").getMatch(0);
+        String filesize = br.getRegex("<dt>Rozmiar pliku:</dt>.*?<dd>(.*?)</dd>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filename = filename.replaceAll("<!--.*?-->", " ");
+        filename = new Regex(filename, "[\\s*?]*(.*?)</").getMatch(0);
+        downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
+        downloadLink.setName(filename);
+        return true;
     }
 
     @Override
@@ -78,12 +65,11 @@ public class Odsiebiecom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         String finalfn = downloadLink.getName();
-        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        getFileInformation(downloadLink);
         /*
          * Zuerst schaun ob wir nen Button haben oder direkt das File vorhanden
          * ist
          */
-
         String steplink = br.getRegex("class=\"pob..\"\\s+href=\"/pobierz/(.*?)\">").getMatch(0);
         if (steplink == null) {
             /* Kein Button, also muss der Link irgendwo auf der Page sein */
@@ -103,19 +89,21 @@ public class Odsiebiecom extends PluginForHost {
             /* Button folgen, schaun ob Link oder Captcha als nächstes kommt */
             downloadurl = "http://odsiebie.com/pobierz/" + steplink;
             br.getPage(downloadurl);
-            if (br.getRedirectLocation() != null) {
-                /* Weiterleitung auf andere Seite, evtl mit Captcha */
-                downloadurl = br.getRedirectLocation();
-                br.getPage(downloadurl);
-            }
             Form capform = br.getFormbyProperty("name", "wer");
             int i = 0;
             while (capform != null) {
-                String adr = capform.getRegex("<img src=\"(.*?)\">").getMatch(0);
+                String adrs[] = capform.getRegex("<img src=\"(.*?)\">").getColumn(0);
+                String adr = null;
+                for (String tmp : adrs) {
+                    if (!tmp.contains(" ")) {
+                        adr = tmp;
+                        break;
+                    }
+                }
+                if (adr == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 File file = br.cloneBrowser().getDownloadTemp(adr);
                 String code = Plugin.getCaptchaCode(file, this, downloadLink);
                 capform.getInputFieldByName("captcha").setValue(code);
-                br.setFollowRedirects(true);
                 br.submitForm(capform);
                 capform = br.getFormbyProperty("name", "wer");
                 i++;
