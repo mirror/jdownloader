@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 
 public class Vipfilecom extends PluginForHost {
 
@@ -65,28 +66,22 @@ public class Vipfilecom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(downloadLink);
-        boolean testlink = false;
         /* DownloadLink holen, 2x der Location folgen */
         String link = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (link == null) {
-            testlink = true;
-            link = br.getRegex(Pattern.compile("<a href=\"(.*?vip-file.*?)\">Test our", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (link == null) {
-                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-                return;
-            }
+           linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+           linkStatus.setStatusText(JDLocale.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink","No free download link for this file"));
         }
-        if (!testlink) {
-            /* SpeedHack */
-            br.setFollowRedirects(false);
-            br.getPage(link);
-            link = br.getRedirectLocation();
-            br.getPage(link);
-            link = br.getRedirectLocation();
-            link = link.replaceAll("file.com.*?/", "file.com:8080/");
-        } else {
-            br.setFollowRedirects(true);
-        }
+        
+        /* SpeedHack */
+        br.setFollowRedirects(false);
+        br.getPage(link);
+        link = br.getRedirectLocation();
+        br.getPage(link);
+        link = br.getRedirectLocation();
+        link = link.replaceAll("file.com.*?/", "file.com:8080/");
+        br.setFollowRedirects(true);
+
         br.openDownload(downloadLink, link, true, 0).startDownload();
     }
 
