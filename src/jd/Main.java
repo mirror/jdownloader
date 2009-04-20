@@ -420,7 +420,6 @@ public class Main {
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.initcontroller", "Starte Controller"));
 
         final JDController controller = init.initController();
-        GarbageThread.getInstance();
 
         // if (JDInitFlags.SWITCH_DEBUG ||
         // JDUtilities.getConfiguration().getBooleanProperty
@@ -514,33 +513,34 @@ public class Main {
         // }
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
-//new GuiRunnable(){
-//
-//    @Override
-//    public Object runSave() {
-//        JButton bt = new JButton("IIII");
-//        JTabbedPanel p = new JTabbedPanel(new MigLayout("ins 0,debug", "[]", "[]")) {
-//
-//            @Override
-//            public void onDisplay() {
-//                // TODO Auto-generated method stub
-//
-//            }
-//
-//            @Override
-//            public void onHide() {
-//                // TODO Auto-generated method stub
-//
-//            }
-//        };
-//        p.add(bt, "height 400!");
-//        JDCollapser.getInstance().setContentPanel(p);
-//        JDCollapser.getInstance().setCollapsed(false);
-//
-//        return null;
-//    }
-//    
-//}.start();
+        // new GuiRunnable(){
+        //
+        // @Override
+        // public Object runSave() {
+        // JButton bt = new JButton("IIII");
+        // JTabbedPanel p = new JTabbedPanel(new MigLayout("ins 0,debug", "[]",
+        // "[]")) {
+        //
+        // @Override
+        // public void onDisplay() {
+        // // TODO Auto-generated method stub
+        //
+        // }
+        //
+        // @Override
+        // public void onHide() {
+        // // TODO Auto-generated method stub
+        //
+        // }
+        // };
+        // p.add(bt, "height 400!");
+        // JDCollapser.getInstance().setContentPanel(p);
+        // JDCollapser.getInstance().setCollapsed(false);
+        //
+        // return null;
+        // }
+        //    
+        // }.start();
 
         JDFileReg.registerFileExts();
 

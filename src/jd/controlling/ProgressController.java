@@ -158,10 +158,9 @@ public class ProgressController {
 
     }
 
-    public double getPercent() {
-        long range = max;
-        long current = currentValue;
-        return (double) current / (double) range;
+    public int getPercent() {
+        if (Math.min(currentValue, max) <= 0) return 0;
+        return (int) (10000 * currentValue / Math.max(1, Math.max(currentValue, max)));
     }
 
     public Object getSource() {

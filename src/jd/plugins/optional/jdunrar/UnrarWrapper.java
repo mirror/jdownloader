@@ -265,7 +265,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             }
         } catch (Exception e) {
             this.exception = e;
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
         }
 
@@ -388,7 +388,14 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         inter.interrupt();
         config.setProperty("SPEED", speed);
         config.save();
-        if (statusid > 0) return false;
+        if (statusid > 0) {
+            switch (statusid) {
+            case JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC:
+                this.exitCode = EXIT_CODE_CRC_ERROR;
+                break;
+            }
+            return false;
+        }
         return true;
     }
 
@@ -434,7 +441,8 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         // CharBuffer cbuf = decoder.decode(bbuf);
         // str = cbuf.toString();
         // } catch (CharacterCodingException e) {
-        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        // ,"Exception occured",e);
         // }
         //
         // JDUtilities.writeLocalFile(fileFile,str);
@@ -606,7 +614,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 return false;
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             unrarvalidated = false;
             return false;
         }
@@ -868,7 +876,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             try {
                 lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition), JDUnrar.CODEPAGE);
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));
             }
             if (new Regex(lastLine, Pattern.compile("Write error.*?bort ", Pattern.CASE_INSENSITIVE)).matches()) {

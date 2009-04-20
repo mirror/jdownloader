@@ -54,6 +54,11 @@ public class Vipfilecom extends PluginForHost {
         String fileName = new Regex(downloadURL, "http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html").getMatch(0);
         downloadLink.setDownloadSize(Regex.getSize(fileSize));
         downloadLink.setName(fileName);
+        String link = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (link == null) {
+            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
+            return true;
+        }
         return true;
     }
 
@@ -64,15 +69,11 @@ public class Vipfilecom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(downloadLink);
         /* DownloadLink holen, 2x der Location folgen */
         String link = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (link == null) {
-           linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-           linkStatus.setStatusText(JDLocale.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink","No free download link for this file"));
-        }
-        
+        if (link == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
+
         /* SpeedHack */
         br.setFollowRedirects(false);
         br.getPage(link);

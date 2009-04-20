@@ -342,10 +342,10 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             ArrayList<DownloadLink> links = ((ArrayList<DownloadLink>) param);
             HashMap<Object, TreePath> map = this.getPathMap();
             for (DownloadLink dl : links) {
-                TreePath path = map.remove(dl);
+                TreePath path = map.remove(dl.getFilePackage());
                 if (path == null) continue;
                 supporter.firePathChanged(path);
-                path = map.remove(dl.getFilePackage());
+                path = map.remove(dl);
                 if (path == null) continue;
                 supporter.firePathChanged(path);
             }

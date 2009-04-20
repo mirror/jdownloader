@@ -122,10 +122,10 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             co = getFilePackageCell(table, value, isSelected, hasFocus, row, column);
             if (!((FilePackage) value).isEnabled()) {
                 co.setEnabled(false);
-            
+
                 progress.setString("");
             } else {
-           
+
                 co.setEnabled(true);
             }
             return co;
@@ -135,7 +135,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 co.setEnabled(false);
                 progress.setString("");
             } else {
-          
+
                 co.setEnabled(true);
             }
             return co;
