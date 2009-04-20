@@ -94,7 +94,7 @@ public class PrzeklejPl extends PluginForHost {
             } else {
                 con.disconnect();
                 downloadLink.setProperty("pass", passCode);
-                dl = br.openDownload(downloadLink, form, true, 1);
+                dl = br.openDownload(downloadLink, form, false, 1);
                 dl.startDownload();
             }
         }
