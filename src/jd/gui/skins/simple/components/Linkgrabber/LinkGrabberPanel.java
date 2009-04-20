@@ -270,7 +270,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             public void run() {
                 setName("LinkGrabber");
                 gatherer_running = true;
-                pc = new ProgressController("LinkGrabber");
+                pc = new ProgressController(JDLocale.L("gui.linkgrabber.pc.linkgrabber","LinkGrabber operations pending..."));
                 pc.getBroadcaster().addListener(INSTANCE);
                 lc.getBroadcaster().addListener(INSTANCE);
                 pc.setRange(0);

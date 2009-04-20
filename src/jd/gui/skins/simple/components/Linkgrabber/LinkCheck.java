@@ -17,6 +17,7 @@ import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 
 class LinkCheckBroadcaster extends JDBroadcaster<LinkCheckListener, LinkCheckEvent> {
 
@@ -97,7 +98,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             public void run() {
                 setName("OnlineCheck");
                 getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.START));
-                pc = new ProgressController("OnlineCheck");
+                pc = new ProgressController(JDLocale.L("gui.linkgrabber.pc.onlinecheck","Checking online availability..."));
                 pc.getBroadcaster().addListener(LinkCheck.getLinkChecker());
                 pc.setRange(0);
                 while (LinksToCheck.size() != 0) {
