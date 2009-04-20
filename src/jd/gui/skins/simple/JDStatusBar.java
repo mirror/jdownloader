@@ -132,7 +132,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         if (speed <= 0) {
             lblSpeed.setText(JDLocale.L("gui.statusbar.speed", "Max. Speed"));
         } else {
-            lblSpeed.setText("(" + JDUtilities.formatKbReadable(speed / 1024) + "/s)");
+            lblSpeed.setText("(" + JDUtilities.formatReadable(speed ) + "/s)");
         }
     }
 

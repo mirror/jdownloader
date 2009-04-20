@@ -93,7 +93,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             ((JRendererLabel) co).setBorder(leftGap);
             return co;
         case LinkGrabberTreeTableModel.COL_SIZE:
-            value = dLink.getDownloadSize() > 0 ? JDUtilities.formatBytesToMB(dLink.getDownloadSize()) : "~";
+            value = dLink.getDownloadSize() > 0 ? JDUtilities.formatReadable(dLink.getDownloadSize()) : "~";
             break;
         case LinkGrabberTreeTableModel.COL_HOSTER:
             value = dLink.getPlugin().getHost();
@@ -145,7 +145,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             ((JRendererLabel) co).setBorder(null);
             return co;
         case LinkGrabberTreeTableModel.COL_SIZE:
-            value = fp.getDownloadSize(false) > 0 ? JDUtilities.formatBytesToMB(fp.getDownloadSize(false)) : "~";
+            value = fp.getDownloadSize(false) > 0 ? JDUtilities.formatReadable(fp.getDownloadSize(false)) : "~";
             break;
         case LinkGrabberTreeTableModel.COL_HOSTER:
             value = fp.getHoster();

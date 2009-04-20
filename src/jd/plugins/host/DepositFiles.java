@@ -236,7 +236,7 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
+        return downloadLink.getName() + " (" + JDUtilities.formatReadable(downloadLink.getDownloadSize()) + ")";
     }
 
     @Override

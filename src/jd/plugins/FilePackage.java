@@ -579,10 +579,10 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 if (next.getDownloadSize() > 0) {
 
                     if (next.isEnabled()) {
-                        totalEstimatedPackageSize += next.getDownloadSize() / 1024;
+                        totalEstimatedPackageSize += next.getDownloadSize();
                     }
 
-                    avg = (i * avg + next.getDownloadSize() / 1024) / (i + 1);
+                    avg = (i * avg + next.getDownloadSize() ) / (i + 1);
                     // logger.info(i+"+ "+next.getDownloadMax()/1024+" kb
                     // avg:"+avg+" = +"+totalEstimatedPackageSize);
                     i++;
@@ -606,7 +606,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
                 totalDownloadSpeed += Math.max(0, next.getDownloadSpeed());
                 if (next.isEnabled()) {
-                    totalBytesLoaded += next.getDownloadCurrent() / 1024;
+                    totalBytesLoaded += next.getDownloadCurrent();
                 }
                 linksInProgress += next.getLinkStatus().isPluginActive() ? 1 : 0;
                 linksFinished += next.getLinkStatus().hasStatus(LinkStatus.FINISHED) ? 1 : 0;

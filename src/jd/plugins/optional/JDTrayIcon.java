@@ -450,7 +450,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
         } else {
             creater.append("<table>");
             creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:") + "</i></td><td>" + downloads + "</td></tr>");
-            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.speed", "Speed:") + "</i></td><td>" + JDUtilities.formatKbReadable(JDUtilities.getController().getSpeedMeter() / 1024) + "/s </td></tr>");
+            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.speed", "Speed:") + "</i></td><td>" + JDUtilities.formatReadable(JDUtilities.getController().getSpeedMeter() ) + "/s </td></tr>");
             creater.append("</table>");
         }
         creater.append("</html>");

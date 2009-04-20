@@ -222,9 +222,9 @@ public class LinkStatus implements Serializable {
         String ret = "";
         if (hasStatus(LinkStatus.ERROR_POST_PROCESS)) {
             if (getErrorMessage() != null) {
-                ret += JDLocale.LF("gui.downloadlink.errorpostprocess2", "%s", getErrorMessage());
+                ret += getErrorMessage();
             } else if (getStatusText() != null) {
-                ret += JDLocale.LF("gui.downloadlink.errorpostprocess2", "%s", getStatusText());
+                ret += getStatusText();
             } else {
                 ret += JDLocale.L("gui.downloadlink.errorpostprocess3", "[convert failed]");
             }
@@ -238,7 +238,8 @@ public class LinkStatus implements Serializable {
             if (downloadLink.isAborted()) {
                 ret += JDLocale.L("gui.downloadlink.aborted", "[interrupted]");
             } else {
-//                ret += JDLocale.L("gui.downloadlink.disabled", "[deaktiviert]");
+                // ret += JDLocale.L("gui.downloadlink.disabled",
+                // "[deaktiviert]");
             }
             if (errorMessage != null) {
 
@@ -269,19 +270,19 @@ public class LinkStatus implements Serializable {
 
             if (speed > 0) {
                 if (downloadLink.getDownloadSize() < 0) {
-                    return JDUtilities.formatKbReadable(speed / 1024) + "/s " + JDLocale.L("gui.download.filesize_unknown", "(Filesize unknown)");
+                    return JDUtilities.formatReadable(speed ) + "/s " + JDLocale.L("gui.download.filesize_unknown", "(Filesize unknown)");
                 } else {
 
                     long remainingBytes = downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent();
                     long eta = remainingBytes / speed;
-                    return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatKbReadable(speed / 1024) + "/s " + chunkString;
+                    return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatReadable(speed ) + "/s " + chunkString;
                 }
             } else {
                 return JDLocale.L("gui.download.create_connection", "Connecting...") + chunkString;
 
             }
         }
-      
+
         if (downloadLink.isAvailabilityChecked() && !downloadLink.isAvailable()) { return JDLocale.L("gui.download.onlinecheckfailed", "[Not available]"); }
         if (this.errorMessage != null) return errorMessage;
         if (statusText != null) { return statusText; }
@@ -393,9 +394,9 @@ public class LinkStatus implements Serializable {
                     if (value == status) { return field.getName(); }
 
                 } catch (IllegalArgumentException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 } catch (IllegalAccessException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
         }
@@ -425,9 +426,9 @@ public class LinkStatus implements Serializable {
                         }
                     }
                 } catch (IllegalArgumentException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 } catch (IllegalAccessException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
         }

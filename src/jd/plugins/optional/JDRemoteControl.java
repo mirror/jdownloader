@@ -251,10 +251,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     output = output + " package_linksinprogress=\"" + filePackage.getLinksInProgress() + "\"";
                     output = output + " package_linkstotal=\"" + filePackage.size() + "\"";
                     output = output + " package_ETA=\"" + JDUtilities.formatSeconds(filePackage.getETA()) + "\"";
-                    output = output + " package_speed=\"" + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s\"";
-                    output = output + " package_loaded=\"" + JDUtilities.formatKbReadable(filePackage.getTotalKBLoaded()) + "\"";
-                    output = output + " package_size=\"" + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize()) + "\"";
-                    output = output + " package_todo=\"" + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"";
+                    output = output + " package_speed=\"" + JDUtilities.formatReadable(filePackage.getTotalDownloadSpeed() ) + "/s\"";
+                    output = output + " package_loaded=\"" + JDUtilities.formatReadable(filePackage.getTotalKBLoaded()) + "\"";
+                    output = output + " package_size=\"" + JDUtilities.formatReadable(filePackage.getTotalEstimatedPackageSize()) + "\"";
+                    output = output + " package_todo=\"" + JDUtilities.formatReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"";
                     output = output + " >";// Close Package
 
                     for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
@@ -315,10 +315,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     output.append(" package_linksinprogress=\"" + filePackage.getLinksInProgress() + "\"");
                     output.append(" package_linkstotal=\"" + filePackage.size() + "\"");
                     output.append(" package_ETA=\"" + JDUtilities.formatSeconds(filePackage.getETA()) + "\"");
-                    output.append(" package_speed=\"" + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s\"");
-                    output.append(" package_loaded=\"" + JDUtilities.formatKbReadable(filePackage.getTotalKBLoaded()) + "\"");
-                    output.append(" package_size=\"" + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize()) + "\"");
-                    output.append(" package_todo=\"" + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"");
+                    output.append(" package_speed=\"" + JDUtilities.formatReadable(filePackage.getTotalDownloadSpeed() ) + "/s\"");
+                    output.append(" package_loaded=\"" + JDUtilities.formatReadable(filePackage.getTotalKBLoaded()) + "\"");
+                    output.append(" package_size=\"" + JDUtilities.formatReadable(filePackage.getTotalEstimatedPackageSize()) + "\"");
+                    output.append(" package_todo=\"" + JDUtilities.formatReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"");
                     output.append(" >");// Close Package
 
                     for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
@@ -382,10 +382,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     output.append(" package_linksinprogress=\"" + filePackage.getLinksInProgress() + "\"");
                     output.append(" package_linkstotal=\"" + filePackage.size() + "\"");
                     output.append(" package_ETA=\"" + JDUtilities.formatSeconds(filePackage.getETA()) + "\"");
-                    output.append(" package_speed=\"" + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s\"");
-                    output.append(" package_loaded=\"" + JDUtilities.formatKbReadable(filePackage.getTotalKBLoaded()) + "\"");
-                    output.append(" package_size=\"" + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize()) + "\"");
-                    output.append(" package_todo=\"" + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"");
+                    output.append(" package_speed=\"" + JDUtilities.formatReadable(filePackage.getTotalDownloadSpeed() ) + "/s\"");
+                    output.append(" package_loaded=\"" + JDUtilities.formatReadable(filePackage.getTotalKBLoaded()) + "\"");
+                    output.append(" package_size=\"" + JDUtilities.formatReadable(filePackage.getTotalEstimatedPackageSize()) + "\"");
+                    output.append(" package_todo=\"" + JDUtilities.formatReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"");
                     output.append(" >");// Close Package
 
                     for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {

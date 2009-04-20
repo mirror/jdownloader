@@ -394,32 +394,15 @@ public class JDUtilities {
         }
     }
 
-    /**
-     * Formatiert Byes in einen MB String [MM.MM MB]
-     * 
-     * @param downloadMax
-     * @return MegaByte Formatierter String
-     */
-    public static String formatBytesToMB(long downloadMax) {
-        if (downloadMax < 0) return null;
-        DecimalFormat c = new DecimalFormat("0.00");
-        return c.format(downloadMax / (1024.0 * 1024.0)) + " MB";
-    }
+    public static String formatReadable(long value) {
 
-    public static String formatKbReadable(int value) {
         DecimalFormat c = new DecimalFormat("0.00");
-        if (value >= 1024 * 1024) return c.format(value / (1024 * 1024.0)) + " GB";
-        if (value >= 1024) return c.format(value / 1024.0) + " MB";
-        return value + " KB";
-    }
+        if (value >= (1024 * 1024 * 1024 * 1024l)) return c.format(value / (1024 * 1024 * 1024.0 * 1024.0)) + " TB";
+        if (value >= (1024 * 1024 * 1024l)) return c.format(value / (1024 * 1024 * 1024.0)) + " GB";
+        if (value >= 1024 * 1024) return c.format(value / (1024 * 1024.0)) + " MB";
+        if (value >= 1024) return c.format(value / 1024.0) + " KB";
 
-    public static String formatKbReadable(long value) {
-        DecimalFormat c = new DecimalFormat("0.00");
-        if (value >= 1024 * 1024 * 1024) return c.format(value / (1024 * 1024 * 1024.0)) + " TB";
-        if (value >= 1024 * 1024) return c.format(value / (1024 * 1024.0)) + " GB";
-        if (value >= 1024) return c.format(value / 1024.0) + " MB";
-
-        return value + " KB";
+        return value + " B";
     }
 
     public static String formatFilesize(double value, int size) {
@@ -569,8 +552,8 @@ public class JDUtilities {
                 String captchaCode = jac.checkCaptcha(captcha);
                 if (jac.isExtern()) {
                     if (captchaCode == null || captchaCode.trim().length() == 0) {
-                        plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);                        
-                            captchaCode = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);                        
+                        plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
+                        captchaCode = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
                     }
                     return captchaCode;
 
@@ -605,8 +588,8 @@ public class JDUtilities {
                 // window.pack();
                 jd.controlling.JDLogger.getLogger().info("worst letter: " + vp);
                 if (plugin.useUserinputIfCaptchaUnknown() && vp > (double) SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)) {
-                    plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);                    
-                    code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);                    
+                    plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
+                    code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
                 } else {
                     return captchaCode;
                 }
@@ -620,9 +603,9 @@ public class JDUtilities {
             }
         }
 
-        else {            
+        else {
             plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
-            String code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, null);            
+            String code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, null);
             return code;
         }
     }

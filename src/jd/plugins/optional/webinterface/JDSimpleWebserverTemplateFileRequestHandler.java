@@ -73,8 +73,8 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             addEntry("name", fp.getName());
             addEntry("comment", fp.getComment());
             addEntry("dldirectory", fp.getDownloadDirectory());
-            addEntry("packagesize", JDUtilities.formatKbReadable(fp.getTotalEstimatedPackageSize()) + " " + fp.getTotalEstimatedPackageSize() + " KB");
-            addEntry("loaded", JDUtilities.formatKbReadable(fp.getTotalKBLoaded()) + " " + fp.getTotalKBLoaded() + " KB");
+            addEntry("packagesize", JDUtilities.formatReadable(fp.getTotalEstimatedPackageSize()) + " " + fp.getTotalEstimatedPackageSize() + " KB");
+            addEntry("loaded", JDUtilities.formatReadable(fp.getTotalKBLoaded()) + " " + fp.getTotalKBLoaded() + " KB");
             addEntry("links", "");
 
             DownloadLink next = null;
@@ -101,7 +101,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 h_info.put("info_percent", f.format(percent));
                 h_info.put("download_status", Single_Status);
                 h_info.put("info_var", i + ". " + next.getName());
-                h_info.put("info_value", JDUtilities.formatKbReadable(next.getDownloadSpeed() / 1024) + "/s " + f.format(next.getPercent() / 100.0) + " %| " + next.getDownloadCurrent() + "/" + next.getDownloadSize() + " bytes");
+                h_info.put("info_value", JDUtilities.formatReadable(next.getDownloadSpeed()) + "/s " + f.format(next.getPercent() / 100.0) + " %| " + next.getDownloadCurrent() + "/" + next.getDownloadSize() + " bytes");
                 h_info.put("download_id", i - 1);/*
                                                   * von 0 anfangen für js
                                                   * skripte
@@ -213,7 +213,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 addEntry(JDLocale.L("gui.linkinfo.package", "Packet"), downloadLink.getFilePackage().getName());
             }
             if (downloadLink.getDownloadSize() > 0) {
-                addEntry(JDLocale.L("gui.linkinfo.filesize", "Dateigröße"), JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()));
+                addEntry(JDLocale.L("gui.linkinfo.filesize", "Dateigröße"), JDUtilities.formatReadable(downloadLink.getDownloadSize()));
             }
             if (downloadLink.isAborted()) {
                 addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("linkinformation.download.aborted", "Abgebrochen"));
@@ -224,7 +224,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 addEntry(JDLocale.L("gui.linkinfo.available", "Verfügbar"), JDLocale.L("gui.linkinfo.available.notchecked", "noch nicht überprüft"));
             }
             if (downloadLink.getDownloadSpeed() > 0) {
-                addEntry(JDLocale.L("gui.linkinfo.speed", "Geschwindigkeit"), downloadLink.getDownloadSpeed() / 1024 + " kb/s");
+                addEntry(JDLocale.L("gui.linkinfo.speed", "Geschwindigkeit"), JDUtilities.formatReadable(downloadLink.getDownloadSpeed()) + " /s");
             }
             if (downloadLink.getFileOutput() != null) {
                 addEntry(JDLocale.L("gui.linkinfo.saveto", "Speichern in"), downloadLink.getFileOutput());
@@ -268,7 +268,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                     double percent = next.getPercent() / 100.0;
                     h_info.put("download_status", Single_Status);
                     h_info.put("info_var", JDLocale.L("download.chunks.connection", "Verbindung") + " " + i);
-                    h_info.put("info_value", JDUtilities.formatKbReadable((int) next.getBytesPerSecond() / 1024) + "/s " + f.format(next.getPercent() / 100.0) + " %");
+                    h_info.put("info_value", JDUtilities.formatReadable((int) next.getBytesPerSecond()) + "/s " + f.format(next.getPercent() / 100.0) + " %");
                     h_info.put("info_percent", f.format(percent));
                     h_info.put("download_id", i - 1);/*
                                                       * von 0 anfangen für js
@@ -315,12 +315,12 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 value = filePackage.getLinksInProgress() + "/" + filePackage.size() + " " + JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
             }
             if (filePackage.getTotalDownloadSpeed() > 0) {
-                value = "[" + filePackage.getLinksInProgress() + "/" + filePackage.size() + "] " + "ETA " + JDUtilities.formatSeconds(filePackage.getETA()) + " @ " + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s";
+                value = "[" + filePackage.getLinksInProgress() + "/" + filePackage.size() + "] " + "ETA " + JDUtilities.formatSeconds(filePackage.getETA()) + " @ " + JDUtilities.formatReadable(filePackage.getTotalDownloadSpeed()) + "/s";
             }
 
             h.put("package_id", Package_ID.toString());
             h.put("download_hoster", value);
-            h.put("download_status_text", f.format(percent) + " % (" + JDUtilities.formatKbReadable(filePackage.getTotalKBLoaded()) + " / " + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize()) + ")");
+            h.put("download_status_text", f.format(percent) + " % (" + JDUtilities.formatReadable(filePackage.getTotalKBLoaded()) + " / " + JDUtilities.formatReadable(filePackage.getTotalEstimatedPackageSize()) + ")");
 
             v2 = new Vector<Object>();
 

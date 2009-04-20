@@ -197,7 +197,7 @@ public class MegaroticCom extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-        return (tempUnavailable ? "<Temp. unavailable> " : "") + downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
+        return (tempUnavailable ? "<Temp. unavailable> " : "") + downloadLink.getName() + " (" + JDUtilities.formatReadable(downloadLink.getDownloadSize()) + ")";
     }
 
     @Override

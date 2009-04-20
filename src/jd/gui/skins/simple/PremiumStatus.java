@@ -237,7 +237,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
 
             if (left >= 0) {
                 // bars[i].setString(JDUtilities.formatKbReadable(left / 1024));
-                bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), JDUtilities.formatKbReadable(left / 1024)));
+                bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), JDUtilities.formatReadable(left)));
             } else {
                 bars[i].setMaximum(10);
                 bars[i].setValue(10);

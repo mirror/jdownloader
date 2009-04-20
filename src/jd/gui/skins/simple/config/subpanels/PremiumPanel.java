@@ -138,7 +138,7 @@ public class PremiumPanel extends JPanel {
             if (accounts.get(i) != null) accs.get(i).setAccount(accounts.get(i));
         }
         createDataset();
-     
+
     }
 
     private void createDataset() {
@@ -146,7 +146,7 @@ public class PremiumPanel extends JPanel {
     }
 
     private void createPanel(int j) {
-        
+
         accs = new ArrayList<AccountPanel>();
 
         JPanel panel = new JPanel();
@@ -154,7 +154,7 @@ public class PremiumPanel extends JPanel {
 
         setLayout(new MigLayout("ins ", "[fill,grow]", "[fill,grow]"));
         panel.setLayout(new MigLayout(" ins 0, wrap 2", "[grow, fill][grow, fill]", "[fill]"));
-        panel.add(Factory.createHeader(JDLocale.L("plugins.premium.accounts", "Accounts"), JDTheme.II("gui.images.accounts",32,32)),"spanx");
+        panel.add(Factory.createHeader(JDLocale.L("plugins.premium.accounts", "Accounts"), JDTheme.II("gui.images.accounts", 32, 32)), "spanx");
 
         add(panel);
         // sp.setBorder(null);
@@ -190,11 +190,11 @@ public class PremiumPanel extends JPanel {
             }
 
         });
-        panel.add(Factory.createHeader(JDLocale.L("plugins.premium.options", "Premium options"), JDTheme.II("gui.images.vip",32,32)),"spanx");
+        panel.add(Factory.createHeader(JDLocale.L("plugins.premium.options", "Premium options"), JDTheme.II("gui.images.vip", 32, 32)), "spanx");
         panel.add(add, "alignx left,gapleft 30");
         panel.add(freeTrafficChart, "spany 2,height " + PIE_HEIGHT + "!");
         panel.add(buy, "alignx left,aligny top,gapleft 30");
-     
+
     }
 
     public JButton createButton(String string, Icon i) {
@@ -273,16 +273,16 @@ public class PremiumPanel extends JPanel {
             if (JDLookAndFeelManager.getPlaf().isJGoodies()) {
                 if (premiumActivated) {
                     chkEnable = new JToggleButton(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
-                     chkEnable.setForeground(INACTIVE);
+                    chkEnable.setForeground(INACTIVE);
                 } else {
                     chkEnable = new JToggleButton(JDLocale.LF("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>", nr));
-                     chkEnable.setForeground(DISABLED);
+                    chkEnable.setForeground(DISABLED);
                 }
-                chkEnable.setIcon(JDTheme.II("gui.images.disabled",16,16));
-                chkEnable.setSelectedIcon(JDTheme.II("gui.images.enabled",16,16));
-   
+                chkEnable.setIcon(JDTheme.II("gui.images.disabled", 16, 16));
+                chkEnable.setSelectedIcon(JDTheme.II("gui.images.enabled", 16, 16));
+
                 chkEnable.setOpaque(false);
-                chkEnable.setContentAreaFilled(false);               
+                chkEnable.setContentAreaFilled(false);
                 chkEnable.setFocusPainted(false);
                 chkEnable.setBorderPainted(false);
             } else {
@@ -351,21 +351,20 @@ public class PremiumPanel extends JPanel {
             if (this.account.isEnabled() != sel) {
                 ce.setChanges(true);
             }
-       
-                if (premiumActivated) {
-                    chkEnable.setForeground((sel) ? ACTIVE : INACTIVE);
-                } else {
-                    chkEnable.setForeground(DISABLED);
-                }
-            
+
+            if (premiumActivated) {
+                chkEnable.setForeground((sel) ? ACTIVE : INACTIVE);
+            } else {
+                chkEnable.setForeground(DISABLED);
+            }
+
             txtPassword.setEnabled(sel);
             txtUsername.setEnabled(sel);
             txtStatus.setEnabled(sel);
             btnCheck.setEnabled(sel);
             lblPassword.setEnabled(sel);
             lblUsername.setEnabled(sel);
-            if(!sel)
-            info.setCollapsed(true);
+            if (!sel) info.setCollapsed(true);
 
         }
 
@@ -405,16 +404,16 @@ public class PremiumPanel extends JPanel {
                         // freeTraffic.fetchImage();
 
                         JDProgressBar bar = new JDProgressBar();
-        bar.setOrientation(SwingConstants.VERTICAL);
-//                        bar.setBorder(null);
-                      
+                        bar.setOrientation(SwingConstants.VERTICAL);
+                        // bar.setBorder(null);
+
                         bar.setStringPainted(true);
 
                         if (ai.getTrafficMax() <= 0) {
                             bar.setValue(1);
                             bar.setMaximum(1);
                             bar.setString(JDLocale.L("gui.premiumpanel.bartext.unlimited", "< ∞ >"));
-                        }else{
+                        } else {
                             bar.setMaximum(Math.max(1, ai.getTrafficMax()));
                             bar.setValue(ai.getTrafficLeft());
                         }
@@ -436,7 +435,7 @@ public class PremiumPanel extends JPanel {
                         }
                         if (ai.getUsedSpace() > -1) {
                             details.add(new JLabel("Used Space"), "");
-                            details.add(getTextField(JDUtilities.formatBytesToMB(ai.getUsedSpace())), "");
+                            details.add(getTextField(JDUtilities.formatReadable(ai.getUsedSpace())), "");
                         }
                         if (ai.getPremiumPoints() > -1) {
                             details.add(new JLabel("PremiumPoints"), "");
@@ -444,11 +443,11 @@ public class PremiumPanel extends JPanel {
                         }
                         if (ai.getTrafficShareLeft() > -1) {
                             details.add(new JLabel("Trafficshare left"), "");
-                            details.add(getTextField(JDUtilities.formatBytesToMB(ai.getTrafficShareLeft())), "");
+                            details.add(getTextField(JDUtilities.formatReadable(ai.getTrafficShareLeft())), "");
                         }
                         if (ai.getTrafficLeft() > -1) {
                             details.add(new JLabel("Traffic left"), "aligny top");
-                            details.add(getTextField(JDUtilities.formatBytesToMB(ai.getTrafficLeft())), "aligny top");
+                            details.add(getTextField(JDUtilities.formatReadable(ai.getTrafficLeft())), "aligny top");
 
                         }
                         info.setCollapsed(false);

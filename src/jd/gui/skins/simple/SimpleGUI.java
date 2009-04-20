@@ -561,7 +561,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // panel.add(new PremiumStatus(), "spanx, cell 0 4");
         panel.add(this.statusBar, "spanx, cell 0 5");
 
-
     }
 
     private void addAddonTask() {
@@ -781,17 +780,16 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     break;
 
                 case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-              
+
                     if (speedmeter != null) speedmeter.stop();
-for(DownloadLink link:DownloadController.getDownloadController().getAllDownloadLinks()){
-    if(link.getLinkStatus().hasStatus(LinkStatus.TODO)){
-        logger.info("Downloads stopped");
-        return;
-    }
-    
-}
-logger.info("All downloads finished");
-                 
+                    for (DownloadLink link : DownloadController.getDownloadController().getAllDownloadLinks()) {
+                        if (link.getLinkStatus().hasStatus(LinkStatus.TODO)) {
+                            logger.info("Downloads stopped");
+                            return;
+                        }
+
+                    }
+                    logger.info("All downloads finished");
 
                     break;
                 case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
@@ -1229,7 +1227,7 @@ logger.info("All downloads finished");
                 String validUntil = (ai.isExpired() ? "[expired] " : "") + formater.format(new Date(ai.getValidUntil())) + "";
                 if (ai.getValidUntil() == -1) validUntil = null;
                 String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
-                String[] data = new String[] { validUntil, JDUtilities.formatBytesToMB(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, JDUtilities.formatBytesToMB(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", JDUtilities.formatBytesToMB(ai.getTrafficShareLeft()), ai.getStatus() };
+                String[] data = new String[] { validUntil, JDUtilities.formatReadable(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, JDUtilities.formatReadable(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", JDUtilities.formatReadable(ai.getTrafficShareLeft()), ai.getStatus() };
                 panel.add(new JXTitledSeparator(def), "spanx, pushx, growx, gapbottom 15");
                 PieChartAPI freeTrafficChart = new PieChartAPI("", 125, 60);
                 freeTrafficChart.addEntity(new ChartAPIEntity("Free", ai.getTrafficLeft(), new Color(50, 200, 50)));
