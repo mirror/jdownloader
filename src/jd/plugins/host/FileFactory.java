@@ -290,7 +290,7 @@ public class FileFactory extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
+    public boolean getFileInformation(DownloadLink downloadLink) throws Exception, PluginException {
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
         br.setFollowRedirects(true);
@@ -318,8 +318,8 @@ public class FileFactory extends PluginForHost {
                 downloadLink.getLinkStatus().setErrorMessage("No slots available atm");
                 downloadLink.getLinkStatus().setStatusText("No slots available atm");
             } else {
+                if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 String fileName = Encoding.htmlDecode(new Regex(br.toString().replaceAll("\\&\\#8203\\;", ""), FILENAME).getMatch(0));
-
                 String fileSize = new Regex(br.toString(), FILESIZE).getMatch(0);
 
                 downloadLink.setName(fileName);
