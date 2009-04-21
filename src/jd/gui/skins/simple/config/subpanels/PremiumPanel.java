@@ -35,7 +35,6 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.logging.Logger;
 
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -98,14 +97,12 @@ public class PremiumPanel extends JPanel {
 
     private ArrayList<Account> list;
 
-    private Logger logger;
+    // private Logger logger = JDLogger.getLogger();
 
     public PremiumPanel(GUIConfigEntry gce) {
         ce = gce.getConfigEntry();
         host = (PluginForHost) gce.getConfigEntry().getActionListener();
-        logger = JDLogger.getLogger();
         premiumActivated = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
-
     }
 
     /**

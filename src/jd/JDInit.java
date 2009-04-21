@@ -245,7 +245,7 @@ public class JDInit {
                     // home.getAbsolutePath(), 0));
                     // System.exit(0);
                     // } catch (Exception e) {
-                    //jd.controlling.JDLogger.getLogger().log(java.util.logging.
+                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.
                     // Level.SEVERE,"Exception occured",e);
                     // // System.exit(0);
                     // }
@@ -585,7 +585,7 @@ public class JDInit {
     }
 
     public void loadPluginOptional() {
-        new OptionalPluginWrapper("JDTrayIcon", 1.6);
+        // new OptionalPluginWrapper("JDTrayIcon", 1.6);
 
         new OptionalPluginWrapper("jdtrayicon.JDLightTray", 1.6);
 
@@ -601,7 +601,7 @@ public class JDInit {
 
         new OptionalPluginWrapper("JDLowSpeed", 1.5);
 
-        new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5);
+        // new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5);
 
         new OptionalPluginWrapper("jdchat.JDChat", 1.5);
 

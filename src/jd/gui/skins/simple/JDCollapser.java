@@ -72,7 +72,7 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
                 panel = null;
             }
 
-        }else{
+        } else {
             setVisible(true);
         }
     }
@@ -90,10 +90,10 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
         this.panel = panel;
         panel.onDisplay();
 
-        JScrollPane sp;
-      
-        getContentPane().add(sp=new JScrollPane(this.panel),"height n:n:"+(int)(SimpleGUI.CURRENTGUI.getHeight()*0.65));
-//        sp.setBorder(null);
+        // JScrollPane sp;
+
+        getContentPane().add(new JScrollPane(this.panel), "height n:n:" + (int) (SimpleGUI.CURRENTGUI.getHeight() * 0.65));
+        // sp.setBorder(null);
         this.revalidate();
 
         this.repaint();

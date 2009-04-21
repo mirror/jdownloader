@@ -1,6 +1,5 @@
 package jd.gui.skins.simple.tasks;
 
-import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -48,7 +47,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
             if (!wrapper.isEnabled()) continue;
             ArrayList<MenuItem> menuItems = wrapper.getPlugin().createMenuitems();
             if (menuItems != null && JDUtilities.getConfiguration().getBooleanProperty(wrapper.getConfigParamKey(), false)) {
-                if (menuItems.size() > 1||   wrapper.getPlugin().getConfig().getEntries().size()>0) {
+                if (menuItems.size() > 1 || wrapper.getPlugin().getConfig().getEntries().size() > 0) {
 
                     CollapseButton bt = new CollapseButton(wrapper.getPlugin().getHost(), JDTheme.II(wrapper.getPlugin().getIconKey(), 16, 16));
                     add(bt, D1_BUTTON_ICON);
@@ -76,7 +75,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
 
                 } else if (menuItems.size() == 1) {
                     JComponent btn = createMenu(menuItems.get(0), JDTheme.II(wrapper.getPlugin().getIconKey(), 16, 16));
-                    
+
                     switch (menuItems.get(0).getID()) {
                     case MenuItem.CONTAINER:
                     case MenuItem.NORMAL:
@@ -88,17 +87,14 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
                         add(btn, D1_TOGGLEBUTTON_ICON);
                         break;
                     }
-                    
-                  
+
                 }
             }
         }
         add(new JSeparator());
 
         config = createButton(JDLocale.L("gui.tasks.addons.edit", "Addonmanager"), JDTheme.II("gui.images.config.addons", 16, 16));
-       
-        
-        
+
         add(config, D1_BUTTON_ICON);
 
     }
@@ -165,8 +161,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
         case MenuItem.CONTAINER:
             CollapseButton col = new CollapseButton(entry.getTitle(), ii);
             for (int i = 0; i < entry.getSize(); i++) {
-                
-                
+
                 switch (entry.get(i).getID()) {
                 case MenuItem.CONTAINER:
                 case MenuItem.NORMAL:
@@ -178,7 +173,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
                     col.getContentPane().add(createMenu(entry.get(i), ii), "gapleft 10");
                     break;
                 }
-          
+
             }
 
             col.getButton().addActionListener(new ActionListener() {
@@ -208,7 +203,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
         case MenuItem.TOGGLE:
             JCheckBox ch = new JCheckBox(entry.getTitle(), entry.isSelected());
             ch.setContentAreaFilled(false);
-          
+
             ch.setFocusPainted(false);
             ch.setBorderPainted(false);
             ch.addMouseListener(new JDUnderlinedText());

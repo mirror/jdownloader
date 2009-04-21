@@ -38,10 +38,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
-import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
 import javax.swing.UIManager;
 
 import jd.captcha.JACController;
@@ -54,9 +52,7 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.JDCollapser;
 import jd.gui.skins.simple.JDEventQueue;
-import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -69,7 +65,6 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.MacOSController;
 import jd.utils.WebUpdate;
-import net.miginfocom.swing.MigLayout;
 
 import org.jvnet.lafwidget.LafWidget;
 import org.jvnet.lafwidget.utils.LafConstants.AnimationKind;
@@ -435,7 +430,7 @@ public class Main {
         // }
         // controller.setLogFileWriter(new BufferedWriter(new FileWriter(log)));
         // } catch (IOException e) {
-        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         // }

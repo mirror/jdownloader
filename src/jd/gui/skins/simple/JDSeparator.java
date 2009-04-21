@@ -1,6 +1,5 @@
 package jd.gui.skins.simple;
 
-import java.awt.Cursor;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
@@ -37,7 +36,7 @@ public class JDSeparator extends JXCollapsiblePane implements PropertyChangeList
 
         minimize.setOpaque(false);
 
-       // setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        // setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setMinimized(false);
     }
 
