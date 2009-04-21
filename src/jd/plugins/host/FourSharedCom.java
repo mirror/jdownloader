@@ -25,6 +25,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 
 public class FourSharedCom extends PluginForHost {
 
@@ -84,7 +85,7 @@ public class FourSharedCom extends PluginForHost {
         url = br.getRegex("id=\\'divDLStart\\' >.*?<a href=\\'(.*?)\'>Click here to download this file</a>.*?</div>").getMatch(0);
         if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.sleep(Integer.parseInt(br.getRegex(" var c = (\\d+?);").getMatch(0)) * 1000l, downloadLink);
-        downloadLink.getLinkStatus().setStatusText("Waiting...");
+        downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.4sharedcom.waiting","Waiting..."));
         downloadLink.requestGuiUpdate();
         // Das wartesystem lässt link b warten während link a lädt
         while (COUNTER > 0) {

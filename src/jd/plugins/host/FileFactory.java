@@ -315,8 +315,8 @@ public class FileFactory extends PluginForHost {
             return false;
         } else {
             if (br.containsHTML("there are currently no free download slots")) {
-                downloadLink.getLinkStatus().setErrorMessage("No slots available atm");
-                downloadLink.getLinkStatus().setStatusText("No slots available atm");
+                downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("plugins.hoster.filefactorycom.errors.nofreeslots","No slots free available"));
+                downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.filefactorycom.errors.nofreeslots","No slots free available"));
             } else {
                 if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 String fileName = Encoding.htmlDecode(new Regex(br.toString().replaceAll("\\&\\#8203\\;", ""), FILENAME).getMatch(0));

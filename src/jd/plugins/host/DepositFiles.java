@@ -33,6 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 import com.sun.org.apache.xerces.internal.impl.xpath.regex.ParseException;
@@ -73,7 +74,7 @@ public class DepositFiles extends PluginForHost {
         if (form != null) {
             br.submitForm(form);
         }
-        if (br.containsHTML("We are sorry, but all downloading slots for your country are busy")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All slots for your country are busy", 10 * 60 * 1000l);
+        if (br.containsHTML("We are sorry, but all downloading slots for your country are busy")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.depositfilescom.errors.allslotsbusy", "All download slots for your country are busy"), 10 * 60 * 1000l);
         String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds(wait)); }
 
@@ -133,23 +134,23 @@ public class DepositFiles extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setStatus("Account expired or logins not valid");
+            ai.setStatus(JDLocale.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
             ai.setValid(false);
             return ai;
         }
         if (isFreeAccount()) {
-            ai.setStatus("Account is ok");
+            ai.setStatus(JDLocale.L("plugins.hoster.depositfilescom.accountok", "Account is OK."));
             ai.setValid(true);
             return ai;
         }
         String expire = br.getRegex("<div class=\"access\">Ihr Gold- Account ist.*?bis zum: <b>(.*?)</b></div>").getMatch(0);
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
         if (expire == null) {
-            ai.setStatus("Account expired or logins not valid");
+            ai.setStatus(JDLocale.L("plugins.hoster.depositfilescom.accountbad", "Account expitred or not valid."));
             ai.setValid(false);
             return ai;
         }
-        ai.setStatus("Account is ok");
+        ai.setStatus(JDLocale.L("plugins.hoster.depositfilescom.accountok", "Account is OK."));
         Date date;
         try {
             date = dateFormat.parse(expire);
@@ -223,7 +224,7 @@ public class DepositFiles extends PluginForHost {
         // Datei geloescht?
         if (br.containsHTML(FILE_NOT_FOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("<strong>Achtung! Sie haben ein Limit")) {
-            downloadLink.getLinkStatus().setStatusText("DownloadLimit reached!");
+            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.depositfilescom.errors.limitreached", "Download limit reached"));
             return true;
         }
         String fileName = br.getRegex(FILE_INFO_NAME).getMatch(0);

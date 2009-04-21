@@ -25,6 +25,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.EvaluatorException;
@@ -105,7 +106,7 @@ public class MediafireCom extends PluginForHost {
 
                     Context.exit();
                 } catch (EvaluatorException e) {
-                    if (i == 2) throw new PluginException(LinkStatus.ERROR_FATAL, "Javascript error");
+                    if (i == 2) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.mediafirecom.errors.javascripterror","JavaScript Error"));
                     continue;
                 }
                 break;

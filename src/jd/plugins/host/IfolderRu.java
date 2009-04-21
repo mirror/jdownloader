@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 
 public class IfolderRu extends PluginForHost {
 
@@ -60,7 +61,7 @@ public class IfolderRu extends PluginForHost {
 
         String watchAd = br.getRegex("http://ints\\.ifolder\\.ru/ints/\\?(.*?)\"").getMatch(0);
         if (watchAd != null) {
-            downloadLink.getLinkStatus().setStatusText("Waiting for ticket");
+            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.ifolderru.errors.ticketwait","Waiting for ticket"));
             watchAd = "http://ints.ifolder.ru/ints/?".concat(watchAd);
             br.getPage(watchAd);
             watchAd = br.getRegex("<font size=\"\\+1\"><a href=(.*?)>").getMatch(0);

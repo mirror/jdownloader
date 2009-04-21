@@ -32,6 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 
 public class ShareNownet extends PluginForHost {
 
@@ -87,7 +88,7 @@ public class ShareNownet extends PluginForHost {
         /* DownloadLink holen/Captcha check */
         dl = br.openDownload(downloadLink, form);
         if (!dl.getConnection().isContentDisposition() || dl.getRequest().getLocation() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (dl.getConnection().isContentDisposition() && dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FATAL, "Server Error");
+        if (dl.getConnection().isContentDisposition() && dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.sharenownet.errors.servererror","Server Error"));
         /* Datei herunterladen */
         dl.startDownload();
     }

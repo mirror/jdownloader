@@ -51,7 +51,7 @@ public class HotFileCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         getFileInformation(link);
-        if (br.containsHTML("You are currently downloading")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Only 1 Download as FreeUser!", 5 * 60 * 1000l);
+        if (br.containsHTML("You are currently downloading")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("JavaScript>starthtimer")) {
             String waittime = br.getRegex("starthtimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waittime.trim()));

@@ -124,7 +124,7 @@ public class Uploadedto extends PluginForHost {
         if (!isPremium()) {
             logger.severe("Entered a Free-account");
             linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
-            linkStatus.setErrorMessage("Account is a freeaccount");
+            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.uploadedto.errors.notpremium","This is free account"));
             linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
             return;
         }
@@ -137,7 +137,7 @@ public class Uploadedto extends PluginForHost {
         }
         if (error != null) {
             if (error.equalsIgnoreCase("error_traffic")) {
-                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.uploadedto.premiumtrafficreached", "Traffic limit reached"));
+                linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"));
                 linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
                 linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 return;
@@ -158,7 +158,7 @@ public class Uploadedto extends PluginForHost {
                 con.disconnect();
                 logger.severe("Endlink not found");
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                linkStatus.setErrorMessage("Indirect Link Error");
+                linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.uploadedto.errors.indirectlinkerror","Indirect link error"));
                 return;
             }
         } else {
@@ -266,7 +266,7 @@ public class Uploadedto extends PluginForHost {
         br.setFollowRedirects(false);
 
         Form form = br.getFormbyProperty("name", "download_form");
-        if (form == null || br.containsHTML("Versuch es sp")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerProblem", 10 * 60 * 1000l);
+        if (form == null || br.containsHTML("Versuch es sp")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.uploadedto.errors.serverproblem","Server problem"), 10 * 60 * 1000l);
         if (form != null) {
             form.put("download_submit", "Download");
             sleep(10000l, downloadLink);

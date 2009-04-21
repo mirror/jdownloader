@@ -76,7 +76,7 @@ public class RapidShareDe extends PluginForHost {
             } catch (Exception es) {
                 logger.severe("kann wartezeit nicht setzen");
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                linkStatus.setErrorMessage("Waittime could not be set");
+                linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.rapidsharede.errors.cannotsetwaittime","Wait time could not be set"));
                 return;
             }
         }
@@ -136,14 +136,14 @@ public class RapidShareDe extends PluginForHost {
         if (page.contains("Premium-Cookie nicht gefunden")) {
             linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
             linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-            linkStatus.setErrorMessage("Account not found or password wrong");
+            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.rapidsharede.errors.accountbad","Account not found or password wrong"));
             return;
 
         }
         String error = new Regex(page, "alert\\(\"(.*)\"\\)<\\/script>").getMatch(0);
         if (error != null) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(JDLocale.L("plugins.host.rapidshareDE.errors." + JDHash.getMD5(error), error));
+            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.rapidshareDE.errors." + JDHash.getMD5(error), error));
             return;
 
         }

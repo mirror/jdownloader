@@ -102,7 +102,7 @@ public class BluehostTo extends PluginForHost {
         String page = br.getPage("http://bluehost.to/fileinfo/urls=" + downloadLink.getDownloadURL());
         String[] dat = page.split("\\, ");
         int time = Integer.parseInt(dat[4]);
-        if (time > 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugin.bluehostto.time", "BH free only allowed from 0 PM to 10 AM"), time * 1000l);
+        if (time > 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.bluehostto.time", "BH free only allowed from 0 PM to 10 AM"), time * 1000l);
 
         br.getPage(downloadLink.getDownloadURL());
         String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"1\\; URL=(.*?)\" />").getMatch(0);

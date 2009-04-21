@@ -27,6 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 
 public class Odsiebiecom extends PluginForHost {
 
@@ -131,7 +132,7 @@ public class Odsiebiecom extends PluginForHost {
         dl = br.openDownload(downloadLink, downloadurl, false, 1);
         if (dl.getConnection().getContentType().contains("text")) {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Server Error");
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.odsiebiecom.errors.servererror","Server error"));
         }
         downloadLink.setFinalFileName(finalfn);
         dl.startDownload();

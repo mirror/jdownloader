@@ -61,7 +61,7 @@ public class Youtube extends PluginForHost {
         br.clearCookies(getHost());
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
+            linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.hoster.youtube.errors.serverunavailable", "Server unavailable"));
             return;
         }
         br.getHttpConnection().disconnect();
@@ -91,7 +91,7 @@ public class Youtube extends PluginForHost {
 
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
+            linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.hoster.youtube.errors.serverunavailable", "Server unavailable"));
             return;
         }
         br.getHttpConnection().disconnect();
@@ -142,11 +142,11 @@ public class Youtube extends PluginForHost {
         login(account);
         if (!br.getRegex("<title>YouTube - Mein YouTube: " + account.getUser() + "</title>").matches()) {
             ai.setValid(false);
-            ai.setStatus("Account invalid. Logins wrong?");
+            ai.setStatus(JDLocale.L("plugins.hoster.youtube.accountbad", "Account is invalid. Probably bad login."));
             return ai;
         }
 
-        ai.setStatus("Account is ok.");
+        ai.setStatus(JDLocale.L("plugins.hoster.youtube.accountok", "Account is OK."));
         ai.setValidUntil(-1);
         ai.setValid(true);
 

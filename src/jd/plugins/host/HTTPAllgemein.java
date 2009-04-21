@@ -92,14 +92,14 @@ public class HTTPAllgemein extends PluginForHost {
                 }
                 urlConnection.disconnect();
                 basicauth = getBasicAuth(downloadLink);
-                if (basicauth == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "BasicAuth is needed!");
+                if (basicauth == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDLocale.L("plugins.hoster.httplinks.errors.basicauthneeded","BasicAuth needed"));
                 br.getHeaders().put("Authorization", basicauth);
                 urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
                 if (urlConnection.getResponseCode() == 401) {
                     urlConnection.disconnect();
                     downloadLink.setProperty("basicauth", null);
                     downloadLink.setProperty("pass", null);
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "BasicAuth is needed!");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDLocale.L("plugins.hoster.httplinks.errors.basicauthneeded","BasicAuth needed"));
                 } else {
                     downloadLink.setProperty("basicauth", basicauth);
                 }

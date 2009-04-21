@@ -36,6 +36,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class FilerNet extends PluginForHost {
@@ -82,7 +83,7 @@ public class FilerNet extends PluginForHost {
         }
 
         br.setFollowRedirects(false);
-        if (br.toString().contains("Momentan sind die Limits f")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All Free-User Slots Full", 10 * 1000 * 60l);
+        if (br.toString().contains("Momentan sind die Limits f")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.filernet.errors.nofreeslots","All free user slots occupied"), 10 * 1000 * 60l);
         String wait = new Regex(br, "Bitte warten Sie ([\\d]*?) Min bis zum").getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, new Long(wait) * 1000 * 60l);
 

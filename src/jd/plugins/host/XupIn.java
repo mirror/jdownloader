@@ -80,7 +80,7 @@ public class XupIn extends PluginForHost {
             String page = br.loadConnection(dl.getConnection());
             if (page.contains("richtige Passwort erneut ein")) {
                 downloadLink.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_RETRY, JDLocale.L("plugins.host.xup", "Password wrong"));
+                throw new PluginException(LinkStatus.ERROR_RETRY, JDLocale.L("plugins.hoster.xupin.errors.passwrong", "Password wrong"));
             }
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }

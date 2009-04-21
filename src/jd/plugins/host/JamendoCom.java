@@ -129,7 +129,7 @@ public class JamendoCom extends PluginForHost {
             }
             sleep(5 * 1000l, link);
         }
-        if (dlurl == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Currently not available", 10 * 60 * 1000l);
+        if (dlurl == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         return dlurl;
     }
 

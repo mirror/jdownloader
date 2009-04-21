@@ -27,6 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 
 public class TwoSharedCom extends PluginForHost {
 
@@ -80,7 +81,7 @@ public class TwoSharedCom extends PluginForHost {
             br.submitForm(pwform);
             if (br.containsHTML("passError\\(\\);")) {
                 downloadLink.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA, "PW wrong");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDLocale.L("plugins.hoster.2sharedcom.errors.wrongcaptcha","Wrong captcha"));
             } else {
                 downloadLink.setProperty("pass", passCode);
             }
@@ -90,7 +91,7 @@ public class TwoSharedCom extends PluginForHost {
         dl = br.openDownload(downloadLink, link);
         if (dl.getConnection().getContentType().contains("text")) {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Session limit reached", 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDLocale.L("plugins.hoster.2sharedcom.errors.sessionlimit","Session limit reached"), 10 * 60 * 1000l);
         }
         dl.startDownload();
     }

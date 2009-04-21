@@ -27,6 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
@@ -94,9 +95,9 @@ public class SendspaceCom extends PluginForHost {
             br.getPage(con.getURL().toExternalForm());
             String error = br.getRegex("<div class=\"errorbox-bad\".*?>(.*?)</div>").getMatch(0);
             if (error == null) error = br.getRegex("<div class=\"errorbox-bad\".*?>.*?>(.*?)</>").getMatch(0);
-            if (error == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown ServerError", 5 * 60 * 1000l);
+            if (error == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sendspacecom.errors.servererror","Unknown server error"), 5 * 60 * 1000l);
             if (error.contains("You may now download the file")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 30 * 1000l); }
-            if (error.contains("full capacity")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sorry, the free service is at full capacity", 5 * 60 * 1000l); }
+            if (error.contains("full capacity")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sendspacecom.errors.serverfull","Free service capacity full"), 5 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         if (con.getResponseCode() == 416) {

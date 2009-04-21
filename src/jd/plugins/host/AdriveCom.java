@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 
 public class AdriveCom extends PluginForHost {
 
@@ -48,7 +49,7 @@ public class AdriveCom extends PluginForHost {
             br.followConnection();
             if (br.containsHTML("File overlimit")) {
                 con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Public File Busy", 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.adrivecom.errors.toomanyconnections", "Too many connections"), 10 * 60 * 1000l);
             } else {
                 con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -81,7 +82,7 @@ public class AdriveCom extends PluginForHost {
             br.followConnection();
             if (br.containsHTML("File overlimit")) {
                 con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Public File Busy", 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.adrivecom.errors.toomanyconnections", "Too many connections"), 10 * 60 * 1000l);
             }
         }
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {

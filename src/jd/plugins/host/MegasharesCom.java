@@ -231,15 +231,15 @@ public class MegasharesCom extends PluginForHost {
             loadpage(downloadLink);
         }
         if (br.containsHTML("You already have the maximum")) {
-            downloadLink.getLinkStatus().setStatusText("Unchecked due to already loading");
+            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.alreadyloading","Cannot check, because aready loading file"));
             return true;
         }
         if (br.containsHTML("All download slots for this link are currently filled")) {
-            downloadLink.getLinkStatus().setStatusText("Unchecked due to already loading");
+            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.allslotsfilled","Cannot check, because all slots filled"));
             return true;
         }
         if (br.containsHTML("This link requires a password")) {
-            downloadLink.getLinkStatus().setStatusText("Password protected");
+            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.passwordprotected","Password protected download"));
             return true;
         }
         String[] dat = br.getRegex("<dt>Filename:.*?<strong>(.*?)</strong>.*?size:(.*?)</dt>").getRow(0);

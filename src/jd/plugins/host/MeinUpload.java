@@ -188,7 +188,7 @@ public class MeinUpload extends PluginForHost {
         dl = br.openDownload(downloadLink, url, true, 0);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.host.meinupload.serverdefect", "Serivce not available"), 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.meinupload.errors.serverdefect", "Serivce not available"), 10 * 60 * 1000l);
         }
         dl.startDownload();
     }
