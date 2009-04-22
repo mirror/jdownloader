@@ -85,11 +85,11 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     private String password;
     private boolean extractAfterDownload = true;
 
-    private int totalBytesLoaded;
+    private long totalBytesLoaded_v2;
 
-    private int totalDownloadSpeed;
+    private long totalDownloadSpeed_v2;
 
-    private int totalEstimatedPackageSize;
+    private long totalEstimatedPackageSize_v2;
 
     private long updateTime;
 
@@ -234,12 +234,12 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      * 
      * @return
      */
-    public int getETA() {
+    public long getETA() {
         if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
             updateCollectives();
         }
-        if (totalDownloadSpeed / 1024 == 0) { return -1; }
-        return (Math.max(totalBytesLoaded, totalEstimatedPackageSize) - totalBytesLoaded) / (totalDownloadSpeed / 1024);
+        if (totalDownloadSpeed_v2 / 1024 == 0) { return -1; }
+        return (Math.max(totalBytesLoaded_v2, totalEstimatedPackageSize_v2) - totalBytesLoaded_v2) / (totalDownloadSpeed_v2);
     }
 
     public String getId() {
@@ -332,7 +332,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             updateCollectives();
         }
 
-        return 100.0 * totalBytesLoaded / Math.max(1, Math.max(totalBytesLoaded, totalEstimatedPackageSize));
+        return 100.0 * totalBytesLoaded_v2 / Math.max(1, Math.max(totalBytesLoaded_v2, totalEstimatedPackageSize_v2));
     }
 
     /**
@@ -362,12 +362,12 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      * 
      * @return
      */
-    public int getTotalDownloadSpeed() {
+    public long getTotalDownloadSpeed() {
         if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
             updateCollectives();
         }
 
-        return totalDownloadSpeed;
+        return totalDownloadSpeed_v2;
     }
 
     /**
@@ -379,7 +379,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
             updateCollectives();
         }
-        return Math.max(totalBytesLoaded, totalEstimatedPackageSize);
+        return Math.max(totalBytesLoaded_v2, totalEstimatedPackageSize_v2);
     }
 
     /**
@@ -387,11 +387,11 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      * 
      * @return
      */
-    public int getTotalKBLoaded() {
+    public long getTotalKBLoaded() {
         if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
             updateCollectives();
         }
-        return totalBytesLoaded;
+        return totalBytesLoaded_v2;
     }
 
     /**
@@ -563,12 +563,12 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     public void updateCollectives() {
         synchronized (downloadLinks) {
 
-            totalEstimatedPackageSize = 0;
-            totalDownloadSpeed = 0;
+            totalEstimatedPackageSize_v2 = 0;
+            totalDownloadSpeed_v2 = 0;
             linksFinished = 0;
             linksInProgress = 0;
             linksFailed = 0;
-            totalBytesLoaded = 0;
+            totalBytesLoaded_v2 = 0;
             long avg = 0;
             DownloadLink next;
             int i = 0;
@@ -579,17 +579,17 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 if (next.getDownloadSize() > 0) {
 
                     if (next.isEnabled()) {
-                        totalEstimatedPackageSize += next.getDownloadSize();
+                        totalEstimatedPackageSize_v2 += next.getDownloadSize();
                     }
 
-                    avg = (i * avg + next.getDownloadSize() ) / (i + 1);
+                    avg = (i * avg + next.getDownloadSize()) / (i + 1);
                     // logger.info(i+"+ "+next.getDownloadMax()/1024+" kb
                     // avg:"+avg+" = +"+totalEstimatedPackageSize);
                     i++;
                 } else {
                     if (it.hasNext()) {
                         if (next.isEnabled()) {
-                            totalEstimatedPackageSize += avg;
+                            totalEstimatedPackageSize_v2 += avg;
                         }
 
                         // logger.info(i+"+avg "+avg+" kb
@@ -597,16 +597,16 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
                     } else {
                         if (next.isEnabled()) {
-                            totalEstimatedPackageSize += avg / 2;
+                            totalEstimatedPackageSize_v2 += avg / 2;
                             // logger.info(i+"+avg "+(avg/2)+" kb
                             // =+"+totalEstimatedPackageSize);
                         }
                     }
                 }
 
-                totalDownloadSpeed += Math.max(0, next.getDownloadSpeed());
+                totalDownloadSpeed_v2 += Math.max(0, next.getDownloadSpeed());
                 if (next.isEnabled()) {
-                    totalBytesLoaded += next.getDownloadCurrent();
+                    totalBytesLoaded_v2 += next.getDownloadCurrent();
                 }
                 linksInProgress += next.getLinkStatus().isPluginActive() ? 1 : 0;
                 linksFinished += next.getLinkStatus().hasStatus(LinkStatus.FINISHED) ? 1 : 0;

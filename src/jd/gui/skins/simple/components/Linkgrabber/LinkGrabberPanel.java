@@ -137,6 +137,21 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     public synchronized void fireTableChanged(final int id, final Object param) {
         synchronized (packages) {
+            if (gatherer_running) {
+                int count = 0;
+                for (LinkGrabberFilePackage fp : packages) {
+                    count += 1 + fp.size();
+                }
+                if (count > (internalTreeTable.getSize().getHeight() / 16.0)) {
+                    for (LinkGrabberFilePackage fp : packages) {
+                        fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false);
+                    }
+                } else {
+                    for (LinkGrabberFilePackage fp : packages) {
+                        fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, true);
+                    }
+                }
+            }
             internalTreeTable.fireTableChanged(id, param);
         }
     }
@@ -270,7 +285,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             public void run() {
                 setName("LinkGrabber");
                 gatherer_running = true;
-                pc = new ProgressController(JDLocale.L("gui.linkgrabber.pc.linkgrabber","LinkGrabber operations pending..."));
+                pc = new ProgressController(JDLocale.L("gui.linkgrabber.pc.linkgrabber", "LinkGrabber operations pending..."));
                 pc.getBroadcaster().addListener(INSTANCE);
                 lc.getBroadcaster().addListener(INSTANCE);
                 pc.setRange(0);

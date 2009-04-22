@@ -59,8 +59,6 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
     private String strPluginDisabled;
 
-    private String strFilePackageStatusFinished;
-
     private String strETA;
 
     private StringBuilder sb = new StringBuilder();
@@ -106,7 +104,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
     private void initLocale() {
         strPluginDisabled = JDLocale.L("gui.downloadlink.plugindisabled", "[Plugin disabled]");
-        strFilePackageStatusFinished = JDLocale.L("gui.filepackage.finished", "[finished]");
+        JDLocale.L("gui.filepackage.finished", "[finished]");
         strDownloadLinkActive = JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
         strETA = JDLocale.L("gui.eta", "ETA");
         strPluginError = JDLocale.L("gui.treetable.error.plugin", "Plugin error");
@@ -227,7 +225,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                         } else if (col.getWidth() < 170) {
                             sb.append("100%");
                         } else {
-                            sb.append("100% (").append(JDUtilities.formatReadable(dLink.getDownloadCurrent())).append('/').append(JDUtilities.formatReadable(Math.max(0, dLink.getDownloadSize()))).append(')');
+                            sb.append("100% (").append(JDUtilities.formatReadable(Math.max(0, dLink.getDownloadSize()))).append(')');
                         }
                         progress.setString(sb.toString());
 
@@ -348,7 +346,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 } else if (col.getWidth() < 170) {
                     sb.append("100%");
                 } else {
-                    sb.append("100% (").append(JDUtilities.formatReadable(progress.getValue())).append('/').append(JDUtilities.formatReadable(Math.max(0, fp.getTotalEstimatedPackageSize()))).append(')');
+                    sb.append("100% (").append(JDUtilities.formatReadable(Math.max(0, fp.getTotalEstimatedPackageSize()))).append(')');
                 }
                 progress.setString(sb.toString());
             } else {
@@ -361,7 +359,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 } else if (col.getWidth() < 170) {
                     sb.append(c.format(fp.getPercent())).append('%');
                 } else {
-                    sb.append(c.format(fp.getPercent())).append("% (").append(JDUtilities.formatReadable(progress.getValue())).append('/').append(JDUtilities.formatReadable(Math.max(0, fp.getTotalEstimatedPackageSize()))).append(')');
+                    sb.append(c.format(fp.getPercent())).append("% (").append(JDUtilities.formatReadable(progress.getRealValue())).append('/').append(JDUtilities.formatReadable(Math.max(0, progress.getRealMax()))).append(')');
                 }
                 progress.setString(sb.toString());
             }
@@ -390,7 +388,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             } else if (fp.getTotalDownloadSpeed() > 0) {
                 clearSB();
                 sb.append('[').append(fp.getLinksInProgress()).append('/').append(fp.size()).append("] ");
-                sb.append(this.strETA).append(' ').append(JDUtilities.formatSeconds(fp.getETA())).append(" @ ").append(JDUtilities.formatReadable(fp.getTotalDownloadSpeed() )).append("/s");
+                sb.append(strETA).append(' ').append(JDUtilities.formatSeconds(fp.getETA())).append(" @ ").append(JDUtilities.formatReadable(fp.getTotalDownloadSpeed())).append("/s");
                 ((JRendererLabel) co).setText(sb.toString());
             } else if (fp.getLinksInProgress() > 0) {
                 clearSB();

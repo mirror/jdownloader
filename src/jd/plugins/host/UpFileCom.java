@@ -30,7 +30,7 @@ public class UpFileCom extends PluginForHost {
 
     public UpFileCom(PluginWrapper wrapper) {
         super(wrapper);
-        //this.setStartIntervall(5000l);
+        // this.setStartIntervall(5000l);
     }
 
     @Override
@@ -43,11 +43,10 @@ public class UpFileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://up-file.com", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); 
+        if (br.containsHTML("requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h1><span[^>]*>(.*?)</span>").getMatch(0);
         String filesize = br.getRegex("</span>\\s+<span[^>]*>\\[\\s(.*?)\\s\\]").getMatch(0);
-        System.out.println(filename+" "+filesize);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return true;
@@ -62,20 +61,15 @@ public class UpFileCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        if (br.containsHTML("Wait for your turn"))
-        {
+        if (br.containsHTML("Wait for your turn")) {
             String waittime = br.getRegex("your\\sturn&nbsp;&nbsp;<span\\sid=\"errt\"[^>]*>(.*?)</span>").getMatch(0);
             int waittimen = 0;
             waittimen = Integer.valueOf(waittime).intValue();
             if (waittimen == 0) waittimen = 60;
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,waittimen * 1001);
-        }
-        else if (br.containsHTML("Downloading is in process from your IP-Address"))
-        {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,60 * 1001);
-        }
-        else
-        {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittimen * 1001l);
+        } else if (br.containsHTML("Downloading is in process from your IP-Address")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1001l);
+        } else {
             Form dlf = br.getFormbyProperty("id", "Premium");
             if (dlf == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             dl = br.openDownload(downloadLink, dlf, false, 1);

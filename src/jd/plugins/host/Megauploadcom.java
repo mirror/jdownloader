@@ -311,17 +311,12 @@ public class Megauploadcom extends PluginForHost {
                         downloadLink.setDupecheckAllowed(true);
                         downloadLink.setAvailable(true);
                     } else {
-                        /*
-                         * damit der linkgrabber nicht die kryptischen ?d=
-                         * anzeigt
-                         */
-                        downloadLink.setName(DownloadLink.UNKNOWN_FILE_NAME);
                         downloadLink.setAvailable(false);
                     }
                 } catch (Exception e) {
                 }
             }
-        } catch (Exception e) {
+        } catch (Exception e) {            
             return false;
         }
         return true;

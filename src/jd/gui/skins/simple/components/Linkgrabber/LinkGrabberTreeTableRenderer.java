@@ -38,7 +38,6 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
     private String strOnline;
     private String strOffline;
     private String strUnchecked;
-    private String strExists;
 
     private ImageIcon imgFinished;
 
@@ -57,7 +56,6 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
     private void initLocale() {
         strOnline = "online";
         strOffline = "offline";
-        strExists = " (already in list)";
         strUnchecked = "unchecked";
     }
 
@@ -113,15 +111,12 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
                     sb.append(strOffline);
                 }
             }
-            if (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
-                sb.append(strExists);
+            if (dLink.getLinkStatus().getErrorMessage() != null && dLink.getLinkStatus().getErrorMessage().trim().length() > 0) {
+                sb.append(">" + dLink.getLinkStatus().getErrorMessage());
+            } else if (dLink.getLinkStatus().getStatusString() != null && dLink.getLinkStatus().getStatusString().trim().length() > 0) {
+                sb.append(">" + dLink.getLinkStatus().getStatusString());
             }
-            if(dLink.getLinkStatus().getErrorMessage()!=null&&dLink.getLinkStatus().getErrorMessage().trim().length()>0){
-                sb.append(">"+dLink.getLinkStatus().getErrorMessage());
-            }else if(dLink.getLinkStatus().getStatusString()!=null&&dLink.getLinkStatus().getStatusString().trim().length()>0){
-                sb.append(">"+dLink.getLinkStatus().getStatusString());
-            }
-                 
+
             ((JRendererLabel) co).setText(sb.toString());
             ((JRendererLabel) co).setBorder(null);
             return co;

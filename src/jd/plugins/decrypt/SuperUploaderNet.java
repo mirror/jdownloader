@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 public class SuperUploaderNet extends PluginForDecrypt {
@@ -37,15 +36,14 @@ public class SuperUploaderNet extends PluginForDecrypt {
 
         br.getPage(parameter);
         if (br.containsHTML("File not found")) return null;
-        String[] links = br.getRegex("<td>\\s+<a href=\"(http://.*?)\"").getColumn(0);  
-        FilePackage fp = FilePackage.getInstance();
-        String packagename = br.getRegex("<div[^>]*>Filename : (.*?)<br>").getMatch(0);
-        fp.setName(packagename);
+        String[] links = br.getRegex("<td>\\s+<a href=\"(http://.*?)\"").getColumn(0);        
+        String packagename = br.getRegex("<title>SuperUploader.net :: Download (.*?)</title>").getMatch(0);
         for (int i = 0; i < links.length; i++) {
-        DownloadLink declink = createDownloadlink(links[i]);
-        declink.setName(packagename);
-        decryptedLinks.add(declink);
-        fp.add(declink);
+            DownloadLink declink = createDownloadlink(links[i]);
+            decryptedLinks.add(declink);
+            if (packagename != null) {
+                declink.setName(packagename.trim());
+            }
         }
         return decryptedLinks;
     }

@@ -48,8 +48,7 @@ public class LinkGrabberFilePackage extends Property {
     private long lastFailCount = 0;
     private transient LinkGrabberFilePackageBroadcaster broadcaster = new LinkGrabberFilePackageBroadcaster();
 
-    public LinkGrabberFilePackage() {
-        this.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, true);
+    public LinkGrabberFilePackage() {        
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
         name = JDUtilities.removeEndingPoints(JDLocale.L("controller.packages.defaultname", "various"));
         useSubDir = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false);

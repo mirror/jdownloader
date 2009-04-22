@@ -397,10 +397,10 @@ public class JDUtilities {
     public static String formatReadable(long value) {
 
         DecimalFormat c = new DecimalFormat("0.00");
-        if (value >= (1024 * 1024 * 1024 * 1024l)) return c.format(value / (1024 * 1024 * 1024.0 * 1024.0)) + " TB";
+        if (value >= (1024 * 1024 * 1024 * 1024l)) return c.format(value / (1024 * 1024 * 1024 * 1024.0)) + " TB";
         if (value >= (1024 * 1024 * 1024l)) return c.format(value / (1024 * 1024 * 1024.0)) + " GB";
-        if (value >= 1024 * 1024) return c.format(value / (1024 * 1024.0)) + " MB";
-        if (value >= 1024) return c.format(value / 1024.0) + " KB";
+        if (value >= (1024 * 1024l)) return c.format(value / (1024 * 1024.0)) + " MB";
+        if (value >= 1024l) return c.format(value / 1024.0) + " KB";
 
         return value + " B";
     }
