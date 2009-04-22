@@ -299,7 +299,11 @@ public class JDRRGui extends JDialog implements ActionListener {
                 // save(); /*zu debugzwecken*/
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
             }
-            dispose();
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    dispose();
+                }
+            });
         }
 
         public void actionPerformed(ActionEvent arg0) {
