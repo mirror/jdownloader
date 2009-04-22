@@ -248,6 +248,8 @@ public class PremiumPanel extends JPanel {
 
         public void createPanel(int nr) {
             this.setLayout(new MigLayout("ins 5, wrap 4", "[shrink][grow 20][shrink][grow 20]"));
+            this.setOpaque(false);
+            this.setBackground(null);
             /**
              * JGoodioes seems to have a performance bug rendering jCHeckboxes.
              * which
@@ -262,11 +264,6 @@ public class PremiumPanel extends JPanel {
                 }
                 chkEnable.setIcon(JDTheme.II("gui.images.disabled", 16, 16));
                 chkEnable.setSelectedIcon(JDTheme.II("gui.images.enabled", 16, 16));
-
-                chkEnable.setOpaque(false);
-                chkEnable.setContentAreaFilled(false);
-                chkEnable.setFocusPainted(false);
-                chkEnable.setBorderPainted(false);
             } else {
                 if (premiumActivated) {
                     chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
@@ -275,8 +272,11 @@ public class PremiumPanel extends JPanel {
                     chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>", nr));
                     chkEnable.setForeground(DISABLED);
                 }
-
             }
+            chkEnable.setOpaque(false);
+            chkEnable.setContentAreaFilled(false);
+            chkEnable.setFocusPainted(false);
+            chkEnable.setBorderPainted(false);
             add(chkEnable, "alignx left");
             chkEnable.addChangeListener(this);
 

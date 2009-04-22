@@ -4,6 +4,7 @@ import java.awt.Cursor;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.logging.Level;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -13,6 +14,7 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
 import jd.config.ConfigGroup;
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.components.JDUnderlinedText;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
@@ -29,15 +31,16 @@ public class Factory {
         JPanel ret = new JPanel(new MigLayout("ins 0", "[]10[grow,fill]3[]"));
         JLinkButton label;
         try {
-
             ret.add(label = new JLinkButton("<html><u><b>" + name + "</b></u></html>", icon, new URL("http://wiki.jdownloader.org/?do=search&id=" + Encoding.urlEncode(name))));
             label.setIconTextGap(8);
             label.setBorder(null);
         } catch (MalformedURLException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
         }
         ret.add(new JSeparator());
         ret.add(new JLabel(JDTheme.II("gui.images.config.tip", 16, 16)));
+        ret.setOpaque(false);
+        ret.setBackground(null);
         return ret;
     }
 
