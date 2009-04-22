@@ -70,10 +70,8 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         long links = 0;
         synchronized (lg.getPackages()) {
             for (LinkGrabberFilePackage fp : lg.getPackages()) {
-                for (DownloadLink l : fp.getDownloadLinks()) {
-                    tot += l.getDownloadSize();
-                    links++;
-                }
+                tot += fp.getDownloadSize(false);
+                links += fp.size();
             }
         }
         downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", links));
