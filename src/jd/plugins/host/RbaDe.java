@@ -147,4 +147,10 @@ public class RbaDe extends PluginForHost {
     @Override
     public void reset() {
     }
+
+    @Override
+    public void reset_downloadlink(DownloadLink link) {
+        // TODO Auto-generated method stub
+        
+    }
 }

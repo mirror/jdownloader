@@ -551,8 +551,7 @@ public abstract class PluginForHost extends Plugin {
      */
     public abstract void reset();
 
-    public void reset_downloadlink(DownloadLink link) {
-    }
+    public abstract void reset_downloadlink(DownloadLink link);
 
     public void resetHosterWaitTime() {
         HOSTER_WAIT_TIMES.put(this.getClass(), 0l);
@@ -743,8 +742,8 @@ public abstract class PluginForHost extends Plugin {
         if (dummy.length() > 2) dummy = dummy.substring(0, 2);
         g.setFont(new Font("Arial", Font.BOLD, size));
         int ww = g.getFontMetrics().stringWidth(dummy);
-//        g.setColor(Color.BLACK);
-//        g.drawRect(0, 0, w - 1, h - 1);
+        // g.setColor(Color.BLACK);
+        // g.drawRect(0, 0, w - 1, h - 1);
 
         g.setColor(Color.WHITE);
         g.fillRect(1, 1, w - 2, h - 2);

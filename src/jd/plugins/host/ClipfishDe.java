@@ -103,4 +103,10 @@ public class ClipfishDe extends PluginForHost {
         return 20;
     }
 
+    @Override
+    public void reset_downloadlink(DownloadLink link) {
+        // TODO Auto-generated method stub
+        
+    }
+
 }

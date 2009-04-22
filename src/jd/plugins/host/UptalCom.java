@@ -19,7 +19,6 @@ package jd.plugins.host;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -30,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 public class UptalCom extends PluginForHost {
 
-    public UptalCom (PluginWrapper wrapper) {
+    public UptalCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(100l);
     }
@@ -63,18 +62,9 @@ public class UptalCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String getlink;
         String filename = downloadLink.getName();
-        String previousLink = null;
-        Object previousLinkProperty = new Property();
-        previousLinkProperty = downloadLink.getProperty("directLink");
-        if (previousLinkProperty == null) {
-            previousLink = null;
-        } else {
-            previousLink = previousLinkProperty.toString();
-        }
-        // br.setDebug(true);
+        String previousLink = downloadLink.getStringProperty("directLink", null);
         if (previousLink == null) {
             getFileInformation(downloadLink);
-        
             br.setFollowRedirects(true);
             getlink = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
             if (getlink == null) getlink = br.getRegex("name=downloadurl value=\"(.*?)\"").getMatch(0);
@@ -82,13 +72,10 @@ public class UptalCom extends PluginForHost {
             br.setFollowRedirects(true);
             getlink = getlink.replaceAll(" ", "%20");
             downloadLink.setProperty("directLink", getlink);
-            
-        }
-        else
-        {
+        } else {
             getlink = previousLink;
         }
-        //this.sleep(3000, downloadLink); // uncomment when they find a better
+        // this.sleep(3000, downloadLink); // uncomment when they find a better
         // way to force wait time
         dl = br.openDownload(downloadLink, getlink, true, 1);
         downloadLink.setFinalFileName(filename);
@@ -102,7 +89,6 @@ public class UptalCom extends PluginForHost {
             }
         }
         dl.startDownload();
-
     }
 
     @Override
@@ -116,5 +102,10 @@ public class UptalCom extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    @Override
+    public void reset_downloadlink(DownloadLink link) {
+        link.setProperty("directLink", null);
     }
 }

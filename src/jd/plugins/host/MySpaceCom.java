@@ -83,4 +83,10 @@ public class MySpaceCom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
+
+    @Override
+    public void reset_downloadlink(DownloadLink link) {
+        // TODO Auto-generated method stub
+        
+    }
 }

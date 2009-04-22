@@ -86,4 +86,10 @@ public class RappersIn extends PluginForHost {
         dl.setResume(true);
         dl.startDownload();
     }
+
+    @Override
+    public void reset_downloadlink(DownloadLink link) {
+        // TODO Auto-generated method stub
+        
+    }
 }

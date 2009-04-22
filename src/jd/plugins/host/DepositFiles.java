@@ -265,4 +265,10 @@ public class DepositFiles extends PluginForHost {
         return 800;
     }
 
+    @Override
+    public void reset_downloadlink(DownloadLink link) {
+        // TODO Auto-generated method stub
+        
+    }
+
 }

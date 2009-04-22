@@ -174,4 +174,10 @@ public class UploadingCom extends PluginForHost {
 
     }
 
+    @Override
+    public void reset_downloadlink(DownloadLink link) {
+        // TODO Auto-generated method stub
+        
+    }
+
 }

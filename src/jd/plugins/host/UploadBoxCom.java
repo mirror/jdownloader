@@ -97,4 +97,10 @@ public class UploadBoxCom extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
+    public void reset_downloadlink(DownloadLink link) {
+        // TODO Auto-generated method stub
+        
+    }
+
 }

@@ -151,4 +151,10 @@ public class JamendoCom extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_HIGHQUALITY, JDLocale.L("plugins.hoster.jamendo", "Prefer High Quality Download")).setDefaultValue(true));
     }
 
+    @Override
+    public void reset_downloadlink(DownloadLink link) {
+        // TODO Auto-generated method stub
+        
+    }
+
 }

@@ -118,4 +118,10 @@ public class IfolderRu extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 5;
     }
+
+    @Override
+    public void reset_downloadlink(DownloadLink link) {
+        // TODO Auto-generated method stub
+        
+    }
 }

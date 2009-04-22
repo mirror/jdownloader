@@ -111,4 +111,10 @@ public class PrzeklejPl extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
+    @Override
+    public void reset_downloadlink(DownloadLink link) {
+        // TODO Auto-generated method stub
+        
+    }
 }

@@ -135,4 +135,10 @@ public class RapidSharkPl extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
+    @Override
+    public void reset_downloadlink(DownloadLink link) {
+        // TODO Auto-generated method stub
+        
+    }
+
 }

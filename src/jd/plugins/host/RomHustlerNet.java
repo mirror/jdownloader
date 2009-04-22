@@ -96,4 +96,10 @@ public class RomHustlerNet extends PluginForHost {
         r.appendTail(sb);
         return sb.toString();
     }
+
+    @Override
+    public void reset_downloadlink(DownloadLink link) {
+        // TODO Auto-generated method stub
+        
+    }
 }
