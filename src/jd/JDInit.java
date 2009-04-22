@@ -515,7 +515,7 @@ public class JDInit {
         new HostPluginWrapper("Roms.Zophar.Net", "RomsZopharNet", "http://[\\w.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}");
         new HostPluginWrapper("RomHustler.Net", "RomHustlerNet", "http://[\\w.]*?romhustler\\.net/download/.*?/\\d+");
         new HostPluginWrapper("SharePlace.com", "Shareplacecom", "http://[\\w\\.]*?shareplace\\.com/\\?[a-zA-Z0-9]+(/.*?)?");
-        new HostPluginWrapper("SharePlace.com", "Shareplacecom", "http://[\\w\\.]*?datei\\.in/\\?[a-zA-Z0-9]+(/.*?)?");
+        new HostPluginWrapper("Datei.in", "Shareplacecom", "http://[\\w\\.]*?datei\\.in/\\?[a-zA-Z0-9]+(/.*?)?");
         new HostPluginWrapper("Spiegel.de", "SpiegelDe", "http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)|http://www.spiegel.de/img/.+?(\\.\\w+)");
         new HostPluginWrapper("SwoopShare.com", "SwoopshareCom", "http://[\\w\\.]*?swoopshare\\.com/file/.*");
         new HostPluginWrapper("2shared.com", "TwoSharedCom", "http://[\\w\\.]*?2shared\\.com/file/\\d+/[a-zA-Z0-9]+");
