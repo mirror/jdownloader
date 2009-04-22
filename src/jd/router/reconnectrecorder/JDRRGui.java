@@ -276,31 +276,30 @@ public class JDRRGui extends JDialog implements ActionListener {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     btnStop.setEnabled(false);
-                }
-            });
-            ip_after = JDUtilities.getIPAddress(null);
-            if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
-                if (reconnect_timer == 0) {
-                    /*
-                     * Reconnect fand innerhalb des Check-Intervalls statt
-                     */
-                    reconnect_duration = check_intervall;
-                } else {
-                    reconnect_duration = System.currentTimeMillis() - reconnect_timer;
-                }
-                JDLogger.getLogger().info("dauer: " + reconnect_duration + "");
-                statusicon.setStatus(1);
-            } else {
-                statusicon.setStatus(-1);
-            }
-            if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
-                save();
-            } else {
-                // save(); /*zu debugzwecken*/
-                JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
-            }
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
+
+                    ip_after = JDUtilities.getIPAddress(null);
+                    if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
+                        if (reconnect_timer == 0) {
+                            /*
+                             * Reconnect fand innerhalb des Check-Intervalls
+                             * statt
+                             */
+                            reconnect_duration = check_intervall;
+                        } else {
+                            reconnect_duration = System.currentTimeMillis() - reconnect_timer;
+                        }
+                        JDLogger.getLogger().info("dauer: " + reconnect_duration + "");
+                        statusicon.setStatus(1);
+                    } else {
+                        statusicon.setStatus(-1);
+                    }
+                    if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
+                        save();
+                    } else {
+                        // save(); /*zu debugzwecken*/
+                        JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
+                    }
+
                     dispose();
                 }
             });
