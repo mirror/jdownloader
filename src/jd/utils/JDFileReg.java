@@ -16,77 +16,82 @@
 
 package jd.utils;
 
-import java.io.File;
-
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.OSDetector;
-
-import com.ice.jni.registry.RegStringValue;
-import com.ice.jni.registry.Registry;
-import com.ice.jni.registry.RegistryException;
-import com.ice.jni.registry.RegistryKey;
-import com.ice.jni.registry.RegistryValue;
+import jd.nutils.io.JDIO;
 
 public class JDFileReg {
 
-    public static void setKey(String key, String valueName, String value) throws RegistryException {
-        RegistryKey topKey = Registry.getTopLevelKey("HKCR");
-        RegistryKey localKey = topKey.openSubKey(key);
-        String dv = localKey.getDefaultValue();
+    public static String createSetKey(String key, String valueName, String value) {
+        StringBuilder sb = new StringBuilder();
 
-        if (!dv.equals(value)) {
-            JDLogger.getLogger().info("Created Windows Registry entry:" + key + "=" + value);
-            localKey = topKey.createSubKey(key, value, RegistryKey.ACCESS_WRITE);
+        sb.append("\r\n[HKEY_CLASSES_ROOT\\" + key + "]");
+
+        if (valueName != null && valueName.trim().length() > 0) {
+            sb.append("\r\n\"" + valueName + "\"=\"" + value + "\"");
+        } else {
+            sb.append("\r\n@=\"" + value + "\"");
         }
-        RegistryValue v = localKey.getValue(valueName);
-        if (!v.equals(value)) {
-            RegStringValue val = new RegStringValue(localKey, valueName, value);
-            JDLogger.getLogger().info("Created Windows Registry entry:" + key + "/" + valueName + "=" + value);
-            localKey.setValue(val);
-            localKey.flushKey();
-        }
+
+        return sb.toString();
     }
 
     public static void registerFileExts() {
-        // 5bc4004260d83e0cf69addb8f9262837
-        // 6f3ad5e9971f92aa28eb01c2ac11f896
-        // f19fbcb71e9682d307e331c04a45fd53
-        try {
-            if (OSDetector.isWindows() && SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty("FILE_REGISTER", true)) {
-                registerWinFileExt("jd");
-                registerWinFileExt("dlc");
-                registerWinFileExt("ccf");
-                registerWinFileExt("rsdf");
-                registerWinProtocol("jd");
-                registerWinProtocol("jdlist");
-                registerWinProtocol("dlc");
-                registerWinProtocol("ccf");
-                registerWinProtocol("rsdf");
+
+        if (OSDetector.isWindows() && SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty("FILE_REGISTER", true)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(createRegisterWinFileExt("jd"));
+            sb.append(createRegisterWinFileExt("dlc"));
+            sb.append(createRegisterWinFileExt("ccf"));
+            sb.append(createRegisterWinFileExt("rsdf"));
+            sb.append(createRegisterWinProtocol("jd"));
+            sb.append(createRegisterWinProtocol("jdlist"));
+            sb.append(createRegisterWinProtocol("dlc"));
+            sb.append(createRegisterWinProtocol("ccf"));
+            sb.append(createRegisterWinProtocol("rsdf"));
+            JDIO.writeLocalFile(JDUtilities.getResourceFile("tmp/installcnl.reg"), "Windows Registry Editor Version 5.00\r\n\r\n\r\n\r\n" + sb.toString());
+
+            JDUtilities.runCommand("regedit", new String[] { "/e", "test.reg", "HKEY_CLASSES_ROOT\\.dlc" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
+            if (!JDUtilities.getResourceFile("tmp/test.reg").exists()) {
+
+                JDUtilities.runCommand("regedit", new String[] { "/s", "installcnl.reg" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
+                JDUtilities.runCommand("regedit", new String[] { "/e", "test.reg", "HKEY_CLASSES_ROOT\\.dlc" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
+                if (JDUtilities.getResourceFile("tmp/test.reg").exists()) {
+                    JDLogger.getLogger().info("Installed Click'n'Load and associated .*dlc,.*ccf,.*rsdf and .*jd with JDownloader. Uninstall with " + JDUtilities.getResourceFile("tools/windows/uninstall.reg"));
+                } else {
+                    JDLogger.getLogger().severe("Installation of CLick'n'Load failed. Try to execute " + JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath() + " manually");
+                }
+
             }
-        } catch (Throwable e) {
-            System.err.println("Run in " + new File("ICE_JNIRegistry.dll").getAbsolutePath());
+            JDUtilities.getResourceFile("tmp/test.reg").delete();
+
         }
+
     }
 
-    private static void registerWinFileExt(String ext) throws RegistryException {
-        String name = "JDownloader " + ext + "-Container";
-        String command = JDUtilities.getResourceFile("JDownloader.exe").getAbsolutePath() + " \"%1\"";
+    private static String createRegisterWinFileExt(String ext) {
 
-        setKey(name, "", "JDownloader " + ext + " file");
-        setKey(name + "\\shell", "", "open");
-        setKey(name + "\\DefaultIcon", "", JDUtilities.getResourceFile("JDownloader.exe").getAbsolutePath());
-        setKey(name + "\\shell\\open\\command", "", command);
+        String command = JDUtilities.getResourceFile("JDownloader.exe").getAbsolutePath().replace("\\", "\\\\") + " \\\"%1\\\"";
+        StringBuilder sb = new StringBuilder();
+        sb.append("\r\n\r\n;Register fileextension ." + ext);
+        sb.append(createSetKey("." + ext, "", "JDownloader " + ext + " file"));
+        sb.append(createSetKey("JDownloader " + ext + " file" + "\\shell", "", "open"));
+        sb.append(createSetKey("JDownloader " + ext + " file" + "\\DefaultIcon", "", JDUtilities.getResourceFile("JDownloader.exe").getAbsolutePath().replace("\\", "\\\\")));
+        sb.append(createSetKey("JDownloader " + ext + " file" + "\\shell\\open\\command", "", command));
+        return sb.toString();
     }
 
-    private static void registerWinProtocol(String p) throws RegistryException {
-        String command = JDUtilities.getResourceFile("JDownloader.exe").getAbsolutePath() + " --add-link \"%1\"";
-
-        setKey(p, "", "JDownloader " + p);
-        setKey(p + "\\DefaultIcon", "", JDUtilities.getResourceFile("JDownloader.exe").getAbsolutePath());
-        setKey(p + "\\shell", "", "open");
-        setKey(p, "Url Protocol", "");
-        setKey(p + "\\shell\\open\\command", "", command);
+    private static String createRegisterWinProtocol(String p) {
+        String command = JDUtilities.getResourceFile("JDownloader.exe").getAbsolutePath().replace("\\", "\\\\") + " --add-link \\\"%1\\\"";
+        StringBuilder sb = new StringBuilder();
+        sb.append("\r\n\r\n;Register Protocol " + p + "://jdownloader.org/sample." + p);
+        sb.append(createSetKey(p, "", "JDownloader " + p));
+        sb.append(createSetKey(p + "\\DefaultIcon", "", JDUtilities.getResourceFile("JDownloader.exe").getAbsolutePath().replace("\\", "\\\\")));
+        sb.append(createSetKey(p + "\\shell", "", "open"));
+        sb.append(createSetKey(p, "Url Protocol", ""));
+        sb.append(createSetKey(p + "\\shell\\open\\command", "", command));
+        return sb.toString();
     }
 }

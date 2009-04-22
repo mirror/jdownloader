@@ -4,8 +4,8 @@
 	<property name="cls" value="bin" />
 	<property name="dist" value="dist" />
 	<property name="res" value="ressourcen" />
-	<property name="keystore" value="G:\jDownloader.keystore" />
-	<property name="class-path" value="libs/registry.jar libs/cobra.jar libs/clink170.jar libs/svnkit.jar libs/mail.jar libs/htmlcleaner2_0.jar libs/hsqldb.jar libs/miglayout15-swing.jar libs/irclib.jar libs/BrowserLauncher2.jar libs/js.jar libs/swingx.jar libs/jl1.0.jar libs/savemytube.jar" />
+	<property name="keystore" value="J:\jDownloader.keystore" />
+	<property name="class-path" value="libs/JDGUI.jar libs/JDHttp.jar libs/JAntiCaptcha.jar libs/JDUtils.jar libs/balloontip.jar libs/BrowserLauncher2.jar libs/clink170.jar libs/cobra.jar libs/hsqldb.jar libs/htmlcleaner2_0.jar libs/irclib.jar libs/jl1.0.jar libs/js.jar libs/looks.jar libs/mail.jar libs/miglayout.jar libs/registry.jar libs/savemytube.jar libs/substance-swingx.jar libs/substance.jar libs/svnkit.jar libs/swingworker.jar libs/swingx.jar libs/synthetica.jar libs/syntheticaAddons.jar libs/syntheticaBlackMoon.jar libs/syntheticaBlackStar.jar libs/syntheticaBlueIce.jar libs/syntheticaBlueMoon.jar libs/syntheticaOrangeMetallic.jar libs/syntheticaSilverMoon.jar libs/syntheticaSimple2D.jar libs/syntheticaSkyMetallic.jar libs/syntheticaWhiteVision.jar" />
 	<target name="compile">
 		<mkdir dir="${cls}" />
 		<javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" />
@@ -15,32 +15,68 @@
 		<!-- jDownloader -->
 		<mkdir dir="${dist}" />
 		<manifest file="Manifest.MF">
-			<attribute name="Created-By" value="coalado" />
+			<attribute name="Created-By" value="JD-Team and AppWork UG" />
 			<attribute name="Main-Class" value="jd.Main" />
 			<attribute name="Class-Path" value="${class-path}" />
 		</manifest>
 		<jar jarfile="${dist}/JDownloader.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
-				<exclude name="jd/plugins/decrypt/**" />
+				<exclude name="jd/http/**" />
+				<exclude name="jd/captcha/**" />
+				<exclude name="jd/gui/**" />
 				<exclude name="jd/plugins/host/**" />
+				<exclude name="jd/plugins/decrypt/**" />
 				<exclude name="jd/captcha/methods/**" />
 				<exclude name="jd/plugins/optional/**" />
+				<exclude name="sun/net/www/protocol/jdp/*.class" />
 				<include name="jd/plugins/host/HTTPAllgemein*" />
 			</fileset>
 			<fileset dir="${res}">
 				<include name="*.properties" />
 				<exclude name="jd/captcha/methods" />
 			</fileset>
-		</jar>	
+		</jar>
+		<delete file="Manifest.MF" failonerror="false" />
+		<manifest file="Manifest.MF">
+				<attribute name="Created-By" value="JD-Team and AppWork UG" />
+			
+				<attribute name="Class-Path" value="${class-path}" />
+			</manifest>
+		<mkdir dir="${dist}/libs" />
+		<jar jarfile="${dist}/libs/JDHttp.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/http/**" />
+				<include name="sun/net/www/protocol/jdp/*.class" />
+			</fileset>
+		</jar>
+		<jar jarfile="${dist}/libs/JDGUI.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/gui/**" />
+			
+			</fileset>
+		</jar>
+		<jar jarfile="${dist}/libs/JAntiCaptcha.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/captcha/**" />
+				<exclude name="jd/captcha/methods/**" />
+			</fileset>
+		
+		</jar>
 
+		<jar jarfile="${dist}/libs/JDUtils.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/nutils/**" />
+			</fileset>
+		</jar>
+		<delete file="Manifest.MF" failonerror="false" />
 	</target>
 	<target name="jarWebupdater">
 		<!--Webupdater-->
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="coalado" />
 			<attribute name="Main-Class" value="jd.update.Main" />
-			
+
 		</manifest>
 		<jar jarfile="${dist}/jdupdate.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
@@ -55,9 +91,11 @@
 				<include name="jd/parser/Regex.class" />
 				<include name="sun/net/www/protocol/jdp/*.class" />
 			</fileset>
-			<zipfileset src="ressourcen/libs/hsqldb.jar" excludes="META-INF/*" />  
-							
+			<zipfileset src="ressourcen/libs/hsqldb.jar" excludes="META-INF/*" />
+
 		</jar>
+
+
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
 
@@ -185,8 +223,8 @@
 		<signjar keystore="${keystore}" alias="jDownloader" storepass="jDownloader">
 			<path>
 				<fileset dir="${dist}" includes="**/*.jar" />
-				
-				
+
+
 			</path>
 		</signjar>
 	</target>
