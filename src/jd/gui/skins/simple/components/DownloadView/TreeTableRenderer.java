@@ -286,7 +286,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             }
 
             ((JRendererLabel) co).setBorder(null);
-            ((JRendererLabel) co).setToolTipText("Blabla Leberkäs");
+//            ((JRendererLabel) co).setToolTipText("Blabla Leberkäs");
             return co;
 
         case DownloadTreeTableModel.COL_STATUS:

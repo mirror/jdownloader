@@ -427,7 +427,7 @@ public class JDInit {
         new DecryptPluginWrapper("xup.in", "XupInFolder", "http://[\\w\\.]*?xup\\.in/a,[0-9]+(/.+)?(/(list|mini))?");
         new DecryptPluginWrapper("youporn.com", "YouPornCom", "http://[\\w\\.]*?youporn\\.com/watch/\\d+/?.+/?");
         new DecryptPluginWrapper("yourfiles.biz", "YourFilesBizFolder", "http://[\\w\\.]*?yourfiles\\.biz/.*/folders/[0-9]+/.+\\.html");
-        new DecryptPluginWrapper("youtube.com", "YouTubeCom", "http://[\\w\\.]*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+|\\< streamingshare=\"youtube\\.com\" name=\".*?\" dlurl=\".*?\" b=\".*?\" convertto=\".*?\" comment=\".*?\" \\>");
+        new DecryptPluginWrapper("youtube.com", "YouTubeCom", "http://[\\w\\.]*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+");
         new DecryptPluginWrapper("megaupload.com folder", "MegauploadComFolder", "http://[\\w\\.]*?megaupload\\.com/.*?\\?f=[a-zA-Z0-9]+");
         new DecryptPluginWrapper("rsmonkey.com", "RsMonkeyCom", "http://[\\w\\.]*?rsmonkey\\.com/\\d+");
         new DecryptPluginWrapper("savefile.com Project", "SavefileComProject", "http://[\\w\\.]*?savefile\\.com/projects/[0-9]+");
@@ -493,7 +493,8 @@ public class JDInit {
         new HostPluginWrapper("4Shared.com", "FourSharedCom", "http://[\\w\\.]*?4shared.com/file/\\d+?/.*?/.*");
         new HostPluginWrapper("FastShare.org", "FastShareorg", "http://[\\w\\.]*?fastshare\\.org/download/(.*)");
         new HostPluginWrapper("FileBase.To", "FileBaseTo", "http://[\\w\\.]*?filebase\\.to/files/\\d{1,}/.*");
-        //new HostPluginWrapper("FileMojo.Com", "FileMojoCom", "http://[\\w\\.]*?filemojo\\.com/(\\d+(/.+)?|l\\.php\\?flink=\\d+)");
+        // new HostPluginWrapper("FileMojo.Com", "FileMojoCom",
+        // "http://[\\w\\.]*?filemojo\\.com/(\\d+(/.+)?|l\\.php\\?flink=\\d+)");
         new HostPluginWrapper("Files.To", "FilesTo", "http://[\\w\\.]*?files\\.to/get/[0-9]+/[a-zA-Z0-9]+");
         new HostPluginWrapper("File-Upload.net", "FileUploadnet", "((http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html)|(http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html))|(http://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)))");
         new HostPluginWrapper("GoogleGroups.com", "GoogleGroups", "http://.*?\\.googlegroups.com/web/.*");
@@ -516,7 +517,8 @@ public class JDInit {
         new HostPluginWrapper("UploadService.info", "UploadServiceinfo", "http://[\\w\\.]*?uploadservice\\.info/file/[a-zA-Z0-9]+\\.html");
         new HostPluginWrapper("UploadStube.de", "UploadStube", "http://[\\w\\.]*?uploadstube\\.de/download\\.php\\?file=.*");
         new HostPluginWrapper("Xup.In", "XupIn", "http://[\\w\\.]*?xup\\.in/dl,\\d+/?.+?");
-        //new HostPluginWrapper("xup.raidrush.ws", "XupInRaidrush", "http://xup.raidrush.ws/.*?/");
+        // new HostPluginWrapper("xup.raidrush.ws", "XupInRaidrush",
+        // "http://xup.raidrush.ws/.*?/");
         new HostPluginWrapper("YouPorn.Com", "YouPornCom", "http://download\\.youporn\\.com/download/\\d+.*");
         new HostPluginWrapper("YourFiles.Biz", "YourFilesBiz", "http://[\\w\\.]*?yourfiles\\.(biz|to)/\\?d=[a-zA-Z0-9]+");
         new HostPluginWrapper("YourFileSender.com", "YourFileSendercom", "http://[\\w\\.]*?yourfilesender\\.com/v/\\d+/(.*?\\.html)");
@@ -581,7 +583,6 @@ public class JDInit {
     }
 
     public void loadPluginOptional() {
-        // new OptionalPluginWrapper("JDTrayIcon", 1.6);
 
         new OptionalPluginWrapper("jdtrayicon.JDLightTray", 1.6);
 
@@ -597,15 +598,11 @@ public class JDInit {
 
         new OptionalPluginWrapper("JDLowSpeed", 1.5);
 
-        // new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5);
-
         new OptionalPluginWrapper("jdchat.JDChat", 1.5);
 
         new OptionalPluginWrapper("Newsfeeds", 1.5);
 
         new OptionalPluginWrapper("JDInfoFileWriter", 1.5);
-
-        // new OptionalPluginWrapper("StreamingShareTool", 1.5);
 
         new OptionalPluginWrapper("langfileeditor.LangFileEditor", 1.5);
 
@@ -616,6 +613,7 @@ public class JDInit {
         new OptionalPluginWrapper("JDPremiumCollector", 1.5);
 
         new OptionalPluginWrapper("JDGrowlNotification", 1.5);
+
     }
 
     public void removeFiles() {

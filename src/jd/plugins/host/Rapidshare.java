@@ -116,8 +116,6 @@ public class Rapidshare extends PluginForHost {
         // downloadLink.setProperty("linkcorrected", true);
     }
 
-
-
     /**
      * Korrigiert die URL und befreit von subdomains etc.
      * 
@@ -232,7 +230,7 @@ public class Rapidshare extends PluginForHost {
                 }
                 if (!checkLinksIntern(links.toArray(new DownloadLink[] {}))) return false;
             }
-        } catch (Exception e) {            
+        } catch (Exception e) {
             return false;
         }
         return true;
@@ -259,41 +257,42 @@ public class Rapidshare extends PluginForHost {
                 u.setFinalFileName(matches[i][1]);
                 u.setDupecheckAllowed(true);
                 u.setMD5Hash(matches[i][6]);
-                //0=File not found 1=File OK 2=File OK (direct download) 3=Server down 4=File abused 5
-                switch(Integer.parseInt(matches[i][4])){
+                // 0=File not found 1=File OK 2=File OK (direct download)
+                // 3=Server down 4=File abused 5
+                switch (Integer.parseInt(matches[i][4])) {
                 case 0:
-                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.filenotfound","File not found"));
-                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.filenotfound","File not found"));
+                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.filenotfound", "File not found"));
+                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.filenotfound", "File not found"));
                     u.setAvailable(false);
                     break;
                 case 1:
-//                    u.getLinkStatus().setStatusText("alles prima");
+                    // u.getLinkStatus().setStatusText("alles prima");
                     u.setAvailable(true);
                     break;
                 case 2:
                     u.setAvailable(true);
-                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.directdownload","Direct Download"));
+                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.directdownload", "Direct Download"));
                 case 3:
-                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.servernotavailable","Server temp. not available. Try later!"));
-                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.servernotavailable","Server temp. not available. Try later!"));
+                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.servernotavailable", "Server temp. not available. Try later!"));
+                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.servernotavailable", "Server temp. not available. Try later!"));
                     u.setAvailable(false);
                     break;
                 case 4:
                     u.setAvailable(false);
-                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.abused","File abused"));
-                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.abused","File abused"));
+                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.abused", "File abused"));
+                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.abused", "File abused"));
                     break;
                 case 5:
                     u.setAvailable(true);
-                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.anonymous","File without Account(annonymous)"));
-                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.anonymous","File without Account(annonymous)"));
+                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.anonymous", "File without Account(annonymous)"));
+                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.anonymous", "File without Account(annonymous)"));
                     break;
                 }
                 i++;
             }
             return true;
-        } catch (Exception e) {            
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+        } catch (Exception e) {
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             System.err.println(br);
             return false;
         }
@@ -374,7 +373,7 @@ public class Rapidshare extends PluginForHost {
                     try {
                         waitTime = new Long(waitfor.trim()) * 60 * 1000l;
                     } catch (Exception e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     }
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
                 }
@@ -415,7 +414,7 @@ public class Rapidshare extends PluginForHost {
                 try {
                     waitTime = new Long(waitfor.trim()) * 60 * 1000l;
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
 
@@ -701,18 +700,15 @@ public class Rapidshare extends PluginForHost {
                 final String passToThread = msg;
                 new Thread() {
                     public void run() {
-                        TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI, "Speedtest result", "Your speedtest results", passToThread);
-
+                        TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI, JDLocale.L("plugins.host.rapidshare.speedtestresult.title", "Speedtest result"), JDLocale.L("plugins.host.rapidshare.speedtestresult.message", "Your speedtest results"), passToThread);
                     }
                 }.start();
             }
         } finally {
             if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 selectedServer = null;
-               
             }
-            downloadLink.getLinkStatus().setStatusText("Loaded  via "+account.getUser());
-
+            downloadLink.getLinkStatus().setStatusText(JDLocale.LF("plugins.host.rapidshare.loadedvia", "Loaded via %s", account.getUser()));
         }
 
     }
@@ -962,7 +958,7 @@ public class Rapidshare extends PluginForHost {
                     dlink.getLinkStatus().setStatusText("Server: " + n.getKey());
 
                 }
-                JDUtilities.getDownloadController().addPackageAt(fp, 0);             
+                JDUtilities.getDownloadController().addPackageAt(fp, 0);
 
             }
 
@@ -997,8 +993,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-     
-    
+
         AccountInfo ai = new AccountInfo(this, account);
         String api = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + account.getUser() + "&password=" + account.getPass() + "&type=prem";
         br.getPage(api);
@@ -1054,12 +1049,8 @@ public class Rapidshare extends PluginForHost {
         }
     }
 
-
-
     @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-        
     }
 
 }

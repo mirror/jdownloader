@@ -124,7 +124,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private int linkType = LINKTYPE_NORMAL;
 
     private int globalSpeedLimit = -1;
-    private int localSpeedLimit = -1;
 
     // Beschreibung des Downloads
     private String name;
@@ -461,36 +460,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return
      */
     public int getSpeedLimit() {
-        if (this.localSpeedLimit <= 0) {
-            if (this.globalSpeedLimit <= 0) {
-                this.globalSpeedLimit = Integer.MAX_VALUE;
-            }
-        } else {
-            this.globalSpeedLimit = this.localSpeedLimit;
+        if (this.globalSpeedLimit <= 0) {
+            this.globalSpeedLimit = Integer.MAX_VALUE;
         }
         return this.globalSpeedLimit;
-    }
-
-    /**
-     * Gibt das Lokale Speed Limit zurück! in bytes/s
-     * 
-     * @return
-     */
-    public int getLocalSpeedLimit() {
-        return this.localSpeedLimit;
-    }
-
-    /**
-     * Setzt das Lokale Speed Limit! in bytes/s
-     * 
-     * @param maximalspeed
-     */
-    public void setLocalSpeedLimit(int maximalspeed) {
-        if (maximalspeed <= 0) {
-            this.localSpeedLimit = -1;
-        } else {
-            this.localSpeedLimit = maximalspeed;
-        }
     }
 
     /**
@@ -651,14 +624,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 } else {
                     // logger.severe("Hoster Plugin Version: " +
                     // getPlugin().getVersion());
-                    //jd.controlling.JDLogger.getLogger().log(java.util.logging.
+                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.
                     // Level.SEVERE,"Exception occured",e);
                     break;
                 }
             } catch (Exception e) {
                 // logger.severe("Hoster Plugin Version: " +
                 // getPlugin().getVersion());
-                //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level
+                // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level
                 // .SEVERE,"Exception occured",e);
                 available = false;
                 break;
@@ -684,7 +657,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return
      */
     public boolean isLimited() {
-        if (this.localSpeedLimit > 0) return true;
         return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0;
     }
 
@@ -732,7 +704,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         if (!isDupeCheckallowed()) {
             finalFileName = null;
         }
-        localSpeedLimit = -1;
         getPlugin().resetHosterWaitTime();
     }
 
