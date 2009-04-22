@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Vector;
+import java.util.logging.Level;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -82,17 +83,23 @@ public class PackageManager extends Interaction implements Serializable {
 
         SubConfiguration config = WebUpdater.getConfig("JDU");
         boolean oldUpdatePackage = false;
-        FilePackage fp = FilePackage.getInstance();
-        fp.setName(JDLocale.L("modules.packagemanager.packagename", "JD-Update"));
-        fp.setDownloadDirectory(JDUtilities.getResourceFile("packages").getAbsolutePath());
 
+        String fpName = JDLocale.L("modules.packagemanager.packagename", "JD-Update");
+        String fpDir = JDUtilities.getResourceFile("packages").getAbsolutePath();
+
+        FilePackage fp = null;
         // Existiert schon ein JD-Update Package in der DownloadListe?
         for (FilePackage fp_cur : JDUtilities.getController().getPackages()) {
-            if (fp_cur.getName().equals(fp.getName()) && fp_cur.getDownloadDirectory().equals(fp.getDownloadDirectory())) {
+            if (fp_cur.getName().equals(fpName) && fp_cur.getDownloadDirectory().equals(fpDir)) {
                 fp = fp_cur;
                 oldUpdatePackage = true;
                 break;
             }
+        }
+        if (fp == null) {
+            fp = FilePackage.getInstance();
+            fp.setName(fpName);
+            fp.setDownloadDirectory(fpDir);
         }
 
         ArrayList<PackageData> data = getPackageData();
@@ -104,12 +111,13 @@ public class PackageManager extends Interaction implements Serializable {
                 pkg.setUpdating(true);
 
                 DistributeData distributeData = null;
-                /*Currently no pumped up addons*/
-                if (config.getBooleanProperty("SUPPORT_JD", true)||false) {
-                    distributeData = new DistributeData(pkg.getStringProperty("url"));
-                } else {
-                    distributeData = new DistributeData(pkg.getStringProperty("light-url"));
-                }
+                // /*Currently no pumped up addons*/
+                // if (config.getBooleanProperty("SUPPORT_JD", true)||false) {
+                distributeData = new DistributeData(pkg.getStringProperty("url"));
+                // } else {
+                // distributeData = new
+                // DistributeData(pkg.getStringProperty("light-url"));
+                // }
                 Vector<DownloadLink> links = distributeData.findLinks();
                 for (DownloadLink link : links) {
                     logger.info("Add link " + link /* + " : " + pkg */);
@@ -260,7 +268,7 @@ public class PackageManager extends Interaction implements Serializable {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            logger.log(Level.SEVERE, "Exception occured", e);
                         }
                         downloadLink.getFilePackage().remove(downloadLink);
                         boolean ch = false;

@@ -150,7 +150,7 @@ public class Main {
     public static void main(String args[]) {
         System.setProperty("file.encoding", "UTF-8");
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
-        LOGGER = jd.controlling.JDLogger.getLogger();
+        LOGGER = JDLogger.getLogger();
         initMACProperties();
         LOGGER.info("Start JDownloader");
         for (String p : args) {
@@ -219,26 +219,26 @@ public class Main {
         }
         try {
             JUnique.acquireLock(instanceID, new MessageHandler() {
-                private int Counter = -1;
+                private int counter = -1;
                 private Vector<String> params = new Vector<String>();
 
                 public String handle(String message) {
-                    if (Counter == -2) return null;
-                    if (Counter == -1) {
+                    if (counter == -2) return null;
+                    if (counter == -1) {
                         try {
-                            Counter = Integer.parseInt(message.trim());
+                            counter = Integer.parseInt(message.trim());
                         } catch (Exception e) {
-                            Counter = -2;
+                            counter = -2;
                             return null;
                         }
-                        if (Counter == -1) Counter = -2;/* Abort */
+                        if (counter == -1) counter = -2;/* Abort */
                     } else {
                         params.add(message);
-                        Counter--;
-                        if (Counter == 0) {
+                        counter--;
+                        if (counter == 0) {
                             String[] args = (String[]) params.toArray(new String[params.size()]);
                             ParameterManager.processParameters(args);
-                            Counter = -1;
+                            counter = -1;
                             params = new Vector<String>();
                         }
                     }
@@ -270,9 +270,9 @@ public class Main {
                                 splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.screen", 32, 32)));
                                 splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.dllist", 32, 32)));
                             } catch (IOException e) {
-                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                                LOGGER.log(Level.SEVERE, "Exception occured", e);
                             } catch (AWTException e) {
-                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                                LOGGER.log(Level.SEVERE, "Exception occured", e);
                             }
                             return null;
                         }
@@ -403,7 +403,7 @@ public class Main {
         // JDialog.setDefaultLookAndFeelDecorated(true);
         if (JDInitFlags.SWITCH_DEBUG) {
             LOGGER.info("DEBUG MODE ACTIVATED");
-            jd.controlling.JDLogger.getLogger().setLevel(Level.ALL);
+            LOGGER.setLevel(Level.ALL);
         } else {
             JDLogger.removeConsoleHandler();
         }
@@ -430,7 +430,7 @@ public class Main {
         // }
         // controller.setLogFileWriter(new BufferedWriter(new FileWriter(log)));
         // } catch (IOException e) {
-        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        // LOGGER.log(Level.SEVERE
         // ,"Exception occured",e);
         // }
         // }
@@ -508,41 +508,13 @@ public class Main {
         // }
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
-        // new GuiRunnable(){
-        //
-        // @Override
-        // public Object runSave() {
-        // JButton bt = new JButton("IIII");
-        // JTabbedPanel p = new JTabbedPanel(new MigLayout("ins 0,debug", "[]",
-        // "[]")) {
-        //
-        // @Override
-        // public void onDisplay() {
-        // // TODO Auto-generated method stub
-        //
-        // }
-        //
-        // @Override
-        // public void onHide() {
-        // // TODO Auto-generated method stub
-        //
-        // }
-        // };
-        // p.add(bt, "height 400!");
-        // JDCollapser.getInstance().setContentPanel(p);
-        // JDCollapser.getInstance().setCollapsed(false);
-        //
-        // return null;
-        // }
-        //    
-        // }.start();
 
         JDFileReg.registerFileExts();
 
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            LOGGER.log(Level.SEVERE, "Exception occured", e);
         }
         new PackageManager().interact(this);
 

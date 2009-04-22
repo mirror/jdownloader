@@ -23,12 +23,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jd.Main;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
@@ -44,7 +46,7 @@ import jd.update.PackageData;
 import jd.update.WebUpdater;
 
 public class WebUpdate implements ControlListener {
-    private static Logger logger = jd.controlling.JDLogger.getLogger();
+    private static Logger logger = JDLogger.getLogger();
     private static boolean JDInitialized = false;
     private static boolean ListenerAdded = false;
 
@@ -102,10 +104,13 @@ public class WebUpdate implements ControlListener {
                 ListenerAdded = true;
             }
         }
-//        SubConfiguration cfg = WebUpdater.getConfig("WEBUPDATE");
-//        cfg.setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false));
-//        cfg.setProperty("PLAF", JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("PLAF"));
-//        cfg.save();
+        // SubConfiguration cfg = WebUpdater.getConfig("WEBUPDATE");
+        // cfg.setProperty(Configuration.PARAM_WEBUPDATE_DISABLE,
+        // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE,
+        // false));
+        // cfg.setProperty("PLAF",
+        // JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("PLAF"));
+        // cfg.save();
 
         logger.finer("Init Webupdater");
 
@@ -163,20 +168,18 @@ public class WebUpdate implements ControlListener {
                         public void run() {
 
                             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
-                                CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI == null ? null : SimpleGUI.CURRENTGUI, JDLocale.LF("init.webupdate.auto.countdowndialog", "Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
+                                CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("init.webupdate.auto.countdowndialog", "Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
                                 if (ccd.result) {
-
                                     doUpdate();
                                 }
                             } else {
                                 try {
-                                    CountdownConfirmDialog ccd = new CountdownConfirmDialog(JDUtilities.getGUI() != null ? ((SimpleGUI) JDUtilities.getGUI()) : null, JDLocale.L("system.dialogs.update", "Updates available"), JDLocale.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size() + "", packages.size() + ""), 20, false, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
+                                    CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("system.dialogs.update", "Updates available"), JDLocale.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size(), packages.size()), 20, false, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
                                     if (ccd.result) {
-
                                         doUpdate();
                                     }
                                 } catch (HeadlessException e) {
-                                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                                    logger.log(Level.SEVERE, "Exception occured", e);
                                 }
                             }
                         }
@@ -203,8 +206,7 @@ public class WebUpdate implements ControlListener {
         try {
             WebUpdate.updateUpdater();
         } catch (IOException e) {
-
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            logger.log(Level.SEVERE, "Exception occured", e);
         }
         JDIO.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
         logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "jdupdate.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
