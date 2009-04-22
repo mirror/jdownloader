@@ -207,7 +207,7 @@ public abstract class Plugin implements ActionListener {
 
     public void clean() {
         lastCaptcha = null;
-        br = new Browser();        
+        br = new Browser();
     }
 
     /**
@@ -398,12 +398,6 @@ public abstract class Plugin implements ActionListener {
     public Captcha getLastCaptcha() {
         return lastCaptcha;
     }
-
-    /**
-     * 
-     * @return gibt den namen des Links an der gerade verarbeitet wird
-     */
-    public abstract String getLinkName();
 
     protected File getLocalCaptchaFile(Plugin plugin) {
         return Plugin.getLocalCaptchaFile(plugin, ".jpg");

@@ -310,11 +310,6 @@ public abstract class PluginsC extends Plugin {
         return cls == null ? new Vector<DownloadLink>() : cls;
     }
 
-    @Override
-    public String getLinkName() {
-        return null;
-    }
-
     /**
      * Gibt das passende plugin für diesen container zurück. falls schon eins
      * exestiert wird dieses zurückgegeben.
@@ -329,9 +324,9 @@ public abstract class PluginsC extends Plugin {
             PLUGINS.put(containerFile, newPlugin);
             return newPlugin;
         } catch (InstantiationException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (IllegalAccessException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return null;
     }

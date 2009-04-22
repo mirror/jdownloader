@@ -38,18 +38,15 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
             try {
                 onExit();
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
 
         }
 
     }
- public String getIconKey(){
-     return "gui.images.config.home";
- }
-    @Override
-    public String getLinkName() {
-        return null;
+
+    public String getIconKey() {
+        return "gui.images.config.home";
     }
 
     public abstract String getRequirements();

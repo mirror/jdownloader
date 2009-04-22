@@ -103,7 +103,7 @@ public abstract class PluginForHost extends Plugin {
 
     private boolean enablePremium = false;
 
-    private boolean AccountwithoutUsername = false;
+    private boolean accountWithoutUsername = false;
 
     private String premiumurl = null;
 
@@ -157,7 +157,7 @@ public abstract class PluginForHost extends Plugin {
     public AccountInfo getAccountInformation(Account account) throws Exception {
         if (account.getProperty(AccountInfo.PARAM_INSTANCE) != null) {
             AccountInfo ai = (AccountInfo) account.getProperty(AccountInfo.PARAM_INSTANCE);
-            if ((System.currentTimeMillis() - ai.getCreateTime()) < 5 * 60 * 1000) { return ai; }
+            if ((System.currentTimeMillis() - ai.getCreateTime()) < 5 * 60 * 1000) return ai;
         }
         AccountInfo ret = fetchAccountInfo(account);
         if (ret == null) return null;
@@ -167,16 +167,15 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        // TODO Auto-generated method stub
         return null;
     }
 
     public boolean getAccountwithoutUsername() {
-        return AccountwithoutUsername;
+        return accountWithoutUsername;
     }
 
     public void setAccountwithoutUsername(boolean b) {
-        AccountwithoutUsername = b;
+        accountWithoutUsername = b;
     }
 
     @Override
@@ -252,10 +251,6 @@ public abstract class PluginForHost extends Plugin {
 
     }
 
-    public int getChunksPerFile() {
-        return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2);
-    }
-
     public synchronized int getCurrentConnections() {
         return currentConnections;
     }
@@ -329,16 +324,6 @@ public abstract class PluginForHost extends Plugin {
         return Math.max(1, this.getMaxConnections() - currentConnections);
     }
 
-    /**
-     * Wird nicht gebraucht muss aber implementiert werden.
-     */
-
-    @Override
-    public String getLinkName() {
-
-        return null;
-    }
-
     public int getMaxConnections() {
         return maxConnections;
     }
@@ -404,7 +389,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         link.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        link.getLinkStatus().setErrorMessage("Plugin has no handlePremium Method!");
+        link.getLinkStatus().setErrorMessage(JDLocale.L("plugins.hoster.nopremiumsupport", "Plugin has no handlePremium Method!"));
     }
 
     public boolean canResume(DownloadLink link) {
@@ -559,15 +544,16 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Führt alle restevorgänge aus und bereitet das Plugin dadurch auf einen
+     * Führt alle resetvorgänge aus und bereitet das Plugin dadurch auf einen
      * Neustart vor. Sollte nicht überschrieben werden
      */
     public final void resetPlugin() {
         reset();
         ArrayList<Account> accounts = getPremiumAccounts();
 
-        for (Account account : accounts)
+        for (Account account : accounts) {
             account.setTempDisabled(false);
+        }
     }
 
     public void resetPluginGlobals() {
@@ -628,17 +614,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void sleep(long i, DownloadLink downloadLink) throws PluginException {
-        try {
-            while (i > 0 && downloadLink.getDownloadLinkController() != null && !downloadLink.getDownloadLinkController().isAborted()) {
-                i -= 1000;
-                downloadLink.getLinkStatus().setStatusText(String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), JDUtilities.formatSeconds(i / 1000)));
-                downloadLink.requestGuiUpdate();
-                Thread.sleep(1000);
-            }
-        } catch (InterruptedException e) {
-            throw new PluginException(LinkStatus.TODO);
-        }
-        downloadLink.getLinkStatus().setStatusText(null);
+        sleep(i, downloadLink, "");
     }
 
     public void sleep(long i, DownloadLink downloadLink, String message) throws PluginException {
@@ -662,7 +638,6 @@ public abstract class PluginForHost extends Plugin {
     public static void resetStatics() {
         HOSTER_WAIT_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
         HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
-
     }
 
     public Browser getBrowser() {
@@ -671,7 +646,6 @@ public abstract class PluginForHost extends Plugin {
 
     public void setDownloadInterface(DownloadInterface dl2) {
         this.dl = dl2;
-
     }
 
     /**
@@ -708,11 +682,6 @@ public abstract class PluginForHost extends Plugin {
      */
     public String getSessionInfo() {
         return "";
-    }
-
-    public final boolean hasHosterIcon() {
-        File res = JDUtilities.getResourceFile("jd/img/hosterlogos/" + getHost() + ".png");
-        return (res != null && res.exists());
     }
 
     public final ImageIcon getHosterIcon() {

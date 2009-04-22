@@ -305,8 +305,6 @@ public abstract class PluginForDecrypt extends Plugin {
      * 
      * @return encryptedLink
      */
-
-    @Override
     public String getLinkName() {
         if (curcryptedLink == null) return "";
         try {
