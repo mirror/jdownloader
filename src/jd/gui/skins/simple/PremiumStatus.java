@@ -70,7 +70,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                                 String host = it.next();
 
                                 if (i == 0) {
-                                    showDetails((HostPluginWrapper) JDUtilities.getPluginForHost(host).getWrapper());
+                                    showDetails(JDUtilities.getPluginForHost(host));
                                     return;
                                 }
                                 i--;
@@ -133,19 +133,14 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         }.start();
     }
 
-    protected void showDetails(HostPluginWrapper wrapper) {
-        // System.out.println("Show detaoils to " + wrapper.getClassName());
-        // SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI,
-        // wrapper.getPlugin().getConfig());
+    protected void showDetails(PluginForHost plugin) {
+        ConfigEntriesPanel panel = new ConfigEntriesPanel(plugin.getConfig());
 
-        ConfigEntriesPanel panel = new ConfigEntriesPanel(wrapper.getPlugin().getConfig());
-     
         Component comp = panel.getComponent(0);
         if (comp instanceof JTabbedPane) {
             ((JTabbedPane) comp).setSelectedIndex(((JTabbedPane) comp).getTabCount() - 1);
         }
         SimpleGUI.CURRENTGUI.getContentPane().display(panel);
-    
     }
 
     private void updatePremium() {

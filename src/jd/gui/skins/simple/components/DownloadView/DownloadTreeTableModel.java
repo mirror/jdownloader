@@ -42,10 +42,10 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
     public static final int COL_STATUS = 3;
 
     /** table column names */
-    static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.treetable.header_1.tree", "F"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"),JDLocale.L("gui.treetable.header_4.statusicon", "Status Icon"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
+    static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.treetable.header_1.tree", "F"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"), JDLocale.L("gui.treetable.header_4.statusicon", "Status Icon"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
 
     /**
-     * Creates a {@link ProjectsTreeTableModel}
+     * Creates a DownloadTreeTableModel
      * 
      * @param allLinks
      * @param downloadLinksTreeTable
@@ -59,8 +59,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
     public static int getIDFormHeaderLabel(String label) {
         for (int i = 0; i < COLUMN_NAMES.length; i++) {
-            if (COLUMN_NAMES[i].equals(label)) { return i; }
-
+            if (COLUMN_NAMES[i].equals(label)) return i;
         }
         return -1;
     }
@@ -181,7 +180,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             return downloadLink;
         } else if (node instanceof FilePackage) {
             FilePackage filePackage = (FilePackage) node;
-           return filePackage;
+            return filePackage;
         } else if (node instanceof String) {
             return (column == 0) ? node.toString() : "";
         } else {

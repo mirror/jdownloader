@@ -93,8 +93,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     private DownloadTreeTableModel model;
 
-    public int mouseOverRow = -1;
-
     private Timer timer;
 
     private TableColumnExt[] cols;
@@ -458,11 +456,9 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
     }
 
     public void mouseExited(MouseEvent e) {
-
     }
 
     public void mouseMoved(MouseEvent e) {
-        mouseOverRow = rowAtPoint(e.getPoint());
     }
 
     private int getRealcolumnAtPoint(int x) {

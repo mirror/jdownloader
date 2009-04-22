@@ -26,10 +26,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 
 /**
- * Interface für alle GUIS
+ * Interface für alle GUIs
  * 
  * @author astaldo
- * 
  */
 public interface UIInterface extends ControlListener {
     /**
@@ -60,14 +59,10 @@ public interface UIInterface extends ControlListener {
      */
     public void addLinksToGrabber(Vector<DownloadLink> links, boolean hideGrabber);
 
-
     public void displayMiniWarning(String shortWarn, String longWarn, int showtime);
 
-
-
-
     /**
-
+     * 
      * Der Benutzer soll den Captcha Code eintippen
      * 
      * @param plugin
@@ -78,11 +73,8 @@ public interface UIInterface extends ControlListener {
      */
     public String showCountdownCaptchaDialog(Plugin plugin, File captchaAddress, String def);
 
-
-
-
     /**
-
+     * 
      * Minimiert die GUI. als ID können die GUI_STATUS_IDS aus UIInterface,*
      * verwendet werden
      */
@@ -98,7 +90,9 @@ public interface UIInterface extends ControlListener {
     public boolean showConfirmDialog(String string);
 
     public boolean showConfirmDialog(String string, String title);
-public String[] showLoginDialog(String title,String defaultUser,String defaultPassword,String errorMessage);
+
+    public String[] showLoginDialog(String title, String defaultUser, String defaultPassword, String errorMessage);
+
     /**
      * Zeigt einen MessageDialog mit Countdown an
      * 

@@ -5,9 +5,7 @@ import javax.swing.JPanel;
 import net.miginfocom.swing.MigLayout;
 
 public class ContentPanel extends JPanel {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = 1606909731977454208L;
     private JTabbedPanel rightPanel = null;
 
@@ -16,10 +14,10 @@ public class ContentPanel extends JPanel {
     public ContentPanel() {
         PANEL = this;
         this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
-
     }
 
     public void display(JTabbedPanel panel) {
+        if (rightPanel == panel) return;
         JDCollapser.getInstance().setCollapsed(true);
         if (rightPanel != null) {
             this.remove(rightPanel);
@@ -41,11 +39,6 @@ public class ContentPanel extends JPanel {
 
     public JTabbedPanel getRightPanel() {
         return rightPanel;
-    }
-
-    public JTabbedPanel getDisplay() {
-        return rightPanel;
-
     }
 
 }

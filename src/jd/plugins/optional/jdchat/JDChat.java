@@ -1366,7 +1366,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         } else {
             if (frame != null) {
                 SimpleGUI.CURRENTGUI.getTaskPane().remove(tp);
-                if (SimpleGUI.CURRENTGUI.getContentPane().getDisplay() == frame) {
+                if (SimpleGUI.CURRENTGUI.getContentPane().getRightPanel() == frame) {
                     SimpleGUI.CURRENTGUI.getTaskPane().switcher(SimpleGUI.CURRENTGUI.getDlTskPane());
                 }
 
@@ -1378,11 +1378,13 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         }
     }
+
     @Override
     public String getIconKey() {
-       
+
         return "gui.images.chat";
     }
+
     public void setLoggedIn(boolean loggedIn) {
         this.loggedIn = loggedIn;
     }
