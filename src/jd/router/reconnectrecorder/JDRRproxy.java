@@ -22,12 +22,12 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Vector;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
-import jd.controlling.JDLogger;
 import jd.utils.JDHexUtils;
 
 public class JDRRproxy extends Thread {
@@ -41,14 +41,16 @@ public class JDRRproxy extends Thread {
     String serverip;
     int port;
     boolean ishttps = false;
+    boolean israw = false;
 
-    public JDRRproxy(Socket Client_Socket, Vector<String> steps, String serverip, int port, boolean ishttps) {
+    public JDRRproxy(Socket Client_Socket, Vector<String> steps, String serverip, int port, boolean ishttps, boolean israw) {
         Current_Socket = Client_Socket;
         this.steps = steps;
         this.serverip = serverip;
         this.setName("JDDProxy");
         this.port = port;
         this.ishttps = ishttps;
+        this.israw = israw;
     }
 
     public void run() {
@@ -61,11 +63,11 @@ public class JDRRproxy extends Thread {
                 SocketFactory socketFactory = SSLSocketFactory.getDefault();
                 outgoing = socketFactory.createSocket(serverip, port);
             }
-            ProxyThread thread1 = new ProxyThread(incoming, outgoing, CHANGE_HEADER | RECORD_HEADER, steps, ishttps);
+            ProxyThread thread1 = new ProxyThread(incoming, outgoing, CHANGE_HEADER | RECORD_HEADER, steps, ishttps, israw);
             thread1.setName("Client2Router");
             thread1.start();
 
-            ProxyThread thread2 = new ProxyThread(outgoing, incoming, CHANGE_HEADER, steps, ishttps);
+            ProxyThread thread2 = new ProxyThread(outgoing, incoming, CHANGE_HEADER, steps, ishttps, israw);
             thread2.setName("Router2Client");
             thread2.start();
             thread2.join();
@@ -99,14 +101,16 @@ class ProxyThread extends Thread {
     String buffer;
     ProxyThread instance;
     boolean ishttps = false;
+    boolean israw = true;
 
-    public ProxyThread(Socket in, Socket out, int dowhat, Vector<String> steps, boolean ishttps) {
+    public ProxyThread(Socket in, Socket out, int dowhat, Vector<String> steps, boolean ishttps, boolean israw) {
         incoming = in;
         outgoing = out;
         this.dowhat = dowhat;
         this.steps = steps;
         this.instance = this;
         this.ishttps = ishttps;
+        this.israw = israw;
     }
 
     public boolean dothis(int dothis) {
@@ -133,7 +137,7 @@ class ProxyThread extends Thread {
                     InputStream k = JDRRUtils.newInputStream(headerbuffer);
                     BufferedInputStream reader2 = new BufferedInputStream(k);
                     String line = null;
-                    HashMap<String, String> headers = new HashMap<String, String>();
+                    LinkedHashMap<String, String> headers = new LinkedHashMap<String, String>();
 
                     while ((line = JDRRUtils.readline(reader2)) != null && line.trim().length() > 0) {
                         String key = null;
@@ -171,8 +175,7 @@ class ProxyThread extends Thread {
 
                         }
                     }
-                    JDLogger.getLogger().info("before: " + headers + "");
-                    JDRRUtils.createStep(headers, postdata, steps, ishttps);
+                    JDRRUtils.createStep(headers, postdata, steps, ishttps, israw);
                 } catch (Exception e) {
                 }
             }
@@ -213,7 +216,6 @@ class ProxyThread extends Thread {
                         }
                         headers.put(key, value);
                     }
-                    JDLogger.getLogger().info("after: " + headers + "");
                 } catch (Exception e) {
                 }
 

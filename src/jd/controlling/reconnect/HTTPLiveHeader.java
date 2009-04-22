@@ -21,9 +21,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -97,6 +96,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
         // script = script.replaceAll("\\>", "&gt;");
         script = script.replaceAll("\\[\\[\\[", "<");
         script = script.replaceAll("\\]\\]\\]", ">");
+        script = script.replaceAll("<REQUEST(.*?)>", "<REQUEST$1><![CDATA[");
         script = script.replaceAll("<REQUEST>", "<REQUEST><![CDATA[");
         script = script.replaceAll("</REQUEST>", "]]></REQUEST>");
         script = script.replaceAll("<RESPONSE(.*?)>", "<RESPONSE$1><![CDATA[");
@@ -213,6 +213,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
 
                     if (toDo.getNodeName().equalsIgnoreCase("REQUEST")) {
                         boolean ishttps = false;
+                        boolean israw = false;
                         if (toDo.getChildNodes().getLength() != 1) {
                             progress.finalize();
                             logger.severe("A REQUEST Tag is not allowed to have childTags.");
@@ -222,9 +223,12 @@ public class HTTPLiveHeader extends ReconnectMethod {
                         if (attributes.getNamedItem("https") != null) {
                             ishttps = true;
                         }
+                        if (attributes.getNamedItem("raw") != null) {
+                            israw = true;
+                        }
                         Browser retbr = null;
                         try {
-                            retbr = doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), br, ishttps);
+                            retbr = doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), br, ishttps, israw);
                         } catch (Exception e2) {
                             retbr = null;
                         }
@@ -278,12 +282,12 @@ public class HTTPLiveHeader extends ReconnectMethod {
             logger.severe(e.getMessage());
             return false;
         } catch (ParserConfigurationException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             progress.finalize();
             logger.severe(e.getMessage());
             return false;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             progress.finalize();
             logger.severe(e.getCause() + " : " + e.getMessage());
             return false;
@@ -292,7 +296,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
         return true;
     }
 
-    private Browser doRequest(String request, Browser br, boolean ishttps) {
+    private Browser doRequest(String request, Browser br, boolean ishttps, boolean israw) {
         try {
             String requestType;
             String path;
@@ -300,9 +304,13 @@ public class HTTPLiveHeader extends ReconnectMethod {
             String host = null;
             String http = "http://";
             if (ishttps) http = "https://";
-
+            if (logger.isLoggable(Level.FINEST)) {
+                br.forceDebug(true);
+            } else {
+                br.forceDebug(false);
+            }
             HashMap<String, String> requestProperties = new HashMap<String, String>();
-            br.setHeaders(new RequestHeader());
+            if (israw) br.setHeaders(new RequestHeader());
             String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
             // ArrayList<String> params =
             // SimpleMatches.getAllSimpleMatches(request,
@@ -352,8 +360,6 @@ public class HTTPLiveHeader extends ReconnectMethod {
             }
             requestType = tmp[0];
             path = tmp[1];
-            logger.finer("RequestType: " + requestType);
-            logger.finer("Path: " + path);
             boolean headersEnd = false;
             // Zerlege request
 
@@ -394,11 +400,9 @@ public class HTTPLiveHeader extends ReconnectMethod {
                     br.getHeaders().putAll(requestProperties);
                 }
                 if (requestType.equalsIgnoreCase("GET")) {
-                    logger.finer("GET " + "http://" + host + path);
                     br.getPage(http + host + path);
                 } else if (requestType.equalsIgnoreCase("POST")) {
                     String poster = post.toString().trim();
-                    logger.finer("POST " + "http://" + host + path + " " + poster);
                     br.postPageRaw(http + host + path, poster);
                 } else if (requestType.equalsIgnoreCase("AUTH")) {
                     logger.finer("Convert AUTH->GET");
@@ -407,22 +411,15 @@ public class HTTPLiveHeader extends ReconnectMethod {
                     logger.severe("Unknown requesttyp: " + requestType);
                     return null;
                 }
-                logger.finer("Answer: ");
-                for (Map.Entry<String, List<String>> me : br.getRequest().getResponseHeaders().entrySet()) {
-                    if (me.getValue() != null && me.getValue().size() > 0) {
-                        headerProperties.put(me.getKey(), me.getValue().get(0));
-                        logger.finer(me.getKey() + " : " + me.getValue().get(0));
-                    }
-                }
                 return br;
             } catch (IOException e) {
 
                 logger.severe("IO Error: " + e.getLocalizedMessage());
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 return null;
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             return null;
         }
 

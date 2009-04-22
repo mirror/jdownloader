@@ -20,13 +20,12 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.JDLogger;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.utils.JDHexUtils;
@@ -83,7 +82,7 @@ public class JDRRUtils {
                 }
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         bigbuffer.flip();
         return bigbuffer;
@@ -106,19 +105,38 @@ public class JDRRUtils {
         };
     }
 
-    public static void createStep(HashMap<String, String> headers, String postdata, Vector<String> steps, boolean ishttps) {
+    public static void createStep(LinkedHashMap<String, String> headers, String postdata, Vector<String> steps, boolean ishttps, boolean rawmode) {
         if (!new Regex(headers.get(null), ".*?\\.(gif|jpg|png|bmp|ico|css|js).*?").matches()) {
             String httpstrue = "";
-            if (ishttps) httpstrue = " https=true";
+            String rawtrue = "";
+            if (ishttps) httpstrue = " https=\"true\"";
+            if (rawmode) rawtrue = " raw=\"true\"";
             StringBuilder hlh = new StringBuilder();
             hlh.append("    [[[STEP]]]" + "\r\n");
-            hlh.append("        [[[REQUEST" + httpstrue + "]]]" + "\r\n");
-            hlh.append("        " + headers.get(null) + "\r\n");
-            hlh.append("        Host: %%%routerip%%%" + "\r\n");
-            if (headers.containsKey("authorization")) {
-                String auth = new Regex(headers.get("authorization"), "Basic (.+)").getMatch(0);
-                if (auth != null) JDRR.auth = Encoding.Base64Decode(auth.trim());
-                hlh.append("        Authorization: Basic %%%basicauth%%%" + "\r\n");
+            hlh.append("        [[[REQUEST" + httpstrue + rawtrue + "]]]" + "\r\n");
+            if (rawmode == true) {
+                for (String key : headers.keySet()) {
+                    /*
+                     * werden vom browser gesetzt
+                     */
+                    if (key != null && key.equalsIgnoreCase("referer")) continue;
+                    if (key != null && key.equalsIgnoreCase("host")) {
+                        hlh.append("        Host: %%%routerip%%%" + "\r\n");
+                        continue;
+                    }
+                    if (key == null) {
+                        hlh.append("        " + headers.get(key) + "\r\n");
+                    } else
+                        hlh.append("        " + key + ": " + headers.get(key) + "\r\n");
+                }
+            } else {
+                hlh.append("        " + headers.get(null) + "\r\n");
+                hlh.append("        Host: %%%routerip%%%" + "\r\n");
+                if (headers.containsKey("authorization")) {
+                    String auth = new Regex(headers.get("authorization"), "Basic (.+)").getMatch(0);
+                    if (auth != null) JDRR.auth = Encoding.Base64Decode(auth.trim());
+                    hlh.append("        Authorization: Basic %%%basicauth%%%" + "\r\n");
+                }
             }
             if (headers.get(null).contains("POST") && postdata != null) {
                 hlh.append("\r\n");
@@ -136,7 +154,6 @@ public class JDRRUtils {
         if (location != null) {
             if (new Regex(location, "https?://(.*?)/?").getMatch(0) != null) {
                 String oldlocation = location;
-                JDLogger.getLogger().severe("Rewriting Location Header");
                 location = new Regex(location, "https?://.*?/(.+)", Pattern.DOTALL).getMatch(0);
                 if (!oldlocation.startsWith("https")) {
                     if (location != null) {
@@ -162,7 +179,6 @@ public class JDRRUtils {
         if (host != null) {
             if (new Regex(host, "(.*?):?").getMatch(0) != null) {
                 String oldhost = host;
-                JDLogger.getLogger().severe("Rewriting Host Header");
                 host = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
                 instance.buffer = instance.buffer.replaceAll(JDHexUtils.getHexString("Host: " + oldhost), JDHexUtils.getHexString("Host: " + host));
                 instance.renewbuffer = true;
@@ -176,7 +192,6 @@ public class JDRRUtils {
             String type = new Regex(con, "(.+)").getMatch(0);
             if (type != null && !type.equalsIgnoreCase("close")) {
                 String oldcon = con;
-                JDLogger.getLogger().severe("Rewriting Connection Header");
                 con = "close";
                 instance.buffer = instance.buffer.replaceAll(JDHexUtils.getHexString("Connection: " + oldcon), JDHexUtils.getHexString("Connection: " + con));
                 instance.renewbuffer = true;
@@ -188,7 +203,6 @@ public class JDRRUtils {
         String ref = JDHexUtils.toString(new Regex(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Referer: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
         if (ref != null) {
             if (new Regex(ref, "https?://(.*?)/?").getMatch(0) != null) {
-                JDLogger.getLogger().severe("Rewriting Referer Header");
                 String oldref = ref;
                 String ref2 = new Regex(ref, "https?://.*?/(.+)", Pattern.DOTALL).getMatch(0);
                 if (!oldref.startsWith("https")) {

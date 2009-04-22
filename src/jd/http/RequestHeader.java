@@ -8,11 +8,14 @@ public class RequestHeader {
 
     private ArrayList<String> keys;
     private ArrayList<String> values;
-    private boolean dominant=false;
-/**
- * if a header is dominant, it will not get merged with existing headers. It will replace it completly
- * @param dominant
- */
+    private boolean dominant = false;
+
+    /**
+     * if a header is dominant, it will not get merged with existing headers. It
+     * will replace it completly
+     * 
+     * @param dominant
+     */
     public void setDominant(boolean dominant) {
         this.dominant = dominant;
     }
@@ -27,16 +30,15 @@ public class RequestHeader {
     }
 
     public void put(String key, String value) {
-        int i;
-        if ((i = keys.indexOf(key)) >= 0) {
-            keys.set(i, key);
-            values.set(i, value);
-
-        } else {
-            keys.add(key);
-            values.add(value);
+        for (int i = 0; i < keys.size(); i++) {
+            if (keys.get(i).equalsIgnoreCase(key.trim())) {
+                keys.set(i, key);
+                values.set(i, value);
+                return;
+            }
         }
-
+        keys.add(key);
+        values.add(value);
     }
 
     public String getKey(int i) {
@@ -114,7 +116,7 @@ public class RequestHeader {
     }
 
     public void setAt(int i, String key, String value) {
-        if(keys.size()==0){
+        if (keys.size() == 0) {
             this.put(key, value);
             return;
         }
@@ -128,7 +130,7 @@ public class RequestHeader {
         keys.set(i, key);
         values.set(i, value);
 
-    }  
+    }
 
     public boolean isDominant() {
         // TODO Auto-generated method stub

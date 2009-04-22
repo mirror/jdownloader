@@ -27,6 +27,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -41,6 +42,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectMethod;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.nutils.JDImage;
@@ -58,6 +60,7 @@ public class JDRRGui extends JDialog implements ActionListener {
     private JButton btnStart;
 
     private JTextField routerip;
+    private JCheckBox rawmode;
     public boolean saved = false;
     private String ip_before;
     private String ip_after;
@@ -80,6 +83,8 @@ public class JDRRGui extends JDialog implements ActionListener {
 
         btnStart = new JButton(JDLocale.L("gui.btn_start", "Start"));
         btnStart.addActionListener(this);
+        rawmode = new JCheckBox("RawMode?");
+        rawmode.setSelected(false);
         JTextPane infolable = new JTextPane();
         infolable.setEditable(false);
         infolable.setContentType("text/html");
@@ -97,6 +102,7 @@ public class JDRRGui extends JDialog implements ActionListener {
 
         c.fill = GridBagConstraints.BOTH;
         spanel.add(routerip, c);
+        spanel.add(rawmode);
 
         JPanel panel = new JPanel(new BorderLayout(n, n));
         panel.setBorder(new EmptyBorder(n, n, n, n));
@@ -138,6 +144,7 @@ public class JDRRGui extends JDialog implements ActionListener {
             configuration.setProperty(ReconnectMethod.PARAM_IPCHECKWAITTIME, ((reconnect_duration / 1000) / 2) + 2);
             configuration.save();
             saved = true;
+            dispose();
         }
     }
 
@@ -146,7 +153,7 @@ public class JDRRGui extends JDialog implements ActionListener {
             if (routerip.getText() != null && !routerip.getText().matches("\\s*")) JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText().trim());
 
             ip_before = JDUtilities.getIPAddress(null);
-            JDRR.startServer(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null));
+            JDRR.startServer(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null), rawmode.isSelected());
 
             try {
                 JLinkButton.openURL("http://localhost:" + (SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972)));
@@ -156,9 +163,17 @@ public class JDRRGui extends JDialog implements ActionListener {
                 JDLogger.exception(e1);
             }
 
-            JDRRInfoPopup popup = new JDRRInfoPopup(ip_before);
-            popup.start_check();
-            popup.setVisible(true);
+            GuiRunnable<Integer> run = new GuiRunnable<Integer>() {
+                @Override
+                public Integer runSave() {
+                    JDRRInfoPopup popup = new JDRRInfoPopup(ip_before);
+                    popup.start_check();
+                    popup.setVisible(true);
+                    return 1;
+                }
+            };
+            run.waitForEDT();
+
             return;
         }
         dispose();
@@ -263,29 +278,37 @@ public class JDRRGui extends JDialog implements ActionListener {
 
         public void closePopup() {
             JDRR.stopServer();
-            btnStop.setEnabled(false);
-            ip_after = JDUtilities.getIPAddress(null);
-            if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
-                if (reconnect_timer == 0) {
-                    /*
-                     * Reconnect fand innerhalb des Check-Intervalls statt
-                     */
-                    reconnect_duration = check_intervall;
-                } else {
-                    reconnect_duration = System.currentTimeMillis() - reconnect_timer;
+            GuiRunnable<Integer> run = new GuiRunnable<Integer>() {
+                @Override
+                public Integer runSave() {
+                    btnStop.setEnabled(false);
+                    ip_after = JDUtilities.getIPAddress(null);
+                    if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
+                        if (reconnect_timer == 0) {
+                            /*
+                             * Reconnect fand innerhalb des Check-Intervalls
+                             * statt
+                             */
+                            reconnect_duration = check_intervall;
+                        } else {
+                            reconnect_duration = System.currentTimeMillis() - reconnect_timer;
+                        }
+                        JDLogger.getLogger().info("dauer: " + reconnect_duration + "");
+                        statusicon.setStatus(1);
+                    } else {
+                        statusicon.setStatus(-1);
+                    }
+                    if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
+                        save();
+                    } else {
+                        // save(); /*zu debugzwecken*/
+                        JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
+                    }
+                    dispose();
+                    return 1;
                 }
-                JDLogger.getLogger().info("dauer: " + reconnect_duration + "");
-                statusicon.setStatus(1);
-            } else {
-                statusicon.setStatus(-1);
-            }
-            if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
-                save();
-            } else {
-                // save(); /*zu debugzwecken*/
-                JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
-            }
-            dispose();
+            };
+            run.waitForEDT();
         }
 
         public void actionPerformed(ActionEvent arg0) {

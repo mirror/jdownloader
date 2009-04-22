@@ -26,6 +26,7 @@ public class HTTPsConnection extends HTTPConnection {
 
     private sun.net.www.protocol.https.HttpsURLConnectionImpl delegate;
 
+    @SuppressWarnings("unchecked")
     public HTTPsConnection(URLConnection openConnection, Proxy p) {
         super(openConnection.getURL(), p, null);
         delegate = (sun.net.www.protocol.https.HttpsURLConnectionImpl) openConnection;
@@ -178,11 +179,11 @@ public class HTTPsConnection extends HTTPConnection {
         sb.append("----------------Request------------------\r\n");
 
         sb.append(getRequestMethod() + " " + getURL().getPath() + (getURL().getQuery() != null ? "?" + getURL().getQuery() : "") + " HTTP/1.1\r\n");
-        if (getURL().getPort() > 0 && getURL().getPort() != 80) {
-            sb.append("Host: " + getURL().getHost() + (":" + getURL().getPort()) + "\r\n");
-        } else {
-            sb.append("Host: " + getURL().getHost() + "\r\n");
-        }
+//        if (getURL().getPort() > 0 && getURL().getPort() != 80) {
+//            sb.append("Host: " + getURL().getHost() + (":" + getURL().getPort()) + "\r\n");
+//        } else {
+//            sb.append("Host: " + getURL().getHost() + "\r\n");
+//        }
         for (Iterator<Entry<String, List<String>>> it = this.getRequestProperties().entrySet().iterator(); it.hasNext();) {
             Entry<String, List<String>> next = it.next();
             StringBuilder value = new StringBuilder();

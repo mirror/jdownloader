@@ -31,7 +31,7 @@ public class JDRR {
     static final String PROPERTY_PORT = "PARAM_PORT";
     static String auth;
 
-    static public void startServer(String serverip) {
+    static public void startServer(String serverip, boolean rawmode) {
         steps = new Vector<String>();
         auth = null;
         running = true;
@@ -39,10 +39,10 @@ public class JDRR {
         try {
             Server_Socket_HTTP = new ServerSocket(SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
             Server_Socket_HTTPS = new ServerSocket(SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + 1);
-            new JDRRServer(Server_Socket_HTTP, serverip, 80, false).start();
-            new JDRRServer(Server_Socket_HTTPS, serverip, 443, true).start();
+            new JDRRServer(Server_Socket_HTTP, serverip, 80, false, rawmode).start();
+            new JDRRServer(Server_Socket_HTTPS, serverip, 443, true, rawmode).start();
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
     }
 
@@ -52,12 +52,12 @@ public class JDRR {
         try {
             Server_Socket_HTTP.close();
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         try {
             Server_Socket_HTTPS.close();
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
     }
 
@@ -66,13 +66,15 @@ public class JDRR {
         String serverip;
         int port;
         boolean ishttps = false;
+        boolean israw = false;
 
-        public JDRRServer(ServerSocket Server_Socket, String server, int port, boolean ishttps) {
+        public JDRRServer(ServerSocket Server_Socket, String server, int port, boolean ishttps, boolean israw) {
             this.Server_Socket = Server_Socket;
             this.serverip = server;
             this.setName("JDRRServer " + port + " " + server);
             this.port = port;
             this.ishttps = ishttps;
+            this.israw = israw;
         }
 
         public void run() {
@@ -84,7 +86,7 @@ public class JDRR {
                     break;
                 }
                 if (running) {
-                    JDRRproxy record = new JDRRproxy(Client_Socket, steps, serverip, port, ishttps);
+                    JDRRproxy record = new JDRRproxy(Client_Socket, steps, serverip, port, ishttps, israw);
                     record.start();
                 }
             }
@@ -92,7 +94,7 @@ public class JDRR {
             try {
                 Server_Socket.close();
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
         }
     }
