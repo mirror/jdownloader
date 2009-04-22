@@ -195,6 +195,7 @@ public abstract class Request {
 
     }
 
+    @SuppressWarnings("unchecked")
     private void collectCookiesFromConnection() {
 
         List<String> cookieHeaders = (List<String>) httpConnection.getHeaderFields().get("Set-Cookie");
@@ -380,6 +381,7 @@ public abstract class Request {
         return httpConnection.getHeaderField(key);
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, List<String>> getResponseHeaders() {
         if (httpConnection == null) { return null; }
         return httpConnection.getHeaderFields();
@@ -513,12 +515,12 @@ public abstract class Request {
                     rd = new BufferedReader(new InputStreamReader(con.getInputStream(), cs));
 
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     System.err.println(con);
                     try {
                         rd = new BufferedReader(new InputStreamReader(con.getInputStream(), cs.replace("-", "")));
                     } catch (Exception e2) {
-                        
+
                         rd = new BufferedReader(new InputStreamReader(con.getInputStream()));
                     }
                 }

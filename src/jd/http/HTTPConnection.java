@@ -32,6 +32,7 @@ import jd.http.requests.PostFormDataRequest;
 import jd.http.requests.PostRequest;
 import jd.http.requests.Request;
 import jd.parser.Regex;
+import sun.net.www.protocol.http.Handler;
 
 public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection implements URLConnectionAdapter {
 
@@ -50,7 +51,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
         return connectionnEstabilished;
     }
 
-    public HTTPConnection(URL url, Proxy p, sun.net.www.protocol.http.Handler handler) {
+    public HTTPConnection(URL url, Proxy p, Handler handler) {
 
         super(url, p, handler);
         this.proxy = (JDProxy) p;
@@ -194,6 +195,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
 
     }
 
+    @SuppressWarnings("unchecked")
     public String toString() {
 
         StringBuilder sb = new StringBuilder();
@@ -202,11 +204,12 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
         sb.append("----------------Request------------------\r\n");
 
         sb.append(getRequestMethod() + " " + getURL().getPath() + (getURL().getQuery() != null ? "?" + getURL().getQuery() : "") + " HTTP/1.1\r\n");
-//        if (getURL().getPort() > 0 && getURL().getPort() != 80) {
-//            sb.append("Host: " + getURL().getHost() + (":" + getURL().getPort()) + "\r\n");
-//        } else {
-//            sb.append("Host: " + getURL().getHost() + "\r\n");
-//        }
+        // if (getURL().getPort() > 0 && getURL().getPort() != 80) {
+        // sb.append("Host: " + getURL().getHost() + (":" + getURL().getPort())
+        // + "\r\n");
+        // } else {
+        // sb.append("Host: " + getURL().getHost() + "\r\n");
+        // }
         for (Iterator<Entry<String, List<String>>> it = this.getRequestProperties().entrySet().iterator(); it.hasNext();) {
             Entry<String, List<String>> next = it.next();
             StringBuilder value = new StringBuilder();

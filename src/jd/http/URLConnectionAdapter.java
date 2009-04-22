@@ -12,6 +12,7 @@ import jd.http.requests.Request;
 
 public interface URLConnectionAdapter {
 
+    @SuppressWarnings("unchecked")
     Map getHeaderFields();
 
     String getHeaderField(String string);

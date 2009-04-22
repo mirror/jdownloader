@@ -21,19 +21,19 @@ public class JDSeparator extends JXCollapsiblePane implements PropertyChangeList
     private ImageIcon left;
     private ImageIcon right;
     private boolean minimized;
-    private boolean mouseover;
+
+    // private boolean mouseover;
 
     public JDSeparator() {
         setLayout(new MigLayout("ins 0,wrap 1"));
+        addMouseListener(this);
 
-        this.addMouseListener(this);
-        SimpleGUI.CURRENTGUI.getLeftcolPane().addMouseListener(this);
+        // SimpleGUI.CURRENTGUI.getLeftcolPane().addMouseListener(this);
         left = JDTheme.II("gui.images.minimize.left", 5, 10);
         right = JDTheme.II("gui.images.minimize.right", 5, 10);
         add(minimize = new JLabel(left), "width 4!,gapright 1");
-
         minimize.setToolTipText(JDLocale.L("gui.sidebar.splitbuttons.hide.tooltip", "Hide the Sidebar"));
-
+        minimize.addMouseListener(this);
         minimize.setOpaque(false);
 
         // setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -57,26 +57,21 @@ public class JDSeparator extends JXCollapsiblePane implements PropertyChangeList
         if (evt.getSource() instanceof JXCollapsiblePane && evt.getPropertyName().equals("collapsed")) {
             if (((JXCollapsiblePane) evt.getSource()).isCollapsed()) {
                 setMinimized(true);
-
             } else {
                 setMinimized(false);
-
             }
-
         }
-
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getSource() == this) {
+        if (e.getSource() == this || e.getSource() == minimize) {
             if (minimized) {
                 SimpleGUI.CURRENTGUI.hideSideBar(false);
             } else {
                 SimpleGUI.CURRENTGUI.hideSideBar(true);
             }
-            mouseover = false;
+            // mouseover = false;
         }
-
     }
 
     public void mouseEntered(MouseEvent e) {
