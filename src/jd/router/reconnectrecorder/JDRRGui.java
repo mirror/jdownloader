@@ -35,6 +35,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 
@@ -42,7 +43,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectMethod;
-import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.nutils.JDImage;
@@ -162,18 +162,13 @@ public class JDRRGui extends JDialog implements ActionListener {
                 // TODO Auto-generated catch block
                 JDLogger.exception(e1);
             }
-
-            GuiRunnable<Integer> run = new GuiRunnable<Integer>() {
-                @Override
-                public Integer runSave() {
-                    JDRRInfoPopup popup = new JDRRInfoPopup(ip_before);
-                    popup.start_check();
+            final JDRRInfoPopup popup = new JDRRInfoPopup(ip_before);
+            popup.start_check();
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
                     popup.setVisible(true);
-                    return 1;
                 }
-            };
-            run.waitForEDT();
-
+            });
             return;
         }
         dispose();
@@ -278,37 +273,33 @@ public class JDRRGui extends JDialog implements ActionListener {
 
         public void closePopup() {
             JDRR.stopServer();
-            GuiRunnable<Integer> run = new GuiRunnable<Integer>() {
-                @Override
-                public Integer runSave() {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
                     btnStop.setEnabled(false);
-                    ip_after = JDUtilities.getIPAddress(null);
-                    if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
-                        if (reconnect_timer == 0) {
-                            /*
-                             * Reconnect fand innerhalb des Check-Intervalls
-                             * statt
-                             */
-                            reconnect_duration = check_intervall;
-                        } else {
-                            reconnect_duration = System.currentTimeMillis() - reconnect_timer;
-                        }
-                        JDLogger.getLogger().info("dauer: " + reconnect_duration + "");
-                        statusicon.setStatus(1);
-                    } else {
-                        statusicon.setStatus(-1);
-                    }
-                    if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
-                        save();
-                    } else {
-                        // save(); /*zu debugzwecken*/
-                        JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
-                    }
-                    dispose();
-                    return 1;
                 }
-            };
-            run.waitForEDT();
+            });
+            ip_after = JDUtilities.getIPAddress(null);
+            if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
+                if (reconnect_timer == 0) {
+                    /*
+                     * Reconnect fand innerhalb des Check-Intervalls statt
+                     */
+                    reconnect_duration = check_intervall;
+                } else {
+                    reconnect_duration = System.currentTimeMillis() - reconnect_timer;
+                }
+                JDLogger.getLogger().info("dauer: " + reconnect_duration + "");
+                statusicon.setStatus(1);
+            } else {
+                statusicon.setStatus(-1);
+            }
+            if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
+                save();
+            } else {
+                // save(); /*zu debugzwecken*/
+                JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
+            }
+            dispose();
         }
 
         public void actionPerformed(ActionEvent arg0) {
