@@ -99,12 +99,10 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         imgFinished = JDTheme.II("gui.images.ok", 16, 16);
         imgFailed = JDTheme.II("gui.images.bad", 16, 16);
         imgExtract = JDTheme.II("gui.images.update_manager", 16, 16);
-
     }
 
     private void initLocale() {
         strPluginDisabled = JDLocale.L("gui.downloadlink.plugindisabled", "[Plugin disabled]");
-        JDLocale.L("gui.filepackage.finished", "[finished]");
         strDownloadLinkActive = JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
         strETA = JDLocale.L("gui.eta", "ETA");
         strPluginError = JDLocale.L("gui.treetable.error.plugin", "Plugin error");

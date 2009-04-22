@@ -483,7 +483,7 @@ public class JDInit {
         new HostPluginWrapper("Speedy-Share.com", "Speedy_ShareCom", "http://[\\w\\.]*?speedy\\-share\\.com/[a-zA-Z0-9]+/(.*)");
         new HostPluginWrapper("Shragle.com", "ShragleCom", "http://[\\w\\.]*?shragle\\.(com|de)/files/[a-zA-Z0-9]+/.*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Vip-File.com", "Vipfilecom", "http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Rasy-Share.com", "EasyShareCom", "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("Easy-Share.com", "EasyShareCom", "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Uploader.pl", "UploaderPl", "http://[\\w\\.]*?uploader\\.pl/\\?d=[A-F0-9]+", PluginWrapper.LOAD_ON_INIT);
 
         // Free Hoster
@@ -564,7 +564,8 @@ public class JDInit {
         new HostPluginWrapper("FileLoad.us", "FileloadUs", "http://[\\w\\.]*?fileload\\.us/.*");
         new HostPluginWrapper("EnterUpload.com", "EnteruploadCom", "http://[\\w\\.]*?enterupload\\.com/.*");
         new HostPluginWrapper("6Giga.com", "SixGigaCom", "http://[\\w\\.]*?6giga\\.com/.*");
-        //new HostPluginWrapper("FilesDump.com", "FilesDumpCom", "http://.*?filesdump\\.com/file/[a-f0-9]+/.*?");
+        // new HostPluginWrapper("FilesDump.com", "FilesDumpCom",
+        // "http://.*?filesdump\\.com/file/[a-f0-9]+/.*?");
         new HostPluginWrapper("UpMusic.in", "UpMusicIn", "http://[\\w\\.]*?upmusic\\.in/[a-z0-9]+.*?");
         new HostPluginWrapper("SuperShare.pl", "SuperSharePl", "http://[\\w\\.]*?supershare\\.pl/\\?d=[A-F0-9]+");
         new HostPluginWrapper("FileFront.com", "FileFrontCom", "http://files.filefront\\.com/.*");
@@ -610,7 +611,7 @@ public class JDInit {
 
         new OptionalPluginWrapper("JDInfoFileWriter", 1.5);
 
-        new OptionalPluginWrapper("StreamingShareTool", 1.5);
+        // new OptionalPluginWrapper("StreamingShareTool", 1.5);
 
         new OptionalPluginWrapper("langfileeditor.LangFileEditor", 1.5);
 
