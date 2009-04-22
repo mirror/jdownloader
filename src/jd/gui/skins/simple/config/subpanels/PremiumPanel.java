@@ -320,14 +320,11 @@ public class PremiumPanel extends JPanel {
             txtPassword.addFocusListener(this);
 
             this.account = new Account(txtUsername.getText(), new String(txtPassword.getPassword()));
-            chkEnable.setSelected(false);
-            txtPassword.setEnabled(false);
-            txtUsername.setEnabled(false);
-            txtStatus.setEnabled(false);
-            btnCheck.setEnabled(false);
-            lblPassword.setEnabled(false);
-            lblUsername.setEnabled(false);
+            
+            setEnabled(false);
             account.setEnabled(chkEnable.isSelected());
+            chkEnable.setSelected(false);
+            
             info = new JXCollapsiblePane();
             info.setCollapsed(true);
             info.addPropertyChangeListener(new PropertyChangeListener() {
@@ -340,6 +337,16 @@ public class PremiumPanel extends JPanel {
             });
 
             add(info, "skip,spanx,growx,newline");
+        }
+        
+        public void setEnabled(boolean flag) {
+        	chkEnable.setSelected(flag);
+            txtPassword.setEnabled(flag);
+            txtUsername.setEnabled(flag);
+            txtStatus.setEnabled(flag);
+            btnCheck.setEnabled(flag);
+            lblPassword.setEnabled(flag);
+            lblUsername.setEnabled(flag);
         }
 
         public void stateChanged(ChangeEvent e) {
@@ -355,12 +362,7 @@ public class PremiumPanel extends JPanel {
                 chkEnable.setForeground(DISABLED);
             }
 
-            txtPassword.setEnabled(sel);
-            txtUsername.setEnabled(sel);
-            txtStatus.setEnabled(sel);
-            btnCheck.setEnabled(sel);
-            lblPassword.setEnabled(sel);
-            lblUsername.setEnabled(sel);
+            setEnabled(sel);
             if (!sel) info.setCollapsed(true);
 
         }
@@ -386,23 +388,18 @@ public class PremiumPanel extends JPanel {
 
                         if (!ai.isValid()) {
                             txtStatus.setText(ai.getStatus());
+                            setEnabled(false);
                             return;
+                        } else if(ai.isExpired()) {
+                        	txtStatus.setText(JDLocale.L("gui.premiumpanel.expired", "This Account is expired"));
+                        	setEnabled(false);
+                        	return;
                         }
 
                         DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
-                        // ChartAPI_GOM freeTraffic = new ChartAPI_GOM("", 200,
-                        // 100);
-                        // double procent = ((double) ai.getTrafficLeft() /
-                        // (double) ai.getTrafficMax() * 100);
-                        // freeTraffic.addEntity(new
-                        // ChartAPIEntity(JDUtilities.formatBytesToMB
-                        // (ai.getTrafficLeft()) + " free",
-                        // String.valueOf(procent), new Color(50, 200, 50)));
-                        // freeTraffic.fetchImage();
 
                         JDProgressBar bar = new JDProgressBar();
                         bar.setOrientation(SwingConstants.VERTICAL);
-                        // bar.setBorder(null);
 
                         bar.setStringPainted(true);
 
@@ -418,32 +415,32 @@ public class PremiumPanel extends JPanel {
                         details.add(bar, "cell 0 0,spany,aligny top, height n:40:n, growy,width 30!");
 
                         if (ai.getValidUntil() > -1) {
-                            details.add(new JLabel("Valid until"), "");
+                            details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.valid", "Valid until")), "");
                             details.add(getTextField(formater.format(new Date(ai.getValidUntil()))), "");
                         }
 
                         if (ai.getAccountBalance() > -1) {
-                            details.add(new JLabel("Balance"), "");
+                            details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.balance", "Balance")), "");
                             details.add(getTextField(String.valueOf(ai.getAccountBalance() / 100) + " €"), "");
                         }
                         if (ai.getFilesNum() > -1) {
-                            details.add(new JLabel("Files stored"), "");
+                            details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.files", "Files stored")), "");
                             details.add(getTextField(String.valueOf(ai.getFilesNum())), "");
                         }
                         if (ai.getUsedSpace() > -1) {
-                            details.add(new JLabel("Used Space"), "");
+                            details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.space", "Used Space")), "");
                             details.add(getTextField(JDUtilities.formatReadable(ai.getUsedSpace())), "");
                         }
                         if (ai.getPremiumPoints() > -1) {
-                            details.add(new JLabel("PremiumPoints"), "");
+                            details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.points", "Points")), "");
                             details.add(getTextField(String.valueOf(ai.getPremiumPoints())), "");
                         }
                         if (ai.getTrafficShareLeft() > -1) {
-                            details.add(new JLabel("Trafficshare left"), "");
+                            details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.trafficshare", "Trafficshare left")), "");
                             details.add(getTextField(JDUtilities.formatReadable(ai.getTrafficShareLeft())), "");
                         }
                         if (ai.getTrafficLeft() > -1) {
-                            details.add(new JLabel("Traffic left"), "aligny top");
+                            details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.traffic", "Traffic left")), "aligny top");
                             details.add(getTextField(JDUtilities.formatReadable(ai.getTrafficLeft())), "aligny top");
 
                         }
