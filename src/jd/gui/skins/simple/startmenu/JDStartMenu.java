@@ -21,7 +21,6 @@ public class JDStartMenu {
         menu.add(new JSeparator());
         menu.add(new RestartAction());
         menu.add(new ExitAction());
-        // addMenu(JDLocale.L("gui.startmenu.exit", "Exit"))
 
     }
 

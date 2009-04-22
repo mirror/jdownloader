@@ -24,7 +24,6 @@ public abstract class StartAction extends AbstractAction {
 
     protected void setIcon(String key) {
         putValue(Action.SMALL_ICON, JDTheme.II(key, (int) dimension.getWidth(), (int) dimension.getHeight()));
-
     }
 
     protected void setAccelerator(String key) {
@@ -32,10 +31,9 @@ public abstract class StartAction extends AbstractAction {
         if (acceleratorString != null && acceleratorString.length() > 0) {
             putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(acceleratorString));
         }
-
     }
 
-    protected void setMnemonic(String key, String kename) {
+    protected void setMnemonic(String key, String keyname) {
         char mnemonic = JDLocale.L(key, "-").charAt(0);
 
         if (mnemonic != 0 && JDLocale.L(key, "-").contentEquals("-") == false) {
@@ -46,27 +44,23 @@ public abstract class StartAction extends AbstractAction {
                 int m = (Integer) f.get(null);
                 putValue(Action.MNEMONIC_KEY, m);
 
-                putValue(Action.DISPLAYED_MNEMONIC_INDEX_KEY, JDLocale.L(kename, kename).indexOf(m));
+                putValue(Action.DISPLAYED_MNEMONIC_INDEX_KEY, JDLocale.L(keyname, keyname).indexOf(m));
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
         }
-
     }
 
     protected void setName(String string) {
         putValue(Action.NAME, JDLocale.L(string, string));
-
     }
 
     protected void setIconDim(Dimension dimension) {
         this.dimension = dimension;
-
     }
 
     protected void setShortDescription(String string) {
         putValue(Action.SHORT_DESCRIPTION, JDLocale.L(string, string));
-
     }
 
     abstract public void init();
