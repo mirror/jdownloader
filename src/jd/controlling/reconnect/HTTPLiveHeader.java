@@ -97,7 +97,6 @@ public class HTTPLiveHeader extends ReconnectMethod {
         script = script.replaceAll("\\[\\[\\[", "<");
         script = script.replaceAll("\\]\\]\\]", ">");
         script = script.replaceAll("<REQUEST(.*?)>", "<REQUEST$1><![CDATA[");
-        script = script.replaceAll("<REQUEST>", "<REQUEST><![CDATA[");
         script = script.replaceAll("</REQUEST>", "]]></REQUEST>");
         script = script.replaceAll("<RESPONSE(.*?)>", "<RESPONSE$1><![CDATA[");
         script = script.replaceAll("</RESPONSE.*>", "]]></RESPONSE>");
