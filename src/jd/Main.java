@@ -284,7 +284,7 @@ public class Main {
             LOGGER.info("init Eventmanager");
             Interaction.initTriggers();
             LOGGER.info("init Localisation");
-            Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadLanguage", "lade Sprachen"));
+            Main.increaseSplashStatus();
 
             JDSounds.setSoundTheme("default");
             start(args);
@@ -368,14 +368,9 @@ public class Main {
 
     }
 
-    private static void setSplashStatus(SplashScreen splashScreen, int i, String l) {
-        // System.out.println(l);
-        if (splashScreen == null) { return; }
-
+    private static void increaseSplashStatus() {
+        if (splashScreen == null) return;
         splashScreen.setNextImage();
-        // splashScreen.setText(l);
-        // splashScreen.setValue(splashScreen.getValue() + i);
-
     }
 
     @SuppressWarnings("unchecked")
@@ -385,7 +380,7 @@ public class Main {
         init.init();
 
         LOGGER.info("init Configuration");
-        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "Lade Konfiguration"));
+        Main.increaseSplashStatus();
 
         String old = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("LOCALE", null);
         if (old != null) {
@@ -399,53 +394,32 @@ public class Main {
             JOptionPane.showMessageDialog(null, "JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
 
-        // JFrame.setDefaultLookAndFeelDecorated(true);
-        // JDialog.setDefaultLookAndFeelDecorated(true);
         if (JDInitFlags.SWITCH_DEBUG) {
             LOGGER.info("DEBUG MODE ACTIVATED");
             LOGGER.setLevel(Level.ALL);
         } else {
             JDLogger.removeConsoleHandler();
         }
-        // JDInit.setupProxy();
-        // JDInit.setupSocks();
+
         WebUpdater.getConfig("WEBUPDATE").save();
         init.removeFiles();
         LOGGER.info("init Controller");
-        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.initcontroller", "Starte Controller"));
+        Main.increaseSplashStatus();
 
         final JDController controller = init.initController();
 
-        // if (JDInitFlags.SWITCH_DEBUG ||
-        // JDUtilities.getConfiguration().getBooleanProperty
-        // (Configuration.LOGGER_FILELOG, false)) {
-        // try {
-        //                
-        // File log = JDUtilities.getResourceFile("logs/" +
-        // (JDInitFlags.SWITCH_DEBUG ? "debug" : "") + "log_" +
-        // System.currentTimeMillis() + ".log");
-        // LOGGER.info("DEBUGGER: Write log to "+log);
-        // if (!log.getParentFile().exists()) {
-        // log.getParentFile().mkdirs();
-        // }
-        // controller.setLogFileWriter(new BufferedWriter(new FileWriter(log)));
-        // } catch (IOException e) {
-        // LOGGER.log(Level.SEVERE
-        // ,"Exception occured",e);
-        // }
-        // }
         LOGGER.info("init Webupdate");
-        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.webupdate", "Check Updates"));
+        Main.increaseSplashStatus();
         new WebUpdate().doWebupdate(false);
         LOGGER.info("init plugins");
-        Main.setSplashStatus(splashScreen, 15, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
+        Main.increaseSplashStatus();
         init.initPlugins();
 
         Locale.setDefault(Locale.ENGLISH);
 
         LOGGER.info("init gui");
-        Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
-        new GuiRunnable() {
+        Main.increaseSplashStatus();
+        new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
@@ -455,10 +429,10 @@ public class Main {
 
         }.waitForEDT();
         LOGGER.info("init downloadqueue");
-        Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loaddownloadqueue", "Lade Downloadliste"));
+        Main.increaseSplashStatus();
         init.initDownloadController();
 
-        Main.setSplashStatus(splashScreen, 100, JDLocale.L("gui.splash.text.finished", "Fertig"));
+        Main.increaseSplashStatus();
         LOGGER.info("Initialisation finished");
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
 
