@@ -16,14 +16,18 @@
 
 package jd.plugins.host;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
@@ -44,10 +48,11 @@ public class IfolderRu extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
 
-        if (br.containsHTML("<p>Файл номер <b>\\d+</b> удален !!!</p>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("<p>Файл номер <b>\\d+</b> удален !!!</p>") || br.containsHTML("<p>Файл номер <b>\\d+</b> не найден !!!</p>"))
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        String filename = br.getRegex("Название:\\s*<b>(.*?)</b>").getMatch(0);
-        String filesize = br.getRegex("Размер:\\s*<b>(.*?)</b>").getMatch(0);
+        String filename = br.getRegex("Название:\\s+<b>(.*?)</b>").getMatch(0);
+        String filesize = br.getRegex("Размер:\\s+<b>(.*?)</b>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize.replace("Мб", "Mb").replace("кб", "Kb")));
@@ -56,6 +61,7 @@ public class IfolderRu extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        boolean do_download = false;
         getFileInformation(downloadLink);
         br.setFollowRedirects(true);
 
@@ -70,39 +76,47 @@ public class IfolderRu extends PluginForHost {
             watchAd = br.getRegex("\"f_top\" src=\"(.*?)\"").getMatch(0);
             if (watchAd == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.getPage(watchAd);
+            /* Tickettime */
             String ticketTimeS = br.getRegex("delay = (\\d+)").getMatch(0);
             if (ticketTimeS == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             int ticketTime = Integer.parseInt(ticketTimeS) * 1000;
             this.sleep(ticketTime, downloadLink);
             br.getPage(watchAd);
         }
+        for (int retry = 1; retry <= 5; retry++) {
+            Form captchaForm = br.getFormbyProperty("name", "form1");
+            String captchaurl = br.getRegex("(/random/images/.*?)\"").getMatch(0);
+            String tag = br.getRegex("tag.value = \"(.*?)\"").getMatch(0);
+            String secret = br.getRegex("var\\s+s=\\s+'(.*?)';").getMatch(0).substring(2);
+            if (captchaForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (tag != null && secret != null) {
+                captchaForm.put("interstitials_session", tag);
+                InputField nv = new InputField(secret, "1");
+                captchaForm.addInputField(nv);
+            } else
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            captchaForm.setAction(br.getURL());
 
-        Form captchaForm = br.getFormbyProperty("name", "form1");
-        String captcha = br.getRegex("(/random/images/.*?)\"").getMatch(0);
-        String tag = br.getRegex("tag.value = \"(.*?)\"").getMatch(0);
-        String secret = br.getRegex("s= '..(.*?)'").getMatch(0);
-        String hidden = br.getRegex("'hidden_code', '..(.+?)'").getMatch(0);
-        if (captchaForm == null || captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        if (tag != null && secret != null) {
-            captchaForm.put("interstitials_session", tag);
-            InputField nv = new InputField(secret, "1");
-            captchaForm.addInputField(nv);
-        } else if (hidden != null) {
-            InputField nv = new InputField("hidden_code", hidden);
-            captchaForm.addInputField(nv);
-        } else
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        captchaForm.setAction(br.getURL());
+            /* Captcha */
+            URLConnectionAdapter con = br.openGetConnection(captchaurl);
+            File file = this.getLocalCaptchaFile(this);
+            Browser.download(file, con);
+            String captchaCode = Plugin.getCaptchaCode(file, this, downloadLink);
+            captchaForm.put("confirmed_number", captchaCode);
 
-        String captchaCode = getCaptchaCode(captcha, downloadLink);
-        captchaForm.put("confirmed_number", captchaCode);
-        br.submitForm(captchaForm);
+            br.submitForm(captchaForm);
 
-        String directLink = br.getRegex("Ссылка для скачивания файла:<br><br><a href=\"(.+?)\"").getMatch(0);
-        if (directLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = br.openDownload(downloadLink, directLink);
-        dl.setResume(true);
-        dl.startDownload();
+            String directLink = br.getRegex("Ссылка для скачивания файла:<br><br><a href=\"(.+?)\"").getMatch(0);
+            if (directLink != null) {
+                dl = br.openDownload(downloadLink, directLink);
+                dl.setResume(true);
+                do_download = true;
+                break;
+            }
+        }
+        if (do_download) {
+            dl.startDownload();
+        } else throw new PluginException(LinkStatus.ERROR_CAPTCHA);
     }
 
     @Override
@@ -116,12 +130,14 @@ public class IfolderRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        /* Tested up to 10 parallel downloads */
+        return 10;
     }
 
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
+
 }
