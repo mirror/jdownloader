@@ -45,6 +45,7 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -265,7 +266,7 @@ public class PremiumPanel extends JPanel {
                 chkEnable.setText(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
                 chkEnable.setForeground(INACTIVE);
             } else {
-                chkEnable.setText(JDLocale.LF("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>", nr));
+                chkEnable.setText(JDLocale.L("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>"));
                 chkEnable.setForeground(DISABLED);
             }
 
@@ -320,14 +321,21 @@ public class PremiumPanel extends JPanel {
             add(info, "skip,spanx,growx,newline");
         }
 
-        public void setEnabled(boolean flag) {
-            chkEnable.setSelected(flag);
-            txtPassword.setEnabled(flag);
-            txtUsername.setEnabled(flag);
-            txtStatus.setEnabled(flag);
-            btnCheck.setEnabled(flag);
-            lblPassword.setEnabled(flag);
-            lblUsername.setEnabled(flag);
+        @Override
+        public void setEnabled(final boolean flag) {
+            SwingUtilities.invokeLater(new Runnable() {
+
+                public void run() {
+                    chkEnable.setSelected(flag);
+                    txtPassword.setEnabled(flag);
+                    txtUsername.setEnabled(flag);
+                    txtStatus.setEnabled(flag);
+                    btnCheck.setEnabled(flag);
+                    lblPassword.setEnabled(flag);
+                    lblUsername.setEnabled(flag);
+                }
+
+            });
         }
 
         public void stateChanged(ChangeEvent e) {
