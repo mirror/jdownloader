@@ -18,6 +18,7 @@ package jd.plugins.host;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -41,9 +42,9 @@ public class MegaShareCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Not Found")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        if (br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.postPage(br.getURL(), "FreeDz=FREE");
+        if (br.containsHTML("This File has been DELETED")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return true;
     }
 
@@ -55,8 +56,12 @@ public class MegaShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        br.postPage(br.getURL(), "FreeDz=FREE");
-        dl = br.openDownload(downloadLink, br.getURL(), "yesss=Download");
+        Form form = br.getForm(0);
+        form.remove("accel");
+        form.remove("yesss");
+        form.remove("yesss");
+        form.put("yesss", "Download");
+        dl = br.openDownload(downloadLink, form, true, 1);
         dl.startDownload();
     }
 
@@ -75,6 +80,6 @@ public class MegaShareCom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }
