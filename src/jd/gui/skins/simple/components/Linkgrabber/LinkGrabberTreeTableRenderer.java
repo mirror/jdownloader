@@ -8,7 +8,6 @@ import javax.swing.JTable;
 import javax.swing.border.Border;
 
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

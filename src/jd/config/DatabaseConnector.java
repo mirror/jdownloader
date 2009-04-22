@@ -19,6 +19,8 @@ package jd.config;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.sql.Connection;
@@ -101,26 +103,31 @@ public class DatabaseConnector implements Serializable {
                             }
                         }
                     } catch (Exception e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     }
                 }
             }
 
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
     }
 
     /**
      * Checks the database of inconsistency
+     * 
+     * @throws IOException
      */
     private boolean checkDatabaseHeader() {
         logger.finer("Checking database");
         File f = new File(configpath + "database.script");
         if (!f.exists()) return true;
         boolean databaseok = true;
+
+        FileInputStream fis = null;
         try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+            fis = new FileInputStream(f);
+            BufferedReader in = new BufferedReader(new InputStreamReader(fis));
             String line = "";
             int counter = 0;
 
@@ -174,8 +181,15 @@ public class DatabaseConnector implements Serializable {
                 }
             }
             in.close();
-        } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            fis.close();
+        } catch (FileNotFoundException e) {
+            databaseok = false;
+        } catch (IOException e) {
+            databaseok = false;
+            try {
+                fis.close();
+            } catch (IOException e1) {
+            }
         }
         return databaseok;
     }
@@ -196,8 +210,8 @@ public class DatabaseConnector implements Serializable {
 
             }
         } catch (Exception e) {
-          
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
 
         return ret;
@@ -222,7 +236,7 @@ public class DatabaseConnector implements Serializable {
                 pst.execute();
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
     }
 
@@ -234,7 +248,7 @@ public class DatabaseConnector implements Serializable {
 
             con.close();
         } catch (SQLException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
     }
 
@@ -247,7 +261,7 @@ public class DatabaseConnector implements Serializable {
             rs.next();
             return rs.getObject(2);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return null;
     }
@@ -268,7 +282,7 @@ public class DatabaseConnector implements Serializable {
                 pst.execute();
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
     }
 

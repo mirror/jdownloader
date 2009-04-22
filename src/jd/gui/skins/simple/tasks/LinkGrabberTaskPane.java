@@ -16,7 +16,6 @@ import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberListener;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberTreeTableAction;
-import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
