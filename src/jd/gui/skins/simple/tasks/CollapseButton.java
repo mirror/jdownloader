@@ -1,7 +1,6 @@
 package jd.gui.skins.simple.tasks;
 
 import java.awt.Container;
-import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -10,7 +9,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
-import jd.gui.skins.simple.components.JDUnderlinedText;
+import jd.gui.skins.simple.Factory;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
@@ -56,22 +55,7 @@ public class CollapseButton extends JPanel {
     }
 
     private JButton createButton(String string, Icon i) {
-        JButton bt;
-
-        if (i == null) {
-            bt = new JButton(string);
-        } else {
-            bt = new JButton(string, i);
-        }
-
-        bt.setContentAreaFilled(false);
-        bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        bt.setFocusPainted(false);
-        bt.setBorderPainted(false);
-        bt.setHorizontalAlignment(JButton.LEFT);
-        // bt.addActionListener(this);
-        bt.addMouseListener(new JDUnderlinedText());
-        return bt;
+        return Factory.createButton(string, i);
     }
 
     public JButton getButton() {

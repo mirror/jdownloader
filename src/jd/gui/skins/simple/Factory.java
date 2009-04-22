@@ -1,6 +1,5 @@
 package jd.gui.skins.simple;
 
-import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
@@ -22,12 +21,11 @@ import net.miginfocom.swing.MigLayout;
 
 public class Factory {
 
-    public static Component createHeader(ConfigGroup group) {
+    public static JPanel createHeader(ConfigGroup group) {
         return createHeader(group.getName(), group.getIcon());
-
     }
 
-    public static Component createHeader(String name, ImageIcon icon) {
+    public static JPanel createHeader(String name, ImageIcon icon) {
         JPanel ret = new JPanel(new MigLayout("ins 0", "[]10[grow,fill]3[]"));
         JLinkButton label;
         try {
@@ -43,6 +41,10 @@ public class Factory {
         return ret;
     }
 
+    public static JButton createButton(String string, Icon i) {
+        return createButton(string, i, null);
+    }
+
     public static JButton createButton(String string, Icon i, ActionListener listener) {
         JButton bt;
         if (i != null) {
@@ -56,7 +58,7 @@ public class Factory {
         bt.setFocusPainted(false);
         bt.setBorderPainted(false);
         bt.setHorizontalAlignment(JButton.LEFT);
-        bt.addActionListener(listener);
+        if (listener != null) bt.addActionListener(listener);
         bt.addMouseListener(new JDUnderlinedText());
         return bt;
     }

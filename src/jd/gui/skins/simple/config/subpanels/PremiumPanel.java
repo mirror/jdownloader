@@ -55,7 +55,6 @@ import jd.gui.JDLookAndFeelManager;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.JDTextField;
-import jd.gui.skins.simple.components.JDUnderlinedText;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
@@ -195,21 +194,7 @@ public class PremiumPanel extends JPanel {
     }
 
     public JButton createButton(String string, Icon i) {
-        JButton bt;
-        if (i != null) {
-            bt = new JButton(string, i);
-        } else {
-            bt = new JButton(string);
-        }
-
-        bt.setContentAreaFilled(false);
-        bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        bt.setFocusPainted(false);
-        bt.setBorderPainted(false);
-        bt.setHorizontalAlignment(JButton.LEFT);
-
-        bt.addMouseListener(new JDUnderlinedText());
-        return bt;
+        return Factory.createButton(string, i);
     }
 
     private class AccountPanel extends JPanel implements ChangeListener, ActionListener, FocusListener {
@@ -320,11 +305,11 @@ public class PremiumPanel extends JPanel {
             txtPassword.addFocusListener(this);
 
             this.account = new Account(txtUsername.getText(), new String(txtPassword.getPassword()));
-            
+
             setEnabled(false);
             account.setEnabled(chkEnable.isSelected());
             chkEnable.setSelected(false);
-            
+
             info = new JXCollapsiblePane();
             info.setCollapsed(true);
             info.addPropertyChangeListener(new PropertyChangeListener() {
@@ -338,9 +323,9 @@ public class PremiumPanel extends JPanel {
 
             add(info, "skip,spanx,growx,newline");
         }
-        
+
         public void setEnabled(boolean flag) {
-        	chkEnable.setSelected(flag);
+            chkEnable.setSelected(flag);
             txtPassword.setEnabled(flag);
             txtUsername.setEnabled(flag);
             txtStatus.setEnabled(flag);
@@ -390,10 +375,10 @@ public class PremiumPanel extends JPanel {
                             txtStatus.setText(ai.getStatus());
                             setEnabled(false);
                             return;
-                        } else if(ai.isExpired()) {
-                        	txtStatus.setText(JDLocale.L("gui.premiumpanel.expired", "This Account is expired"));
-                        	setEnabled(false);
-                        	return;
+                        } else if (ai.isExpired()) {
+                            txtStatus.setText(JDLocale.L("gui.premiumpanel.expired", "This Account is expired"));
+                            setEnabled(false);
+                            return;
                         }
 
                         DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
