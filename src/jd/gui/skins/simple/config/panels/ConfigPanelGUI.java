@@ -21,6 +21,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.List;
 import java.util.Locale;
+import java.util.logging.Level;
 
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -31,6 +32,7 @@ import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.controlling.JDLogger;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
@@ -146,9 +148,9 @@ public class ConfigPanelGUI extends ConfigPanel {
                 launcher = new BrowserLauncher();
                 ar = launcher.getBrowserList();
             } catch (BrowserLaunchingInitializingException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
             } catch (UnsupportedOperatingSystemException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
             }
             if (ar == null || ar.size() < 2) {
                 browserArray = new Object[] { "JavaBrowser" };
@@ -175,7 +177,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                         save();
                         JLinkButton.openURL("http://jdownloader.org");
                     } catch (Exception e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                        JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
                         SimpleGUI.CURRENTGUI.showMessageDialog(JDLocale.LF("gui.config.gui.testbrowser.error", "Browser launcher failed: %s", e.getLocalizedMessage()));
                     }
                 }
@@ -266,7 +268,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                             restart |= JDLookAndFeelManager.getPlaf().isJGoodies() && UIManager.getLookAndFeel().getSupportsWindowDecorations();
                             restart |= JDLookAndFeelManager.getPlaf().isSubstance() && !UIManager.getLookAndFeel().getSupportsWindowDecorations();
                             if (restart) {
-                                if (!SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.dialog.plaf.restart", "This Look&Feel needs JDownloader to restart.Restart Now?"), JDLocale.L("gui.dialog.plaf.restart.title", "Restart JDownloader?"))) { return null; }
+                                if (!SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.dialog.plaf.restart", "This Look&Feel needs JDownloader to restart. Restart now?"), JDLocale.L("gui.dialog.plaf.restart.title", "Restart JDownloader?"))) return null;
 
                                 JDUtilities.restartJD();
                             }
@@ -276,7 +278,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                             SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
 
                         } catch (Exception e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
                         }
                         return null;
                     }

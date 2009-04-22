@@ -250,29 +250,25 @@ public class PremiumPanel extends JPanel {
             this.setLayout(new MigLayout("ins 5, wrap 4", "[shrink][grow 20][shrink][grow 20]"));
             this.setOpaque(false);
             this.setBackground(null);
-            /**
-             * JGoodioes seems to have a performance bug rendering jCHeckboxes.
-             * which
+            /*
+             * JGoodies seems to have a performance bug rendering JCheckBoxes.
              */
             if (JDLookAndFeelManager.getPlaf().isJGoodies()) {
-                if (premiumActivated) {
-                    chkEnable = new JToggleButton(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
-                    chkEnable.setForeground(INACTIVE);
-                } else {
-                    chkEnable = new JToggleButton(JDLocale.LF("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>", nr));
-                    chkEnable.setForeground(DISABLED);
-                }
+                chkEnable = new JToggleButton();
                 chkEnable.setIcon(JDTheme.II("gui.images.disabled", 16, 16));
                 chkEnable.setSelectedIcon(JDTheme.II("gui.images.enabled", 16, 16));
             } else {
-                if (premiumActivated) {
-                    chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
-                    chkEnable.setForeground(INACTIVE);
-                } else {
-                    chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>", nr));
-                    chkEnable.setForeground(DISABLED);
-                }
+                chkEnable = new JCheckBox();
             }
+
+            if (premiumActivated) {
+                chkEnable.setText(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
+                chkEnable.setForeground(INACTIVE);
+            } else {
+                chkEnable.setText(JDLocale.LF("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>", nr));
+                chkEnable.setForeground(DISABLED);
+            }
+
             chkEnable.setOpaque(false);
             chkEnable.setContentAreaFilled(false);
             chkEnable.setFocusPainted(false);
