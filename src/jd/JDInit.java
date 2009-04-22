@@ -460,31 +460,31 @@ public class JDInit {
         // Premium Hoster
         new HostPluginWrapper("RapidShare.com", "Rapidshare", "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?.+", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Uploaded.to", "Uploadedto", "((http://[\\w\\.]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[a-zA-Z0-9]+/?)|(http://[\\w\\.]*?ul\\.to/[a-zA-Z0-9\\-]+/?))", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("bluehost.to", "BluehostTo", "http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("depositfiles.com", "DepositFiles", "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("BlueHost.to", "BluehostTo", "http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("DepositFiles.com", "DepositFiles", "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("FileFactory.com", "FileFactory", "http://[\\w\\.]*?filefactory\\.com(/|//)file/[a-zA-Z0-9]+/?", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Filer.net", "FilerNet", "http://[\\w\\.]*?filer.net/(file[\\d]+|get|dl)/.*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Freakshare.net", "Freaksharenet", "http://[\\w\\.]*?freakshare\\.net/files/\\d+/(.*)", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Megashares.Com", "MegasharesCom", "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/(.*\\?d[0-9]{2}=[0-9a-f]{7}|.*?dl/[0-9a-f]+/)", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Megaupload.com", "Megauploadcom", "http://[\\w\\.]*?(megaupload)\\.com/.*?(\\?|&)d=[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("FreakShare.net", "Freaksharenet", "http://[\\w\\.]*?freakshare\\.net/files/\\d+/(.*)", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("MegaShares.Com", "MegasharesCom", "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/(.*\\?d[0-9]{2}=[0-9a-f]{7}|.*?dl/[0-9a-f]+/)", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("MegaUpload.com", "Megauploadcom", "http://[\\w\\.]*?(megaupload)\\.com/.*?(\\?|&)d=[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("MeinUpload.com", "MeinUpload", "(http://[\\w\\.]*?meinupload\\.com/{1,}dl/.+/.+)|(http://[\\w\\.]*?meinupload\\.com/\\?d=.*)|http://[\\w\\.]*?mein-upload\\.com/[a-zA-Z0-9]+(\\.html|/)", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("badongo.com", "BadongoCom", "http://[\\w\\.]*?badongo\\.viajd.*/.*(file|vid)/[0-9]+\\??[0-9]*", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("Badongo.com", "BadongoCom", "http://[\\w\\.]*?badongo\\.viajd.*/.*(file|vid)/[0-9]+\\??[0-9]*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Mooshare.net", "Moosharenet", "http://[\\w\\.]*?mooshare\\.net/files/\\d+/.*?\\.html", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Netload.in", "Netloadin", "http://[\\w\\.]*?netload\\.in/.+", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Qshare.Com", "QshareCom", "http://[\\w\\.]*?qshare\\.com\\/get\\/[0-9]{1,20}\\/.*", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("NetLoad.in", "Netloadin", "http://[\\w\\.]*?netload\\.in/.+", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("QShare.Com", "QshareCom", "http://[\\w\\.]*?qshare\\.com\\/get\\/[0-9]{1,20}\\/.*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("RapidShare.De", "RapidShareDe", "http://[\\w\\.]*?rapidshare\\.de/files/[\\d]{3,9}/.*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("sharebase.to", "ShareBaseTo", "http://[\\w\\.]*?sharebase\\.(de|to)/files/[a-zA-Z0-9]+\\.html", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Youtube.com", "Youtube", "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("ShareBase.to", "ShareBaseTo", "http://[\\w\\.]*?sharebase\\.(de|to)/files/[a-zA-Z0-9]+\\.html", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("YouTube.com", "Youtube", "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Share-Online.Biz", "ShareOnlineBiz", "http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("filehostme.com", "FileHostMecom", "http://[\\w\\.]*?filehostme\\.com/[a-zA-Z0-9]+\\.html", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("gigasize.com", "GigaSizeCom", "http://[\\w\\.]*?gigasize\\.com/get\\.php.*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("letitbit.net", "LetitBitNet", "http://[\\w\\.]*?letitbit\\.net/download/[a-zA-Z0-9]+?/.*", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("FileHostMe.com", "FileHostMecom", "http://[\\w\\.]*?filehostme\\.com/[a-zA-Z0-9]+\\.html", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("GigaSize.com", "GigaSizeCom", "http://[\\w\\.]*?gigasize\\.com/get\\.php.*", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("LetItBit.net", "LetitBitNet", "http://[\\w\\.]*?letitbit\\.net/download/[a-zA-Z0-9]+?/.*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Megarotic.com", "MegaroticCom", "http://[\\w\\.]*?(megarotic|sexuploader)\\.com/.*?\\?d=[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Speedy-Share.com", "Speedy_ShareCom", "http://[\\w\\.]*?speedy\\-share\\.com/[a-zA-Z0-9]+/(.*)");
-        new HostPluginWrapper("shragle.com", "ShragleCom", "http://[\\w\\.]*?shragle\\.(com|de)/files/[a-zA-Z0-9]+/.*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Vip-file.com", "Vipfilecom", "http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("easy-share.com", "EasyShareCom", "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("uploader.pl", "UploaderPl", "http://[\\w\\.]*?uploader\\.pl/\\?d=[A-F0-9]+", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("Shragle.com", "ShragleCom", "http://[\\w\\.]*?shragle\\.(com|de)/files/[a-zA-Z0-9]+/.*", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("Vip-File.com", "Vipfilecom", "http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("Rasy-Share.com", "EasyShareCom", "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("Uploader.pl", "UploaderPl", "http://[\\w\\.]*?uploader\\.pl/\\?d=[A-F0-9]+", PluginWrapper.LOAD_ON_INIT);
 
         // Free Hoster
         new HostPluginWrapper("Share-Now.net", "ShareNownet", "http://[\\w\\.]*?share-now\\.net/{1,}files/\\d+-(.*?)\\.html");
