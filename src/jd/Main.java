@@ -432,7 +432,6 @@ public class Main {
         Main.increaseSplashStatus();
         init.initDownloadController();
 
-        Main.increaseSplashStatus();
         LOGGER.info("Initialisation finished");
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
 

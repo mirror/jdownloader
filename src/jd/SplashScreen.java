@@ -2,7 +2,6 @@ package jd;
 
 import java.awt.AWTException;
 import java.awt.AlphaComposite;
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Graphics2D;
@@ -27,8 +26,6 @@ import jd.gui.JDLookAndFeelManager;
 
 public class SplashScreen implements ActionListener {
 
-  
-
     private float duration = 500.0f;
 
     private BufferedImage image;
@@ -41,7 +38,7 @@ public class SplashScreen implements ActionListener {
     private Timer timer;
     private JWindow window;
 
-//    private BufferedImage screenshot;
+    // private BufferedImage screenshot;
 
     private ArrayList<SplashProgressImage> progressimages;
 
@@ -53,19 +50,10 @@ public class SplashScreen implements ActionListener {
 
     private int w;
 
-    private int imageCounter = 2;
-
-    public BufferedImage getImage() {
-        return image;
-    }
+    private int imageCounter = 1;
 
     public void setNextImage() {
-        // image = imgDb.paintNext();
-        // drawImage(alphaValue);
-        // // label.setImage(currentImage);
-        // label.repaint();
         imageCounter++;
-
     }
 
     public SplashScreen(Image image) throws IOException, AWTException {
@@ -83,17 +71,16 @@ public class SplashScreen implements ActionListener {
         y = (int) (screenHeight / 2 - image.getHeight(null) / 2);
         w = image.getWidth(null);
         h = image.getHeight(null);
-//        createScreenshot();
+        // createScreenshot();
         initGui();
-        annimate();
+        startAnimation();
     }
 
-    private void annimate() {
+    private void startAnimation() {
         timer = new Timer(speed, this);
         timer.setCoalesce(true);
         timer.start();
         startTime = System.currentTimeMillis();
-
     }
 
     private void initGui() {
@@ -105,7 +92,7 @@ public class SplashScreen implements ActionListener {
         window.setAlwaysOnTop(true);
         window.setSize(image.getWidth(null), image.getHeight(null));
         Container content = window.getContentPane();
-        content.add(BorderLayout.NORTH, label);
+        content.add(label);
         window.pack();
         Rectangle b = gc.getBounds();
         window.setLocation(b.x + x, b.y + y);
@@ -113,25 +100,16 @@ public class SplashScreen implements ActionListener {
 
     }
 
-//    private void createScreenshot() throws AWTException {
-//        final Robot robot = new Robot();
-//        final Rectangle rectangle = new Rectangle(x, y, w, h);
-//        screenshot = robot.createScreenCapture(rectangle);
-//    }
+    // private void createScreenshot() throws AWTException {
+    // final Robot robot = new Robot();
+    // final Rectangle rectangle = new Rectangle(x, y, w, h);
+    // screenshot = robot.createScreenCapture(rectangle);
+    // }
 
-    public void actionPerformed(final ActionEvent e) {
-        edtAction(e);
-    }
-
-    private void edtAction(ActionEvent e) {
+    public void actionPerformed(ActionEvent e) {
         float percent = Math.min(1.0f, (System.currentTimeMillis() - startTime) / duration);
-        // if (percent >= 1.0) {
-        // timer.stop();
-        // return;
-        // }
         label.setIcon(drawImage(percent));
         label.repaint();
-
     }
 
     /**
@@ -153,12 +131,12 @@ public class SplashScreen implements ActionListener {
         // RenderingHints.VALUE_RENDER_QUALITY);
         // g2d.setRenderingHints(qualityHints);
 
-       // g2d.drawImage(screenshot, 0, 0, null);
+        // g2d.drawImage(screenshot, 0, 0, null);
         g2d.setColor(Color.WHITE);
-        g2d.fillRect(1, 1, w-2, h-2);
+        g2d.fillRect(1, 1, w - 2, h - 2);
         g2d.setColor(Color.BLACK.brighter());
-        g2d.drawRect(0, 0, w-1, h-1);
-  
+        g2d.drawRect(0, 0, w - 1, h - 1);
+
         g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alphaValue));
         g2d.drawImage(image, 0, 0, null);
         if (progressimages.size() > 0) {
@@ -180,13 +158,11 @@ public class SplashScreen implements ActionListener {
 
     public void addProgressImage(SplashProgressImage splashProgressImage) {
         this.progressimages.add(splashProgressImage);
-
     }
 
     public void finish() {
         timer.stop();
         window.dispose();
-
     }
 
 }
