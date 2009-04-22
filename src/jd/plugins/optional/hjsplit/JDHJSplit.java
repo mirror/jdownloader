@@ -55,8 +55,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     private static final int ARCHIVE_TYPE_NONE = -1;
     private static final int ARCHIVE_TYPE_NORMAL = 0;
     private static final int ARCHIVE_TYPE_UNIX = 1;
-    private static final int ARCHIVE_TYPE_7Z = 2;
-    private static final int ARCHIVE_TYPE_RAR = 2;
     private static final String CONFIG_KEY_OVERWRITE = "OVERWRITE";
 
     // Wird als reihe für anstehende extracthjobs verwendet
@@ -317,9 +315,9 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
         switch (type) {
         case ARCHIVE_TYPE_UNIX:
-            return validateUnixType(startFile) != null;
+            return typeCrossCheck(validateUnixType(startFile)) != null;
         case ARCHIVE_TYPE_NORMAL:
-            return validateNormalType(startFile) != null;
+            return typeCrossCheck(validateNormalType(startFile)) != null;
         default:
             return false;
         }
@@ -386,6 +384,28 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         return ret;
     }
 
+    private ArrayList<File> typeCrossCheck(ArrayList<File> files) {
+        int ArchiveCheckFailed = 0;
+        for (File file : files) {
+            try {
+                Signature fs = FileSignatures.getFileSignature(file);
+                if (fs != null && (fs.getId().equals("RAR") || fs.getId().equals("﻿7Z"))) {
+                    ArchiveCheckFailed++;
+                }
+            } catch (IOException e) {
+            }
+        }
+        if (ArchiveCheckFailed > 1) {
+            /*
+             * mehr als 1 mal sollte kein Rar oder 7zip header signatur gefunden
+             * werden
+             */
+            logger.warning("Found more than 1 non-HJArchive Header, skip HJMerge!");
+            return null;
+        }
+        return files;
+    }
+
     /**
      * Validiert das archiv auf 2 arten 1. wird ind er downloadliste nach
      * passenden unfertigen archiven gesucht 2. wird das archiv durchnummeriert
@@ -410,6 +430,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         });
         ArrayList<File> ret = new ArrayList<File>();
         char c = 'a';
+
         for (int i = 0; i < files.length; i++) {
 
             File newFile;
@@ -466,32 +487,11 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
      */
     private int getArchiveType(File file) {
         String name = file.getName();
-
-        if (name.matches("(?is).*\\.7z\\.[\\d]+$")) return ARCHIVE_TYPE_7Z;
-        if (name.matches(".*\\.a.$")) {
-            try {
-                Signature fs = FileSignatures.getFileSignature(file);
-                if (fs != null && fs.getId().equals("RAR"))
-                    return ARCHIVE_TYPE_RAR;
-                else if (fs != null && fs.getId().equals("﻿7Z")) return ARCHIVE_TYPE_7Z;
-            } catch (IOException e) {
-            }
-
-            return ARCHIVE_TYPE_UNIX;
-
-        }
+        if (name.matches(".*\\.a.$")) return ARCHIVE_TYPE_UNIX;
         if (name.matches(".*\\.[\\d]+($|\\.[^\\d]*$)")) return ARCHIVE_TYPE_NORMAL;
-        {
-            try {
-                Signature fs = FileSignatures.getFileSignature(file);
-                if (fs != null && fs.getId().equals("RAR"))
-                    return ARCHIVE_TYPE_RAR;
-                else if (fs != null && fs.getId().equals("﻿7Z")) return ARCHIVE_TYPE_7Z;
-            } catch (IOException e) {
-            }
 
-            return ARCHIVE_TYPE_NONE;
-        }
+        return ARCHIVE_TYPE_NONE;
+
     }
 
     /**
