@@ -44,7 +44,6 @@ public class MegaShareCom extends PluginForHost {
         if (br.containsHTML("Not Found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        System.out.println(br);
         return true;
     }
 
@@ -56,11 +55,9 @@ public class MegaShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        br.createPostRequest(br.getURL(), "FreeDz=FREE");
-
-        System.out.println(br);
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
+        br.postPage(br.getURL(), "FreeDz=FREE");
+        dl = br.openDownload(downloadLink, br.getURL(), "yesss=Download");
+        dl.startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
