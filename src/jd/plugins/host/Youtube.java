@@ -111,6 +111,7 @@ public class Youtube extends PluginForHost {
         }
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
@@ -134,6 +135,7 @@ public class Youtube extends PluginForHost {
         br.submitForm(login);
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         br.setFollowRedirects(true);
@@ -156,6 +158,6 @@ public class Youtube extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

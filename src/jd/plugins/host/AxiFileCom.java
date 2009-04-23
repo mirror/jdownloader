@@ -90,7 +90,7 @@ public class AxiFileCom extends PluginForHost {
             }
             lastone[10] = (char) i;
             if (lastone[7] == 0x00 && lastone[6] == 0x02 && lastone[5] == 0x9D && lastone[4] == 0x49) ifs.add((short) lastone[0]);
-            if (lastone[0] == 0x00 && lastone[2] == 0x00 && ("" + (char) lastone[1]).matches("[0-9a-f]")) pool.add((char) lastone[1]);
+            if (lastone[0] == 0x00 && lastone[2] == 0x00 && ("" + lastone[1]).matches("[0-9a-f]")) pool.add(lastone[1]);
             if (lastone[0] == 0x00 && lastone[1] == 0x08 && lastone[2] == 0x00 && lastone[3] == 0x96 && lastone[4] == 0x04 && lastone[5] == 0x00 && lastone[6] == 0x08 && lastone[7] == 0x0F && lastone[8] == 0x08 && lastone[10] == 0x1D) poolindex.add((short) (lastone[9] - 0x11));
 
         }
@@ -111,6 +111,7 @@ public class AxiFileCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
@@ -126,7 +127,7 @@ public class AxiFileCom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

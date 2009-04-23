@@ -38,9 +38,6 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
 public class ShareOnlineBiz extends PluginForHost {
-    private String captchaCode;
-    private String passCode = null;
-    private String url;
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -129,8 +126,9 @@ public class ShareOnlineBiz extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        DownloadLink downloadLink = (DownloadLink) parameter;
+        DownloadLink downloadLink = parameter;
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(parameter);
         login(account);
@@ -139,6 +137,7 @@ public class ShareOnlineBiz extends PluginForHost {
         br.getPage("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
         Form form = br.getForm(0);
         if (form.containsHTML("name=downloadpw")) {
+            String passCode = null;
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput(null, downloadLink);
             } else {
@@ -157,7 +156,7 @@ public class ShareOnlineBiz extends PluginForHost {
             downloadLink.setProperty("pass", passCode);
         }
 
-        url = br.getRegex("loadfilelink\\.decode\\(\"(.*?)\"\\);").getMatch(0);
+        String url = br.getRegex("loadfilelink\\.decode\\(\"(.*?)\"\\);").getMatch(0);
 
         br.setFollowRedirects(true);
         /* Datei herunterladen */
@@ -171,7 +170,7 @@ public class ShareOnlineBiz extends PluginForHost {
         getFileInformation(downloadLink);
         String id = new Regex(downloadLink.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
         br.getPage("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
-        if (br.containsHTML("Probleme mit einem Fileserver")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.shareonlinebiz.errors.servernotavailable","Server temporarily down"), 15 * 60 * 1000l);
+        if (br.containsHTML("Probleme mit einem Fileserver")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
 
         }
         File captchaFile = this.getLocalCaptchaFile(this);
@@ -181,8 +180,9 @@ public class ShareOnlineBiz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         /* CaptchaCode holen */
-        captchaCode = getCaptchaCode(captchaFile, downloadLink);
+        String captchaCode = getCaptchaCode(captchaFile, downloadLink);
         Form form = br.getForm(1);
+        String passCode = null;
         if (form.containsHTML("name=downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput(null, downloadLink);
@@ -213,7 +213,7 @@ public class ShareOnlineBiz extends PluginForHost {
         }
 
         /* PassCode war richtig, also Speichern */
-        downloadLink.setProperty("pass", passCode);
+        if (passCode != null) downloadLink.setProperty("pass", passCode);
         /* DownloadLink holen, thx @dwd */
         String all = br.getRegex("eval\\(unescape\\(.*?\"\\)\\)\\);").getMatch(-1);
         String dec = br.getRegex("loadfilelink\\.decode\\(\".*?\"\\);").getMatch(-1);
@@ -221,7 +221,7 @@ public class ShareOnlineBiz extends PluginForHost {
         Scriptable scope = cx.initStandardObjects();
         String fun = "function f(){ " + all + "\nreturn " + dec + "} f()";
         Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-        url = Context.toString(result);
+        String url = Context.toString(result);
         Context.exit();
 
         /* 15 seks warten */
@@ -232,6 +232,7 @@ public class ShareOnlineBiz extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
@@ -247,7 +248,7 @@ public class ShareOnlineBiz extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

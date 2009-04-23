@@ -75,25 +75,31 @@ public class WrzutaPl extends PluginForHost {
         String linkurl = null;
         if (filetype.equalsIgnoreCase("audio")) {
             linkurl = br.getRegex("wrzuta_flv=(.*?)&wrzuta_mini").getMatch(0);
-            if (linkurl == null) linkurl = "http://wrzuta.pl/aud/file/" + fileid + "/";
-            else addext=false;
+            if (linkurl == null)
+                linkurl = "http://wrzuta.pl/aud/file/" + fileid + "/";
+            else
+                addext = false;
         }
         if (filetype.equalsIgnoreCase("film")) {
             linkurl = br.getRegex("wrzuta_flv=(.*?)&wrzuta_mini").getMatch(0);
-            if (linkurl == null) linkurl = "http://wrzuta.pl/vid/file/" + fileid + "/";
-            else addext=false;
+            if (linkurl == null)
+                linkurl = "http://wrzuta.pl/vid/file/" + fileid + "/";
+            else
+                addext = false;
         }
         if (filetype.equalsIgnoreCase("obraz")) {
             linkurl = br.getRegex("wrzuta_flv=(.*?)&wrzuta_mini").getMatch(0);
-            if (linkurl == null) linkurl = "http://wrzuta.pl/img/file/" + fileid + "/";
-            else addext=false;
-        } 
+            if (linkurl == null)
+                linkurl = "http://wrzuta.pl/img/file/" + fileid + "/";
+            else
+                addext = false;
+        }
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setDebug(true);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, linkurl);
         URLConnectionAdapter con = dl.getConnection();
-        if (!con.getContentType().equalsIgnoreCase("unknown") && addext != false ) {
+        if (!con.getContentType().equalsIgnoreCase("unknown") && addext != false) {
             if (con.getContentType().contains("mpeg3")) {
                 downloadLink.setFinalFileName(filename.trim() + ".mp3");
             } else if (con.getContentType().contains("flv")) {
@@ -111,6 +117,7 @@ public class WrzutaPl extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
@@ -126,6 +133,6 @@ public class WrzutaPl extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

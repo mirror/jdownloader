@@ -41,6 +41,7 @@ public class QshareCom extends PluginForHost {
         this.enablePremium("http://s1.qshare.com/index.php?sysm=sys_page&sysf=site&site=buy");
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
@@ -228,6 +229,7 @@ public class QshareCom extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

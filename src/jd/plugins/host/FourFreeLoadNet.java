@@ -50,7 +50,7 @@ public class FourFreeLoadNet extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        //url = downloadLink.getDownloadURL();
+        // url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
 
@@ -107,6 +107,7 @@ public class FourFreeLoadNet extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
@@ -122,6 +123,6 @@ public class FourFreeLoadNet extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

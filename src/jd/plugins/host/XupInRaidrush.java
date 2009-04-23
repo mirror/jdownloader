@@ -38,6 +38,7 @@ public class XupInRaidrush extends PluginForHost {
         return AGB_LINK;
     }
 
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 
         br.getPage(downloadLink.getDownloadURL());
@@ -64,6 +65,7 @@ public class XupInRaidrush extends PluginForHost {
 
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
@@ -80,7 +82,7 @@ public class XupInRaidrush extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

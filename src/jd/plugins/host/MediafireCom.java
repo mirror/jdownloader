@@ -106,7 +106,7 @@ public class MediafireCom extends PluginForHost {
 
                     Context.exit();
                 } catch (EvaluatorException e) {
-                    if (i == 2) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.mediafirecom.errors.javascripterror","JavaScript Error"));
+                    if (i == 2) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.mediafirecom.errors.javascripterror", "JavaScript Error"));
                     continue;
                 }
                 break;
@@ -117,6 +117,7 @@ public class MediafireCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
@@ -132,6 +133,6 @@ public class MediafireCom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

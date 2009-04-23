@@ -100,6 +100,7 @@ public class PrzeklejPl extends PluginForHost {
         }
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
@@ -115,6 +116,6 @@ public class PrzeklejPl extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

@@ -40,7 +40,7 @@ public class DlFreeFr extends PluginForHost {
         String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)soit", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll("o","byte").replaceAll("Ko","Kb").replaceAll("Mo", "Mb").replaceAll("Go", "Gb")));
+        downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll("o", "byte").replaceAll("Ko", "Kb").replaceAll("Mo", "Mb").replaceAll("Go", "Gb")));
         return true;
     }
 
@@ -66,6 +66,7 @@ public class DlFreeFr extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
@@ -81,6 +82,6 @@ public class DlFreeFr extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

@@ -49,6 +49,7 @@ public class RomsZopharNet extends PluginForHost {
         br.openDownload(downloadLink, br.getRedirectLocation()).startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         /* TODO: Wert nachprüfen */
         return 1;
@@ -65,6 +66,6 @@ public class RomsZopharNet extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

@@ -118,6 +118,7 @@ public class BluehostTo extends PluginForHost {
         return "http://bluehost.to/agb.php";
     }
 
+    @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null) return false;
 
@@ -126,8 +127,8 @@ public class BluehostTo extends PluginForHost {
             logger.finest("Checked Links with one request: " + urls.length);
             StringBuilder sb = new StringBuilder();
             sb.append("urls=");
-            for (int i = 0; i < urls.length; i++) {
-                sb.append(urls[i].getDownloadURL());
+            for (DownloadLink url : urls) {
+                sb.append(url.getDownloadURL());
                 sb.append(',');
             }
             this.setBrowserExclusive();

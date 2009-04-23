@@ -69,6 +69,7 @@ public class RomHustlerNet extends PluginForHost {
         br.openDownload(downloadLink, downloadUrl, true, 1).startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         /* TODO: Wert nachprüfen */
         return 1;
@@ -100,6 +101,6 @@ public class RomHustlerNet extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

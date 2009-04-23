@@ -33,7 +33,6 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.Request;
-import jd.nutils.JDHash;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -345,7 +344,7 @@ public class Megauploadcom extends PluginForHost {
         int captchTries = 10;
         Form form = null;
         String code = null;
-      
+
         while (captchTries-- >= 0) {
 
             br.getPage("http://megaupload.com/?d=" + getDownloadID(link));
@@ -392,15 +391,13 @@ public class Megauploadcom extends PluginForHost {
                 c.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
                 URLConnectionAdapter con = c.openGetConnection(captcha);
                 Browser.download(file, con);
-              
+
                 code = null;
-                
+
                 if (code == null) {
 
-                
-                        code = getCaptchaCode(file, link);
+                    code = getCaptchaCode(file, link);
 
-                
                 }
                 if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 1) {
                     if (code == null || code.contains("-") || code.trim().length() != 4) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 1000l); }
@@ -422,7 +419,6 @@ public class Megauploadcom extends PluginForHost {
 
         if (form != null && form.containsHTML("captchacode")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
 
-    
         // waitForNext(link);
         link.getLinkStatus().setStatusText("Wait for start");
         link.requestGuiUpdate();
@@ -534,6 +530,7 @@ public class Megauploadcom extends PluginForHost {
     public void reset() {
     }
 
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }

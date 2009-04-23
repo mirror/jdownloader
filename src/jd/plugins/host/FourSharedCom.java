@@ -66,6 +66,7 @@ public class FourSharedCom extends PluginForHost {
         COUNTER--;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         try {
             handleFree0(downloadLink);
@@ -85,7 +86,7 @@ public class FourSharedCom extends PluginForHost {
         url = br.getRegex("id=\\'divDLStart\\' >.*?<a href=\\'(.*?)\'>Click here to download this file</a>.*?</div>").getMatch(0);
         if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.sleep(Integer.parseInt(br.getRegex(" var c = (\\d+?);").getMatch(0)) * 1000l, downloadLink);
-        downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.4sharedcom.waiting","Waiting..."));
+        downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.4sharedcom.waiting", "Waiting..."));
         downloadLink.requestGuiUpdate();
         // Das wartesystem lässt link b warten während link a lädt
         while (COUNTER > 0) {
@@ -101,6 +102,7 @@ public class FourSharedCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 2;
     }
@@ -116,7 +118,7 @@ public class FourSharedCom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

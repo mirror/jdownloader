@@ -227,6 +227,7 @@ public class FilerNet extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
@@ -235,6 +236,7 @@ public class FilerNet extends PluginForHost {
     public void reset() {
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }

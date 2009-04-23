@@ -198,6 +198,7 @@ public class RapidShareDe extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

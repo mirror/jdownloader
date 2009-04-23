@@ -40,7 +40,11 @@ public class Uploadedto extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://uploaded.to/ref?id=70683&r");
         setMaxConnections(20);
-//        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "PREMIUMCHUNKS", JDLocale.L("plugins.hoster.uploadedto.chunks", "Premium connections # (>1 causes higher traffic)"), 1, 20).setDefaultValue(1).setStep(1));
+        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER,
+        // getPluginConfig(), "PREMIUMCHUNKS",
+        // JDLocale.L("plugins.hoster.uploadedto.chunks",
+        // "Premium connections # (>1 causes higher traffic)"), 1,
+        // 20).setDefaultValue(1).setStep(1));
     }
 
     /**
@@ -50,7 +54,7 @@ public class Uploadedto extends PluginForHost {
      */
     private void correctURL(DownloadLink parameter) {
         String link = parameter.getDownloadURL();
-        link=link.replace("ul.to/", "uploaded.to/file/");
+        link = link.replace("ul.to/", "uploaded.to/file/");
         link = link.replace("/?id=", "/file/");
         link = link.replace("?id=", "file/");
         link = link.replaceFirst("/\\?.*?&id=", "/file/");
@@ -64,6 +68,7 @@ public class Uploadedto extends PluginForHost {
 
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 800;
     }
@@ -88,6 +93,7 @@ public class Uploadedto extends PluginForHost {
         return true;
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -111,12 +117,13 @@ public class Uploadedto extends PluginForHost {
             ai.setValidUntil(Regex.getMilliSeconds(expire, "dd-MM-yyyy hh:mm", null));
             ai.setAccountBalance((long) (Double.parseDouble(balance) * 100));
             ai.setTrafficLeft(Regex.getSize(traffic));
-            ai.setTrafficMax(50 * 1024 *1024 * 1024l);
+            ai.setTrafficMax(50 * 1024 * 1024 * 1024l);
             ai.setPremiumPoints(Long.parseLong(points));
         }
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(downloadLink);
@@ -124,7 +131,7 @@ public class Uploadedto extends PluginForHost {
         if (!isPremium()) {
             logger.severe("Entered a Free-account");
             linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
-            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.uploadedto.errors.notpremium","This is free account"));
+            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.uploadedto.errors.notpremium", "This is free account"));
             linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
             return;
         }
@@ -158,7 +165,7 @@ public class Uploadedto extends PluginForHost {
                 con.disconnect();
                 logger.severe("Endlink not found");
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.uploadedto.errors.indirectlinkerror","Indirect link error"));
+                linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.uploadedto.errors.indirectlinkerror", "Indirect link error"));
                 return;
             }
         } else {
@@ -177,10 +184,12 @@ public class Uploadedto extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         correctURL(downloadLink);
@@ -207,6 +216,7 @@ public class Uploadedto extends PluginForHost {
         return true;
     }
 
+    @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -235,6 +245,7 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(downloadLink);
@@ -266,7 +277,7 @@ public class Uploadedto extends PluginForHost {
         br.setFollowRedirects(false);
 
         Form form = br.getFormbyProperty("name", "download_form");
-        if (form == null || br.containsHTML("Versuch es sp")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.uploadedto.errors.serverproblem","Server problem"), 10 * 60 * 1000l);
+        if (form == null || br.containsHTML("Versuch es sp")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.uploadedto.errors.serverproblem", "Server problem"), 10 * 60 * 1000l);
         if (form != null) {
             form.put("download_submit", "Download");
             sleep(10000l, downloadLink);
@@ -290,20 +301,23 @@ public class Uploadedto extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

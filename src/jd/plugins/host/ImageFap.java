@@ -133,6 +133,7 @@ public class ImageFap extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }

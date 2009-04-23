@@ -74,11 +74,12 @@ public class FileBaseTo extends PluginForHost {
             // if captcha error
             if (br.containsHTML("Code wurde falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        
+
         String dlAction = br.getRegex("<form action=\"(http.*?)\"").getMatch(0);
         br.openDownload(downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName())).startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
@@ -94,6 +95,6 @@ public class FileBaseTo extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

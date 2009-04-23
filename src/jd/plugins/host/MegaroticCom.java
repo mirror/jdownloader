@@ -119,12 +119,11 @@ public class MegaroticCom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        DownloadLink downloadLink = (DownloadLink) parameter;
         getFileInformation(parameter);
         login(account);
         if (!this.isPremium()) {
             simultanpremium = 1;
-            handleFree0(downloadLink);
+            handleFree0(parameter);
             return;
         } else {
             if (simultanpremium + 1 > 20) {
@@ -133,19 +132,19 @@ public class MegaroticCom extends PluginForHost {
                 simultanpremium++;
             }
         }
-        String link = downloadLink.getDownloadURL().replaceAll("/de", "");
+        String link = parameter.getDownloadURL().replaceAll("/de", "");
         String id = Request.parseQuery(link).get("d");
         br.setFollowRedirects(false);
         String dlUrl = "http://megarotic.com/?d=" + id;
         br.getPage(dlUrl);
-        handlePw(downloadLink);
+        handlePw(parameter);
         if (br.getRedirectLocation() == null) {
             dlUrl = br.getRegex("getElementById\\(\"downloadhtml\"\\)\\.innerHTML.*?href=\"(.*?)\" style").getMatch(0);
             if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         br.setFollowRedirects(true);
         dlUrl = dlUrl.replaceFirst("megarotic\\.com/", "megarotic\\.com:" + usePort() + "/");
-        dl = br.openDownload(downloadLink, dlUrl, true, 0);
+        dl = br.openDownload(parameter, dlUrl, true, 0);
         dl.startDownload();
     }
 
@@ -229,7 +228,7 @@ public class MegaroticCom extends PluginForHost {
 
     public void handleFree0(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
-        DownloadLink downloadLink = (DownloadLink) parameter;
+        DownloadLink downloadLink = parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
         String id = Request.parseQuery(link).get("d");
         br.setCookie(downloadLink.getDownloadURL(), "l", "de");
@@ -343,6 +342,6 @@ public class MegaroticCom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

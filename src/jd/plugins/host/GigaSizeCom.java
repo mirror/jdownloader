@@ -90,7 +90,6 @@ public class GigaSizeCom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        DownloadLink downloadLink = (DownloadLink) parameter;
         getFileInformation(parameter);
         login(account);
         if (!this.isPremium()) {
@@ -99,7 +98,7 @@ public class GigaSizeCom extends PluginForHost {
             } else {
                 simultanpremium++;
             }
-            handleFree0(downloadLink);
+            handleFree0(parameter);
             return;
         } else {
             if (simultanpremium + 1 > 20) {
@@ -108,11 +107,11 @@ public class GigaSizeCom extends PluginForHost {
                 simultanpremium++;
             }
         }
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(parameter.getDownloadURL());
         br.setFollowRedirects(true);
         br.getPage("http://www.gigasize.com/form.php");
         Form download = br.getForm(0);
-        dl = br.openDownload(downloadLink, download, true, 0);
+        dl = br.openDownload(parameter, download, true, 0);
         if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         dl.startDownload();
     }
@@ -155,7 +154,7 @@ public class GigaSizeCom extends PluginForHost {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Download-Slots sind besetzt")) {
-            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.gigasizecom.errors.alreadyloading","Cannot check, because already loading file"));
+            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.gigasizecom.errors.alreadyloading", "Cannot check, because already loading file"));
             return true;
         }
         String[] dat = br.getRegex("strong>Name</strong>: <b>(.*?)</b></p>.*?<p>Gr.*? <span>(.*?)</span>").getRow(0);
@@ -170,10 +169,12 @@ public class GigaSizeCom extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
@@ -194,6 +195,6 @@ public class GigaSizeCom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

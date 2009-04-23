@@ -119,7 +119,7 @@ public class MeinUpload extends PluginForHost {
         br.clearCookies("mein-upload.com");
         br.getPage("http://www.mein-upload.com/");
         Form login = br.getForm(0);
-    
+
         login.put("login", Encoding.urlEncode(account.getUser()));
         login.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(login);
@@ -134,6 +134,7 @@ public class MeinUpload extends PluginForHost {
         return true;
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -160,6 +161,7 @@ public class MeinUpload extends PluginForHost {
         return ai;
     }
 
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
@@ -232,7 +234,7 @@ public class MeinUpload extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

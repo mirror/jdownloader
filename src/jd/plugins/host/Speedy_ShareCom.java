@@ -85,6 +85,7 @@ public class Speedy_ShareCom extends PluginForHost {
         br.openDownload(downloadLink, downloadLink.getDownloadURL(), postdata).startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
@@ -100,6 +101,6 @@ public class Speedy_ShareCom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

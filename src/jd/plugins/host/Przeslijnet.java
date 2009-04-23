@@ -71,6 +71,7 @@ public class Przeslijnet extends PluginForHost {
         br.openDownload(downloadLink, Encoding.htmlDecode(br.getRegex("onClick=\"window\\.location=\\\\\'(.*?)\\\\\'").getMatch(0))).startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

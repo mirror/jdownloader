@@ -51,6 +51,7 @@ public class YouPornCom extends PluginForHost {
         br.openDownload(link, link.getDownloadURL()).startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
@@ -68,6 +69,6 @@ public class YouPornCom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

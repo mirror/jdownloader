@@ -62,6 +62,7 @@ public class MegasharesCom extends PluginForHost {
         }
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -95,6 +96,7 @@ public class MegasharesCom extends PluginForHost {
         br.setFollowRedirects(tmp);
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         login(account);
@@ -231,15 +233,15 @@ public class MegasharesCom extends PluginForHost {
             loadpage(downloadLink);
         }
         if (br.containsHTML("You already have the maximum")) {
-            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.alreadyloading","Cannot check, because aready loading file"));
+            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.alreadyloading", "Cannot check, because aready loading file"));
             return true;
         }
         if (br.containsHTML("All download slots for this link are currently filled")) {
-            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.allslotsfilled","Cannot check, because all slots filled"));
+            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.allslotsfilled", "Cannot check, because all slots filled"));
             return true;
         }
         if (br.containsHTML("This link requires a password")) {
-            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.passwordprotected","Password protected download"));
+            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.passwordprotected", "Password protected download"));
             return true;
         }
         String[] dat = br.getRegex("<dt>Filename:.*?<strong>(.*?)</strong>.*?size:(.*?)</dt>").getRow(0);
@@ -276,7 +278,7 @@ public class MegasharesCom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

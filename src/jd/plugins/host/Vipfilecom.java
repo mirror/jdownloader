@@ -86,6 +86,7 @@ public class Vipfilecom extends PluginForHost {
         br.openDownload(downloadLink, link, true, 0).startDownload();
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         Form form = br.getForm(1);
@@ -97,6 +98,7 @@ public class Vipfilecom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
@@ -112,7 +114,7 @@ public class Vipfilecom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

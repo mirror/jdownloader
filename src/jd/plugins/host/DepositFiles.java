@@ -126,6 +126,7 @@ public class DepositFiles extends PluginForHost {
         return false;
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         setBrowserExclusive();
@@ -239,10 +240,12 @@ public class DepositFiles extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
@@ -255,6 +258,7 @@ public class DepositFiles extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 800;
     }

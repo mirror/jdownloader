@@ -42,6 +42,7 @@ public class HTTPAllgemein extends PluginForHost {
         return "";
     }
 
+    @Override
     public String getFileInformationString(DownloadLink parameter) {
         return "(" + contentType + ")" + parameter.getName();
     }
@@ -159,6 +160,7 @@ public class HTTPAllgemein extends PluginForHost {
 
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

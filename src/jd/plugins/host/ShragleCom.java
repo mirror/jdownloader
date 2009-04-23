@@ -76,6 +76,7 @@ public class ShragleCom extends PluginForHost {
         }
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
@@ -100,6 +101,7 @@ public class ShragleCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.de/", "\\.com/"));
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         login(account);
@@ -166,10 +168,12 @@ public class ShragleCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 1000;
     }
@@ -185,6 +189,6 @@ public class ShragleCom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

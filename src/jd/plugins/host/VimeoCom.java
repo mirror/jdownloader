@@ -80,6 +80,7 @@ public class VimeoCom extends PluginForHost {
 
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         /* TODO: Wert nachprüfen */
         return 20;
@@ -96,7 +97,7 @@ public class VimeoCom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

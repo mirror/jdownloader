@@ -78,17 +78,17 @@ public class BadongoCom extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        DownloadLink downloadLink = (DownloadLink) parameter;
         getFileInformation(parameter);
         login(account);
         isPremium();
         String link = null;
-        br.getPage(downloadLink.getDownloadURL().replaceAll("\\.viajd", ".com"));
+        br.getPage(parameter.getDownloadURL().replaceAll("\\.viajd", ".com"));
         sleep(5000l, parameter);
-        if (downloadLink.getStringProperty("type", "single").equalsIgnoreCase("split")) {
+        if (parameter.getStringProperty("type", "single").equalsIgnoreCase("split")) {
             String downloadLinks[] = br.getRegex("doDownload\\(\\'(.*?)\\'\\)").getColumn(0);
-            link = downloadLinks[downloadLink.getIntegerProperty("part", 1) - 1];
+            link = downloadLinks[parameter.getIntegerProperty("part", 1) - 1];
             sleep(5000l, parameter);
             br.getPage(link + "/ifr?pr=1&zenc=");
             link = link + "/loc?pr=1";
@@ -96,7 +96,7 @@ public class BadongoCom extends PluginForHost {
             link = br.getRegex("onclick=\"return doDownload\\('(.*?)'\\)").getMatch(0);
         }
         if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = br.openDownload(downloadLink, link, true, 0);
+        dl = br.openDownload(parameter, link, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             String page = br.loadConnection(dl.getConnection());
             br.getRequest().setHtmlCode(page);
@@ -158,6 +158,7 @@ public class BadongoCom extends PluginForHost {
         if (br.containsHTML("Du hast Deine Download Quote überschritten")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
@@ -193,6 +194,7 @@ public class BadongoCom extends PluginForHost {
         }
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -216,7 +218,7 @@ public class BadongoCom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

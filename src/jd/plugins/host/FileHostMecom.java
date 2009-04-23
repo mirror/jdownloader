@@ -33,8 +33,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 public class FileHostMecom extends PluginForHost {
-    private String passCode = null;
-    private String url;
 
     public FileHostMecom(PluginWrapper wrapper) {
         super(wrapper);
@@ -107,26 +105,27 @@ public class FileHostMecom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        DownloadLink downloadLink = (DownloadLink) parameter;
         getFileInformation(parameter);
         login(account);
         if (!this.isPremium()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(parameter.getDownloadURL());
+        String url = null;
         if (br.getRedirectLocation() == null) {
             Form form = br.getForm(0);
             if (form.hasInputFieldByName("password")) {
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput(null, downloadLink);
+                String passCode = null;
+                if (parameter.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput(null, parameter);
                 } else {
                     /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
+                    passCode = parameter.getStringProperty("pass", null);
                 }
                 form.put("password", passCode);
             }
             br.submitForm(form);
             if (br.containsHTML(">Wrong password<")) {
-                downloadLink.setProperty("pass", null);
+                parameter.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             url = br.getRegex("24 hours<br><br>.*?<span style.*?>.*?<a href=\"(.*?)\">.*?</a>").getMatch(0);
@@ -136,7 +135,7 @@ public class FileHostMecom extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        dl = br.openDownload(downloadLink, url, true, 0);
+        dl = br.openDownload(parameter, url, true, 0);
         dl.startDownload();
     }
 
@@ -171,6 +170,7 @@ public class FileHostMecom extends PluginForHost {
         String captcha = getCaptcha();
         form = br.getForm(0);
         form.put("code", captcha);
+        String passCode = null;
         if (form.hasInputFieldByName("password")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput(null, downloadLink);
@@ -188,9 +188,7 @@ public class FileHostMecom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         if (br.containsHTML("<b>Enter code below:</b>")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
-        }
+        if (passCode != null) downloadLink.setProperty("pass", passCode);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         br.setDebug(true);
@@ -214,7 +212,7 @@ public class FileHostMecom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

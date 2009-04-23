@@ -308,6 +308,7 @@ public class Rapidshare extends PluginForHost {
         return new Regex(downloadURL, "files/(\\d+)/").getMatch(0);
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         try {
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
@@ -700,6 +701,7 @@ public class Rapidshare extends PluginForHost {
                 }
                 final String passToThread = msg;
                 new Thread() {
+                    @Override
                     public void run() {
                         TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI, JDLocale.L("plugins.host.rapidshare.speedtestresult.title", "Speedtest result"), JDLocale.L("plugins.host.rapidshare.speedtestresult.message", "Your speedtest results"), passToThread);
                     }
@@ -949,8 +951,7 @@ public class Rapidshare extends PluginForHost {
                 }
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName("RS Speedtest");
-                for (Iterator<Entry<String, String>> it = serverMap.entrySet().iterator(); it.hasNext();) {
-                    Entry<String, String> n = it.next();
+                for (Entry<String, String> n : serverMap.entrySet()) {
                     DownloadLink dlink = new DownloadLink((PluginForHost) getWrapper().getNewPluginInstance(), link.substring(link.lastIndexOf("/") + 1), getHost(), link, true);
                     dlink.setProperty("USE_SERVER", n.getKey());
                     dlink.setProperty("ALLOW_DUPE", true);

@@ -246,6 +246,7 @@ public class Netloadin extends PluginForHost {
         }
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -271,6 +272,7 @@ public class Netloadin extends PluginForHost {
         return ai;
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 800;
     }
@@ -415,6 +417,7 @@ public class Netloadin extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
