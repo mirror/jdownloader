@@ -9,6 +9,7 @@ gui.icons.delete=default/edit-delete
 
 ##
 gui.images.add = default/list-add
+gui.images.cancel=default/emblem-unreadable
 gui.images.taskpanes.addons=default/mail-attachment
 gui.images.config.addons = default/mail-attachment
 gui.images.config.home = default/applications-system
