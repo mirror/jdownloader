@@ -28,6 +28,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
+import java.util.logging.Level;
 
 import javax.swing.JFrame;
 import javax.swing.JWindow;
@@ -134,6 +135,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_TOOLTIP, JDLocale.L("plugins.optional.JDLightTray.tooltip", "Show Tooltip")).setDefaultValue(true));
     }
 
+    @Override
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             logger.info("JDLightTrayIcon Init complete");
@@ -160,7 +162,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         try {
             systemTray.add(trayIcon);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(Level.SEVERE, "Exception occured", e);
         }
     }
 

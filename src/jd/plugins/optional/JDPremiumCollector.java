@@ -134,7 +134,7 @@ public class JDPremiumCollector extends PluginOptional {
     @Override
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
-            fetchAccounts();
+            // fetchAccounts();
             JDUtilities.getController().removeControlListener(this);
             return;
         }

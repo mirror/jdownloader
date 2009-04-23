@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
@@ -618,6 +619,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
 
         if (!((MenuItem) e.getSource()).isSelected()) {
@@ -723,6 +725,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         updateNamesPanel();
     }
 
+    @Override
     public void controlEvent(ControlEvent e) {
 
         if (e.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
@@ -750,6 +753,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
     }
 
+    @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
@@ -815,10 +819,12 @@ public class JDChat extends PluginOptional implements ControlListener {
         return nick;
     }
 
+    @Override
     public String getHost() {
         return JDLocale.L("plugins.optional.jdchat.name", "JD Chat");
     }
 
+    @Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
@@ -837,6 +843,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         return getVersion("$Revision$");
     }
 
+    @Override
     public boolean initAddon() {
         NAMES = new ArrayList<User>();
         sb = new StringBuilder();
@@ -1099,7 +1106,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                 break;
             } catch (IOException e) {
                 addToText(null, STYLE_SYSTEM_MESSAGE, "Connect Timeout. Server not reachable...");
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                logger.log(Level.SEVERE, "Exception occured", e);
                 try {
                     Thread.sleep(15000);
                 } catch (InterruptedException e1) {
@@ -1149,6 +1156,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     }
 
+    @Override
     public void onExit() {
         NAMES.clear();
         this.setLoggedIn(false);
@@ -1358,6 +1366,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             SimpleGUI.CURRENTGUI.getTaskPane().switcher(tp);
             JDUtilities.getController().addControlListener(this);
             new Thread() {
+                @Override
                 public void run() {
 
                     initIRC();
@@ -1427,6 +1436,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     private void startAwayObserver() {
         Thread th = new Thread() {
+            @Override
             public void run() {
                 while (true) {
                     if (System.currentTimeMillis() - lastAction > AWAY_TIMEOUT) {
@@ -1437,7 +1447,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                     try {
                         Thread.sleep(10000);
                     } catch (InterruptedException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                        logger.log(Level.SEVERE, "Exception occured", e);
                     }
                 }
             }

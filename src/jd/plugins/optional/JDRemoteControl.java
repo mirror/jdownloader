@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -58,10 +59,12 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     public JDRemoteControl(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     public String getIconKey() {
-    
+
         return "gui.images.network";
     }
+
     class Serverhandler implements Handler {
 
         public void handle(Request request, Response response) {
@@ -252,7 +255,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     output = output + " package_linksinprogress=\"" + filePackage.getLinksInProgress() + "\"";
                     output = output + " package_linkstotal=\"" + filePackage.size() + "\"";
                     output = output + " package_ETA=\"" + Formatter.formatSeconds(filePackage.getETA()) + "\"";
-                    output = output + " package_speed=\"" + Formatter.formatReadable(filePackage.getTotalDownloadSpeed() ) + "/s\"";
+                    output = output + " package_speed=\"" + Formatter.formatReadable(filePackage.getTotalDownloadSpeed()) + "/s\"";
                     output = output + " package_loaded=\"" + Formatter.formatReadable(filePackage.getTotalKBLoaded()) + "\"";
                     output = output + " package_size=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize()) + "\"";
                     output = output + " package_todo=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"";
@@ -316,7 +319,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     output.append(" package_linksinprogress=\"" + filePackage.getLinksInProgress() + "\"");
                     output.append(" package_linkstotal=\"" + filePackage.size() + "\"");
                     output.append(" package_ETA=\"" + Formatter.formatSeconds(filePackage.getETA()) + "\"");
-                    output.append(" package_speed=\"" + Formatter.formatReadable(filePackage.getTotalDownloadSpeed() ) + "/s\"");
+                    output.append(" package_speed=\"" + Formatter.formatReadable(filePackage.getTotalDownloadSpeed()) + "/s\"");
                     output.append(" package_loaded=\"" + Formatter.formatReadable(filePackage.getTotalKBLoaded()) + "\"");
                     output.append(" package_size=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize()) + "\"");
                     output.append(" package_todo=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"");
@@ -383,7 +386,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     output.append(" package_linksinprogress=\"" + filePackage.getLinksInProgress() + "\"");
                     output.append(" package_linkstotal=\"" + filePackage.size() + "\"");
                     output.append(" package_ETA=\"" + Formatter.formatSeconds(filePackage.getETA()) + "\"");
-                    output.append(" package_speed=\"" + Formatter.formatReadable(filePackage.getTotalDownloadSpeed() ) + "/s\"");
+                    output.append(" package_speed=\"" + Formatter.formatReadable(filePackage.getTotalDownloadSpeed()) + "/s\"");
                     output.append(" package_loaded=\"" + Formatter.formatReadable(filePackage.getTotalKBLoaded()) + "\"");
                     output.append(" package_size=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize()) + "\"");
                     output.append(" package_todo=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"");
@@ -495,7 +498,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                             Thread.sleep(5000);
                         } catch (InterruptedException e) {
 
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            logger.log(Level.SEVERE, "Exception occured", e);
                         }
                         JDUtilities.restartJD();
                     }
@@ -519,7 +522,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                             Thread.sleep(5000);
                         } catch (InterruptedException e) {
 
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            logger.log(Level.SEVERE, "Exception occured", e);
                         }
                         JDUtilities.getController().exit();
                     }
@@ -696,7 +699,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             server.start();
 
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            logger.log(Level.SEVERE, "Exception occured", e);
         }
     }
 

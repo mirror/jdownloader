@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
+import java.util.logging.Level;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -83,26 +84,28 @@ public abstract class PluginForHost extends Plugin {
             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        String captchaCode = getCaptchaCode(this.getHost(),captchaFile,0 ,downloadLink,null,null);
+        String captchaCode = getCaptchaCode(this.getHost(), captchaFile, 0, downloadLink, null, null);
         return captchaCode;
 
     }
+
     public String getCaptchaCode(String methodname, File captchaFile, DownloadLink downloadLink) throws PluginException, InterruptedException {
-        return getCaptchaCode(methodname,captchaFile,0,downloadLink,null,null);
+        return getCaptchaCode(methodname, captchaFile, 0, downloadLink, null, null);
     }
+
     public String getCaptchaCode(File captchaFile, DownloadLink downloadLink) throws PluginException, InterruptedException {
         // TODO Auto-generated method stub
-        return getCaptchaCode(this.getHost(),captchaFile,0,downloadLink,null,null);
+        return getCaptchaCode(this.getHost(), captchaFile, 0, downloadLink, null, null);
     }
-    public String getCaptchaCode(String method, File file, int flag, DownloadLink link,String defaultValue,String explain) throws PluginException, InterruptedException {
+
+    public String getCaptchaCode(String method, File file, int flag, DownloadLink link, String defaultValue, String explain) throws PluginException, InterruptedException {
         link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
         link.requestGuiUpdate();
-        String cc = new CaptchaController(method, file,defaultValue,explain).getCode(flag);
-  
+        String cc = new CaptchaController(method, file, defaultValue, explain).getCode(flag);
+
         if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         return cc;
     }
-
 
     private static final String AGB_CHECKED = "AGB_CHECKED";
     private static final String CONFIGNAME = "pluginsForHost";
@@ -151,6 +154,7 @@ public abstract class PluginForHost extends Plugin {
         br.clearCookies(getHost());
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {
             SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, config);
@@ -234,7 +238,7 @@ public abstract class PluginForHost extends Plugin {
                 }
 
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                logger.log(Level.SEVERE, "Exception occured", e);
             }
         }
         if (premium.getSize() != 0) {
@@ -306,9 +310,9 @@ public abstract class PluginForHost extends Plugin {
                     }
 
                 } catch (IllegalArgumentException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    logger.log(Level.SEVERE, "Exception occured", e);
                 } catch (SecurityException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    logger.log(Level.SEVERE, "Exception occured", e);
                 }
             }
         }

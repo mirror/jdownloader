@@ -19,6 +19,7 @@ package jd.plugins.optional;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.logging.Level;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -121,7 +122,7 @@ public class JDFolderWatch extends PluginOptional {
                             Thread.sleep(5000);
                         }
                     } catch (Exception e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        logger.log(Level.SEVERE, "Exception occured", e);
                     }
                 }
             }

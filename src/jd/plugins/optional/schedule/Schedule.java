@@ -63,6 +63,7 @@ public class Schedule extends PluginOptional {
         super(wrapper);
     }
 
+    @Override
     public String getIconKey() {
 
         return "gui.images.config.eventmanager";

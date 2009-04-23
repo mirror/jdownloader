@@ -85,6 +85,7 @@ public class Account extends Property {
         if (this.user != null) this.user = this.user.trim();
     }
 
+    @Override
     public String toString() {
         return user + ":" + pass + " " + status + " " + enabled + " " + super.toString();
     }

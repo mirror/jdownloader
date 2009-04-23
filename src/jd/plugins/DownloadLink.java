@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -32,6 +33,7 @@ import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
+import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
 import jd.controlling.SpeedMeter;
 import jd.event.JDBroadcaster;
@@ -219,8 +221,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void addSourcePluginPasswords(String[] sourcePluginPasswords) {
-        for (int i = 0; i < sourcePluginPasswords.length; i++) {
-            addSourcePluginPassword(sourcePluginPasswords[i]);
+        for (String sourcePluginPassword : sourcePluginPasswords) {
+            addSourcePluginPassword(sourcePluginPassword);
         }
     }
 
@@ -596,9 +598,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
         for (int retry = 0; retry < 5; retry++) {
             try {
-                available = ((PluginForHost) getPlugin()).getFileInformation(this);
+                available = getPlugin().getFileInformation(this);
                 try {
-                    ((PluginForHost) getPlugin()).getBrowser().getHttpConnection().disconnect();
+                    getPlugin().getBrowser().getHttpConnection().disconnect();
                 } catch (Exception e) {
                 }
                 break;
@@ -614,7 +616,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 if (e.getMessage().contains("code: 500")) {
                     try {
                         wait += 500;
-                        jd.controlling.JDLogger.getLogger().finer("500 Error Code, retrying in " + wait);
+                        JDLogger.getLogger().finer("500 Error Code, retrying in " + wait);
                         Thread.sleep(wait);
                     } catch (InterruptedException e1) {
                         available = false;
@@ -624,14 +626,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 } else {
                     // logger.severe("Hoster Plugin Version: " +
                     // getPlugin().getVersion());
-                    //jd.controlling.JDLogger.getLogger().log(java.util.logging.
+                    // JDLogger.getLogger().log(java.util.logging.
                     // Level.SEVERE,"Exception occured",e);
                     break;
                 }
             } catch (Exception e) {
                 // logger.severe("Hoster Plugin Version: " +
                 // getPlugin().getVersion());
-                //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level
+                // JDLogger.getLogger().log(java.util.logging.Level
                 // .SEVERE,"Exception occured",e);
                 available = false;
                 break;
@@ -677,7 +679,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
 
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
                 }
             }
         }

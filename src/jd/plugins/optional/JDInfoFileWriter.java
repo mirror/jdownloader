@@ -19,6 +19,7 @@ package jd.plugins.optional;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.logging.Level;
 
 import javax.swing.JComboBox;
 
@@ -143,7 +144,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
                 logger.severe("JDInfoFileWriter: can not write to: " + dest.getAbsolutePath());
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            logger.log(Level.SEVERE, "Exception occured", e);
             logger.severe("JDInfoFileWriter: can not write to: " + dest.getAbsolutePath());
         }
     }

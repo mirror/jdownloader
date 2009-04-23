@@ -71,6 +71,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         initConfig();
     }
 
+    @Override
     public String getIconKey() {
         return "gui.images.addons.merge";
     }
@@ -145,6 +146,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         return menu;
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem) {
             menuitemActionPerformed(e, (MenuItem) e.getSource());
@@ -162,6 +164,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             JDFileChooser fc = new JDFileChooser("_JDHJSPLIT_");
             fc.setMultiSelectionEnabled(true);
             FileFilter ff = new FileFilter() {
+                @Override
                 public boolean accept(File pathname) {
                     if (isStartVolume(pathname)) return true;
                     if (pathname.isDirectory()) return true;

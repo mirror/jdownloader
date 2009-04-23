@@ -21,6 +21,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.logging.Level;
 
 import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
@@ -190,7 +191,7 @@ public class JDShutdown extends PluginOptional {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            logger.log(Level.SEVERE, "Exception occured", e);
                         }
                         Object obj = wrapper.getPlugin().interact("isWorking", null);
                         if (obj == null || (obj instanceof Boolean && obj.equals(false))) break;
@@ -282,10 +283,12 @@ public class JDShutdown extends PluginOptional {
     private void dbusPowerState(String command) {
         JDUtilities.runCommand("dbus-send", new String[] { "--session", "--dest=org.freedesktop.PowerManagement", "--type=method_call", "--print-reply", "--reply-timeout=2000", "/org/freedesktop/PowerManagement", "org.freedesktop.PowerManagement." + command }, null, 0);
     }
+
     public String getIconKey() {
-        
+
         return "gui.images.logout";
     }
+
     public void initConfig() {
         SubConfiguration subConfig = getPluginConfig();
         ConfigEntry ce;

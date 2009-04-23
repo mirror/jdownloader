@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.logging.Level;
 
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
@@ -324,9 +325,9 @@ public abstract class PluginsC extends Plugin {
             PLUGINS.put(containerFile, newPlugin);
             return newPlugin;
         } catch (InstantiationException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(Level.SEVERE, "Exception occured", e);
         } catch (IllegalAccessException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(Level.SEVERE, "Exception occured", e);
         }
         return null;
     }

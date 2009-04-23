@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
@@ -688,7 +689,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 initLocaleDataComplete();
             }
         } catch (SVNException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
             JOptionPane.showMessageDialog(this, JDLocale.LF("plugins.optional.langfileeditor.svn.error.message", "An error occured while checking the SVN Repository out! Please check the SVN settings!\n%s", e.getMessage()), JDLocale.L("plugins.optional.langfileeditor.svn.error.title", "Error!"), JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -959,7 +960,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             }
             f.close();
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
         }
     }
 

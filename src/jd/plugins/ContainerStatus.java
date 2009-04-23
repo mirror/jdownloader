@@ -18,7 +18,9 @@ package jd.plugins;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.util.logging.Level;
 
+import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
 
 public class ContainerStatus {
@@ -92,6 +94,7 @@ public class ContainerStatus {
         return statusText;
     }
 
+    @Override
     public String toString() {
         Class<? extends ContainerStatus> cl = this.getClass();
         Field[] fields = cl.getDeclaredFields();
@@ -114,9 +117,9 @@ public class ContainerStatus {
                         }
                     }
                 } catch (IllegalArgumentException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
                 } catch (IllegalAccessException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
                 }
             }
         }

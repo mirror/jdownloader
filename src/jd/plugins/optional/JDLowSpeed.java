@@ -19,6 +19,7 @@ package jd.plugins.optional;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.logging.Level;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -101,7 +102,7 @@ public class JDLowSpeed extends PluginOptional {
                             Thread.sleep(500);
                         } catch (InterruptedException e) {
 
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            logger.log(Level.SEVERE, "Exception occured", e);
                         }
                         int speed = downloadLink.getSpeedMeter().getSpeed();
                         long size = downloadLink.getDownloadSize();
@@ -211,7 +212,7 @@ public class JDLowSpeed extends PluginOptional {
                             Thread.sleep(20000);
                         } catch (InterruptedException e) {
 
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            logger.log(Level.SEVERE, "Exception occured", e);
                         }
                     }
                 }

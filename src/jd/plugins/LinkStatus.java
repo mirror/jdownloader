@@ -18,7 +18,9 @@ package jd.plugins;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.util.logging.Level;
 
+import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -271,12 +273,12 @@ public class LinkStatus implements Serializable {
 
             if (speed > 0) {
                 if (downloadLink.getDownloadSize() < 0) {
-                    return Formatter.formatReadable(speed ) + "/s " + JDLocale.L("gui.download.filesize_unknown", "(Filesize unknown)");
+                    return Formatter.formatReadable(speed) + "/s " + JDLocale.L("gui.download.filesize_unknown", "(Filesize unknown)");
                 } else {
 
                     long remainingBytes = downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent();
                     long eta = remainingBytes / speed;
-                    return "ETA " + Formatter.formatSeconds((int) eta) + " @ " + Formatter.formatReadable(speed ) + "/s " + chunkString;
+                    return "ETA " + Formatter.formatSeconds((int) eta) + " @ " + Formatter.formatReadable(speed) + "/s " + chunkString;
                 }
             } else {
                 return JDLocale.L("gui.download.create_connection", "Connecting...") + chunkString;
@@ -395,9 +397,9 @@ public class LinkStatus implements Serializable {
                     if (value == status) { return field.getName(); }
 
                 } catch (IllegalArgumentException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
                 } catch (IllegalAccessException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
                 }
             }
         }
@@ -427,9 +429,9 @@ public class LinkStatus implements Serializable {
                         }
                     }
                 } catch (IllegalArgumentException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
                 } catch (IllegalAccessException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
                 }
             }
         }
