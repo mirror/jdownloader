@@ -484,9 +484,10 @@ public class SingleDownloadController extends Thread {
             status.setWaitTime(status.getValue());
         } else {
             status.resetWaitTime();
+            downloadLink.setEnabled(false);
         }
 
-        downloadLink.setEnabled(false);
+       
         DownloadController.getDownloadController().fireDownloadLinkUpdate(downloadLink);
     }
 

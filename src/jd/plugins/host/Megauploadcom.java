@@ -116,7 +116,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public String getDownloadID(DownloadLink link) throws MalformedURLException {
-        return Request.parseQuery(link.getDownloadURL()).get("d");
+        return Request.parseQuery(link.getDownloadURL()).get("d").toUpperCase();
     }
 
     @Override
@@ -345,7 +345,7 @@ public class Megauploadcom extends PluginForHost {
         int captchTries = 10;
         Form form = null;
         String code = null;
-        String hash = null;
+      
         while (captchTries-- >= 0) {
 
             br.getPage("http://megaupload.com/?d=" + getDownloadID(link));
@@ -392,27 +392,15 @@ public class Megauploadcom extends PluginForHost {
                 c.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
                 URLConnectionAdapter con = c.openGetConnection(captcha);
                 Browser.download(file, con);
-                hash = JDHash.getMD5(file);
+              
                 code = null;
-                Browser br2 = new Browser();
-                try {
-                    br2.postPage("http://service.jdownloader.org/tools/cg.php", "h=" + hash);
-                    if (br2.getHttpConnection().isOK() && !br2.containsHTML("error")) {
-                        code = br2.toString().trim();
-
-                    }
-                } catch (Exception e) {
-
-                }
-
+                
                 if (code == null) {
 
-                    try {
+                
                         code = getCaptchaCode(file, link);
 
-                    } catch (PluginException ee) {
-
-                    }
+                
                 }
                 if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 1) {
                     if (code == null || code.contains("-") || code.trim().length() != 4) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 1000l); }
@@ -434,11 +422,7 @@ public class Megauploadcom extends PluginForHost {
 
         if (form != null && form.containsHTML("captchacode")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
 
-        if (code != null) {
-
-            Browser br2 = new Browser();
-            br2.postPage("http://service.jdownloader.org/tools/c.php", hash + "=" + code);
-        }
+    
         // waitForNext(link);
         link.getLinkStatus().setStatusText("Wait for start");
         link.requestGuiUpdate();
@@ -488,6 +472,7 @@ public class Megauploadcom extends PluginForHost {
 
         br.setFollowRedirects(false);
         String dlID = getDownloadID(link);
+        br.setDebug(true);
         br.getHeaders().clear();
         br.getHeaders().setDominant(true);
         br.getHeaders().put("Accept", "text/plain,text/html,*/*;q=0.3");
@@ -502,7 +487,7 @@ public class Megauploadcom extends PluginForHost {
         } else {
             getRedirect("http://megaupload.com/mgr_dl.php?d=" + dlID, link);
         }
-        if (br.getRedirectLocation() == null || br.getRedirectLocation().contains(dlID)) {
+        if (br.getRedirectLocation() == null || br.getRedirectLocation().toUpperCase().contains(dlID)) {
             if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 2) {
                 handleFree1(link, account);
             } else {

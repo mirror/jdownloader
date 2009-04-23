@@ -16,6 +16,7 @@
 
 package jd.gui.skins.simple;
 
+import java.awt.Cursor;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -25,18 +26,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import javax.swing.AbstractButton;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.JSeparator;
 
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.skins.simple.components.JCancelButton;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -184,7 +184,7 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         private static final long serialVersionUID = 2676301394570621548L;
         private JLabel label;
         private JProgressBar bar;
-        private AbstractButton cancel = new JCancelButton();
+        private JButton cancel;
         private boolean attached = false;
         private ProgressController controller = null;
 
@@ -193,13 +193,17 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         }
 
         public ProgressEntry() {
-            this.setLayout(new MigLayout("ins 0", "[18!]0![grow,fill]5![16!]", "16!"));
-            this.add(label = new JLabel(), "sizegroup labels");
-            this.add(bar = new JProgressBar(), "sizegroup bars, growx");
-            this.add(cancel, "sizegroup cancel, wrap");
-            cancel.setVisible(false);
+            this.setLayout(new MigLayout("ins 0", "[18!]0![grow,fill]5![20!]", "16!"));
+            this.add(label = new JLabel());
+            this.add(bar = new JProgressBar());
+            this.add(cancel = new JButton(JDTheme.II("gui.images.cancel", 16, 16)),"width 16!,height 16!");
+cancel.setBorderPainted(false);
+cancel.setContentAreaFilled(false);
+cancel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+cancel.setOpaque(false);
+
             cancel.addActionListener(this);
-            this.add(new JSeparator(), "span");
+            // this.add(new JSeparator(), "span");
         }
 
         public boolean isAttached() {
@@ -208,7 +212,8 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
 
         public void update(ProgressController controller) {
             this.controller = controller;
-            cancel.setVisible(controller.isCancelVisible());
+            if (cancel != null) cancel.setEnabled(controller.isInterruptable());
+            if (cancel != null) cancel.setToolTipText(controller.isInterruptable() ? JDLocale.L("gui.progressbars.cancel.tooltip.enabled", "Interrupt this module") : JDLocale.L("gui.progressbars.cancel.tooltip.disabled", "Not possible to interrupt this module"));
             label.setIcon(controller.getIcon());
             bar.setMaximum(10000);
             bar.setValue(controller.getPercent());
@@ -220,6 +225,9 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         public void actionPerformed(ActionEvent arg0) {
             if (arg0.getSource() == this.cancel) {
                 if (controller != null) controller.fireCancelAction();
+                cancel.setIcon(JDTheme.II("gui.images.bad", 16, 16));
+                cancel.setToolTipText(JDLocale.L("gui.progressbars.cancel.tooltip.interrupted", "Termnation in progress"));
+                cancel = null;
             }
         }
 

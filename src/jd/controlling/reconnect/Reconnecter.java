@@ -88,7 +88,7 @@ public class Reconnecter {
             logger.info("DO RECONNECT NOW");
             boolean interrupt = SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);
             if (interrupt) {
-                controller.pauseDownloads(true);
+//                controller.pauseDownloads(true);
 
                 for (FilePackage fp : controller.getPackages()) {
                     for (DownloadLink nextDownloadLink : fp.getDownloadLinks()) {
@@ -136,9 +136,11 @@ public class Reconnecter {
     public static boolean doReconnectIfRequested() {
         boolean ret=false;
         if (RECONNECT_REQUESTS > 0){
-            
+            try{
             ret=Reconnecter.doReconnect();
-            
+            }catch(Exception e){
+                logger.finest("Reconnect failed. Exception "+e.getMessage());
+            }
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, ret);
             JDUtilities.getConfiguration().save();
         }

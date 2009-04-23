@@ -1,6 +1,7 @@
 package jd.gui.userio.dialog;
 
 import javax.swing.JDialog;
+import javax.swing.JLabel;
 
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
@@ -14,34 +15,20 @@ public abstract class JCountdownDialog extends JDialog {
     protected Thread countdownThread;
     private String ownTitle;
     protected int countdown;
+    protected JLabel countDownLabel;
 
     public JCountdownDialog(SimpleGUI currentgui) {
         super(currentgui);
+        this.countDownLabel = new JLabel();
         setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Please enter..."));
     }
 
-    @Override
-    public String getTitle() {
-        if (this.ownTitle == null) return super.getTitle();
-        return ownTitle;
-    }
-
-    @Override
-    public void setTitle(String title) {
-        super.setTitle(title);
-        this.ownTitle = title;
-    }
-
-    private void setSuperTitle(String title) {
-        super.setTitle(title);
-
-    }
 
     public void interrupt() {
         if (countdownThread != null) {
             countdownThread.interrupt();
             countdownThread = null;
-            setSuperTitle(getTitle());
+            countDownLabel.setText("");
         }
     }
 
@@ -66,15 +53,16 @@ public abstract class JCountdownDialog extends JDialog {
                 while (--c >= 0) {
                     if (!isVisible()) return;
                     if (countdownThread == null) return;
-                    final String left=Formatter.formatSeconds(c);
-                    new GuiRunnable<Object>(){
+                    final String left = Formatter.formatSeconds(c);
+
+                    new GuiRunnable() {
 
                         @Override
                         public Object runSave() {
-                            setSuperTitle(getTitle() + " [" + left + "]");
+                            countDownLabel.setText(JDLocale.LF("gui.dialogs.countdown.label", "%s sec", left));
                             return null;
                         }
-                        
+
                     }.start();
                     if (c <= 3) JDSounds.P("sound.captcha.onCaptchaInputEmergency");
 
@@ -97,5 +85,4 @@ public abstract class JCountdownDialog extends JDialog {
         countdownThread.start();
 
     }
-
 }

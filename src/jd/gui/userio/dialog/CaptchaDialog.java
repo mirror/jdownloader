@@ -16,6 +16,7 @@
 
 package jd.gui.userio.dialog;
 
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -24,6 +25,7 @@ import java.io.File;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 import javax.swing.WindowConstants;
@@ -189,9 +191,9 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
 
         this.getRootPane().setDefaultButton(btnOK);
         this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        if (this.explain != null) {
+        if (explain != null) {
             JTextField tf;
-            add(tf = new JTextField());
+            add(tf = new JTextField(), "");
             tf.setBorder(null);
             tf.setBackground(null);
             tf.setOpaque(false);
@@ -200,14 +202,17 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
         }
         add(new JLabel(imageIcon), "alignx center");
         add(textField);
-
-        add(btnOK, "split 2,tag ok");
-        add(btnBAD, "tag cancel");
-
+        add(this.countDownLabel, "split 3,growx");
+        add(btnOK, "alignx right");
+        add(btnBAD, "alignx right");
+        this.setMinimumSize(new Dimension(300, -1));
         this.pack();
         this.setResizable(false);
-        this.setLocation(Screen.getCenterOfComponent(null, this));
-        this.setLocation(Screen.getDockBottomRight(this));
+        if (SimpleGUI.CURRENTGUI == null || SimpleGUI.CURRENTGUI.getExtendedState() == JFrame.ICONIFIED || !SimpleGUI.CURRENTGUI.isVisible() || !SimpleGUI.CURRENTGUI.isActive()) {
+            this.setLocation(Screen.getDockBottomRight(this));
+        } else {
+            this.setLocation(Screen.getCenterOfComponent(SimpleGUI.CURRENTGUI, this));
+        }
         this.toFront();
         this.setAlwaysOnTop(true);
         this.requestFocus();
@@ -223,21 +228,23 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
     }
 
     private void startJAC() {
-        this.setTitle(getTitle() + "-JAntiCaptcha");
+        final String title = getTitle();
+        this.setTitle(title + "-JAntiCaptcha");
         jacWorker = new SwingWorker<Object, Object>() {
 
             private String code;
 
             @Override
             protected Object doInBackground() throws Exception {
-                CaptchaController cc = new CaptchaController(method, imagefile,null,null);
+                CaptchaController cc = new CaptchaController(method, imagefile, null, null);
                 this.code = cc.getCode(flag | UserIO.NO_USER_INTERACTION);
                 return null;
             }
 
             public void done() {
-
+                setTitle(title);
                 if (!this.isCancelled() && code != null) textField.setText(code);
+
             }
         };
         jacWorker.execute();

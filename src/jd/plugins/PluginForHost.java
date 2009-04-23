@@ -466,6 +466,7 @@ public abstract class PluginForHost extends Plugin {
                     }
                 }
             } catch (PluginException e) {
+                e.printStackTrace();
                 e.fillLinkStatus(downloadLink.getLinkStatus());
             }
             return;

@@ -42,7 +42,12 @@ public class CaptchaController {
     public String getCode(int flag) {
 
         if ((flag & UserIO.NO_JAC) > 0) return UserIO.getInstance().requestCaptchaDialog(flag, methodname, captchafile, suggest, explain);
-        if (!isJACMethodEnabled(methodname)) return null;
+        if (!isJACMethodEnabled(methodname)){
+            if((flag & UserIO.NO_USER_INTERACTION) >0 )return null;
+            
+            return    UserIO.getInstance().requestCaptchaDialog(flag | UserIO.NO_JAC, methodname, captchafile, suggest, explain);
+            
+        }
 
         Image captchaImage;
         try {

@@ -624,14 +624,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 } else {
                     // logger.severe("Hoster Plugin Version: " +
                     // getPlugin().getVersion());
-                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.
+                    //jd.controlling.JDLogger.getLogger().log(java.util.logging.
                     // Level.SEVERE,"Exception occured",e);
                     break;
                 }
             } catch (Exception e) {
                 // logger.severe("Hoster Plugin Version: " +
                 // getPlugin().getVersion());
-                // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level
+                //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level
                 // .SEVERE,"Exception occured",e);
                 available = false;
                 break;
@@ -808,7 +808,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Verändert den Aktiviert-Status
+     * Verändert den Aktiviert-Status Resets ERROR_TEMPORARILY_UNAVAILABLE!!
      * 
      * @param isEnabled
      *            Soll dieser DownloadLink aktiviert sein oder nicht
@@ -821,6 +821,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 this.getBroadcaster().fireEvent(new DownloadLinkEvent(this, DownloadLinkEvent.ENABLED));
             }
         }
+        this.getLinkStatus().removeStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
 
         this.isEnabled = isEnabled;
         if (!isEnabled) {

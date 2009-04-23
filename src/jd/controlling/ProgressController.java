@@ -72,7 +72,7 @@ public class ProgressController {
         this(name, 100l);
     }
 
-    public boolean isCancelVisible() {
+    public boolean isInterruptable() {
         return getBroadcaster().hasListener();
     }
 

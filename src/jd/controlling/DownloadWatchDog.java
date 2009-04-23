@@ -242,7 +242,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                         nextDownloadLink.reset();
                         nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
                     }
-                    if (nextDownloadLink.isEnabled()) {
+                    if (nextDownloadLink.isEnabled()&&!nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
                         if (nextDownloadLink.getPlugin().ignoreHosterWaittime(nextDownloadLink) || nextDownloadLink.getPlugin().getRemainingHosterWaittime() <= 0) {
                             if (!isDownloadLinkActive(nextDownloadLink)) {
                                 // if (!nextDownloadLink.isAborted()) {
@@ -384,9 +384,9 @@ if(value){
                         if (!link.isEnabled() && linkStatus.getTotalWaitTime() > 0) {
 
                             if (linkStatus.getRemainingWaittime() == 0) {
-                                link.setEnabled(true);
+//                                link.setEnabled(true);
                                 linkStatus.reset();
-                                updates.add(link);
+//                                updates.add(link);
                             }
                             hasTempDisabledLinks = true;
 

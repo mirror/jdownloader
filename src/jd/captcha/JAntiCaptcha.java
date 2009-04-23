@@ -571,6 +571,7 @@ public class JAntiCaptcha {
 
         try {
             File file = JDUtilities.getResourceFile(this.srcFile);
+            file.getParentFile().mkdirs();
             String ext = JDIO.getFileExtension(this.srcFile);
             ImageIO.write((RenderedImage) this.sourceImage, ext, file);
         } catch (IOException e) {

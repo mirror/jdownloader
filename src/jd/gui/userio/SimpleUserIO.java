@@ -33,7 +33,7 @@ public class SimpleUserIO extends UserIO {
 
     public static void main(String args[]) {
         UserIO.setInstance(SimpleUserIO.getInstance());
-        String res = UserIO.getInstance().requestCaptchaDialog(0, "rapidshare.com", new File("C:\\Users\\oem\\.jd_home\\captchas\\stealth.to\\21.04.2009_21.38.26.327.jpg"), "01234", null);
+        String res = UserIO.getInstance().requestCaptchaDialog(0, "megaupload.com", new File("C:\\Users\\oem\\.jd_home\\captchas\\megaupload.com\\23.04.2009_12.28.22.245.jpg"), "01234", null);
         System.out.println("result: " + res);
     }
 }

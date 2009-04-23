@@ -11,7 +11,7 @@ public abstract class UserIO {
     /**
      * TO not query user. Try to fill automaticly, or return null
      */
-    public static final int NO_USER_INTERACTION = 0;
+    public static final int NO_USER_INTERACTION = 1<<1;
     protected static UserIO INSTANCE = null;
 
     protected UserIO() {
