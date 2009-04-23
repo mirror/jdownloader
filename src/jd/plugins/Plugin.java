@@ -58,7 +58,7 @@ public abstract class Plugin implements ActionListener {
     /**
      * Ein Logger, um Meldungen darzustellen
      */
-    public static Logger logger = jd.controlling.JDLogger.getLogger();
+    protected static Logger logger = jd.controlling.JDLogger.getLogger();
 
     /**
      * Gibt die Passwörter als String aus bsp. {"Passwort1","Passwort2"}
@@ -71,7 +71,7 @@ public abstract class Plugin implements ActionListener {
         return JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
     }
 
-    public static ConversionMode DisplayDialog(ArrayList<ConversionMode> displaymodes, String name, CryptedLink link) throws InterruptedException {
+    public static ConversionMode showDisplayDialog(ArrayList<ConversionMode> displaymodes, String name, CryptedLink link) throws InterruptedException {
         link.getProgressController().setStatusText(JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
         synchronized (JDUtilities.userio_lock) {
             ConversionMode temp = ConvertDialog.DisplayDialog(displaymodes, name);
@@ -98,12 +98,16 @@ public abstract class Plugin implements ActionListener {
         return password;
     }
 
+    protected File getLocalCaptchaFile(Plugin plugin) {
+        return getLocalCaptchaFile(plugin, ".jpg");
+    }
+
     /**
-     * Gibt die Date zurück in die der aktuelle captcha geladne werden soll.
+     * Gibt die Datei zurück in die der aktuelle captcha geladen werden soll.
      * 
      * @param plugin
-     * @return Gibt einen Pfadzurück der für die nächste Captchadatei reserviert
-     *         ist
+     * @return Gibt einen Pfad zurück der für die nächste Captchadatei
+     *         reserviert ist
      */
     public static File getLocalCaptchaFile(Plugin plugin, String extension) {
         if (extension == null) {
@@ -117,23 +121,16 @@ public abstract class Plugin implements ActionListener {
         return dest;
     }
 
-    /**
-     * Zeigt an, ob das Plugin abgebrochen werden soll
-     */
-    public ConfigContainer config;
-
-    private String statusText;
+    protected ConfigContainer config;
 
     protected PluginWrapper wrapper;
 
     protected Browser br;
 
     public Plugin(PluginWrapper wrapper) {
-
         this.br = new Browser();
         this.wrapper = wrapper;
         config = new ConfigContainer(this);
-
     }
 
     public PluginWrapper getWrapper() {
@@ -154,7 +151,7 @@ public abstract class Plugin implements ActionListener {
      * @return wahr, falls ein Treffer gefunden wurde.
      */
     public synchronized boolean canHandle(String data) {
-        if (data == null) { return false; }
+        if (data == null) return false;
         Pattern pattern = getSupportedLinks();
         if (pattern != null) {
             Matcher matcher = pattern.matcher(data);
@@ -164,7 +161,6 @@ public abstract class Plugin implements ActionListener {
     }
 
     public void clean() {
-
         br = new Browser();
     }
 
@@ -189,7 +185,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Verwendet den JDcontroller um ein ControlEvent zu broadcasten
+     * Verwendet den JDController um ein ControlEvent zu broadcasten
      * 
      * @param controlID
      * @param param
@@ -208,10 +204,10 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Gibt das Konfigurationsobjekt der INstanz zurück. Die Gui kann daraus
+     * Gibt das Konfigurationsobjekt der Instanz zurück. Die Gui kann daraus
      * Dialogelement zaubern
      * 
-     * @return gibt die aktuelle Configuration INstanz zurück
+     * @return gibt die aktuelle Configuration Instanz zurück
      */
     public ConfigContainer getConfig() {
         return config;
@@ -225,12 +221,12 @@ public abstract class Plugin implements ActionListener {
      * @return Filename aus dem header (content disposition) extrahiert
      * @throws Exception
      */
-    static public String getFileNameFormHeader(URLConnectionAdapter urlConnection) {
+    public static String getFileNameFormHeader(URLConnectionAdapter urlConnection) {
         if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename") < 0) { return Plugin.getFileNameFormURL(urlConnection.getURL()); }
         return getFileNameFromDispositionHeader(urlConnection.getHeaderField("content-disposition"));
     }
 
-    static public String getFileNameFromDispositionHeader(String header) {
+    public static String getFileNameFromDispositionHeader(String header) {
         // http://greenbytes.de/tech/tc2231/
         if (header == null) return null;
         String orgheader = header;
@@ -315,7 +311,7 @@ public abstract class Plugin implements ActionListener {
         return filename;
     }
 
-    static public String getFileNameFormURL(URL url) {
+    public static String getFileNameFormURL(URL url) {
         return extractFileNameFromURL(url.toExternalForm());
     }
 
@@ -326,7 +322,7 @@ public abstract class Plugin implements ActionListener {
      * 
      * @return Datename des Downloads.
      */
-    static public String extractFileNameFromURL(String filename) {
+    public static String extractFileNameFromURL(String filename) {
         int index = filename.indexOf("?");
         /*
          * erst die Get-Parameter abschneiden
@@ -349,10 +345,6 @@ public abstract class Plugin implements ActionListener {
         return wrapper.getHost();
     }
 
-    protected File getLocalCaptchaFile(Plugin plugin) {
-        return Plugin.getLocalCaptchaFile(plugin, ".jpg");
-    }
-
     /**
      * Liefert eine einmalige ID des Plugins zurück
      * 
@@ -370,19 +362,6 @@ public abstract class Plugin implements ActionListener {
      */
     public SubConfiguration getPluginConfig() {
         return SubConfiguration.getConfig(wrapper.getConfigName());
-    }
-
-    /**
-     * Gibt den Statustext des Plugins zurück. kann von der GUI aufgerufen
-     * werden
-     * 
-     * @return Statustext
-     */
-    public String getStatusText() {
-        if (statusText == null) {
-            statusText = "";
-        }
-        return statusText;
     }
 
     /**
@@ -412,15 +391,6 @@ public abstract class Plugin implements ActionListener {
      */
     public void init() {
 
-    }
-
-    /**
-     * Setzte den Statustext des Plugins.
-     * 
-     * @param value
-     */
-    public void setStatusText(String value) {
-        statusText = value;
     }
 
     /**

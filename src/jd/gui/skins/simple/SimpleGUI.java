@@ -25,7 +25,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
@@ -88,7 +87,6 @@ import jd.gui.skins.simple.tasks.DownloadTaskPane;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
 import jd.gui.skins.simple.tasks.LogTaskPane;
 import jd.gui.skins.simple.tasks.TaskPanel;
-import jd.gui.userio.dialog.CaptchaDialog;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
@@ -96,7 +94,6 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
@@ -330,7 +327,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -885,7 +882,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);
@@ -927,7 +924,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             JDUtilities.getController().startDownloads();
         }
     }
-
 
     public String showCountdownUserInputDialog(final String message, final String def) {
 
@@ -1318,7 +1314,5 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         return new String[] { d.getPanel().getUserName(), new String(d.getPanel().getPassword()) };
     }
-
- 
 
 }

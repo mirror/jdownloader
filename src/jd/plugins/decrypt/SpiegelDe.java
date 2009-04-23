@@ -82,7 +82,7 @@ public class SpiegelDe extends PluginForDecrypt {
             possibleconverts.add(ConversionMode.VIDEOMP4);
             possibleconverts.add(ConversionMode.VIDEOPODCAST);
             possibleconverts.add(ConversionMode.VIDEOIPHONE);
-            ConversionMode convertTo = Plugin.DisplayDialog(possibleconverts, name, cryptedLink);
+            ConversionMode convertTo = Plugin.showDisplayDialog(possibleconverts, name, cryptedLink);
 
             if (convertTo != null) {
                 DownloadLink downloadLink = null;

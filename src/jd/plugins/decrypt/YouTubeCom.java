@@ -151,7 +151,7 @@ public class YouTubeCom extends PluginForDecrypt {
             possibleconverts.add(ConversionMode.AUDIOMP3);
             possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
 
-            ConversionMode convertTo = Plugin.DisplayDialog(possibleconverts, name, param);
+            ConversionMode convertTo = Plugin.showDisplayDialog(possibleconverts, name, param);
 
             if (convertTo != null) {
                 if (convertTo == ConvertDialog.ConversionMode.VIDEOMP4) {

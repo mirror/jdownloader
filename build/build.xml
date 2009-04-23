@@ -37,12 +37,13 @@
 				<exclude name="jd/captcha/methods" />
 			</fileset>
 		</jar>
+
 		<delete file="Manifest.MF" failonerror="false" />
 		<manifest file="Manifest.MF">
-				<attribute name="Created-By" value="JD-Team and AppWork UG" />
-			
-				<attribute name="Class-Path" value="${class-path}" />
-			</manifest>
+			<attribute name="Created-By" value="JD-Team and AppWork UG" />
+			<attribute name="Class-Path" value="${class-path}" />
+		</manifest>
+
 		<mkdir dir="${dist}/libs" />
 		<jar jarfile="${dist}/libs/JDHttp.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
@@ -50,12 +51,13 @@
 				<include name="sun/net/www/protocol/jdp/*.class" />
 			</fileset>
 		</jar>
+
 		<jar jarfile="${dist}/libs/JDGUI.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/gui/**" />
-			
 			</fileset>
 		</jar>
+
 		<jar jarfile="${dist}/libs/JAntiCaptcha.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/captcha/**" />
@@ -71,6 +73,7 @@
 		</jar>
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
+
 	<target name="jarWebupdater">
 		<!--Webupdater-->
 		<manifest file="Manifest.MF">
@@ -92,9 +95,7 @@
 				<include name="sun/net/www/protocol/jdp/*.class" />
 			</fileset>
 			<zipfileset src="ressourcen/libs/hsqldb.jar" excludes="META-INF/*" />
-
 		</jar>
-
 
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
@@ -108,15 +109,7 @@
 		<mkdir dir="${dist}/pluginressourcen/108__JDTrayLight/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/108__JDTrayLight/plugins/JDLightTray.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/JDLightTray*" />
-				<include name="jd/plugins/optional/TrayIconPopup*" />
-			</fileset>
-		</jar>
-
-		<mkdir dir="${dist}/pluginressourcen/107__JDTrayIcon/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/107__JDTrayIcon/plugins/JDTrayIcon.jar" manifest="Manifest.MF">
-			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/JDTrayIcon*" />
+				<include name="jd/plugins/optional/jdtrayicon/**" />
 			</fileset>
 		</jar>
 
@@ -159,13 +152,6 @@
 		<jar jarfile="${dist}/pluginressourcen/118__JDLowSpeed/plugins/JDLowSpeed.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDLowSpeed*" />
-			</fileset>
-		</jar>
-
-		<mkdir dir="${dist}/pluginressourcen/117__JDHttpLiveScripter/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/117__JDHttpLiveScripter/plugins/JDHTTPLiveHeaderScripter.jar" manifest="Manifest.MF">
-			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/HTTPLiveHeaderScripter*" />
 			</fileset>
 		</jar>
 
@@ -223,11 +209,10 @@
 		<signjar keystore="${keystore}" alias="jDownloader" storepass="jDownloader">
 			<path>
 				<fileset dir="${dist}" includes="**/*.jar" />
-
-
 			</path>
 		</signjar>
 	</target>
+
 	<target name="cryptContainer">
 		<taskdef name="yguard" classname="com.yworks.yguard.YGuardTask" />
 		<yguard>

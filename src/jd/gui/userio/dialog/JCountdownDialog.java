@@ -10,6 +10,7 @@ import jd.utils.JDSounds;
 
 public abstract class JCountdownDialog extends JDialog {
 
+    private static final long serialVersionUID = 8114522313158766965L;
     protected Thread countdownThread;
     private String ownTitle;
     protected int countdown;
@@ -19,11 +20,13 @@ public abstract class JCountdownDialog extends JDialog {
         setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Please enter..."));
     }
 
+    @Override
     public String getTitle() {
         if (this.ownTitle == null) return super.getTitle();
         return ownTitle;
     }
 
+    @Override
     public void setTitle(String title) {
         super.setTitle(title);
         this.ownTitle = title;
@@ -43,8 +46,6 @@ public abstract class JCountdownDialog extends JDialog {
     }
 
     protected abstract void onCountdown();
-
-    // TODO Auto-generated method stub
 
     protected void countdown(int time) {
         this.countdown = time;

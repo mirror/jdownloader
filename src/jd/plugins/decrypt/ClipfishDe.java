@@ -71,7 +71,7 @@ public class ClipfishDe extends PluginForDecrypt {
         possibleconverts.add(ConversionMode.VIDEOFLV);
         possibleconverts.add(ConversionMode.AUDIOMP3);
         possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
-        ConversionMode ConvertTo = Plugin.DisplayDialog(possibleconverts, name, cryptedLink);
+        ConversionMode ConvertTo = Plugin.showDisplayDialog(possibleconverts, name, cryptedLink);
 
         if (ConvertTo != null) {
             downloadLink.setFinalFileName(name + ".tmp");

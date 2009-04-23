@@ -48,6 +48,8 @@ import org.jdesktop.swingworker.SwingWorker;
  */
 public class CaptchaDialog extends JCountdownDialog implements ActionListener, KeyListener {
 
+    private static final long serialVersionUID = -2046990134131595481L;
+
     private JButton btnBAD;
 
     private JButton btnOK;
@@ -68,7 +70,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
 
     private String explain;
 
-    private SwingWorker jacWorker;
+    private SwingWorker<Object, Object> jacWorker;
 
     public CaptchaDialog(int flag, String methodname, File captchafile, String suggestion, String explain) {
         super(SimpleGUI.CURRENTGUI);
@@ -222,7 +224,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
 
     private void startJAC() {
         this.setTitle(getTitle() + "-JAntiCaptcha");
-        jacWorker = new SwingWorker() {
+        jacWorker = new SwingWorker<Object, Object>() {
 
             private String code;
 

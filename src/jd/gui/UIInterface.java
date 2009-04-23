@@ -16,13 +16,11 @@
 
 package jd.gui;
 
-import java.io.File;
 import java.util.Vector;
 
 import jd.event.ControlListener;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 
 /**
@@ -60,7 +58,6 @@ public interface UIInterface extends ControlListener {
     public void addLinksToGrabber(Vector<DownloadLink> links, boolean hideGrabber);
 
     public void displayMiniWarning(String shortWarn, String longWarn, int showtime);
-
 
     /**
      * 
