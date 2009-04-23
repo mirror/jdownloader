@@ -74,7 +74,7 @@ public class LinkProtectIn extends PluginForDecrypt {
                 Browser.download(captchaFile, br2.openGetConnection(captchaAddress));
 
                 br.setCookie(br.getURL(), "PHPSESSID", br2.getCookie(br2.getURL(), "PHPSESSID"));
-                String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
+                String captchaCode = getCaptchaCode(captchaFile, this, param);
                 captchaCode = captchaCode.toUpperCase();
                 form.put("code", captchaCode);
 

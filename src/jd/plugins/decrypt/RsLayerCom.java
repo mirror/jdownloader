@@ -84,7 +84,7 @@ public class RsLayerCom extends PluginForDecrypt {
                     File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
                     Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
 
-                    String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
+                    String captchaCode = getCaptchaCode(captchaFile, this, param);
                     captchaForm.put("captcha_input", captchaCode);
                     br.submitForm(captchaForm);
 

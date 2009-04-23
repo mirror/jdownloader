@@ -39,6 +39,8 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import jd.controlling.JDLogger;
+import jd.nutils.Formatter;
+import jd.nutils.Screen;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -94,9 +96,9 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
                     if (countdownThread == null) { return; }
                     if (titleText != null) {
 
-                        setTitle(JDUtilities.formatSeconds(c) + " mm:ss  >> " + titleText);
+                        setTitle(Formatter.formatSeconds(c) + " mm:ss  >> " + titleText);
                     } else {
-                        setTitle(JDUtilities.formatSeconds(c) + " mm:ss");
+                        setTitle(Formatter.formatSeconds(c) + " mm:ss");
                     }
 
                     try {
@@ -151,7 +153,7 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         this.setAlwaysOnTop(true);
         pack();
-        setLocation(JDUtilities.getCenterOfComponent(null, this));
+        setLocation(Screen.getCenterOfComponent(null, this));
         countdownThread.start();
         setVisible(true);
 

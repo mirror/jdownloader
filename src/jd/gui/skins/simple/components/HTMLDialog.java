@@ -32,8 +32,8 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import jd.controlling.JDLogger;
+import jd.nutils.Screen;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse ist wie die Optionspane mit textfeld nur mit textarea
@@ -96,7 +96,7 @@ public class HTMLDialog extends JDialog implements ActionListener, HyperlinkList
         this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         this.setVisible(true);
 
-        this.setLocation(JDUtilities.getCenterOfComponent(frame, this));
+        this.setLocation(Screen.getCenterOfComponent(frame, this));
         this.setVisible(false);
         this.setModal(true);
         this.setVisible(true);

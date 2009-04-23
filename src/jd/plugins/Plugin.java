@@ -30,10 +30,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.captcha.pixelgrid.Captcha;
 import jd.config.ConfigContainer;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
+import jd.controlling.CaptchaController;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
@@ -55,10 +55,6 @@ public abstract class Plugin implements ActionListener {
 
     public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
 
-    public static final int CAPTCHA_JAC = 0;
-
-    public static final int CAPTCHA_USER_INPUT = 1;
-
     private boolean acceptOnlyURIs = true;
     /**
      * Ein Logger, um Meldungen darzustellen
@@ -76,20 +72,7 @@ public abstract class Plugin implements ActionListener {
         return JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
     }
 
-    /**
-     * verwendet die erste Acaptcha Interaction um den captcha auszuwerten
-     * 
-     * @param file
-     * @param plugin
-     * @return captchacode
-     * @throws PluginException
-     * @throws InterruptedException
-     */
-    public static String getCaptchaCode(File file, Plugin plugin, DownloadLink link) throws PluginException, InterruptedException {
-        String captchaText = JDUtilities.getCaptcha(plugin, null, file, false, link);
-        if (captchaText == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        return captchaText;
-    }
+  
 
     public static ConversionMode DisplayDialog(ArrayList<ConversionMode> displaymodes, String name, CryptedLink link) throws InterruptedException {
         link.getProgressController().setStatusText(JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
@@ -100,23 +83,7 @@ public abstract class Plugin implements ActionListener {
         }
     }
 
-    public static String getCaptchaCode(Plugin plugin, String method, File file, boolean forceJAC, DownloadLink link) throws PluginException, InterruptedException {
-        String captchaText = JDUtilities.getCaptcha(plugin, method, file, forceJAC, link);
-        if (captchaText == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        return captchaText;
-    }
 
-    public static String getCaptchaCode(Plugin plugin, String method, File file, boolean forceJAC, CryptedLink link) throws DecrypterException, InterruptedException {
-        String captchaText = JDUtilities.getCaptcha(plugin, method, file, forceJAC, link);
-        if (captchaText == null) throw new DecrypterException(DecrypterException.CAPTCHA);
-        return captchaText;
-    }
-
-    public static String getCaptchaCode(File file, Plugin plugin, CryptedLink link) throws DecrypterException, InterruptedException {
-        String captchaText = JDUtilities.getCaptcha(plugin, null, file, false, link);
-        if (captchaText == null) throw new DecrypterException(DecrypterException.CAPTCHA);
-        return captchaText;
-    }
 
     public static String getUserInput(String message, CryptedLink link) throws DecrypterException, InterruptedException {
         String password = JDUtilities.getUserInput(message, link);
@@ -155,14 +122,10 @@ public abstract class Plugin implements ActionListener {
         return dest;
     }
 
-    private int captchaDetectionID = -1;
-
     /**
      * Zeigt an, ob das Plugin abgebrochen werden soll
      */
     public ConfigContainer config;
-
-    private Captcha lastCaptcha;
 
     private String statusText;
 
@@ -206,7 +169,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     public void clean() {
-        lastCaptcha = null;
+
         br = new Browser();
     }
 
@@ -238,10 +201,6 @@ public abstract class Plugin implements ActionListener {
      */
     public void fireControlEvent(int controlID, Object param) {
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
-    }
-
-    public int getCaptchaDetectionID() {
-        return captchaDetectionID;
     }
 
     /**
@@ -395,10 +354,6 @@ public abstract class Plugin implements ActionListener {
         return wrapper.getHost();
     }
 
-    public Captcha getLastCaptcha() {
-        return lastCaptcha;
-    }
-
     protected File getLocalCaptchaFile(Plugin plugin) {
         return Plugin.getLocalCaptchaFile(plugin, ".jpg");
     }
@@ -464,18 +419,6 @@ public abstract class Plugin implements ActionListener {
 
     }
 
-    public void setCaptchaDetectID(int captchaJac) {
-        captchaDetectionID = captchaJac;
-    }
-
-    public void setCaptchaDetectionID(int captchaDetectionID) {
-        this.captchaDetectionID = captchaDetectionID;
-    }
-
-    public void setLastCaptcha(Captcha captcha) {
-        lastCaptcha = captcha;
-    }
-
     /**
      * Setzte den Statustext des Plugins.
      * 
@@ -483,17 +426,6 @@ public abstract class Plugin implements ActionListener {
      */
     public void setStatusText(String value) {
         statusText = value;
-    }
-
-    /**
-     * Wenn das Captcha nicht richtig erkannt wurde kann wird ein Dialog zu
-     * Captchaeingabe gezeigt ist useUserinputIfCaptchaUnknown wird dieser
-     * dialog nicht gezeigt
-     * 
-     * @return
-     */
-    public boolean useUserinputIfCaptchaUnknown() {
-        return true;
     }
 
     /**

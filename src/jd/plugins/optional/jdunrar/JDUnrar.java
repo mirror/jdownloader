@@ -40,6 +40,7 @@ import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.nutils.Executer;
+import jd.nutils.Formatter;
 import jd.nutils.OSDetector;
 import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
@@ -1283,7 +1284,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             if ((test = new Regex(downloadLink.getFileOutput(), "part(\\d*?)\\.").getMatch(0)) != null) {
                 nums = test.length();
                 i = 1;
-                while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".part" + JDUtilities.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
+                while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".part" + Formatter.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
                     ret.add(JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED));
                     i++;
                 }
@@ -1303,7 +1304,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     }
                 }
                 if (nums != -1) {
-                    while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".r" + JDUtilities.fillString(i + "", "0", "", nums))).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
+                    while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".r" + Formatter.fillString(i + "", "0", "", nums))).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
                         ret.add(JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED));
                         i++;
                     }

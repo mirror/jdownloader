@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -34,7 +35,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 import com.sun.org.apache.xerces.internal.impl.xpath.regex.ParseException;
 
@@ -237,7 +237,7 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-        return downloadLink.getName() + " (" + JDUtilities.formatReadable(downloadLink.getDownloadSize()) + ")";
+        return downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")";
     }
 
     @Override

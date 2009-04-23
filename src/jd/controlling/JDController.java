@@ -435,21 +435,7 @@ public class JDController implements ControlListener {
         fireControlEvent(c);
     }
 
-    /**
-     * Der Benuter soll den Captcha Code erkennen
-     * 
-     * @param plugin
-     *            Das Plugin, das den Code anfordert
-     * @param captchaAddress
-     *            Adresse des anzuzeigenden Bildes
-     * @return Text des Captchas
-     */
-    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress, String def) {
-        synchronized (JDUtilities.userio_lock) {
-        String captchaCode = uiInterface.showCountdownCaptchaDialog(plugin, captchaAddress, def);
-        return captchaCode;
-        }
-    }
+
 
     /**
      * Gibt den Status (ID) der downloads zurück

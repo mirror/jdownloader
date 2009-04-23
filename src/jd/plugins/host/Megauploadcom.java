@@ -408,7 +408,7 @@ public class Megauploadcom extends PluginForHost {
                 if (code == null) {
 
                     try {
-                        code = Plugin.getCaptchaCode(file, this, link);
+                        code = getCaptchaCode(file, link);
 
                     } catch (PluginException ee) {
 

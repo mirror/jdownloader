@@ -46,6 +46,7 @@ import jd.controlling.reconnect.ReconnectMethod;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.nutils.JDImage;
+import jd.nutils.Screen;
 import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -111,7 +112,7 @@ public class JDRRGui extends JDialog implements ActionListener {
         panel.add(bpanel, BorderLayout.SOUTH);
         this.setContentPane(panel);
         this.pack();
-        this.setLocation(JDUtilities.getCenterOfComponent(null, this));
+        this.setLocation(Screen.getCenterOfComponent(null, this));
     }
 
     private void save() {

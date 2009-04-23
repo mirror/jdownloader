@@ -34,6 +34,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.nutils.Formatter;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
@@ -371,7 +372,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         int c = 1;
         ArrayList<File> ret = new ArrayList<File>();
         for (int i = 0; i < files.length; i++) {
-            String volume = JDUtilities.fillString(c + "", "0", "", 3);
+            String volume = Formatter.fillString(c + "", "0", "", 3);
             File newFile;
             if ((newFile = new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", "\\." + volume + "$1"))).exists()) {
 

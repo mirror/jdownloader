@@ -48,6 +48,7 @@ import jd.gui.skins.simple.SimpleGuiUtils;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.JDImage;
+import jd.nutils.Screen;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
@@ -119,7 +120,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
             setContentPane(main);
             pack();
-            setLocation(JDUtilities.getCenterOfComponent(owner, this));
+            setLocation(Screen.getCenterOfComponent(owner, this));
             setVisible(true);
         }
 
@@ -198,7 +199,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
             setContentPane(main);
             pack();
-            setLocation(JDUtilities.getCenterOfComponent(owner, this));
+            setLocation(Screen.getCenterOfComponent(owner, this));
             setVisible(true);
         }
 

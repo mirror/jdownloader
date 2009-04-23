@@ -57,7 +57,7 @@ public class DreiDlAm extends PluginForDecrypt {
                 Form form = br.getForm(3);
                 br.cloneBrowser().getDownload(file, "http://3dl.am/images/captcha5.php" + captcha);
 
-                String capTxt = Plugin.getCaptchaCode(file, this, link);
+                String capTxt = getCaptchaCode(file, this, link);
                 form.put("antwort", capTxt);
                 br.submitForm(form);
                 if (!br.containsHTML("/failed.html';")) break;
@@ -76,7 +76,7 @@ public class DreiDlAm extends PluginForDecrypt {
         ArrayList<String> linksReturn = new ArrayList<String>();
         if (parameter != null) br.getPage(parameter);
         if (br.containsHTML("/failed.html")) {
-            String url = br.getRegex(PluginPattern.decrypterPattern_DreiDlAm_3).getMatch(-1);
+            String url = br.getRegex(PluginPattern.DECRYPTER_3DLAM_3).getMatch(-1);
             decryptFromDownload(url);
         }
         String[] links = br.getRegex(Pattern.compile("value='http://3dl\\.am/link/(.*?)/'", Pattern.CASE_INSENSITIVE)).getColumn(0);
@@ -95,7 +95,7 @@ public class DreiDlAm extends PluginForDecrypt {
         br.clearCookies("3dl.am");
         br.getPage("http://3dl.am");
         link = param;
-        if (new Regex(parameter, PluginPattern.decrypterPattern_DreiDlAm_2).matches()) {
+        if (new Regex(parameter, PluginPattern.DECRYPTER_3DLAM_2).matches()) {
             ArrayList<String> links = decryptFromStart(parameter);
             progress.setRange(links.size());
             for (int i = 0; i < links.size(); i++) {
@@ -105,7 +105,7 @@ public class DreiDlAm extends PluginForDecrypt {
                 dl_link.addSourcePluginPassword(password);
                 decryptedLinks.add(dl_link);
             }
-        } else if (new Regex(parameter, PluginPattern.decrypterPattern_DreiDlAm_1).matches()) {
+        } else if (new Regex(parameter, PluginPattern.DECRYPTER_3DLAM_1).matches()) {
             progress.setRange(1);
             String link = decryptFromLink(parameter);
             decryptedLinks.add(createDownloadlink(link));

@@ -71,7 +71,7 @@ public class UploadBoxCom extends PluginForHost {
         if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         URLConnectionAdapter con = br.cloneBrowser().openGetConnection(captchaUrl);
         Browser.download(file, con);
-        String code = Plugin.getCaptchaCode(file, this, link);
+        String code = getCaptchaCode(file,link);
         form.put("enter", code);
         br.submitForm(form);
         if (br.containsHTML("read the captcha code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);

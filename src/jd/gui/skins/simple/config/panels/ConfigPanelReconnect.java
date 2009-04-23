@@ -49,6 +49,7 @@ import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.gui.skins.simple.config.subpanels.SubPanelCLRReconnect;
 import jd.gui.skins.simple.config.subpanels.SubPanelLiveHeaderReconnect;
+import jd.nutils.Formatter;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -109,7 +110,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
                             @Override
                             public Object runSave() {
-                                time.setText(JDUtilities.formatSeconds((System.currentTimeMillis() - timel) / 1000));
+                                time.setText(Formatter.formatSeconds((System.currentTimeMillis() - timel) / 1000));
                                 time.setEnabled(true);
                                 timeLabel.setEnabled(true);
                                 return null;
@@ -177,8 +178,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDLocale.L("reconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5).setGroup(group)));
         this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDLocale.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20).setGroup(group)));
 
-        this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("DOWNLOAD"), "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", JDLocale.L("gui.config.download.autoresume", "Let Reconnects interrupt resumeable downloads")).setDefaultValue(true).setGroup(group)));
-        panel.add(Factory.createHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.methods", "Reconnect Methods"), JDTheme.II("gui.images.reconnect_selection", 32, 32))), "spanx");
+       panel.add(Factory.createHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.methods", "Reconnect Methods"), JDTheme.II("gui.images.reconnect_selection", 32, 32))), "spanx");
 
         panel.add(tabbed = new JTabbedPane(), "spanx,pushy,growy");
         tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);

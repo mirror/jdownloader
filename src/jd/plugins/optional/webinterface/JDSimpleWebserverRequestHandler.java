@@ -32,6 +32,7 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
 import jd.http.Encoding;
+import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -92,7 +93,7 @@ public class JDSimpleWebserverRequestHandler {
                      */
                     if (requestParameter.containsKey(key + "_counter")) {
                         Integer keycounter = 0;
-                        keycounter = JDUtilities.filterInt(requestParameter.get(key + "_counter"));
+                        keycounter = Formatter.filterInt(requestParameter.get(key + "_counter"));
                         keycounter++;
                         requestParameter.put(key + "_counter", keycounter.toString());
                         requestParameter.put(key + "_" + keycounter.toString(), value);
@@ -108,7 +109,7 @@ public class JDSimpleWebserverRequestHandler {
         if (requestParameter.containsKey("do")) {
             if (requestParameter.get("do").compareToIgnoreCase("submit") == 0) {
                 if (requestParameter.containsKey("speed")) {
-                    int setspeed = JDUtilities.filterInt(requestParameter.get("speed"));
+                    int setspeed = Formatter.filterInt(requestParameter.get("speed"));
                     if (setspeed < 0) {
                         setspeed = 0;
                     }
@@ -116,7 +117,7 @@ public class JDSimpleWebserverRequestHandler {
                 }
 
                 if (requestParameter.containsKey("maxdls")) {
-                    int maxdls = JDUtilities.filterInt(requestParameter.get("maxdls"));
+                    int maxdls = Formatter.filterInt(requestParameter.get("maxdls"));
                     if (maxdls < 1) {
                         maxdls = 1;
                     }
@@ -136,7 +137,7 @@ public class JDSimpleWebserverRequestHandler {
                         Integer download_id = 0;
                         Integer package_id = 0;
                         String[] ids;
-                        int counter_max = JDUtilities.filterInt(requestParameter.get("package_single_add_counter"));
+                        int counter_max = Formatter.filterInt(requestParameter.get("package_single_add_counter"));
                         int counter_index = 0;
                         DownloadLink link;
                         Vector<DownloadLink> links = new Vector<DownloadLink>();
@@ -144,8 +145,8 @@ public class JDSimpleWebserverRequestHandler {
                         for (counter_index = 1; counter_index <= counter_max; counter_index++) {
                             if (requestParameter.containsKey("package_single_add_" + counter_index)) {
                                 ids = requestParameter.get("package_single_add_" + counter_index).toString().split("[+]", 2);
-                                package_id = JDUtilities.filterInt(ids[0].toString());
-                                download_id = JDUtilities.filterInt(ids[1].toString());
+                                package_id = Formatter.filterInt(ids[0].toString());
+                                download_id = Formatter.filterInt(ids[1].toString());
                                 links.add(LinkGrabberPanel.getLinkGrabber().getPackages().get(package_id).get(download_id));
                                 if (!packages.contains(LinkGrabberPanel.getLinkGrabber().getPackages().get(package_id))) packages.add(LinkGrabberPanel.getLinkGrabber().getPackages().get(package_id));
                             }
@@ -196,15 +197,15 @@ public class JDSimpleWebserverRequestHandler {
                     Integer download_id = 0;
                     Integer package_id = 0;
                     String[] ids;
-                    int counter_max = JDUtilities.filterInt(requestParameter.get("package_single_download_counter"));
+                    int counter_max = Formatter.filterInt(requestParameter.get("package_single_download_counter"));
                     int counter_index = 0;
                     DownloadLink link;
                     Vector<DownloadLink> links = new Vector<DownloadLink>();
                     for (counter_index = 1; counter_index <= counter_max; counter_index++) {
                         if (requestParameter.containsKey("package_single_download_" + counter_index)) {
                             ids = requestParameter.get("package_single_download_" + counter_index).toString().split("[+]", 2);
-                            package_id = JDUtilities.filterInt(ids[0].toString());
-                            download_id = JDUtilities.filterInt(ids[1].toString());
+                            package_id = Formatter.filterInt(ids[0].toString());
+                            download_id = Formatter.filterInt(ids[1].toString());
 
                             links.add(JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id));
                         }

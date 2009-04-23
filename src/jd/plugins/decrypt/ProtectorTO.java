@@ -104,7 +104,7 @@ public class ProtectorTO extends PluginForDecrypt {
                 con.connect();
                 Browser.download(file, br.cloneBrowser().openGetConnection(con.getRequest().getLocation()));
                 Form form = br.getForm(0);
-                String captchaCode = Plugin.getCaptchaCode(file, this, param);
+                String captchaCode = getCaptchaCode(file, this, param);
                 if (captchaCode == null) return null;
                 form.put("code", captchaCode);
                 br.submitForm(form);

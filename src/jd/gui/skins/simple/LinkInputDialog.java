@@ -31,8 +31,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 
+import jd.nutils.Screen;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * Mit dieser Klasse werden in einem Dialog Links entgegengenommen
@@ -101,7 +101,7 @@ public class LinkInputDialog extends JDialog implements ActionListener {
         this.getRootPane().setDefaultButton(btnOK);
         this.setPreferredSize(new Dimension(400, 300));
         this.pack();
-        this.setLocation(JDUtilities.getCenterOfComponent(owner, this));
+        this.setLocation(Screen.getCenterOfComponent(owner, this));
         this.setVisible(true);
     }
 

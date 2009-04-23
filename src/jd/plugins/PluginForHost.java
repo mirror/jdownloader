@@ -42,9 +42,11 @@ import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountManager;
+import jd.controlling.CaptchaController;
 import jd.controlling.DownloadController;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
+import jd.nutils.Formatter;
 import jd.nutils.JDImage;
 import jd.parser.Regex;
 import jd.plugins.download.DownloadInterface;
@@ -81,10 +83,26 @@ public abstract class PluginForHost extends Plugin {
             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+        String captchaCode = getCaptchaCode(this.getHost(),captchaFile,0 ,downloadLink,null,null);
         return captchaCode;
 
     }
+    public String getCaptchaCode(String methodname, File captchaFile, DownloadLink downloadLink) throws PluginException, InterruptedException {
+        return getCaptchaCode(methodname,captchaFile,0,downloadLink,null,null);
+    }
+    public String getCaptchaCode(File captchaFile, DownloadLink downloadLink) throws PluginException, InterruptedException {
+        // TODO Auto-generated method stub
+        return getCaptchaCode(this.getHost(),captchaFile,0,downloadLink,null,null);
+    }
+    public String getCaptchaCode(String method, File file, int flag, DownloadLink link,String defaultValue,String explain) throws PluginException, InterruptedException {
+        link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
+        link.requestGuiUpdate();
+        String cc = new CaptchaController(method, file,defaultValue,explain).getCode(flag);
+  
+        if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        return cc;
+    }
+
 
     private static final String AGB_CHECKED = "AGB_CHECKED";
     private static final String CONFIGNAME = "pluginsForHost";
@@ -621,7 +639,7 @@ public abstract class PluginForHost extends Plugin {
         try {
             while (i > 0 && downloadLink.getDownloadLinkController() != null && !downloadLink.getDownloadLinkController().isAborted()) {
                 i -= 1000;
-                downloadLink.getLinkStatus().setStatusText(message + String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), JDUtilities.formatSeconds(i / 1000)));
+                downloadLink.getLinkStatus().setStatusText(message + String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), Formatter.formatSeconds(i / 1000)));
                 downloadLink.requestGuiUpdate();
                 Thread.sleep(1000);
             }

@@ -30,6 +30,8 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.nutils.Formatter;
+import jd.nutils.Screen;
 import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -107,7 +109,7 @@ public class AgbDialog extends JDialog implements ActionListener {
 
                 while (--c >= 0) {
                     if (countdownThread == null) return;
-                    setTitle(JDLocale.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert") + " [" + JDUtilities.formatSeconds(c) + "]");
+                    setTitle(JDLocale.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert") + " [" + Formatter.formatSeconds(c) + "]");
 
                     try {
                         Thread.sleep(1000);
@@ -127,7 +129,7 @@ public class AgbDialog extends JDialog implements ActionListener {
 
         pack();
         setResizable(false);
-        setLocation(JDUtilities.getCenterOfComponent(null, this));
+        setLocation(Screen.getCenterOfComponent(null, this));
         setVisible(true);
 
     }

@@ -103,7 +103,7 @@ public class Odsiebiecom extends PluginForHost {
                 }
                 if (adr == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 File file = br.cloneBrowser().getDownloadTemp(adr);
-                String code = Plugin.getCaptchaCode(file, this, downloadLink);
+                String code = getCaptchaCode(file,downloadLink);
                 capform.getInputFieldByName("captcha").setValue(code);
                 br.submitForm(capform);
                 capform = br.getFormbyProperty("name", "wer");

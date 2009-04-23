@@ -36,6 +36,7 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.JDProxy;
 import jd.http.RequestHeader;
+import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -270,7 +271,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
                             logger.severe("A Wait Step needs a Waittimeattribute: e.g.: <WAIT seconds=\"15\"/>");
                             return false;
                         }
-                        int seconds = JDUtilities.filterInt(item.getNodeValue());
+                        int seconds = Formatter.filterInt(item.getNodeValue());
                         Thread.sleep(seconds * 1000);
                     }
                 }

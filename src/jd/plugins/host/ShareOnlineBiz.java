@@ -181,7 +181,7 @@ public class ShareOnlineBiz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         /* CaptchaCode holen */
-        captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+        captchaCode = getCaptchaCode(captchaFile, downloadLink);
         Form form = br.getForm(1);
         if (form.containsHTML("name=downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {

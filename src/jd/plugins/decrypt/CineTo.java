@@ -47,7 +47,7 @@ public class CineTo extends PluginForDecrypt {
                 File file = this.getLocalCaptchaFile(this);
                 URLConnectionAdapter con = br.openGetConnection("http://cine.to/securimage_show.php");
                 Browser.download(file, con);
-                String code = Plugin.getCaptchaCode(file, this, param);
+                String code = getCaptchaCode(file, this, param);
                 br.postPage(param.toString(), "captcha=" + code + "&submit=Senden");
                 if (br.containsHTML("Code ist falsch")) throw new DecrypterException(DecrypterException.CAPTCHA);
                 String[] links = br.getRegex("window\\.open\\('(.*?)'").getColumn(0);

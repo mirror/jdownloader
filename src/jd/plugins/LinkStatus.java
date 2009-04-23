@@ -19,6 +19,7 @@ package jd.plugins;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 
+import jd.nutils.Formatter;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -252,9 +253,9 @@ public class LinkStatus implements Serializable {
 
         if (hasStatus(ERROR_IP_BLOCKED) && downloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
             if (errorMessage == null) {
-                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000)));
+                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000)));
             } else {
-                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000))) + errorMessage;
+                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000))) + errorMessage;
 
             }
             return ret;
@@ -270,12 +271,12 @@ public class LinkStatus implements Serializable {
 
             if (speed > 0) {
                 if (downloadLink.getDownloadSize() < 0) {
-                    return JDUtilities.formatReadable(speed ) + "/s " + JDLocale.L("gui.download.filesize_unknown", "(Filesize unknown)");
+                    return Formatter.formatReadable(speed ) + "/s " + JDLocale.L("gui.download.filesize_unknown", "(Filesize unknown)");
                 } else {
 
                     long remainingBytes = downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent();
                     long eta = remainingBytes / speed;
-                    return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatReadable(speed ) + "/s " + chunkString;
+                    return "ETA " + Formatter.formatSeconds((int) eta) + " @ " + Formatter.formatReadable(speed ) + "/s " + chunkString;
                 }
             } else {
                 return JDLocale.L("gui.download.create_connection", "Connecting...") + chunkString;
@@ -408,7 +409,7 @@ public class LinkStatus implements Serializable {
         Class<? extends LinkStatus> cl = this.getClass();
         Field[] fields = cl.getDeclaredFields();
         StringBuilder sb = new StringBuilder();
-        sb.append(JDUtilities.fillString(Integer.toBinaryString(status), "0", "", 32) + " <Statuscode\r\n");
+        sb.append(Formatter.fillString(Integer.toBinaryString(status), "0", "", 32) + " <Statuscode\r\n");
         String latest = "";
         for (Field field : fields) {
             if (field.getModifiers() == 25) {
@@ -418,11 +419,11 @@ public class LinkStatus implements Serializable {
                     if (hasStatus(value)) {
                         if (value == lastestStatus) {
                             latest = "latest:" + field.getName() + "\r\n";
-                            sb.append(JDUtilities.fillString(Integer.toBinaryString(value), "0", "", 32) + " |" + field.getName() + "\r\n");
+                            sb.append(Formatter.fillString(Integer.toBinaryString(value), "0", "", 32) + " |" + field.getName() + "\r\n");
 
                         } else {
 
-                            sb.append(JDUtilities.fillString(Integer.toBinaryString(value), "0", "", 32) + " |" + field.getName() + "\r\n");
+                            sb.append(Formatter.fillString(Integer.toBinaryString(value), "0", "", 32) + " |" + field.getName() + "\r\n");
                         }
                     }
                 } catch (IllegalArgumentException e) {

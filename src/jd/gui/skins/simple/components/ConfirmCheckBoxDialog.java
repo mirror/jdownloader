@@ -33,6 +33,7 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import jd.controlling.JDLogger;
+import jd.nutils.Screen;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -125,7 +126,7 @@ public class ConfirmCheckBoxDialog extends JDialog implements ActionListener {
         panel.setBorder(new EmptyBorder(n, n, n, n));
 
         pack();
-        setLocation(JDUtilities.getCenterOfComponent(null, this));
+        setLocation(Screen.getCenterOfComponent(null, this));
         setVisible(true);
 
     }

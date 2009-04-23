@@ -42,7 +42,7 @@ public class ScumIn extends PluginForDecrypt {
 
         File captchaFile = this.getLocalCaptchaFile(this);
         Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://scum.in/share/includes/captcha.php?t="));
-        String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
+        String captchaCode = getCaptchaCode(captchaFile, this, param);
 
         br.postPage("http://scum.in/plugins/home/links.callback.php", "id=" + parameter.substring(parameter.lastIndexOf("=") + 1) + "&captcha=" + captchaCode);
 

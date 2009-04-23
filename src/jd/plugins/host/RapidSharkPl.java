@@ -66,7 +66,7 @@ public class RapidSharkPl extends PluginForHost {
             URLConnectionAdapter con = br.openGetConnection(captchaurl);
             File file = this.getLocalCaptchaFile(this);
             Browser.download(file, con);
-            String code = Plugin.getCaptchaCode(this, "fileload.us", file, false, downloadLink);
+            String code = getCaptchaCode("fileload.us", file,downloadLink);
             form.put("code", code);
             form.setAction(downloadLink.getDownloadURL());
             // Ticket Time

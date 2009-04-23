@@ -21,6 +21,7 @@ import java.io.File;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -28,7 +29,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 public class FilesTo extends PluginForHost {
 
@@ -59,7 +59,7 @@ public class FilesTo extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-        return downloadLink.getName() + " (" + JDUtilities.formatReadable(downloadLink.getDownloadSize()) + ")";
+        return downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")";
     }
 
     @Override
@@ -78,7 +78,7 @@ public class FilesTo extends PluginForHost {
 
         File captchaFile = this.getLocalCaptchaFile(this);
         Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
-        String code = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+        String code = getCaptchaCode(captchaFile, downloadLink);
 
         Form captchaForm = br.getForm(0);
         captchaForm.put("txt_ccode", code);

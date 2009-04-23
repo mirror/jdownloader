@@ -7,7 +7,7 @@ import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 
-import jd.utils.JDUtilities;
+import jd.nutils.Screen;
 
 public class SimpleGuiUtils {
 
@@ -48,7 +48,7 @@ public class SimpleGuiUtils {
     
             return point;
         }
-        return JDUtilities.getCenterOfComponent(parent, child);
+        return Screen.getCenterOfComponent(parent, child);
     }
 
     public static void restoreWindow(JFrame parent, Component component) {

@@ -78,7 +78,7 @@ public class Collectr extends PluginForDecrypt {
                 File file = this.getLocalCaptchaFile(this);
                 Browser c = br.cloneBrowser();
                 Browser.download(file, c.openGetConnection("http://collectr.net/img/saptcha" + saptcha + ".gif"));
-                String captchaCode = Plugin.getCaptchaCode(file, this, param);
+                String captchaCode = getCaptchaCode(file, this, param);
                 HashMap<String, String> post = new HashMap<String, String>();
                 post.put("saptcha", captchaCode);
                 post.put("id", saptcha);

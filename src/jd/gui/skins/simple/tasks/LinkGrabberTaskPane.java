@@ -16,9 +16,9 @@ import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberListener;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberTreeTableAction;
+import jd.nutils.Formatter;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 
 public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, LinkGrabberListener {
 
@@ -74,7 +74,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
             }
         }
         downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", links));
-        totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", JDUtilities.formatReadable(tot)));
+        totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
     }
 
     private void initGUI() {

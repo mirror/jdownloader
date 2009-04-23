@@ -81,7 +81,7 @@ public class ShareNownet extends PluginForHost {
             File captchaFile = getLocalCaptchaFile(this);
             br.getDownload(captchaFile, "http://share-now.net/captcha.php?id=" + form.getInputFieldByName("download").getValue());
             /* CaptchaCode holen */
-            String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+            String captchaCode = getCaptchaCode(captchaFile,downloadLink);
             form.put("Submit", "Download+Now");
             form.put("captcha", captchaCode);
         }

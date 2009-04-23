@@ -47,7 +47,7 @@ public class LinkcryptCom extends PluginForDecrypt {
             File captchaFile = this.getLocalCaptchaFile(this);
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(url));
 
-            String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
+            String captchaCode = getCaptchaCode(captchaFile, this, param);
             if (captchaCode == null) return null;
             f.put("captcha", captchaCode);
             br.submitForm(f);

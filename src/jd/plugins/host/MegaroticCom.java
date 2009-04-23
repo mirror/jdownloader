@@ -30,6 +30,7 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.Request;
+import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
@@ -197,7 +198,7 @@ public class MegaroticCom extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-        return (tempUnavailable ? "<Temp. unavailable> " : "") + downloadLink.getName() + " (" + JDUtilities.formatReadable(downloadLink.getDownloadSize()) + ")";
+        return (tempUnavailable ? "<Temp. unavailable> " : "") + downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")";
     }
 
     @Override
@@ -254,7 +255,7 @@ public class MegaroticCom extends PluginForHost {
 
         Browser.download(file, con);
 
-        String code = Plugin.getCaptchaCode(file, this, downloadLink);
+        String code = getCaptchaCode(file, downloadLink);
 
         br.postPage(captchaPost, HTMLParser.joinMap(fields, "=", "&") + "&imagestring=" + code);
         if (br.containsHTML(SIMPLEPATTERN_CAPTCHA_URl)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);

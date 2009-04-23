@@ -18,14 +18,9 @@ package jd.utils;
 
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
-import java.awt.Image;
 import java.awt.Insets;
-import java.awt.MediaTracker;
-import java.awt.Point;
-import java.awt.Toolkit;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
@@ -43,7 +38,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -59,29 +53,22 @@ import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
-import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
-import javax.swing.JFrame;
 
 import jd.CPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.JDClassLoader;
-import jd.captcha.JAntiCaptcha;
-import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
-import jd.controlling.JDLogger;
-import jd.event.ControlEvent;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
-import jd.http.Encoding;
 import jd.http.JDProxy;
 import jd.nutils.Executer;
+import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -99,7 +86,7 @@ public class JDUtilities {
     /**
      * Die Konfiguration
      */
-    private static Configuration configuration = null;
+    public static Configuration configuration = null;
 
     private static DatabaseConnector dbconnect = null;
 
@@ -343,121 +330,6 @@ public class JDUtilities {
 
     }
 
-    /**
-     * Hängt an i solange fill vorne an bis die zechenlänge von i gleich num ist
-     * 
-     * @param i
-     * @param num
-     * @param fill
-     * @return aufgefüllte Zeichenkette
-     */
-    public static String fillInteger(long i, int num, String fill) {
-        String ret = "" + i;
-        while (ret.length() < num) {
-            ret = fill + ret;
-        }
-        return ret;
-    }
-
-    public static String fillString(String binaryString, String pre, String post, int length) {
-        while (binaryString.length() < length) {
-            if (binaryString.length() < length) {
-                binaryString = pre + binaryString;
-            }
-            if (binaryString.length() < length) {
-                binaryString = binaryString + post;
-            }
-        }
-        return binaryString;
-    }
-
-    /**
-     * GIbt den Integer der sich in src befindet zurück. alle nicht
-     * integerzeichen werden ausgefiltert
-     * 
-     * @param src
-     * @return Integer in src
-     */
-    public static int filterInt(String src) {
-        try {
-            return Integer.parseInt(Encoding.filterString(src, "1234567890"));
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
-
-    public static long filterLong(String src) {
-        try {
-            return Long.parseLong(Encoding.filterString(src, "1234567890"));
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
-
-    public static String formatReadable(long value) {
-
-        DecimalFormat c = new DecimalFormat("0.00");
-        if (value >= (1024 * 1024 * 1024 * 1024l)) return c.format(value / (1024 * 1024 * 1024 * 1024.0)) + " TB";
-        if (value >= (1024 * 1024 * 1024l)) return c.format(value / (1024 * 1024 * 1024.0)) + " GB";
-        if (value >= (1024 * 1024l)) return c.format(value / (1024 * 1024.0)) + " MB";
-        if (value >= 1024l) return c.format(value / 1024.0) + " KB";
-
-        return value + " B";
-    }
-
-    public static String formatFilesize(double value, int size) {
-        if (value > 1024 && size < 5) {
-            return formatFilesize(value / 1024.0, ++size);
-        } else {
-            DecimalFormat c = new DecimalFormat("0.00");
-            switch (size) {
-            case 0:
-                return c.format(value) + " B";
-            case 1:
-                return c.format(value) + " KB";
-            case 2:
-                return c.format(value) + " MB";
-            case 3:
-                return c.format(value) + " GB";
-            case 4:
-                return c.format(value) + " TB";
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden
-     * 
-     * @param eta
-     *            toURI().toURL();
-     * @return formatierte Zeit
-     */
-    public static String formatSeconds(long eta) {
-        long hours = eta / (60 * 60);
-        eta -= hours * 60 * 60;
-        long minutes = eta / 60;
-        long seconds = eta - minutes * 60;
-        if (hours == 0) { return JDUtilities.fillInteger(minutes, 2, "0") + ":" + JDUtilities.fillInteger(seconds, 2, "0"); }
-        return JDUtilities.fillInteger(hours, 2, "0") + ":" + JDUtilities.fillInteger(minutes, 2, "0") + ":" + JDUtilities.fillInteger(seconds, 2, "0");
-    }
-
-    public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC, CryptedLink link) throws InterruptedException {
-        link.getProgressController().setStatusText(JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
-        String code = getCaptcha(plugin, method, file, forceJAC);
-        link.getProgressController().setStatusText(null);
-        return code;
-    }
-
-    public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC, DownloadLink link) throws InterruptedException {
-        link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
-        link.requestGuiUpdate();
-        String code = getCaptcha(plugin, method, file, forceJAC);
-        link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO);
-        link.requestGuiUpdate();
-        return code;
-    }
-
     public static String getUserInput(String message, DownloadLink link) throws InterruptedException {
         link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
         link.requestGuiUpdate();
@@ -505,138 +377,6 @@ public class JDUtilities {
             String password = JDUtilities.getGUI().showCountdownUserInputDialog(message, defaultmessage);
             return password;
         }
-    }
-
-    /**
-     * Diese Methode erstellt einen neuen Captchadialog und liefert den
-     * eingegebenen Text zurück.
-     * 
-     * @param controller
-     *            Der Controller
-     * @param plugin
-     *            Das Plugin, das dieses Captcha fordert
-     * @param host
-     *            der Host von dem die Methode verwendet werden soll
-     * @param file
-     * @return Der vom Benutzer eingegebene Text
-     * @throws InterruptedException
-     */
-    public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC) throws InterruptedException {
-        String host;
-        if (method == null) {
-            host = plugin.getHost();
-        } else {
-            host = method.toLowerCase();
-        }
-        JDUtilities.getController().fireControlEvent(new ControlEvent(plugin, ControlEvent.CONTROL_CAPTCHA_LOADED, file));
-
-        jd.controlling.JDLogger.getLogger().info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host));
-        if (forceJAC || JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true) && !configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false)) {
-            if (!JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host) || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true)) { return null; }
-
-            JFrame jf = SimpleGUI.CURRENTGUI;
-            Image captchaImage;
-            try {
-                captchaImage = ImageIO.read(file);
-
-                MediaTracker mediaTracker = new MediaTracker(jf);
-                mediaTracker.addImage(captchaImage, 0);
-                try {
-                    mediaTracker.waitForID(0);
-                } catch (InterruptedException e) {
-                    return null;
-                }
-                mediaTracker.removeImage(captchaImage);
-                JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
-                Captcha captcha = jac.createCaptcha(captchaImage);
-                String captchaCode = jac.checkCaptcha(captcha);
-                if (jac.isExtern()) {
-                    if (captchaCode == null || captchaCode.trim().length() == 0) {
-                        plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
-                        captchaCode = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
-                    }
-                    return captchaCode;
-
-                }
-                jd.controlling.JDLogger.getLogger().info("Code: " + captchaCode);
-                jd.controlling.JDLogger.getLogger().info("Vality: " + captcha.getValityPercent());
-                jd.controlling.JDLogger.getLogger().info("Object Detection: " + captcha.isPerfectObjectDetection());
-                // ScrollPaneWindow window = new ScrollPaneWindow("Captcha");
-
-                plugin.setLastCaptcha(captcha);
-                String code = null;
-                plugin.setCaptchaDetectID(Plugin.CAPTCHA_JAC);
-                LetterComperator[] lcs = captcha.getLetterComperators();
-
-                double vp = 0.0;
-                if (lcs == null) {
-                    vp = 100.0;
-                } else {
-                    for (LetterComperator element : lcs) {
-                        // window.setImage(i, 0, lcs[i].getB().getImage(3));
-                        // window.setImage(i, 1, lcs[i].getA().getImage(3));
-                        if (element == null) {
-                            vp = 100.0;
-                            break;
-                        }
-                        vp = Math.max(vp, element.getValityPercent());
-                        // window.setText(i, 2, lcs[i].getValityPercent());
-                        // window.setText(i, 3, lcs[i].getDecodedValue());
-                        // window.setText(i, 4, lcs[i].getB().getPixelString());
-                    }
-                }
-                // window.pack();
-                jd.controlling.JDLogger.getLogger().info("worst letter: " + vp);
-                if (plugin.useUserinputIfCaptchaUnknown() && vp > (double) SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)) {
-                    plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
-                    code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
-                } else {
-                    return captchaCode;
-                }
-
-                if (code != null && code.equals(captchaCode)) { return captchaCode; }
-                return code;
-            } catch (IOException e1) {
-                // TODO Auto-generated catch block
-                JDLogger.exception(e1);
-                return null;
-            }
-        }
-
-        else {
-            plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
-            String code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, null);
-            return code;
-        }
-    }
-
-    /**
-     * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere
-     * zentriert werden kann
-     * 
-     * @param parent
-     *            Die Komponente, an der ausgerichtet wird
-     * @param child
-     *            Die Komponente die ausgerichtet werden soll
-     * @return Ein Punkt, mit dem diese Komponente mit der setLocation Methode
-     *         zentriert dargestellt werden kann
-     */
-    public static Point getCenterOfComponent(Component parent, Component child) {
-        Point center;
-        if (parent == null || !parent.isShowing()) {
-            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            int width = screenSize.width;
-            int height = screenSize.height;
-            center = new Point(width / 2, height / 2);
-        } else {
-            center = parent.getLocationOnScreen();
-            center.x += parent.getWidth() / 2;
-            center.y += parent.getHeight() / 2;
-        }
-        // Dann Auszurichtende Komponente in die Berechnung einflieÃŸen lassen
-        center.x -= child.getWidth() / 2;
-        center.y -= child.getHeight() / 2;
-        return center;
     }
 
     /**
@@ -813,8 +553,8 @@ public class JDUtilities {
      */
     public static Double getJavaVersion() {
         String version = System.getProperty("java.version");
-        int majorVersion = JDUtilities.filterInt(version.substring(0, version.indexOf(".")));
-        int subversion = JDUtilities.filterInt(version.substring(version.indexOf(".") + 1));
+        int majorVersion = Formatter.filterInt(version.substring(0, version.indexOf(".")));
+        int subversion = Formatter.filterInt(version.substring(version.indexOf(".") + 1));
         return Double.parseDouble(majorVersion + "." + subversion);
     }
 
@@ -1223,28 +963,6 @@ public class JDUtilities {
         }
         return dbconnect;
 
-    }
-
-    /**
-     * The format describing an http date.
-     */
-    private static SimpleDateFormat dateFormat;
-    static {
-        dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
-        dateFormat.setTimeZone(new SimpleTimeZone(0, "GMT"));
-        dateFormat.setLenient(true);
-    }
-
-    /**
-     * Returns a string containing an HTTP-formatted date.
-     * 
-     * @param time
-     *            The date to format (current time in msec).
-     * 
-     * @return HTTP date string representing the given time.
-     */
-    public static String formatTime(long time) {
-        return dateFormat.format(new Date(time)).substring(0, 29);
     }
 
     public static boolean openExplorer(File path) {

@@ -88,6 +88,8 @@ import jd.gui.skins.simple.tasks.DownloadTaskPane;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
 import jd.gui.skins.simple.tasks.LogTaskPane;
 import jd.gui.skins.simple.tasks.TaskPanel;
+import jd.gui.userio.dialog.CaptchaDialog;
+import jd.nutils.Formatter;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.plugins.Account;
@@ -236,10 +238,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         setName("MAINFRAME");
         Dimension dim = SimpleGuiUtils.getLastDimension(this, null);
         if (dim == null) {
-            dim = new Dimension(800, 600);
+            dim = new Dimension(1000, 600);
         }
         setPreferredSize(dim);
-        this.setMinimumSize(new Dimension(800, 600));
+        this.setMinimumSize(new Dimension(1000, 600));
         setLocation(SimpleGuiUtils.getLastLocation(null, null, this));
         pack();
 
@@ -926,19 +928,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         }
     }
 
-    /**
-     * Displays a Captchainput Dialog
-     */
-    public String showCountdownCaptchaDialog(final Plugin plugin, final File captchaAddress, final String def) {
-
-        GuiRunnable<String> run = new GuiRunnable<String>() {
-            @Override
-            public String runSave() {
-                return new CaptchaDialog(SimpleGUI.this, plugin, captchaAddress, def).getCaptchaText();
-            }
-        };
-        return run.getReturnValue();
-    }
 
     public String showCountdownUserInputDialog(final String message, final String def) {
 
@@ -1227,7 +1216,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 String validUntil = (ai.isExpired() ? "[expired] " : "") + formater.format(new Date(ai.getValidUntil())) + "";
                 if (ai.getValidUntil() == -1) validUntil = null;
                 String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
-                String[] data = new String[] { validUntil, JDUtilities.formatReadable(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, JDUtilities.formatReadable(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", JDUtilities.formatReadable(ai.getTrafficShareLeft()), ai.getStatus() };
+                String[] data = new String[] { validUntil, Formatter.formatReadable(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, Formatter.formatReadable(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", Formatter.formatReadable(ai.getTrafficShareLeft()), ai.getStatus() };
                 panel.add(new JXTitledSeparator(def), "spanx, pushx, growx, gapbottom 15");
                 PieChartAPI freeTrafficChart = new PieChartAPI("", 125, 60);
                 freeTrafficChart.addEntity(new ChartAPIEntity("Free", ai.getTrafficLeft(), new Color(50, 200, 50)));
@@ -1329,5 +1318,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         return new String[] { d.getPanel().getUserName(), new String(d.getPanel().getPassword()) };
     }
+
+ 
 
 }

@@ -66,7 +66,7 @@ public class Wiireloaded extends PluginForDecrypt {
             if (!captchaFile.exists() || captchaFile.length() == 0) {
                 return null;
             } else {
-                String capTxt = Plugin.getCaptchaCode(captchaFile, this, param);
+                String capTxt = getCaptchaCode(captchaFile, this, param);
                 Form post = br.getForm(0);
                 post.put("sicherheitscode", capTxt);
                 try {
@@ -90,7 +90,7 @@ public class Wiireloaded extends PluginForDecrypt {
                     if (!captchaFile.exists() || captchaFile.length() == 0) {
                         return null;
                     } else {
-                        String capTxt = Plugin.getCaptchaCode(this, "wii-numeric", captchaFile, false, param);
+                        String capTxt = getCaptchaCode("wii-numeric", captchaFile,  param);
                         Form post = brc.getForm(0);
                         post.put("insertvalue", capTxt);
                         brc.submitForm(post);

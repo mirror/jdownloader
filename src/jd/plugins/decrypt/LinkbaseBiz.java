@@ -133,7 +133,7 @@ public class LinkbaseBiz extends PluginForDecrypt {
                     } catch (Exception e) {
                         throw new DecrypterException(DecrypterException.CAPTCHA);
                     }
-                    String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
+                    String captchaCode = getCaptchaCode(captchaFile, this, param);
                     form.put("captcha", captchaCode);
                     br.submitForm(form);
                     if (br.containsHTML("Das war leider Falsch")) {

@@ -52,7 +52,7 @@ public class XinkIt extends PluginForDecrypt {
 
                 File captchaFile = getLocalCaptchaFile(this);
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAdress));
-                String captchaCode = Plugin.getCaptchaCode(this, "linkcrypt.com", captchaFile, false, param);
+                String captchaCode = getCaptchaCode("linkcrypt.com", captchaFile, param);
 
                 Form captchaForm = br.getForm(0);
                 captchaForm.put("captcha", captchaCode);

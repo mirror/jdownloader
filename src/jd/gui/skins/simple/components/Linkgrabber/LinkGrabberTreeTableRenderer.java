@@ -7,6 +7,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.border.Border;
 
+import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -90,7 +91,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             ((JRendererLabel) co).setBorder(leftGap);
             return co;
         case LinkGrabberTreeTableModel.COL_SIZE:
-            value = dLink.getDownloadSize() > 0 ? JDUtilities.formatReadable(dLink.getDownloadSize()) : "~";
+            value = dLink.getDownloadSize() > 0 ? Formatter.formatReadable(dLink.getDownloadSize()) : "~";
             break;
         case LinkGrabberTreeTableModel.COL_HOSTER:
             value = dLink.getPlugin().getHost();
@@ -139,7 +140,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             ((JRendererLabel) co).setBorder(null);
             return co;
         case LinkGrabberTreeTableModel.COL_SIZE:
-            value = fp.getDownloadSize(false) > 0 ? JDUtilities.formatReadable(fp.getDownloadSize(false)) : "~";
+            value = fp.getDownloadSize(false) > 0 ? Formatter.formatReadable(fp.getDownloadSize(false)) : "~";
             break;
         case LinkGrabberTreeTableModel.COL_HOSTER:
             value = fp.getHoster();

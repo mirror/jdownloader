@@ -78,18 +78,18 @@ public class PluginPattern {
         return completePattern.toString();
     }
 
-    static public final String decrypterPattern_AnimeANet_Series = "http://[\\w\\.]*?animea\\.net/download/[\\d]+/(.*?)\\.html";
-    static public final String decrypterPattern_AnimeANet_Episode = "http://[\\w\\.]*?animea\\.net/download/[\\d]+-[\\d]+/(.*?)\\.html";
-    static public final String decrypterPattern_AnimeANet_Plugin = decrypterPattern_AnimeANet_Series + "|" + decrypterPattern_AnimeANet_Episode;
+    static public final String DECRYPTER_ANIMEANET_SERIES = "http://[\\w\\.]*?animea\\.net/download/[\\d]+/(.*?)\\.html";
+    static public final String DECRYPTER_ANIMEANET_EPISODE = "http://[\\w\\.]*?animea\\.net/download/[\\d]+-[\\d]+/(.*?)\\.html";
+    static public final String DECRYPTER_ANIMEANET_PLUGIN = DECRYPTER_ANIMEANET_SERIES + "|" + DECRYPTER_ANIMEANET_EPISODE;
 
-    static public final String decrypterPattern_DDLMusic_Main = "http://[\\w\\.]*?ddl-music\\.org/index\\.php\\?site=view_download&cat=.+&id=\\d+";
-    static public final String decrypterPattern_DDLMusic_Crypt = "http://[\\w\\.]*?ddl-music\\.org/captcha/ddlm_cr\\d\\.php\\?\\d+\\?\\d+";
-    static public final String decrypterPattern_DDLMusic_Plugin = decrypterPattern_DDLMusic_Main + "|" + decrypterPattern_DDLMusic_Crypt;
+    static public final String DECRYPTER_DDLMSC_MAIN = "http://[\\w\\.]*?ddl-music\\.org/index\\.php\\?site=view_download&cat=.+&id=\\d+";
+    static public final String DECRYPTER_DDLMSC_CRYPT = "http://[\\w\\.]*?ddl-music\\.org/captcha/ddlm_cr\\d\\.php\\?\\d+\\?\\d+";
+    static public final String DECRYPTER_DDLMSC_PLUGIN = DECRYPTER_DDLMSC_MAIN + "|" + DECRYPTER_DDLMSC_CRYPT;
 
-    static public final String decrypterPattern_DreiDlAm_1 = "http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+";
-    static public final String decrypterPattern_DreiDlAm_2 = "http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/";
-    static public final String decrypterPattern_DreiDlAm_3 = "http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html";
-    static public final String decrypterPattern_DreiDlAm_4 = "http://[\\w\\.]*?3dl\\.am/index\\.php\\?action=detailansicht&file_id=[0-9]+";
-    static public final String decrypterPattern_DreiDlAm_Plugin = decrypterPattern_DreiDlAm_1 + "|" + decrypterPattern_DreiDlAm_2 + "|" + decrypterPattern_DreiDlAm_3 + "|" + decrypterPattern_DreiDlAm_4;
+    static public final String DECRYPTER_3DLAM_1 = "http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+";
+    static public final String DECRYPTER_3DLAM_2 = "http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/";
+    static public final String DECRYPTER_3DLAM_3 = "http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html";
+    static public final String DECRYPTER_3DLAM_4 = "http://[\\w\\.]*?3dl\\.am/index\\.php\\?action=detailansicht&file_id=[0-9]+";
+    static public final String DECRYPTER_3DLAM_PLUGIN = DECRYPTER_3DLAM_1 + "|" + DECRYPTER_3DLAM_2 + "|" + DECRYPTER_3DLAM_3 + "|" + DECRYPTER_3DLAM_4;
 
 }

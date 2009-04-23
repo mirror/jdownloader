@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -37,7 +38,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class FilerNet extends PluginForHost {
 
@@ -62,7 +62,7 @@ public class FilerNet extends PluginForHost {
         while (tries < maxCaptchaTries) {
             File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
             Browser.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
-            code = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+            code = getCaptchaCode(captchaFile,  downloadLink);
             page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
             tries++;
             if (!page.contains("captcha.png")) {
@@ -193,7 +193,7 @@ public class FilerNet extends PluginForHost {
                 br.getPage(downloadLink.getDownloadURL());
                 captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
                 Browser.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
-                code = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+                code = getCaptchaCode(captchaFile, this, downloadLink);
                 page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
                 if (Regex.matches(page, PATTERN_MATCHER_ERROR)) { return false; }
                 if (downloadLink.getDownloadSize() == 0) {
@@ -222,7 +222,7 @@ public class FilerNet extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-        return downloadLink.getName() + " (" + JDUtilities.formatReadable(downloadLink.getDownloadSize()) + ")";
+        return downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")";
     }
 
     @Override

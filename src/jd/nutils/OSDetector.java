@@ -16,9 +16,33 @@
 
 package jd.nutils;
 
+import java.io.File;
+
+import jd.utils.JDUtilities;
+
 public class OSDetector {
+    private enum MultiState {
+        UNCHECKED, TRUE, FALSE;
+
+        public Boolean getState() {
+            switch (this) {
+            case TRUE:
+                return true;
+            case FALSE:
+                return false;
+            default:
+                return null;
+            }
+        }
+
+        public boolean hasState() {
+
+            return this != UNCHECKED;
+        }
+    }
 
     private static byte OS_ID = -1;
+    private static MultiState IS_WINDOWS_VISTA_ADMIN = MultiState.UNCHECKED;
     public static final byte OS_LINUX_OTHER = 6;
     public static final byte OS_MAC_OTHER = 5;
     public static final byte OS_WINDOWS_2000 = 2;
@@ -55,6 +79,29 @@ public class OSDetector {
             OSDetector.getOS();
         }
         return OS_ID;
+
+    }
+
+    /**
+     * Tries to read a value out of the regitrsy, which is (tested on vista)
+     * only possible with admin rights
+     * 
+     * @return
+     */
+    public static boolean isWindowsAdmin() {
+        if (IS_WINDOWS_VISTA_ADMIN.hasState()) return IS_WINDOWS_VISTA_ADMIN.getState();
+
+        File file = JDUtilities.getResourceFile("tmp/ini.test");
+        JDUtilities.runCommand("regedit", new String[] { "/e", file.getName(), "HKEY_CLASSES_ROOT\\.ini" }, file.getParent(), 10);
+
+        if (file.exists()) {
+            IS_WINDOWS_VISTA_ADMIN = MultiState.TRUE;
+            JDUtilities.getResourceFile("tmp/ini.test").delete();
+            return true;
+        } else {
+            IS_WINDOWS_VISTA_ADMIN = MultiState.FALSE;
+            return false;
+        }
 
     }
 

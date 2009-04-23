@@ -48,7 +48,7 @@ public class CryptMeCom extends PluginForDecrypt {
             String captchaAddress = "http://crypt-me.com/rechen-captcha.php";
             File captchaFile = this.getLocalCaptchaFile(this);
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
-            String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
+            String captchaCode = getCaptchaCode(captchaFile, this, param);
             form.put("sicherheitscode", captchaCode);
             br.submitForm(form);
         }

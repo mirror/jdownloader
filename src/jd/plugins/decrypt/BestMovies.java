@@ -64,7 +64,7 @@ public class BestMovies extends PluginForDecrypt {
                 File captchaFile = this.getLocalCaptchaFile(this);
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://" + host + "/clockcaptcha.php"));
 
-                String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
+                String captchaCode =getCaptchaCode(captchaFile, this, param);
 
                 String time[] = new Regex(captchaCode, "(\\d+)[\\.\\:\\-\\,](\\d+)").getRow(0);
 
@@ -91,6 +91,8 @@ public class BestMovies extends PluginForDecrypt {
 
         return decryptedLinks;
     }
+
+
 
     @Override
     public String getVersion() {

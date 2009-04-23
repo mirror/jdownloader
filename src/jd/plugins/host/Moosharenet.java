@@ -158,7 +158,7 @@ public class Moosharenet extends PluginForHost {
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+        String captchaCode = getCaptchaCode(captchaFile,downloadLink);
         Form form = br.getForm(1);
         form.put("captcha", captchaCode);
         br.setFollowRedirects(false);

@@ -21,6 +21,7 @@ import java.util.Vector;
 
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
+import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 
 /**
@@ -132,12 +133,12 @@ public class Replacer {
 
         if (key.equalsIgnoreCase("SYSTEM.DATE")) {
             Calendar c = Calendar.getInstance();
-            return JDUtilities.fillInteger(c.get(Calendar.DATE), 2, "0") + "." + JDUtilities.fillInteger((c.get(Calendar.MONTH) + 1), 2, "0") + "." + c.get(Calendar.YEAR);
+            return Formatter.fillInteger(c.get(Calendar.DATE), 2, "0") + "." + Formatter.fillInteger((c.get(Calendar.MONTH) + 1), 2, "0") + "." + c.get(Calendar.YEAR);
         }
 
         if (key.equalsIgnoreCase("SYSTEM.TIME")) {
             Calendar c = Calendar.getInstance();
-            return JDUtilities.fillInteger(c.get(Calendar.HOUR_OF_DAY), 2, "0") + ":" + JDUtilities.fillInteger(c.get(Calendar.MINUTE), 2, "0") + ":" + JDUtilities.fillInteger(c.get(Calendar.SECOND), 2, "0");
+            return Formatter.fillInteger(c.get(Calendar.HOUR_OF_DAY), 2, "0") + ":" + Formatter.fillInteger(c.get(Calendar.MINUTE), 2, "0") + ":" + Formatter.fillInteger(c.get(Calendar.SECOND), 2, "0");
         }
 
         if (key.equalsIgnoreCase("JD.REVISION")) return JDUtilities.getRevision();

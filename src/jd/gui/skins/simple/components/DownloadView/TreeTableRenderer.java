@@ -26,12 +26,12 @@ import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.border.Border;
 
+import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
@@ -223,7 +223,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                         } else if (col.getWidth() < 170) {
                             sb.append("100%");
                         } else {
-                            sb.append("100% (").append(JDUtilities.formatReadable(Math.max(0, dLink.getDownloadSize()))).append(')');
+                            sb.append("100% (").append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize()))).append(')');
                         }
                         progress.setString(sb.toString());
 
@@ -242,7 +242,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                         } else if (col.getWidth() < 170) {
                             sb.append(c.format(dLink.getPercent() / 100.0)).append('%');
                         } else {
-                            sb.append(c.format(dLink.getPercent() / 100.0)).append("% (").append(JDUtilities.formatReadable(dLink.getDownloadCurrent())).append('/').append(JDUtilities.formatReadable(Math.max(0, dLink.getDownloadSize()))).append(')');
+                            sb.append(c.format(dLink.getPercent() / 100.0)).append("% (").append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize()))).append(')');
                         }
                         progress.setString(sb.toString());
                     }
@@ -255,7 +255,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             progress.setMaximum(10000);
             progress.setValue(0);
             if (dLink.getDownloadSize() > 1) {
-                progress.setString(JDUtilities.formatReadable(Math.max(0, dLink.getDownloadSize())));
+                progress.setString(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize())));
             } else {
                 progress.setString("");
             }
@@ -344,7 +344,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 } else if (col.getWidth() < 170) {
                     sb.append("100%");
                 } else {
-                    sb.append("100% (").append(JDUtilities.formatReadable(Math.max(0, fp.getTotalEstimatedPackageSize()))).append(')');
+                    sb.append("100% (").append(Formatter.formatReadable(Math.max(0, fp.getTotalEstimatedPackageSize()))).append(')');
                 }
                 progress.setString(sb.toString());
             } else {
@@ -357,7 +357,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 } else if (col.getWidth() < 170) {
                     sb.append(c.format(fp.getPercent())).append('%');
                 } else {
-                    sb.append(c.format(fp.getPercent())).append("% (").append(JDUtilities.formatReadable(progress.getRealValue())).append('/').append(JDUtilities.formatReadable(Math.max(0, progress.getRealMax()))).append(')');
+                    sb.append(c.format(fp.getPercent())).append("% (").append(Formatter.formatReadable(progress.getRealValue())).append('/').append(Formatter.formatReadable(Math.max(0, progress.getRealMax()))).append(')');
                 }
                 progress.setString(sb.toString());
             }
@@ -386,7 +386,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             } else if (fp.getTotalDownloadSpeed() > 0) {
                 clearSB();
                 sb.append('[').append(fp.getLinksInProgress()).append('/').append(fp.size()).append("] ");
-                sb.append(strETA).append(' ').append(JDUtilities.formatSeconds(fp.getETA())).append(" @ ").append(JDUtilities.formatReadable(fp.getTotalDownloadSpeed())).append("/s");
+                sb.append(strETA).append(' ').append(Formatter.formatSeconds(fp.getETA())).append(" @ ").append(Formatter.formatReadable(fp.getTotalDownloadSpeed())).append("/s");
                 ((JRendererLabel) co).setText(sb.toString());
             } else if (fp.getLinksInProgress() > 0) {
                 clearSB();

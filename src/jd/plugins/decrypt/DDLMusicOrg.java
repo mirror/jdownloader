@@ -38,7 +38,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        if (parameter.matches(PluginPattern.decrypterPattern_DDLMusic_Crypt)) {
+        if (parameter.matches(PluginPattern.DECRYPTER_DDLMSC_CRYPT)) {
             int add = 0;
             for (int i = 1; i < 5; i++) {
                 br.getPage(parameter);
@@ -61,7 +61,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
                 }
                 add += 500;
             }
-        } else if (parameter.matches(PluginPattern.decrypterPattern_DDLMusic_Main)) {
+        } else if (parameter.matches(PluginPattern.DECRYPTER_DDLMSC_MAIN)) {
             br.getPage(parameter);
 
             String password = br.getRegex(Pattern.compile("<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>.*?<td class=\"normal\"><div align=\"center\">(.*?)</div></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);

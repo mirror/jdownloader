@@ -130,7 +130,7 @@ public class EasyShareCom extends PluginForHost {
             } catch (Exception e) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+            String captchaCode = getCaptchaCode(captchaFile, downloadLink);
 
             form.put("captcha", captchaCode);
         }
@@ -140,6 +140,8 @@ public class EasyShareCom extends PluginForHost {
         if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         dl.startDownload();
     }
+
+
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);

@@ -52,8 +52,8 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.ConfigurationPopup;
+import jd.nutils.Screen;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 public class ConfigPanelEventmanager extends ConfigPanel implements ActionListener, MouseListener, DropTargetListener {
@@ -212,7 +212,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         if (config != null) panel.add(config);
 
         ConfigurationPopup pop = new ConfigurationPopup(SimpleGUI.CURRENTGUI, config, panel);
-        pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
+        pop.setLocation(Screen.getCenterOfComponent(this, pop));
         pop.setVisible(true);
     }
 

@@ -36,7 +36,9 @@ import javax.swing.JLabel;
 import javax.swing.JTextPane;
 import javax.swing.WindowConstants;
 
+import jd.nutils.Formatter;
 import jd.nutils.JDImage;
+import jd.nutils.Screen;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -152,7 +154,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
 
                     while (--c >= 0 && stopTimer == false) {
                         if (countdownThread == null) return;
-                        setTitle(title + " [" + JDUtilities.formatSeconds(c) + "]");
+                        setTitle(title + " [" + Formatter.formatSeconds(c) + "]");
 
                         try {
                             Thread.sleep(1000);
@@ -271,7 +273,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
 
     public void showDialog() {
         setModal(true);
-        this.setLocation(JDUtilities.getCenterOfComponent(parentFrame, this));
+        this.setLocation(Screen.getCenterOfComponent(parentFrame, this));
         pack();
         setVisible(true);
     }

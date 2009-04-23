@@ -53,6 +53,7 @@ import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
+import jd.nutils.Screen;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
@@ -1143,7 +1144,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             setMinimumSize(new Dimension(900, 600));
             setPreferredSize(new Dimension(900, 600));
             pack();
-            setLocation(JDUtilities.getCenterOfComponent(owner, this));
+            setLocation(Screen.getCenterOfComponent(owner, this));
             setVisible(true);
         }
 

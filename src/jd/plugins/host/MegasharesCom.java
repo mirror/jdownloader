@@ -151,7 +151,7 @@ public class MegasharesCom extends PluginForHost {
 
             HashMap<String, String> input = HTMLParser.getInputHiddenFields(br + "");
 
-            String code = Plugin.getCaptchaCode(file, this, downloadLink);
+            String code = getCaptchaCode(file, downloadLink);
             String geturl = downloadLink.getDownloadURL() + "&rs=check_passport_renewal&rsargs[]=" + code + "&rsargs[]=" + input.get("random_num") + "&rsargs[]=" + input.get("passport_num") + "&rsargs[]=replace_sec_pprenewal&rsrnd=" + (new Date().getTime());
             br.getPage(geturl);
             loadpage(downloadLink);

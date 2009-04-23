@@ -32,6 +32,7 @@ import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.nutils.OSDetector;
+import jd.nutils.Screen;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -93,7 +94,7 @@ public class Installer {
                 ConfigurationPopup pop = new ConfigurationPopup(parent, p, panel);
                 pop.setModal(true);
                 pop.setAlwaysOnTop(alwaysOnTop);
-                pop.setLocation(JDUtilities.getCenterOfComponent(parent, pop));
+                pop.setLocation(Screen.getCenterOfComponent(parent, pop));
                 pop.setVisible(true);
 
                 return null;

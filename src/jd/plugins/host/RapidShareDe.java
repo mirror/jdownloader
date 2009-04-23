@@ -95,7 +95,7 @@ public class RapidShareDe extends PluginForHost {
         }
         String code = null;
 
-        code = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+        code = getCaptchaCode(captchaFile, downloadLink);
         form.put("captcha", code);
 
         br.openDownload(downloadLink, form).startDownload();

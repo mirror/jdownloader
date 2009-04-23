@@ -30,11 +30,7 @@ public class ControlEvent extends AWTEvent {
      */
     public final static int CONTROL_ALL_DOWNLOADS_FINISHED = 1;
 
-    /**
-     * Gibt an dass ein captcha geladen wurde. der Fiel-Pfad zum captcha wir als
-     * parameter erwartet. Source ist das ausführende Plugin
-     */
-    public static final int CONTROL_CAPTCHA_LOADED = 12;
+
 
     /**
      * Das Verteilen des Inhalts der Zwischenablage ist abgeschlossen Als

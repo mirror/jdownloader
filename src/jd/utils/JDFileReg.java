@@ -56,12 +56,12 @@ public class JDFileReg {
             JDUtilities.runCommand("regedit", new String[] { "/e", "test.reg", "HKEY_CLASSES_ROOT\\.dlc" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
             if (!JDUtilities.getResourceFile("tmp/test.reg").exists()) {
 
-                JDUtilities.runCommand("regedit", new String[] { "/s", "installcnl.reg" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
-                JDUtilities.runCommand("regedit", new String[] { "/e", "test.reg", "HKEY_CLASSES_ROOT\\.dlc" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
+                JDUtilities.runCommand("regedit.exe", new String[] {  "installcnl.reg" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
+                JDUtilities.runCommand("regedit.exe", new String[] { "/e", "test.reg", "HKEY_CLASSES_ROOT\\.dlc" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
                 if (JDUtilities.getResourceFile("tmp/test.reg").exists()) {
                     JDLogger.getLogger().info("Installed Click'n'Load and associated .*dlc,.*ccf,.*rsdf and .*jd with JDownloader. Uninstall with " + JDUtilities.getResourceFile("tools/windows/uninstall.reg"));
-                } else {
-                    JDLogger.getLogger().severe("Installation of CLick'n'Load failed. Try to execute " + JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath() + " manually");
+                } else {  
+                    JDLogger.getLogger().severe("Installation of CLick'n'Load failed. Please try to start JDownloader as Admin. For details, visit http://jdownloader.org/click-n-load. Try to execute " + JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath() + " manually");
                 }
 
             }

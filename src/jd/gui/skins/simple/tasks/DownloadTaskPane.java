@@ -10,6 +10,7 @@ import javax.swing.Timer;
 
 import jd.controlling.DownloadController;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
+import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
@@ -52,16 +53,16 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
             loaded += l.getDownloadCurrent();
         }
 
-        totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", JDUtilities.formatReadable(tot)));
+        totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
         progress.setMaximum(tot);
         progress.setValue(loaded);
 
         if (JDUtilities.getController().getSpeedMeter() > 1024) {
-            speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", JDUtilities.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s"));
+            speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s"));
 
             long etanum = (tot - loaded) / JDUtilities.getController().getSpeedMeter();
 
-            eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", JDUtilities.formatSeconds(etanum)));
+            eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", Formatter.formatSeconds(etanum)));
         } else {
             eta.setText("");
             speed.setText("");

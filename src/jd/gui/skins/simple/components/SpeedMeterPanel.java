@@ -23,6 +23,7 @@ import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.nutils.Formatter;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -144,7 +145,7 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
 
         g2.setFont(f);
 
-        String txt = (limit == 1024 ? 0 : JDUtilities.formatReadable(JDUtilities.getController().getSpeedMeter() )) + "/s";
+        String txt = (limit == 1024 ? 0 : Formatter.formatReadable(JDUtilities.getController().getSpeedMeter() )) + "/s";
         FontMetrics fmetrics = g2.getFontMetrics();
 
         int len = fmetrics.stringWidth(txt);
@@ -154,17 +155,17 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
             g2.setColor(Color.RED);
             g2.drawLine(0, limitpx, width, limitpx);
             if (limitpx > height / 2) {
-                g2.drawString(limit == 1024 ? JDLocale.L("gui.speedmeter.pause", "pause") : JDUtilities.formatReadable(limit ) + "/s", 5, limitpx - 4);
+                g2.drawString(limit == 1024 ? JDLocale.L("gui.speedmeter.pause", "pause") : Formatter.formatReadable(limit ) + "/s", 5, limitpx - 4);
 
             } else {
-                g2.drawString(limit == 1024 ? JDLocale.L("gui.speedmeter.pause", "pause") : JDUtilities.formatReadable(limit ) + "/s", 5, limitpx + 12);
+                g2.drawString(limit == 1024 ? JDLocale.L("gui.speedmeter.pause", "pause") : Formatter.formatReadable(limit ) + "/s", 5, limitpx + 12);
 
             }
         }
         if (limit != 1024) {
         g2.setColor(fontCol);
 
-        g2.drawString(JDUtilities.formatReadable(JDUtilities.getController().getSpeedMeter() ) + "/s", width - len - 5, 12);
+        g2.drawString(Formatter.formatReadable(JDUtilities.getController().getSpeedMeter() ) + "/s", width - len - 5, 12);
         }
         // int[] xPoints = { 30, 700, 400 };
         // int[] yPoints = { 30, 30, 600 };

@@ -21,7 +21,6 @@ import it.sauronsoftware.junique.AlreadyLockedException;
 import it.sauronsoftware.junique.JUnique;
 import it.sauronsoftware.junique.MessageHandler;
 
-import java.awt.AWTException;
 import java.awt.EventQueue;
 import java.awt.Image;
 import java.awt.MediaTracker;
@@ -51,9 +50,11 @@ import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
+import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDEventQueue;
 import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.gui.userio.SimpleUserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.update.WebUpdater;
@@ -163,7 +164,7 @@ public class Main {
         }
 
         preInitChecks();
-
+UserIO.setInstance(SimpleUserIO.getInstance());
         for (int i = 0; i < args.length; i++) {
 
             if (args[i].equals("-prot")) {
@@ -269,9 +270,7 @@ public class Main {
                                 splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.plugins", 32, 32)));
                                 splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.screen", 32, 32)));
                                 splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.dllist", 32, 32)));
-                            } catch (IOException e) {
-                                LOGGER.log(Level.SEVERE, "Exception occured", e);
-                            } catch (AWTException e) {
+                            } catch (Exception e) {
                                 LOGGER.log(Level.SEVERE, "Exception occured", e);
                             }
                             return null;
@@ -407,6 +406,7 @@ public class Main {
         Main.increaseSplashStatus();
 
         final JDController controller = init.initController();
+
 
         LOGGER.info("init Webupdate");
         Main.increaseSplashStatus();

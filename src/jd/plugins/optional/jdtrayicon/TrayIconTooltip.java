@@ -31,6 +31,7 @@ import javax.swing.SwingUtilities;
 
 import jd.controlling.DownloadController;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
+import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -183,16 +184,16 @@ public class TrayIconTooltip {
                         lblDlRunning.setText(String.valueOf(JDUtilities.getController().getRunningDownloadNum()));
                         lblDlFinished.setText(String.valueOf(finished));
                         lblDlTotal.setText(String.valueOf(dlc.getAllDownloadLinks().size()));
-                        lblSpeed.setText(JDUtilities.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s");
+                        lblSpeed.setText(Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s");
 
-                        lblProgress.setText(JDLocale.L("plugins.optional.trayIcon.progress", "Progress: ") + JDUtilities.formatFilesize(loaded, 0) + " / " + JDUtilities.formatFilesize(tot, 0));
+                        lblProgress.setText(JDLocale.L("plugins.optional.trayIcon.progress", "Progress: ") + Formatter.formatFilesize(loaded, 0) + " / " + Formatter.formatFilesize(tot, 0));
                         prgTotal.setMaximum(tot);
                         prgTotal.setValue(loaded);
 
                         long etanum = 0;
                         if (JDUtilities.getController().getSpeedMeter() > 1024) etanum = (tot - loaded) / JDUtilities.getController().getSpeedMeter();
 
-                        lblETA.setText(JDUtilities.formatSeconds(etanum));
+                        lblETA.setText(Formatter.formatSeconds(etanum));
 
                         toolParent.pack();
                     }

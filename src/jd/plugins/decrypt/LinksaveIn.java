@@ -54,7 +54,7 @@ public class LinksaveIn extends PluginForDecrypt {
 
             Linksave.prepareCaptcha(captchaFile);
 
-            String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
+            String captchaCode = getCaptchaCode(captchaFile, this, param);
             if (captchaCode == null) return null;
             form.put("code", captchaCode);
             br.submitForm(form);

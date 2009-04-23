@@ -21,6 +21,7 @@ import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
+import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
@@ -232,7 +233,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
 
             if (left >= 0) {
                 // bars[i].setString(JDUtilities.formatKbReadable(left / 1024));
-                bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), JDUtilities.formatReadable(left)));
+                bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), Formatter.formatReadable(left)));
             } else {
                 bars[i].setMaximum(10);
                 bars[i].setValue(10);

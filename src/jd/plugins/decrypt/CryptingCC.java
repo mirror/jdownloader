@@ -56,7 +56,7 @@ public class CryptingCC extends PluginForDecrypt {
                     String url = br.getRegex("(captcha\\-.*?\\.gif)").getMatch(0);
                     File captchaFile = this.getLocalCaptchaFile(this);
                     Browser.download(captchaFile, br.cloneBrowser().openGetConnection(url));
-                    String captchaCode = Plugin.getCaptchaCode(this, "linkcrypt.com", captchaFile, false, param);
+                    String captchaCode = getCaptchaCode(this, "linkcrypt.com", captchaFile, false, param);
                     if (captchaCode == null) return null;
                     f.put("captcha", captchaCode);
                 }

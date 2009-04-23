@@ -17,6 +17,7 @@
 package jd.plugins;
 
 import java.awt.Color;
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -25,13 +26,16 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.config.MenuItem;
+import jd.controlling.CaptchaController;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
+import jd.nutils.Formatter;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
+import jd.plugins.decrypt.BestMovies;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -87,7 +91,7 @@ public abstract class PluginForDecrypt extends Plugin {
     public void sleep(long i, CryptedLink link) throws InterruptedException {
         while (i > 0) {
             i -= 1000;
-            link.getProgressController().setStatusText(String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), JDUtilities.formatSeconds(i / 1000)));
+            link.getProgressController().setStatusText(String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), Formatter.formatSeconds(i / 1000)));
             Thread.sleep(1000);
         }
         link.getProgressController().setStatusText(null);
@@ -181,6 +185,33 @@ public abstract class PluginForDecrypt extends Plugin {
 
         progress.finalize();
         return tmpLinks;
+    }
+    protected String getCaptchaCode(File captchaFile, Plugin plg, CryptedLink param) throws PluginException, InterruptedException {
+      
+        return this.getCaptchaCode(plg.getHost(), captchaFile, 0, param, null, null);
+    }
+    public String getCaptchaCode(String methodname, File captchaFile, CryptedLink param) throws PluginException, InterruptedException {
+        return this.getCaptchaCode(methodname, captchaFile, 0, param, null, null);
+    }
+    /**
+     * 
+     * @param method  Method name (name of the captcha method)
+     * @param file (imagefile)
+     * @param flag  (Flag of  UserIO.FLAGS
+     * @param link  (CryptedlinkO)
+     * @param defaultValue  (suggest this code)
+     * @param explain  (Special captcha? needs explaination? then use this parameter)
+     * @return
+     * @throws PluginException
+     * @throws InterruptedException
+     */
+    public String getCaptchaCode(String method, File file, int flag, CryptedLink link,String defaultValue,String explain) throws PluginException, InterruptedException {
+        link.getProgressController().setStatusText(JDLocale.LF("gui.linkgrabber.waitinguserio", "Waiting for user input: %s", method));
+
+        String cc = new CaptchaController(method, file,defaultValue,explain).getCode(flag);
+        link.getProgressController().setStatusText(null);
+        if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        return cc;
     }
 
     private void tryClickNLoad(CryptedLink cryptedLink) {

@@ -27,6 +27,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.reconnect.Reconnecter;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -37,7 +38,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class FileFactory extends PluginForHost {
 
@@ -124,7 +124,7 @@ public class FileFactory extends PluginForHost {
             try {
                 parameter.getLinkStatus().setStatusText(JDLocale.L("plugin.filefactory.jac.running", "JAC running"));
                 parameter.requestGuiUpdate();
-                captchaCode = Plugin.getCaptchaCode(captchaFile, this, parameter);
+                captchaCode = getCaptchaCode(captchaFile, parameter);
             } catch (Exception e) {
                 continue;
             }
@@ -334,7 +334,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-        return downloadLink.getName() + " (" + JDUtilities.formatReadable(downloadLink.getDownloadSize()) + ")";
+        return downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")";
     }
 
     @Override

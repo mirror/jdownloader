@@ -30,6 +30,8 @@ import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 
 import jd.config.SubConfiguration;
+import jd.nutils.Formatter;
+import jd.nutils.Screen;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDUtilities;
@@ -75,9 +77,9 @@ public class InputDialog extends JDialog implements ActionListener, KeyListener 
                     if (!isVisible()) return;
                     if (countdownThread == null) return;
                     if (title != null) {
-                        setTitle(title + " [" + JDUtilities.formatSeconds(c) + "]");
+                        setTitle(title + " [" + Formatter.formatSeconds(c) + "]");
                     } else {
-                        setTitle("[" + JDUtilities.formatSeconds(c) + "]");
+                        setTitle("[" + Formatter.formatSeconds(c) + "]");
                     }
                     if (c <= 3) JDSounds.P("sound.captcha.onCaptchaInputEmergency");
 
@@ -121,7 +123,7 @@ public class InputDialog extends JDialog implements ActionListener, KeyListener 
         JDUtilities.addToGridBag(this, btnBAD, 3, 1, 1, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
         this.pack();
         this.setResizable(false);
-        this.setLocation(JDUtilities.getCenterOfComponent(null, this));
+        this.setLocation(Screen.getCenterOfComponent(null, this));
 
         this.toFront();
         this.setAlwaysOnTop(true);

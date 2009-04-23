@@ -38,7 +38,7 @@ public class AnimeANet extends PluginForDecrypt {
         parameter = parameter.replaceAll(" ", "+");
 
         br.getPage(parameter);
-        if (parameter.matches(PluginPattern.decrypterPattern_AnimeANet_Series)) {
+        if (parameter.matches(PluginPattern.DECRYPTER_ANIMEANET_SERIES)) {
             String[] links = br.getRegex("<a href=\"/download/(.*?)\\.html\"").getColumn(0);
             progress.setRange(links.length);
             for (String element : links) {

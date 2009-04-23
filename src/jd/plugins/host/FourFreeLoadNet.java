@@ -61,7 +61,7 @@ public class FourFreeLoadNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         /* CaptchaCode holen */
-        captchaCode = Plugin.getCaptchaCode(this, "egoshare.com", captchaFile, false, downloadLink);
+        captchaCode = getCaptchaCode("egoshare.com", captchaFile, downloadLink);
         Form form = br.getFormbyProperty("name", "myform");
         if (form == null) form = br.getForm(1);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

@@ -61,17 +61,6 @@ public interface UIInterface extends ControlListener {
 
     public void displayMiniWarning(String shortWarn, String longWarn, int showtime);
 
-    /**
-     * 
-     * Der Benutzer soll den Captcha Code eintippen
-     * 
-     * @param plugin
-     *            Das Plugin, daß den Captcha Code benötigt
-     * @param captchaAddress
-     *            Die Adresse des Captchas
-     * @return Der erkannte Text
-     */
-    public String showCountdownCaptchaDialog(Plugin plugin, File captchaAddress, String def);
 
     /**
      * 

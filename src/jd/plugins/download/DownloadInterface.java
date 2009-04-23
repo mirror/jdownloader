@@ -40,6 +40,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
 import jd.http.requests.Request;
+import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -796,12 +797,12 @@ abstract public class DownloadInterface {
                         logger.finest(connection.toString());
                         String[][] fixrange = new Regex(connection.getRequestProperty("Range"), ".*?(\\d+).*?-.*?(\\d+)?").getMatches();
 
-                        long gotSB = JDUtilities.filterLong(fixrange[0][0]);
+                        long gotSB = Formatter.filterLong(fixrange[0][0]);
                         long gotEB;
                         if (fixrange[0][1] == null) {
-                            gotEB = JDUtilities.filterLong(fixrange[0][0]) + connection.getLongContentLength() - 1;
+                            gotEB = Formatter.filterLong(fixrange[0][0]) + connection.getLongContentLength() - 1;
                         } else {
-                            gotEB = JDUtilities.filterLong(fixrange[0][1]);
+                            gotEB = Formatter.filterLong(fixrange[0][1]);
                         }
                         if (gotSB != startByte) {
                             logger.severe("Range Conflict " + gotSB + " - " + gotEB + " wished start: " + 0);
@@ -843,8 +844,8 @@ abstract public class DownloadInterface {
                         return;
                     }
                 } else if (range != null) {
-                    long gotSB = JDUtilities.filterLong(range[0][0]);
-                    long gotEB = JDUtilities.filterLong(range[0][1]);
+                    long gotSB = Formatter.filterLong(range[0][0]);
+                    long gotEB = Formatter.filterLong(range[0][1]);
                     if (gotSB != startByte) {
                         logger.severe("Range Conflict " + range[0][0] + " - " + range[0][1] + " wished start: " + 0);
                         logger.finest(connection.toString());

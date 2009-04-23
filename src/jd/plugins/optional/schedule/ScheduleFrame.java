@@ -34,6 +34,7 @@ import javax.swing.Timer;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.nutils.Formatter;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -181,7 +182,7 @@ public class ScheduleFrame extends JPanel implements ActionListener {
                 time.setEnabled(true);
             }
         } else if (e.getSource() == c) {
-            String remainString = JDUtilities.formatSeconds(var / 1000);
+            String remainString = Formatter.formatSeconds(var / 1000);
             String remain = JDLocale.L("addons.schedule.menu.remain", "Remaining:") + " " + remainString;
             status.setText(remain);
         }

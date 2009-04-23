@@ -101,7 +101,7 @@ public class IfolderRu extends PluginForHost {
             URLConnectionAdapter con = br.openGetConnection(captchaurl);
             File file = this.getLocalCaptchaFile(this);
             Browser.download(file, con);
-            String captchaCode = Plugin.getCaptchaCode(file, this, downloadLink);
+            String captchaCode = getCaptchaCode(file,downloadLink);
             captchaForm.put("confirmed_number", captchaCode);
 
             br.submitForm(captchaForm);

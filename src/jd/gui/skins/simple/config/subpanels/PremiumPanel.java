@@ -61,6 +61,7 @@ import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.http.Encoding;
+import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
@@ -254,7 +255,7 @@ public class PremiumPanel extends JPanel {
             /*
              * JGoodies seems to have a performance bug rendering JCheckBoxes.
              */
-            if (JDLookAndFeelManager.getPlaf().isJGoodies()) {
+            if (JDLookAndFeelManager.getPlaf().isJGoodies()||true) {
                 chkEnable = new JToggleButton();
                 chkEnable.setIcon(JDTheme.II("gui.images.disabled", 16, 16));
                 chkEnable.setSelectedIcon(JDTheme.II("gui.images.enabled", 16, 16));
@@ -418,7 +419,7 @@ public class PremiumPanel extends JPanel {
                         }
                         if (ai.getUsedSpace() > -1) {
                             details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.space", "Used Space")), "");
-                            details.add(getTextField(JDUtilities.formatReadable(ai.getUsedSpace())), "");
+                            details.add(getTextField(Formatter.formatReadable(ai.getUsedSpace())), "");
                         }
                         if (ai.getPremiumPoints() > -1) {
                             details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.points", "Points")), "");
@@ -426,11 +427,11 @@ public class PremiumPanel extends JPanel {
                         }
                         if (ai.getTrafficShareLeft() > -1) {
                             details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.trafficshare", "Trafficshare left")), "");
-                            details.add(getTextField(JDUtilities.formatReadable(ai.getTrafficShareLeft())), "");
+                            details.add(getTextField(Formatter.formatReadable(ai.getTrafficShareLeft())), "");
                         }
                         if (ai.getTrafficLeft() > -1) {
                             details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.traffic", "Traffic left")), "aligny top");
-                            details.add(getTextField(JDUtilities.formatReadable(ai.getTrafficLeft())), "aligny top");
+                            details.add(getTextField(Formatter.formatReadable(ai.getTrafficLeft())), "aligny top");
 
                         }
                         info.setCollapsed(false);

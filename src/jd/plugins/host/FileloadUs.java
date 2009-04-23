@@ -66,7 +66,7 @@ public class FileloadUs extends PluginForHost {
             URLConnectionAdapter con = br.openGetConnection(captchaurl);
             File file = this.getLocalCaptchaFile(this);
             Browser.download(file, con);
-            String code = Plugin.getCaptchaCode(file, this, downloadLink);
+            String code = getCaptchaCode(file, downloadLink);
             form.put("code", code);
             form.setAction(downloadLink.getDownloadURL());
             // Ticket Time

@@ -49,7 +49,7 @@ public class CrystalWarezIN extends PluginForDecrypt {
                     File file = this.getLocalCaptchaFile(this);
                     URLConnectionAdapter con = br.cloneBrowser().openGetConnection("http://crystal-warez.in/securimage_show.php");
                     Browser.download(file, con);
-                    code = Plugin.getCaptchaCode(file, this, param);
+                    code = getCaptchaCode(file, this, param);
                     Form form = br.getForm(1);
                     form.put("captcha", code);
                     br.submitForm(form);

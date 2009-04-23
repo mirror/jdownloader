@@ -66,7 +66,9 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
 import jd.nutils.JDImage;
+import jd.nutils.Screen;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -150,6 +152,7 @@ public class Serienjunkies extends PluginForDecrypt {
         setConfigElements();
         passwords.add("serienjunkies.dl.am");
         passwords.add("serienjunkies.org");
+        passwords.add("dokujunkies.org");
     }
 
     public boolean[] checkLinks(DownloadLink[] urls) {
@@ -481,7 +484,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
                     active++;
                     try {
-                        capTxt = Plugin.getCaptchaCode(this, "einzellinks.serienjunkies.org", captchaFile, false, downloadLink);
+                        capTxt = getCaptchaCode(this, "einzellinks.serienjunkies.org", captchaFile, false, downloadLink);
                     } catch (Exception e) {
                         active--;
                         jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
@@ -1109,7 +1112,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
                         add(panel, BorderLayout.CENTER);
                         pack();
-                        setLocation(JDUtilities.getCenterOfComponent(null, this));
+                        setLocation(Screen.getCenterOfComponent(null, this));
                         setVisible(true);
                     }
 
@@ -1139,10 +1142,6 @@ public class Serienjunkies extends PluginForDecrypt {
         cfg.setDefaultValue(true);
     }
 
-    @Override
-    public boolean useUserinputIfCaptchaUnknown() {
-        return false;
-    }
 
     public class SerienjunkiesThread extends Thread {
         private DownloadLink downloadLink;
@@ -1297,7 +1296,7 @@ class SerienjunkiesSJTable extends JDialog {
         super(owner);
         this.setTitle(JDLocale.L("plugin.serienjunkies.manager.title", "SerienJunkies Linkverwaltung"));
         setSize(600, 300);
-        this.setLocation(JDUtilities.getCenterOfComponent(null, this));
+        this.setLocation(Screen.getCenterOfComponent(null, this));
         this.dls = DownloadLinks;
         m_data = new SerienjunkiesTM(dls);
         setModal(true);
@@ -1415,7 +1414,7 @@ class SerienjunkiesSJTable extends JDialog {
                     }
                     if (countdownThread == null) { return; }
 
-                    insertButton.setText(JDUtilities.formatSeconds(c) + ">>" + JDLocale.L("gui.component.textarea.context.paste", "Einfügen"));
+                    insertButton.setText(Formatter.formatSeconds(c) + ">>" + JDLocale.L("gui.component.textarea.context.paste", "Einfügen"));
 
                     try {
                         Thread.sleep(1000);
