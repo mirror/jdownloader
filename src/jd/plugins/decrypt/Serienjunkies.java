@@ -35,6 +35,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,7 +59,9 @@ import javax.swing.table.TableColumn;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.skins.simple.GuiRunnable;
@@ -171,11 +174,12 @@ public class Serienjunkies extends PluginForDecrypt {
         if (data.contains("serienjunkies.org") && (data.contains("/?cat="))) {
             cat = getSerienJunkiesCat() != sCatNoThing;
         }
-        boolean rscom = (Boolean) getPluginConfig().getProperty("USE_RAPIDSHARE_V2", true);
-        boolean rsde = (Boolean) getPluginConfig().getProperty("USE_RAPIDSHAREDE_V2", true);
-        boolean net = (Boolean) getPluginConfig().getProperty("USE_NETLOAD_V2", true);
-        boolean uploaded = (Boolean) getPluginConfig().getProperty("USE_UPLOADED_V2", true);
-        boolean filefactory = (Boolean) getPluginConfig().getProperty("USE_FILEFACTORY_V2", true);
+        SubConfiguration plgConfig = getPluginConfig();
+        boolean rscom = plgConfig.getBooleanProperty("USE_RAPIDSHARE_V2", true);
+        boolean rsde = plgConfig.getBooleanProperty("USE_RAPIDSHAREDE_V2", true);
+        boolean net = plgConfig.getBooleanProperty("USE_NETLOAD_V2", true);
+        boolean uploaded = plgConfig.getBooleanProperty("USE_UPLOADED_V2", true);
+        boolean filefactory = plgConfig.getBooleanProperty("USE_FILEFACTORY_V2", true);
         next = false;
         String hosterStr = "";
         if (rscom || rsde || net || uploaded || filefactory || cat) {
@@ -198,7 +202,6 @@ public class Serienjunkies extends PluginForDecrypt {
             hosterStr += isNext() + "p\\=[\\d]+";
             if (cat) {
                 hosterStr += isNext() + "cat\\=[\\d]+";
-
             }
 
             hosterStr += ")";
@@ -215,7 +218,7 @@ public class Serienjunkies extends PluginForDecrypt {
             for (String element : links) {
                 Matcher m = pat.matcher(element);
 
-                if (!m.matches()) { return true; }
+                if (!m.matches()) return true;
             }
         }
         return false;
@@ -244,15 +247,15 @@ public class Serienjunkies extends PluginForDecrypt {
                     if (captchaFile != null && capTxt != null) {
                         JDUtilities.appendInfoToFilename(captchaFile, capTxt, false);
                     }
-                    String[][] gifs = new Regex(htmlcode, patternCaptcha).getMatches();
+                    String gif = new Regex(htmlcode, patternCaptcha).getMatch(1);
 
-                    String captchaAdress = "http://" + subdomain + "serienjunkies.org" + gifs[0][1];
+                    String captchaAdress = "http://" + subdomain + "serienjunkies.org" + gif;
                     Browser capbr = br3.cloneBrowser();
                     capbr.setFollowRedirects(true);
                     URLConnectionAdapter con = openGetConnection(capbr, captchaAdress);
 
                     if (con.getResponseCode() < 0) {
-                        captchaAdress = "http://" + subdomain + "serienjunkies.org" + gifs[0][1];
+                        captchaAdress = "http://" + subdomain + "serienjunkies.org" + gif;
                         capbr.setFollowRedirects(true);
                         con.disconnect();
                         con = openGetConnection(capbr, captchaAdress);
@@ -268,7 +271,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                     try {
                                         Thread.sleep(1200);
                                     } catch (InterruptedException e) {
-                                        logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                                        logger.log(Level.SEVERE, "Exception occured", e);
                                     }
                                     progress.increase(1);
                                 }
@@ -284,7 +287,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                 try {
                                     Thread.sleep(100);
                                 } catch (InterruptedException e) {
-                                    logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                                    logger.log(Level.SEVERE, "Exception occured", e);
                                 }
                                 progress.increase(1);
                             }
@@ -317,7 +320,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         capTxt = getCaptchaCode(captchaFile, this, downloadLink);
                     } catch (Exception e) {
                         active--;
-                        logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                        logger.log(Level.SEVERE, "Exception occured", e);
                         progress.setColor(Color.red);
                         progress.setStatus(0);
                         progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.captcha", "Error: Captcha"));
@@ -386,7 +389,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                             continue;
                                         }
                                         if (tx != null) {
-                                            String link = new Regex(brd.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                                            String link = brd.getRegex(Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                                             if (link != null) {
                                                 try {
                                                     getPage(brd, link);
@@ -407,7 +410,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                         }
                                     }
                                 } catch (Exception e) {
-                                    logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                                    logger.log(Level.SEVERE, "Exception occured", e);
                                 }
 
                             }
@@ -427,7 +430,7 @@ public class Serienjunkies extends PluginForDecrypt {
                             try {
                                 t.wait();
                             } catch (InterruptedException e) {
-                                logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                                logger.log(Level.SEVERE, "Exception occured", e);
                             }
                         }
                     }
@@ -438,7 +441,7 @@ public class Serienjunkies extends PluginForDecrypt {
             }
 
         } catch (IOException e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(Level.SEVERE, "Exception occured", e);
         }
         return links;
     }
@@ -488,7 +491,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         capTxt = getCaptchaCode("einzellinks.serienjunkies.org", captchaFile, downloadLink);
                     } catch (Exception e) {
                         active--;
-                        logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                        logger.log(Level.SEVERE, "Exception occured", e);
                         break;
                     }
                     active--;
@@ -501,7 +504,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
             links = br3.getRedirectLocation();
         } catch (IOException e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(Level.SEVERE, "Exception occured", e);
         }
         return links;
     }
@@ -553,7 +556,7 @@ public class Serienjunkies extends PluginForDecrypt {
                             try {
                                 Thread.sleep(1200);
                             } catch (InterruptedException e) {
-                                logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                                logger.log(Level.SEVERE, "Exception occured", e);
                             }
                             progress.increase(1);
                         }
@@ -578,7 +581,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         try {
                             Thread.sleep(100);
                         } catch (InterruptedException e) {
-                            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            logger.log(Level.SEVERE, "Exception occured", e);
                         }
                         progress.increase(1);
                     }
@@ -596,7 +599,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
             }
 
-            String[][] links = br3.getRegex(Pattern.compile(" <a href=\"http://(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+            String[] links = br3.getRegex(Pattern.compile(" <a href=\"http://(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
             Vector<String> helpvector = new Vector<String>();
             String helpstring = "";
 
@@ -616,23 +619,23 @@ public class Serienjunkies extends PluginForDecrypt {
             } else {
                 logger.info("else link");
                 // Kategorien
-                for (String[] link : links) {
-                    if (link[0].indexOf("/safe/") >= 0) {
-                        helpstring = EinzelLinks(link[0], cryptedLink);
+                for (String link : links) {
+                    if (link.indexOf("/safe/") >= 0) {
+                        helpstring = EinzelLinks(link, cryptedLink);
                         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpstring)));
-                    } else if (link[0].indexOf("/sjsafe/") >= 0) {
-                        helpvector = ContainerLinks(link[0], cryptedLink);
+                    } else if (link.indexOf("/sjsafe/") >= 0) {
+                        helpvector = ContainerLinks(link, cryptedLink);
                         if (helpvector == null) return null;
                         for (int j = 0; j < helpvector.size(); j++) {
                             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpvector.get(j))));
                         }
                     } else {
-                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link[0])));
+                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
                     }
                 }
             }
         } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(Level.SEVERE, "Exception occured", e);
         }
         return decryptedLinks;
     }
@@ -657,7 +660,7 @@ public class Serienjunkies extends PluginForDecrypt {
         try {
             linkName = ((title.length() > 10 ? title.substring(0, 10) : title) + "#" + name).replaceAll("\\.", " ").replaceAll("[^\\w \\#]", "").trim() + ".rar";
         } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(Level.SEVERE, "Exception occured", e);
         }
         if (linkName == null || parameter.matches("http://serienjunkies.org/sa[fv]e/.*") || parameter.matches("http://download.serienjunkies.org/..\\-.*")) {
             size = 100;
@@ -973,7 +976,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     try {
                         if (element3[1].toLowerCase().contains(Encoding.UTF8Decode(link).toLowerCase())) { return new String[] { size, element3[0], element3[1], title }; }
                     } catch (Exception e) {
-                        logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                        logger.log(Level.SEVERE, "Exception occured", e);
                     }
 
                 }
@@ -1129,20 +1132,21 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     private void setConfigElements() {
+        SubConfiguration plgConfig = getPluginConfig();
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), "SJ_MIRRORMANAGEMENT", mirrorManagement, JDLocale.L("plugins.decrypt.serienjunkies.mirrorManagement", "mirror management")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, plgConfig, "SJ_MIRRORMANAGEMENT", mirrorManagement, JDLocale.L("plugins.decrypt.serienjunkies.mirrorManagement", "mirror management")));
         cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster selection")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_RAPIDSHARE_V2", "Rapidshare.com"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster selection")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, plgConfig, "USE_RAPIDSHARE_V2", "Rapidshare.com"));
         cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_RAPIDSHAREDE_V2", "Rapidshare.de"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, plgConfig, "USE_RAPIDSHAREDE_V2", "Rapidshare.de"));
         cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_NETLOAD_V2", "Netload.in"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, plgConfig, "USE_NETLOAD_V2", "Netload.in"));
         cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_UPLOADED_V2", "Uploaded.to"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, plgConfig, "USE_UPLOADED_V2", "Uploaded.to"));
         cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_FILEFACTORY_V2", "FileFactory.com"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, plgConfig, "USE_FILEFACTORY_V2", "FileFactory.com"));
         cfg.setDefaultValue(true);
     }
 
@@ -1247,7 +1251,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                     }
                                 } catch (Exception e) {
                                     finaldls = null;
-                                    logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                                    logger.log(Level.SEVERE, "Exception occured", e);
                                 }
                                 if (finaldls != null) break;
                             }
@@ -1267,7 +1271,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 }
 
             } catch (Exception e) {
-                logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                logger.log(Level.SEVERE, "Exception occured", e);
             }
 
             if (result == null) {
@@ -1405,7 +1409,7 @@ class SerienjunkiesSJTable extends JDialog {
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                        JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
                     }
                 }
                 int c = countdown;
