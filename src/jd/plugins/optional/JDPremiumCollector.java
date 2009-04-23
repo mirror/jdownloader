@@ -66,19 +66,12 @@ public class JDPremiumCollector extends PluginOptional {
             post += "&apiuser=" + subConfig.getStringProperty(PROPERTY_LOGIN_USER);
             post += "&apipassword=" + subConfig.getStringProperty(PROPERTY_LOGIN_PASS);
             br.postPage(subConfig.getStringProperty(PROPERTY_API_URL), post);
-
         } catch (IOException e1) {
-
-            // JDLogger.exception(e1);
             logger.severe(JDLocale.L("plugins.optional.premiumcollector.error.url", "Probably wrong URL! See log for more infos!"));
-            // JOptionPane.showMessageDialog(guiFrame, ,
-            // JDLocale.L("plugins.optional.premiumcollector.error", "Error!"),
-            // JOptionPane.ERROR_MESSAGE);
         }
 
         if (br.containsHTML("Login faild")) {
             logger.severe(JDLocale.L("plugins.optional.premiumcollector.error.userpass", "Wrong username/password!"));
-
             return;
         }
 
@@ -108,9 +101,9 @@ public class JDPremiumCollector extends PluginOptional {
                 }
                 pc.finalize();
             }
+
         });
         t.start();
-
     }
 
     @Override
@@ -134,7 +127,7 @@ public class JDPremiumCollector extends PluginOptional {
     @Override
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
-            // fetchAccounts();
+            fetchAccounts();
             JDUtilities.getController().removeControlListener(this);
             return;
         }
@@ -261,7 +254,6 @@ public class JDPremiumCollector extends PluginOptional {
                 AccountManager.getInstance().setAccountsForHost(plg.getPlugin(), accounts);
                 logger.finer(plg.getHost() + " : " + accounts.size() + " accounts inserted");
             } else {
-
                 AccountManager.getInstance().setAccountsForHost(plg.getPlugin(), oldaccounts);
                 logger.finer(plg.getHost() + " : " + oldaccounts.size() + " accounts inserted");
             }
