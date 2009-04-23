@@ -235,10 +235,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         setName("MAINFRAME");
         Dimension dim = SimpleGuiUtils.getLastDimension(this, null);
         if (dim == null) {
-            dim = new Dimension(1000, 600);
+            dim = new Dimension(1000, 680);
         }
         setPreferredSize(dim);
-        this.setMinimumSize(new Dimension(1000, 600));
+        this.setMinimumSize(new Dimension(1000, 680));
         setLocation(SimpleGuiUtils.getLastLocation(null, null, this));
         pack();
 

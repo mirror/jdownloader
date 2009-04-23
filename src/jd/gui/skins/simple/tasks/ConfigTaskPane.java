@@ -133,7 +133,7 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
             if (ContentPanel.PANEL != null && ContentPanel.PANEL.getRightPanel() instanceof ConfigPanel) {
                 if (((ConfigPanel) ContentPanel.PANEL.getRightPanel()).hasChanges() != PropertyType.NONE) {
                     this.changes = true;
-                    System.out.println("CHANGES !");
+//                    System.out.println("CHANGES !");
                     if (((ConfigPanel) ContentPanel.PANEL.getRightPanel()).hasChanges() == PropertyType.NEEDS_RESTART) {
                         System.out.println("RESTART !");
                         this.restart = true;

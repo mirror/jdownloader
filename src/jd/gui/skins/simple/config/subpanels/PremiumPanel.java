@@ -19,6 +19,7 @@ package jd.gui.skins.simple.config.subpanels;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Cursor;
+import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.ClipboardOwner;
@@ -36,6 +37,7 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import javax.swing.AbstractButton;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -51,9 +53,13 @@ import javax.swing.event.ChangeListener;
 
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.controlling.JDController;
 import jd.controlling.JDLogger;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.skins.simple.Factory;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.JDTextField;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -72,13 +78,13 @@ import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 
-public class PremiumPanel extends JPanel {
+public class PremiumPanel extends JPanel implements ControlListener {
 
     private static final long serialVersionUID = 3275917572262383770L;
 
     private static final Color ACTIVE = new Color(0x7cd622);
     private static final Color INACTIVE = new Color(0xa40604);
-    private static final Color DISABLED = new Color(0xaff0000);
+ 
 
     private static final int PIE_WIDTH = 450;
 
@@ -104,6 +110,7 @@ public class PremiumPanel extends JPanel {
         ce = gce.getConfigEntry();
         host = (PluginForHost) gce.getConfigEntry().getActionListener();
         premiumActivated = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
+
     }
 
     /**
@@ -136,7 +143,7 @@ public class PremiumPanel extends JPanel {
             if (accounts.get(i) != null) accs.get(i).setAccount(accounts.get(i));
         }
         createDataset();
-
+        JDController.getInstance().addControlListener(this);
     }
 
     private void createDataset() {
@@ -217,6 +224,7 @@ public class PremiumPanel extends JPanel {
         public AccountPanel(int nr) {
             this.panelID = nr;
             createPanel(nr);
+
         }
 
         public void setAccount(Account account) {
@@ -251,11 +259,12 @@ public class PremiumPanel extends JPanel {
         public void createPanel(int nr) {
             this.setLayout(new MigLayout("ins 5, wrap 4", "[shrink][grow 20][shrink][grow 20]"));
             this.setOpaque(false);
+
             this.setBackground(null);
             /*
              * JGoodies seems to have a performance bug rendering JCheckBoxes.
              */
-            if (JDLookAndFeelManager.getPlaf().isJGoodies()||true) {
+            if (JDLookAndFeelManager.getPlaf().isJGoodies() ) {
                 chkEnable = new JToggleButton();
                 chkEnable.setIcon(JDTheme.II("gui.images.disabled", 16, 16));
                 chkEnable.setSelectedIcon(JDTheme.II("gui.images.enabled", 16, 16));
@@ -268,7 +277,7 @@ public class PremiumPanel extends JPanel {
                 chkEnable.setForeground(INACTIVE);
             } else {
                 chkEnable.setText(JDLocale.L("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>"));
-                chkEnable.setForeground(DISABLED);
+                chkEnable.setForeground(INACTIVE);
             }
 
             chkEnable.setOpaque(false);
@@ -313,8 +322,10 @@ public class PremiumPanel extends JPanel {
             info.addPropertyChangeListener(new PropertyChangeListener() {
 
                 public void propertyChange(PropertyChangeEvent evt) {
-                    PremiumPanel.this.getParent().getParent().getParent().invalidate();
-                    PremiumPanel.this.getParent().getParent().getParent().repaint();
+                    if (evt.getOldValue() != null) {
+                        PremiumPanel.this.getParent().getParent().getParent().invalidate();
+                        PremiumPanel.this.getParent().getParent().getParent().repaint();
+                    }
 
                 }
             });
@@ -324,6 +335,7 @@ public class PremiumPanel extends JPanel {
 
         @Override
         public void setEnabled(final boolean flag) {
+            if (chkEnable.isSelected() == flag) return;
             SwingUtilities.invokeLater(new Runnable() {
 
                 public void run() {
@@ -342,14 +354,12 @@ public class PremiumPanel extends JPanel {
         public void stateChanged(ChangeEvent e) {
             boolean sel = chkEnable.isSelected();
 
-            if (this.account.isEnabled() != sel) {
-                ce.setChanges(true);
-            }
+            ce.setChanges(true);
 
             if (premiumActivated) {
                 chkEnable.setForeground((sel) ? ACTIVE : INACTIVE);
             } else {
-                chkEnable.setForeground(DISABLED);
+                chkEnable.setForeground(INACTIVE);
             }
 
             setEnabled(sel);
@@ -460,6 +470,17 @@ public class PremiumPanel extends JPanel {
         public void focusLost(FocusEvent e) {
             createDataset();
         }
+
+        public int getID() {
+            // TODO Auto-generated method stub
+            return this.panelID;
+        }
+
+        public JToggleButton getLabel() {
+            // TODO Auto-generated method stub
+            return this.chkEnable;
+        }
+
     }
 
     private class ChartRefresh extends Thread {
@@ -523,6 +544,39 @@ public class PremiumPanel extends JPanel {
         }
 
         public void lostOwnership(Clipboard arg0, Transferable arg1) {
+        }
+
+    }
+
+
+    public void controlEvent(ControlEvent event) {
+        if (!this.isDisplayable()) {
+            JDController.getInstance().removeControlListener(this);
+            System.out.println("remove from listener list");
+        }
+        if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED && event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
+            premiumActivated = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
+            new GuiRunnable<Object>() {
+
+                @Override
+                public Object runSave() {
+                    for (AccountPanel ap : accs) {
+                        if (premiumActivated) {
+                            ap.getLabel().setText(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", ap.getID()));
+                            ap.getLabel().setForeground(INACTIVE);
+                            ap.getLabel().setForeground((ap.getAccount().isEnabled()) ? ACTIVE : INACTIVE);
+                        } else {
+                            ap.getLabel().setText(JDLocale.L("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>"));
+                         
+                            ap.getLabel().setForeground(INACTIVE);
+                        }
+                      
+                    }
+                    return null;
+                }
+
+            }.start();
+
         }
 
     }

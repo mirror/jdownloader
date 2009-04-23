@@ -143,7 +143,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         @Override
         public void setValueAt(Object value, int row, int col) {
-            if (col == 4) {
+            if (col == 3) {
                 if ((Boolean) value) {
                     String msg = JDLocale.L("gui.config.plugin.host.desc", "Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB <br> der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!") + "\r\n\r\n" + JDLocale.LF("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!", pluginsForHost.get(row).getHost());
                     if (JOptionPane.showConfirmDialog(SimpleGUI.CURRENTGUI, msg) == JOptionPane.OK_OPTION) {
@@ -152,7 +152,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 } else {
                     pluginsForHost.get(row).setAGBChecked((Boolean) value);
                 }
-            } else if (col == 5) {
+            } else if (col == 4) {
                 pluginsForHost.get(row).setUsePlugin((Boolean) value);
             }
         }

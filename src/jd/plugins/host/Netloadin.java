@@ -84,8 +84,12 @@ public class Netloadin extends PluginForHost {
         br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
         checkPassword(downloadLink);
+        System.out.println(br);
         if (linkStatus.isFailed()) return;
-
+        if (br.containsHTML("download_fast_link")) {
+            handleFastLink(downloadLink);
+            return;
+        }
         String url = br.getRegex(Pattern.compile("<div class=\"Free_dl\">.*?<a href=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (br.containsHTML(FILE_NOT_FOUND)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -136,21 +140,28 @@ public class Netloadin extends PluginForHost {
         Browser.download(file, c.openGetConnection(captchaURL));
         captchaPost.put("captcha_check", getCaptchaCode(file, downloadLink));
         br.submitForm(captchaPost);
-        if (br.containsHTML(FILE_NOT_FOUND)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
+        handleErrors(downloadLink);
+
+        String finalURL = br.getRegex(NEW_HOST_URL).getMatch(0);
+        sleep(20000, downloadLink);
+        dl = RAFDownload.download(downloadLink, br.createRequest(finalURL));
+        dl.startDownload();
+    }
+
+    private void handleErrors(DownloadLink downloadLink) throws PluginException {
+        if (br.containsHTML(FILE_NOT_FOUND)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
         }
         if (br.containsHTML(FILE_DAMAGED)) {
             logger.warning("File is on a damaged server");
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
+
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+
         }
         if (br.containsHTML("Datenbank Fehler")) {
             logger.warning("Database Error");
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+
         }
 
         if (br.containsHTML(LIMIT_REACHED) || br.containsHTML(DOWNLOAD_LIMIT)) {
@@ -163,17 +174,17 @@ public class Netloadin extends PluginForHost {
             if (waitTime == 0) {
                 logger.finest("Waittime was 0");
                 sleep(30000l, downloadLink);
-                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                return;
+
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+
             }
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            linkStatus.setValue(waitTime);
-            return;
+
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
+
         }
         if (br.containsHTML(CAPTCHA_WRONG)) {
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
-        }
+
+        throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         if (br.containsHTML("download_unknown_server_data")) {
             logger.info("File is not uploaded completly");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 2000l);
@@ -185,10 +196,26 @@ public class Netloadin extends PluginForHost {
 
         }
 
-        String finalURL = br.getRegex(NEW_HOST_URL).getMatch(0);
-        sleep(20000, downloadLink);
-        dl = RAFDownload.download(downloadLink, br.createRequest(finalURL));
-        dl.startDownload();
+    }
+
+    private void handleFastLink(DownloadLink downloadLink) throws Exception {
+br.forceDebug(true);
+        String url = br.getRegex("<a class=\"download_fast_link\" href=\"(.*?)\">Start Free Download</a>").getMatch(0);
+logger.finest("Url: "+url);
+logger.finest(br.toString());
+
+        sleep(10000, downloadLink);
+        br.setFollowRedirects(false);
+        br.getPage(url);
+        logger.finest(br.toString());
+        if (br.getRedirectLocation() != null) {
+            dl = br.openDownload(downloadLink, url);
+            dl.startDownload();
+        } else {
+            handleErrors(downloadLink);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
+
     }
 
     private void checkPassword(DownloadLink downloadLink) throws Exception {
