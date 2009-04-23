@@ -102,6 +102,7 @@ public class LinksaveIn extends PluginForDecrypt {
         return new ArrayList<DownloadLink>();
     }
 
+    @Override
     protected boolean isClickNLoadEnabled() {
         return true;
     }

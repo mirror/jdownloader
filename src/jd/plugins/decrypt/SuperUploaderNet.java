@@ -30,16 +30,17 @@ public class SuperUploaderNet extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         br.getPage(parameter);
         if (br.containsHTML("File not found")) return null;
-        String[] links = br.getRegex("<td>\\s+<a href=\"(http://.*?)\"").getColumn(0);        
+        String[] links = br.getRegex("<td>\\s+<a href=\"(http://.*?)\"").getColumn(0);
         String packagename = br.getRegex("<title>SuperUploader.net :: Download (.*?)</title>").getMatch(0);
-        for (int i = 0; i < links.length; i++) {
-            DownloadLink declink = createDownloadlink(links[i]);
+        for (String link : links) {
+            DownloadLink declink = createDownloadlink(link);
             decryptedLinks.add(declink);
             if (packagename != null) {
                 declink.setName(packagename.trim());

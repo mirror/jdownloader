@@ -31,6 +31,7 @@ public class GoogleGroups extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 

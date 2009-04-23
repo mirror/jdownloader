@@ -37,6 +37,7 @@ public class CrystalWarezIN extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String parameter = param.toString();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

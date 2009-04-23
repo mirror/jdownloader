@@ -40,6 +40,7 @@ public class Charts4You extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -62,8 +63,8 @@ public class Charts4You extends PluginForDecrypt {
         String[] links = br.getRegex("url=(.*?)\"").getColumn(0);
         FilePackage fp = FilePackage.getInstance();
         fp.setName(name);
-        for (int i = 0; i < links.length; i++) {
-            DownloadLink link = this.createDownloadlink(links[i]);
+        for (String link2 : links) {
+            DownloadLink link = this.createDownloadlink(link2);
             if (pass != null) link.addSourcePluginPassword(pass);
             link.setFilePackage(fp);
             decryptedLinks.add(link);

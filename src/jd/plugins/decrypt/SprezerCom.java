@@ -19,6 +19,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -34,16 +35,13 @@ public class SprezerCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String[][] links = br.getRegex("<a href=\"(get-.*?)\">").getMatches();
-        if (links == null || links.length == 0) {
-            return null;
-        }
-        for (int i = 0; i < links.length; i++) {
-            br.getPage("http://www.sprezer.com/" + links[i][0]);
+        String[] links = br.getRegex("<a href=\"(get-.*?)\">").getColumn(0);
+        if (links == null || links.length == 0) return null;
+        for (String link : links) {
+            br.getPage("http://www.sprezer.com/" + link);
             String code = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
-            String plainlink = jd.http.Encoding.deepHtmlDecode(code);
-            DownloadLink dl_link = createDownloadlink(plainlink);
-            decryptedLinks.add(dl_link);
+            String plainlink = Encoding.deepHtmlDecode(code);
+            decryptedLinks.add(createDownloadlink(plainlink));
         }
         return decryptedLinks;
     }

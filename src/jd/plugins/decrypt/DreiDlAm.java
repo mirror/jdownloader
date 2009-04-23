@@ -79,8 +79,8 @@ public class DreiDlAm extends PluginForDecrypt {
             decryptFromDownload(url);
         }
         String[] links = br.getRegex(Pattern.compile("value='http://3dl\\.am/link/(.*?)/'", Pattern.CASE_INSENSITIVE)).getColumn(0);
-        for (int i = 0; i < links.length; i++) {
-            linksReturn.add("http://3dl.am/link/" + links[i] + "/");
+        for (String link2 : links) {
+            linksReturn.add("http://3dl.am/link/" + link2 + "/");
         }
         return linksReturn;
     }

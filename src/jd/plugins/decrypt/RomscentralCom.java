@@ -58,8 +58,8 @@ public class RomscentralCom extends PluginForDecrypt {
                 lastRootCatUrl = rootUrl;
                 String rootCat = new Regex(rootUrl, patternSupportedWay1).getMatch(0);
                 String matches[] = new Regex(parameter, patternSupportedWay2.pattern()).getRow(0);
-                for (int i = 0; i < matches.length; i++) {
-                    decryptedLinks.add(createDownloadlink("http://www.romscentral.com/" + rootCat + "/" + matches[i]));
+                for (String match : matches) {
+                    decryptedLinks.add(createDownloadlink("http://www.romscentral.com/" + rootCat + "/" + match));
                 }
             }
         }

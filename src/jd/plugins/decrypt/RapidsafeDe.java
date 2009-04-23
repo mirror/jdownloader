@@ -79,17 +79,17 @@ public class RapidsafeDe extends PluginForDecrypt {
 
             ArrayList<String> flash = new ArrayList<String>();
             String[] flashsites = br.getRegex("<param name=\"movie\" value=\"/(.*?)\" />").getColumn(0);
-            for (int i = 0; i < flashsites.length; i++) {
-                flash.add(flashsites[i]);
+            for (String flashsite : flashsites) {
+                flash.add(flashsite);
             }
 
             String[][] helpsites = br.getRegex("onclick=\"RapidSafePSC\\('(.*?)&start=(.*?)','").getMatches();
-            for (int i = 0; i < helpsites.length; i++) {
-                br.postPage(parameter, dat + "&f=1&start=" + helpsites[i][1]);
+            for (String[] helpsite : helpsites) {
+                br.postPage(parameter, dat + "&f=1&start=" + helpsite[1]);
                 String[] helpflash = br.getRegex("<param name=\"movie\" value=\"/(.*?)\" />").getColumn(0);
 
-                for (int j = 0; j < helpflash.length; j++) {
-                    flash.add(helpflash[j]);
+                for (String element : helpflash) {
+                    flash.add(element);
                 }
             }
 

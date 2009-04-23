@@ -163,6 +163,7 @@ public class Serienjunkies extends PluginForDecrypt {
         return ret;
     }
 
+    @Override
     public synchronized boolean canHandle(String data) {
         boolean cat = false;
         if (data == null) return false;
@@ -615,18 +616,18 @@ public class Serienjunkies extends PluginForDecrypt {
             } else {
                 logger.info("else link");
                 // Kategorien
-                for (int i = 0; i < links.length; i++) {
-                    if (links[i][0].indexOf("/safe/") >= 0) {
-                        helpstring = EinzelLinks(links[i][0], cryptedLink);
+                for (String[] link : links) {
+                    if (link[0].indexOf("/safe/") >= 0) {
+                        helpstring = EinzelLinks(link[0], cryptedLink);
                         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpstring)));
-                    } else if (links[i][0].indexOf("/sjsafe/") >= 0) {
-                        helpvector = ContainerLinks(links[i][0], cryptedLink);
+                    } else if (link[0].indexOf("/sjsafe/") >= 0) {
+                        helpvector = ContainerLinks(link[0], cryptedLink);
                         if (helpvector == null) return null;
                         for (int j = 0; j < helpvector.size(); j++) {
                             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpvector.get(j))));
                         }
                     } else {
-                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(links[i][0])));
+                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link[0])));
                     }
                 }
             }
@@ -691,6 +692,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
             ar = new GuiRunnable<ArrayList<DownloadLink>>() {
 
+                @Override
                 public ArrayList<DownloadLink> runSave() {
                     SerienjunkiesSJTable sjt = new SerienjunkiesSJTable(SimpleGUI.CURRENTGUI, ar2);
 
@@ -1039,6 +1041,7 @@ public class Serienjunkies extends PluginForDecrypt {
         new GuiRunnable<Object>() {
             private static final long serialVersionUID = 8726498576488124702L;
 
+            @Override
             public Object runSave() {
 
                 new Dialog(SimpleGUI.CURRENTGUI) {
@@ -1061,6 +1064,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                 this.var = var;
                             }
 
+                            @Override
                             public String toString() {
                                 return name;
                             }
@@ -1467,10 +1471,12 @@ class SerienjunkiesTM extends AbstractTableModel {
         return m_columns.length;
     }
 
+    @Override
     public String getColumnName(int column) {
         return m_columns[column].m_title;
     }
 
+    @Override
     public boolean isCellEditable(int nRow, int nCol) {
         return false;
     }

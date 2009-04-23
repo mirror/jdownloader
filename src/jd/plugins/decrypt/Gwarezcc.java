@@ -51,6 +51,7 @@ public class Gwarezcc extends PluginForDecrypt {
         setConfigElements();
     }
 
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -81,9 +82,9 @@ public class Gwarezcc extends PluginForDecrypt {
             if (dlc_found == false) {
                 /* Mirrors suchen (Verschlüsselt) */
                 String mirror_pages[] = br.getRegex(Pattern.compile("<img src=\"gfx/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(0);
-                for (int i = 0; i < mirror_pages.length; i++) {
+                for (String mirror_page : mirror_pages) {
                     /* Mirror Page zur weiteren Verarbeitung adden */
-                    decryptedLinks.add(createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "/parts/" + mirror_pages[i] + "/"));
+                    decryptedLinks.add(createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "/parts/" + mirror_page + "/"));
                 }
             }
 
@@ -110,11 +111,11 @@ public class Gwarezcc extends PluginForDecrypt {
                 password = password.trim();
             }
             progress.setRange(forms.length);
-            for (int ii = 0; ii < forms.length; ii++) {
+            for (Form form : forms) {
                 /* Parts decrypten und adden */
-                if (forms[ii].getAction().trim().startsWith("redirect")) {
+                if (form.getAction().trim().startsWith("redirect")) {
 
-                    br.submitForm(forms[ii]);
+                    br.submitForm(form);
 
                     String linkString = null;
 
@@ -136,9 +137,9 @@ public class Gwarezcc extends PluginForDecrypt {
                             Browser.download(captchaFile, rcBr.openGetConnection(captchaAddress));
                             String code = getCaptchaCode(captchaFile, this, param);
                             if (code == null) continue;
-                            forms[ii].put("recaptcha_challenge_field", challenge);
-                            forms[ii].put("recaptcha_response_field", code);
-                            br.submitForm(forms[ii]);
+                            form.put("recaptcha_challenge_field", challenge);
+                            form.put("recaptcha_response_field", code);
+                            br.submitForm(form);
                         }
                         Form cap = br.getForm(0);
                         URLConnectionAdapter con = br.cloneBrowser().openGetConnection("captcha/captcha.php");
@@ -189,6 +190,7 @@ public class Gwarezcc extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

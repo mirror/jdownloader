@@ -38,6 +38,7 @@ public class ProtectBoxIn extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -57,8 +58,8 @@ public class ProtectBoxIn extends PluginForDecrypt {
         form.put("button.y", p.y + "");
         br.submitForm(form);
         String[] links = br.getRegex("Link\\.php\\?url\\=(.*?)\"").getColumn(0);
-        for (int i = 0; i < links.length; i++) {
-            decryptedLinks.add(createDownloadlink(links[i]));
+        for (String link : links) {
+            decryptedLinks.add(createDownloadlink(link));
         }
         return decryptedLinks;
     }
