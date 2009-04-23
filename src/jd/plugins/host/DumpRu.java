@@ -48,10 +48,13 @@ public class DumpRu extends PluginForHost {
 
             // Filesize
 
-//            String size = br.getRegex(Pattern.compile("<span class=\"comment\">(.*&nbsp;.*)</span><br>")).getMatch(0);
-//            size = size.replaceAll("Кб", "KB").replaceAll("Mб", "MB"); <<< does NOT WORK ...
-//            System.out.println(size);
-//            downloadLink.setDownloadSize(Regex.getSize(size.replaceAll("Кб", "KB").replaceAll("Mб", "MB")));
+            // String size =
+            // br.getRegex(Pattern.compile("<span class=\"comment\">(.*&nbsp;.*)</span><br>")).getMatch(0);
+            // size = size.replaceAll("Кб", "KB").replaceAll("Mб", "MB"); <<<
+            // does NOT WORK ...
+            // System.out.println(size);
+            // downloadLink.setDownloadSize(Regex.getSize(size.replaceAll("Кб",
+            // "KB").replaceAll("Mб", "MB")));
 
             // Filename
             String name = br.getRegex("name_of_file\">\\s(.*?)</span>").getMatch(0).trim();
@@ -59,7 +62,7 @@ public class DumpRu extends PluginForHost {
 
             return true;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return false;
     }
@@ -71,12 +74,10 @@ public class DumpRu extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (!getFileInformation(downloadLink)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         br.submitForm(br.getForm(1));
         String link = br.getRegex(Pattern.compile("<a href=\"(http://.*?dump\\.ru/file_download/.*?)\">")).getMatch(0);
-        dl = br.openDownload(downloadLink,link);
+        dl = br.openDownload(downloadLink, link);
         dl.startDownload();
     }
 
@@ -96,6 +97,6 @@ public class DumpRu extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

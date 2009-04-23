@@ -57,7 +57,8 @@ public class GoogleGroups extends PluginForHost {
                 map.put(subd, link);
             }
         }
-   for(DownloadLink l:urls) l.setAvailable(false);
+        for (DownloadLink l : urls)
+            l.setAvailable(false);
         for (Entry<String, ArrayList<DownloadLink>> entry : map.entrySet()) {
             try {
                 br.getPage("http://groups.google.com/group/" + entry.getKey() + "/files");
@@ -67,7 +68,7 @@ public class GoogleGroups extends PluginForHost {
                     na = na.replaceFirst("googlegroups.com/web/.*", "googlegroups.com/web/") + URLEncoder.encode(na.replaceFirst("http://.*?\\.googlegroups.com/web/", ""), "UTF-8");
                     for (String[] strings : infos) {
                         if (strings[0].contains(na) || downloadLink.getName().equals(strings[1])) {
-                           
+
                             downloadLink.setAvailable(true);
                             downloadLink.setFinalFileName(strings[1]);
                             downloadLink.setDupecheckAllowed(true);
@@ -79,7 +80,7 @@ public class GoogleGroups extends PluginForHost {
                 }
             } catch (IOException e) {
                 // TODO Auto-generated catch block
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 return false;
             }
         }
@@ -124,6 +125,6 @@ public class GoogleGroups extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

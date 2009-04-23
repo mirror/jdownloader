@@ -73,7 +73,7 @@ public class FileFactory extends PluginForHost {
         try {
             handleFree0(parameter);
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
             if (e.getMessage() != null && e.getMessage().contains("502")) {
                 logger.severe("Filefactory returned Bad gateway.");
                 Thread.sleep(1000);
@@ -113,7 +113,7 @@ public class FileFactory extends PluginForHost {
                     Browser.download(captchaFile, Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(patternForCaptcha).getMatch(0)));
                     break;
                 } catch (IOException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     try {
                         Thread.sleep(200);
                     } catch (Exception e2) {

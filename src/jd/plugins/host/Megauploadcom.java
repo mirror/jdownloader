@@ -245,7 +245,7 @@ public class Megauploadcom extends PluginForHost {
             try {
                 id = getDownloadID(u);
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
             map.put("id" + i, id);
             i++;
@@ -316,7 +316,7 @@ public class Megauploadcom extends PluginForHost {
                 } catch (Exception e) {
                 }
             }
-        } catch (Exception e) {            
+        } catch (Exception e) {
             return false;
         }
         return true;
@@ -558,7 +558,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     @Override
-    public void reset_downloadlink(DownloadLink link) {        
+    public void reset_downloadlink(DownloadLink link) {
     }
 
     private void setConfigElements() {

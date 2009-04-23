@@ -76,7 +76,7 @@ public class RapidShareDe extends PluginForHost {
             } catch (Exception es) {
                 logger.severe("kann wartezeit nicht setzen");
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.rapidsharede.errors.cannotsetwaittime","Wait time could not be set"));
+                linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.rapidsharede.errors.cannotsetwaittime", "Wait time could not be set"));
                 return;
             }
         }
@@ -136,7 +136,7 @@ public class RapidShareDe extends PluginForHost {
         if (page.contains("Premium-Cookie nicht gefunden")) {
             linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
             linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.rapidsharede.errors.accountbad","Account not found or password wrong"));
+            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.rapidsharede.errors.accountbad", "Account not found or password wrong"));
             return;
 
         }
@@ -186,7 +186,7 @@ public class RapidShareDe extends PluginForHost {
             downloadLink.setName(regExp[0][0]);
             return true;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return false;
 
@@ -213,6 +213,6 @@ public class RapidShareDe extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

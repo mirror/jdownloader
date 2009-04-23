@@ -92,14 +92,14 @@ public class Netloadin extends PluginForHost {
             return;
         }
         if (br.containsHTML(FILE_DAMAGED)) {
-            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.fileondmgserver","File on damaged server"));
+            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"));
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
 
         if (!br.containsHTML(DOWNLOAD_START) || url == null) {
-            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.dlnotfound","Download link not found"));
+            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
             logger.severe(br.toString());
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             return;
@@ -107,14 +107,14 @@ public class Netloadin extends PluginForHost {
         url = url.replaceAll("\\&amp\\;", "&");
         br.getPage(url);
         if (br.containsHTML(FILE_DAMAGED)) {
-            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.fileondmgserver","File on damaged server"));
+            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"));
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
 
         if (!br.containsHTML(DOWNLOAD_CAPTCHA)) {
-            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.captchanotfound","Captcha not found"));
+            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.captchanotfound", "Captcha not found"));
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             return;
         }
@@ -134,7 +134,7 @@ public class Netloadin extends PluginForHost {
         File file = this.getLocalCaptchaFile(this);
         Browser c = br.cloneBrowser();
         Browser.download(file, c.openGetConnection(captchaURL));
-        captchaPost.put("captcha_check", getCaptchaCode(file,downloadLink));
+        captchaPost.put("captcha_check", getCaptchaCode(file, downloadLink));
         br.submitForm(captchaPost);
         if (br.containsHTML(FILE_NOT_FOUND)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -181,7 +181,7 @@ public class Netloadin extends PluginForHost {
         }
         if (br.containsHTML("unknown_file_data")) {
             logger.info("unknown_file_data");
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.netloadin.errors.damagedfile","Damaged file"));
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.netloadin.errors.damagedfile", "Damaged file"));
 
         }
 
@@ -299,7 +299,7 @@ public class Netloadin extends PluginForHost {
             checkErrors();
             String url = br.getRedirectLocation();
             if (url == null) url = br.getRegex("<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier.<\\/a>").getMatch(0);
-            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, JDLocale.L("plugins.hoster.netloadin.errors.dlnotfound","Download link not found"));
+            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, JDLocale.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
 
             con = br.createRequest(url);
 
@@ -328,7 +328,7 @@ public class Netloadin extends PluginForHost {
         }
         if (!dl.getConnection().isContentDisposition() && dl.getConnection().getResponseCode() != 206 && dl.getConnection().getResponseCode() != 416) {
             // Serverfehler
-            if (br.followConnection() == null) throw new PluginException(LinkStatus.ERROR_RETRY, JDLocale.L("plugins.hoster.netloadin.errors.couldnotfollow","Server: could not follow the link"));
+            if (br.followConnection() == null) throw new PluginException(LinkStatus.ERROR_RETRY, JDLocale.L("plugins.hoster.netloadin.errors.couldnotfollow", "Server: could not follow the link"));
             checkPassword(downloadLink);
             checkErrors();
         }
@@ -349,7 +349,7 @@ public class Netloadin extends PluginForHost {
 
     private void checkErrors() throws PluginException {
         if (br.containsHTML(FILE_NOT_FOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(FILE_DAMAGED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.netloadin.errors.fileondmgserver","File on damaged server"), 20 * 60 * 1000l);
+        if (br.containsHTML(FILE_DAMAGED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"), 20 * 60 * 1000l);
     }
 
     @Override
@@ -383,7 +383,7 @@ public class Netloadin extends PluginForHost {
                 downloadLink.setDownloadSize((int) Regex.getSize(entries[1] + " bytes"));
                 downloadLink.setFinalFileName(entries[0]);
                 downloadLink.setDupecheckAllowed(true);
-                fileStatusText = JDLocale.L("plugins.hoster.netloadin.errors.mightbeoffline","Might be offline");
+                fileStatusText = JDLocale.L("plugins.hoster.netloadin.errors.mightbeoffline", "Might be offline");
                 return true;
             }
 
@@ -400,7 +400,7 @@ public class Netloadin extends PluginForHost {
         } catch (PluginException e2) {
             throw e2;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }

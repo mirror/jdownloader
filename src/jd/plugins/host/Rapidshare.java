@@ -293,7 +293,7 @@ public class Rapidshare extends PluginForHost {
             }
             return true;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
             System.err.println(br);
             return false;
         }
@@ -374,7 +374,7 @@ public class Rapidshare extends PluginForHost {
                     try {
                         waitTime = new Long(waitfor.trim()) * 60 * 1000l;
                     } catch (Exception e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                        logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     }
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
                 }
@@ -415,7 +415,7 @@ public class Rapidshare extends PluginForHost {
                 try {
                     waitTime = new Long(waitfor.trim()) * 60 * 1000l;
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
 

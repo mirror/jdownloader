@@ -55,7 +55,7 @@ public class ArchivTo extends PluginForHost {
 
             return true;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return false;
     }
@@ -98,6 +98,6 @@ public class ArchivTo extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

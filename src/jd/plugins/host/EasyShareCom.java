@@ -75,7 +75,7 @@ public class EasyShareCom extends PluginForHost {
         try {
             ai.setValidUntil(isExpired(account).getTime());
         } catch (PluginException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
             ai.setValid(false);
             ai.setExpired(true);
             return ai;

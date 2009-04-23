@@ -79,8 +79,7 @@ public class CryptingCC extends PluginForDecrypt {
             /* Container */
             if (!getContainer(page, parameter, "dlc", decryptedLinks)) {
                 if (!getContainer(page, parameter, "ccf", decryptedLinks)) {
-                    if (getContainer(page, parameter, "rsdf", decryptedLinks))
-                    ;
+                    getContainer(page, parameter, "rsdf", decryptedLinks);
                 }
             }
             /* No Container */

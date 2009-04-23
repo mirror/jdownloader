@@ -75,13 +75,13 @@ public class RelinkUs extends PluginForDecrypt {
                 progress.increase(1);
             } catch (Exception e) {
                 // TODO Auto-generated catch block
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
         }
     }
 
     @Override
-    public  ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
 
         this.progress = progress;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
