@@ -31,7 +31,6 @@ import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
@@ -83,7 +82,7 @@ public class UCMS extends PluginForDecrypt {
                         captchaFile = getLocalCaptchaFile(this);
                         Browser.download(captchaFile, captchaAdress);
                         capTxt = this.getCaptchaCode("hardcoremetal.biz", captchaFile, param);
-                       
+
                         String posthelp = HTMLParser.getFormInputHidden(element[2]);
                         if (element[0].startsWith("http")) {
                             br.postPage(element[0], posthelp + "&code=" + capTxt);
@@ -152,13 +151,11 @@ public class UCMS extends PluginForDecrypt {
                 }
             }
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             return null;
         }
         return decryptedLinks;
     }
-
- 
 
     @Override
     public String getVersion() {

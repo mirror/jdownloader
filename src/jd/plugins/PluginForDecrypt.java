@@ -35,7 +35,6 @@ import jd.nutils.Formatter;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
-import jd.plugins.decrypt.BestMovies;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -186,29 +185,38 @@ public abstract class PluginForDecrypt extends Plugin {
         progress.finalize();
         return tmpLinks;
     }
+
     protected String getCaptchaCode(File captchaFile, Plugin plg, CryptedLink param) throws PluginException, InterruptedException {
-      
+
         return this.getCaptchaCode(plg.getHost(), captchaFile, 0, param, null, null);
     }
+
     public String getCaptchaCode(String methodname, File captchaFile, CryptedLink param) throws PluginException, InterruptedException {
         return this.getCaptchaCode(methodname, captchaFile, 0, param, null, null);
     }
+
     /**
      * 
-     * @param method  Method name (name of the captcha method)
-     * @param file (imagefile)
-     * @param flag  (Flag of  UserIO.FLAGS
-     * @param link  (CryptedlinkO)
-     * @param defaultValue  (suggest this code)
-     * @param explain  (Special captcha? needs explaination? then use this parameter)
+     * @param method
+     *            Method name (name of the captcha method)
+     * @param file
+     *            (imagefile)
+     * @param flag
+     *            (Flag of UserIO.FLAGS
+     * @param link
+     *            (CryptedlinkO)
+     * @param defaultValue
+     *            (suggest this code)
+     * @param explain
+     *            (Special captcha? needs explaination? then use this parameter)
      * @return
      * @throws PluginException
      * @throws InterruptedException
      */
-    public String getCaptchaCode(String method, File file, int flag, CryptedLink link,String defaultValue,String explain) throws PluginException, InterruptedException {
+    public String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws PluginException, InterruptedException {
         link.getProgressController().setStatusText(JDLocale.LF("gui.linkgrabber.waitinguserio", "Waiting for user input: %s", method));
 
-        String cc = new CaptchaController(method, file,defaultValue,explain).getCode(flag);
+        String cc = new CaptchaController(method, file, defaultValue, explain).getCode(flag);
         link.getProgressController().setStatusText(null);
         if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         return cc;

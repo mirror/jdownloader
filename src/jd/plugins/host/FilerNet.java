@@ -26,7 +26,6 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -62,7 +61,7 @@ public class FilerNet extends PluginForHost {
         while (tries < maxCaptchaTries) {
             File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
             Browser.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
-            code = getCaptchaCode(captchaFile,  downloadLink);
+            code = getCaptchaCode(captchaFile, downloadLink);
             page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
             tries++;
             if (!page.contains("captcha.png")) {
@@ -83,7 +82,7 @@ public class FilerNet extends PluginForHost {
         }
 
         br.setFollowRedirects(false);
-        if (br.toString().contains("Momentan sind die Limits f")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.filernet.errors.nofreeslots","All free user slots occupied"), 10 * 1000 * 60l);
+        if (br.toString().contains("Momentan sind die Limits f")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.filernet.errors.nofreeslots", "All free user slots occupied"), 10 * 1000 * 60l);
         String wait = new Regex(br, "Bitte warten Sie ([\\d]*?) Min bis zum").getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, new Long(wait) * 1000 * 60l);
 
@@ -112,6 +111,7 @@ public class FilerNet extends PluginForHost {
         }
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
@@ -177,7 +177,9 @@ public class FilerNet extends PluginForHost {
              * .setDownloadSize(urlConnection.getLongContentLength());
              * downloadLink.setDupecheckAllowed(true);
              * urlConnection.disconnect(); } catch (IOException e) {
-             * jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e); } return true;
+             * jd.controlling
+             * .JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+             * ,"Exception occured",e); } return true;
              */
         }
 
@@ -193,7 +195,7 @@ public class FilerNet extends PluginForHost {
                 br.getPage(downloadLink.getDownloadURL());
                 captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
                 Browser.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
-                code = getCaptchaCode(captchaFile, this, downloadLink);
+                code = getCaptchaCode(captchaFile, downloadLink);
                 page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
                 if (Regex.matches(page, PATTERN_MATCHER_ERROR)) { return false; }
                 if (downloadLink.getDownloadSize() == 0) {
@@ -213,16 +215,11 @@ public class FilerNet extends PluginForHost {
                 }
                 return true;
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
             tries++;
         }
         return false;
-    }
-
-    @Override
-    public String getFileInformationString(DownloadLink downloadLink) {
-        return downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")";
     }
 
     @Override
@@ -244,12 +241,9 @@ public class FilerNet extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-
     }
 
     @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-        
     }
 }

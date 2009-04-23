@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -44,7 +43,7 @@ public class BluehostTo extends PluginForHost {
     }
 
     private void login(Account account) throws Exception {
-        this.setBrowserExclusive();        
+        this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.setCookie("http://bluehost.to", "bluehost_lang", "DE");
         br.postPage("http://bluehost.to/premiumlogin.php", "loginname=" + Encoding.urlEncode(account.getUser()) + "&loginpass=" + Encoding.urlEncode(account.getPass()));
@@ -180,11 +179,6 @@ public class BluehostTo extends PluginForHost {
     }
 
     @Override
-    public String getFileInformationString(DownloadLink downloadLink) {
-        return downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")";
-    }
-
-    @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -205,6 +199,6 @@ public class BluehostTo extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

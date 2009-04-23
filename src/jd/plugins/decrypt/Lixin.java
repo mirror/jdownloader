@@ -27,7 +27,6 @@ import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 public class Lixin extends PluginForDecrypt {

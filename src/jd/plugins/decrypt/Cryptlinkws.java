@@ -28,7 +28,6 @@ import jd.http.HTMLEntities;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 public class Cryptlinkws extends PluginForDecrypt {
@@ -50,7 +49,7 @@ public class Cryptlinkws extends PluginForDecrypt {
             br.getPage(parameter);
             String link = br.getRegex("unescape\\(('|\")(.*?)('|\")\\)").getMatch(1);
             link = fixLink(Encoding.htmlDecode(link));
-            
+
             br.getPage("http://www.cryptlink.ws/" + link);
             link = br.getRegex("unescape\\(('|\")(.*?)('|\")\\)").getMatch(1);
             link = fixLink(Encoding.htmlDecode(link));

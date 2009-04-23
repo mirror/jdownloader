@@ -28,7 +28,6 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -66,7 +65,7 @@ public class RapidSharkPl extends PluginForHost {
             URLConnectionAdapter con = br.openGetConnection(captchaurl);
             File file = this.getLocalCaptchaFile(this);
             Browser.download(file, con);
-            String code = getCaptchaCode("fileload.us", file,downloadLink);
+            String code = getCaptchaCode("fileload.us", file, downloadLink);
             form.put("code", code);
             form.setAction(downloadLink.getDownloadURL());
             // Ticket Time
@@ -74,7 +73,7 @@ public class RapidSharkPl extends PluginForHost {
             br.submitForm(form);
             URLConnectionAdapter con2 = br.getHttpConnection();
             String dllink = br.getRedirectLocation();
-            if (con2.getContentType().contains("html")) {               
+            if (con2.getContentType().contains("html")) {
                 String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
                 if (error != null) {
                     logger.warning(error);
@@ -83,9 +82,8 @@ public class RapidSharkPl extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
                     }
-                }                
-                if (br.containsHTML("Download Link Generated"))
-                    dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);                
+                }
+                if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
             }
             dl = br.openDownload(downloadLink, dllink);
             dl.startDownload();
@@ -110,7 +108,7 @@ public class RapidSharkPl extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        //br.setCookie("http://rapidshark.pl/", "lang", "english");
+        // br.setCookie("http://rapidshark.pl/", "lang", "english");
         br.getPage("http://www.rapidshark.pl/?op=change_lang&lang=english");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -137,8 +135,6 @@ public class RapidSharkPl extends PluginForHost {
 
     @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-        
     }
 
 }

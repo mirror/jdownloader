@@ -21,12 +21,10 @@ import java.io.File;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -51,20 +49,14 @@ public class FilesTo extends PluginForHost {
                 return true;
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         downloadLink.setAvailable(false);
         return false;
     }
 
     @Override
-    public String getFileInformationString(DownloadLink downloadLink) {
-        return downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")";
-    }
-
-    @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
@@ -89,6 +81,7 @@ public class FilesTo extends PluginForHost {
         br.openDownload(downloadLink, url, true, 1).startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
@@ -103,8 +96,6 @@ public class FilesTo extends PluginForHost {
 
     @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-        
     }
 
 }

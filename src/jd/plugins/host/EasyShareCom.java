@@ -17,7 +17,6 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -54,7 +53,7 @@ public class EasyShareCom extends PluginForHost {
 
     }
 
-    private Date isexpired(Account account) throws MalformedURLException, PluginException {
+    private Date isExpired(Account account) throws MalformedURLException, PluginException {
         HashMap<String, Cookie> cookies = br.getCookies().get("easy-share.com");
         Cookie premstatus = cookies.get("PREMIUMSTATUS");
         if (premstatus == null || !premstatus.getValue().equalsIgnoreCase("ACTIVE")) {
@@ -64,6 +63,7 @@ public class EasyShareCom extends PluginForHost {
         return premstatus.getExpires();
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -73,9 +73,9 @@ public class EasyShareCom extends PluginForHost {
             return ai;
         }
         try {
-            ai.setValidUntil(isexpired(account).getTime());
+            ai.setValidUntil(isExpired(account).getTime());
         } catch (PluginException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             ai.setValid(false);
             ai.setExpired(true);
             return ai;
@@ -141,17 +141,17 @@ public class EasyShareCom extends PluginForHost {
         dl.startDownload();
     }
 
-
-
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         login(account);
-        isexpired(account);
+        isExpired(account);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), true, 0);
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
@@ -166,7 +166,5 @@ public class EasyShareCom extends PluginForHost {
 
     @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-        
     }
 }

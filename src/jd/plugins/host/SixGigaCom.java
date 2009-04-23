@@ -28,7 +28,6 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -74,7 +73,7 @@ public class SixGigaCom extends PluginForHost {
             br.submitForm(form);
             URLConnectionAdapter con2 = br.getHttpConnection();
             String dllink = br.getRedirectLocation();
-            if (con2.getContentType().contains("html")) {               
+            if (con2.getContentType().contains("html")) {
                 String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
                 if (error != null) {
                     logger.warning(error);
@@ -83,9 +82,8 @@ public class SixGigaCom extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
                     }
-                }                
-                if (br.containsHTML("Download Link Generated"))
-                    dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);                
+                }
+                if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
             }
             dl = br.openDownload(downloadLink, dllink);
             dl.startDownload();
@@ -135,8 +133,6 @@ public class SixGigaCom extends PluginForHost {
 
     @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-        
     }
 
 }

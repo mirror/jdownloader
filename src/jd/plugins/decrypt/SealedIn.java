@@ -29,7 +29,6 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
@@ -56,7 +55,7 @@ public class SealedIn extends PluginForDecrypt {
                     String url = br.getRegex("(captcha\\-.*?\\.gif)").getMatch(0);
                     File captchaFile = this.getLocalCaptchaFile(this);
                     Browser.download(captchaFile, br.cloneBrowser().openGetConnection(url));
-                    String captchaCode = getCaptchaCode(this, "linkcrypt.com", captchaFile, false, param);
+                    String captchaCode = getCaptchaCode("linkcrypt.com", captchaFile, param);
                     if (captchaCode == null) return null;
                     f.put("captcha", captchaCode);
                 }

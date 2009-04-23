@@ -24,7 +24,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -156,7 +155,7 @@ public class DepositFiles extends PluginForHost {
             date = dateFormat.parse(expire);
             ai.setValidUntil(date.getTime());
         } catch (ParseException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
 
         return ai;
@@ -236,11 +235,6 @@ public class DepositFiles extends PluginForHost {
     }
 
     @Override
-    public String getFileInformationString(DownloadLink downloadLink) {
-        return downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")";
-    }
-
-    @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -268,7 +262,7 @@ public class DepositFiles extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

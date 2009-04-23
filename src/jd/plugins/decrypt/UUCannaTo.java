@@ -26,7 +26,6 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 public class UUCannaTo extends PluginForDecrypt {
@@ -47,7 +46,7 @@ public class UUCannaTo extends PluginForDecrypt {
             String captchaUrl = br.getRegex("<img\\s+src=\"(captcha/captcha\\.php\\?id=[\\d]+)\"").getMatch(0);
             File captchaFile = this.getLocalCaptchaFile(this);
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
-            String captchaCode = getCaptchaCode(captchaFile, this, param);            
+            String captchaCode = getCaptchaCode(captchaFile, this, param);
             captchaForm.put("sicherheitscode", captchaCode);
             br.submitForm(captchaForm);
 

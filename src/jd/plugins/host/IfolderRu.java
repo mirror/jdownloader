@@ -27,7 +27,6 @@ import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
@@ -48,8 +47,7 @@ public class IfolderRu extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
 
-        if (br.containsHTML("<p>Файл номер <b>\\d+</b> удален !!!</p>") || br.containsHTML("<p>Файл номер <b>\\d+</b> не найден !!!</p>"))
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<p>Файл номер <b>\\d+</b> удален !!!</p>") || br.containsHTML("<p>Файл номер <b>\\d+</b> не найден !!!</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = br.getRegex("Название:\\s+<b>(.*?)</b>").getMatch(0);
         String filesize = br.getRegex("Размер:\\s+<b>(.*?)</b>").getMatch(0);
@@ -67,7 +65,7 @@ public class IfolderRu extends PluginForHost {
 
         String watchAd = br.getRegex("http://ints\\.ifolder\\.ru/ints/\\?(.*?)\"").getMatch(0);
         if (watchAd != null) {
-            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.ifolderru.errors.ticketwait","Waiting for ticket"));
+            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.ifolderru.errors.ticketwait", "Waiting for ticket"));
             watchAd = "http://ints.ifolder.ru/ints/?".concat(watchAd);
             br.getPage(watchAd);
             watchAd = br.getRegex("<font size=\"\\+1\"><a href=(.*?)>").getMatch(0);
@@ -101,7 +99,7 @@ public class IfolderRu extends PluginForHost {
             URLConnectionAdapter con = br.openGetConnection(captchaurl);
             File file = this.getLocalCaptchaFile(this);
             Browser.download(file, con);
-            String captchaCode = getCaptchaCode(file,downloadLink);
+            String captchaCode = getCaptchaCode(file, downloadLink);
             captchaForm.put("confirmed_number", captchaCode);
 
             br.submitForm(captchaForm);
@@ -116,7 +114,8 @@ public class IfolderRu extends PluginForHost {
         }
         if (do_download) {
             dl.startDownload();
-        } else throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
     }
 
     @Override
@@ -136,8 +135,6 @@ public class IfolderRu extends PluginForHost {
 
     @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
 
 }

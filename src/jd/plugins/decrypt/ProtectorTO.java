@@ -31,7 +31,6 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
@@ -63,7 +62,7 @@ public class ProtectorTO extends PluginForDecrypt {
          * 
          * String link = "dlc://protector.to/container/" + currentDate + "/" +
          * folderID + "_1.dlc"; decryptedLinks.add(createDownloadlink(link));
-         */        
+         */
         synchronized (lock) {
             if (param.getStringProperty("referer", null) != null) {
                 br.getHeaders().put("Referer", param.getStringProperty("referer", null));
@@ -71,7 +70,7 @@ public class ProtectorTO extends PluginForDecrypt {
             if (param.getProperty("protector_cookies", null) != null) {
                 br.getCookies().putAll((HashMap<String, HashMap<String, Cookie>>) param.getProperty("protector_cookies", null));
             }
-            br.getPage(parameter+"?jd=1");
+            br.getPage(parameter + "?jd=1");
             if (br.getRedirectLocation() != null) {
                 DownloadLink dl;
                 decryptedLinks.add(dl = createDownloadlink(br.getRedirectLocation()));

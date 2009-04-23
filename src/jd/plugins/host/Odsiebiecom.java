@@ -24,14 +24,11 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 
 public class Odsiebiecom extends PluginForHost {
-
-    private String downloadurl;
 
     public Odsiebiecom(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,6 +64,7 @@ public class Odsiebiecom extends PluginForHost {
         /* Nochmals das File überprüfen */
         String finalfn = downloadLink.getName();
         getFileInformation(downloadLink);
+        String downloadurl;
         /*
          * Zuerst schaun ob wir nen Button haben oder direkt das File vorhanden
          * ist
@@ -103,7 +101,7 @@ public class Odsiebiecom extends PluginForHost {
                 }
                 if (adr == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 File file = br.cloneBrowser().getDownloadTemp(adr);
-                String code = getCaptchaCode(file,downloadLink);
+                String code = getCaptchaCode(file, downloadLink);
                 capform.getInputFieldByName("captcha").setValue(code);
                 br.submitForm(capform);
                 capform = br.getFormbyProperty("name", "wer");
@@ -132,7 +130,7 @@ public class Odsiebiecom extends PluginForHost {
         dl = br.openDownload(downloadLink, downloadurl, false, 1);
         if (dl.getConnection().getContentType().contains("text")) {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.odsiebiecom.errors.servererror","Server error"));
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.odsiebiecom.errors.servererror", "Server error"));
         }
         downloadLink.setFinalFileName(finalfn);
         dl.startDownload();
@@ -153,8 +151,6 @@ public class Odsiebiecom extends PluginForHost {
 
     @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-        
     }
 
 }

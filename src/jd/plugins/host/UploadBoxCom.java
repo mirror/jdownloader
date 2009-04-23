@@ -24,7 +24,6 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -71,7 +70,7 @@ public class UploadBoxCom extends PluginForHost {
         if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         URLConnectionAdapter con = br.cloneBrowser().openGetConnection(captchaUrl);
         Browser.download(file, con);
-        String code = getCaptchaCode(file,link);
+        String code = getCaptchaCode(file, link);
         form.put("enter", code);
         br.submitForm(form);
         if (br.containsHTML("read the captcha code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -84,7 +83,6 @@ public class UploadBoxCom extends PluginForHost {
 
     @Override
     public void reset() {
-        // TODO Auto-generated method stub
     }
 
     @Override
@@ -99,8 +97,6 @@ public class UploadBoxCom extends PluginForHost {
 
     @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-        
     }
 
 }

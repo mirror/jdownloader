@@ -331,11 +331,11 @@ public abstract class PluginForHost extends Plugin {
      * überschrieben werden. So kann ein Plugin zusatzinfos zu seinen Links
      * anzeigen (Nach dem aufruf von getFileInformation()
      * 
-     * @param parameter
+     * @param downloadLink
      * @return
      */
-    public String getFileInformationString(DownloadLink parameter) {
-        return "";
+    public String getFileInformationString(DownloadLink downloadLink) {
+        return downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")";
     }
 
     public synchronized int getFreeConnections() {

@@ -29,7 +29,6 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
@@ -81,14 +80,14 @@ public class ShareNownet extends PluginForHost {
             File captchaFile = getLocalCaptchaFile(this);
             br.getDownload(captchaFile, "http://share-now.net/captcha.php?id=" + form.getInputFieldByName("download").getValue());
             /* CaptchaCode holen */
-            String captchaCode = getCaptchaCode(captchaFile,downloadLink);
+            String captchaCode = getCaptchaCode(captchaFile, downloadLink);
             form.put("Submit", "Download+Now");
             form.put("captcha", captchaCode);
         }
         /* DownloadLink holen/Captcha check */
         dl = br.openDownload(downloadLink, form);
         if (!dl.getConnection().isContentDisposition() || dl.getRequest().getLocation() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (dl.getConnection().isContentDisposition() && dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.sharenownet.errors.servererror","Server Error"));
+        if (dl.getConnection().isContentDisposition() && dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.sharenownet.errors.servererror", "Server Error"));
         /* Datei herunterladen */
         dl.startDownload();
     }
@@ -116,6 +115,7 @@ public class ShareNownet extends PluginForHost {
         }
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -141,6 +141,7 @@ public class ShareNownet extends PluginForHost {
         return ai;
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
@@ -155,8 +156,6 @@ public class ShareNownet extends PluginForHost {
 
     @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-        
     }
 
 }

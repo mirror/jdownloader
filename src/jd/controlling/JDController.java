@@ -38,7 +38,6 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.update.FileUpdate;
@@ -434,8 +433,6 @@ public class JDController implements ControlListener {
         ControlEvent c = new ControlEvent(this, controlID, param);
         fireControlEvent(c);
     }
-
-
 
     /**
      * Gibt den Status (ID) der downloads zurück

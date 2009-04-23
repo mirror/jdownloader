@@ -27,14 +27,12 @@ import jd.config.SubConfiguration;
 import jd.controlling.reconnect.Reconnecter;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
@@ -52,7 +50,7 @@ public class FileFactory extends PluginForHost {
     private static final String NOT_AVAILABLE = "class=\"box error\"";
     private static final String PATTERN_DOWNLOADING_TOO_MANY_FILES = "currently downloading too many files at once";
     private static final String WAIT_TIME = "have exceeded the download limit for free users.  Please wait ([0-9]+) minutes to download more files";
-    
+
     private static final String LOGIN_ERROR = "The email or password you have entered is incorrect";
 
     private static Pattern patternForCaptcha = Pattern.compile("<img class=\"captchaImage\" src=\"(.*?)\"");
@@ -65,6 +63,7 @@ public class FileFactory extends PluginForHost {
         this.enablePremium("http://www.filefactory.com/info/premium.php");
     }
 
+    @Override
     public int getTimegapBetweenConnections() {
         return 200;
     }
@@ -74,7 +73,7 @@ public class FileFactory extends PluginForHost {
         try {
             handleFree0(parameter);
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             if (e.getMessage() != null && e.getMessage().contains("502")) {
                 logger.severe("Filefactory returned Bad gateway.");
                 Thread.sleep(1000);
@@ -114,7 +113,7 @@ public class FileFactory extends PluginForHost {
                     Browser.download(captchaFile, Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(patternForCaptcha).getMatch(0)));
                     break;
                 } catch (IOException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     try {
                         Thread.sleep(200);
                     } catch (Exception e2) {
@@ -180,10 +179,12 @@ public class FileFactory extends PluginForHost {
 
     }
 
+    @Override
     public int getMaxRetries() {
         return 20;
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
@@ -210,25 +211,26 @@ public class FileFactory extends PluginForHost {
         }
         expire = expire.replace("th", "");
         ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM, yyyy", Locale.UK));
-        
+
         br.getPage("http://www.filefactory.com/reward/summary.php");
         String points = br.getMatch("Available reward points.*?class=\"amount\">(.*?) points").replaceAll("\\,", "");
         ai.setPremiumPoints(Long.parseLong(points.trim()));
 
-        /*br.getPage("http://www.filefactory.com/members/details/premium/usage/");
+        /*
+         * br.getPage("http://www.filefactory.com/members/details/premium/usage/"
+         * );
+         * 
+         * String[] dat =br.getRegex(
+         * "You have downloaded (.*?) in the last 24 hours.*?Your daily limit is (.*?), and your download usage will be reset "
+         * ).getRow(0); long gone; if (dat == null && Regex.matches(br,
+         * "You have not downloaded anything")) {
+         * 
+         * gone = 0; } else {
+         * 
+         * gone = Regex.getSize(dat[0].replace(",", "")); } ai.setTrafficMax(12
+         * 1024 1024 1024l); ai.setTrafficLeft(12 1024 1024 1024l - gone);
+         */
 
-        String[] dat = br.getRegex("You have downloaded (.*?) in the last 24 hours.*?Your daily limit is (.*?), and your download usage will be reset ").getRow(0);
-        long gone;
-        if (dat == null && Regex.matches(br, "You have not downloaded anything")) {
-
-            gone = 0;
-        } else {
-
-            gone = Regex.getSize(dat[0].replace(",", ""));
-        }
-        ai.setTrafficMax(12 * 1024 * 1024 * 1024l);
-        ai.setTrafficLeft(12 * 1024 * 1024 * 1024l - gone);*/
-        
         return ai;
     }
 
@@ -253,10 +255,9 @@ public class FileFactory extends PluginForHost {
         login.put("password", account.getPass());
         br.submitForm(login);
         br.setFollowRedirects(true);
-        
-        if (br.getRegex(LOGIN_ERROR).getMatch(0) != null)
-        	throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGIN_ERROR, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        
+
+        if (br.getRegex(LOGIN_ERROR).getMatch(0) != null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGIN_ERROR, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+
         br.setFollowRedirects(false);
         br.openGetConnection(downloadLink.getDownloadURL());
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
@@ -315,8 +316,8 @@ public class FileFactory extends PluginForHost {
             return false;
         } else {
             if (br.containsHTML("there are currently no free download slots")) {
-                downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("plugins.hoster.filefactorycom.errors.nofreeslots","No slots free available"));
-                downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.filefactorycom.errors.nofreeslots","No slots free available"));
+                downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("plugins.hoster.filefactorycom.errors.nofreeslots", "No slots free available"));
+                downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.filefactorycom.errors.nofreeslots", "No slots free available"));
             } else {
                 if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 String fileName = Encoding.htmlDecode(new Regex(br.toString().replaceAll("\\&\\#8203\\;", ""), FILENAME).getMatch(0));
@@ -333,13 +334,7 @@ public class FileFactory extends PluginForHost {
     }
 
     @Override
-    public String getFileInformationString(DownloadLink downloadLink) {
-        return downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")";
-    }
-
-    @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
@@ -347,6 +342,7 @@ public class FileFactory extends PluginForHost {
     public void init() {
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
@@ -361,8 +357,6 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-        
     }
 
 }

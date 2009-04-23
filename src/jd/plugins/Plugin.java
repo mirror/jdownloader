@@ -33,7 +33,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
-import jd.controlling.CaptchaController;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
@@ -72,8 +71,6 @@ public abstract class Plugin implements ActionListener {
         return JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
     }
 
-  
-
     public static ConversionMode DisplayDialog(ArrayList<ConversionMode> displaymodes, String name, CryptedLink link) throws InterruptedException {
         link.getProgressController().setStatusText(JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
         synchronized (JDUtilities.userio_lock) {
@@ -82,8 +79,6 @@ public abstract class Plugin implements ActionListener {
             return temp;
         }
     }
-
-
 
     public static String getUserInput(String message, CryptedLink link) throws DecrypterException, InterruptedException {
         String password = JDUtilities.getUserInput(message, link);

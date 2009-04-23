@@ -29,7 +29,6 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
@@ -47,42 +46,42 @@ public class CryptingCC extends PluginForDecrypt {
         String page = br.getPage(parameter);
         Form f = br.getForm(0);
         boolean do_continue = false;
-        
-        if (f != null) {           
+
+        if (f != null) {
             for (int retrycnt = 1; retrycnt <= 5; retrycnt++) {
-                
-                /* Captcha */                
+
+                /* Captcha */
                 if (f.hasInputFieldByName("captcha")) {
                     String url = br.getRegex("(captcha\\-.*?\\.gif)").getMatch(0);
                     File captchaFile = this.getLocalCaptchaFile(this);
                     Browser.download(captchaFile, br.cloneBrowser().openGetConnection(url));
-                    String captchaCode = getCaptchaCode(this, "linkcrypt.com", captchaFile, false, param);
+                    String captchaCode = getCaptchaCode("linkcrypt.com", captchaFile, param);
                     if (captchaCode == null) return null;
                     f.put("captcha", captchaCode);
                 }
-                
+
                 /* Folder password */
                 if (f.hasInputFieldByName("passw")) {
                     String pass = getUserInput(null, param);
                     f.put("passw", pass);
                 }
-                
+
                 page = br.submitForm(f);
-                
+
                 if (!br.containsHTML("class=\"error\">")) {
                     do_continue = true;
                     break;
-                }           
+                }
             }
         }
-        
-        
+
         if (do_continue || f == null) {
             /* Container */
             if (!getContainer(page, parameter, "dlc", decryptedLinks)) {
-               if (!getContainer(page, parameter, "ccf", decryptedLinks)) {
-                  if (getContainer(page, parameter, "rsdf", decryptedLinks)); 
-               }
+                if (!getContainer(page, parameter, "ccf", decryptedLinks)) {
+                    if (getContainer(page, parameter, "rsdf", decryptedLinks))
+                    ;
+                }
             }
             /* No Container */
             if (decryptedLinks.size() == 0) {
@@ -91,10 +90,14 @@ public class CryptingCC extends PluginForDecrypt {
                     Browser tab;
                     tab = br.cloneBrowser();
                     progress.setRange(ids.length);
-                    for (String id : ids) {                    
+                    for (String id : ids) {
                         tab.getPage("pl-" + id);
-                        //decryptedLinks.addAll(new DistributeData(tab.toString()).findLinks(false));
-                        /* Use next 2 lines instead of last line if decrypter uses iframes */
+                        // decryptedLinks.addAll(new
+                        // DistributeData(tab.toString()).findLinks(false));
+                        /*
+                         * Use next 2 lines instead of last line if decrypter
+                         * uses iframes
+                         */
                         String link = tab.getRegex("<iframe .*? src=\"(.*?)\">").getMatch(0);
                         decryptedLinks.add(createDownloadlink(link));
                         progress.increase(1);
@@ -109,14 +112,14 @@ public class CryptingCC extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-    
+
     private boolean getContainer(String page, String cryptedLink, String containerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {
         String container_link = new Regex(page, "href=\"(" + containerFormat + "/[a-z0-9]+)\"").getMatch(0);
         if (container_link != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
             Browser browser = br.cloneBrowser();
             browser.getDownload(container, "http://crypting.cc/" + Encoding.htmlDecode(container_link));
-            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));            
+            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
             container.delete();
             return true;
         }

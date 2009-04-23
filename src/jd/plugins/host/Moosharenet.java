@@ -33,11 +33,11 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 public class Moosharenet extends PluginForHost {
+
     public Moosharenet(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://mooshare.net/?section=becomemember");
@@ -59,6 +59,7 @@ public class Moosharenet extends PluginForHost {
         }
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -89,8 +90,9 @@ public class Moosharenet extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        getFileInformation(downloadLink);
         login(account);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
@@ -129,7 +131,7 @@ public class Moosharenet extends PluginForHost {
         br.submitForm(form);
         String filename = br.getRegex(Pattern.compile(">Datei</td>.*?<td.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         String filesize = br.getRegex(Pattern.compile(">Gr.*?e</td>.*?<td.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return true;
@@ -158,7 +160,7 @@ public class Moosharenet extends PluginForHost {
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        String captchaCode = getCaptchaCode(captchaFile,downloadLink);
+        String captchaCode = getCaptchaCode(captchaFile, downloadLink);
         Form form = br.getForm(1);
         form.put("captcha", captchaCode);
         br.setFollowRedirects(false);
@@ -178,6 +180,7 @@ public class Moosharenet extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 5;
     }
@@ -193,8 +196,6 @@ public class Moosharenet extends PluginForHost {
 
     @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-        
     }
 
 }

@@ -29,7 +29,6 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
@@ -71,6 +70,7 @@ public class LetitBitNet extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         Form form = br.getForm(3);
@@ -119,7 +119,7 @@ public class LetitBitNet extends PluginForHost {
         br.submitForm(down);
         // if we cannot bypass, ask user for entering captcha code
         if (!br.containsHTML("<frame")) {
-            String code = getCaptchaCode("letitbit.net", file,  downloadLink);
+            String code = getCaptchaCode("letitbit.net", file, downloadLink);
             down.put("cap", code);
             down.put("uid2", id2);
             down.setAction("http://letitbit.net/download3.php");
@@ -139,6 +139,7 @@ public class LetitBitNet extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
@@ -153,7 +154,5 @@ public class LetitBitNet extends PluginForHost {
 
     @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-        
     }
 }

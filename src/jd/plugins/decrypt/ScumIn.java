@@ -24,7 +24,6 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 public class ScumIn extends PluginForDecrypt {
