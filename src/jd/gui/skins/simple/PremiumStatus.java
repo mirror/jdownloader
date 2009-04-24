@@ -1,6 +1,8 @@
 package jd.gui.skins.simple;
 
 import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
@@ -11,6 +13,7 @@ import java.util.logging.Logger;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.Timer;
 
 import jd.HostPluginWrapper;
 import jd.config.SubConfiguration;
@@ -29,7 +32,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class PremiumStatus extends JPanel implements ControlListener, AccountListener {
+public class PremiumStatus extends JPanel implements ControlListener, AccountListener, ActionListener {
 
     private static final long serialVersionUID = 7290466989514173719L;
     private static final long UNLIMITED = 10l * 1024l * 1024l * 1024l;
@@ -40,19 +43,23 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
     private TinyProgressBar[] bars;
 
     private long trafficTotal = 0l;
-    private Thread refresher;
+    private Timer refresher;
     private JLabel lbl;
-    private Thread cacheWait;
     private Logger logger;
     private SubConfiguration config;
     private String MAP_PROP = "MAP2";
     private String MAPSIZE_PROP = "MAPSIZE2";
+    private Object Lock = new Object();
 
     @SuppressWarnings("unchecked")
     public PremiumStatus() {
         super();
         bars = new TinyProgressBar[BARCOUNT];
         logger = JDLogger.getLogger();
+
+        refresher = new Timer(1000 * 60 * 15, this);
+        refresher.setInitialDelay(1000 * 60 * 15);
+        refresher.setRepeats(true);
 
         this.setLayout(new MigLayout(DEBUG + "ins 0", "[]", "[]"));
         add(lbl = new JLabel("Load Premiumstatus..."), "hidemode 3");
@@ -106,32 +113,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         config = SubConfiguration.getConfig("PREMIUMSTATUS");
         this.map = (TreeMap<String, ArrayList<AccountInfo>>) config.getProperty(MAP_PROP, new TreeMap<String, ArrayList<AccountInfo>>());
         this.mapSize = (TreeMap<String, Long>) config.getProperty(MAPSIZE_PROP, new TreeMap<String, Long>());
-        refresher = new Thread() {
-            public void run() {
-
-                while (true) {
-                    try {
-                        Thread.sleep(15 * 60 * 1000);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                    updatePremium();
-
-                }
-            }
-
-        };
-
-        refresher.start();
-        new GuiRunnable<Object>() {
-
-            @Override
-            public Object runSave() {
-                redraw();
-                return null;
-            }
-
-        }.start();
+        this.onUpdate();
     }
 
     protected void showDetails(PluginForHost plugin) {
@@ -144,58 +126,52 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         SimpleGUI.CURRENTGUI.getContentPane().display(panel);
     }
 
-    private void updatePremium() {
-        long trafficTotal = 0;
-        logger.finer("Update Premiuminfo");
-        TreeMap<String, ArrayList<AccountInfo>> map = new TreeMap<String, ArrayList<AccountInfo>>();
-        TreeMap<String, Long> mapSize = new TreeMap<String, Long>();
-        for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
-            if (wrapper.isLoaded() && wrapper.usePlugin()) {
-                final PluginForHost helpPlugin = wrapper.getPlugin();
-                if (helpPlugin.getPremiumAccounts().size() > 0) {
-                    for (Account a : helpPlugin.getPremiumAccounts()) {
-                        if (a.isEnabled()) {
-                            try {
-                                int to = helpPlugin.getBrowser().getConnectTimeout();
-                                helpPlugin.getBrowser().setConnectTimeout(5000);
+    private synchronized void updatePremium() {
+        synchronized (Lock) {
+            long trafficTotal = 0;
+            logger.finer("Update Premiuminfo");
+            TreeMap<String, ArrayList<AccountInfo>> map = new TreeMap<String, ArrayList<AccountInfo>>();
+            TreeMap<String, Long> mapSize = new TreeMap<String, Long>();
+            for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
+                if (wrapper.isLoaded() && wrapper.usePlugin()) {
+                    final PluginForHost helpPlugin = wrapper.getPlugin();
+                    if (helpPlugin.getPremiumAccounts().size() > 0) {
+                        for (Account a : helpPlugin.getPremiumAccounts()) {
+                            if (a.isEnabled()) {
+                                try {
+                                    int to = helpPlugin.getBrowser().getConnectTimeout();
+                                    helpPlugin.getBrowser().setConnectTimeout(5000);
 
-                                AccountInfo ai = helpPlugin.getAccountInformation(a);
-                                helpPlugin.getBrowser().setConnectTimeout(to);
-                                if (ai.isValid()) {
-                                    if (!map.containsKey(wrapper.getHost())) {
-                                        mapSize.put(wrapper.getHost(), 0l);
-                                        map.put(wrapper.getHost(), new ArrayList<AccountInfo>());
+                                    AccountInfo ai = helpPlugin.getAccountInformation(a);
+                                    helpPlugin.getBrowser().setConnectTimeout(to);
+                                    if (ai.isValid()) {
+                                        if (!map.containsKey(wrapper.getHost())) {
+                                            mapSize.put(wrapper.getHost(), 0l);
+                                            map.put(wrapper.getHost(), new ArrayList<AccountInfo>());
+                                        }
+
+                                        map.get(wrapper.getHost()).add(ai);
+                                        mapSize.put(wrapper.getHost(), mapSize.get(wrapper) + (ai.getTrafficLeft() > 0 ? ai.getTrafficLeft() : UNLIMITED));
+
+                                        trafficTotal += (ai.getTrafficLeft() > 0 ? ai.getTrafficLeft() : UNLIMITED);
+
                                     }
-
-                                    map.get(wrapper.getHost()).add(ai);
-                                    mapSize.put(wrapper.getHost(), mapSize.get(wrapper) + (ai.getTrafficLeft() > 0 ? ai.getTrafficLeft() : UNLIMITED));
-
-                                    trafficTotal += (ai.getTrafficLeft() > 0 ? ai.getTrafficLeft() : UNLIMITED);
+                                } catch (Exception e) {
 
                                 }
-                            } catch (Exception e) {
 
                             }
-
                         }
                     }
                 }
-            }
 
+            }
+            this.setTrafficTotal(trafficTotal);
+            this.setMap(map);
+            this.setMapSize(mapSize);
+            save();
         }
-        this.setTrafficTotal(trafficTotal);
-        this.setMap(map);
-        this.setMapSize(mapSize);
-        save();
-        new GuiRunnable<Object>() {
-
-            @Override
-            public Object runSave() {
-                redraw();
-                return null;
-            }
-
-        }.start();
+        onUpdate();
     }
 
     private void save() {
@@ -205,48 +181,57 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
 
     }
 
-    private void redraw() {
-        lbl.setVisible(false);
-        for (int i = 0; i < BARCOUNT; i++) {
-            bars[i].setVisible(false);
-        }
+    private synchronized void redraw() {
+        new GuiRunnable<Object>() {
+            @Override
+            public Object runSave() {
+                System.out.println("redraw");
+                synchronized (Lock) {
+                    lbl.setVisible(false);
+                    for (int i = 0; i < BARCOUNT; i++) {
+                        bars[i].setVisible(false);
+                    }
 
-        int i = 0;
-        for (Iterator<String> it = getMap().keySet().iterator(); it.hasNext();) {
-            String host = it.next();
-            ArrayList<AccountInfo> list = this.getMap().get(host);
+                    int i = 0;
+                    for (Iterator<String> it = getMap().keySet().iterator(); it.hasNext();) {
+                        String host = it.next();
+                        ArrayList<AccountInfo> list = getMap().get(host);
 
-            PluginForHost plugin = JDUtilities.getPluginForHost(host);
-            long max = 0l;
-            long left = 0l;
+                        PluginForHost plugin = JDUtilities.getPluginForHost(host);
+                        long max = 0l;
+                        long left = 0l;
 
-            for (AccountInfo ai : list) {
+                        for (AccountInfo ai : list) {
 
-                max += ai.getTrafficMax();
-                left += ai.getTrafficLeft();
+                            max += ai.getTrafficMax();
+                            left += ai.getTrafficLeft();
+                        }
+                        bars[i].setVisible(true);
+                        bars[i].setIcon(plugin.getHosterIcon());
+                        bars[i].setMaximum(max);
+                        bars[i].setAlignmentX(RIGHT_ALIGNMENT);
+                        bars[i].setValue(left);
+
+                        if (left >= 0) {
+                            //bars[i].setString(JDUtilities.formatKbReadable(left
+                            // /
+                            // 1024));
+                            bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), Formatter.formatReadable(left)));
+                        } else {
+                            bars[i].setMaximum(10);
+                            bars[i].setValue(10);
+
+                            bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.unlimited_traffic.tooltip", "%s -- Unlimited traffic! You can download as much as you want to.", host));
+
+                        }
+                        i++;
+                        if (i >= BARCOUNT) break;
+                    }
+                    invalidate();
+                    return null;
+                }
             }
-            bars[i].setVisible(true);
-            bars[i].setIcon(plugin.getHosterIcon());
-            bars[i].setMaximum(max);
-            bars[i].setAlignmentX(RIGHT_ALIGNMENT);
-            bars[i].setValue(left);
-
-            if (left >= 0) {
-                // bars[i].setString(JDUtilities.formatKbReadable(left / 1024));
-                bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), Formatter.formatReadable(left)));
-            } else {
-                bars[i].setMaximum(10);
-                bars[i].setValue(10);
-
-                bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.unlimited_traffic.tooltip", "%s -- Unlimited traffic! You can download as much as you want to.", host));
-
-            }
-            i++;
-            if (i >= BARCOUNT) break;
-        }
-
-        this.invalidate();
-
+        }.start();
     }
 
     public synchronized void setMap(TreeMap<String, ArrayList<AccountInfo>> map) {
@@ -274,35 +259,28 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_PLUGIN_INACTIVE) {
-            new GuiRunnable<Object>() {
-
-                @Override
-                public Object runSave() {
-                    redraw();
-                    return null;
-                }
-
-            }.start();
-        }
-
+        onUpdate();
     }
 
     public void onUpdate() {
-        if (cacheWait != null) return;
-        this.cacheWait = new Thread() {
-            public void run() {
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    return;
-                }
-                updatePremium();
-                cacheWait = null;
-            }
-        };
-        cacheWait.start();
+        refresher.stop();
+        refresher.setDelay(2000);
+        refresher.setInitialDelay(2000);
+        refresher.restart();
+    }
 
+    public void actionPerformed(ActionEvent arg0) {
+        if (arg0.getSource() == this.refresher) {
+            refresher.stop();
+            if (refresher.getDelay() == 1000 * 60 * 15) {
+                updatePremium();
+            } else {
+                redraw();
+            }
+            refresher.setDelay(1000 * 60 * 15);
+            refresher.setInitialDelay(1000 * 60 * 15);
+            refresher.restart();
+        }
     }
 
 }
