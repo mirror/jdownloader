@@ -561,6 +561,15 @@ public class JDInit {
         new HostPluginWrapper("FileLoad.us", "FileloadUs", "http://[\\w\\.]*?fileload\\.us/.*");
         new HostPluginWrapper("EnterUpload.com", "EnteruploadCom", "http://[\\w\\.]*?enterupload\\.com/.*");
         new HostPluginWrapper("6Giga.com", "SixGigaCom", "http://[\\w\\.]*?6giga\\.com/.*");
+        new HostPluginWrapper("Filelobster.com", "FilelobsterCom", "http://[\\w\\.]*?filelobster\\.com/.*");
+        new HostPluginWrapper("Sharearound.com", "SharearoundCom", "http://[\\w\\.]*?sharearound\\.com/.*");
+        new HostPluginWrapper("Only4files.com", "OnlyFourFilesCom", "http://[\\w\\.]*?only4files\\.com/.*");
+        new HostPluginWrapper("Fileuploadshark.com", "FileuploadsharkCom", "http://[\\w\\.]*?fileuploadshark\\.com/.*");
+        new HostPluginWrapper("Xshareware.com", "XsharewareCom", "http://[\\w\\.]*?xshareware\\.com/.*");
+        new HostPluginWrapper("Qsave.info", "QsaveInfo", "http://[\\w\\.]*?qsave\\.info/.*");
+        new HostPluginWrapper("Savefile.ro", "SavefileRo", "http://[\\w\\.]*?savefile\\.ro/.*");
+        new HostPluginWrapper("Pixelhit.com", "PixelhitCom", "http://[\\w\\.]*?pixelhit\\.com/.*");
+        new HostPluginWrapper("Bagruj.cz", "BagrujCz", "http://[\\w\\.]*?bagruj\\.cz/.*");
         // new HostPluginWrapper("FilesDump.com", "FilesDumpCom",
         // "http://.*?filesdump\\.com/file/[a-f0-9]+/.*?");
         new HostPluginWrapper("UpMusic.in", "UpMusicIn", "http://[\\w\\.]*?upmusic\\.in/[a-z0-9]+.*?");

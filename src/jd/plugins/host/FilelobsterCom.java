@@ -31,9 +31,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-public class SixGigaCom extends PluginForHost {
+public class FilelobsterCom extends PluginForHost {
 
-    public SixGigaCom(PluginWrapper wrapper) {
+    public FilelobsterCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -42,11 +42,6 @@ public class SixGigaCom extends PluginForHost {
         getFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.setDebug(true);
-        Form form = br.getForm(0);
-        form.setAction(downloadLink.getDownloadURL());
-        form.remove("method_premium");
-        form.put("referer", Encoding.urlEncode(downloadLink.getDownloadURL()));
-        br.submitForm(form);
         if (br.containsHTML("You have reached")) {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -58,10 +53,10 @@ public class SixGigaCom extends PluginForHost {
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         } else {
-            form = br.getFormbyProperty("name", "F1");
+            Form form = br.getFormbyProperty("name", "F1");
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             // TODO: AntiCaptcha Method would allow simultanous connections
-            String captchaurl = br.getRegex(Pattern.compile("below:</b></td></tr>\\s+<tr><td><img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String captchaurl = br.getRegex(Pattern.compile("below:</b></td></tr>\\s+<tr><td>\\s+<img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             URLConnectionAdapter con = br.openGetConnection(captchaurl);
             File file = this.getLocalCaptchaFile(this);
             Browser.download(file, con);
@@ -69,7 +64,7 @@ public class SixGigaCom extends PluginForHost {
             form.put("code", code);
             form.setAction(downloadLink.getDownloadURL());
             // Ticket Time
-            this.sleep(120000, downloadLink);
+            this.sleep(20000, downloadLink);
             br.submitForm(form);
             URLConnectionAdapter con2 = br.getHttpConnection();
             String dllink = br.getRedirectLocation();
@@ -101,17 +96,17 @@ public class SixGigaCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://6giga.com/tos.html";
+        return "http://filelobster.com/tos.html";
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.6giga.com/", "lang", "english");
+        br.setCookie("http://www.filelobster.com/", "lang", "english");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("You\\s+have\\s+requested\\s+<font\\s+color=\"red\">http://[\\w\\.]*?6giga\\.com/[a-z0-9]+/(.*?)</font>").getMatch(0));
-        String filesize = br.getRegex("\\s+\\((.*?)\\)</font>").getMatch(0);
+        if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex("Filename:</b></td><td\\s+nowrap>(.*?)</td>").getMatch(0));
+        String filesize = br.getRegex("Size:</b></td><td>(.*?)\\s+<small>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
@@ -120,7 +115,7 @@ public class SixGigaCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision$");
+        return getVersion("$Revision: 5402 $");
     }
 
     @Override
