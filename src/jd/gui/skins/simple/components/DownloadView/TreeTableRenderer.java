@@ -228,7 +228,16 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                         progress.setString(sb.toString());
 
                     } else {
-                        progress.setString("");
+                        clearSB();
+                        col = this.table.getCols()[column];
+                        if (col.getWidth() < 60) {
+
+                        } else if (col.getWidth() < 170) {
+                            sb.append(c.format(dLink.getPercent() / 100.0)).append('%');
+                        } else {
+                            sb.append(c.format(dLink.getPercent() / 100.0)).append("% (").append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize()))).append(')');
+                        }
+                        progress.setString(sb.toString());
                     }
                 } else {
 
@@ -255,7 +264,16 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             progress.setMaximum(10000);
             progress.setValue(0);
             if (dLink.getDownloadSize() > 1) {
-                progress.setString(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize())));
+                clearSB();
+                col = this.table.getCols()[column];
+                if (col.getWidth() < 60) {
+
+                } else if (col.getWidth() < 170) {
+                    sb.append(c.format(dLink.getPercent() / 100.0)).append('%');
+                } else {
+                    sb.append(c.format(dLink.getPercent() / 100.0)).append("% (").append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize()))).append(')');
+                }
+                progress.setString(sb.toString());
             } else {
                 progress.setString("");
             }
@@ -286,7 +304,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             }
 
             ((JRendererLabel) co).setBorder(null);
-//            ((JRendererLabel) co).setToolTipText("Blabla Leberkäs");
+            // ((JRendererLabel) co).setToolTipText("Blabla Leberkäs");
             return co;
 
         case DownloadTreeTableModel.COL_STATUS:
