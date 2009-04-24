@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -91,9 +92,37 @@ public class MediafireCom extends PluginForHost {
             if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
                 url = br.getRedirectLocation();
             } else {
-                String[][] para = br.getRegex("[a-z]{2}\\(\\'([a-z0-9]{7,14})\\'\\,\\'([0-f0-9]*?)\\'\\,\\'([a-z0-9]{2,14})\\'\\)\\;").getMatches();
-                if (para.length == 0 || para[0].length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
-                br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + para[0][0] + "&pk=" + para[0][1] + "&r=" + para[0][2]);
+                if (br.containsHTML("Password Protected File"))
+                {   br.setDebug(true);
+                    String passCode;
+                    DownloadLink link = downloadLink;
+                    Form form = br.getFormbyProperty("name", "form_password");
+                    if (link.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput(null, link);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = link.getStringProperty("pass", null);
+                    }
+                    form.put("downloadp", passCode);
+                    br.submitForm(form);
+                    form = br.getFormbyProperty("name", "form_password");
+                    if (form != null && !br.containsHTML("cu\\('[a-z0-9]*'")) {
+                        link.setProperty("pass", null);
+                        throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
+                    } else {
+                        link.setProperty("pass", passCode);
+                    } 
+                }
+                
+                //String[][] para = br.getRegex("[a-z]{2}\\(\\'([a-z0-9]{7,14})\\'\\,\\'([0-f0-9]*?)\\'\\,\\'([a-z0-9]{2,14})\\'\\)\\;").getMatches();
+                //if (para.length == 0 || para[0].length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+                String qk = null, pk = null, r = null;
+                String[] parameters = br.getRegex("\\s+cu\\('(.*?)','(.*?)','(.*?)'\\);").getRow(0);
+                qk = parameters[0];
+                pk = parameters[1];
+                r = parameters[2];
+                
+                br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
                 String error = br.getRegex("var et=(.*?);").getMatch(0);
                 if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
                 url = br.getRegex("(\"http\\:\\/\\/\".*?)\\+'\"").getMatch(0);
