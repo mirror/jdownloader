@@ -25,7 +25,7 @@ public class ExitAction extends StartAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        boolean doIt;
+        boolean doIt = true;
         if (!SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
             doIt = SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"));
         } else {

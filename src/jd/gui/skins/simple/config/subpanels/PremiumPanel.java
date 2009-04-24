@@ -19,7 +19,6 @@ package jd.gui.skins.simple.config.subpanels;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Cursor;
-import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.ClipboardOwner;
@@ -37,7 +36,6 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-import javax.swing.AbstractButton;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -48,8 +46,7 @@ import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+import javax.swing.Timer;
 
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -78,13 +75,12 @@ import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 
-public class PremiumPanel extends JPanel implements ControlListener {
+public class PremiumPanel extends JPanel implements ControlListener, ActionListener {
 
     private static final long serialVersionUID = 3275917572262383770L;
 
     private static final Color ACTIVE = new Color(0x7cd622);
     private static final Color INACTIVE = new Color(0xa40604);
- 
 
     private static final int PIE_WIDTH = 450;
 
@@ -104,13 +100,21 @@ public class PremiumPanel extends JPanel implements ControlListener {
 
     private ArrayList<Account> list;
 
+    private Timer chartrefresh;
+
+    private ChartRefresh chartThread = null;
+
+    private Object Lock = new Object();
+
     // private Logger logger = JDLogger.getLogger();
 
     public PremiumPanel(GUIConfigEntry gce) {
+        chartrefresh = new Timer(2000, this);
+        chartrefresh.setInitialDelay(2000);
+        chartrefresh.setRepeats(false);
         ce = gce.getConfigEntry();
         host = (PluginForHost) gce.getConfigEntry().getActionListener();
         premiumActivated = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
-
     }
 
     /**
@@ -119,13 +123,16 @@ public class PremiumPanel extends JPanel implements ControlListener {
      * @return
      */
     public ArrayList<Account> getAccounts() {
-        ArrayList<Account> accounts = new ArrayList<Account>();
-        if (accs != null) {
-            for (AccountPanel acc : accs) {
-                accounts.add(acc.getAccount());
+        synchronized (Lock) {
+            ArrayList<Account> accounts = new ArrayList<Account>();
+            if (accs != null) {
+                for (AccountPanel acc : accs) {
+                    Account tacc = acc.getAccount();
+                    if (tacc != null) accounts.add(tacc);
+                }
             }
+            return accounts;
         }
-        return accounts;
     }
 
     /**
@@ -135,19 +142,23 @@ public class PremiumPanel extends JPanel implements ControlListener {
      */
     @SuppressWarnings("unchecked")
     public void setAccounts(Object list) {
-        ArrayList<Account> accounts = (ArrayList<Account>) list;
-        this.list = accounts;
-        createPanel(accounts.size());
-        for (int i = 0; i < accs.size(); i++) {
-            if (i >= accounts.size()) break;
-            if (accounts.get(i) != null) accs.get(i).setAccount(accounts.get(i));
+        synchronized (Lock) {
+            ArrayList<Account> accounts = (ArrayList<Account>) list;
+            this.list = accounts;
+            createPanel(accounts.size());
+            for (int i = 0; i < accs.size(); i++) {
+                if (i >= accounts.size()) break;
+                if (accounts.get(i) != null) accs.get(i).setAccount(accounts.get(i));
+            }
+            createDataset();
+            JDController.getInstance().addControlListener(this);
         }
-        createDataset();
-        JDController.getInstance().addControlListener(this);
     }
 
     private void createDataset() {
-        new ChartRefresh().start();
+        if (chartThread != null && chartThread.isAlive()) return;
+        chartThread = new ChartRefresh();
+        chartThread.start();
     }
 
     private void createPanel(int j) {
@@ -206,7 +217,7 @@ public class PremiumPanel extends JPanel implements ControlListener {
         return Factory.createButton(string, i);
     }
 
-    private class AccountPanel extends JPanel implements ChangeListener, ActionListener, FocusListener {
+    private class AccountPanel extends JPanel implements ActionListener, FocusListener {
 
         private static final long serialVersionUID = 6448121932852086853L;
         private JToggleButton chkEnable;
@@ -224,7 +235,6 @@ public class PremiumPanel extends JPanel implements ControlListener {
         public AccountPanel(int nr) {
             this.panelID = nr;
             createPanel(nr);
-
         }
 
         public void setAccount(Account account) {
@@ -233,26 +243,19 @@ public class PremiumPanel extends JPanel implements ControlListener {
             txtUsername.setText(account.getUser());
             txtPassword.setText(account.getPass());
             txtStatus.setText(account.getStatus());
-            chkEnable.setSelected(sel);
-            lblUsername.setEnabled(sel);
-            lblPassword.setEnabled(sel);
-            txtUsername.setEnabled(sel);
-            txtPassword.setEnabled(sel);
-            txtStatus.setEnabled(sel);
-            btnCheck.setEnabled(sel);
+            setEnabled(sel);
         }
 
         public Account getAccount() {
             String pass = new String(txtPassword.getPassword());
             if (account == null) return null;
+            if (account.getUser().length() == 0 && account.getPass().length() == 0) return null;
             if (!account.getUser().equals(txtUsername.getText()) || !account.getPass().equals(pass)) {
                 account.setUser(txtUsername.getText());
                 account.setPass(pass);
                 account.getProperties().clear();
-
             }
-
-            account.setEnabled(chkEnable.isSelected());
+            account.setEnabled(chkEnable.isEnabled());
             return account;
         }
 
@@ -264,7 +267,7 @@ public class PremiumPanel extends JPanel implements ControlListener {
             /*
              * JGoodies seems to have a performance bug rendering JCheckBoxes.
              */
-            if (JDLookAndFeelManager.getPlaf().isJGoodies() ) {
+            if (JDLookAndFeelManager.getPlaf().isJGoodies()) {
                 chkEnable = new JToggleButton();
                 chkEnable.setIcon(JDTheme.II("gui.images.disabled", 16, 16));
                 chkEnable.setSelectedIcon(JDTheme.II("gui.images.enabled", 16, 16));
@@ -285,7 +288,6 @@ public class PremiumPanel extends JPanel implements ControlListener {
             chkEnable.setFocusPainted(false);
             chkEnable.setBorderPainted(false);
             add(chkEnable, "alignx left");
-            chkEnable.addChangeListener(this);
 
             add(btnCheck = new JButton(JDLocale.L("plugins.config.premium.test.show", "Show Details")), "split 3,spanx 3");
             btnCheck.addActionListener(this);
@@ -313,9 +315,7 @@ public class PremiumPanel extends JPanel implements ControlListener {
 
             this.account = new Account(txtUsername.getText(), new String(txtPassword.getPassword()));
 
-            setEnabled(false);
-            account.setEnabled(chkEnable.isSelected());
-            chkEnable.setSelected(false);
+            account.setEnabled(false);
 
             info = new JXCollapsiblePane();
             info.setCollapsed(true);
@@ -330,41 +330,36 @@ public class PremiumPanel extends JPanel implements ControlListener {
                 }
             });
 
+            txtPassword.setEnabled(false);
+            chkEnable.setSelected(false);
+            txtUsername.setEnabled(false);
+            txtStatus.setEnabled(false);
+            btnCheck.setEnabled(false);
+            lblPassword.setEnabled(false);
+            lblUsername.setEnabled(false);
+            chkEnable.addActionListener(this);
             add(info, "skip,spanx,growx,newline");
         }
 
         @Override
         public void setEnabled(final boolean flag) {
-            if (chkEnable.isSelected() == flag) return;
+            if (flag == txtPassword.isEnabled()) return;
             SwingUtilities.invokeLater(new Runnable() {
-
                 public void run() {
-                    chkEnable.setSelected(flag);
+                    if (premiumActivated) {
+                        chkEnable.setForeground((flag) ? ACTIVE : INACTIVE);
+                    } else {
+                        chkEnable.setForeground(INACTIVE);
+                    }
                     txtPassword.setEnabled(flag);
+                    chkEnable.setSelected(flag);
                     txtUsername.setEnabled(flag);
                     txtStatus.setEnabled(flag);
                     btnCheck.setEnabled(flag);
                     lblPassword.setEnabled(flag);
                     lblUsername.setEnabled(flag);
                 }
-
             });
-        }
-
-        public void stateChanged(ChangeEvent e) {
-            boolean sel = chkEnable.isSelected();
-
-            ce.setChanges(true);
-
-            if (premiumActivated) {
-                chkEnable.setForeground((sel) ? ACTIVE : INACTIVE);
-            } else {
-                chkEnable.setForeground(INACTIVE);
-            }
-
-            setEnabled(sel);
-            if (!sel) info.setCollapsed(true);
-
         }
 
         private JTextField getTextField(String text) {
@@ -376,6 +371,14 @@ public class PremiumPanel extends JPanel implements ControlListener {
         }
 
         public void actionPerformed(ActionEvent e) {
+            if (e.getSource() == chkEnable) {
+                boolean sel = chkEnable.isSelected();
+                ce.setChanges(true);
+                System.out.println(e);
+                setEnabled(sel);
+                if (!sel) info.setCollapsed(true);
+                return;
+            }
             if (e.getSource() == btnCheck) {
                 if (info.isCollapsed()) {
                     AccountInfo ai;
@@ -464,11 +467,13 @@ public class PremiumPanel extends JPanel implements ControlListener {
         }
 
         public void focusGained(FocusEvent e) {
+            chartrefresh.stop();
             ((JTextField) e.getSource()).selectAll();
         }
 
         public void focusLost(FocusEvent e) {
-            createDataset();
+            if (txtPassword.getPassword().length == 0) return;
+            chartrefresh.restart();
         }
 
         public int getID() {
@@ -490,7 +495,7 @@ public class PremiumPanel extends JPanel implements ControlListener {
             freeTrafficChart.clear();
             int accCounter = 0;
             for (Account acc : getAccounts()) {
-                if (acc != null && acc.getUser().length() > 0 && acc.getPass().length() > 0) {
+                if (acc != null && (acc.getUser().length() > 0 || acc.getPass().length() > 0)) {
                     try {
                         accCounter++;
                         AccountInfo ai = host.getAccountInformation(acc);
@@ -548,7 +553,6 @@ public class PremiumPanel extends JPanel implements ControlListener {
 
     }
 
-
     public void controlEvent(ControlEvent event) {
         if (!this.isDisplayable()) {
             JDController.getInstance().removeControlListener(this);
@@ -564,13 +568,12 @@ public class PremiumPanel extends JPanel implements ControlListener {
                         if (premiumActivated) {
                             ap.getLabel().setText(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", ap.getID()));
                             ap.getLabel().setForeground(INACTIVE);
-                            ap.getLabel().setForeground((ap.getAccount().isEnabled()) ? ACTIVE : INACTIVE);
+                            if (ap.getAccount() != null) ap.getLabel().setForeground((ap.getAccount().isEnabled()) ? ACTIVE : INACTIVE);
                         } else {
                             ap.getLabel().setText(JDLocale.L("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>"));
-                         
                             ap.getLabel().setForeground(INACTIVE);
                         }
-                      
+
                     }
                     return null;
                 }
@@ -579,6 +582,10 @@ public class PremiumPanel extends JPanel implements ControlListener {
 
         }
 
+    }
+
+    public void actionPerformed(ActionEvent arg0) {
+        if (arg0.getSource() == this.chartrefresh) createDataset();
     }
 
 }
