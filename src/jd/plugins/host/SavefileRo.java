@@ -115,7 +115,7 @@ public class SavefileRo extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 5402 $");
+        return getVersion("$Revision$");
     }
 
     @Override
