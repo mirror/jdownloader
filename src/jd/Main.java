@@ -406,7 +406,7 @@ UserIO.setInstance(SimpleUserIO.getInstance());
 
         LOGGER.info("init Webupdate");
         Main.increaseSplashStatus();
-        new WebUpdate().doWebupdate(false);
+        //new WebUpdate().doWebupdate(false);
         LOGGER.info("init plugins");
         Main.increaseSplashStatus();
         init.initPlugins();

@@ -37,7 +37,7 @@ import jd.nutils.JDImage;
 import jd.parser.Regex;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel;
+
 
 public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
 
@@ -200,53 +200,53 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
 
     }
 
-    @SuppressWarnings("unused")
-    private static void installSynthetica() {
-        try {
-            UIManager.setLookAndFeel(new SyntheticaStandardLookAndFeel());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        String pkg = "de/javasoft/plaf/synthetica/";
-        Enumeration<URL> ress = null;
-        try {
-            ress = JDUtilities.getJDClassLoader().getResources(pkg);
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
-
-        while (ress.hasMoreElements()) {
-            URL res = ress.nextElement();
-
-            String url = new Regex(res, "(.*)\\!.*").getMatch(0);
-            url = url.substring(4);
-            try {
-                File file = new File(new URL(url).toURI());
-
-                JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
-                JarEntry e;
-                while ((e = jarFile.getNextJarEntry()) != null) {
-                    System.out.println(e.getName());
-                    if (e.getName().startsWith(pkg)) {
-
-                        String laf = new Regex(e.getName(), "de/javasoft/plaf/synthetica/Synthetica(.*?)LookAndFeel\\.class").getMatch(0);
-
-                        if (laf != null) {
-
-                            UIManager.installLookAndFeel(laf, "de.javasoft.plaf.synthetica.Synthetica" + laf + "LookAndFeel");
-                        }
-                    }
-
-                }
-
-            } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-            }
-        }
-
-    }
+//    @SuppressWarnings("unused")
+//    private static void installSynthetica() {
+//        try {
+//            UIManager.setLookAndFeel(new SyntheticaStandardLookAndFeel());
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        String pkg = "de/javasoft/plaf/synthetica/";
+//        Enumeration<URL> ress = null;
+//        try {
+//            ress = JDUtilities.getJDClassLoader().getResources(pkg);
+//        } catch (IOException e1) {
+//            // TODO Auto-generated catch block
+//            e1.printStackTrace();
+//        }
+//
+//        while (ress.hasMoreElements()) {
+//            URL res = ress.nextElement();
+//
+//            String url = new Regex(res, "(.*)\\!.*").getMatch(0);
+//            url = url.substring(4);
+//            try {
+//                File file = new File(new URL(url).toURI());
+//
+//                JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
+//                JarEntry e;
+//                while ((e = jarFile.getNextJarEntry()) != null) {
+//                    System.out.println(e.getName());
+//                    if (e.getName().startsWith(pkg)) {
+//
+//                        String laf = new Regex(e.getName(), "de/javasoft/plaf/synthetica/Synthetica(.*?)LookAndFeel\\.class").getMatch(0);
+//
+//                        if (laf != null) {
+//
+//                            UIManager.installLookAndFeel(laf, "de.javasoft.plaf.synthetica.Synthetica" + laf + "LookAndFeel");
+//                        }
+//                    }
+//
+//                }
+//
+//            } catch (Exception e) {
+//                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+//            }
+//        }
+//
+//    }
 
     public JDLookAndFeelManager(LookAndFeelInfo lafi) {
 
