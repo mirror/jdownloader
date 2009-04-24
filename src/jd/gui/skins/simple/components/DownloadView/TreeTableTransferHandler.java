@@ -72,6 +72,7 @@ public class TreeTableTransferHandler extends TransferHandler {
             case DRAG_PACKAGES:
                 Vector<FilePackage> packages = (Vector<FilePackage>) draggingObjects;
                 if (current.getLastPathComponent() instanceof FilePackage && packages.contains(current.getLastPathComponent())) return false;
+                if (current.getLastPathComponent() instanceof DownloadLink && packages.contains(((DownloadLink) current.getLastPathComponent()).getFilePackage())) return false;
                 break;
             default:
                 return false;

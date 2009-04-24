@@ -45,7 +45,7 @@ class FilePackageBroadcaster extends JDBroadcaster<FilePackageListener, FilePack
  * 
  * @author JD-Team
  */
-public class FilePackage extends Property implements Serializable, DownloadLinkListener {
+public class FilePackage extends Property implements Serializable, DownloadLinkListener, FilePackageListener {
 
     // Zählt die instanzierungen durch um eine ID zu erstellen
     private static int counter = 0;
@@ -101,6 +101,8 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private Integer links_Disabled;
 
+    private String ListHoster = null;
+
     public synchronized JDBroadcaster<FilePackageListener, FilePackageEvent> getBroadcaster() {
         if (broadcaster == null) broadcaster = new FilePackageBroadcaster();
         return broadcaster;
@@ -116,12 +118,14 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         counter++;
         id = System.currentTimeMillis() + "_" + counter;
         downloadLinks = new Vector<DownloadLink>();
+        getBroadcaster().addListener(this);
     }
 
     private void readObject(java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
         /* nach dem deserialisieren sollen die transienten neu geholt werden */
         stream.defaultReadObject();
         links_Disabled = new Integer(0);
+        getBroadcaster().addListener(this);
     }
 
     /**
@@ -517,13 +521,16 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public String getHoster() {
-        Set<String> hosterList = new HashSet<String>();
-        synchronized (downloadLinks) {
-            for (DownloadLink dl : downloadLinks) {
-                hosterList.add(dl.getHost());
+        if (ListHoster == null) {
+            Set<String> hosterList = new HashSet<String>();
+            synchronized (downloadLinks) {
+                for (DownloadLink dl : downloadLinks) {
+                    hosterList.add(dl.getHost());
+                }
             }
+            ListHoster = hosterList.toString();
         }
-        return hosterList.toString();
+        return ListHoster;
     }
 
     public void sort(final int col) {
@@ -661,5 +668,23 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 break;
             }
         }
+    }
+
+    public void onFilePackageEvent(FilePackageEvent event) {
+        synchronized (downloadLinks) {
+            switch (event.getID()) {
+            case FilePackageEvent.DOWNLOADLINK_ADDED:
+            case FilePackageEvent.DOWNLOADLINK_REMOVED:
+                Set<String> hosterList = new HashSet<String>();
+                synchronized (downloadLinks) {
+                    for (DownloadLink dl : downloadLinks) {
+                        hosterList.add(dl.getHost());
+                    }
+                }
+                ListHoster = hosterList.toString();
+                break;
+            }
+        }
+
     }
 }

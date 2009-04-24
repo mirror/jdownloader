@@ -18,8 +18,6 @@ package jd.gui.skins.simple.components.DownloadView;
 
 import java.util.Vector;
 
-import javax.swing.tree.TreePath;
-
 import jd.controlling.JDLogger;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -195,52 +193,6 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
         return true;
     }
 
-    public boolean move(TreePath[] from, Object before, Object after) {
-
-        if (from.length == 0) { return false; }
-        if (from[0].getLastPathComponent() instanceof DownloadLink) { return moveDownloadLinks(from, (DownloadLink) before, (DownloadLink) after); }
-        return movePackages(from, (FilePackage) before, (FilePackage) after);
-
-    }
-
-    private boolean moveDownloadLinks(TreePath[] from, DownloadLink before, DownloadLink after) {
-
-        Vector<DownloadLink> links = new Vector<DownloadLink>();
-
-        for (TreePath path : from) {
-            links.add((DownloadLink) path.getLastPathComponent());
-        }
-
-        return JDUtilities.getController().moveLinks(links, before, after);
-
-    }
-
-    private boolean movePackages(TreePath[] from, FilePackage before, FilePackage after) {
-        Vector<FilePackage> fps = new Vector<FilePackage>();
-        for (TreePath path : from) {
-            fps.add((FilePackage) path.getLastPathComponent());
-        }
-        if (after != null && !(after instanceof FilePackage)) { return false; }
-        return JDUtilities.getController().movePackages(fps, before, after);
-
-    }
-
-    public boolean moveToPackage(TreePath[] from, FilePackage filePackage, boolean position) {
-        if (!(from[0].getLastPathComponent() instanceof DownloadLink)) { return false; }
-        Vector<DownloadLink> links = new Vector<DownloadLink>();
-
-        for (TreePath path : from) {
-            links.add((DownloadLink) path.getLastPathComponent());
-        }
-        if (filePackage.size() == 0) { return false; }
-
-        if (position) {
-            return JDUtilities.getController().moveLinks(links, null, filePackage.get(0));
-        } else {
-            return JDUtilities.getController().moveLinks(links, filePackage.lastElement(), null);
-        }
-
-    }
 
     @Override
     public void setValueAt(Object value, Object node, int col) {

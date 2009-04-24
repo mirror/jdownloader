@@ -22,7 +22,6 @@ import java.awt.LinearGradientPaint;
 import java.awt.Point;
 import java.awt.MultipleGradientPaint.CycleMethod;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -36,7 +35,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 import javax.swing.DropMode;
 import javax.swing.JMenu;
@@ -45,7 +43,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
-import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
@@ -89,11 +86,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     private TableCellRenderer cellRenderer;
 
-    private Logger logger = jd.controlling.JDLogger.getLogger();
-
     private DownloadTreeTableModel model;
-
-    private Timer timer;
 
     private TableColumnExt[] cols;
 
@@ -409,32 +402,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             Vector<DownloadLink> alllinks = getAllSelectedDownloadLinks();
             TreeTableAction test = new TreeTableAction(panel, JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TreeTableAction.DELETE, new Property("links", alllinks));
             test.actionPerformed(new ActionEvent(test, 0, ""));
-        } else if (e.getKeyCode() == KeyEvent.VK_UP && e.isControlDown()) {
-            int cur = getSelectedRow();
-            /**
-             * TODO
-             */
-            if (e.isAltDown()) {
-                // moveSelectedItems(MenuAction.ITEMS_MOVE_TOP);
-                getSelectionModel().setSelectionInterval(0, 0);
-            } else {
-                // moveSelectedItems(MenuAction.ITEMS_MOVE_UP);
-                cur = Math.max(0, cur - 1);
-                getSelectionModel().setSelectionInterval(cur, cur);
-            }
-        } else if (e.getKeyCode() == KeyEvent.VK_DOWN && e.isControlDown()) {
-            int cur = getSelectedRow();
-            int len = getVisibleRowCount();
-            if (e.isAltDown()) {
-                // moveSelectedItems(MenuAction.ITEMS_MOVE_BOTTOM);
-                getSelectionModel().setSelectionInterval(len, len);
-            } else {
-                // moveSelectedItems(MenuAction.ITEMS_MOVE_DOWN);
-                cur = Math.min(len, cur + 1);
-                getSelectionModel().setSelectionInterval(cur, cur);
-            }
         }
-
     }
 
     public void keyTyped(KeyEvent e) {
@@ -612,93 +580,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 }
             }
         }
-    }
-
-    public void moveSelectedItems(int id) {
-        Vector<DownloadLink> links = getSelectedDownloadLinks();
-        Vector<FilePackage> fps = getSelectedFilePackages();
-
-        logger.finer("move " + links.size() + " - " + fps.size());
-        if (links.size() >= fps.size()) {
-            if (links.size() == 0) { return; }
-            /**
-             * TODO
-             */
-            switch (id) {
-            // case MenuAction.ITEMS_MOVE_BOTTOM:
-            // DownloadLink lastLink =
-            // JDUtilities.getController().getPackages().
-            // lastElement().getDownloadLinks().lastElement();
-            // JDUtilities.getController().moveLinks(links, lastLink, null);
-            // break;
-            // case MenuAction.ITEMS_MOVE_TOP:
-            // DownloadLink firstLink =
-            // JDUtilities.getController().getPackages()
-            // .firstElement().getDownloadLinks().firstElement();
-            // JDUtilities.getController().moveLinks(links, null, firstLink);
-            // break;
-            // case MenuAction.ITEMS_MOVE_UP:
-            // DownloadLink before =
-            // JDUtilities.getController().getDownloadLinkBefore(links.get(0));
-            // JDUtilities.getController().moveLinks(links, null, before);
-            // break;
-            // case MenuAction.ITEMS_MOVE_DOWN:
-            // DownloadLink after =
-            // JDUtilities.getController().getDownloadLinkAfter
-            // (links.lastElement());
-            // JDUtilities.getController().moveLinks(links, after, null);
-            // break;
-            }
-
-        } else {
-
-            switch (id) {
-            // case MenuAction.ITEMS_MOVE_BOTTOM:
-            // FilePackage lastFilepackage =
-            // JDUtilities.getController().getPackages().lastElement();
-            // JDUtilities.getController().movePackages(fps, lastFilepackage,
-            // null);
-            // break;
-            // case MenuAction.ITEMS_MOVE_TOP:
-            // FilePackage firstPackage =
-            // JDUtilities.getController().getPackages().firstElement();
-            // JDUtilities.getController().movePackages(fps, null,
-            // firstPackage);
-            // break;
-            // case MenuAction.ITEMS_MOVE_UP:
-            // int i =
-            // JDUtilities.getController().getPackages().indexOf(fps.get(0));
-            // if (i <= 0) return;
-            //
-            // FilePackage before =
-            // JDUtilities.getController().getPackages().get(i - 1);
-            // JDUtilities.getController().movePackages(fps, null, before);
-            // break;
-            // case MenuAction.ITEMS_MOVE_DOWN:
-            // i =
-            // JDUtilities.getController().getPackages().indexOf(fps.lastElement
-            // ());
-            // if (i >= JDUtilities.getController().getPackages().size() - 1)
-            // return;
-            //
-            // FilePackage after =
-            // JDUtilities.getController().getPackages().get(i + 1);
-            // JDUtilities.getController().movePackages(fps, after, null);
-            // break;
-            }
-
-        }
-        timer = new Timer(100, new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                updateSelectionAndExpandStatus();
-                logger.finest("REFRESH");
-            }
-
-        });
-        timer.setRepeats(false);
-        timer.start();
-
     }
 
     /**

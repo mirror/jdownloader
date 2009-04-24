@@ -617,52 +617,6 @@ public class JDController implements ControlListener {
         return downloadLinks;
     }
 
-    /**
-     * Schneidet alle Links aus und fügt sie zwischen before unc after ein. Alle
-     * 
-     * @param links
-     * @param before
-     * @param after
-     * @return
-     */
-    public boolean moveLinks(Vector<DownloadLink> links, DownloadLink before, DownloadLink after) {
-        if (links.contains(before) || links.contains(after)) { return false; }
-        if (before != null && after != null && before.getFilePackage() != after.getFilePackage()) { return false; }
-        if (before == null & after == null) { return false; }
-        /* TODO */
-        // JDUtilities.getDownloadController().removeDownloadLinks(links);
-        FilePackage dest = before == null ? after.getFilePackage() : before.getFilePackage();
-        if (dest == null) { return false; }
-        int pos = 0;
-        if (before != null) {
-            pos = dest.indexOf(before) + 1;
-        } else {
-            pos = dest.indexOf(after);
-        }
-
-        dest.addAllAt(links, pos);
-
-        // logger.info("II");
-
-        return true;
-    }
-
-    public boolean movePackages(Vector<FilePackage> fps, FilePackage before, FilePackage after) {
-        if (after != null && fps.contains(after)) { return false; }
-        if (before != null && fps.contains(before)) { return false; }
-        if (before == null && after == null) { return false; }
-        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
-        synchronized (packages) {
-            packages.removeAll(fps);
-            int pos = after == null ? packages.indexOf(before) + 1 : packages.indexOf(after);
-
-            packages.addAll(pos, fps);
-
-        }
-
-        return true;
-    }
-
     public void pauseDownloads(boolean value) {
         if (watchdog == null) return;
         watchdog.pause(value);
