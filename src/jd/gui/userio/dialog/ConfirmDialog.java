@@ -93,7 +93,7 @@ public class ConfirmDialog extends JCountdownDialog implements ActionListener {
         this.getRootPane().setDefaultButton(btnOK);
         this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         if (icon != null) {
-            add(new JLabel(this.icon), "split 2,alignx left,aligny center,shrinkx");
+            add(new JLabel(this.icon), "split 2,alignx left,aligny center,shrinkx,gapright 10");
         }
         add(textField, "pushx,growx,pushy,growy,spanx,aligny center,wrap");
         add(this.countDownLabel, "split 3,growx");

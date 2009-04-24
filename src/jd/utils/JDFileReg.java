@@ -54,17 +54,19 @@ public class JDFileReg {
             sb.append(createRegisterWinProtocol("rsdf"));
             JDIO.writeLocalFile(JDUtilities.getResourceFile("tmp/installcnl.reg"), "Windows Registry Editor Version 5.00\r\n\r\n\r\n\r\n" + sb.toString());
 
-           if (!SubConfiguration.getConfig("CNL").getBooleanProperty("INSTALLED",false)) {
-UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN,JDLocale.L("gui.cnl.install.title","Click'n'Load Installation"),JDLocale.L("gui.cnl.install.text","Click'n'load is a very comfortable way to add links to JDownloader. To install Click'n'Load, JDownloader has set some registry entries. You might have to confirm some Windows messages to continue."),JDTheme.II("images.clicknload",32,32),null,null);
-                JDUtilities.runCommand("regedit.exe", new String[] {  "installcnl.reg" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
-                JDUtilities.runCommand("regedit.exe", new String[] { "/e", "test.reg", "HKEY_CLASSES_ROOT\\.dlc" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
-                if (JDUtilities.getResourceFile("tmp/test.reg").exists()) {
-                    JDLogger.getLogger().info("Installed Click'n'Load and associated .*dlc,.*ccf,.*rsdf and .*jd with JDownloader. Uninstall with " + JDUtilities.getResourceFile("tools/windows/uninstall.reg"));
-                } else {  
-                    JDLogger.getLogger().severe("Installation of CLick'n'Load failed. Please try to start JDownloader as Admin. For details, visit http://jdownloader.org/click-n-load. Try to execute " + JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath() + " manually");
+            if (!SubConfiguration.getConfig("CNL2").getBooleanProperty("INSTALLED", false)) {
+                if (UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("gui.cnl.install.title", "Click'n'Load Installation"), JDLocale.L("gui.cnl.install.text", "Click'n'load is a very comfortable way to add links to JDownloader. \r\nTo install Click'n'Load, JDownloader has to set some registry entries. \r\nYou might have to confirm some Windows messages to continue."), JDTheme.II("gui.clicknload", 48, 48), null, null)) {
+                    JDUtilities.runCommand("regedit.exe", new String[] { "installcnl.reg" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
+                    JDUtilities.runCommand("regedit.exe", new String[] { "/e", "test.reg", "HKEY_CLASSES_ROOT\\.dlc" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
+                    if (JDUtilities.getResourceFile("tmp/test.reg").exists()) {
+                        JDLogger.getLogger().info("Installed Click'n'Load and associated .*dlc,.*ccf,.*rsdf and .*jd with JDownloader. Uninstall with " + JDUtilities.getResourceFile("tools/windows/uninstall.reg"));
+                    } else {
+                        JDLogger.getLogger().severe("Installation of CLick'n'Load failed. Please try to start JDownloader as Admin. For details, visit http://jdownloader.org/click-n-load. Try to execute " + JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath() + " manually");
+                    }
+
                 }
-                SubConfiguration.getConfig("CNL").setProperty("INSTALLED",true);
-                SubConfiguration.getConfig("CNL").save();
+                SubConfiguration.getConfig("CNL2").setProperty("INSTALLED", true);
+                SubConfiguration.getConfig("CNL2").save();
             }
             JDUtilities.getResourceFile("tmp/test.reg").delete();
 
