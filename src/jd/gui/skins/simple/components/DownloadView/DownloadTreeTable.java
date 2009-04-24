@@ -40,7 +40,6 @@ import javax.swing.DropMode;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
-import javax.swing.JProgressBar;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -188,8 +187,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
         if (JDUtilities.getJavaVersion() >= 1.6 && SimpleGUI.isSubstance()) {
 
-            int height = 20;
-            JProgressBar progressBar = new JProgressBar();
+            int height = 20;            
             SubstanceColorScheme colorScheme = SubstanceColorSchemeUtilities.getColorScheme(table, ComponentState.SELECTED);
             Color[] colors = new Color[] { Colors.getColor(colorScheme.getUltraLightColor(), 50), Colors.getColor(colorScheme.getLightColor(), 50), Colors.getColor(colorScheme.getMidColor(), 50), Colors.getColor(colorScheme.getUltraLightColor(), 50) };
 
@@ -219,18 +217,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     }
 
-    private void addErrorHighlighter() {
-        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 120);
-
-        addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
-            @Override
-            public boolean doHighlight(DownloadLink link) {
-                return link.getLinkStatus().isFailed();
-            }
-        });
-
-    }
-
     private void addPostErrorHighlighter() {
         Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 120);
 
@@ -250,26 +236,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             @Override
             public boolean doHighlight(DownloadLink link) {
                 return !link.isEnabled();
-            }
-        });
-
-    }
-
-    private void addFinishedHighlighter() {
-        Color background = JDTheme.C("gui.color.downloadlist.row_link_done", "c4ffd2", 10);
-        Color backGroundPackage = JDTheme.C("gui.color.downloadlist.row_package_done", "339933", 10);
-
-        addHighlighter(new FilepackageRowHighlighter(this, backGroundPackage, backGroundPackage) {
-            @Override
-            public boolean doHighlight(FilePackage fp) {
-                return fp.isFinished();
-            }
-        });
-
-        addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
-            @Override
-            public boolean doHighlight(DownloadLink link) {
-                return link.getLinkStatus().hasStatus(LinkStatus.FINISHED);
             }
         });
 

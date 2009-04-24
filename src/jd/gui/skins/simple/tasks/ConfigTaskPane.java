@@ -29,7 +29,6 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
     private JButton eventmanager;
     private JButton sav;
     private boolean changes;
-    private boolean restart;
     public static final int ACTION_GENERAL = 1;
     public static final int ACTION_DOWNLOAD = 2;
     public static final int ACTION_GUI = 3;
@@ -136,7 +135,6 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
 //                    System.out.println("CHANGES !");
                     if (((ConfigPanel) ContentPanel.PANEL.getRightPanel()).hasChanges() == PropertyType.NEEDS_RESTART) {
                         System.out.println("RESTART !");
-                        this.restart = true;
                     }
                 }
                 if (changes) {

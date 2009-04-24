@@ -274,6 +274,7 @@ public class Updater {
     }
 
     /** Copies host and decryptplugins from svn dir to updatelist */
+    @SuppressWarnings("unused")
     private void movePlugins(String cfg) throws IOException {
         if (cfg == null) return;
         pluginsDir = new File(cfg);

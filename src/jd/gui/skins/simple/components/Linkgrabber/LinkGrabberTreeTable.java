@@ -332,34 +332,6 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         return prioPopup;
     }
 
-    // @SuppressWarnings("unchecked")
-    // public Painter getGradientPainter() {
-    // // int height = 20;
-    // // Color color2;
-    // // color1 = new Color(color1.getRed(), color1.getGreen(),
-    // color1.getBlue(), 40);
-    // // color2 = new Color(color1.getRed(), color1.getGreen(),
-    // color1.getBlue(), 200);
-    // // LinearGradientPaint gradientPaint = new LinearGradientPaint(1, 0, 1,
-    // height, new float[] { 0.0f, 1.0f }, new Color[] { color1, color2 });
-    // // MattePainter mattePainter = new MattePainter(gradientPaint);
-    // return new MattePainter(new Color(0xff, 0xfa, 0x7c, 255));
-    // }
-
-    private void addOnlineHighlighter() {
-        Color background = JDTheme.C("gui.color.linkgrabber.online", "c4ffd2", 120);
-
-        addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
-            @Override
-            public boolean doHighlight(DownloadLink link) {
-                if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return false;
-                if (link.isAvailabilityChecked() && link.isAvailable()) return true;
-                return false;
-            }
-        });
-
-    }
-
     private void addDisabledHighlighter() {
         Color background = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100);
 
@@ -387,21 +359,6 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
             }
 
         }, DownloadTreeTable.getFolderPainter(this)));
-
-    }
-
-    private void addOfflineHighlighter() {
-        /* TODO: andre farbe auswählen */
-        Color background = JDTheme.C("gui.color.linkgrabber.error_post", "ff0000", 120);
-
-        addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
-            @Override
-            public boolean doHighlight(DownloadLink link) {
-                if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return false;
-                if (link.isAvailabilityChecked() && !link.isAvailable()) return true;
-                return false;
-            }
-        });
 
     }
 

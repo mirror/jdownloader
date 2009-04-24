@@ -10,8 +10,6 @@ import javax.swing.JScrollPane;
 import jd.config.ConfigPropertyListener;
 import jd.config.Property;
 import jd.controlling.JDController;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;

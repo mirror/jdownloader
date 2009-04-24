@@ -104,17 +104,13 @@ public class LinkAdder extends JTabbedPanel {
 
     private void setClipboard(boolean b) {
         if (b) {
-
-            if (clipboardObserver != null) {
-                clipboardObserver.interrupt();
-            }
+            if (clipboardObserver != null && clipboardObserver.isAlive()) return;
             clipboardObserver = new Thread() {
                 public void run() {
                     String old = null;
                     while (true) {
                         try {
                             String newText = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
-
                             if (newText != null && !newText.equalsIgnoreCase(old)) {
                                 String[] links = HTMLParser.getHttpLinks(newText, null);
                                 if (links.length > 0) {
@@ -157,7 +153,7 @@ public class LinkAdder extends JTabbedPanel {
 
     @Override
     public void onHide() {
-        ClipboardHandler.getClipboard().setEnabled(mainClipBoardEnabled);
         setClipboard(false);
+        ClipboardHandler.getClipboard().setEnabled(mainClipBoardEnabled);
     }
 }

@@ -200,6 +200,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
 
     }
 
+    @SuppressWarnings("unused")
     private static void installSynthetica() {
         try {
             UIManager.setLookAndFeel(new SyntheticaStandardLookAndFeel());

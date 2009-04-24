@@ -40,7 +40,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
@@ -109,9 +108,7 @@ import org.jdesktop.swingx.JXLoginDialog;
 import org.jdesktop.swingx.JXTitledSeparator;
 import org.jdesktop.swingx.JXLoginPane.Status;
 import org.jvnet.lafwidget.LafWidget;
-import org.jvnet.lafwidget.tabbed.DefaultTabPreviewPainter;
 import org.jvnet.lafwidget.utils.LafConstants.AnimationKind;
-import org.jvnet.lafwidget.utils.LafConstants.TabOverviewKind;
 
 //import org.jvnet.substance.SubstanceLookAndFeel;
 //import org.jvnet.substance.SubstanceRootPaneUI;
@@ -213,12 +210,12 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         System.out.println(ui);
         addWindowListener(this);
         this.setAnimate();
-        JDController.getInstance().addControlListener(new ConfigPropertyListener( SimpleGuiConstants.ANIMATION_ENABLED) {     
+        JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
 
             @Override
             public void onPropertyChanged(Property source, String propertyName) {
                 setAnimate();
-                
+
             }
 
         });
@@ -301,11 +298,11 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     private void setAnimate() {
-     
-        if (this.isSubstance()) {
+
+        if (isSubstance()) {
             if (SimpleGuiConstants.isAnimated()) {
                 UIManager.put(LafWidget.ANIMATION_KIND, AnimationKind.REGULAR);
-             
+
             } else {
                 UIManager.put(LafWidget.ANIMATION_KIND, AnimationKind.NONE);
             }
@@ -729,7 +726,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     break;
                 case LinkGrabberTreeTableAction.GUI_ADD:
                     lgTaskPane.setPanelID(0);
-
+                    return;
+                case LinkGrabberTreeTableAction.CLEAR:
+                    lgTaskPane.setPanelID(0);
                     return;
                 }
             }

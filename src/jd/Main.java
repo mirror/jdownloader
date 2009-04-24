@@ -39,7 +39,6 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import javax.swing.UIManager;
 
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
@@ -66,9 +65,6 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.MacOSController;
 import jd.utils.WebUpdate;
-
-import org.jvnet.lafwidget.LafWidget;
-import org.jvnet.lafwidget.utils.LafConstants.AnimationKind;
 
 /**
  * @author astaldo/JD-Team
