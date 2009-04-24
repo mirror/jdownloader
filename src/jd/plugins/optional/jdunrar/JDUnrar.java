@@ -59,7 +59,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     private static final String DUMMY_HOSTER = "dum.my";
 
     public static int getAddonInterfaceVersion() {
-        return 2;
+        return 3;
     }
 
     /**

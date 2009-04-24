@@ -47,7 +47,7 @@ public class JDShutdown extends PluginOptional {
     private static Thread shutdown = null;
 
     public static int getAddonInterfaceVersion() {
-        return 2;
+        return 3;
     }
 
     private MenuItem menuItem;

@@ -43,7 +43,7 @@ public class JDWebinterface extends PluginOptional {
     static final String PROPERTY_USER = "PARAM_USER";
 
     public static int getAddonInterfaceVersion() {
-        return 2;
+        return 3;
     }
 
     public JDWebinterface(PluginWrapper wrapper) {

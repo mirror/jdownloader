@@ -58,7 +58,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     private ConfigEntry txtInfo;
 
     public static int getAddonInterfaceVersion() {
-        return 2;
+        return 3;
     }
 
     private SubConfiguration subConfig = null;

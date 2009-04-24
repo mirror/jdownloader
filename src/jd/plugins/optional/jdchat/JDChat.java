@@ -112,7 +112,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private static final String DEBUG = "";
 
     public static int getAddonInterfaceVersion() {
-        return 2;
+        return 3;
     }
 
     private boolean changed;

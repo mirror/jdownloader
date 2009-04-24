@@ -73,7 +73,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     private TrayIconTooltip tit;
 
     public static int getAddonInterfaceVersion() {
-        return 2;
+        return 3;
     }
 
     public JDLightTray(PluginWrapper wrapper) {

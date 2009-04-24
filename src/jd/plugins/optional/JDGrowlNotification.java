@@ -21,7 +21,7 @@ import jd.utils.JDUtilities;
 
 public class JDGrowlNotification extends PluginOptional {
     public static int getAddonInterfaceVersion() {
-        return 2;
+        return 3;
     }
 
     public JDGrowlNotification(PluginWrapper wrapper) {

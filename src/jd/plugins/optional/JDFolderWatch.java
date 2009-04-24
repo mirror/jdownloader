@@ -49,7 +49,7 @@ public class JDFolderWatch extends PluginOptional {
     }
 
     public static int getAddonInterfaceVersion() {
-        return 2;
+        return 3;
     }
 
     private SubConfiguration subConfig = null;

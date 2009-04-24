@@ -30,7 +30,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
     }
 
-    public static final int ADDON_INTERFACE_VERSION = 2;
+    public static final int ADDON_INTERFACE_VERSION = 3;
 
     public void controlEvent(ControlEvent event) {
 

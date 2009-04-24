@@ -214,7 +214,7 @@ public class Schedule extends PluginOptional {
     }
 
     public static int getAddonInterfaceVersion() {
-        return 2;
+        return 3;
     }
 
     @Override

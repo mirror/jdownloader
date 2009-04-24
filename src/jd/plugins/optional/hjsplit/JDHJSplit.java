@@ -62,7 +62,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     private Jobber queue;
 
     public static int getAddonInterfaceVersion() {
-        return 2;
+        return 3;
     }
 
     public JDHJSplit(PluginWrapper wrapper) {
