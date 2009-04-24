@@ -7,6 +7,11 @@ import java.beans.PropertyChangeListener;
 
 import javax.swing.JScrollPane;
 
+import jd.config.ConfigPropertyListener;
+import jd.config.Property;
+import jd.controlling.JDController;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
@@ -30,7 +35,16 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
         this.setCollapsed(true);
         this.addMouseListener(this);
         getContentPane().setLayout(new MigLayout("ins 0,wrap 1", "[grow, fill]", "[grow,fill]"));
+        this.setAnimated(SimpleGuiConstants.isAnimated());
+        JDController.getInstance().addControlListener(new ConfigPropertyListener( SimpleGuiConstants.ANIMATION_ENABLED) {     
 
+            @Override
+            public void onPropertyChanged(Property source, String propertyName) {
+                setAnimated(SimpleGuiConstants.isAnimated());
+                
+            }
+
+        });
         this.addPropertyChangeListener(new PropertyChangeListener() {
 
             public void propertyChange(PropertyChangeEvent evt) {

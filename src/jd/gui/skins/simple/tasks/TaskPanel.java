@@ -13,9 +13,13 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.event.EventListenerList;
 
+import jd.config.ConfigPropertyListener;
+import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.JDController;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.JTabbedPanel;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.SingletonPanel;
 import net.miginfocom.swing.MigLayout;
 
@@ -46,6 +50,16 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
         this.addMouseListener(this);
         this.listenerList = new EventListenerList();
         this.setPanelID(pid);
+        this.setAnimated(SimpleGuiConstants.isAnimated());
+        JDController.getInstance().addControlListener(new ConfigPropertyListener( SimpleGuiConstants.ANIMATION_ENABLED) {     
+
+            @Override
+            public void onPropertyChanged(Property source, String propertyName) {
+                setAnimated(SimpleGuiConstants.isAnimated());
+                
+            }
+
+        });
         this.addPropertyChangeListener(this);
         this.setLayout(new MigLayout("ins 5 5 5 15, wrap 1", "[fill,grow]", "[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]"));
         setDeligateCollapsed(SubConfiguration.getConfig("gui").getBooleanProperty(getPanelID() + "_collapsed", false));

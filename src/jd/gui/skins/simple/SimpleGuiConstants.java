@@ -23,5 +23,11 @@ public class SimpleGuiConstants {
     public transient static SubConfiguration GUI_CONFIG = null;
     public static final String GUICONFIGNAME = "simpleGUI";
     public static final String PARAM_SIDEBAR_COLLAPSED = "PARAM_SIDEBAR_COLLAPSED";
+    public static final String ANIMATION_ENABLED = "ANIMATION_ENABLED";
+    
+    public static boolean isAnimated() {
+        // TODO Auto-generated method stub
+        return SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.ANIMATION_ENABLED,true);
+    }
 
 }

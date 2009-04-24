@@ -60,8 +60,8 @@ import org.jdesktop.swingx.decorator.ComponentAdapter;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.PainterHighlighter;
 import org.jdesktop.swingx.painter.MattePainter;
-import org.jvnet.lafwidget.animation.FadeConfigurationManager;
-import org.jvnet.lafwidget.animation.FadeKind;
+//import org.jvnet.lafwidget.animation.FadeConfigurationManager;
+//import org.jvnet.lafwidget.animation.FadeKind;
 
 public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener, DropTargetListener {
 
@@ -262,7 +262,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         table.setDragEnabled(true);
 
-        FadeConfigurationManager.getInstance().disallowFades(FadeKind.ROLLOVER, table);
+//        FadeConfigurationManager.getInstance().disallowFades(FadeKind.ROLLOVER, table);
         new DropTarget(table, this);
 
         TableColumn column = null;

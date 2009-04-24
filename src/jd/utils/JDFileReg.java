@@ -18,6 +18,7 @@ package jd.utils;
 
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.gui.UserIO;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
@@ -53,9 +54,8 @@ public class JDFileReg {
             sb.append(createRegisterWinProtocol("rsdf"));
             JDIO.writeLocalFile(JDUtilities.getResourceFile("tmp/installcnl.reg"), "Windows Registry Editor Version 5.00\r\n\r\n\r\n\r\n" + sb.toString());
 
-            JDUtilities.runCommand("regedit", new String[] { "/e", "test.reg", "HKEY_CLASSES_ROOT\\.dlc" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
-            if (!JDUtilities.getResourceFile("tmp/test.reg").exists()) {
-
+           if (!SubConfiguration.getConfig("CNL").getBooleanProperty("INSTALLED",false)) {
+UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN,JDLocale.L("gui.cnl.install.title","Click'n'Load Installation"),JDLocale.L("gui.cnl.install.text","Click'n'load is a very comfortable way to add links to JDownloader. To install Click'n'Load, JDownloader has set some registry entries. You might have to confirm some Windows messages to continue."),JDTheme.II("images.clicknload",32,32),null,null);
                 JDUtilities.runCommand("regedit.exe", new String[] {  "installcnl.reg" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
                 JDUtilities.runCommand("regedit.exe", new String[] { "/e", "test.reg", "HKEY_CLASSES_ROOT\\.dlc" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
                 if (JDUtilities.getResourceFile("tmp/test.reg").exists()) {
@@ -63,7 +63,8 @@ public class JDFileReg {
                 } else {  
                     JDLogger.getLogger().severe("Installation of CLick'n'Load failed. Please try to start JDownloader as Admin. For details, visit http://jdownloader.org/click-n-load. Try to execute " + JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath() + " manually");
                 }
-
+                SubConfiguration.getConfig("CNL").setProperty("INSTALLED",true);
+                SubConfiguration.getConfig("CNL").save();
             }
             JDUtilities.getResourceFile("tmp/test.reg").delete();
 

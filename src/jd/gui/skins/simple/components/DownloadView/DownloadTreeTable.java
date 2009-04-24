@@ -40,6 +40,7 @@ import javax.swing.DropMode;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.JProgressBar;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -188,9 +189,12 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         if (JDUtilities.getJavaVersion() >= 1.6 && SimpleGUI.isSubstance()) {
 
             int height = 20;
-            // JProgressBar progressBar = new JProgressBar();
+            JProgressBar progressBar = new JProgressBar();
             SubstanceColorScheme colorScheme = SubstanceColorSchemeUtilities.getColorScheme(table, ComponentState.SELECTED);
             Color[] colors = new Color[] { Colors.getColor(colorScheme.getUltraLightColor(), 50), Colors.getColor(colorScheme.getLightColor(), 50), Colors.getColor(colorScheme.getMidColor(), 50), Colors.getColor(colorScheme.getUltraLightColor(), 50) };
+
+            // Color[] colors= new
+            // Color[]{Color.RED,Color.BLUE,Color.BLUE,Color.RED};
             LinearGradientPaint paint = new LinearGradientPaint(0, 0, 0, height, new float[] { 0.0f, 0.4f, 0.5f, 1.0f }, colors, CycleMethod.REPEAT);
             return new MattePainter<Component>(paint);
 

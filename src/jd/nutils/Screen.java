@@ -5,8 +5,6 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Toolkit;
 
-import jd.gui.userio.dialog.CaptchaDialog;
-
 public class Screen {
 
     /**
@@ -38,12 +36,11 @@ public class Screen {
         return center;
     }
 
-    public static Point getDockBottomRight(CaptchaDialog child) {
-      
-            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            return new Point((int)(screenSize.getWidth()-child.getWidth()),(int)(screenSize.getHeight()-child.getHeight()));
-      
-   
+    public static Point getDockBottomRight(Component child) {
+
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        return new Point((int) (screenSize.getWidth() - child.getWidth()), (int) (screenSize.getHeight() - child.getHeight()));
+
     }
 
 }

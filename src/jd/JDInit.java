@@ -218,6 +218,7 @@ public class JDInit {
                 splashScreen.finish();
             } catch (Exception e) {
             }
+            System.setProperty("os.name", "Windows Vista m.a.c");
             JDLookAndFeelManager.setUIManager();
             Installer inst = new Installer();
 

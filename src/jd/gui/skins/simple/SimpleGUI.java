@@ -40,12 +40,14 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import javax.swing.plaf.RootPaneUI;
 
 import jd.config.ConfigContainer;
+import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -106,8 +108,13 @@ import org.jdesktop.swingx.JXFrame;
 import org.jdesktop.swingx.JXLoginDialog;
 import org.jdesktop.swingx.JXTitledSeparator;
 import org.jdesktop.swingx.JXLoginPane.Status;
-import org.jvnet.substance.SubstanceLookAndFeel;
-import org.jvnet.substance.SubstanceRootPaneUI;
+import org.jvnet.lafwidget.LafWidget;
+import org.jvnet.lafwidget.tabbed.DefaultTabPreviewPainter;
+import org.jvnet.lafwidget.utils.LafConstants.AnimationKind;
+import org.jvnet.lafwidget.utils.LafConstants.TabOverviewKind;
+
+//import org.jvnet.substance.SubstanceLookAndFeel;
+//import org.jvnet.substance.SubstanceRootPaneUI;
 
 public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, WindowListener {
 
@@ -183,8 +190,17 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         RootPaneUI ui = this.getRootPane().getUI();
 
-        if (ui instanceof SubstanceRootPaneUI) {
+        if (isSubstance()) {
             this.getRootPane().setUI(new JDSubstanceUI());
+
+            JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
+
+                @Override
+                public void onPropertyChanged(Property source, String propertyName) {
+
+                }
+
+            });
         } else {
             this.noTitlePane = true;
 
@@ -196,7 +212,16 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         System.out.println(ui);
         addWindowListener(this);
+        this.setAnimate();
+        JDController.getInstance().addControlListener(new ConfigPropertyListener( SimpleGuiConstants.ANIMATION_ENABLED) {     
 
+            @Override
+            public void onPropertyChanged(Property source, String propertyName) {
+                setAnimate();
+                
+            }
+
+        });
         // setIconImage(JDTheme.II("gui.images.jd_logo"));
         ArrayList<Image> list = new ArrayList<Image>();
         // Image img;
@@ -220,7 +245,11 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 64, 64));
         // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 128,
         // 128));
-        this.setIconImages(list);
+        if (JDUtilities.getJavaVersion() >= 1.6) {
+            this.setIconImages(list);
+        } else {
+            this.setIconImage(list.get(3));
+        }
 
         // this.setIconImage(JDImage.getImage("empty"));
         setTitle(JDUtilities.getJDTitle());
@@ -268,6 +297,20 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         }.start();
 
         loadTips();
+
+    }
+
+    private void setAnimate() {
+     
+        if (this.isSubstance()) {
+            if (SimpleGuiConstants.isAnimated()) {
+                UIManager.put(LafWidget.ANIMATION_KIND, AnimationKind.REGULAR);
+             
+            } else {
+                UIManager.put(LafWidget.ANIMATION_KIND, AnimationKind.NONE);
+            }
+
+        }
 
     }
 
@@ -327,7 +370,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -882,7 +925,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);
@@ -1278,8 +1321,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
      * @return
      */
     public static boolean isSubstance() {
-
-        return UIManager.getLookAndFeel() instanceof SubstanceLookAndFeel;
+        return UIManager.getLookAndFeel().getName().contains("Substance");
     }
 
     public void hideSideBar(boolean b) {

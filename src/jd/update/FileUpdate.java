@@ -87,7 +87,7 @@ public class FileUpdate {
     public boolean equals() {
         if (!exists()) return false;
         String localHash = getLocalHash();
-
+if(localHash==null)return false;
         return localHash.equalsIgnoreCase(hash);
     }
 
