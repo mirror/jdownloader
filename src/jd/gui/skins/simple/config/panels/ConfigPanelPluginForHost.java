@@ -242,7 +242,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                if (table.getSelectedColumn() < 0) return;
+                if (table.getSelectedRow() < 0) return;
                 HostPluginWrapper hpw = pluginsForHost.get(table.getSelectedRow());
                 btnEdit.setEnabled(hpw.hasConfig());
                 btnLoad.setEnabled(!hpw.isLoaded());

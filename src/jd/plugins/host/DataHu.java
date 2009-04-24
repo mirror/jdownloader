@@ -16,17 +16,25 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 public class DataHu extends PluginForHost {
 
     public DataHu(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://data.hu/premium.php");
     }
 
     @Override
@@ -49,6 +57,62 @@ public class DataHu extends PluginForHost {
     @Override
     public String getVersion() {
         return getVersion("$Revision$");
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.getPage("http://data.hu/");
+        Form form = br.getForm(0);
+        form.put("username", Encoding.urlEncode(account.getUser()));
+        form.put(form.getInputFieldByName("login_passfield").getValue(), Encoding.urlEncode(account.getPass()));
+        form.put("remember", "on");
+        br.submitForm(form);
+        br.getPage("http://data.hu/index.php");
+        if (br.getCookie("http://data.hu/", "datapremiumseccode") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    public boolean isPremium() throws IOException {
+        br.getPage("http://data.hu/user.php");
+        if (br.getRegex("logged_user_prem_date\">(.*?)<").matches()) return true;
+        return false;
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        this.setBrowserExclusive();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+
+        String days = br.getRegex("logged_user_prem_date\">(.*?)<").getMatch(0);
+        if (days != null) {
+            ai.setValidUntil(Regex.getMilliSeconds(days, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
+        } else if (days == null || days.equals("0")) {
+            ai.setExpired(true);
+            ai.setValid(false);
+            return ai;
+        }
+        String points = br.getRegex(Pattern.compile("leftpanel_datapont_pont\">(\\d+)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (points != null) ai.setPremiumPoints(Long.parseLong(points.trim().replaceAll(",|\\.", "")));
+        ai.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        getFileInformation(downloadLink);
+        login(account);
+        br.getPage(downloadLink.getDownloadURL());
+        String link = br.getRegex("window.location.href='(.*?)';").getMatch(0);
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.setFollowRedirects(true);
+        dl = br.openDownload(downloadLink, link, true, 0);
+        dl.startDownload();
     }
 
     @Override
@@ -92,6 +156,6 @@ public class DataHu extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

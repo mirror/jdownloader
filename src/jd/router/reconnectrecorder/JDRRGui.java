@@ -195,7 +195,7 @@ public class JDRRGui extends JDialog implements ActionListener {
             setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 
             setResizable(false);
-            setUndecorated(false);
+            setUndecorated(true);
             setTitle("RRStatus");
             setLocation(20, 20);
             setAlwaysOnTop(true);

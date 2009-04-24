@@ -97,6 +97,7 @@ public class SendspaceCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         String linkurl = br.getRegex("<a id=\"downlink\" class=\"mango\" href=\"(.*?)\"").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.setFollowRedirects(true);
         dl = br.openDownload(link, linkurl, true, 0);
         dl.startDownload();
     }
