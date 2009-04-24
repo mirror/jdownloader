@@ -23,6 +23,8 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -36,12 +38,67 @@ public class SendspaceCom extends PluginForHost {
 
     public SendspaceCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.setStartIntervall(5000l);
+        enablePremium("http://www.sendspace.com/joinpro_pay.html");
+        setStartIntervall(5000l);
     }
 
     @Override
     public String getAGBLink() {
         return "http://www.sendspace.com/terms.html";
+    }
+
+    public void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage("http://www.sendspace.com/login.html");
+        br.postPage("http://www.sendspace.com/login.html", "action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1&submit=login&openid_url=&action_type=login");
+        if (br.getCookie("http://www.sendspace.com", "ssal") == null || br.getCookie("http://www.sendspace.com", "ssal").equalsIgnoreCase("deleted")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (!isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    public boolean isPremium() throws IOException {
+        br.getPage("http://www.sendspace.com/mysendspace/myindex.html?l=1");
+        if (br.containsHTML("Your membership is valid for")) return true;
+        return false;
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        this.setBrowserExclusive();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        String left = br.getRegex("You have downloaded (.*?)GB today").getMatch(0);
+        if (left != null) {
+            int tleft = 800 - Integer.parseInt(left.replaceAll("\\.", ""));
+            ai.setTrafficLeft((long) (1024l * 1024l * 1024 * (tleft / 100.0)));
+        }
+        String days = br.getRegex("Your membership is valid for (\\d+) days").getMatch(0);
+        if (days != null) {
+            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 50 * 50 * 1000));
+        } else if (days == null || days.equals("0")) {
+            ai.setExpired(true);
+            ai.setValid(false);
+            return ai;
+        }
+        String points = br.getRegex(Pattern.compile("You have([\\d+, ]+)<a href=\"maxpoints", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (points != null) ai.setPremiumPoints(Long.parseLong(points.trim().replaceAll(",|\\.", "")));
+        ai.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        getFileInformation(link);
+        login(account);
+        br.getPage(link.getDownloadURL());
+        String linkurl = br.getRegex("<a id=\"downlink\" class=\"mango\" href=\"(.*?)\"").getMatch(0);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl = br.openDownload(link, linkurl, true, 0);
+        dl.startDownload();
     }
 
     @Override
@@ -95,9 +152,9 @@ public class SendspaceCom extends PluginForHost {
             br.getPage(con.getURL().toExternalForm());
             String error = br.getRegex("<div class=\"errorbox-bad\".*?>(.*?)</div>").getMatch(0);
             if (error == null) error = br.getRegex("<div class=\"errorbox-bad\".*?>.*?>(.*?)</>").getMatch(0);
-            if (error == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sendspacecom.errors.servererror","Unknown server error"), 5 * 60 * 1000l);
+            if (error == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sendspacecom.errors.servererror", "Unknown server error"), 5 * 60 * 1000l);
             if (error.contains("You may now download the file")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 30 * 1000l); }
-            if (error.contains("full capacity")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sendspacecom.errors.serverfull","Free service capacity full"), 5 * 60 * 1000l); }
+            if (error.contains("full capacity")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sendspacecom.errors.serverfull", "Free service capacity full"), 5 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         if (con.getResponseCode() == 416) {
@@ -128,6 +185,6 @@ public class SendspaceCom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

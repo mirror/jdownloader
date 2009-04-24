@@ -249,7 +249,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
         public Account getAccount() {
             String pass = new String(txtPassword.getPassword());
             if (account == null) return null;
-            if (account.getUser().length() == 0 && account.getPass().length() == 0) return null;
+            if (txtUsername.getText().length() == 0 && pass.length() == 0) return null;
             if (!account.getUser().equals(txtUsername.getText()) || !account.getPass().equals(pass)) {
                 account.setUser(txtUsername.getText());
                 account.setPass(pass);
@@ -383,7 +383,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                 if (info.isCollapsed()) {
                     AccountInfo ai;
                     try {
-                        ai = host.getAccountInformation(account);
+                        ai = host.getAccountInformation(getAccount());
                         if (ai == null) return;
                         Container details = info.getContentPane();
                         details.setLayout(new MigLayout("ins 0 0 0 0, wrap 3,aligny top", "[][fill,align right]15[grow, fill,align left]"));
