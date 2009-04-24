@@ -31,7 +31,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.captcha.JAntiCaptcha;
 import jd.controlling.JDLogger;
-
+import jd.gui.skins.simple.GuiRunnable;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -173,19 +173,26 @@ public class UTILITIES {
      * @param file
      * @return Neues Bild
      */
-    public static Image loadImage(File file) {
-        JFrame jf = new JFrame();
-        Image img = jf.getToolkit().getImage(file.getAbsolutePath());
-        MediaTracker mediaTracker = new MediaTracker(jf);
-        mediaTracker.addImage(img, 0);
-        try {
-            mediaTracker.waitForID(0);
-        } catch (InterruptedException e) {
-            return null;
-        }
+    public static Image loadImage(final File file) {
+        GuiRunnable<Image> run = new GuiRunnable<Image>() {
+            @Override
+            public Image runSave() {
+                JFrame jf = new JFrame();
+                Image img = jf.getToolkit().getImage(file.getAbsolutePath());
+                MediaTracker mediaTracker = new MediaTracker(jf);
+                mediaTracker.addImage(img, 0);
+                try {
+                    mediaTracker.waitForID(0);
+                } catch (InterruptedException e) {
+                    return null;
+                }
 
-        mediaTracker.removeImage(img);
-        return img;
+                mediaTracker.removeImage(img);
+                return img;
+            }
+        };
+        run.waitForEDT();
+        return run.getReturnValue();
     }
 
     public static int nextJump(int x, int from, int to, int step) {
