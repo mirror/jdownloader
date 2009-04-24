@@ -101,6 +101,11 @@ public class TreeTableTransferHandler extends TransferHandler {
         return new StringSelection("JDAFFE");
     }
 
+    @Override
+    protected void exportDone(JComponent source, Transferable data, int action) {
+        isDragging = false;
+    }
+
     @SuppressWarnings("unchecked")
     private boolean drop(int row, Point point) {
         if (!isDragging) return false;
@@ -221,7 +226,7 @@ public class TreeTableTransferHandler extends TransferHandler {
     public boolean importData(TreeTableTransferHandler.TransferSupport info) {
         try {
             Transferable tr = info.getTransferable();
-            if (tr.isDataFlavorSupported(DataFlavor.stringFlavor) && ((String) tr.getTransferData(DataFlavor.stringFlavor)).equalsIgnoreCase("jdaffe")) {
+            if (isDragging) {
                 Point p = ((JTable.DropLocation) info.getDropLocation()).getDropPoint();
                 int row = ((JTable.DropLocation) info.getDropLocation()).getRow();
                 return drop(row, p);
