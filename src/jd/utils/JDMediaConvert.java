@@ -28,13 +28,15 @@ public class JDMediaConvert {
 
     private static Logger logger = jd.controlling.JDLogger.getLogger();
 
-    private static String TempExt = ".tmp";
+    private static String TempExt = ".tmp$";
 
     public static boolean ConvertFile(DownloadLink downloadlink, ConversionMode InType, ConversionMode OutType) {
         logger.info("Convert " + downloadlink.getName() + " - " + InType.GetText() + " - " + OutType.GetText());
         if (InType.equals(OutType)) {
             logger.info("No Conversion needed, renaming...");
-            new File(downloadlink.getFileOutput()).renameTo(new File(downloadlink.getFileOutput().replaceAll(".tmp", OutType.GetExtFirst())));
+            File oldone = new File(downloadlink.getFileOutput());
+            File newone = new File(downloadlink.getFileOutput().replaceAll(TempExt, OutType.GetExtFirst()));
+            oldone.renameTo(newone);
             return true;
         }
 

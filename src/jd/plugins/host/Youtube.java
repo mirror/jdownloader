@@ -20,7 +20,8 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
-import jd.parser.html.Form;
+import jd.http.Encoding;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -44,13 +45,19 @@ public class Youtube extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+        downloadLink.setFinalFileName(downloadLink.getStringProperty("finalname", "video.tmp"));
         br.setFollowRedirects(true);
-        return (br.openGetConnection(downloadLink.getDownloadURL()).getResponseCode() == 200);
+        URLConnectionAdapter tmp = br.openGetConnection(downloadLink.getDownloadURL());
+        if (tmp.getResponseCode() == 200) {
+            tmp.disconnect();
+            return true;
+        }
+        tmp.disconnect();
+        return false;
     }
 
     @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
@@ -64,7 +71,6 @@ public class Youtube extends PluginForHost {
             linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.hoster.youtube.errors.serverunavailable", "Server unavailable"));
             return;
         }
-        br.getHttpConnection().disconnect();
         dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {
@@ -84,17 +90,12 @@ public class Youtube extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
         login(account);
-        if (!br.getRegex("<title>YouTube - Mein YouTube: " + account.getUser() + "</title>").matches()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
-
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.hoster.youtube.errors.serverunavailable", "Server unavailable"));
             return;
         }
-        br.getHttpConnection().disconnect();
         dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {
@@ -125,29 +126,24 @@ public class Youtube extends PluginForHost {
     }
 
     private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+        br.getPage("http://www.youtube.com/");
         br.getPage("http://www.youtube.com/signup?next=/index");
-        Form login = br.getFormbyProperty("name", "loginForm");
-        login.put("username", account.getUser());
-        login.put("password", account.getPass());
-        br.submitForm(login);
+        br.postPage("https://www.google.com/accounts/ServiceLoginAuth?service=youtube", "ltmpl=sso&continue=http%3A%2F%2Fwww.youtube.com%2Fsignup%3Fhl%3Den_US%26warned%3D%26nomobiletemp%3D1%26next%3D%2Findex&service=youtube&uilel=3&ltmpl=sso&hl=en_US&ltmpl=sso&GALX=IKTS6-HeUug&Email=" + Encoding.urlEncode(account.getUser()) + "&Passwd=" + Encoding.urlEncode(account.getPass()) + "&PersistentCookie=yes&rmShown=1&signIn=Sign+in&asts=");
+        br.getPage("http://www.youtube.com/index?hl=en-GB");
+        if (!br.getRegex("<title>YouTube - " + account.getUser() + "'s YouTube</title>").matches()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
-        br.setFollowRedirects(true);
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-        login(account);
-        if (!br.getRegex("<title>YouTube - Mein YouTube: " + account.getUser() + "</title>").matches()) {
+        try {
+            login(account);
+        } catch (PluginException e) {
             ai.setValid(false);
-            ai.setStatus(JDLocale.L("plugins.hoster.youtube.accountbad", "Account is invalid. Probably bad login."));
             return ai;
         }
-
         ai.setStatus(JDLocale.L("plugins.hoster.youtube.accountok", "Account is OK."));
         ai.setValidUntil(-1);
         ai.setValid(true);

@@ -17,8 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -26,8 +24,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class YouPornCom extends PluginForDecrypt {
-
-    private static final Pattern DOWNLOADFILE = Pattern.compile("var player_url = '(.*?)';", Pattern.CASE_INSENSITIVE);
 
     public YouPornCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,8 +36,8 @@ public class YouPornCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
 
         br.postPage(parameter, "user_choice=Enter");
-        String matches = br.getRegex(DOWNLOADFILE).getMatch(0);
-        String filename = br.getRegex("<meta name=\"title\" content=\"YOUPORN - (.*?)\" />").getMatch(0);
+        String matches = br.getRegex("addVariable\\('file', encodeURIComponent\\('(.*?)'\\)\\);").getMatch(0);
+        String filename = br.getRegex("<title>(.*?)- Free Porn Videos - YouPorn.com Lite \\(BETA\\)</title>").getMatch(0);
         if (matches == null) { return null; }
         matches = matches.replaceAll("&xml=1", "");
         DownloadLink dlink = createDownloadlink(matches);

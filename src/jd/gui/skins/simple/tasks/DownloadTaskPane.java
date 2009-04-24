@@ -49,8 +49,10 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
         long tot = 0;
         long loaded = 0;
         for (DownloadLink l : dlc.getAllDownloadLinks()) {
-            if (!l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS) && l.isEnabled()) tot += l.getDownloadSize();
-            loaded += l.getDownloadCurrent();
+            if (!l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS) && l.isEnabled()) {
+                tot += l.getDownloadSize();
+                loaded += l.getDownloadCurrent();
+            }
         }
 
         totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
@@ -60,8 +62,7 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
         if (JDUtilities.getController().getSpeedMeter() > 1024) {
             speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s"));
 
-            long etanum = (tot - loaded) / JDUtilities.getController().getSpeedMeter();
-
+            long etanum = (tot - loaded) / JDUtilities.getController().getSpeedMeter();            
             eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", Formatter.formatSeconds(etanum)));
         } else {
             eta.setText("");

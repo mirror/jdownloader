@@ -61,19 +61,15 @@ public class YouTubeCom extends PluginForDecrypt {
     }
 
     private void login(Account account) throws Exception {
-        if (account.isEnabled()) {
-            br.setFollowRedirects(true);
-            br.setCookiesExclusive(true);
-            br.clearCookies("youtube.com");
-            br.getPage("http://www.youtube.com/signup?next=/index");
-            Form login = br.getFormbyProperty("name", "loginForm");
-            login.put("username", account.getUser());
-            login.put("password", account.getPass());
-            br.submitForm(login);
-            if (!br.getRegex("<title>YouTube - Mein YouTube: " + account.getUser() + "</title>").matches()) {
-                logger.severe("Account invalid");
-                account.setEnabled(false);
-            }
+        br.setCookiesExclusive(true);
+        br.clearCookies("http://www.youtube.com/");
+        br.setFollowRedirects(true);
+        br.getPage("http://www.youtube.com/");
+        br.getPage("http://www.youtube.com/signup?next=/index");
+        br.postPage("https://www.google.com/accounts/ServiceLoginAuth?service=youtube", "ltmpl=sso&continue=http%3A%2F%2Fwww.youtube.com%2Fsignup%3Fhl%3Den_US%26warned%3D%26nomobiletemp%3D1%26next%3D%2Findex&service=youtube&uilel=3&ltmpl=sso&hl=en_US&ltmpl=sso&GALX=IKTS6-HeUug&Email=" + Encoding.urlEncode(account.getUser()) + "&Passwd=" + Encoding.urlEncode(account.getPass()) + "&PersistentCookie=yes&rmShown=1&signIn=Sign+in&asts=");
+        br.getPage("http://www.youtube.com/index?hl=en-GB");
+        if (!br.getRegex("<title>YouTube - " + account.getUser() + "'s YouTube</title>").matches()) {
+            account.setEnabled(false);
         }
     }
 
@@ -164,6 +160,7 @@ public class YouTubeCom extends PluginForDecrypt {
                 thislink.setFinalFileName(name + ".tmp");
                 thislink.setSourcePluginComment("Convert to " + convertTo.GetText());
                 thislink.setProperty("convertto", convertTo.name());
+                thislink.setProperty("finalname", name + ".tmp");
                 decryptedLinks.add(thislink);
                 if (gotHD && convertTo == ConvertDialog.ConversionMode.VIDEOMP4) {
                     thislink = createDownloadlink(link.replaceAll("&fmt=18", "&fmt=22"));
@@ -171,6 +168,7 @@ public class YouTubeCom extends PluginForDecrypt {
                     thislink.setFinalFileName(name + "(HD)" + ".tmp");
                     thislink.setSourcePluginComment("Convert to " + convertTo.GetText());
                     thislink.setProperty("convertto", convertTo.name());
+                    thislink.setProperty("finalname", name + "(HD).tmp");
                     decryptedLinks.add(thislink);
                 }
             }
