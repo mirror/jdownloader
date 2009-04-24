@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -100,7 +102,9 @@ public class Odsiebiecom extends PluginForHost {
                     }
                 }
                 if (adr == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                File file = br.cloneBrowser().getDownloadTemp(adr);
+                URLConnectionAdapter con = br.openGetConnection(adr);
+                File file = this.getLocalCaptchaFile(this);
+                Browser.download(file, con);
                 String code = getCaptchaCode(file, downloadLink);
                 capform.getInputFieldByName("captcha").setValue(code);
                 br.submitForm(capform);
