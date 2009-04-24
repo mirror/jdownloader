@@ -31,11 +31,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
@@ -248,7 +250,7 @@ abstract public class DownloadInterface {
             } catch (Exception e) {
                 addException(e);
                 error(LinkStatus.ERROR_RETRY, JDUtilities.convertExceptionReadable(e));
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                logger.log(Level.SEVERE,"Exception occured",e);
             }
             return null;
         }
@@ -406,7 +408,7 @@ abstract public class DownloadInterface {
                         }
 
                     } catch (Exception e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        logger.log(Level.SEVERE,"Exception occured",e);
                         error(LinkStatus.ERROR_FATAL, JDLocale.L("download.error.message.outofmemory", "The downloadsystem is out of memory"));
 
                         return;
@@ -424,7 +426,7 @@ abstract public class DownloadInterface {
                             Thread.sleep(addWait);
                         }
                     } catch (Exception e) {
-//                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+//                        logger.log(Level.SEVERE,"Exception occured",e);
                     }
                     deltaTime = System.currentTimeMillis() - timer;
                     if (deltaTime == 0) deltaTime = 1;
@@ -461,9 +463,9 @@ abstract public class DownloadInterface {
             } catch (IOException e) {
                 if (e.getMessage() != null && e.getMessage().indexOf("timed out") >= 0) {
                     error(LinkStatus.ERROR_TIMEOUT_REACHED, null);
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    logger.log(Level.SEVERE,"Exception occured",e);
                 } else {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    logger.log(Level.SEVERE,"Exception occured",e);
                     if (e.getLocalizedMessage().contains("503")) {
                         linkStatus.setValue(10 * 60000l);
                         error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("download.error.message.unavailable", "Service temp. unavailable"));
@@ -473,7 +475,7 @@ abstract public class DownloadInterface {
                     }
                 }
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                logger.log(Level.SEVERE,"Exception occured",e);
                 error(LinkStatus.ERROR_RETRY, JDUtilities.convertExceptionReadable(e));
                 addException(e);
             }
@@ -483,14 +485,14 @@ abstract public class DownloadInterface {
                     inputStream.close();
                 }
             } catch (IOException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                logger.log(Level.SEVERE,"Exception occured",e);
             }
             try {
                 if (source != null) {
                     source.close();
                 }
             } catch (IOException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                logger.log(Level.SEVERE,"Exception occured",e);
             }
 
         }
@@ -706,7 +708,7 @@ abstract public class DownloadInterface {
         // error(LinkStatus.ERROR_DOWNLOAD_FAILED,
         // JDUtilities.convertExceptionReadable(e));
         // addException(e);
-        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+        // logger.log(Level.SEVERE,"Exception occured",e);
         // }
         // return -1;
         //
@@ -937,7 +939,7 @@ abstract public class DownloadInterface {
 
     public static final int ERROR_REDIRECTED = -1;
 
-    public static Logger logger = jd.controlling.JDLogger.getLogger();
+    public static Logger logger = JDLogger.getLogger();
 
     // private int status = STATUS_INITIALIZED;
 
@@ -1763,12 +1765,12 @@ if(userInterrupt){
             if (e instanceof FileNotFoundException) {
                 this.error(LinkStatus.ERROR_LOCAL_IO, JDLocale.LF("download.error.message.localio", "Could not write to file: %s", e.getMessage()));
             } else {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                logger.log(Level.SEVERE,"Exception occured",e);
             }
             handleErrors();
             // if (plugin.getCurrentStep().getStatus() !=
             // PluginStep.STATUS_ERROR) {
-            // // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            // // logger.log(Level.SEVERE,"Exception occured",e);
             // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
             //
             // plugin.getCurrentStep().setParameter(JDUtilities.
@@ -1825,7 +1827,7 @@ if(userInterrupt){
                     try {
                         this.wait(interval);
                     } catch (Exception e) {
-                        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        // logger.log(Level.SEVERE,"Exception occured",e);
                         Iterator<Chunk> it = chunks.iterator();
                         while (it.hasNext()) {
                             it.next().interrupt();

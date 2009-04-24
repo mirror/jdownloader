@@ -13,7 +13,6 @@ public abstract class JCountdownDialog extends JDialog {
 
     private static final long serialVersionUID = 8114522313158766965L;
     protected Thread countdownThread;
-    private String ownTitle;
     protected int countdown;
     protected JLabel countDownLabel;
 
@@ -22,7 +21,6 @@ public abstract class JCountdownDialog extends JDialog {
         this.countDownLabel = new JLabel();
         setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Please enter..."));
     }
-
 
     public void interrupt() {
         if (countdownThread != null) {
@@ -55,7 +53,7 @@ public abstract class JCountdownDialog extends JDialog {
                     if (countdownThread == null) return;
                     final String left = Formatter.formatSeconds(c);
 
-                    new GuiRunnable() {
+                    new GuiRunnable<Object>() {
 
                         @Override
                         public Object runSave() {

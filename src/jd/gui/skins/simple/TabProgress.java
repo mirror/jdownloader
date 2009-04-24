@@ -196,11 +196,11 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
             this.setLayout(new MigLayout("ins 0", "[18!]0![grow,fill]5![20!]", "16!"));
             this.add(label = new JLabel());
             this.add(bar = new JProgressBar());
-            this.add(cancel = new JButton(JDTheme.II("gui.images.cancel", 16, 16)),"width 16!,height 16!");
-cancel.setBorderPainted(false);
-cancel.setContentAreaFilled(false);
-cancel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-cancel.setOpaque(false);
+            this.add(cancel = new JButton(JDTheme.II("gui.images.cancel", 16, 16)), "width 16!,height 16!");
+            cancel.setBorderPainted(false);
+            cancel.setContentAreaFilled(false);
+            cancel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            cancel.setOpaque(false);
 
             cancel.addActionListener(this);
             // this.add(new JSeparator(), "span");
@@ -226,7 +226,7 @@ cancel.setOpaque(false);
             if (arg0.getSource() == this.cancel) {
                 if (controller != null) controller.fireCancelAction();
                 cancel.setIcon(JDTheme.II("gui.images.bad", 16, 16));
-                cancel.setToolTipText(JDLocale.L("gui.progressbars.cancel.tooltip.interrupted", "Termnation in progress"));
+                cancel.setToolTipText(JDLocale.L("gui.progressbars.cancel.tooltip.interrupted", "Termination in progress"));
                 cancel = null;
             }
         }
