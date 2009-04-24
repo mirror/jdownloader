@@ -27,7 +27,7 @@ gui.images.config.tip = default/dialog-information
 gui.images.captcha.methods=default/font-x-generic
 gui.images.configuration = default/preferences-desktop
 gui.images.delete = default/list-remove
-
+gui.clicknload=logo/cnl
 gui.images.load = default/document-open
 gui.images.next = default/media-playback-start
 gui.images.save = default/document-save
