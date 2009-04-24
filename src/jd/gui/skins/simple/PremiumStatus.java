@@ -50,6 +50,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
     private String MAP_PROP = "MAP2";
     private String MAPSIZE_PROP = "MAPSIZE2";
     private Object Lock = new Object();
+    private boolean redrawinprogress = false;
 
     @SuppressWarnings("unchecked")
     public PremiumStatus() {
@@ -182,10 +183,11 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
     }
 
     private synchronized void redraw() {
+        if (redrawinprogress) return;
+        redrawinprogress = true;
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
-                System.out.println("redraw");
                 synchronized (Lock) {
                     lbl.setVisible(false);
                     for (int i = 0; i < BARCOUNT; i++) {
@@ -228,6 +230,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                         if (i >= BARCOUNT) break;
                     }
                     invalidate();
+                    redrawinprogress = false;
                     return null;
                 }
             }
