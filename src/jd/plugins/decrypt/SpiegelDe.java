@@ -125,7 +125,7 @@ public class SpiegelDe extends PluginForDecrypt {
             String title = new Regex(br.getPage(url), PATTERN_IMG_TITLE).getMatch(0);
             int count = 1;
             FilePackage filePackage = FilePackage.getInstance();
-            filePackage.setName(title);
+            filePackage.setName(title.trim());
             while (url != null) {
                 String page = br.getPage(url);
                 Regex regex = new Regex(page, PATTERN_IMG_URL);
@@ -136,7 +136,7 @@ public class SpiegelDe extends PluginForDecrypt {
                 if (imgLink != null) {
                     DownloadLink dlLink = createDownloadlink(imgLink);
                     dlLink.setFilePackage(filePackage);
-                    dlLink.setFinalFileName(title + "-" + count + ending);
+                    dlLink.setFinalFileName(title.trim() + "-" + count + ending);
                     dlLink.setName(dlLink.getFinalFileName());
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false) == false) {
                         dlLink.addSubdirectory("spiegel.de - fotostrecken");

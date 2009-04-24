@@ -160,7 +160,7 @@ public class Main {
         }
 
         preInitChecks();
-UserIO.setInstance(SimpleUserIO.getInstance());
+        UserIO.setInstance(SimpleUserIO.getInstance());
         for (int i = 0; i < args.length; i++) {
 
             if (args[i].equals("-prot")) {
@@ -403,10 +403,9 @@ UserIO.setInstance(SimpleUserIO.getInstance());
 
         final JDController controller = init.initController();
 
-
         LOGGER.info("init Webupdate");
         Main.increaseSplashStatus();
-        //new WebUpdate().doWebupdate(false);
+        new WebUpdate().doWebupdate(false);
         LOGGER.info("init plugins");
         Main.increaseSplashStatus();
         init.initPlugins();
