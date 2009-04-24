@@ -28,10 +28,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.EvaluatorException;
-import org.mozilla.javascript.Scriptable;
-
 public class MediafireCom extends PluginForHost {
 
     static private final String offlinelink = "tos_aup_violation";
@@ -87,13 +83,14 @@ public class MediafireCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String url = null;
+        br.setDebug(true);
         for (int i = 0; i < 3; i++) {
             getFileInformation(downloadLink);
             if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
-                url = br.getRedirectLocation();
+                url = br.getRedirectLocation();                
             } else {
-                if (br.containsHTML("Password Protected File"))
-                {   br.setDebug(true);
+                if (!br.containsHTML("\\s+cu\\('"))
+                {   
                     String passCode;
                     DownloadLink link = downloadLink;
                     Form form = br.getFormbyProperty("name", "form_password");
@@ -114,8 +111,6 @@ public class MediafireCom extends PluginForHost {
                     } 
                 }
                 
-                //String[][] para = br.getRegex("[a-z]{2}\\(\\'([a-z0-9]{7,14})\\'\\,\\'([0-f0-9]*?)\\'\\,\\'([a-z0-9]{2,14})\\'\\)\\;").getMatches();
-                //if (para.length == 0 || para[0].length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
                 String qk = null, pk = null, r = null;
                 String[] parameters = br.getRegex("\\s+cu\\('(.*?)','(.*?)','(.*?)'\\);").getRow(0);
                 qk = parameters[0];
@@ -125,24 +120,29 @@ public class MediafireCom extends PluginForHost {
                 br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
                 String error = br.getRegex("var et=(.*?);").getMatch(0);
                 if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-                url = br.getRegex("(\"http\\:\\/\\/\".*?)\\+'\"").getMatch(0);
-                String js = br.getRegex("<script language=\"Javascript\">.*?\\<\\!\\-\\-(.*?)function").getMatch(0);
-                String fnc = "function f(){" + js + "\r\nreturn " + url + ";}f();";
-                Context cx = Context.enter();
-                try {
-                    Scriptable scope = cx.initStandardObjects();
-                    url = Context.toString(cx.evaluateString(scope, fnc, "<cnd>", 1, null));
+                url = br.getRegex("(http\\:\\/\\/\".*?)\\+'\"").getMatch(0);
+                String finalurl = null;
+                String value;
+                String[] variables = new Regex(url, "\\+(.*?)\\+").getColumn(0);
+                String mL = br.getRegex("var mL='(.*?)'").getMatch(0);
+                String mH = br.getRegex("var mH='(.*?)'").getMatch(0);
+                String mY = br.getRegex("var mY='(.*?)'").getMatch(0);
+                finalurl="http://"+mL+"/";
+                for(i=0;i<variables.length;i++)
+                {     
+                    value = br.getRegex("var "+variables[i]+"='(.*?)';").getMatch(0);
+                    if (variables[i].equalsIgnoreCase("'/' ") || variables[i].equalsIgnoreCase("'/'")) value = null;
+                    if (variables[i].equalsIgnoreCase(" 'g/'")) value = null;
+                    if (variables[i].equalsIgnoreCase("mL")) value = null;
+                    if (variables[i].equalsIgnoreCase("mH")) value = null;
 
-                    Context.exit();
-                } catch (EvaluatorException e) {
-                    if (i == 2) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.mediafirecom.errors.javascripterror", "JavaScript Error"));
-                    continue;
+                    if (value!=null && value!="null") finalurl= finalurl + value;
                 }
-                break;
+                url = finalurl + "g/"+mH+"/"+mY;
+                if (url.contains("/g/")) throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
-        br.setDebug(true);
-        dl = br.openDownload(downloadLink, url, true, 0);
+        dl = br.openDownload(downloadLink, url, true, 1);
         dl.startDownload();
     }
 
