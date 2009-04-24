@@ -267,6 +267,12 @@ public class DownloadController implements FilePackageListener, DownloadControll
         }
     }
 
+    public int indexOf(FilePackage fp) {
+        synchronized (packages) {
+            return packages.indexOf(fp);
+        }
+    }
+
     public void addPackageAt(FilePackage fp, int index) {
         if (fp == null) return;
         synchronized (packages) {
@@ -274,20 +280,32 @@ public class DownloadController implements FilePackageListener, DownloadControll
                 addPackage(fp);
                 return;
             }
-            if (index > packages.size() - 1) {
-                index = packages.size() - 1;
-            }
-            if (index < 0) {
-                index = 0;
-            }
             if (packages.contains(fp)) {
                 packages.remove(fp);
-                packages.add(index, fp);
+                if (index > packages.size() - 1) {
+                    packages.add(fp);
+                } else if (index < 0) {
+                    packages.add(0, fp);
+                } else
+                    packages.add(index, fp);
                 broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
             } else {
-                packages.add(index, fp);
+                if (index > packages.size() - 1) {
+                    packages.add(fp);
+                } else if (index < 0) {
+                    packages.add(0, fp);
+                } else
+                    packages.add(index, fp);
                 fp.getBroadcaster().addListener(this);
                 broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE));
+            }
+        }
+    }
+
+    public void addAllAt(Vector<FilePackage> links, int index) {
+        synchronized (packages) {
+            for (int i = 0; i < links.size(); i++) {
+                addPackageAt(links.get(i), index + i);
             }
         }
     }

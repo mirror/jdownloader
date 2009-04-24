@@ -147,10 +147,20 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         synchronized (downloadLinks) {
             if (downloadLinks.contains(link)) {
                 downloadLinks.remove(link);
-                downloadLinks.add(index, link);
+                if (index > downloadLinks.size() - 1) {
+                    downloadLinks.add(link);
+                } else if (index < 0) {
+                    downloadLinks.add(0, link);
+                } else
+                    downloadLinks.add(index, link);
                 getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
             } else {
-                downloadLinks.add(index, link);
+                if (index > downloadLinks.size() - 1) {
+                    downloadLinks.add(link);
+                } else if (index < 0) {
+                    downloadLinks.add(0, link);
+                } else
+                    downloadLinks.add(index, link);
                 if (!link.isEnabled()) synchronized (links_Disabled) {
                     links_Disabled++;
                 }
