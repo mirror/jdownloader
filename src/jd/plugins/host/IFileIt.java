@@ -61,7 +61,6 @@ public class IFileIt extends PluginForHost {
                 br2= br.cloneBrowser();
                 br2.getPage("http://ifile.it/download:dl_request?it="+it+",type=simple,esn=1,0d149="+code+",0d149x=0");
                 if (br2.containsHTML("retry")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                downloadLink.requestGuiUpdate();
             }
             br.getPage("http://ifile.it/dl");
             dlLink = br.getRegex("var __url\\s+=\\s+'(http://.*?)'").getMatch(0);
@@ -73,8 +72,9 @@ public class IFileIt extends PluginForHost {
         else {
             dlLink = previousLink;
         }
+        br.setDebug(true);
         /* Datei herunterladen */
-        dl = br.openDownload(downloadLink, dlLink, true, 1);
+        dl = br.openDownload(downloadLink, dlLink, true, -2);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isOK()) {
             if (previousLink != null) {
@@ -84,7 +84,6 @@ public class IFileIt extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
         }
-        
         dl.startDownload();
     }
 
