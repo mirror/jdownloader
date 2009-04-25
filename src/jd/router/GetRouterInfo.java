@@ -54,6 +54,7 @@ import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.http.Browser;
 import jd.http.RequestHeader;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.OSDetector;
 import jd.nutils.Threader;
 import jd.nutils.jobber.JDRunnable;
 import jd.utils.JDLocale;
@@ -224,7 +225,7 @@ public class GetRouterInfo {
         }
         if (new File("/sbin/route").exists()) {
             try {
-                String OS = System.getProperty("os.name").toLowerCase();
+                String OS = OSDetector.getOSString().toLowerCase();
                 if (OS.indexOf("mac") > -1) {
                     String routingt = JDUtilities.runCommand("/sbin/route", new String[] { "-n", "get", "default" }, "/", 2);
                     Pattern pattern = Pattern.compile("gateway: (\\S*)", Pattern.CASE_INSENSITIVE);

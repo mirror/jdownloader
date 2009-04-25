@@ -34,6 +34,7 @@ import jd.config.CFGConfig;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.nutils.JDHash;
+import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.nutils.zip.UnZip;
 import jd.parser.Regex;
@@ -175,7 +176,7 @@ public class WebUpdater implements Serializable {
                     if (url == null) url = entry.getRelURL();
                     if (url.toLowerCase().indexOf(element) >= 0) {
                         osFound = true;
-                        if (System.getProperty("os.name").toLowerCase().indexOf(element) >= 0) {
+                        if (OSDetector.getOSString().toLowerCase().indexOf(element) >= 0) {
                             correctOS = true;
                         }
                     }

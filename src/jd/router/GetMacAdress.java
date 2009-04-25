@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
+import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
@@ -39,8 +40,8 @@ public class GetMacAdress {
     }
 
     private String callArpTool(String ipAddress) throws IOException, InterruptedException {
-        String OS = System.getProperty("os.name").toLowerCase();
-        if (OS.indexOf("nt") > -1 || OS.indexOf("windows") > -1) { return callArpToolWindows(ipAddress); }
+       
+        if (OSDetector.isWindows()) { return callArpToolWindows(ipAddress); }
 
         return callArpToolDefault(ipAddress);
     }

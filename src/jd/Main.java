@@ -43,6 +43,7 @@ import javax.swing.JOptionPane;
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
+import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
@@ -56,6 +57,7 @@ import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.userio.SimpleUserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.OSDetector;
 import jd.update.WebUpdater;
 import jd.utils.CheckJava;
 import jd.utils.JDFileReg;
@@ -95,7 +97,7 @@ public class Main {
 
                     String seperator = "/";
 
-                    if (System.getProperty("os.name").toLowerCase().contains("win") || System.getProperty("os.name").toLowerCase().contains("nt")) {
+                    if (OSDetector.getOSString().toLowerCase().contains("win") || OSDetector.getOSString().toLowerCase().contains("nt")) {
                         seperator = "\\";
                     }
 
@@ -351,7 +353,7 @@ public class Main {
      */
     private static void initMACProperties() {
         // Mac specific //
-        if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
+        if (OSDetector.isMac()) {
             LOGGER.info("apple.laf.useScreenMenuBar=true");
             LOGGER.info("com.apple.mrj.application.growbox.intrudes=false");
             LOGGER.info("com.apple.mrj.application.apple.menu.about.name=jDownloader");
@@ -388,7 +390,7 @@ public class Main {
 
             JOptionPane.showMessageDialog(null, "JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
-
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, true);
         if (JDInitFlags.SWITCH_DEBUG) {
             LOGGER.info("DEBUG MODE ACTIVATED");
             LOGGER.setLevel(Level.ALL);
@@ -406,6 +408,7 @@ public class Main {
         LOGGER.info("init Webupdate");
         Main.increaseSplashStatus();
         new WebUpdate().doWebupdate(false);
+
         LOGGER.info("init plugins");
         Main.increaseSplashStatus();
         init.initPlugins();

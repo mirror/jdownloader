@@ -43,6 +43,7 @@ public class OSDetector {
 
     private static byte OS_ID = -1;
     private static MultiState IS_WINDOWS_VISTA_ADMIN = MultiState.UNCHECKED;
+    private static String OS_STRING;
     public static final byte OS_LINUX_OTHER = 6;
     public static final byte OS_MAC_OTHER = 5;
     public static final byte OS_WINDOWS_2000 = 2;
@@ -53,7 +54,7 @@ public class OSDetector {
     public static final byte OS_WINDOWS_XP = 0;
 
     private static void getOS() {
-        String OS = System.getProperty("os.name").toLowerCase();
+        String OS = getOSString().toLowerCase();
         if (OS.indexOf("windows xp") > -1) {
             OS_ID = OS_WINDOWS_XP;
         } else if (OS.indexOf("windows vista") > -1) {
@@ -176,6 +177,17 @@ public class OSDetector {
         if (windowManager != null && windowManager.trim().toLowerCase().endsWith("kde")) { return true; }
 
         return false;
+    }
+
+    public static String getOSString() {
+        if (OS_STRING == null) OS_STRING = System.getProperty("os.name");
+        return OS_STRING;
+
+    }
+
+    public static void setOSString(String property) {
+        OS_STRING = property;
+
     }
 
 }

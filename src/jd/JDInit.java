@@ -218,6 +218,10 @@ public class JDInit {
                 splashScreen.finish();
             } catch (Exception e) {
             }
+            /**
+             * Workaround to enable JGoodies for MAC oS
+             */
+            OSDetector.setOSString(System.getProperty("os.name"));
             System.setProperty("os.name", "Windows Vista m.a.c");
             JDLookAndFeelManager.setUIManager();
             Installer inst = new Installer();

@@ -29,6 +29,7 @@ import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
+import jd.nutils.OSDetector;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -78,7 +79,7 @@ public abstract class UnitTest {
         // frame.setAlwaysOnTop(true);
         System.setProperty("file.encoding", "UTF-8");
         // Mac specific //
-        if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
+        if (OSDetector.isMac()) {
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "jDownloader");
             System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
             System.setProperty("apple.laf.useScreenMenuBar", "true");
@@ -147,14 +148,14 @@ public abstract class UnitTest {
                         System.out.println("Successfull");
                         // System.out.println(testInstance.getLog());
                     } catch (Exception e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                         System.out.println("FAILED");
                         // System.err.println(testInstance.getLog());
                     }
 
                 }
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
         }
     }

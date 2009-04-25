@@ -34,6 +34,7 @@ import jd.controlling.interaction.InteractionTrigger;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
+import jd.nutils.OSDetector;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -209,10 +210,14 @@ public class JDShutdown extends PluginOptional {
             CountdownConfirmDialog shutDownMessage = new CountdownConfirmDialog(((SimpleGUI) JDUtilities.getGUI()), JDLocale.L("interaction.shutdown.dialog.msg", "<h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>"), count, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
             if (shutDownMessage.result) {
                 JDUtilities.getController().prepareShutdown();
-                String OS = System.getProperty("os.name").toLowerCase();
-                if (OS.indexOf("windows xp") > -1 || OS.indexOf("windows vista") > -1 || OS.indexOf("windows 2003") > -1) {
+                switch (OSDetector.getOSID()) {
+                case OSDetector.OS_WINDOWS_2003:
+                case OSDetector.OS_WINDOWS_VISTA:
+                case OSDetector.OS_WINDOWS_XP:
                     shutDownWin();
-                } else if (OS.indexOf("windows 2000") > -1 || OS.indexOf("nt") > -1) {
+                    break;
+                case OSDetector.OS_WINDOWS_2000:
+                case OSDetector.OS_WINDOWS_NT:
                     shutDownWin();
                     try {
                         FileWriter fw = null;
@@ -232,7 +237,8 @@ public class JDShutdown extends PluginOptional {
                         }
                     } catch (Exception e) {
                     }
-                } else if (OS.indexOf("windows") > -1) {
+                    break;
+                case OSDetector.OS_WINDOWS_OTHER:
                     try {
                         JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "user,ExitWindows" }, null, 0);
                     } catch (Exception e) {
@@ -241,7 +247,8 @@ public class JDShutdown extends PluginOptional {
                         JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "Shell32,SHExitWindowsEx", "1" }, null, 0);
                     } catch (Exception e) {
                     }
-                } else if (OS.indexOf("mac") >= 0) {
+                    break;
+                case OSDetector.OS_MAC_OTHER:
                     try {
                         if (getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
                             JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxhibernate.scpt").getAbsolutePath() }, null, 0);
@@ -250,7 +257,7 @@ public class JDShutdown extends PluginOptional {
                         }
                     } catch (Exception e) {
                     }
-                } else {
+                default:
                     if (getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
                         try {
                             dbusPowerState("Hibernate");
@@ -275,7 +282,9 @@ public class JDShutdown extends PluginOptional {
                         } catch (Exception e) {
                         }
                     }
+                    break;
                 }
+
             }
         }
     }

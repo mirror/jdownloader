@@ -59,6 +59,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiUtils;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.tasks.TaskPanel;
+import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
@@ -1290,7 +1291,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
             } else if (Regex.matches(cmd, CMD_VERSION)) {
 
-                String msg = " is using " + JDUtilities.getJDTitle() + " with Java " + JDUtilities.getJavaVersion() + " on a " + System.getProperty("os.name") + " system";
+                String msg = " is using " + JDUtilities.getJDTitle() + " with Java " + JDUtilities.getJavaVersion() + " on a " +OSDetector.getOSString() + " system";
                 conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + prepareToSend(msg) + new String(new byte[] { 1 }));
                 addToText(null, STYLE_ACTION, conn.getNick() + " " + Utils.prepareMsg(msg));
             } else if (Regex.matches(cmd, CMD_MODE)) {
