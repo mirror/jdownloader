@@ -585,6 +585,7 @@ public class JDInit {
         new HostPluginWrapper("ShareGadget.com", "ShareGadgetCom", "http://.*?sharegadget\\.com/[0-9]+.");
         new HostPluginWrapper("Uptal.com", "UptalCom", "http://.*?uptal\\.com/\\?d=[A-Fa-f0-9]+");
         new HostPluginWrapper("IFile.it", "IFileIt", "http://.*?ifile\\.it/[A-za-z0-9]+.*");
+        new HostPluginWrapper("Mihd.net", "IFileIt", "http://.*?mihd\\.net/[A-za-z0-9]+.*");
 
         // Hoster from Extern
         new HostPluginWrapper("iFolder.ru", "IfolderRu", "http://[\\w\\.]*?ifolder\\.ru/\\d+");
