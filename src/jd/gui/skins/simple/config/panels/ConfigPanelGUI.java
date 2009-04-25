@@ -105,6 +105,7 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.ANIMATION_ENABLED, JDLocale.L("gui.config.gui.animationenabled", "Enable extended effects.")).setGroup(feel));
         ce.setDefaultValue(true);
+        ce.setPropertyType(PropertyType.NEEDS_RESTART);
         // Extended Tab
         ConfigContainer ext = new ConfigContainer(this, JDLocale.L("gui.config.gui.ext", "Advanced"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));

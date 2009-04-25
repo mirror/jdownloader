@@ -30,7 +30,6 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
-import jd.controlling.interaction.PackageManager;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
@@ -61,7 +60,7 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
                 return JDLocale.L("gui.config.packagemanager.column_name", "Paket");
             case 1:
                 return JDLocale.L("gui.config.packagemanager.column_category", "Kategorie");
-         
+
             case 2:
                 return JDLocale.L("gui.config.packagemanager.column_latestVersion", "Akt. Version");
             case 3:
@@ -77,26 +76,30 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
-            PackageData element = packageData.get(rowIndex);
+            try {
+                PackageData element = packageData.get(rowIndex);
 
-            switch (columnIndex) {
-            case 0:
-                return element.getStringProperty("name");
-            case 1:
-                return element.getStringProperty("category");
-           case 2:
-                return element.getStringProperty("version");
-            case 3:
-                return String.valueOf(element.getInstalledVersion());
-            case 4:
-                return element.isSelected();
+                switch (columnIndex) {
+                case 0:
+                    return element.getStringProperty("name");
+                case 1:
+                    return element.getStringProperty("category");
+                case 2:
+                    return element.getStringProperty("version");
+                case 3:
+                    return String.valueOf(element.getInstalledVersion());
+                case 4:
+                    return element.isSelected();
+                }
+            } catch (Exception e) {
+
             }
-            return null;
+            return "";
         }
 
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return  columnIndex == 4;
+            return columnIndex == 4;
         }
 
         @Override
@@ -111,8 +114,6 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
     private static final long serialVersionUID = 1L;
 
     private JButton btnReset;
-
- 
 
     private ArrayList<PackageData> packageData = new ArrayList<PackageData>();
 
@@ -137,13 +138,11 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
         }
     }
 
-
-
     @Override
     public void initPanel() {
-  
-        panel.setLayout(new MigLayout("ins 10,wrap 2", "[fill,grow 10]10[fill,grow]","[fill,grow,null:150000:null][]"));
-        packageData = new PackageManager().getPackageData();
+
+        panel.setLayout(new MigLayout("ins 10,wrap 2", "[fill,grow 10]10[fill,grow]", "[fill,grow,null:150000:null][]"));
+        // packageData = new PackageManager().getPackageData();
         Collections.sort(packageData, new Comparator<PackageData>() {
             public int compare(PackageData a, PackageData b) {
                 return (a.getStringProperty("category") + " " + a.getStringProperty("name")).compareToIgnoreCase(b.getStringProperty("category") + " " + b.getStringProperty("name"));
@@ -154,33 +153,38 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
 
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
-      
+
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-//        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-//
-//            private static final long serialVersionUID = 1L;
-//            private Color bgNormal = null;
-//            private Color bgSelected = null;
-//
-//            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-//                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-//
-//                if (bgNormal == null) bgNormal = getBackground();
-//                if (bgSelected == null && isSelected) bgSelected = getBackground();
-//
-//                PackageData pd = packageData.get(row);
-//                if (isSelected) {
-//                    c.setBackground(bgSelected);
-//                } else if (column == 0 && (pd.getInstalledVersion() != 0 || pd.isSelected()) && pd.getInstalledVersion() < Integer.valueOf(pd.getStringProperty("version"))) {
-//                    c.setBackground(Color.GREEN);
-//                } else {
-//                    c.setBackground(bgNormal);
-//                }
-//
-//                return c;
-//            }
-//
-//        });
+        // table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer()
+        // {
+        //
+        // private static final long serialVersionUID = 1L;
+        // private Color bgNormal = null;
+        // private Color bgSelected = null;
+        //
+        // public Component getTableCellRendererComponent(JTable table, Object
+        // value, boolean isSelected, boolean hasFocus, int row, int column) {
+        // Component c = super.getTableCellRendererComponent(table, value,
+        // isSelected, hasFocus, row, column);
+        //
+        // if (bgNormal == null) bgNormal = getBackground();
+        // if (bgSelected == null && isSelected) bgSelected = getBackground();
+        //
+        // PackageData pd = packageData.get(row);
+        // if (isSelected) {
+        // c.setBackground(bgSelected);
+        // } else if (column == 0 && (pd.getInstalledVersion() != 0 ||
+        // pd.isSelected()) && pd.getInstalledVersion() <
+        // Integer.valueOf(pd.getStringProperty("version"))) {
+        // c.setBackground(Color.GREEN);
+        // } else {
+        // c.setBackground(bgNormal);
+        // }
+        //
+        // return c;
+        // }
+        //
+        // });
 
         TableColumn column = null;
         for (int c = 0; c < tableModel.getColumnCount(); ++c) {
@@ -192,7 +196,7 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
             case 1:
                 column.setPreferredWidth(100);
                 column.setMaxWidth(150);
-                break;         
+                break;
             case 2:
                 column.setPreferredWidth(80);
                 column.setMaxWidth(100);
@@ -211,16 +215,17 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
 
         JScrollPane scrollpane = new JScrollPane(table);
 
-
         btnReset = new JButton(JDLocale.L("gui.config.packagemanager.reset", "Addons neu herunterladen"));
         btnReset.addActionListener(this);
 
-    
-
-//        ConfigContainer container = new ConfigContainer(this);
-//        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, WebUpdater.getConfig("JDU"), "SUPPORT_JD", JDLocale.L("gui.config.packagemanager.supportJD", "Support JD by downloading pumped-up-addons")).setDefaultValue(true));
-//        this.add(cep = new ConfigEntriesPanel(container));
-//        cep.addPropertyChangeListener(this);
+        // ConfigContainer container = new ConfigContainer(this);
+        // container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // WebUpdater.getConfig("JDU"), "SUPPORT_JD",
+        // JDLocale.L("gui.config.packagemanager.supportJD",
+        // "Support JD by downloading pumped-up-addons"
+        // )).setDefaultValue(true));
+        // this.add(cep = new ConfigEntriesPanel(container));
+        // cep.addPropertyChangeListener(this);
         panel.add(scrollpane, "spanx");
         panel.add(btnReset, "");
         add(panel);
@@ -232,7 +237,7 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
 
     @Override
     public void save() {
-     
+
     }
 
 }
