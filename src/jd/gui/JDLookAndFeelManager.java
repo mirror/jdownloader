@@ -18,11 +18,9 @@ package jd.gui;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
