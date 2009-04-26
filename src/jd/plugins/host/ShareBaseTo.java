@@ -145,7 +145,7 @@ public class ShareBaseTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
         }
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, br.getRedirectLocation(), false, 2);
+        dl = br.openDownload(downloadLink, br.getRedirectLocation(), false, -2);
         if (dl.getConnection() == null) {
             logger.severe("ServerError");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.servicenotavailable","Service not available"), 10 * 60 * 1000l);
