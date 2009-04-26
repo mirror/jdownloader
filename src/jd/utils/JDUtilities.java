@@ -902,7 +902,7 @@ public class JDUtilities {
     }
 
     public static DownloadController getDownloadController() {
-        return DownloadController.getDownloadController();
+        return DownloadController.getInstance();
     }
 
     /**

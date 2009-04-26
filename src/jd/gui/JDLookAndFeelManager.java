@@ -180,7 +180,8 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
         // installSynthetica();
 
         String value = System.getProperty(key);
-        System.setProperty(key, "Windows XP");
+        // System.setProperty(key, "Windows XP"); /*dieser eintrag sorgt dafür
+        // das JD unter linux nicht mehr startet*/
 
         try {
             UIManager.setLookAndFeel(getPlaf().getClassName());
@@ -195,7 +196,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
         //             
         // }
 
-        // com.incors.plaf.alloy.AlloyLookAndFeel.setProperty("alloy.licenseCode"
+        //com.incors.plaf.alloy.AlloyLookAndFeel.setProperty("alloy.licenseCode"
         // , "2009/05/16#rechenmacher@appwork.org#19lvyj#157lsi");
         // try {
         // javax.swing.LookAndFeel alloyLnF = new
@@ -249,7 +250,8 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
     // if (e.getName().startsWith(pkg)) {
     //
     // String laf = new Regex(e.getName(),
-    // "de/javasoft/plaf/synthetica/Synthetica(.*?)LookAndFeel\\.class").getMatch(0);
+    //"de/javasoft/plaf/synthetica/Synthetica(.*?)LookAndFeel\\.class").getMatch
+    // (0);
     //
     // if (laf != null) {
     //

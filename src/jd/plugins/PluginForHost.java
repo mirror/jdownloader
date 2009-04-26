@@ -463,7 +463,7 @@ public abstract class PluginForHost extends Plugin {
 
             if (t > 0) {
                 this.resetHosterWaitTime();
-                DownloadController.getDownloadController().fireGlobalUpdate();
+                DownloadController.getInstance().fireGlobalUpdate();
             }
             try {
                 handleFree(downloadLink);
@@ -530,7 +530,7 @@ public abstract class PluginForHost extends Plugin {
         } else {
             if (t > 0) {
                 this.resetHosterWaitTime();
-                DownloadController.getDownloadController().fireGlobalUpdate();
+                DownloadController.getInstance().fireGlobalUpdate();
             }
             try {
                 handleFree(downloadLink);

@@ -125,7 +125,7 @@ public class SingleDownloadController extends Thread {
 
                 downloadLink.setEnabled(false);
                 // linkStatus.addStatus(LinkStatus.ERROR_SECURITY);
-                DownloadController.getDownloadController().fireDownloadLinkUpdate(downloadLink);
+                DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);
 
                 return;
@@ -135,7 +135,7 @@ public class SingleDownloadController extends Thread {
             linkStatus.setStatusText(JDLocale.L("gui.download.create_connection", "Connecting..."));
 
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, currentPlugin);
-            DownloadController.getDownloadController().fireDownloadLinkUpdate(downloadLink);
+            DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
             currentPlugin.init();
             try {
                 currentPlugin.handle(downloadLink);
@@ -250,7 +250,7 @@ public class SingleDownloadController extends Thread {
         status.resetWaitTime();
 
         downloadLink.setEnabled(false);
-        DownloadController.getDownloadController().fireDownloadLinkUpdate(downloadLink);
+        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 
     private void onErrorPluginDefect(DownloadLink downloadLink2, PluginForHost currentPlugin2) {
@@ -276,7 +276,7 @@ public class SingleDownloadController extends Thread {
         if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
             new PackageManager().onDownloadedPackage(downloadLink);
         }
-        DownloadController.getDownloadController().fireDownloadLinkUpdate(downloadLink);
+        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
 
         Interaction.handleInteraction(Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED, downloadLink);
         if (JDUtilities.getController().isContainerFile(new File(downloadLink.getFileOutput()))) {
@@ -301,7 +301,7 @@ public class SingleDownloadController extends Thread {
             downloadLink2.getLinkStatus().reset();
         }
 
-        DownloadController.getDownloadController().fireDownloadLinkUpdate(downloadLink);
+        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
 
     }
 
@@ -387,7 +387,7 @@ public class SingleDownloadController extends Thread {
         if (SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 1) {
             downloadLink.setEnabled(false);
             status.setErrorMessage(JDLocale.L("controller.status.fileexists.skip", "File already exists."));
-            DownloadController.getDownloadController().fireDownloadLinkUpdate(downloadLink);
+            DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
         } else {
             if (new File(downloadLink.getFileOutput()).delete()) {
                 status.reset();
@@ -396,7 +396,7 @@ public class SingleDownloadController extends Thread {
                 status.setErrorMessage(JDLocale.L("controller.status.fileexists.overwritefailed", "Überschreiben fehlgeschlagen ") + downloadLink.getFileOutput());
             }
         }
-        DownloadController.getDownloadController().fireDownloadLinkUpdate(downloadLink);
+        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
 
     }
 
@@ -429,7 +429,7 @@ public class SingleDownloadController extends Thread {
         if (linkStatus.getErrorMessage() == null) {
             linkStatus.setErrorMessage(JDLocale.L("controller.status.connectionproblems", "Connection lost."));
         }
-        DownloadController.getDownloadController().fireDownloadLinkUpdate(downloadLink);
+        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
 
     }
 
@@ -458,7 +458,7 @@ public class SingleDownloadController extends Thread {
         status.setWaitTime(30 * 60 * 1000l);
 
         downloadLink.setEnabled(false);
-        DownloadController.getDownloadController().fireDownloadLinkUpdate(downloadLink);
+        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 
     /**
@@ -488,7 +488,7 @@ public class SingleDownloadController extends Thread {
         }
 
        
-        DownloadController.getDownloadController().fireDownloadLinkUpdate(downloadLink);
+        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 
     /**
@@ -514,7 +514,7 @@ public class SingleDownloadController extends Thread {
 
         Reconnecter.requestReconnect();
 
-        DownloadController.getDownloadController().fireDownloadLinkUpdate(downloadLink);
+        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
 
     }
 

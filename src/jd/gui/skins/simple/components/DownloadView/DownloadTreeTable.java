@@ -187,7 +187,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
         if (JDUtilities.getJavaVersion() >= 1.6 && SimpleGUI.isSubstance()) {
 
-            int height = 20;            
+            int height = 20;
             SubstanceColorScheme colorScheme = SubstanceColorSchemeUtilities.getColorScheme(table, ComponentState.SELECTED);
             Color[] colors = new Color[] { Colors.getColor(colorScheme.getUltraLightColor(), 50), Colors.getColor(colorScheme.getLightColor(), 50), Colors.getColor(colorScheme.getMidColor(), 50), Colors.getColor(colorScheme.getUltraLightColor(), 50) };
 

@@ -48,7 +48,7 @@ public class LinkGrabberFilePackage extends Property {
     private long lastFailCount = 0;
     private transient LinkGrabberFilePackageBroadcaster broadcaster = new LinkGrabberFilePackageBroadcaster();
 
-    public LinkGrabberFilePackage() {        
+    public LinkGrabberFilePackage() {
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
         name = JDUtilities.removeEndingPoints(JDLocale.L("controller.packages.defaultname", "various"));
         useSubDir = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false);
@@ -105,6 +105,12 @@ public class LinkGrabberFilePackage extends Property {
             }
             this.remove(remove);
             countFailedLinks(true);
+        }
+    }
+
+    public int indexOf(DownloadLink link) {
+        synchronized (downloadLinks) {
+            return downloadLinks.indexOf(link);
         }
     }
 
@@ -213,8 +219,22 @@ public class LinkGrabberFilePackage extends Property {
         synchronized (downloadLinks) {
             if (downloadLinks.contains(link)) {
                 downloadLinks.remove(link);
+                if (index > downloadLinks.size() - 1) {
+                    downloadLinks.add(link);
+                } else if (index < 0) {
+                    downloadLinks.add(0, link);
+                } else
+                    downloadLinks.add(index, link);
+                getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+            } else {
+                if (index > downloadLinks.size() - 1) {
+                    downloadLinks.add(link);
+                } else if (index < 0) {
+                    downloadLinks.add(0, link);
+                } else
+                    downloadLinks.add(index, link);
+                getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK));
             }
-            downloadLinks.add(index, link);
         }
     }
 
@@ -236,8 +256,10 @@ public class LinkGrabberFilePackage extends Property {
     }
 
     public void addAllAt(Vector<DownloadLink> links, int index) {
-        for (int i = 0; i < links.size(); i++) {
-            add(index + i, links.get(i));
+        synchronized (downloadLinks) {
+            for (int i = 0; i < links.size(); i++) {
+                add(index + i, links.get(i));
+            }
         }
     }
 
@@ -277,6 +299,7 @@ public class LinkGrabberFilePackage extends Property {
     public boolean remove(DownloadLink link) {
         synchronized (downloadLinks) {
             boolean ret = downloadLinks.remove(link);
+            if (ret) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK));
             if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
             return ret;
         }
@@ -285,6 +308,7 @@ public class LinkGrabberFilePackage extends Property {
     public DownloadLink remove(int index) {
         synchronized (downloadLinks) {
             DownloadLink link = downloadLinks.remove(index);
+            if (link != null) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK));
             if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
             return link;
         }
@@ -305,6 +329,7 @@ public class LinkGrabberFilePackage extends Property {
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
         synchronized (downloadLinks) {
             this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
+            getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
             if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
         }
     }
@@ -364,6 +389,7 @@ public class LinkGrabberFilePackage extends Property {
 
             });
         }
+        getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public String getHoster() {

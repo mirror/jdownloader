@@ -52,7 +52,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                                            * verzögert gespeichert
                                            */
 
-    public synchronized static DownloadController getDownloadController() {
+    public synchronized static DownloadController getInstance() {
         /* darf erst nachdem der JDController init wurde, aufgerufen werden */
         if (INSTANCE == null) {
             INSTANCE = new DownloadController();

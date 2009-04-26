@@ -31,6 +31,7 @@ import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
+import jd.controlling.LinkGrabberController;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
 import jd.nutils.Formatter;
@@ -49,6 +50,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     private JDSimpleWebserverResponseCreator response;
 
     private Vector<Object> v_info = new Vector<Object>();
+    private LinkGrabberController lgi;
 
     /**
      * Create a new handler that serves files from a base directory
@@ -57,7 +59,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
      *            directory
      */
     public JDSimpleWebserverTemplateFileRequestHandler(JDSimpleWebserverResponseCreator response) {
-
+        lgi = LinkGrabberController.getInstance();
         this.response = response;
     }
 
@@ -122,39 +124,40 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         DownloadLink dLink;
         Integer Package_ID;
         Integer Download_ID;
+        synchronized (lgi.getPackages()) {
+            for (Package_ID = 0; Package_ID < lgi.getPackages().size(); Package_ID++) {
+                filePackage = lgi.getPackages().get(Package_ID);
 
-        for (Package_ID = 0; Package_ID < LinkGrabberPanel.getLinkGrabber().getPackages().size(); Package_ID++) {
-            filePackage = LinkGrabberPanel.getLinkGrabber().getPackages().get(Package_ID);
+                h = new Hashtable<Object, Object>();
+                /* Paket Infos */
+                h.put("download_name", filePackage.getName());
 
-            h = new Hashtable<Object, Object>();
-            /* Paket Infos */
-            h.put("download_name", filePackage.getName());
+                h.put("package_id", Package_ID.toString());
 
-            h.put("package_id", Package_ID.toString());
+                v2 = new Vector<Object>();
 
-            v2 = new Vector<Object>();
+                for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
+                    dLink = filePackage.getDownloadLinks().get(Download_ID);
 
-            for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
-                dLink = filePackage.getDownloadLinks().get(Download_ID);
+                    /* Download Infos */
+                    h2 = new Hashtable<Object, Object>();
 
-                /* Download Infos */
-                h2 = new Hashtable<Object, Object>();
+                    h2.put("package_id", Package_ID.toString());
+                    h2.put("download_id", Download_ID.toString());
+                    h2.put("download_name", dLink.getName());
+                    if (dLink.isAvailabilityChecked() && dLink.isAvailable()) {
+                        h2.put("download_status", "online");
+                    } else {
+                        h2.put("download_status", "offline");
+                    }
 
-                h2.put("package_id", Package_ID.toString());
-                h2.put("download_id", Download_ID.toString());
-                h2.put("download_name", dLink.getName());
-                if (dLink.isAvailabilityChecked() && dLink.isAvailable()) {
-                    h2.put("download_status", "online");
-                } else {
-                    h2.put("download_status", "offline");
+                    h2.put("download_hoster", dLink.getHost());
+
+                    v2.addElement(h2);
                 }
-
-                h2.put("download_hoster", dLink.getHost());
-
-                v2.addElement(h2);
+                h.put("downloads", v2);
+                v.addElement(h);
             }
-            h.put("downloads", v2);
-            v.addElement(h);
         }
         // t.setParam("message_status", "show");
         // t.setParam("message", "great work");

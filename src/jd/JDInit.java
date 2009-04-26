@@ -27,6 +27,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
+import jd.controlling.LinkGrabberController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;
@@ -131,8 +132,9 @@ public class JDInit {
         return new JDController();
     }
 
-    public DownloadController initDownloadController() {
-        return DownloadController.getDownloadController();
+    public void initControllers() {
+        DownloadController.getInstance();
+        //LinkGrabberController.getInstance();
     }
 
     public UIInterface initGUI(JDController controller) {
@@ -221,7 +223,7 @@ public class JDInit {
             /**
              * Workaround to enable JGoodies for MAC oS
              */
-           
+
             JDLookAndFeelManager.setUIManager();
             Installer inst = new Installer();
 

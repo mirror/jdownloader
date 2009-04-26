@@ -48,7 +48,7 @@ public class ResetLink extends Interaction implements Serializable {
                 link.getLinkStatus().setStatusText("");
                 link.reset();
                 ((PluginForHost) link.getPlugin()).resetPluginGlobals();
-                DownloadController.getDownloadController().fireDownloadLinkUpdate(link);
+                DownloadController.getInstance().fireDownloadLinkUpdate(link);
             } else {
                 logger.severe("Kein letzter Downloadlink gefunden");
             }

@@ -149,8 +149,8 @@ public class Main {
 
     public static void main(String args[]) {
         System.setProperty("file.encoding", "UTF-8");
-       OSDetector.setOSString(System.getProperty("os.name"));
-//        System.setProperty("os.name", "Windows Vista m.a.c");
+        OSDetector.setOSString(System.getProperty("os.name"));
+        // System.setProperty("os.name", "Windows Vista m.a.c");
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
         LOGGER = JDLogger.getLogger();
         initMACProperties();
@@ -410,7 +410,7 @@ public class Main {
 
         LOGGER.info("init Webupdate");
         Main.increaseSplashStatus();
-       if(Main.BETA) JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, true);
+        if (Main.BETA) JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, true);
         new WebUpdate().doWebupdate(false);
 
         LOGGER.info("init plugins");
@@ -432,7 +432,7 @@ public class Main {
         }.waitForEDT();
         LOGGER.info("init downloadqueue");
         Main.increaseSplashStatus();
-        init.initDownloadController();
+        init.initControllers();
 
         LOGGER.info("Initialisation finished");
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);

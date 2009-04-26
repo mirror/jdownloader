@@ -114,7 +114,7 @@ public class TreeTableTransferHandler extends TransferHandler {
         if (current == null) return false;
         JPopupMenu popup = new JPopupMenu();
         JMenuItem m;
-        synchronized (DownloadController.getDownloadController().getPackages()) {
+        synchronized (DownloadController.getInstance().getPackages()) {
             switch (draggingType) {
             case DRAG_LINKS:
                 final Vector<DownloadLink> downloadLinks = (Vector<DownloadLink>) draggingObjects;
@@ -126,11 +126,10 @@ public class TreeTableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (DownloadController.getDownloadController().getPackages()) {
+                            synchronized (DownloadController.getInstance().getPackages()) {
                                 FilePackage fp = ((FilePackage) current.getLastPathComponent());
                                 fp.addAllAt(downloadLinks, 0);
-                            }
-                            isDragging = false;
+                            }                            
                         }
                     });
 
@@ -138,11 +137,10 @@ public class TreeTableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (DownloadController.getDownloadController().getPackages()) {
+                            synchronized (DownloadController.getInstance().getPackages()) {
                                 FilePackage fp = ((FilePackage) current.getLastPathComponent());
                                 fp.addAllAt(downloadLinks, fp.size());
-                            }
-                            isDragging = false;
+                            }                            
                         }
                     });
 
@@ -153,11 +151,10 @@ public class TreeTableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (DownloadController.getDownloadController().getPackages()) {
+                            synchronized (DownloadController.getInstance().getPackages()) {
                                 FilePackage fp = ((DownloadLink) current.getLastPathComponent()).getFilePackage();
                                 fp.addAllAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()) - 1);
-                            }
-                            isDragging = false;
+                            }                            
                         }
                     });
 
@@ -165,11 +162,10 @@ public class TreeTableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (DownloadController.getDownloadController().getPackages()) {
+                            synchronized (DownloadController.getInstance().getPackages()) {
                                 FilePackage fp = ((DownloadLink) current.getLastPathComponent()).getFilePackage();
                                 fp.addAllAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()) + 1);
-                            }
-                            isDragging = false;
+                            }                            
                         }
                     });
                 }
@@ -191,8 +187,7 @@ public class TreeTableTransferHandler extends TransferHandler {
                 m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        DownloadController.getDownloadController().addAllAt(packages, DownloadController.getDownloadController().indexOf(fp));
-                        isDragging = false;
+                        DownloadController.getInstance().addAllAt(packages, DownloadController.getInstance().indexOf(fp));                        
                     }
 
                 });
@@ -201,8 +196,7 @@ public class TreeTableTransferHandler extends TransferHandler {
                 m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        DownloadController.getDownloadController().addAllAt(packages, DownloadController.getDownloadController().indexOf(fp) + 1);
-                        isDragging = false;
+                        DownloadController.getInstance().addAllAt(packages, DownloadController.getInstance().indexOf(fp) + 1);                        
                     }
                 });
 

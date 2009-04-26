@@ -106,17 +106,20 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     @Override
     public void onDisplay() {
-        internalTreeTable.removeKeyListener(internalTreeTable);
-        internalTreeTable.addKeyListener(internalTreeTable);
         visible = true;
         updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
+        Update_Async.restart();
+        JDUtilities.getDownloadController().getBroadcaster().addListener(this);
+        internalTreeTable.removeKeyListener(internalTreeTable);
+        internalTreeTable.addKeyListener(internalTreeTable);
     }
 
     @Override
     public void onHide() {
-        internalTreeTable.removeKeyListener(internalTreeTable);
         visible = false;
-        updateTableTask(NO_JOB, null);
+        JDUtilities.getDownloadController().getBroadcaster().removeListener(this);
+        Update_Async.stop();
+        internalTreeTable.removeKeyListener(internalTreeTable);
     }
 
     @SuppressWarnings("unchecked")
@@ -191,7 +194,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     }
 
     @SuppressWarnings("unchecked")
-    public void actionPerformed(ActionEvent e) {        
+    public void actionPerformed(ActionEvent e) {
         if (e.getSource() == this.Update_Async) {
             fireTableTask();
             return;

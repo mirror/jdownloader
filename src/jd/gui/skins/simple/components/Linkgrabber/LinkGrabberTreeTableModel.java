@@ -2,6 +2,7 @@ package jd.gui.skins.simple.components.Linkgrabber;
 
 import java.util.Vector;
 
+import jd.controlling.LinkGrabberController;
 import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
 
@@ -19,7 +20,7 @@ public class LinkGrabberTreeTableModel extends AbstractTreeTableModel {
     /** table column names */
     static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.linkgrabber.header.packagesfiles", "Pakete/Dateien"), JDLocale.L("gui.treetable.header.size", "Größe"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status") };
 
-    private LinkGrabberPanel owner;
+    private LinkGrabberController lgi;
 
     /**
      * Creates a {@link ProjectsTreeTableModel}
@@ -32,11 +33,11 @@ public class LinkGrabberTreeTableModel extends AbstractTreeTableModel {
      */
     public LinkGrabberTreeTableModel(LinkGrabberPanel treeTable) {
         super("root");
-        owner = treeTable;
+        lgi=LinkGrabberController.getInstance();
     }
 
     public boolean containesPackage(LinkGrabberFilePackage fp) {
-        return owner.getPackages().contains(fp);
+        return lgi.getPackages().contains(fp);
     }
 
     public Object getChild(Object parent, int index) {
@@ -142,7 +143,7 @@ public class LinkGrabberTreeTableModel extends AbstractTreeTableModel {
      *         Have to implement this:
      */
     public Vector<LinkGrabberFilePackage> getPackages() {
-        return owner.getPackages();
+        return lgi.getPackages();
     }
 
     /**

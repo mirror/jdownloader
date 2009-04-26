@@ -34,6 +34,7 @@ import javax.swing.tree.TreePath;
 
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.LinkGrabberController;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.DownloadView.DownloadLinkRowHighlighter;
 import jd.gui.skins.simple.components.DownloadView.DownloadTreeTable;
@@ -65,6 +66,10 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
     public static final String PROPERTY_EXPANDED = "lg_expanded";
     public static final String PROPERTY_SELECTED = "lg_selected";
 
+    public LinkGrabberPanel getLinkGrabber() {
+        return linkgrabber;
+    }
+
     public LinkGrabberTreeTable(LinkGrabberTreeTableModel treeModel, final LinkGrabberPanel linkgrabber) {
         super(treeModel);
         this.linkgrabber = linkgrabber;
@@ -88,41 +93,33 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         this.getTableHeader().addMouseListener(this);
         UIManager.put("Table.focusCellHighlightBorder", null);
         setHighlighters(new Highlighter[] {});
-        // setHighlighters(HighlighterFactory.createAlternateStriping(UIManager.
-        // getColor("Panel.background").brighter(),
-        // UIManager.getColor("Panel.background").darker()));
-        // new PainterHighlighter(HighlightPredicate.IS_FOLDER,
-        // DownloadTreeTable.getFolderPainter());
         addPackageHighlighter();
-        // addOfflineHighlighter();
-        // addOnlineHighlighter();
+
         addDisabledHighlighter();
 
-        // addPackageOfflineHighlighter();
-        addExistsHighlighter();
-        addUncheckedHighlighter();
-      
+        
+        addExistsHighlighter();        
+        setTransferHandler(new LinkGrabberTreeTableTransferHandler(this));
         getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
             public void valueChanged(ListSelectionEvent e) {
-                if(getSelectedRow()<0)return;
-                if(getPathForRow(getSelectedRow())==null)return;
+                if (getSelectedRow() < 0) return;
+                if (getPathForRow(getSelectedRow()) == null) return;
                 Object obj = getPathForRow(getSelectedRow()).getLastPathComponent();
 
-                if(obj==null){
-                    linkgrabber.hideFilePackageInfo();   
+                if (obj == null) {
+                    linkgrabber.hideFilePackageInfo();
                 }
-             
+
                 LinkGrabberFilePackage pkg = null;
                 if (obj instanceof LinkGrabberFilePackage) {
-                    pkg=(LinkGrabberFilePackage) obj;
-                   
+                    pkg = (LinkGrabberFilePackage) obj;
+
                 } else {
-                    pkg=   linkgrabber.getFPwithLink((DownloadLink) obj);;
-               
+                    pkg = LinkGrabberController.getInstance().getFPwithLink((DownloadLink) obj);
                 }
                 linkgrabber.showFilePackageInfo(pkg);
-                
+
             }
         });
     }
@@ -132,7 +129,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
     }
 
     public synchronized void fireTableChanged(int id, Object param) {
-        TreeModelSupport supporter = getLinkGrabberV2TreeTableModel().getModelSupporter();        
+        TreeModelSupport supporter = getLinkGrabberV2TreeTableModel().getModelSupporter();
         supporter.fireTreeStructureChanged(new TreePath(model.getRoot()));
         updateSelectionAndExpandStatus();
     }
@@ -224,7 +221,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
             test.actionPerformed(new ActionEvent(test, 0, ""));
             return;
         }
-    
+
     }
 
     public void mouseEntered(MouseEvent arg0) {
@@ -374,25 +371,6 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
                 return false;
             }
         });
-
-    }
-
-    private void addUncheckedHighlighter() {
-        // /* TODO: andre farbe auswählen */
-        // Color background = JDTheme.C("gui.color.linkgrabber.error_post",
-        // "ff7f00");
-        // Color foreground = Color.DARK_GRAY;
-        // Color selectedBackground = background.darker();
-        // Color selectedForground = foreground;
-        //
-        // addHighlighter(new LinkGrabberV2DownloadLinkRowHighlighter(this,
-        // background, foreground, selectedBackground, selectedForground) {
-        // @Override
-        // public boolean doHighlight(DownloadLink link) {
-        // if (!link.isAvailabilityChecked()) return true;
-        // return false;
-        // }
-        // });
 
     }
 

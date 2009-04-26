@@ -3,6 +3,7 @@ package jd.gui.skins.simple.tasks;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Vector;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -10,17 +11,17 @@ import javax.swing.JLabel;
 import javax.swing.JSeparator;
 import javax.swing.Timer;
 
+import jd.controlling.LinkGrabberController;
+import jd.controlling.LinkGrabberControllerEvent;
+import jd.controlling.LinkGrabberControllerListener;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberEvent;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberListener;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberTreeTableAction;
 import jd.nutils.Formatter;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 
-public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, LinkGrabberListener {
+public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, LinkGrabberControllerListener {
 
     private static final long serialVersionUID = -7720749076951577192L;
     private JButton panel_add_links;
@@ -37,10 +38,12 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     private JLabel packages;
     private JLabel totalsize;
     private Timer fadeTimer;
+    private Vector<LinkGrabberFilePackage> fps;
 
     public LinkGrabberTaskPane(String string, ImageIcon ii) {
         super(string, ii, "linkgrabber");
-
+        fps = LinkGrabberController.getInstance().getPackages();
+        LinkGrabberController.getInstance().getBroadcaster().addListener(this);
         linkgrabberButtonsEnabled = false;
         initGUI();
         fadeTimer = new Timer(2000, this);
@@ -63,12 +66,11 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     }
 
     private void update() {/* TODO: soll man über events aktuallisiert werden */
-        LinkGrabberPanel lg = LinkGrabberPanel.getLinkGrabber();
-        packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", lg.getPackages().size()));
+        packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", fps.size()));
         long tot = 0;
         long links = 0;
-        synchronized (lg.getPackages()) {
-            for (LinkGrabberFilePackage fp : lg.getPackages()) {
+        synchronized (fps) {
+            for (LinkGrabberFilePackage fp : fps) {
                 tot += fp.getDownloadSize(false);
                 links += fp.size();
             }
@@ -129,31 +131,6 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         }
     }
 
-    public void onLinkgrabberEvent(LinkGrabberEvent event) {
-        if (event.getID() == LinkGrabberEvent.EMPTY_EVENT) {
-            EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                    lg_add_all.setEnabled(false);
-                    lg_add_selected.setEnabled(false);
-                    lg_clear.setEnabled(false);
-                    revalidate();
-                    linkgrabberButtonsEnabled = false;
-                }
-            });
-        }
-        if (event.getID() == LinkGrabberEvent.UPDATE_EVENT && linkgrabberButtonsEnabled == false) {
-            linkgrabberButtonsEnabled = true;
-            EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                    lg_add_all.setEnabled(true);
-                    lg_add_selected.setEnabled(true);
-                    lg_clear.setEnabled(true);
-                    revalidate();
-                }
-            });
-        }
-    }
-
     public void setPanelID(int i) {
         SimpleGUI.CURRENTGUI.getContentPane().display(getPanel(i));
         switch (i) {
@@ -182,6 +159,36 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
             break;
         }
 
+    }
+
+    public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
+        switch (event.getID()) {
+        case LinkGrabberControllerEvent.REFRESH_STRUCTURE:
+            if (linkgrabberButtonsEnabled) return;
+            linkgrabberButtonsEnabled = true;
+            EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    lg_add_all.setEnabled(true);
+                    lg_add_selected.setEnabled(true);
+                    lg_clear.setEnabled(true);
+                    revalidate();
+                }
+            });
+            break;
+        case LinkGrabberControllerEvent.EMPTY:
+            EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    lg_add_all.setEnabled(false);
+                    lg_add_selected.setEnabled(false);
+                    lg_clear.setEnabled(false);
+                    revalidate();
+                    linkgrabberButtonsEnabled = false;
+                }
+            });
+            break;
+        default:
+            break;
+        }
     }
 
 }

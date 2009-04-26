@@ -709,9 +709,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 24, 24));
         lgTaskPane.addPanel(new SingletonPanel(LinkAdder.class));
 
-        lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
-
-        linkGrabber.getBroadcaster().addListener(lgTaskPane);
+        lgTaskPane.addPanel(new SingletonPanel(linkGrabber));        
         lgTaskPane.addActionListener(linkGrabber);
         lgTaskPane.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -825,7 +823,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
 
                     if (speedmeter != null) speedmeter.stop();
-                    for (DownloadLink link : DownloadController.getDownloadController().getAllDownloadLinks()) {
+                    for (DownloadLink link : DownloadController.getInstance().getAllDownloadLinks()) {
                         if (link.getLinkStatus().hasStatus(LinkStatus.TODO)) {
                             logger.info("Downloads stopped");
                             return;

@@ -28,6 +28,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadController;
+import jd.controlling.LinkGrabberController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
@@ -40,14 +41,16 @@ import jd.utils.JDUtilities;
 
 public class JDSimpleWebserverRequestHandler {
 
-//    private SubConfiguration guiConfig = null;
+    // private SubConfiguration guiConfig = null;
     private HashMap<String, String> headers;
 
     private Logger logger = jd.controlling.JDLogger.getLogger();
     private JDSimpleWebserverResponseCreator response;
 
+    private LinkGrabberController lgi;
+
     public JDSimpleWebserverRequestHandler(HashMap<String, String> headers, JDSimpleWebserverResponseCreator response) {
-//        guiConfig = JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME);
+        lgi = LinkGrabberController.getInstance();
         this.response = response;
         this.headers = headers;
     }
@@ -132,7 +135,7 @@ public class JDSimpleWebserverRequestHandler {
                     }
                 }
                 if (requestParameter.containsKey("package_single_add_counter")) {
-                    synchronized (LinkGrabberPanel.getLinkGrabber().getPackages()) {
+                    synchronized (lgi) {
                         /* aktionen in der adder liste ausführen */
                         Integer download_id = 0;
                         Integer package_id = 0;
@@ -147,20 +150,20 @@ public class JDSimpleWebserverRequestHandler {
                                 ids = requestParameter.get("package_single_add_" + counter_index).toString().split("[+]", 2);
                                 package_id = Formatter.filterInt(ids[0].toString());
                                 download_id = Formatter.filterInt(ids[1].toString());
-                                links.add(LinkGrabberPanel.getLinkGrabber().getPackages().get(package_id).get(download_id));
-                                if (!packages.contains(LinkGrabberPanel.getLinkGrabber().getPackages().get(package_id))) packages.add(LinkGrabberPanel.getLinkGrabber().getPackages().get(package_id));
+                                links.add(lgi.getPackages().get(package_id).get(download_id));
+                                if (!packages.contains(lgi.getPackages().get(package_id))) packages.add(lgi.getPackages().get(package_id));
                             }
                         }
                         if (requestParameter.containsKey("selected_dowhat_link_adder")) {
                             String dowhat = requestParameter.get("selected_dowhat_link_adder");
                             /* packages-namen des link-adders aktuell halten */
-                            synchronized (LinkGrabberPanel.getLinkGrabber().getPackages()) {
-                                for (int i = 0; i < LinkGrabberPanel.getLinkGrabber().getPackages().size(); i++) {
-                                    if (requestParameter.containsKey("adder_package_name_" + i)) {
-                                        LinkGrabberPanel.getLinkGrabber().getPackages().get(i).setName(Encoding.htmlDecode(requestParameter.get("adder_package_name_" + i).toString()));
-                                    }
+
+                            for (int i = 0; i < lgi.getPackages().size(); i++) {
+                                if (requestParameter.containsKey("adder_package_name_" + i)) {
+                                    lgi.getPackages().get(i).setName(Encoding.htmlDecode(requestParameter.get("adder_package_name_" + i).toString()));
                                 }
                             }
+
                             if (dowhat.compareToIgnoreCase("remove") == 0) {
                                 /* entfernen */
                                 for (LinkGrabberFilePackage fp : packages) {
@@ -169,9 +172,9 @@ public class JDSimpleWebserverRequestHandler {
                             } else if (dowhat.compareToIgnoreCase("remove+offline") == 0) {
                                 /* entfernen(offline) */
                                 links = new Vector<DownloadLink>();
-                                for (int i = 0; i < LinkGrabberPanel.getLinkGrabber().getPackages().size(); i++) {
-                                    for (int ii = 0; ii < LinkGrabberPanel.getLinkGrabber().getPackages().get(i).size(); ii++) {
-                                        links.add(LinkGrabberPanel.getLinkGrabber().getPackages().get(i).get(ii));
+                                for (int i = 0; i < lgi.getPackages().size(); i++) {
+                                    for (int ii = 0; ii < lgi.getPackages().get(i).size(); ii++) {
+                                        links.add(lgi.getPackages().get(i).get(ii));
                                     }
                                 }
                                 for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
@@ -219,7 +222,7 @@ public class JDSimpleWebserverRequestHandler {
                                 link = it.next();
                                 link.setEnabled(true);
                             }
-                            DownloadController.getDownloadController().fireGlobalUpdate();
+                            DownloadController.getInstance().fireGlobalUpdate();
                         }
                         if (dowhat.compareToIgnoreCase("deactivate") == 0) {
                             /* deaktivieren */
@@ -227,7 +230,7 @@ public class JDSimpleWebserverRequestHandler {
                                 link = it.next();
                                 link.setEnabled(false);
                             }
-                            DownloadController.getDownloadController().fireGlobalUpdate();
+                            DownloadController.getInstance().fireGlobalUpdate();
                         }
                         if (dowhat.compareToIgnoreCase("reset") == 0) {
                             /*
@@ -239,7 +242,7 @@ public class JDSimpleWebserverRequestHandler {
                                 link.getLinkStatus().setStatusText("");
                                 link.reset();
                             }
-                            DownloadController.getDownloadController().fireGlobalUpdate();
+                            DownloadController.getInstance().fireGlobalUpdate();
                         }
                         if (dowhat.compareToIgnoreCase("remove") == 0) {
 
@@ -255,7 +258,7 @@ public class JDSimpleWebserverRequestHandler {
                                 link = it.next();
                                 link.setAborted(true);
                             }
-                            DownloadController.getDownloadController().fireGlobalUpdate();
+                            DownloadController.getInstance().fireGlobalUpdate();
                         }
                     }
                 }

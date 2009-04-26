@@ -12,6 +12,9 @@ public class LinkGrabberFilePackageEvent extends JDEvent {
     /* ein wichtiger Wert wurde geändert */
     public static final int UPDATE_EVENT = 1;
 
+    public static final int ADD_LINK = 2;
+    public static final int REMOVE_LINK = 3;
+
     /* das FilePackage ist leer */
     public static final int EMPTY_EVENT = 999;
 

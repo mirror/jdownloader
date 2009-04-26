@@ -1009,7 +1009,7 @@ public class Rapidshare extends PluginForHost {
         HashMap<String, String> data = getMap(matches);
 
         ai.setTrafficLeft((Long.parseLong(data.get("premkbleft")) / 1000) * 1024l * 1024l);
-        ai.setTrafficMax(12 * 1024 * 1024 * 1024l);
+        ai.setTrafficMax(15 * 1024 * 1024 * 1024l);
         ai.setFilesNum(Long.parseLong(data.get("curfiles")));
         ai.setPremiumPoints(Long.parseLong(data.get("points")));
         ai.setNewPremiumPoints(Long.parseLong(data.get("prempoints")));
