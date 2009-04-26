@@ -32,6 +32,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import jd.captcha.JAntiCaptcha;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.GuiRunnable;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;

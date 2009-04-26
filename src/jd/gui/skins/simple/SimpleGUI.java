@@ -96,8 +96,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.router.GetRouterInfo;
-import jd.router.RInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
@@ -369,7 +367,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -601,8 +599,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         // panel.add(new PremiumStatus(), "spanx, cell 0 4");
         panel.add(this.statusBar, "spanx, cell 0 5");
-        
-   
 
     }
 
@@ -928,7 +924,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);
