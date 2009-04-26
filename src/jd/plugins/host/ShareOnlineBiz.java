@@ -108,16 +108,15 @@ public class ShareOnlineBiz extends PluginForHost {
         if (br.postPage("http://www.share-online.biz/linkcheck/linkcheck.php", "links=" + id).matches("\\s*")) {
             br.getPage("http://www.share-online.biz/download.php?id=" + id + "&setlang=en");
             String[] strings = br.getRegex("</font> \\((.*?)\\) \\.</b></div></td>.*?<b>File name:</b>.*?<b>(.*?)</b></div></td>").getRow(0);
-            if (strings.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (strings == null || strings.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setDownloadSize(Regex.getSize(strings[0].trim()));
             downloadLink.setName(strings[1].trim());
             return true;
         }
-        String infos[][] = br.getRegex("(.*?);(.*?);(.*?);(.+)").getMatches();
-        if (infos.length != 1 && infos[0].length != 4 && !infos[0][1].equalsIgnoreCase("OK")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        downloadLink.setDownloadSize(Long.parseLong(infos[0][3].trim()));
-        downloadLink.setName(infos[0][2].trim());
+        String infos[] = br.getRegex("(.*?);(.*?);(.*?);(.+)").getRow(0);
+        if (infos == null || !infos[1].equalsIgnoreCase("OK")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setDownloadSize(Long.parseLong(infos[3].trim()));
+        downloadLink.setName(infos[2].trim());
         return true;
     }
 
