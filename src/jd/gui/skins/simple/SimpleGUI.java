@@ -17,6 +17,7 @@
 package jd.gui.skins.simple;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
@@ -40,6 +41,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
@@ -1147,17 +1149,19 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     }
 
-    public static void showConfigDialog(JFrame parent, ConfigContainer container) {
-        showConfigDialog(parent, container, false);
-    }
-
-    public static void showConfigDialog(final JFrame parent, final ConfigContainer container, boolean alwaysOnTop) {
+    public static void showConfigDialog(final JFrame parent, final ConfigContainer container, final int i) {
         new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
-                JDCollapser.getInstance().setContentPanel(new ConfigEntriesPanel(container));
-
+                ConfigEntriesPanel cep;
+                JDCollapser.getInstance().setContentPanel(cep = new ConfigEntriesPanel(container));
+                if (i > 0) {
+                    Component comp = cep.getComponent(0);
+                    if (comp instanceof JTabbedPane) {
+                        ((JTabbedPane) comp).setSelectedIndex(((JTabbedPane) comp).getTabCount() - 1);
+                    }
+                }
                 if (container.getGroup() != null) {
                     JDCollapser.getInstance().setTitle(container.getGroup().getName());
                     JDCollapser.getInstance().setIcon(container.getGroup().getIcon());

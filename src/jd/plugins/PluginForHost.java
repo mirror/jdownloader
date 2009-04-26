@@ -157,10 +157,13 @@ public abstract class PluginForHost extends Plugin {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {
-            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, config);
+            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, config,0);
             return;
         }
-
+        if (e.getID() == 2) {
+            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, config,1);
+            return;
+        }
         ArrayList<Account> accounts = getPremiumAccounts();
         if (e.getID() >= 200) {
             int accountID = e.getID() - 200;
@@ -244,7 +247,8 @@ public abstract class PluginForHost extends Plugin {
         if (premium.getSize() != 0) {
             menuList.add(premium);
         } else {
-            menuList.add(new MenuItem(JDLocale.L("plugins.menu.noAccountsYet", "No accounts yet"), -1));
+            menuList.add(m=new MenuItem(JDLocale.L("plugins.menu.noaccounts", "Add account"), 2));
+            m.setActionListener(this);
         }
 
         return menuList;

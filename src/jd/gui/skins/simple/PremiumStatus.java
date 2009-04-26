@@ -1,7 +1,6 @@
 package jd.gui.skins.simple;
 
 import java.awt.Component;
-import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -12,7 +11,10 @@ import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JToggleButton;
@@ -22,6 +24,7 @@ import javax.swing.event.ChangeListener;
 
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
+import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountListener;
 import jd.controlling.AccountManager;
@@ -113,8 +116,27 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         premium.addMouseListener(new MouseListener() {
 
             public void mouseClicked(MouseEvent e) {
-                if (e.isPopupTrigger()) {
-
+                if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+                    JPopupMenu popup = new JPopupMenu();
+                    for(HostPluginWrapper wrapper:HostPluginWrapper.getHostWrapper()){
+                        if(!wrapper.isLoaded())continue;
+                        if(!wrapper.isPremiumEnabled())continue;
+                        JMenu pluginPopup = new JMenu(wrapper.getHost());
+                        ArrayList<MenuItem> entries = wrapper.getPlugin().createMenuitems();
+                        for (MenuItem next : entries) {
+                            JMenuItem mi = JDMenu.getJMenuItem(next);
+                            if (mi == null) {
+                                pluginPopup.addSeparator();
+                            } else {
+                                pluginPopup.add(mi);
+                            }
+                        }
+                        popup.add(pluginPopup);
+                        
+                    }
+                   
+                    popup.show(premium, e.getPoint().x, e.getPoint().y);
+                    
                     System.out.println("Show menu");
                 }
 
@@ -196,6 +218,25 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         this.map = (TreeMap<String, ArrayList<AccountInfo>>) config.getProperty(MAP_PROP, new TreeMap<String, ArrayList<AccountInfo>>());
         this.mapSize = (TreeMap<String, Long>) config.getProperty(MAPSIZE_PROP, new TreeMap<String, Long>());
         this.onUpdate();
+    }
+
+    private JMenu createExtrasMenu(Object obj) {
+        JMenu pluginPopup = new JMenu("Premium");
+        ArrayList<MenuItem> entries = new ArrayList<MenuItem>();
+
+        if (entries != null && entries.size() > 0) {
+            for (MenuItem next : entries) {
+                JMenuItem mi = JDMenu.getJMenuItem(next);
+                if (mi == null) {
+                    pluginPopup.addSeparator();
+                } else {
+                    pluginPopup.add(mi);
+                }
+            }
+        } else {
+            pluginPopup.setEnabled(false);
+        }
+        return pluginPopup;
     }
 
     protected void showDetails(PluginForHost plugin) {

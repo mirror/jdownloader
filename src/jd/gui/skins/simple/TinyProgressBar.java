@@ -28,7 +28,11 @@ public class TinyProgressBar extends JPanel {
      
 
     }
-
+public void setEnabled(boolean b){
+    super.setEnabled(b);
+    lbl.setEnabled(b);
+    prg.setEnabled(b);
+}
     public void setIcon(ImageIcon hosterIcon) {
         lbl.setIcon(hosterIcon);
     }
