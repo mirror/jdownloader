@@ -137,3 +137,5 @@ plaf.screenshot.org.jvnet.substance.skin.SubstanceRavenGraphiteLookAndFeel=defau
 plaf.screenshot.org.jvnet.substance.skin.SubstanceRavenLookAndFeel=default/screenshots/plaf-substance-Raven
 plaf.screenshot.org.jvnet.substance.skin.SubstanceSaharaLookAndFeel=default/screenshots/plaf-substance-Sahara
 plaf.screenshot.org.jvnet.substance.skin.SubstanceBusinessLookAndFeel=default/screenshots/plaf-substance-Business
+plaf.screenshot.com.sun.java.swing.plaf.windows.WindowsLookAndFeel=default/screenshots/plaf-windows style
+plaf.screenshot.apple.laf.AquaLookAndFeel=default/screenshots/plaf-apple aqua
