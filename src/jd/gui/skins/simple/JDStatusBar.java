@@ -42,7 +42,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
     private JLabel maxChunks;
 
     public JDStatusBar() {
-        setLayout(new MigLayout("ins 0 0 0 0,", "[fill,grow,left][shrink,right][shrink,right][shrink,right][shrink,right][shrink,right]", "[21px!]"));
+        setLayout(new MigLayout("ins 0 0 0 0,", "[fill,grow,left][shrink,right][shrink,right][shrink,right][shrink,right][shrink,right]", "[23px!]"));
 
         // lblMessage.setIcon(statusIcon);
         // statusBarHandler = new LabelHandler(lblMessage,

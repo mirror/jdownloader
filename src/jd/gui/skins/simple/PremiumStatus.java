@@ -1,6 +1,7 @@
 package jd.gui.skins.simple;
 
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -12,10 +13,15 @@ import java.util.logging.Logger;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
+import javax.swing.JToggleButton;
 import javax.swing.Timer;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import jd.HostPluginWrapper;
+import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountListener;
 import jd.controlling.AccountManager;
@@ -29,6 +35,7 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -51,21 +58,91 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
     private String MAPSIZE_PROP = "MAPSIZE2";
     private Object Lock = new Object();
     private boolean redrawinprogress = false;
+    private JToggleButton premium;
 
     @SuppressWarnings("unchecked")
     public PremiumStatus() {
         super();
         bars = new TinyProgressBar[BARCOUNT];
         logger = JDLogger.getLogger();
-
+        lbl = new JLabel(JDLocale.L("gui.statusbar.premiumloadlabel", "< add Accounts"));
         refresher = new Timer(1000 * 60 * 15, this);
         refresher.setInitialDelay(1000 * 60 * 15);
         refresher.setRepeats(true);
 
         this.setLayout(new MigLayout(DEBUG + "ins 0", "[]", "[]"));
-        add(lbl = new JLabel("Load Premiumstatus..."), "hidemode 3");
+
         JDController.getInstance().addControlListener(this);
         AccountManager.getInstance().addAccountListener(this);
+
+        premium = new JToggleButton();
+        premium.setIcon(JDTheme.II("gui.images.premium_disabled", 16, 16));
+        premium.setSelectedIcon(JDTheme.II("gui.images.premium_enabled", 16, 16));
+        premium.setToolTipText(JDLocale.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
+
+        premium.addChangeListener(new ChangeListener() {
+
+            public void stateChanged(ChangeEvent e) {
+                if (premium.isSelected()) {
+                    premium.setIcon(JDTheme.II("gui.images.premium_enabled", 16, 16));
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
+
+                } else {
+                    premium.setIcon(JDTheme.II("gui.images.premium_disabled", 16, 16));
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, false);
+
+                }
+             
+                for (int i = 0; i < BARCOUNT; i++) {
+                    if (bars[i] != null) {
+                        bars[i].setEnabled(premium.isSelected());
+                    }
+                }
+
+                JDUtilities.getConfiguration().save();
+
+            }
+
+        });
+
+        premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
+        premium.setFocusPainted(false);
+        premium.setContentAreaFilled(false);
+        premium.setBorderPainted(false);
+        add(premium);
+        premium.addMouseListener(new MouseListener() {
+
+            public void mouseClicked(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+
+                    System.out.println("Show menu");
+                }
+
+            }
+
+            public void mouseEntered(MouseEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+            public void mouseExited(MouseEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+            public void mousePressed(MouseEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+            public void mouseReleased(MouseEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+        });
+        add(new JSeparator(JSeparator.VERTICAL), "height 16,aligny center");
+        add(lbl, "hidemode 3");
+
         for (int i = 0; i < BARCOUNT; i++) {
             TinyProgressBar pg = new TinyProgressBar();
             bars[i] = pg;
@@ -111,6 +188,10 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
             add(pg, "hidemode 3");
 
         }
+        for (int i = 0; i < BARCOUNT; i++) {
+            bars[i].setEnabled(premium.isSelected());
+        }
+
         config = SubConfiguration.getConfig("PREMIUMSTATUS");
         this.map = (TreeMap<String, ArrayList<AccountInfo>>) config.getProperty(MAP_PROP, new TreeMap<String, ArrayList<AccountInfo>>());
         this.mapSize = (TreeMap<String, Long>) config.getProperty(MAPSIZE_PROP, new TreeMap<String, Long>());
@@ -189,49 +270,55 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
             @Override
             public Object runSave() {
                 synchronized (Lock) {
-                    lbl.setVisible(false);
-                    for (int i = 0; i < BARCOUNT; i++) {
-                        bars[i].setVisible(false);
-                    }
-
-                    int i = 0;
-                    for (Iterator<String> it = getMap().keySet().iterator(); it.hasNext();) {
-                        String host = it.next();
-                        ArrayList<AccountInfo> list = getMap().get(host);
-
-                        PluginForHost plugin = JDUtilities.getPluginForHost(host);
-                        long max = 0l;
-                        long left = 0l;
-
-                        for (AccountInfo ai : list) {
-
-                            max += ai.getTrafficMax();
-                            left += ai.getTrafficLeft();
+                    try {
+                        lbl.setVisible(false);
+                        for (int i = 0; i < BARCOUNT; i++) {
+                            bars[i].setVisible(false);
                         }
-                        bars[i].setVisible(true);
-                        bars[i].setIcon(plugin.getHosterIcon());
-                        bars[i].setMaximum(max);
-                        bars[i].setAlignmentX(RIGHT_ALIGNMENT);
-                        bars[i].setValue(left);
 
-                        if (left >= 0) {
-                            //bars[i].setString(JDUtilities.formatKbReadable(left
-                            // /
-                            // 1024));
-                            bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), Formatter.formatReadable(left)));
-                        } else {
-                            bars[i].setMaximum(10);
-                            bars[i].setValue(10);
+                        int i = 0;
+                        for (Iterator<String> it = getMap().keySet().iterator(); it.hasNext();) {
+                            String host = it.next();
+                            ArrayList<AccountInfo> list = getMap().get(host);
 
-                            bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.unlimited_traffic.tooltip", "%s -- Unlimited traffic! You can download as much as you want to.", host));
+                            PluginForHost plugin = JDUtilities.getPluginForHost(host);
+                            long max = 0l;
+                            long left = 0l;
 
+                            for (AccountInfo ai : list) {
+
+                                max += ai.getTrafficMax();
+                                left += ai.getTrafficLeft();
+                            }
+                            bars[i].setVisible(true);
+                            bars[i].setIcon(plugin.getHosterIcon());
+                            bars[i].setMaximum(max);
+                            bars[i].setAlignmentX(RIGHT_ALIGNMENT);
+                            bars[i].setValue(left);
+
+                            if (left >= 0) {
+                                //bars[i].setString(JDUtilities.formatKbReadable
+                                // (left
+                                // /
+                                // 1024));
+                                bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), Formatter.formatReadable(left)));
+                            } else {
+                                bars[i].setMaximum(10);
+                                bars[i].setValue(10);
+
+                                bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.unlimited_traffic.tooltip", "%s -- Unlimited traffic! You can download as much as you want to.", host));
+
+                            }
+                            i++;
+                            if (i >= BARCOUNT) break;
                         }
-                        i++;
-                        if (i >= BARCOUNT) break;
+                        invalidate();
+                        redrawinprogress = false;
+                        return null;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return null;
                     }
-                    invalidate();
-                    redrawinprogress = false;
-                    return null;
                 }
             }
         }.start();

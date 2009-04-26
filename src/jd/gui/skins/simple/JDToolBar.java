@@ -94,27 +94,27 @@ public class JDToolBar extends JToolBar implements ControlListener {
         });
         clipboard.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
         /* Premium */
-        add(premium = new JToggleButton(JDTheme.II("gui.images.premium_disabled", 24, 24)), BUTTON_CONSTRAINTS);
-        premium.setToolTipText(JDLocale.L("gui.menu.action.premium.desc", "Enable Premiumusage globaly"));
-
-        premium.addChangeListener(new ChangeListener() {
-
-            public void stateChanged(ChangeEvent e) {
-                if (premium.isSelected()) {
-                    premium.setIcon(JDTheme.II("gui.images.premium_enabled", 24, 24));
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
-                } else {
-                    premium.setIcon(JDTheme.II("gui.images.premium_disabled", 24, 24));
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, false);
-
-                }
-                JDUtilities.getConfiguration().save();
-
-            }
-
-        });
-
-        premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
+//        add(premium = new JToggleButton(JDTheme.II("gui.images.premium_disabled", 24, 24)), BUTTON_CONSTRAINTS);
+//        premium.setToolTipText(JDLocale.L("gui.menu.action.premium.desc", "Enable Premiumusage globaly"));
+//
+//        premium.addChangeListener(new ChangeListener() {
+//
+//            public void stateChanged(ChangeEvent e) {
+//                if (premium.isSelected()) {
+//                    premium.setIcon(JDTheme.II("gui.images.premium_enabled", 24, 24));
+//                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
+//                } else {
+//                    premium.setIcon(JDTheme.II("gui.images.premium_disabled", 24, 24));
+//                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, false);
+//
+//                }
+//                JDUtilities.getConfiguration().save();
+//
+//            }
+//
+//        });
+//
+//        premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
         /* reconect */
         add(reconnect = new JToggleButton(JDTheme.II("gui.images.reconnect_disabled", 24, 24)), BUTTON_CONSTRAINTS);
 
