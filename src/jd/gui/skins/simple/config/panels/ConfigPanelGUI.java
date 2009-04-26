@@ -90,10 +90,11 @@ public class ConfigPanelGUI extends ConfigPanel {
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDSounds.PARAM_CURRENTTHEME, JDSounds.getSoundIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.soundTheme", "Soundtheme")).setGroup(lookGroup));
         ce.setDefaultValue("noSounds");
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDLookAndFeelManager.PARAM_PLAF, JDLookAndFeelManager.getSupportedLookAndFeels(), JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroup(lookGroup));
-        ce.setDefaultValue(JDLookAndFeelManager.getPlaf());
+        if (JDLookAndFeelManager.getSupportedLookAndFeels().length > 1) {
+            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDLookAndFeelManager.PARAM_PLAF, JDLookAndFeelManager.getSupportedLookAndFeels(), JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroup(lookGroup));
+            ce.setDefaultValue(JDLookAndFeelManager.getPlaf());
+        }
 
-      
         /* FEEL */
         ConfigGroup feel = new ConfigGroup(JDLocale.L("gui.config.gui.feel", "Feel"), JDTheme.II("gui.images.configuration", 32, 32));
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_INPUTTIMEOUT, JDLocale.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600).setDefaultValue(20).setGroup(feel));

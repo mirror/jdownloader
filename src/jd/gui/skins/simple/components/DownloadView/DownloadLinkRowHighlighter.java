@@ -7,6 +7,7 @@ import java.awt.LinearGradientPaint;
 import javax.swing.tree.TreePath;
 
 import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.JXTreeTable;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
@@ -48,10 +49,15 @@ public abstract class DownloadLinkRowHighlighter extends PainterHighlighter {
 
     public Painter<Component> getGradientPainter(Color colora, Color colorb) {
         int height = 20;
+if(JDUtilities.getJavaVersion()>=1.6){
+    LinearGradientPaint gradientPaint = new LinearGradientPaint(1, 0, 1, height, new float[] { 0.0f, 1.0f }, new Color[] { colora, colorb });
 
-        LinearGradientPaint gradientPaint = new LinearGradientPaint(1, 0, 1, height, new float[] { 0.0f, 1.0f }, new Color[] { colora, colorb });
+    return new MattePainter<Component>(gradientPaint);
+}else{
 
-        return new MattePainter<Component>(gradientPaint);
+    return new MattePainter<Component>(colora);  
+}
+     
     }
 
     public abstract boolean doHighlight(DownloadLink link);

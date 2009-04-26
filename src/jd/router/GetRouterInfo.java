@@ -43,6 +43,7 @@ import java.util.regex.Pattern;
 import javax.swing.JTextField;
 
 import jd.config.Configuration;
+import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.skins.simple.GuiRunnable;
@@ -504,8 +505,9 @@ public class GetRouterInfo {
                         isalv.meths = upnp.met;
 
                     }
+                    JDLogger.getLogger().info(upnp.met.toString());
                 } catch (Exception e) {
-                    // TODO: handle exception
+                    JDLogger.getLogger().info("NO UPNP");
                 }
                 isalv.isAlv = false;
             }
@@ -941,6 +943,7 @@ public class GetRouterInfo {
         System.out.println(r.size());
         for (RInfo info : r) {
             System.out.println(info.getRouterName());
+            System.out.println("\r\n\r\n"+info.getReconnectMethode());
         }
         System.exit(0);
     }

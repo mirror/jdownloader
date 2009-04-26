@@ -96,6 +96,8 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.router.GetRouterInfo;
+import jd.router.RInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
@@ -599,6 +601,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         // panel.add(new PremiumStatus(), "spanx, cell 0 4");
         panel.add(this.statusBar, "spanx, cell 0 5");
+        
+   
 
     }
 

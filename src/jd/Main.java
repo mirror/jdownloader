@@ -74,6 +74,7 @@ import jd.utils.WebUpdate;
 
 public class Main {
 
+    private static final boolean BETA = true;
     private static Logger LOGGER;
     private static SplashScreen splashScreen;
     private static String instanceID = Main.class.getName();
@@ -148,6 +149,8 @@ public class Main {
 
     public static void main(String args[]) {
         System.setProperty("file.encoding", "UTF-8");
+       OSDetector.setOSString(System.getProperty("os.name"));
+//        System.setProperty("os.name", "Windows Vista m.a.c");
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
         LOGGER = JDLogger.getLogger();
         initMACProperties();
@@ -407,6 +410,7 @@ public class Main {
 
         LOGGER.info("init Webupdate");
         Main.increaseSplashStatus();
+       if(Main.BETA) JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, true);
         new WebUpdate().doWebupdate(false);
 
         LOGGER.info("init plugins");

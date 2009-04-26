@@ -30,8 +30,10 @@ import javax.swing.UIManager.LookAndFeelInfo;
 
 import jd.config.SubConfiguration;
 import jd.config.container.JDLabelContainer;
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.JDImage;
+import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -61,13 +63,24 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
             if (clname.contains("Substance") && JDUtilities.getJavaVersion() >= 1.6) {
 
                 ret.add(new JDLookAndFeelManager(lafis[i]));
-            }
+            }else
             if (clname.contains("Synthetica")) {
                 ret.add(new JDLookAndFeelManager(lafis[i]));
-            }
+            }else
             if (clname.contains("goodie")) {
+                if(!OSDetector.isWindows()){
                 JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
                 lafm.setName("JGoodies");
+                ret.add(lafm);
+                }
+            }else if(clname.startsWith("apple.laf")){
+          
+                JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
+                lafm.setName("Apple Aqua");
+                ret.add(lafm);
+            }else if(clname.endsWith("WindowsLookAndFeel")){
+                JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
+                lafm.setName("Windows Style");
                 ret.add(lafm);
             }
 
@@ -128,7 +141,10 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
         // return new
         // JDLookAndFeelManager("com.jgoodies.looks.windows.WindowsLookAndFeel"
         // );
-        return new JDLookAndFeelManager(UIManager.getSystemLookAndFeelClassName());
+        JDLookAndFeelManager[] sup = getSupportedLookAndFeels();
+        if(sup.length==0)  return new JDLookAndFeelManager(UIManager.getSystemLookAndFeelClassName());
+        return sup[0];
+      
     }
 
     public static void installSubstance() {
@@ -161,17 +177,21 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
     public static void setUIManager() {
         if (uiInitated) return;
         uiInitated = true;
-
+        String key = "os.name";
         installJGoodies();
         if (JDUtilities.getJavaVersion() >= 1.6) installSubstance();
 
         // installSynthetica();
+        
+        String value = System.getProperty(key);
+        System.setProperty(key, "Windows XP");
+                  
         try {
             UIManager.setLookAndFeel(getPlaf().getClassName());
         } catch (Exception e) {
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-
+        System.setProperty(key, value);
         // try {
         // UIManager.setLookAndFeel(
         // "com.jgoodies.looks.windows.WindowsLookAndFeel");
