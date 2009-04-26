@@ -709,7 +709,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 24, 24));
         lgTaskPane.addPanel(new SingletonPanel(LinkAdder.class));
 
-        lgTaskPane.addPanel(new SingletonPanel(linkGrabber));        
+        lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
         lgTaskPane.addActionListener(linkGrabber);
         lgTaskPane.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -1147,7 +1147,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     }
 
-    public static void showConfigDialog(final JFrame parent, final ConfigContainer container, final int i) {
+    public static void displayConfig(final ConfigContainer container, final int i) {
         new GuiRunnable<Object>() {
 
             @Override
@@ -1174,9 +1174,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             }
 
         }.waitForEDT();
-
-        // showConfigDialog(parent, new ConfigEntriesPanel(container),
-        // alwaysOnTop);
     }
 
     public void windowActivated(WindowEvent e) {

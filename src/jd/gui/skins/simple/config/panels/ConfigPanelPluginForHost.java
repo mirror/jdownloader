@@ -212,7 +212,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private void editEntry(HostPluginWrapper hpw) {
         hpw.getPlugin().getConfig().setGroup(new ConfigGroup(hpw.getPlugin().getHost(), JDTheme.II("gui.images.taskpanes.premium", 24, 24)));
-        SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, hpw.getPlugin().getConfig(),0);
+        SimpleGUI.displayConfig(hpw.getPlugin().getConfig(), 0);
     }
 
     private void editEntry() {

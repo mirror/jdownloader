@@ -1,6 +1,5 @@
 package jd.gui.skins.simple;
 
-import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -16,7 +15,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
-import javax.swing.JTabbedPane;
 import javax.swing.JToggleButton;
 import javax.swing.Timer;
 import javax.swing.event.ChangeEvent;
@@ -32,7 +30,6 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -95,7 +92,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, false);
 
                 }
-             
+
                 for (int i = 0; i < BARCOUNT; i++) {
                     if (bars[i] != null) {
                         bars[i].setEnabled(premium.isSelected());
@@ -118,9 +115,9 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
             public void mouseClicked(MouseEvent e) {
                 if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
                     JPopupMenu popup = new JPopupMenu();
-                    for(HostPluginWrapper wrapper:HostPluginWrapper.getHostWrapper()){
-                        if(!wrapper.isLoaded())continue;
-                        if(!wrapper.isPremiumEnabled())continue;
+                    for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
+                        if (!wrapper.isLoaded()) continue;
+                        if (!wrapper.isPremiumEnabled()) continue;
                         JMenu pluginPopup = new JMenu(wrapper.getHost());
                         ArrayList<MenuItem> entries = wrapper.getPlugin().createMenuitems();
                         for (MenuItem next : entries) {
@@ -132,35 +129,25 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                             }
                         }
                         popup.add(pluginPopup);
-                        
-                    }
-                   
-                    popup.show(premium, e.getPoint().x, e.getPoint().y);
-                    
-                    System.out.println("Show menu");
-                }
 
+                    }
+
+                    popup.show(premium, e.getPoint().x, e.getPoint().y);
+                }
             }
 
             public void mouseEntered(MouseEvent e) {
-                // TODO Auto-generated method stub
-
             }
 
             public void mouseExited(MouseEvent e) {
-                // TODO Auto-generated method stub
-
             }
 
             public void mousePressed(MouseEvent e) {
-                // TODO Auto-generated method stub
-
             }
 
             public void mouseReleased(MouseEvent e) {
-                // TODO Auto-generated method stub
-
             }
+
         });
         add(new JSeparator(JSeparator.VERTICAL), "height 16,aligny center");
         add(lbl, "hidemode 3");
@@ -220,33 +207,36 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         this.onUpdate();
     }
 
-    private JMenu createExtrasMenu(Object obj) {
-        JMenu pluginPopup = new JMenu("Premium");
-        ArrayList<MenuItem> entries = new ArrayList<MenuItem>();
-
-        if (entries != null && entries.size() > 0) {
-            for (MenuItem next : entries) {
-                JMenuItem mi = JDMenu.getJMenuItem(next);
-                if (mi == null) {
-                    pluginPopup.addSeparator();
-                } else {
-                    pluginPopup.add(mi);
-                }
-            }
-        } else {
-            pluginPopup.setEnabled(false);
-        }
-        return pluginPopup;
-    }
+    // private JMenu createExtrasMenu(Object obj) {
+    // JMenu pluginPopup = new JMenu("Premium");
+    // ArrayList<MenuItem> entries = new ArrayList<MenuItem>();
+    //
+    // if (entries != null && entries.size() > 0) {
+    // for (MenuItem next : entries) {
+    // JMenuItem mi = JDMenu.getJMenuItem(next);
+    // if (mi == null) {
+    // pluginPopup.addSeparator();
+    // } else {
+    // pluginPopup.add(mi);
+    // }
+    // }
+    // } else {
+    // pluginPopup.setEnabled(false);
+    // }
+    // return pluginPopup;
+    // }
 
     protected void showDetails(PluginForHost plugin) {
-        ConfigEntriesPanel panel = new ConfigEntriesPanel(plugin.getConfig());
-
-        Component comp = panel.getComponent(0);
-        if (comp instanceof JTabbedPane) {
-            ((JTabbedPane) comp).setSelectedIndex(((JTabbedPane) comp).getTabCount() - 1);
-        }
-        SimpleGUI.CURRENTGUI.getContentPane().display(panel);
+        // ConfigEntriesPanel panel = new
+        // ConfigEntriesPanel(plugin.getConfig());
+        //
+        // Component comp = panel.getComponent(0);
+        // if (comp instanceof JTabbedPane) {
+        // ((JTabbedPane) comp).setSelectedIndex(((JTabbedPane)
+        // comp).getTabCount() - 1);
+        // }
+        // SimpleGUI.CURRENTGUI.getContentPane().display(panel);
+        SimpleGUI.displayConfig(plugin.getConfig(), 1);
     }
 
     private synchronized void updatePremium() {
@@ -301,7 +291,6 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         config.setProperty(MAP_PROP, map);
         config.setProperty(MAPSIZE_PROP, mapSize);
         config.save();
-
     }
 
     private synchronized void redraw() {
@@ -338,7 +327,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                             bars[i].setValue(left);
 
                             if (left >= 0) {
-                                //bars[i].setString(JDUtilities.formatKbReadable
+                                // bars[i].setString(JDUtilities.formatKbReadable
                                 // (left
                                 // /
                                 // 1024));

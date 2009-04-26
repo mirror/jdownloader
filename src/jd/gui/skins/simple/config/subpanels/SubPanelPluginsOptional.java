@@ -154,13 +154,12 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     }
 
     private void editEntry() {
-        SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig(),0);
+        SimpleGUI.displayConfig(pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig(), 0);
     }
 
     @Override
     public void initPanel() {
-        panel.setLayout(new MigLayout("ins 10,wrap 2", "[fill,grow 10]10[fill,grow]","[fill,grow,null:150000:null][]"));
-        
+        panel.setLayout(new MigLayout("ins 10,wrap 2", "[fill,grow 10]10[fill,grow]", "[fill,grow,null:150000:null][]"));
 
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
@@ -171,7 +170,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
                 btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
             }
         });
-        
+
         TableColumn column = null;
         for (int c = 0; c < tableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
