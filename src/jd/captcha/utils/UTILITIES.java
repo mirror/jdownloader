@@ -191,7 +191,6 @@ public class UTILITIES {
                 return img;
             }
         };
-        run.waitForEDT();
         return run.getReturnValue();
     }
 

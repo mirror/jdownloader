@@ -69,7 +69,7 @@ import jd.utils.MacOSController;
 import jd.utils.WebUpdate;
 
 /**
- * @author astaldo/JD-Team
+ * @author JD-Team
  */
 
 public class Main {

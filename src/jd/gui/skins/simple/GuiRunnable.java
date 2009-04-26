@@ -20,6 +20,7 @@ public abstract class GuiRunnable<T> implements Runnable {
     private final Object lock = new Object();
 
     private boolean started = false;
+    private boolean done = false;
 
     public boolean isStarted() {
         return started;
@@ -46,26 +47,25 @@ public abstract class GuiRunnable<T> implements Runnable {
      * is not started yet.. the start method gets called
      */
     public void waitForEDT() {
+        if (done) return;
         if (!isStarted()) start();
         if (!SwingUtilities.isEventDispatchThread()) {
             synchronized (lock) {
                 try {
                     lock.wait();
                 } catch (InterruptedException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
         }
-
+        done = true;
     }
 
     public void run() {
-
         this.returnValue = this.runSave();
         synchronized (lock) {
             lock.notify();
         }
-
     }
 
     abstract public T runSave();
