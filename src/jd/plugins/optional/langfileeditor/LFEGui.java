@@ -660,7 +660,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
             }, JDLocale.L("plugins.optional.langfileeditor.svn.checkOut", "CheckOut SVN now (This may take several seconds ...)")));
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SVN_UPDATE_ON_START, JDLocale.L("plugins.optional.langfileeditor.svn.checkOutOnStart", "CheckOut SVN on start")).setDefaultValue(false));
-            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, container);
+            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI, container, 0);
 
         } else if (e.getSource() == mnuSVNCheckOutNow) {
 
