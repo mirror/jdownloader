@@ -199,7 +199,7 @@ public class Netloadin extends PluginForHost {
     }
 
     private void handleFastLink(DownloadLink downloadLink) throws Exception {
-
+br.forceDebug(true);
         String url = br.getRegex("<a class=\"download_fast_link\" href=\"(.*?)\">Start Free Download</a>").getMatch(0);
     
 
@@ -212,7 +212,7 @@ public class Netloadin extends PluginForHost {
         br.getPage(url);
         logger.finest(br.toString());
         if (br.getRedirectLocation() != null) {
-            dl = br.openDownload(downloadLink, url);
+            dl = br.openDownload(downloadLink, br.getRedirectLocation());
             dl.startDownload();
         } else {
             handleErrors(downloadLink);
