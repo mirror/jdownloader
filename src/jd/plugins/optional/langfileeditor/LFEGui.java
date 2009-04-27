@@ -197,7 +197,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         top.add(keyChart, BorderLayout.LINE_END);
 
         JPanel main = new JPanel(new BorderLayout(5, 5));
-        main.setBorder(new EmptyBorder(10, 10, 10, 10));
+        main.setBorder(new EmptyBorder(5, 5, 5, 5));
         main.add(top, BorderLayout.PAGE_START);
         main.add(new JScrollPane(table));
 
