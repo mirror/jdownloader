@@ -76,21 +76,21 @@ public class WrzutaPl extends PluginForHost {
         if (filetype.equalsIgnoreCase("audio")) {
             linkurl = br.getRegex("wrzuta_flv=(.*?)&wrzuta_mini").getMatch(0);
             if (linkurl == null)
-                linkurl = "http://wrzuta.pl/aud/file/" + fileid + "/";
+                linkurl = downloadLink.getDownloadURL().replaceFirst("audio", "sr/f");
             else
                 addext = false;
         }
         if (filetype.equalsIgnoreCase("film")) {
             linkurl = br.getRegex("wrzuta_flv=(.*?)&wrzuta_mini").getMatch(0);
             if (linkurl == null)
-                linkurl = "http://wrzuta.pl/vid/file/" + fileid + "/";
+                linkurl = downloadLink.getDownloadURL().replaceFirst("film", "sr/f");
             else
                 addext = false;
         }
         if (filetype.equalsIgnoreCase("obraz")) {
             linkurl = br.getRegex("wrzuta_flv=(.*?)&wrzuta_mini").getMatch(0);
             if (linkurl == null)
-                linkurl = "http://wrzuta.pl/img/file/" + fileid + "/";
+                linkurl = downloadLink.getDownloadURL().replaceFirst("obraz", "sr/f");
             else
                 addext = false;
         }
