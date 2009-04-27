@@ -870,7 +870,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             matches = new Regex(JDIO.getLocalFile(file), "JDLocale[\\s]*\\.L[F]?[\\s]*\\([\\s]*\"(.*?)\"[\\s]*,[\\s]*(\".*?\"|.*?)[\\s]*[,\\)]").getMatches();
 
             for (String[] match : matches) {
-                if (match[1].startsWith("//")) continue;
+                if (match[1].startsWith("//") || match[1].startsWith("*")) continue;
                 match[0] = match[0].trim().toLowerCase();
                 if (sourceEntries.containsKey(match[0])) continue;
 
