@@ -142,7 +142,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
                 for (int toDoStep = 0; toDoStep < toDos.getLength(); toDoStep++) {
                     Node toDo = toDos.item(toDoStep);
 
-                    progress.setStatusText(String.format(JDLocale.L("interaction.liveHeader.progress.4_step", "(%s)HTTPLiveHeader"), toDo.getNodeName()));
+                    progress.setStatusText(JDLocale.LF("interaction.liveHeader.progress.4_step", "(%s)HTTPLiveHeader", toDo.getNodeName()));
 
                     if (toDo.getNodeName().equalsIgnoreCase("DEFINE")) {
 

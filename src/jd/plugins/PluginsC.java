@@ -105,7 +105,7 @@ public abstract class PluginsC extends Plugin {
         progress.addToMax(dlU.size());
         for (String string : dlU) {
             progress.increase(1);
-            progress.setStatusText(String.format(JDLocale.L("plugins.container.decrypt", "Decrypt link %s"), "" + i));
+            progress.setStatusText(JDLocale.LF("plugins.container.decrypt", "Decrypt link %s", i));
 
             DistributeData distributeData = new DistributeData(string);
             Vector<DownloadLink> links = distributeData.findLinks();
@@ -375,11 +375,11 @@ public abstract class PluginsC extends Plugin {
             doDecryption(filename);
             progress.increase(1);
 
-            progress.setStatusText(String.format(JDLocale.L("plugins.container.found", "Prozess %s links"), "" + cls.size()));
+            progress.setStatusText(JDLocale.LF("plugins.container.found", "Prozess %s links", cls.size()));
             logger.info(filename + " Parse");
             if (cls != null && dlU != null) {
                 decryptLinkProtectorLinks();
-                progress.setStatusText(String.format(JDLocale.L("plugins.container.exit", "Finished. Found %s links"), "" + cls.size()));
+                progress.setStatusText(JDLocale.LF("plugins.container.exit", "Finished. Found %s links", cls.size()));
                 Iterator<DownloadLink> it = cls.iterator();
                 while (it.hasNext()) {
                     it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);

@@ -255,9 +255,9 @@ public class LinkStatus implements Serializable {
 
         if (hasStatus(ERROR_IP_BLOCKED) && downloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
             if (errorMessage == null) {
-                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000)));
+                ret = JDLocale.LF("gui.download.waittime_status", "Wait %s min", Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000)));
             } else {
-                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000))) + errorMessage;
+                ret = JDLocale.LF("gui.download.waittime_status", "Wait %s min", Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000))) + errorMessage;
 
             }
             return ret;

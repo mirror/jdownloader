@@ -105,8 +105,6 @@ abstract public class DownloadInterface {
 
         private DownloadInterface dl;
 
-   
-
         /**
          * Die Connection wird entsprechend der start und endbytes neu
          * aufgebaut.
@@ -250,7 +248,7 @@ abstract public class DownloadInterface {
             } catch (Exception e) {
                 addException(e);
                 error(LinkStatus.ERROR_RETRY, JDUtilities.convertExceptionReadable(e));
-                logger.log(Level.SEVERE,"Exception occured",e);
+                logger.log(Level.SEVERE, "Exception occured", e);
             }
             return null;
         }
@@ -408,7 +406,7 @@ abstract public class DownloadInterface {
                         }
 
                     } catch (Exception e) {
-                        logger.log(Level.SEVERE,"Exception occured",e);
+                        logger.log(Level.SEVERE, "Exception occured", e);
                         error(LinkStatus.ERROR_FATAL, JDLocale.L("download.error.message.outofmemory", "The downloadsystem is out of memory"));
 
                         return;
@@ -426,7 +424,7 @@ abstract public class DownloadInterface {
                             Thread.sleep(addWait);
                         }
                     } catch (Exception e) {
-//                        logger.log(Level.SEVERE,"Exception occured",e);
+                        // logger.log(Level.SEVERE,"Exception occured",e);
                     }
                     deltaTime = System.currentTimeMillis() - timer;
                     if (deltaTime == 0) deltaTime = 1;
@@ -463,9 +461,9 @@ abstract public class DownloadInterface {
             } catch (IOException e) {
                 if (e.getMessage() != null && e.getMessage().indexOf("timed out") >= 0) {
                     error(LinkStatus.ERROR_TIMEOUT_REACHED, null);
-                    logger.log(Level.SEVERE,"Exception occured",e);
+                    logger.log(Level.SEVERE, "Exception occured", e);
                 } else {
-                    logger.log(Level.SEVERE,"Exception occured",e);
+                    logger.log(Level.SEVERE, "Exception occured", e);
                     if (e.getLocalizedMessage().contains("503")) {
                         linkStatus.setValue(10 * 60000l);
                         error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("download.error.message.unavailable", "Service temp. unavailable"));
@@ -475,7 +473,7 @@ abstract public class DownloadInterface {
                     }
                 }
             } catch (Exception e) {
-                logger.log(Level.SEVERE,"Exception occured",e);
+                logger.log(Level.SEVERE, "Exception occured", e);
                 error(LinkStatus.ERROR_RETRY, JDUtilities.convertExceptionReadable(e));
                 addException(e);
             }
@@ -485,14 +483,14 @@ abstract public class DownloadInterface {
                     inputStream.close();
                 }
             } catch (IOException e) {
-                logger.log(Level.SEVERE,"Exception occured",e);
+                logger.log(Level.SEVERE, "Exception occured", e);
             }
             try {
                 if (source != null) {
                     source.close();
                 }
             } catch (IOException e) {
-                logger.log(Level.SEVERE,"Exception occured",e);
+                logger.log(Level.SEVERE, "Exception occured", e);
             }
 
         }
@@ -518,7 +516,7 @@ abstract public class DownloadInterface {
             maxspeed *= TIME_BASE / 1000;
             long max = Math.max(MIN_BUFFERSIZE, maxspeed);
             long bufferSize = Math.min(MAX_BUFFERSIZE, max);
-            //logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+
+            // logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+
             // max);
             bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
             if (speedDebug) {
@@ -890,7 +888,7 @@ abstract public class DownloadInterface {
             }
 
             if (isInterrupted() || downloadLink.isAborted()) {
-                userInterrupt=true;
+                userInterrupt = true;
             }
             addChunksDownloading(+1);
 
@@ -986,7 +984,7 @@ abstract public class DownloadInterface {
     private boolean fatalErrorOccured = false;
 
     private boolean doFileSizeCheck = true;
-    public boolean userInterrupt=false;
+    public boolean userInterrupt = false;
     private boolean fakeContentRangeHeader_flag = false;
 
     private Request request = null;
@@ -1494,10 +1492,10 @@ abstract public class DownloadInterface {
      * @return
      */
     public boolean handleErrors() {
-if(userInterrupt){
-    logger.info("Download interrupted by user input");
-    return false;
-}
+        if (userInterrupt) {
+            logger.info("Download interrupted by user input");
+            return false;
+        }
         if (this.doFileSizeCheck && (totaleLinkBytesLoaded <= 0 || totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
 
             logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
@@ -1683,7 +1681,7 @@ if(userInterrupt){
         if (block != null) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             linkstatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-            linkstatus.setErrorMessage(String.format(JDLocale.L("system.download.errors.linkisBlocked", "Mirror %s is loading"), block.getPlugin().getHost()));
+            linkstatus.setErrorMessage(JDLocale.LF("system.download.errors.linkisBlocked", "Mirror %s is loading", block.getPlugin().getHost()));
             return true;
         }
         File fileOutput = new File(downloadLink.getFileOutput());
@@ -1765,7 +1763,7 @@ if(userInterrupt){
             if (e instanceof FileNotFoundException) {
                 this.error(LinkStatus.ERROR_LOCAL_IO, JDLocale.LF("download.error.message.localio", "Could not write to file: %s", e.getMessage()));
             } else {
-                logger.log(Level.SEVERE,"Exception occured",e);
+                logger.log(Level.SEVERE, "Exception occured", e);
             }
             handleErrors();
             // if (plugin.getCurrentStep().getStatus() !=

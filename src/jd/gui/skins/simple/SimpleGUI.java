@@ -45,7 +45,6 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
-import javax.swing.plaf.RootPaneUI;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigPropertyListener;
@@ -111,9 +110,6 @@ import org.jdesktop.swingx.JXTitledSeparator;
 import org.jdesktop.swingx.JXLoginPane.Status;
 import org.jvnet.lafwidget.LafWidget;
 import org.jvnet.lafwidget.utils.LafConstants.AnimationKind;
-
-//import org.jvnet.substance.SubstanceLookAndFeel;
-//import org.jvnet.substance.SubstanceRootPaneUI;
 
 public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, WindowListener {
 
@@ -187,7 +183,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         statusBar = new JDStatusBar();
 
-        RootPaneUI ui = this.getRootPane().getUI();
+        // RootPaneUI ui = this.getRootPane().getUI();
 
         if (isSubstance()) {
             this.getRootPane().setUI(new JDSubstanceUI());
@@ -209,7 +205,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         noTitlePane = false;
         toolBar = new JDToolBar(noTitlePane);
 
-        System.out.println(ui);
+        // System.out.println(ui);
         addWindowListener(this);
         this.setAnimate();
         JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
@@ -217,20 +213,12 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             @Override
             public void onPropertyChanged(Property source, String propertyName) {
                 setAnimate();
-
             }
 
         });
-        // setIconImage(JDTheme.II("gui.images.jd_logo"));
+
         ArrayList<Image> list = new ArrayList<Image>();
-        // Image img;
-        // list.add(JDImage.getImage("logo/logo_e_14"));
-        // list.add(JDImage.getImage("logo/logo_e_15"));
-        // list.add(JDImage.getImage("logo/logo_e_16"));
-        // list.add(JDImage.getImage("logo/logo_e_17"));
-        // list.add(JDImage.getImage("logo/logo_e_18"));
-        // list.add(JDImage.getImage("logo/logo_e_19"));
-        // list.add(JDImage.getImage("logo/logo_e_20"));
+
         list.add(JDImage.getImage("logo/logo_14_14"));
         list.add(JDImage.getImage("logo/logo_15_15"));
         list.add(JDImage.getImage("logo/logo_16_16"));
@@ -239,11 +227,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         list.add(JDImage.getImage("logo/logo_19_19"));
         list.add(JDImage.getImage("logo/logo_20_20"));
 
-        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 32, 32));
-        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 16, 16));
-        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 64, 64));
-        // list.add((Image)JDImage.getScaledImage((BufferedImage)img, 128,
-        // 128));
         if (JDUtilities.getJavaVersion() >= 1.6) {
             this.setIconImages(list);
         } else {
@@ -266,7 +249,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             dim = new Dimension(1000, 680);
         }
         setPreferredSize(dim);
-        this.setMinimumSize(new Dimension(1000, 680));
+        setMinimumSize(new Dimension(1000, 680));
         setLocation(SimpleGuiUtils.getLastLocation(null, null, this));
         pack();
 
@@ -295,8 +278,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             }
         }.start();
 
-        loadTips();
-
     }
 
     private void setAnimate() {
@@ -310,15 +291,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             }
 
         }
-
-    }
-
-    private void loadTips() {
-        // List tips = Arrays.asList(new DefaultTip("Tip 1",
-        // "This is <b>tip</b> 1"), new DefaultTip("Tip 2", "This is tip 2"));
-        // DefaultTipOfTheDayModel model = new DefaultTipOfTheDayModel(tips);
-        // JXTipOfTheDay tipOfTheDay = new JXTipOfTheDay(model);
-        // tipOfTheDay.showDialog(this);
 
     }
 
@@ -1246,7 +1218,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     return null;
                 }
                 JPanel panel = new JPanel(new MigLayout("ins 22", "[right]10[grow,fill]40"));
-                String def = String.format(JDLocale.L("plugins.host.premium.info.title", "Accountinformation from %s for %s"), account.getUser(), pluginForHost.getHost());
+                String def = JDLocale.LF("plugins.host.premium.info.title", "Accountinformation from %s for %s", account.getUser(), pluginForHost.getHost());
                 String[] label = new String[] { JDLocale.L("plugins.host.premium.info.validUntil", "Valid until"), JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDLocale.L("plugins.host.premium.info.files", "Files"), JDLocale.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"), JDLocale.L("plugins.host.premium.info.usedSpace", "Used Space"), JDLocale.L("plugins.host.premium.info.cash", "Cash"), JDLocale.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"), JDLocale.L("plugins.host.premium.info.status", "Info") };
 
                 DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);

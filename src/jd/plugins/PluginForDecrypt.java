@@ -91,7 +91,7 @@ public abstract class PluginForDecrypt extends Plugin {
     public void sleep(long i, CryptedLink link) throws InterruptedException {
         while (i > 0) {
             i -= 1000;
-            link.getProgressController().setStatusText(String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), Formatter.formatSeconds(i / 1000)));
+            link.getProgressController().setStatusText(JDLocale.LF("gui.downloadlink.status.wait", "wait %s min", Formatter.formatSeconds(i / 1000)));
             Thread.sleep(1000);
         }
         link.getProgressController().setStatusText(null);

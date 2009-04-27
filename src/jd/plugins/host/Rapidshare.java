@@ -1044,7 +1044,7 @@ public class Rapidshare extends PluginForHost {
     private void waitTicketTime(DownloadLink downloadLink, long pendingTime) throws InterruptedException {
 
         while (pendingTime > 0 && !downloadLink.isAborted()) {
-            downloadLink.getLinkStatus().setStatusText(String.format(JDLocale.L("plugin.rapidshare.tickettime", "Wait %s for ticket"), Formatter.formatSeconds((int) (pendingTime / 1000))));
+            downloadLink.getLinkStatus().setStatusText(JDLocale.LF("plugin.rapidshare.tickettime", "Wait %s for ticket", Formatter.formatSeconds((int) (pendingTime / 1000))));
             downloadLink.requestGuiUpdate();
             Thread.sleep(1000);
             pendingTime -= 1000;

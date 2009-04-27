@@ -121,51 +121,51 @@ public class TreeTableTransferHandler extends TransferHandler {
 
                 if (current.getLastPathComponent() instanceof FilePackage) {
                     /* Links in Package */
-                    String Name = ((FilePackage) current.getLastPathComponent()).getName();
-                    popup.add(m = new JMenuItem(String.format(JDLocale.L("gui.table.draganddrop.insertinpackagestart", "In Paket '%s' am Anfang einfügen"), Name)));
+                    String name = ((FilePackage) current.getLastPathComponent()).getName();
+                    popup.add(m = new JMenuItem(JDLocale.LF("gui.table.draganddrop.insertinpackagestart", "In Paket '%s' am Anfang einfügen", name)));
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
                             synchronized (DownloadController.getInstance().getPackages()) {
                                 FilePackage fp = ((FilePackage) current.getLastPathComponent());
                                 fp.addAllAt(downloadLinks, 0);
-                            }                            
+                            }
                         }
                     });
 
-                    popup.add(m = new JMenuItem(String.format(JDLocale.L("gui.table.draganddrop.insertinpackageend", "In Paket '%s' am Ende einfügen"), Name)));
+                    popup.add(m = new JMenuItem(JDLocale.LF("gui.table.draganddrop.insertinpackageend", "In Paket '%s' am Ende einfügen", name)));
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
                             synchronized (DownloadController.getInstance().getPackages()) {
                                 FilePackage fp = ((FilePackage) current.getLastPathComponent());
                                 fp.addAllAt(downloadLinks, fp.size());
-                            }                            
+                            }
                         }
                     });
 
                 } else if (current.getLastPathComponent() instanceof DownloadLink) {
                     /* Links in Links */
-                    String Name = ((DownloadLink) current.getLastPathComponent()).getName();
-                    popup.add(m = new JMenuItem(String.format(JDLocale.L("gui.table.draganddrop.before", "Vor '%s' ablegen"), Name)));
+                    String name = ((DownloadLink) current.getLastPathComponent()).getName();
+                    popup.add(m = new JMenuItem(JDLocale.LF("gui.table.draganddrop.before", "Vor '%s' ablegen", name)));
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
                             synchronized (DownloadController.getInstance().getPackages()) {
                                 FilePackage fp = ((DownloadLink) current.getLastPathComponent()).getFilePackage();
                                 fp.addAllAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()) - 1);
-                            }                            
+                            }
                         }
                     });
 
-                    popup.add(m = new JMenuItem(String.format(JDLocale.L("gui.table.draganddrop.after", "Nach '%s' ablegen"), Name)));
+                    popup.add(m = new JMenuItem(JDLocale.LF("gui.table.draganddrop.after", "Nach '%s' ablegen", name)));
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
                             synchronized (DownloadController.getInstance().getPackages()) {
                                 FilePackage fp = ((DownloadLink) current.getLastPathComponent()).getFilePackage();
                                 fp.addAllAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()) + 1);
-                            }                            
+                            }
                         }
                     });
                 }
@@ -173,30 +173,30 @@ public class TreeTableTransferHandler extends TransferHandler {
             case DRAG_PACKAGES:
                 final Vector<FilePackage> packages = (Vector<FilePackage>) draggingObjects;
                 final FilePackage fp;
-                final String Name;
+                final String name;
                 if (current.getLastPathComponent() instanceof FilePackage) {
-                    Name = ((FilePackage) current.getLastPathComponent()).getName();
+                    name = ((FilePackage) current.getLastPathComponent()).getName();
                     fp = ((FilePackage) current.getLastPathComponent());
                 } else if (current.getLastPathComponent() instanceof DownloadLink) {
-                    Name = ((DownloadLink) current.getLastPathComponent()).getFilePackage().getName();
+                    name = ((DownloadLink) current.getLastPathComponent()).getFilePackage().getName();
                     fp = ((DownloadLink) current.getLastPathComponent()).getFilePackage();
                 } else
                     return false;
 
-                popup.add(m = new JMenuItem(String.format(JDLocale.L("gui.table.draganddrop.movepackagebefore", "Vor Paket '%s' einfügen"), Name)));
+                popup.add(m = new JMenuItem(JDLocale.LF("gui.table.draganddrop.movepackagebefore", "Vor Paket '%s' einfügen", name)));
                 m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        DownloadController.getInstance().addAllAt(packages, DownloadController.getInstance().indexOf(fp));                        
+                        DownloadController.getInstance().addAllAt(packages, DownloadController.getInstance().indexOf(fp));
                     }
 
                 });
 
-                popup.add(m = new JMenuItem(String.format(JDLocale.L("gui.table.draganddrop.movepackageend", "Nach Paket '%s' einfügen"), Name)));
+                popup.add(m = new JMenuItem(JDLocale.LF("gui.table.draganddrop.movepackageend", "Nach Paket '%s' einfügen", name)));
                 m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        DownloadController.getInstance().addAllAt(packages, DownloadController.getInstance().indexOf(fp) + 1);                        
+                        DownloadController.getInstance().addAllAt(packages, DownloadController.getInstance().indexOf(fp) + 1);
                     }
                 });
 
