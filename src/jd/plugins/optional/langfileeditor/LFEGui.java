@@ -101,7 +101,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private PieChartAPI keyChart;
     private ChartAPIEntity entDone, entMissing, entOld;
     private JMenu mnuFile, mnuSVN, mnuKey, mnuEntries;
-    private JMenuItem mnuNew, mnuReload, mnuSave, mnuSaveAs;// , mnuClose;
+    private JMenuItem mnuNew, mnuReload, mnuSave, mnuSaveAs;
     private JMenuItem mnuSVNSettings, mnuSVNCheckOutNow;
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuPickDoneColor, mnuPickMissingColor, mnuPickOldColor, mnuShowDupes;
@@ -245,16 +245,11 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         mnuFile.add(mnuSaveAs = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.saveAs", "Save As")));
         mnuFile.addSeparator();
         mnuFile.add(mnuReload = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.reload", "Reload")));
-        // mnuFile.addSeparator();
-        // mnuFile.add(mnuClose = new
-        // JMenuItem(JDLocale.L("plugins.optional.langfileeditor.close",
-        // "Close")));
 
         mnuNew.addActionListener(this);
         mnuSave.addActionListener(this);
         mnuSaveAs.addActionListener(this);
         mnuReload.addActionListener(this);
-        // mnuClose.addActionListener(this);
 
         mnuSave.setEnabled(false);
         mnuSaveAs.setEnabled(false);
@@ -634,11 +629,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 }
             }
 
-            // } else if (e.getSource() == mnuClose) {
-
-            // this.setVisible(false);
-            // this.dispose();
-
         } else if (e.getSource() == mnuSVNSettings) {
 
             ConfigEntry ce, conditionEntry;
@@ -737,7 +727,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         table.getSelectionModel().setSelectionInterval(newRow, newRow);
 
         updateKeyChart();
-        changed(true);
+        changed = true;
     }
 
     private int[] getSelectedRows() {
@@ -771,22 +761,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         return false;
     }
 
-    private void changed(boolean b) {
-        // TODO: weglassen?
-        // if (b != changed) {
-        // if (b) {
-        // this.setTitle(JDLocale.L("plugins.optional.langfileeditor.title",
-        // "jDownloader - Language File Editor") + " [ * " +
-        // languageFile.getAbsolutePath() + "]");
-        // } else {
-        // this.setTitle(JDLocale.L("plugins.optional.langfileeditor.title",
-        // "jDownloader - Language File Editor") + " [" +
-        // languageFile.getAbsolutePath() + "]");
-        // }
-        // }
-        changed = b;
-    }
-
     private void saveLanguageFile(File file) {
         StringBuilder sb = new StringBuilder();
 
@@ -806,7 +780,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         }
 
         if (languageFile.getAbsolutePath() != cmboFile.getText()) cmboFile.setCurrentPath(languageFile);
-        changed(false);
+        changed = false;
         JOptionPane.showMessageDialog(this, JDLocale.L("plugins.optional.langfileeditor.save.success.message", "LanguageFile saved successfully!"), JDLocale.L("plugins.optional.langfileeditor.save.success.title", "Save successful!"), JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -864,11 +838,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         tableModel.fireTableRowsInserted(0, data.size() - 1);
         table.packAll();
         changed = false;
-        // TODO: weglassen?
-        // if (languageFile != null)
-        // this.setTitle(JDLocale.L("plugins.optional.langfileeditor.title",
-        // "jDownloader - Language File Editor") + " [" +
-        // languageFile.getAbsolutePath() + "]");
 
         updateKeyChart();
         mnuEntries.setEnabled(true);
@@ -901,7 +870,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             matches = new Regex(JDIO.getLocalFile(file), "JDLocale[\\s]*\\.L[F]?[\\s]*\\([\\s]*\"(.*?)\"[\\s]*,[\\s]*(\".*?\"|.*?)[\\s]*[,\\)]").getMatches();
 
             for (String[] match : matches) {
-
+                if (match[1].startsWith("//")) continue;
                 match[0] = match[0].trim().toLowerCase();
                 if (sourceEntries.containsKey(match[0])) continue;
 
@@ -1105,7 +1074,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 data.get(row).setLanguage((String) value);
                 this.fireTableRowsUpdated(row, row);
                 updateKeyChart();
-                changed(true);
+                changed = true;
             }
         }
 
