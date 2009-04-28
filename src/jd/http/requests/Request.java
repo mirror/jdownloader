@@ -356,7 +356,17 @@ public abstract class Request {
         } catch (Exception e) {
             String path = this.getHttpConnection().getURL().getFile();
             if (!path.endsWith("/")) {
-                path = path.substring(0, path.lastIndexOf("/"));
+              
+                    int lastSlash = path.lastIndexOf("/");
+                    if(lastSlash>0){
+                        
+                   
+                    path = path.substring(0, path.lastIndexOf("/"));
+                    }else{
+                        path="";
+                    }
+             
+               
             }
             red = "http://" + this.getHttpConnection().getURL().getHost() + (red.charAt(0) == '/' ? red : path + "/" + red);
         }

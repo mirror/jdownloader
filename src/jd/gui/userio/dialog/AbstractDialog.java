@@ -73,7 +73,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
         this.icon = icon;
         this.okOption = (okOption == null) ? JDLocale.L("gui.btn_ok", null) : okOption;
-        this.cancelOption = (okOption == null) ? JDLocale.L("gui.btn_cancel", null) : cancelOption;
+        this.cancelOption = (cancelOption == null) ? JDLocale.L("gui.btn_cancel", null) : cancelOption;
 
     }
 
@@ -112,7 +112,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         }
         contentInit(contentpane);
         add(contentpane, "pushx,growx,pushy,growy,spanx,aligny center,wrap");
-        add(this.countDownLabel, "split 5,growx");
+        add(this.countDownLabel, "split 6,growx");
 
         if ((flag & UserIO.DONT_SHOW_AGAIN) > 0) {
             dont = new JCheckBox();
@@ -139,7 +139,11 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         this.toFront();
         this.setAlwaysOnTop(true);
         SubConfiguration cfg = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
-        if (JDFlags.hasAllFlags(flag, UserIO.NO_COUNTDOWN)) this.countdown(Math.max(2, cfg.getIntegerProperty(SimpleGuiConstants.PARAM_INPUTTIMEOUT, 20)));
+        if (JDFlags.hasNoFlags(flag, UserIO.NO_COUNTDOWN)) {
+            this.countdown(Math.max(2, cfg.getIntegerProperty(SimpleGuiConstants.PARAM_INPUTTIMEOUT, 20)));
+        }else{
+            countDownLabel.setVisible(false);
+        }
 this.packed();
         this.setVisible(true);
         this.toFront();

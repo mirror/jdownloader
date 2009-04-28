@@ -16,6 +16,8 @@
 
 package jd.controlling;
 
+import java.io.IOException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +37,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -53,7 +56,7 @@ public class DistributeData extends Thread {
     /**
      * Aufruf von Clipboard Überwachung
      */
-    private boolean clipboard = false;
+    private boolean disableDeepEmergencyScan = false;
 
     /**
      * Die zu verteilenden Daten
@@ -86,9 +89,9 @@ public class DistributeData extends Thread {
         this.data = data;
     }
 
-    public DistributeData(String data, boolean clipboard) {
+    public DistributeData(String data, boolean disableDeepEmergencyScan) {
         this(data);
-        this.clipboard = clipboard;
+        this.disableDeepEmergencyScan = disableDeepEmergencyScan;
     }
 
     public DistributeData(String data, boolean hideGrabber, boolean startDownload) {
@@ -397,33 +400,12 @@ public class DistributeData extends Thread {
 
         Vector<DownloadLink> links = findLinks();
 
-        if (links.size() == 0 && !clipboard) {
+        if (links.size() == 0 && !disableDeepEmergencyScan) {
 
             logger.info("No supported links found -> search for links in source code of all urls");
-            String[] urls = HTMLParser.getHttpLinks(data, null);
 
-            if (urls.length > 0) {
-                data = "";
-            }
-            StringBuilder buff = new StringBuilder(data);
-            Browser br = new Browser();
-            br.setFollowRedirects(false);
-            for (String url : urls) {
-
-                try {
-                    buff.append(br.getPage(url));
-                    if (br.getRedirectLocation() != null) {
-                        buff.append(' ');
-                        buff.append(br.getRedirectLocation());
-                    }
-                    buff.append(' ');
-                } catch (Exception e) {
-                }
-
-            }
-            data = buff.toString();
+            data = getLoadLinkString(data);
             links = findLinks();
-
         }
 
         Collections.sort(links);
@@ -444,5 +426,51 @@ public class DistributeData extends Thread {
 
     public void setLinkData(Vector<DownloadLink> linkData) {
         this.linkData = linkData;
+    }
+
+    /**
+     * searches for links in linkstring, loads them, and parses the source for
+     * each link
+     * 
+     * @param linkstring
+     */
+    public static void loadAndParse(String linkstring) {
+
+        JDController.getInstance().distributeLinks(getLoadLinkString(linkstring));
+
+    }
+
+    private static String getLoadLinkString(String linkstring) {
+        StringBuffer sb = new StringBuffer();
+        String[] links = HTMLParser.getHttpLinks(linkstring, null);
+        ProgressController pc = new ProgressController(JDLocale.LF("gui.addurls.progress", "Parse %s URL(s)", links.length), links.length);
+        int i = 0;
+
+        for (String l : links) {
+            Browser br = new Browser();
+        
+            try {
+                new URL(l);
+                pc.setStatusText(JDLocale.LF("gui.addurls.progress.get", "Parse %s URL(s). Get %s links", links.length, l));
+
+                br.getPage(l);
+
+                String[] found = HTMLParser.getHttpLinks(br + "", l);
+                for (String f : found) {
+
+                    i++;
+                    sb.append("\r\n" + f);
+                }
+
+            } catch (Exception e1) {
+             
+            }
+            pc.setStatusText(JDLocale.LF("gui.addurls.progress.found", "Parse %s URL(s). Found %s links", links.length, i));
+            pc.increase(1);
+
+        }
+        JDLogger.getLogger().info("Found Links" + sb);
+        pc.finalize(2000);
+        return sb.toString();
     }
 }

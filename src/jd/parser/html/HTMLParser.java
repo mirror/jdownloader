@@ -16,6 +16,8 @@
 
 package jd.parser.html;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -24,6 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 
 public class HTMLParser {
@@ -150,19 +153,25 @@ public class HTMLParser {
      */
     public static String[] getHttpLinks(String data, String url) {
         data = data.trim();
-        String protocolPattern = "(h.{2,3}|httpviajd|https|ccf|dlc|ftp)";
+        String protocolPattern = "(h.{2,3}|httpviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist)";
         if (!data.matches(".*<.*>.*")) {
             int c = new Regex(data, "(" + protocolPattern + "://|(?<!://)www\\.)").count();
             if (c == 0)
                 return new String[] {};
             else if (c == 1 && data.length() < 100 && data.matches("^(" + protocolPattern + "://|www\\.).*")) {
                 String link = data.replaceFirst("h.{2,3}://", "http://").replaceFirst("^www\\.", "http://www.").replaceFirst("[<>\"].*", "");
+                URLConnectionAdapter con = null;
                 try {
-                    if (!link.matches(".*\\s.*") || new Browser().openGetConnection(link.replaceFirst("^httpviajd", "http").replaceAll("\\s", "%20")).isOK()) { return new String[] { link.replaceAll("\\s", "%20") }; }
+
+                    if (!link.matches(".*\\s.*") || (con = new Browser().openGetConnection(link.replaceFirst("^httpviajd", "http").replaceAll("\\s", "%20"))).isOK()) {
+                        if (con != null) con.disconnect();
+                        return new String[] { link.replaceAll("\\s", "%20") };
+                    }
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
+                if (con != null) con.disconnect();
             }
         }
 
@@ -180,24 +189,48 @@ public class HTMLParser {
                 break;
             }
         }
-        if (url != null) {
-            url = url.replace("http://", "");
+        String pro = "http";
+        if (url != null && url.trim().length() > 0) {
+
+            if (url.startsWith("https://")) {
+                pro = "https";
+            }
+            if (url.startsWith("jd://")) {
+                pro = "jd";
+            }
+            if (url.startsWith("rsdf://")) {
+                pro = "rsdf";
+            }
+            if (url.startsWith("ccf://")) {
+                pro = "ccf";
+            }
+            if (url.startsWith("dlc://")) {
+                pro = "dlc";
+            }
+            if (url.startsWith("jdlist://")) {
+                pro = "jdlist";
+            }
+            if (url.startsWith("ftp://")) {
+                pro = "ftp";
+            }
+            url = url.replace(pro + "://", "");
             int dot = url.lastIndexOf('/');
             if (dot != -1) {
-                basename = url.substring(0, dot + 1);
+                basename = pro + "://" + url.substring(0, dot + 1);
             } else {
-                basename = "http://" + url + "/";
+                basename = pro + "://" + url + "/";
             }
             dot = url.indexOf('/');
             if (dot != -1) {
-                host = "http://" + url.substring(0, dot);
+                host = pro + "://" + url.substring(0, dot);
             } else {
-                host = "http://" + url;
+                host = pro + "://" + url;
             }
-            url = "http://" + url;
+            url = pro + "://" + url;
         } else {
             url = "";
         }
+
         final class Httppattern {
             public Pattern p;
             public int group;
@@ -207,15 +240,15 @@ public class HTMLParser {
                 this.group = group;
             }
         }
-        Httppattern[] linkAndFormPattern = new Httppattern[] { new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)('|\")(.*?)\\2", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 3), new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2), new Httppattern(Pattern.compile("\\[(link|url)\\](.*?)\\[/\\1\\]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2) };
+        Httppattern[] linkAndFormPattern = new Httppattern[] { new Httppattern(Pattern.compile("src=['|\"](.*?)['|\"]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 1), new Httppattern(Pattern.compile("src=(.*?)[ |>]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 1), new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)('|\")(.*?)\\2", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 3), new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2), new Httppattern(Pattern.compile("\\[(link|url)\\](.*?)\\[/\\1\\]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2) };
         for (Httppattern element : linkAndFormPattern) {
             m = element.p.matcher(data);
             while (m.find()) {
                 link = m.group(element.group);
                 link = link.replaceAll("h.{2,3}://", "http://");
                 if (!(link.length() > 3 && link.matches("^" + protocolPattern + "://.*")) && link.length() > 0) {
-                    if (link.length() > 2 && link.substring(0, 3).equals("www")) {
-                        link = "http://" + link;
+                    if (link.length() > 2 && link.startsWith("www")) {
+                        link = pro + "://" + link;
                     }
                     if (link.charAt(0) == '/') {
                         link = host + link;
@@ -226,9 +259,16 @@ public class HTMLParser {
                     }
                 }
                 link = link.trim();
-                if (!set.contains(link)) {
-                    set.add(link);
+
+                try {
+                    new URL(link);
+                    if (!set.contains(link)) {
+                        set.add(link);
+                    }
+                } catch (MalformedURLException e) {
+                    
                 }
+
             }
         }
         data = data.replaceAll("(?s)<.*?>", "\r\n");
