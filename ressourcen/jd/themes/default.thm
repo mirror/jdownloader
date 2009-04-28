@@ -83,8 +83,10 @@ gui.images.taskpanes.premium=default/contact-new
 gui.images.vip=default/contact-new
 gui.images.buy=default/premium
 gui.images.accounts=default/accounts
-
+gui.images.logomenu=default/logomenu
 gui.images.taskpanes.download=default/go-down
+gui.images.go_bottom=default/go-bottom
+gui.images.go_top=default/go-top
 gui.images.break=default/media-playback-pause
 gui.images.ok=default/ok
 gui.images.bad=default/bad
