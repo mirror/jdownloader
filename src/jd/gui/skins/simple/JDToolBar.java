@@ -1,11 +1,19 @@
 package jd.gui.skins.simple;
 
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 
 import javax.swing.JButton;
 import javax.swing.JMenu;
+import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
@@ -19,6 +27,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
 import jd.gui.skins.simple.startmenu.JDStartMenu;
+import jd.nutils.JDImage;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -30,6 +39,10 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     private static final Object BUTTON_CONSTRAINTS = "gaptop 2";
 
+    public static final int DISPLAY = 32;
+
+    public static final int LEFTGAP = 2;
+
     private JButton playButton;
     private JToggleButton pauseButton;
     private JButton stopButton;
@@ -40,38 +53,55 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     private SpeedMeterPanel speedmeter;
 
-    public JDToolBar(boolean noTitlePane) {
+    private Image logo;
+
+    public JDToolBar(boolean noTitlePane, Image mainMenuIcon) {
         super(JToolBar.HORIZONTAL);
 
         setRollover(true);
         JDUtilities.getController().addControlListener(this);
         this.setFloatable(false);
-        this.setLayout(new MigLayout(" ins 0", "[][][][][][][][][][][][][][grow,fill]"));
-        if (noTitlePane||true) {
+        this.setLayout(new MigLayout("ins 0,gap 0", "[][][][][][][][][][][][][][grow,fill]"));
+        if (noTitlePane || true) {
 
-            IconMenuBar mb = new IconMenuBar();
-            JMenu menu = new JMenu("");
-            // menu.setSize(50,50);
+//            IconMenuBar mb = new IconMenuBar();
+//            JMenu menu = new JMenu("");
+//            // menu.setSize(50,50);
+//
+//            menu.setPreferredSize(mb.getMinimumSize());
+//            menu.setMinimumSize(mb.getMinimumSize());
+//            menu.setOpaque(false);
+//            menu.setBackground(null);
+//
+//            JDStartMenu.createMenu(menu);
+//            mb.add(menu);
 
-            menu.setPreferredSize(mb.getMinimumSize());
-            menu.setMinimumSize(mb.getMinimumSize());
-            menu.setOpaque(false);
-            menu.setBackground(null);
-
-            JDStartMenu.createMenu(menu);
-            mb.add(menu);
-
-            add(mb, "gapright 15");
+            // add(mb, "gapright 15");
+//            mb.setVisible(false);
+            JPanel bt = new JPanel();
+            bt.setVisible(false);
+           
+//            bt.setContentAreaFilled(false);
+//            bt.setBorderPainted(false);
+            add(bt, "gapright 15,width 48!");
 
         }
         initController();
-        add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 5,gapright 5");
+        add(new JSeparator(JSeparator.VERTICAL), "skip,height 32,gapleft 5,gapright 5");
         initQuickConfig();
         addSpeedMeter();
         setPause(false);
-
+        logo = mainMenuIcon;
+        MouseAreaListener ml;
+        this.addMouseMotionListener(ml=new MouseAreaListener(LEFTGAP,0,48+LEFTGAP,48));
+        this.addMouseListener(ml);
     }
-
+  
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        ((Graphics2D) g).drawImage(logo, LEFTGAP, 0, 48 + LEFTGAP, DISPLAY, 0, 48 - DISPLAY, 48, 48, null);
+//System.out.println("do paint"+logo);
+    }
     private void initQuickConfig() {
         /* Clipboard */
         add(clipboard = new JToggleButton(JDTheme.II("gui.images.clipboard_disabled", 24, 24)), BUTTON_CONSTRAINTS);
@@ -105,11 +135,13 @@ public class JDToolBar extends JToolBar implements ControlListener {
         // public void stateChanged(ChangeEvent e) {
         // if (premium.isSelected()) {
         // premium.setIcon(JDTheme.II("gui.images.premium_enabled", 24, 24));
-        // JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,
+        // JDUtilities.getConfiguration().setProperty(Configuration.
+        // PARAM_USE_GLOBAL_PREMIUM,
         // true);
         // } else {
         // premium.setIcon(JDTheme.II("gui.images.premium_disabled", 24, 24));
-        // JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,
+        // JDUtilities.getConfiguration().setProperty(Configuration.
+        // PARAM_USE_GLOBAL_PREMIUM,
         // false);
         //
         // }
@@ -119,7 +151,8 @@ public class JDToolBar extends JToolBar implements ControlListener {
         //
         // });
         //
-        // premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,
+        //premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(
+        // Configuration.PARAM_USE_GLOBAL_PREMIUM,
         // true));
         /* reconect */
         add(reconnect = new JToggleButton(JDTheme.II("gui.images.reconnect_disabled", 24, 24)), BUTTON_CONSTRAINTS);
@@ -232,7 +265,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
     public void controlEvent(final ControlEvent event) {
         new GuiRunnable<Object>() {
 
-            //@Override
+            // @Override
             public Object runSave() {
                 switch (event.getID()) {
                 case ControlEvent.CONTROL_DOWNLOAD_START:
@@ -272,5 +305,14 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
         }.start();
 
+    }
+
+    public void setMainMenuIcon(Image mainMenuIcon) {
+       this.logo=mainMenuIcon;
+       this.repaint(0, 0, 48, 48);
+      // this.revalidate();
+   
+   
+        
     }
 }

@@ -7,6 +7,7 @@ import java.awt.Image;
 import javax.swing.JMenuBar;
 
 import jd.nutils.JDImage;
+import jd.utils.JDTheme;
 
 public class IconMenuBar extends JMenuBar {
 
@@ -17,7 +18,7 @@ public class IconMenuBar extends JMenuBar {
 
     public IconMenuBar() {
         super();
-        appIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_64_64"), 32, 32);
+        appIcon = JDTheme.I("gui.images.logomenu", 32, 32);
         setFocusable(false);
         setBorderPainted(true);
         setOpaque(false);

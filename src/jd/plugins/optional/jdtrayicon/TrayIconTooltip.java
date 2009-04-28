@@ -30,6 +30,7 @@ import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
 import jd.controlling.DownloadController;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
@@ -118,7 +119,15 @@ public class TrayIconTooltip {
     }
 
     public void hide() {
-        toolParent.setVisible(false);
+        new GuiRunnable() {
+
+            @Override
+            public Object runSave() {
+                toolParent.setVisible(false);
+                return null;
+            }
+
+        }.start();
         counter = 0;
         inside = false;
     }
@@ -152,7 +161,7 @@ public class TrayIconTooltip {
             this.p = p;
         }
 
-        //@Override
+        // @Override
         public void run() {
             try {
                 Thread.sleep(1000);
