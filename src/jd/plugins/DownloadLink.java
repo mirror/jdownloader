@@ -138,6 +138,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * geladen wurde
      */
     private transient PluginsC pluginForContainer;
+private transient boolean stopMark=false;
+    public boolean isStopMark() {
+    return stopMark;
+}
+
+public void setStopMark(boolean stopMark) {
+    this.stopMark = stopMark;
+}
 
     private String sourcePluginComment = null;
 

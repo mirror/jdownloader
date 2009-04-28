@@ -12,7 +12,7 @@ public class JStartMenu extends JMenu {
     public JStartMenu(String name, String icon, String tooltip) {
         super(JDLocale.L(name, null));
         this.setIcon(JDTheme.II(icon, 24, 24));
-        this.setToolTipText(JDLocale.L(tooltip, null));
+        //this.setToolTipText(JDLocale.L(tooltip, null));
     }
 
 }

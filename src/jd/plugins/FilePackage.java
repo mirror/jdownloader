@@ -85,7 +85,14 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     private String password;
     private String dlpassword;
     private boolean extractAfterDownload = true;
+    private transient boolean stopMark=false;
+    public boolean isStopMark() {
+    return stopMark;
+}
 
+public void setStopMark(boolean stopMark) {
+    this.stopMark = stopMark;
+}
     private long totalBytesLoaded_v2;
 
     private long totalDownloadSpeed_v2;
