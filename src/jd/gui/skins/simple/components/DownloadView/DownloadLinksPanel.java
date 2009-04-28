@@ -86,14 +86,14 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     private boolean visible = true;
 
-    private FilePackageInfo FilePackageInfo;
+    private FilePackageInfo filePackageInfo;
 
     public DownloadLinksPanel() {
         super(new BorderLayout());
         internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
 
-        FilePackageInfo = new FilePackageInfo();
+        filePackageInfo = new FilePackageInfo();
         this.add(scrollPane);
         JDUtilities.getDownloadController().getBroadcaster().addListener(this);
         Update_Async = new Timer(UPDATE_TIMING, this);
@@ -104,10 +104,9 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     }
 
     public void showFilePackageInfo(FilePackage fp) {
-        FilePackageInfo.setPackage(fp);
-        JDCollapser.getInstance().setContentPanel(FilePackageInfo);
-        JDCollapser.getInstance().getContentPane().add(FilePackageInfo);
-        JDCollapser.getInstance().setTitle("FilePackage");
+        filePackageInfo.setPackage(fp);
+        JDCollapser.getInstance().setContentPanel(filePackageInfo);
+        JDCollapser.getInstance().setTitle(JDLocale.L("gui.linkgrabber.packagetab.title", "FilePackage"));
         JDCollapser.getInstance().setVisible(true);
         JDCollapser.getInstance().setCollapsed(false);
     }
@@ -481,7 +480,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     public void onDownloadControllerEvent(DownloadControllerEvent event) {
         switch (event.getID()) {
         case DownloadControllerEvent.REMOVE_FILPACKAGE:
-            if (FilePackageInfo.getPackage() != null && FilePackageInfo.getPackage() == ((FilePackage) event.getParameter())) {
+            if (filePackageInfo.getPackage() != null && filePackageInfo.getPackage() == ((FilePackage) event.getParameter())) {
                 this.hideFilePackageInfo();
             }
             break;

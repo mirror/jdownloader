@@ -54,7 +54,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     private boolean gatherer_running = false;
     private ProgressController pc;
 
-    private LinkGrabberFilePackageInfo FilePackageInfo;
+    private LinkGrabberFilePackageInfo filePackageInfo;
     private Timer gathertimer;
 
     private Jobber checkJobbers = new Jobber(4);
@@ -80,7 +80,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         internalTreeTable = new LinkGrabberTreeTable(new LinkGrabberTreeTableModel(this), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
         this.add(scrollPane, "cell 0 0");
-        FilePackageInfo = new LinkGrabberFilePackageInfo();
+        filePackageInfo = new LinkGrabberFilePackageInfo();
         Update_Async = new Timer(250, this);
         Update_Async.setInitialDelay(250);
         Update_Async.setRepeats(false);
@@ -93,10 +93,9 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     }
 
     public void showFilePackageInfo(LinkGrabberFilePackage fp) {
-        FilePackageInfo.setPackage(fp);
-        JDCollapser.getInstance().setContentPanel(FilePackageInfo);
-        JDCollapser.getInstance().getContentPane().add(FilePackageInfo);
-        JDCollapser.getInstance().setTitle("FilePackage");
+        filePackageInfo.setPackage(fp);
+        JDCollapser.getInstance().setContentPanel(filePackageInfo);
+        JDCollapser.getInstance().setTitle(JDLocale.L("gui.linkgrabber.packagetab.title", "FilePackage"));
         JDCollapser.getInstance().setVisible(true);
         JDCollapser.getInstance().setCollapsed(false);
     }
@@ -127,7 +126,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         }
     }
 
-    //@Override
+    // @Override
     public void onHide() {
         LGINSTANCE.getBroadcaster().removeListener(this);
         Update_Async.stop();
@@ -211,7 +210,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         Update_Async.restart();
     }
 
-    //@Override
+    // @Override
     public void onDisplay() {
         fireTableChanged(1, null);
         LGINSTANCE.getBroadcaster().addListener(this);
@@ -511,18 +510,17 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     public boolean hasLinks() {
         return waitingList.size() > 0 || LGINSTANCE.size() > 0;
     }
-    
 
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
         switch (event.getID()) {
         case LinkGrabberControllerEvent.REMOVE_FILPACKAGE:
-            if (FilePackageInfo.getPackage() != null && FilePackageInfo.getPackage() == ((LinkGrabberFilePackage) event.getParameter())) {
+            if (filePackageInfo.getPackage() != null && filePackageInfo.getPackage() == ((LinkGrabberFilePackage) event.getParameter())) {
                 this.hideFilePackageInfo();
             }
         case LinkGrabberControllerEvent.REFRESH_STRUCTURE:
             if (event.getParameter() != null) {
-                if (FilePackageInfo.getPackage() != null && FilePackageInfo.getPackage() == event.getParameter()) {
-                    FilePackageInfo.update();
+                if (filePackageInfo.getPackage() != null && filePackageInfo.getPackage() == event.getParameter()) {
+                    filePackageInfo.update();
                 }
             }
             Update_Async.restart();

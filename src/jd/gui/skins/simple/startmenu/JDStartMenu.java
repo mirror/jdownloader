@@ -1,6 +1,5 @@
 package jd.gui.skins.simple.startmenu;
 
-import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
@@ -20,11 +19,9 @@ public class JDStartMenu {
         popup.add(new JSeparator());
         popup.add(new AboutMenu());
         popup.add(new JSeparator());
-        popup.add(new RestartAction()); 
+        popup.add(new RestartAction());
         popup.add(new ExitAction());
 
     }
-
-
 
 }
