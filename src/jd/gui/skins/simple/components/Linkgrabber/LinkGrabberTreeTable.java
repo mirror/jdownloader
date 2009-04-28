@@ -69,6 +69,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
     private Vector<LinkGrabberFilePackage> selectedPackages = new Vector<LinkGrabberFilePackage>();
 
     public static final String PROPERTY_EXPANDED = "lg_expanded";
+    public static final String PROPERTY_USEREXPAND = "lg_userexpand";
     public static final String PROPERTY_SELECTED = "lg_selected";
 
     public LinkGrabberPanel getLinkGrabber() {
@@ -243,11 +244,13 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
     public void treeCollapsed(TreeExpansionEvent event) {
         LinkGrabberFilePackage fp = (LinkGrabberFilePackage) event.getPath().getLastPathComponent();
         fp.setProperty(PROPERTY_EXPANDED, false);
+        fp.setProperty(PROPERTY_USEREXPAND, true);
     }
 
     public void treeExpanded(TreeExpansionEvent event) {
         LinkGrabberFilePackage fp = (LinkGrabberFilePackage) event.getPath().getLastPathComponent();
         fp.setProperty(PROPERTY_EXPANDED, true);
+        fp.setProperty(PROPERTY_USEREXPAND, true);
     }
 
     private int getRealcolumnAtPoint(int x) {
@@ -366,7 +369,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
             prop.put("links", links);
             prop.put("prio", new Integer(i));
             prioPopup.add(tmp = new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, Integer.toString(i), LinkGrabberTreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
-            tmp.setIcon(JDTheme.II("gui.images.priority" + i, 16, 16));            
+            tmp.setIcon(JDTheme.II("gui.images.priority" + i, 16, 16));
             if (prio != null && i == prio) {
                 tmp.setEnabled(false);
             } else

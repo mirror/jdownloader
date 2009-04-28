@@ -80,12 +80,14 @@ public class JDImage {
         String id;
         long start = System.currentTimeMillis();
         if ((ret = IMAGE_ICON_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) {
-            System.out.println("Return cached image: " + id + "(" + (System.currentTimeMillis() - start) + ")");
+            // System.out.println("Return cached image: " + id + "(" +
+            // (System.currentTimeMillis() - start) + ")");
             return ret;
         }
         ret = new ImageIcon(getScaledImage((BufferedImage) img.getImage(), width, height));
         IMAGE_ICON_CACHE.put(id, ret);
-        System.out.println("Return new scaled image: " + id + "(" + (System.currentTimeMillis() - start) + ")");
+        // System.out.println("Return new scaled image: " + id + "(" +
+        // (System.currentTimeMillis() - start) + ")");
 
         return ret;
     }
@@ -96,12 +98,14 @@ public class JDImage {
         long start = System.currentTimeMillis();
 
         if ((ret = SCALED_IMAGE_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) {
-            System.out.println("Return cached image: " + id + "(" + (System.currentTimeMillis() - start) + ")");
+            // System.out.println("Return cached image: " + id + "(" +
+            // (System.currentTimeMillis() - start) + ")");
             return ret;
         }
         ret = getScaledImage((BufferedImage) img.getImage(), width, height);
         SCALED_IMAGE_CACHE.put(id, ret);
-        System.out.println("Return new scaled image: " + id + "(" + (System.currentTimeMillis() - start) + ")");
+        // System.out.println("Return new scaled image: " + id + "(" +
+        // (System.currentTimeMillis() - start) + ")");
         return ret;
 
     }
@@ -112,12 +116,14 @@ public class JDImage {
         long start = System.currentTimeMillis();
 
         if ((ret = SCALED_IMAGE_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) {
-            System.out.println("Return cached image: " + id + "(" + (System.currentTimeMillis() - start) + ")");
+            // System.out.println("Return cached image: " + id + "(" +
+            // (System.currentTimeMillis() - start) + ")");
             return ret;
         }
         if (img == null) return null;
         if ((ret = SCALED_IMAGE_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) {
-            System.out.println("Return cached image: " + id + "(" + (System.currentTimeMillis() - start) + ")");
+            // System.out.println("Return cached image: " + id + "(" +
+            // (System.currentTimeMillis() - start) + ")");
             return ret;
         }
         double faktor = Math.min((double) img.getWidth() / width, (double) img.getHeight() / height);
@@ -126,7 +132,8 @@ public class JDImage {
         if (faktor == 1.0) return img;
         ret = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
         SCALED_IMAGE_CACHE.put(id, ret);
-        System.out.println("Return new scaled image: " + id + "(" + (System.currentTimeMillis() - start) + ")");
+        // System.out.println("Return new scaled image: " + id + "(" +
+        // (System.currentTimeMillis() - start) + ")");
         return ret;
 
     }
@@ -145,7 +152,8 @@ public class JDImage {
         if (!(file = JDUtilities.getResourceFile("jd/img/" + imageName + ".png")).exists()) return null;
         BufferedImage ret;
         if ((ret = BUFFERED_IMAGE_CACHE.get(imageName)) != null) {
-            System.out.println("loaded cached image " + imageName + "(" + (System.currentTimeMillis() - i) + ")");
+            // System.out.println("loaded cached image " + imageName + "(" +
+            // (System.currentTimeMillis() - i) + ")");
             return ret;
         }
 
@@ -157,7 +165,8 @@ public class JDImage {
             return null;
         }
         BUFFERED_IMAGE_CACHE.put(imageName, ret);
-        System.out.println("loaded new image " + imageName + "(" + (System.currentTimeMillis() - i) + ")");
+        // System.out.println("loaded new image " + imageName + "(" +
+        // (System.currentTimeMillis() - i) + ")");
         return ret;
 
     }

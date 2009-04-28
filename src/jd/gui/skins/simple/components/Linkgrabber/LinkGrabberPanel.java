@@ -114,11 +114,11 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 }
                 if (count > (internalTreeTable.getSize().getHeight() / 16.0)) {
                     for (LinkGrabberFilePackage fp : fps) {
-                        fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false);
+                        if (!(Boolean) fp.getProperty(LinkGrabberTreeTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false);
                     }
                 } else {
                     for (LinkGrabberFilePackage fp : fps) {
-                        fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, true);
+                        if (!(Boolean) fp.getProperty(LinkGrabberTreeTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, true);
                     }
                 }
             }

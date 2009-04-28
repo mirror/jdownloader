@@ -108,8 +108,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         return stopMark;
     }
 
-    public boolean isStopMark(Object item) {
-        if (item == null) return false;
+    public boolean isStopMark(Object item) {        
         return stopMark == item;
     }
 
