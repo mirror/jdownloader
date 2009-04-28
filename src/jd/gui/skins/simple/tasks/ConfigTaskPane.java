@@ -11,6 +11,7 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.ContentPanel;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -18,13 +19,14 @@ import jd.utils.JDUtilities;
 
 public class ConfigTaskPane extends TaskPanel implements ActionListener, ControlListener {
 
+    private static final long serialVersionUID = -7720749076951577192L;
+
     private JButton general;
     private JButton download;
     private JButton gui;
     private JButton reconnect;
     private JButton captcha;
     private JButton host;
-    // private JButton decrypt;
     private JButton addons;
     private JButton eventmanager;
     private JButton sav;
@@ -35,7 +37,6 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
     public static final int ACTION_RECONNECT = 4;
     public static final int ACTION_CAPTCHA = 5;
     public static final int ACTION_HOST = 6;
-    // public static final int ACTION_DECRYPT = 7;
     public static final int ACTION_ADDONS = 7;
     public static final int ACTION_EVENTMANAGER = 8;
     public static final int ACTION_SAVE = 9;
@@ -53,10 +54,6 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
         this.reconnect = (this.createButton(JDLocale.L("gui.config.tabLables.reconnect", "reconnect"), JDTheme.II("gui.images.config.reconnect", 16, 16)));
         this.captcha = (this.createButton(JDLocale.L("gui.config.tabLables.jac", "jac"), JDTheme.II("gui.images.config.ocr", 16, 16)));
         this.host = (this.createButton(JDLocale.L("gui.config.tabLables.hostPlugin", "hostPlugin"), JDTheme.II("gui.images.config.host", 16, 16)));
-        // this.decrypt =
-        // addButton(this.createButton(JDLocale.L(
-        // "gui.config.tabLables.decryptPlugin",
-        // "decryptPlugin"), JDTheme.II("gui.images.config.decrypt", 16, 16)));
         this.addons = (this.createButton(JDLocale.L("gui.config.tabLables.addons", "addons"), JDTheme.II("gui.images.config.packagemanager", 16, 16)));
         this.eventmanager = (this.createButton(JDLocale.L("gui.config.tabLables.eventManager", "eventManager"), JDTheme.II("gui.images.config.eventmanager", 16, 16)));
         this.sav = (this.createButton(JDLocale.L("gui.task.config.save", "Save changes"), JDTheme.II("gui.images.save", 16, 16)));
@@ -73,16 +70,9 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
         add(new JSeparator());
 
         add(sav, D1_BUTTON_ICON);
-      //  sav.setEnabled(false);
     }
 
-    /**
-     * 
-     */
-    private static final long serialVersionUID = -7720749076951577192L;
-
     public void actionPerformed(ActionEvent e) {
-
         if (e.getSource() == general) {
             this.broadcastEvent(new ActionEvent(this, ACTION_GENERAL, ((JButton) e.getSource()).getName()));
             return;
@@ -107,11 +97,6 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
             this.broadcastEvent(new ActionEvent(this, ACTION_HOST, ((JButton) e.getSource()).getName()));
             return;
         }
-        // if (e.getSource() == decrypt) {
-        // this.broadcastEvent(new ActionEvent(this, ACTION_DECRYPT, ((JButton)
-        // e.getSource()).getName()));
-        // return;
-        // }
         if (e.getSource() == addons) {
             this.broadcastEvent(new ActionEvent(this, ACTION_ADDONS, ((JButton) e.getSource()).getName()));
             return;
@@ -129,21 +114,19 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
 
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
-            if (ContentPanel.PANEL != null && ContentPanel.PANEL.getRightPanel() instanceof ConfigPanel) {
-                if (((ConfigPanel) ContentPanel.PANEL.getRightPanel()).hasChanges() != PropertyType.NONE) {
+            ContentPanel contentPanel = SimpleGUI.CURRENTGUI.getContentPane();
+            if (contentPanel != null && contentPanel.getRightPanel() instanceof ConfigPanel) {
+                if (((ConfigPanel) contentPanel.getRightPanel()).hasChanges() != PropertyType.NONE) {
                     this.changes = true;
-//                    System.out.println("CHANGES !");
-                    if (((ConfigPanel) ContentPanel.PANEL.getRightPanel()).hasChanges() == PropertyType.NEEDS_RESTART) {
+                    if (((ConfigPanel) contentPanel.getRightPanel()).hasChanges() == PropertyType.NEEDS_RESTART) {
                         System.out.println("RESTART !");
                     }
                 }
                 if (changes) {
                     sav.setEnabled(true);
                 }
-
             }
         }
-
     }
 
 }

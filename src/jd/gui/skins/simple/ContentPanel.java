@@ -9,10 +9,10 @@ public class ContentPanel extends JPanel {
     private static final long serialVersionUID = 1606909731977454208L;
     private JTabbedPanel rightPanel = null;
 
-    public static ContentPanel PANEL;
+    // public static ContentPanel PANEL;
 
     public ContentPanel() {
-        PANEL = this;
+        // PANEL = this;
         this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
     }
 
