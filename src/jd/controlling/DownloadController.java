@@ -191,6 +191,8 @@ public class DownloadController implements FilePackageListener, DownloadControll
             DownloadLink localLink;
             PluginForHost pluginForHost = null;
             PluginsC pluginForContainer = null;
+            String tmp1 = null;
+            String tmp2 = null;
             Iterator<DownloadLink> it;
             FilePackage fp;
             while (iterator.hasNext()) {
@@ -207,9 +209,11 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         continue;
                     }
                     if (!localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        String tmp1=localLink.getLinkStatus().getStatusText();
-                        
-                        //localLink.getLinkStatus().reset();
+                        tmp1 = localLink.getLinkStatus().getStatusText();
+                        tmp2 = localLink.getLinkStatus().getErrorMessage();
+                        localLink.getLinkStatus().reset();
+                        localLink.getLinkStatus().setErrorMessage(tmp2);
+                        localLink.getLinkStatus().setStatusText(tmp1);
                     }
                     if (localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 1) {
                         it.remove();

@@ -57,12 +57,12 @@ public class HotFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waittime.trim()));
         }
         String waittime = br.getRegex("starttimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
-        long time = 60000l;
-        if (waittime != null) time = Long.parseLong(waittime.trim());
-        this.sleep(time, link);
+        if (waittime == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        this.sleep(Long.parseLong(waittime.trim()), link);
         Form form = br.getForm(1);
         br.submitForm(form);
         String dl_url = br.getRegex("Downloading.*?<a href=\"(.*?/get/.*?)\">").getMatch(0);
+        if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
         dl = br.openDownload(link, dl_url, true, 1);
         dl.startDownload();

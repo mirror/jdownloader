@@ -32,8 +32,6 @@ import javax.swing.event.TreeExpansionListener;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
-
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.LinkGrabberController;
@@ -86,8 +84,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
-        setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        this.getTreeSelectionModel().setSelectionMode(TreeSelectionModel.CONTIGUOUS_TREE_SELECTION);
+        setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);        
         setEditable(false);
         setAutoscrolls(false);
         setColumnControlVisible(true);

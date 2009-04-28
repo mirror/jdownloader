@@ -16,7 +16,9 @@
 
 package jd.plugins.decrypt;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -69,7 +71,7 @@ public class DDLWarez extends PluginForDecrypt {
                 String base = br.getBaseURL();
                 String action = form.getAction(base);
 
-                if (action.contains("get_file")) {
+                if (action.contains("get_file") || action.contains("goref.php")) {
                     Browser clone = br.cloneBrowser();
                     clone.setDebug(true);
 
@@ -142,43 +144,51 @@ public class DDLWarez extends PluginForDecrypt {
 
                 Form form = br.getForm(1);
 
-                if (form != null && !form.getAction().equalsIgnoreCase("get_file.php")) {
+                if (form != null && !form.getAction().equalsIgnoreCase("get_file.php") && !form.getAction().equalsIgnoreCase("goref.php")) {
 
-                    for (InputField ipf : form.getInputFields()) {
+                    if (form.containsHTML("identifier")) {
+                        String id = form.getVarsMap().get("identifier");
+                        int what = 0;
+                        if (br.containsHTML("der Ausgangsreihenfolge")) what = 2;
+                        if (br.containsHTML("NICHT die Farbe blau")) what = 1;
+                        String code = getCode(id, br, what);
+                        form.put("result", code);
+                    } else {
+                        for (InputField ipf : form.getInputFields()) {
 
-                        if (ipf.getType().equalsIgnoreCase("text") && ipf.getValue() == null) {
-                            if (captchaText != null)
-                                ipf.setValue(captchaText);
-                            else {
-                                final String text = form.getHtmlCode().replaceAll("<.*?>", "").trim();
-                                String res = new GuiRunnable<String>() {
-
-                                    @Override
-                                    public String runSave() {
-                                        CountdownConfirmDialog input = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, "DDL-Warez Human Verification", 10, true, null, CountdownConfirmDialog.STYLE_INPUTFIELD | CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, text, new Regex(Encoding.deepHtmlDecode(HTMLEntities.unhtmlAngleBrackets(text)), "[A-Za-z0-9_äÄöÖüÜß\\s\\,\\.]+[^A-Za-z0-9_äÄöÖüÜß\\,\\.]+\\s(\\S+)").getMatch(0));
-                                        if (input.result) {
-                                            return input.input;
-                                        } else {
-                                            return null;
-                                        }
-                                    }
-
-                                }.getReturnValue();
-
-                                if (res != null) {
-                                    captchaText = res;
+                            if (ipf.getType().equalsIgnoreCase("text") && ipf.getValue() == null) {
+                                if (captchaText != null)
                                     ipf.setValue(captchaText);
-                                } else {
-                                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                                else {
+                                    final String text = form.getHtmlCode().replaceAll("<.*?>", "").trim();
+                                    String res = new GuiRunnable<String>() {
+
+                                        @Override
+                                        public String runSave() {
+                                            CountdownConfirmDialog input = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, "DDL-Warez Human Verification", 10, true, null, CountdownConfirmDialog.STYLE_INPUTFIELD | CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, text, new Regex(Encoding.deepHtmlDecode(HTMLEntities.unhtmlAngleBrackets(text)), "[A-Za-z0-9_äÄöÖüÜß\\s\\,\\.]+[^A-Za-z0-9_äÄöÖüÜß\\,\\.]+\\s(\\S+)").getMatch(0));
+                                            if (input.result) {
+                                                return input.input;
+                                            } else {
+                                                return null;
+                                            }
+                                        }
+
+                                    }.getReturnValue();
+
+                                    if (res != null) {
+                                        captchaText = res;
+                                        ipf.setValue(captchaText);
+                                    } else {
+                                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                                    }
                                 }
                             }
-
                         }
                     }
 
                     br.submitForm(form);
                     form = br.getForm(1);
-                    if (form != null && !form.getAction().equalsIgnoreCase("get_file.php")) {
+                    if (form != null && !form.getAction().equalsIgnoreCase("get_file.php") && !form.getAction().equalsIgnoreCase("goref.php")) {
                         captchaText = null;
                         continue;
                     }
@@ -281,5 +291,47 @@ public class DDLWarez extends PluginForDecrypt {
     @Override
     public String getVersion() {
         return getVersion("$Revision$");
+    }
+
+    public static String getCode(String id, Browser br, int what) throws IOException {
+        Browser brc = br.cloneBrowser();
+        brc.getPage("http://www.ddl-warez.org/getcaptcha.php?id=" + id);
+        String[][] ss = brc.getRegex("color=\"(.*?)\".*?kerning=\".*?\">(.*?)</font>").getMatches();
+        if (ss.length == 0) return null;
+        HashMap<String, String> codes = new HashMap<String, String>();
+        for (String[] c : ss) {
+            codes.put(Encoding.htmlDecode(c[1]).trim().replaceAll("\\W+", ""), c[0]);
+        }
+        String code = "";
+        for (String c : codes.keySet()) {
+            if (c.length() > code.length()) {
+                code = c;
+            }
+        }
+        if (what == 2) return code; /* falls nur ein ergebnis */
+        String color = codes.get(code);
+        for (String c : codes.keySet()) {
+            switch (what) {
+            case 0:/* gleich wie alle */
+                if (codes.get(c).equalsIgnoreCase(color) && c.length() < code.length()) return c;
+                break;
+            case 1:/* nicht gleiche wie alle */
+                if (!codes.get(c).equalsIgnoreCase(color) && c.length() < code.length()) return c;
+                break;
+            default:
+                break;
+            }
+        }
+        if (what == 1) {
+            String retcode = code;
+            for (String c : codes.keySet()) {
+                if (c.equalsIgnoreCase(code)) continue;
+                for (int i = 0; i < c.length(); i++) {
+                    retcode.replaceAll("" + c.charAt(i), "");
+                }
+            }
+            return retcode;
+        }
+        return null; /* keines */
     }
 }
