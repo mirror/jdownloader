@@ -11,7 +11,6 @@ import jd.config.Configuration;
 import jd.config.Property;
 import jd.controlling.LinkGrabberController;
 import jd.event.JDBroadcaster;
-import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
@@ -19,20 +18,19 @@ import jd.utils.JDUtilities;
 
 class LinkGrabberFilePackageBroadcaster extends JDBroadcaster<LinkGrabberFilePackageListener, LinkGrabberFilePackageEvent> {
 
-    //@Override
+    // @Override
     protected void fireEvent(LinkGrabberFilePackageListener listener, LinkGrabberFilePackageEvent event) {
         listener.handle_LinkGrabberFilePackageEvent(event);
     }
 
 }
 
-public class LinkGrabberFilePackage extends Property {
+public class LinkGrabberFilePackage extends Property implements LinkGrabberFilePackageListener {
 
     /**
      * 
      */
     private static final long serialVersionUID = 5865820033205069205L;
-    private ComboBrowseFile brwSaveTo;
     private String downloadDirectory;
     private Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
     private String name = "";
@@ -47,6 +45,7 @@ public class LinkGrabberFilePackage extends Property {
     private boolean lastSort = false;
     private int lastfail = 0;
     private long lastFailCount = 0;
+    private String hosts;
     private transient LinkGrabberFilePackageBroadcaster broadcaster = new LinkGrabberFilePackageBroadcaster();
 
     public LinkGrabberFilePackage() {
@@ -58,6 +57,7 @@ public class LinkGrabberFilePackage extends Property {
                 extractAfterDownload = wrapper.getPluginConfig().getBooleanProperty("ACTIVATED", true);
             }
         }
+        getBroadcaster().addListener(this);
     }
 
     public synchronized JDBroadcaster<LinkGrabberFilePackageListener, LinkGrabberFilePackageEvent> getBroadcaster() {
@@ -142,14 +142,10 @@ public class LinkGrabberFilePackage extends Property {
         return name;
     }
 
-    public ComboBrowseFile getComboBrowseFile() {
-        return brwSaveTo;
-    }
-
     public void add(DownloadLink link) {
         synchronized (downloadLinks) {
             if (!downloadLinks.contains(link)) {
-                LinkGrabberFilePackage fp = LinkGrabberController.getInstance().getFPwithLink(link);                
+                LinkGrabberFilePackage fp = LinkGrabberController.getInstance().getFPwithLink(link);
                 downloadLinks.add(link);
                 getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK));
                 if (fp != null && fp != this) fp.remove(link);
@@ -237,7 +233,7 @@ public class LinkGrabberFilePackage extends Property {
                 } else if (index < 0) {
                     downloadLinks.add(0, link);
                 } else
-                    downloadLinks.add(index, link);                
+                    downloadLinks.add(index, link);
                 getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK));
                 if (fp != null && fp != this) fp.remove(link);
             }
@@ -399,13 +395,30 @@ public class LinkGrabberFilePackage extends Property {
     }
 
     public String getHoster() {
+        if (hosts == null) updateHosts();
+        return hosts;
+    }
+
+    private void updateHosts() {
         Set<String> hosterList = new HashSet<String>();
         synchronized (downloadLinks) {
             for (DownloadLink dl : downloadLinks) {
                 hosterList.add(dl.getHost());
             }
+            hosts = hosterList.toString();
         }
-        return hosterList.toString();
+    }
+
+    public void handle_LinkGrabberFilePackageEvent(LinkGrabberFilePackageEvent event) {
+        switch (event.getID()) {
+        case LinkGrabberFilePackageEvent.ADD_LINK:
+        case LinkGrabberFilePackageEvent.REMOVE_LINK:
+            updateHosts();
+            break;
+        default:
+            break;
+        }
+
     }
 
 }

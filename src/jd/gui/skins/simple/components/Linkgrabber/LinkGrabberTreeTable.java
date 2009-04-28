@@ -118,20 +118,16 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
                 if (getSelectedRow() < 0) return;
                 if (getPathForRow(getSelectedRow()) == null) return;
                 Object obj = getPathForRow(getSelectedRow()).getLastPathComponent();
-
                 if (obj == null) {
                     linkgrabber.hideFilePackageInfo();
                 }
-
                 LinkGrabberFilePackage pkg = null;
                 if (obj instanceof LinkGrabberFilePackage) {
                     pkg = (LinkGrabberFilePackage) obj;
-
                 } else {
                     pkg = LinkGrabberController.getInstance().getFPwithLink((DownloadLink) obj);
                 }
                 linkgrabber.showFilePackageInfo(pkg);
-
             }
         });
     }

@@ -28,7 +28,7 @@ import jd.utils.JDUtilities;
 
 class DownloadControllerBroadcaster extends JDBroadcaster<DownloadControllerListener, DownloadControllerEvent> {
 
-    //@Override
+    // @Override
     protected void fireEvent(DownloadControllerListener listener, DownloadControllerEvent event) {
         listener.onDownloadControllerEvent(event);
 
@@ -268,7 +268,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
             if (!packages.contains(fp)) {
                 fp.getBroadcaster().addListener(this);
                 packages.add(fp);
-                broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE));
+                broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE, fp));
             }
         }
     }
@@ -303,7 +303,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                 } else
                     packages.add(index, fp);
                 fp.getBroadcaster().addListener(this);
-                broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE));
+                broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE, fp));
             }
         }
     }
@@ -322,7 +322,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
             fp2.abortDownload();
             fp2.getBroadcaster().removeListener(this);
             packages.remove(fp2);
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REMOVE_FILPACKAGE));
+            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REMOVE_FILPACKAGE, fp2));
         }
     }
 

@@ -40,6 +40,7 @@ import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadControllerEvent;
 import jd.controlling.DownloadControllerListener;
 import jd.controlling.JDLogger;
+import jd.gui.skins.simple.JDCollapser;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
@@ -85,10 +86,14 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     private boolean visible = true;
 
+    private FilePackageInfo FilePackageInfo;
+
     public DownloadLinksPanel() {
         super(new BorderLayout());
         internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
+
+        FilePackageInfo = new FilePackageInfo();
         this.add(scrollPane);
         JDUtilities.getDownloadController().getBroadcaster().addListener(this);
         Update_Async = new Timer(UPDATE_TIMING, this);
@@ -98,13 +103,26 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         Update_Async.restart();
     }
 
+    public void showFilePackageInfo(FilePackage fp) {
+        FilePackageInfo.setPackage(fp);
+        JDCollapser.getInstance().setContentPanel(FilePackageInfo);
+        JDCollapser.getInstance().getContentPane().add(FilePackageInfo);
+        JDCollapser.getInstance().setTitle("FilePackage");
+        JDCollapser.getInstance().setVisible(true);
+        JDCollapser.getInstance().setCollapsed(false);
+    }
+
+    public void hideFilePackageInfo() {
+        JDCollapser.getInstance().setCollapsed(true);
+    }
+
     public synchronized void fireTableChanged(int id, Object param) {
         synchronized (JDUtilities.getController().getPackages()) {
             internalTreeTable.fireTableChanged(id, param);
         }
     }
 
-    //@Override
+    // @Override
     public void onDisplay() {
         visible = true;
         updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
@@ -115,7 +133,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         internalTreeTable.addKeyListener(internalTreeTable);
     }
 
-    //@Override
+    // @Override
     public void onHide() {
         visible = false;
         JDUtilities.getDownloadController().getBroadcaster().removeListener(this);
@@ -462,6 +480,11 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     public void onDownloadControllerEvent(DownloadControllerEvent event) {
         switch (event.getID()) {
+        case DownloadControllerEvent.REMOVE_FILPACKAGE:
+            if (FilePackageInfo.getPackage() != null && FilePackageInfo.getPackage() == ((FilePackage) event.getParameter())) {
+                this.hideFilePackageInfo();
+            }
+            break;
         case DownloadControllerEvent.REFRESH_STRUCTURE:
             updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
             break;

@@ -44,6 +44,8 @@ import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.table.TableCellRenderer;
@@ -92,7 +94,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     private DownloadLinksPanel panel;
 
-    public DownloadTreeTable(DownloadTreeTableModel treeModel, DownloadLinksPanel panel) {
+    public DownloadTreeTable(DownloadTreeTableModel treeModel, final DownloadLinksPanel panel) {
         super(treeModel);
         cellRenderer = new TreeTableRenderer(this);
         this.panel = panel;
@@ -121,7 +123,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         UIManager.put("Table.focusCellHighlightBorder", null);
 
         if (JDUtilities.getJavaVersion() >= 1.6) {
-            //setDropMode(DropMode.ON_OR_INSERT_ROWS); /*muss noch geschaut werden wie man das genau macht*/
+            // setDropMode(DropMode.ON_OR_INSERT_ROWS); /*muss noch geschaut
+            // werden wie man das genau macht*/
             setDropMode(DropMode.USE_SELECTION);
         } else {
             setDropMode(DropMode.USE_SELECTION);
@@ -152,6 +155,25 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         // }
         // });
         addHighlighter(new PainterHighlighter(HighlightPredicate.IS_FOLDER, getFolderPainter(this)));
+
+        getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+
+            public void valueChanged(ListSelectionEvent e) {
+                if (getSelectedRow() < 0) return;
+                if (getPathForRow(getSelectedRow()) == null) return;
+                Object obj = getPathForRow(getSelectedRow()).getLastPathComponent();
+                if (obj == null) {
+                    panel.hideFilePackageInfo();
+                }
+                FilePackage pkg = null;
+                if (obj instanceof FilePackage) {
+                    pkg = (FilePackage) obj;
+                } else {
+                    pkg = ((DownloadLink) obj).getFilePackage();
+                }
+                panel.showFilePackageInfo(pkg);
+            }
+        });
 
         // Highlighter extendPrefWidth = new AbstractHighlighter() {
         // //@Override
@@ -210,7 +232,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 100);
 
         addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
-            //@Override
+            // @Override
             public boolean doHighlight(DownloadLink dLink) {
                 return dLink.getLinkStatus().getRemainingWaittime() > 0 || dLink.getPlugin() == null || dLink.getPlugin().getRemainingHosterWaittime() > 0;
             }
@@ -222,7 +244,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 120);
 
         addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
-            //@Override
+            // @Override
             public boolean doHighlight(DownloadLink link) {
                 return link.getLinkStatus().hasStatus(LinkStatus.ERROR_POST_PROCESS);
             }
@@ -234,7 +256,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         Color background = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100);
 
         addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
-            //@Override
+            // @Override
             public boolean doHighlight(DownloadLink link) {
                 return !link.isEnabled();
             }
@@ -572,7 +594,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
      * Expansion
      */
     public synchronized void updateSelectionAndExpandStatus() {
-        int i = 0;        
+        int i = 0;
         while (getPathForRow(i) != null) {
             if (getPathForRow(i).getLastPathComponent() instanceof FilePackage) {
                 FilePackage fp = (FilePackage) getPathForRow(i).getLastPathComponent();

@@ -55,6 +55,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
     private List<?> oldList;
 
     private boolean waitFlag;
+    private boolean tempdisabled = false;
 
     /**
      */
@@ -79,7 +80,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
         return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
     }
 
-    //@Override
+    // @Override
     public void run() {
         while (true) {
             waitFlag = true;
@@ -92,7 +93,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
                     }
                 }
             }
-            while (enabled) {
+            while (enabled && !this.tempdisabled) {
                 try {
                     for (DataFlavor element : clipboard.getAvailableDataFlavors()) {
 
@@ -142,15 +143,19 @@ public class ClipboardHandler extends Thread implements ControlListener {
         }
     }
 
+    public void setTempDisableD(boolean v) {
+        this.tempdisabled = v;
+    }
+
     /**
      * Schaltet die clipboardüberwachung an/aus
      * 
      * @param enabled
      */
     public void setEnabled(boolean enabled2) {
-        if(enabled2){
+        if (enabled2) {
             JDLogger.getLogger().info("ClipBoard Observation enabled");
-        }else{
+        } else {
             JDLogger.getLogger().info("ClipBoard Observation disabled");
         }
 

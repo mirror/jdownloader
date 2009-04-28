@@ -100,7 +100,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
     private File currentPath;
 
-    private boolean editable = false;
+    private boolean editable = true;
 
     private Vector<String> files;
 
@@ -117,7 +117,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         try {
             list = (Vector<String>) SubConfiguration.getConfig("GUI").getProperty(string, new Vector<String>());
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             list = new Vector<String>();
         }
         setFiles(list);
@@ -230,8 +230,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         btnBrowse.addActionListener(this);
 
         this.add(cmboInput, "grow");
-        this.add(btnBrowse, "wrap");
-        
+        this.add(btnBrowse, "wrap");        
     }
 
     /**
@@ -270,7 +269,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         editable = value;
     }
 
-    //@Override
+    // @Override
     public void setEnabled(boolean value) {
         cmboInput.setEnabled(value);
         btnBrowse.setEnabled(value);

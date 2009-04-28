@@ -33,7 +33,7 @@ import jd.utils.JDUtilities;
 
 class FilePackageBroadcaster extends JDBroadcaster<FilePackageListener, FilePackageEvent> {
 
-    //@Override
+    // @Override
     protected void fireEvent(FilePackageListener listener, FilePackageEvent event) {
         listener.onFilePackageEvent(event);
     }
@@ -83,6 +83,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     private String name = null;
 
     private String password;
+    private String dlpassword;
     private boolean extractAfterDownload = true;
 
     private long totalBytesLoaded_v2;
@@ -216,6 +217,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      *         abgegeben hat
      */
     public String getComment() {
+        updateData();
         return comment == null ? "" : comment;
     }
 
@@ -329,7 +331,54 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      *         angegeben hat
      */
     public String getPassword() {
+        updateData();
         return password == null ? "" : password;
+    }
+
+    public String getDLPassword() {
+        updateData();
+        return dlpassword == null ? "" : dlpassword;
+    }
+
+    public void updateData() {
+        synchronized (downloadLinks) {
+            String password = this.password;
+            StringBuilder comment = new StringBuilder(this.comment);
+
+            String[] pws = JDUtilities.passwordStringToArray(password);
+            Vector<String> pwList = new Vector<String>();
+            for (String element : pws) {
+                pwList.add(element);
+            }
+
+            Vector<String> dlpwList = new Vector<String>();
+
+            for (DownloadLink element : downloadLinks) {
+                pws = JDUtilities.passwordStringToArray(element.getSourcePluginPassword());
+
+                String dlpw = element.getStringProperty("pass", null);
+                if (dlpw != null && !dlpwList.contains(dlpw)) dlpwList.add(dlpw);
+                for (String element2 : pws) {
+                    if (pwList.indexOf(element2) < 0) {
+                        pwList.add(element2);
+                    }
+                }
+
+                String newComment = element.getSourcePluginComment();
+                if (newComment != null && comment.indexOf(newComment) < 0) {
+                    comment.append("|");
+                    comment.append(newComment);
+                }
+            }
+
+            String cmt = comment.toString();
+            if (cmt.startsWith("|")) {
+                cmt = cmt.substring(1);
+            }
+            this.comment = cmt;
+            this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
+            this.dlpassword = JDUtilities.passwordArrayToString(dlpwList.toArray(new String[dlpwList.size()]));
+        }
     }
 
     /**
@@ -572,7 +621,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     /**
      * Alles undokumentiert, da selbsterklärend
      */
-    //@Override
+    // @Override
     public String toString() {
         return this.getName() + " " + this.size();
     }

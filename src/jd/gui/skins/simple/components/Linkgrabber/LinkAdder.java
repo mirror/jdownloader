@@ -31,7 +31,6 @@ public class LinkAdder extends JTabbedPanel {
     private JTextArea text;
     private Thread clipboardObserver;
     private JLabel lbl;
-    private boolean mainClipBoardEnabled;
 
     public LinkAdder() {
         super(new MigLayout("ins 0 0 8 8,wrap 1", "[]", "[][fill,grow][]"));
@@ -89,10 +88,9 @@ public class LinkAdder extends JTabbedPanel {
 
     }
 
-    //@Override
+    // @Override
     public void onDisplay() {
-        this.mainClipBoardEnabled = ClipboardHandler.getClipboard().isEnabled();
-        ClipboardHandler.getClipboard().setEnabled(false);
+        ClipboardHandler.getClipboard().setTempDisableD(true);
         setClipboard(true);
 
     }
@@ -142,7 +140,7 @@ public class LinkAdder extends JTabbedPanel {
         if (text.getText().contains(newText)) return;
         new GuiRunnable<Object>() {
 
-            //@Override
+            // @Override
             public Object runSave() {
                 text.setText(text.getText() + "\r\n" + newText);
                 return null;
@@ -151,9 +149,9 @@ public class LinkAdder extends JTabbedPanel {
 
     }
 
-    //@Override
+    // @Override
     public void onHide() {
         setClipboard(false);
-        ClipboardHandler.getClipboard().setEnabled(mainClipBoardEnabled);
+        ClipboardHandler.getClipboard().setTempDisableD(false);
     }
 }

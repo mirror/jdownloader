@@ -1,4 +1,4 @@
-package jd.gui.skins.simple.components.Linkgrabber;
+package jd.gui.skins.simple.components.DownloadView;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -9,16 +9,16 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
-import jd.config.Configuration;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JDTextField;
+import jd.plugins.FilePackage;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionListener {
+public class FilePackageInfo extends JTabbedPanel implements ActionListener {
 
     private static final long serialVersionUID = 5410296068527460629L;
 
@@ -34,22 +34,20 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
 
     private JCheckBox chbExtract;
 
-    private JCheckBox chbUseSubdirectory;
-
     private JTabbedPane tabbedPane;
 
     private JPanel simplePanel, extendedPanel;
 
-    private LinkGrabberFilePackage fp = null;
+    private FilePackage fp = null;
 
     private boolean notifyUpdate = true;
 
-    public LinkGrabberFilePackageInfo() {
+    public FilePackageInfo() {
         buildGui();
         fp = null;
     }
 
-    public void setPackage(LinkGrabberFilePackage fp) {
+    public void setPackage(FilePackage fp) {
         if (this.fp != null && this.fp == fp) {
             update();
             return;
@@ -73,12 +71,11 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
         dlPassword.setText(fp.getDLPassword());
         if (!brwSaveTo.isFocusOwner()) brwSaveTo.setText(fp.getDownloadDirectory());
         if (!chbExtract.isFocusOwner()) chbExtract.setSelected(fp.isExtractAfterDownload());
-        if (!chbUseSubdirectory.isFocusOwner()) chbUseSubdirectory.setSelected(fp.useSubDir());
         revalidate();/* neuzeichnen */
         notifyUpdate = true;
     }
 
-    public LinkGrabberFilePackage getPackage() {
+    public FilePackage getPackage() {
         return fp;
     }
 
@@ -108,11 +105,6 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
         chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
         chbExtract.addActionListener(this);
 
-        chbUseSubdirectory = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.useSubdirectory", "Use Subdirectory"));
-        chbUseSubdirectory.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
-        chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
-        chbUseSubdirectory.addActionListener(this);
-
         dlPassword = new JDTextField();
         dlPassword.setEditable(false);
 
@@ -131,8 +123,7 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
         extendedPanel.add(txtPassword, "growx");
         extendedPanel.add(chbExtract, "wrap");
         extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
-        extendedPanel.add(txtComment, "grow");
-        extendedPanel.add(chbUseSubdirectory, "wrap");
+        extendedPanel.add(txtComment, "grow,wrap");
         extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.dlpassword", "Download Passwort")));
 
         extendedPanel.add(dlPassword, "growx");
@@ -155,14 +146,13 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
             fp.setPassword(txtPassword.getText());
         } else if (e.getSource() == chbExtract) {
             fp.setExtractAfterDownload(chbExtract.isSelected());
-        } else if (e.getSource() == chbUseSubdirectory) {
-            fp.setUseSubDir(chbUseSubdirectory.isSelected());
         }
     }
 
     // @Override
     public void onDisplay() {
         update();
+
     }
 
     // @Override

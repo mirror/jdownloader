@@ -89,12 +89,13 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     public void sleep(long i, CryptedLink link) throws InterruptedException {
+        String before = link.getProgressController().getStatusText();
         while (i > 0) {
             i -= 1000;
-            link.getProgressController().setStatusText(JDLocale.LF("gui.downloadlink.status.wait", "wait %s min", Formatter.formatSeconds(i / 1000)));
+            link.getProgressController().setStatusText(before + " " + JDLocale.LF("gui.downloadlink.status.wait", "wait %s min", Formatter.formatSeconds(i / 1000)));
             Thread.sleep(1000);
         }
-        link.getProgressController().setStatusText(null);
+        link.getProgressController().setStatusText(before);
     }
 
     /**
@@ -113,7 +114,7 @@ public abstract class PluginForDecrypt extends Plugin {
         return dl;
     }
 
-    //@Override
+    // @Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
@@ -278,7 +279,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 this.plg = plg;
             }
 
-            //@Override
+            // @Override
             public void run() {
                 ArrayList<DownloadLink> links = plg.decryptLink(decryptableLink);
                 for (DownloadLink link : links) {

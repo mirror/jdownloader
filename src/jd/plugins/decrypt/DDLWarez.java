@@ -127,7 +127,6 @@ public class DDLWarez extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setCookiesExclusive(true);
-        br.setDebug(true);
         br.setReadTimeout(5 * 60 * 1000);
         br.setConnectTimeout(5 * 60 * 1000);
         for (int retry = 1; retry <= 10; retry++) {
@@ -144,7 +143,7 @@ public class DDLWarez extends PluginForDecrypt {
 
                 Form form = br.getForm(1);
 
-                if (form != null && !form.getAction().equalsIgnoreCase("get_file.php") && !form.getAction().equalsIgnoreCase("goref.php")) {
+                if (form != null && !form.getAction().contains("get_file.php") && !form.getAction().contains("goref.php")) {
 
                     if (form.containsHTML("identifier")) {
                         String id = form.getVarsMap().get("identifier");
@@ -188,7 +187,13 @@ public class DDLWarez extends PluginForDecrypt {
 
                     br.submitForm(form);
                     form = br.getForm(1);
-                    if (form != null && !form.getAction().equalsIgnoreCase("get_file.php") && !form.getAction().equalsIgnoreCase("goref.php")) {
+                    if (form.getAction().contains("crypt.php")) {
+                        form.put("submit", Encoding.urlEncode("zu den Links..."));
+                        this.sleep(10 * 1000l, param);
+                        br.submitForm(form);
+                        form = br.getForm(1);
+                    }
+                    if (form != null && !form.getAction().contains("get_file.php") && !form.getAction().contains("goref.php")) {
                         captchaText = null;
                         continue;
                     }
