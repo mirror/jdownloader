@@ -517,11 +517,12 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         Integer prio = null;
         if (links.size() == 1) prio = links.get(0).getPriority();
         HashMap<String, Object> prop = null;
-        for (int i = 4; i >= -4; i--) {
+        for (int i = 3; i >= 0; i--) {
             prop = new HashMap<String, Object>();
             prop.put("links", links);
             prop.put("prio", new Integer(i));
             prioPopup.add(tmp = new JMenuItem(new TreeTableAction(panel, Integer.toString(i), TreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
+            tmp.setIcon(JDTheme.II("gui.images.priority" + i, 16, 16));
             if (prio != null && i == prio) {
                 tmp.setEnabled(false);
             } else
