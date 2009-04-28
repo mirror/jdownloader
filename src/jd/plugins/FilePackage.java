@@ -85,14 +85,16 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     private String password;
     private String dlpassword;
     private boolean extractAfterDownload = true;
-    private transient boolean stopMark=false;
-    public boolean isStopMark() {
-    return stopMark;
-}
+    private transient boolean stopMark = false;
 
-public void setStopMark(boolean stopMark) {
-    this.stopMark = stopMark;
-}
+    public boolean isStopMark() {
+        return stopMark;
+    }
+
+    public void setStopMark(boolean stopMark) {
+        this.stopMark = stopMark;
+    }
+
     private long totalBytesLoaded_v2;
 
     private long totalDownloadSpeed_v2;
@@ -350,7 +352,7 @@ public void setStopMark(boolean stopMark) {
     public void updateData() {
         synchronized (downloadLinks) {
             String password = this.password;
-            StringBuilder comment = new StringBuilder(this.comment);
+            StringBuilder comment = new StringBuilder(this.comment == null ? "" : this.comment);
 
             String[] pws = JDUtilities.passwordStringToArray(password);
             Vector<String> pwList = new Vector<String>();
