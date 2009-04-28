@@ -193,7 +193,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         SimpleGuiConstants.GUI_CONFIG = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
         JDLookAndFeelManager.setUIManager();
 
-        JPanel p;
+        // JPanel p;
         // menuBar = new JDMenuBar();
 
         statusBar = new JDStatusBar();
@@ -300,8 +300,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         this.addWindowStateListener(new WindowStateListener() {
 
             public void windowStateChanged(WindowEvent e) {
-               SimpleGUI.this.titleUI.getTitlePane().repaint();
-                
+                SimpleGUI.this.titleUI.getTitlePane().repaint();
+
             }
 
         });
@@ -326,20 +326,22 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         if (!mainMenuRollOverStatus) return;
         this.mainMenuRollOverStatus = false;
         toolBar.setMainMenuIcon(mainMenuIcon);
-        if (titleUI != null) this.titleUI.setMainMenuIcon(mainMenuIcon);
         toolBar.setToolTipText(null);
-        if (titleUI != null) titleUI.setToolTipText(null);
-
+        if (titleUI != null) {
+            titleUI.setMainMenuIcon(mainMenuIcon);
+            titleUI.setToolTipText(null);
+        }
     }
 
     public void onMainMenuMouseEnter() {
         if (mainMenuRollOverStatus) return;
         this.mainMenuRollOverStatus = true;
         toolBar.setMainMenuIcon(mainMenuIconRollOver);
-        if (titleUI != null) this.titleUI.setMainMenuIcon(mainMenuIconRollOver);
-        toolBar.setToolTipText("Click to open the main menu");
-        if (titleUI != null) titleUI.setToolTipText("Click to open the main menu");
-
+        toolBar.setToolTipText(JDLocale.L("gui.menu.tooltip", "Click to open the main menu"));
+        if (titleUI != null) {
+            titleUI.setMainMenuIcon(mainMenuIconRollOver);
+            titleUI.setToolTipText("Click to open the main menu");
+        }
     }
 
     private void setAnimate() {
@@ -389,7 +391,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
      */
 
     public void actionPerformed(ActionEvent e) {
-//        JDSounds.PT("sound.gui.clickToolbar");
+        // JDSounds.PT("sound.gui.clickToolbar");
         // switch (e.getID()) {
         // // case JDAction.ITEMS_MOVE_UP:
         // // case JDAction.ITEMS_MOVE_DOWN:
