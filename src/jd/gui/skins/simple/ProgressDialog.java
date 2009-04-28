@@ -16,25 +16,23 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.logging.Logger;
 
 import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.WindowConstants;
 
+import jd.nutils.Screen;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class ProgressDialog extends Progressor implements ActionListener {
-
-    @SuppressWarnings("unused")
-    private static Logger logger = jd.controlling.JDLogger.getLogger();
+public class ProgressDialog extends JDialog implements ActionListener {
 
     private static int REL = GridBagConstraints.RELATIVE;
 
@@ -52,8 +50,7 @@ public class ProgressDialog extends Progressor implements ActionListener {
 
     private Thread thread;
 
-    public ProgressDialog(Frame owner, String message, Thread ob, boolean ok, boolean cancel) {
-
+    public ProgressDialog(JFrame owner, String message, Thread ob, boolean ok, boolean cancel) {
         super(owner);
         setModal(true);
         setLayout(new GridBagLayout());
@@ -77,10 +74,9 @@ public class ProgressDialog extends Progressor implements ActionListener {
         if (cancel) {
             JDUtilities.addToGridBag(this, btnNOTOK, REL, REL, REM, 1, ok ? 0 : 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         }
-        setLocation(SimpleGuiUtils.getLastLocation(owner, "DIALOGS", this));
+        setLocation(Screen.getCenterOfComponent(owner, this));
 
         pack();
-
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -90,8 +86,7 @@ public class ProgressDialog extends Progressor implements ActionListener {
             }
             setVisible(false);
             dispose();
-        }
-        if (e.getSource() == btnNOTOK) {
+        } else if (e.getSource() == btnNOTOK) {
             if (thread != null && thread.isAlive()) {
                 thread.interrupt();
             }
@@ -122,7 +117,6 @@ public class ProgressDialog extends Progressor implements ActionListener {
 
     public void setMaximum(int value) {
         progress.setMaximum(value);
-
     }
 
     public void setMessage(String txt) {
@@ -136,7 +130,6 @@ public class ProgressDialog extends Progressor implements ActionListener {
     public void setString(String txt) {
 
         progress.setString(txt);
-
     }
 
     public void setStringPainted(boolean v) {
@@ -145,7 +138,6 @@ public class ProgressDialog extends Progressor implements ActionListener {
 
     public void setThread(Thread th) {
         thread = th;
-
     }
 
     public void setValue(int value) {

@@ -35,7 +35,6 @@ import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JTable;
-import javax.swing.WindowConstants;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
@@ -65,7 +64,7 @@ class BasicLinkButtonUI extends MetalButtonUI {
     public BasicLinkButtonUI() {
     }
 
-    //@Override
+    // @Override
     protected void paintText(Graphics g, JComponent com, Rectangle rect, String s) {
         JLinkButton bn = (JLinkButton) com;
         ButtonModel bnModel = bn.getModel();
@@ -153,10 +152,8 @@ class JLinkButtonEditor implements TableCellEditor, ActionListener {
 
 class JLinkButtonRenderer implements TableCellRenderer {
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-       
 
-
-        return (Component)value;
+        return (Component) value;
     }
 }
 
@@ -198,47 +195,45 @@ public class JLinkButton extends JButton {
         } else {
 
             if (url != null) {
-                String Browser = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_BROWSER, null);
-                if (Browser == null) {
+                String browser = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_BROWSER, null);
+                if (browser == null) {
                     BrowserLauncher launcher;
                     List<?> ar = null;
 
                     launcher = new BrowserLauncher();
                     ar = launcher.getBrowserList();
 
-                    Object[] BrowserArray = (Object[]) SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, null);
+                    Object[] browserArray = (Object[]) SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, null);
 
-                    if (BrowserArray == null) {
+                    if (browserArray == null) {
                         if (ar.size() < 2) {
-                            BrowserArray = new Object[] { "JavaBrowser" };
+                            browserArray = new Object[] { "JavaBrowser" };
                         } else {
-                            BrowserArray = new Object[ar.size() + 1];
-                            for (int i = 0; i < BrowserArray.length - 1; i++) {
-                                BrowserArray[i] = ar.get(i);
+                            browserArray = new Object[ar.size() + 1];
+                            for (int i = 0; i < browserArray.length - 1; i++) {
+                                browserArray[i] = ar.get(i);
                             }
-                            BrowserArray[BrowserArray.length - 1] = "JavaBrowser";
+                            browserArray[browserArray.length - 1] = "JavaBrowser";
                         }
-                        SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, BrowserArray);
-                        SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty(SimpleGuiConstants.PARAM_BROWSER, BrowserArray[0]);
-                        Browser = (String) BrowserArray[0];
+                        SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, browserArray);
+                        SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty(SimpleGuiConstants.PARAM_BROWSER, browserArray[0]);
+                        browser = (String) browserArray[0];
                         SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).save();
                     }
                 }
-                if (Browser.equals("JavaBrowser")) {
-                    DnDWebBrowser browser = new DnDWebBrowser(((SimpleGUI) JDUtilities.getGUI()));
-                    browser.goTo(url);
-                    browser.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-                    browser.setSize(800, 600);
-                    browser.setVisible(true);
+                if (browser.equals("JavaBrowser")) {
+                    DnDWebBrowser javaBrowser = new DnDWebBrowser(((SimpleGUI) JDUtilities.getGUI()));
+                    javaBrowser.goTo(url);
+                    javaBrowser.setDefaultCloseOperation(DnDWebBrowser.DISPOSE_ON_CLOSE);
+                    javaBrowser.setSize(800, 600);
+                    javaBrowser.setVisible(true);
                 } else {
                     try {
                         BrowserLauncher launcher = new BrowserLauncher();
-                        launcher.openURLinBrowser(Browser, url.toString());
+                        launcher.openURLinBrowser(browser, url.toString());
                     } catch (BrowserLaunchingInitializingException e1) {
-
                         JDLogger.exception(e1);
                     } catch (UnsupportedOperatingSystemException e1) {
-
                         JDLogger.exception(e1);
                     }
 
@@ -313,7 +308,7 @@ public class JLinkButton extends JButton {
         }
         setLinkURL(url);
         this.setBackground(null);
-       setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setBorderPainted(false);
         setContentAreaFilled(false);
         setRolloverEnabled(true);
@@ -322,7 +317,7 @@ public class JLinkButton extends JButton {
 
             public void actionPerformed(ActionEvent e) {
                 try {
-                    if(getLinkURL()!=null) JLinkButton.openURL(getLinkURL());
+                    if (getLinkURL() != null) JLinkButton.openURL(getLinkURL());
                 } catch (Exception e1) {
                     JDLogger.exception(e1);
                 }
@@ -368,7 +363,7 @@ public class JLinkButton extends JButton {
             setText(url.toExternalForm());
         }
         setLinkURL(url);
-       setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setBorderPainted(false);
         setContentAreaFilled(false);
         setRolloverEnabled(true);
@@ -433,7 +428,7 @@ public class JLinkButton extends JButton {
      * private void setDefault() { UIManager.getDefaults().put("LinkButtonUI",
      * "BasicLinkButtonUI"); }
      */
-    //@Override
+    // @Override
     public String getUIClassID() {
         return "LinkButtonUI";
     }
@@ -462,7 +457,7 @@ public class JLinkButton extends JButton {
         return isLinkVisited;
     }
 
-    //@Override
+    // @Override
     protected String paramString() {
         String str;
         if (linkBehavior == ALWAYS_UNDERLINE) {
@@ -551,7 +546,7 @@ public class JLinkButton extends JButton {
         repaint();
     }
 
-    //@Override
+    // @Override
     public void updateUI() {
         setUI(BasicLinkButtonUI.createUI(this));
     }

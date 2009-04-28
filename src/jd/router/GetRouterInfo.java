@@ -48,7 +48,6 @@ import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.ProgressDialog;
-import jd.gui.skins.simple.Progressor;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.config.GUIConfigEntry;
@@ -126,10 +125,10 @@ public class GetRouterInfo {
                 if (InetAddress.getByName(iPaddress).isReachable(1500)) { return true; }
             } catch (UnknownHostException e) {
 
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             } catch (IOException e) {
 
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
         }
         return false;
@@ -157,7 +156,7 @@ public class GetRouterInfo {
                 }
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return ret;
     }
@@ -166,11 +165,11 @@ public class GetRouterInfo {
 
     public String password = null;
 
-    private Progressor progressBar;
+    private ProgressDialog progressBar;
 
     public String username = null;
 
-    public GetRouterInfo(Progressor progress) {
+    public GetRouterInfo(ProgressDialog progress) {
         progressBar = progress;
         if (progressBar != null) {
             progressBar.setMaximum(100);
@@ -201,7 +200,7 @@ public class GetRouterInfo {
         }
         try {
 
-            setProgressText(JDLocale.L("gui.config.routeripfinder.status.tryingtofindrouterip","Trying to find the router IP address..."));
+            setProgressText(JDLocale.L("gui.config.routeripfinder.status.tryingtofindrouterip", "Trying to find the router IP address..."));
             String _255 = "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
             String exIP = "(?:" + _255 + "\\.){3}" + _255;
             Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}(" + exIP + ").*");
@@ -234,7 +233,7 @@ public class GetRouterInfo {
                     while (matcher.find()) {
                         String hostname = matcher.group(1).trim();
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
-                            setProgressText(JDLocale.L("gui.config.routeripfinder.status.testing","Testing")+ " " + hostname+" ...");
+                            setProgressText(JDLocale.L("gui.config.routeripfinder.status.testing", "Testing") + " " + hostname + " ...");
                             try {
                                 InetAddress ia = InetAddress.getByName(hostname);
                                 if (ia.isReachable(1500)) {
@@ -246,10 +245,10 @@ public class GetRouterInfo {
                                 }
                             } catch (UnknownHostException e) {
 
-                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                             } catch (IOException e) {
 
-                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                             }
                         }
 
@@ -261,7 +260,7 @@ public class GetRouterInfo {
                     while (matcher.find()) {
                         String hostname = matcher.group(1).trim();
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
-                            setProgressText(JDLocale.L("gui.config.routeripfinder.status.testing","Testing")+ " " + hostname+" ...");
+                            setProgressText(JDLocale.L("gui.config.routeripfinder.status.testing", "Testing") + " " + hostname + " ...");
                             try {
                                 InetAddress ia = InetAddress.getByName(hostname);
                                 if (ia.isReachable(1500)) {
@@ -273,10 +272,10 @@ public class GetRouterInfo {
                                 }
                             } catch (UnknownHostException e) {
 
-                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                             } catch (IOException e) {
 
-                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                             }
                         }
 
@@ -402,7 +401,7 @@ public class GetRouterInfo {
                 public void go() throws Exception {
 
                     final String hostname = hosts.get(d);
-                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.testing","Testing")+ " " + hostname+" ...");
+                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.testing", "Testing") + " " + hostname + " ...");
                     try {
                         InetAddress ia = InetAddress.getByName(hostname);
                         if (ia.isReachable(1500)) {
@@ -465,7 +464,7 @@ public class GetRouterInfo {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, info2.getKey().getReconnectMethodeClr());
             } else
                 continue;
-            setProgressText(JDLocale.L("gui.config.routeripfinder.status.testingrouter","Testing router") + " " + info2.getKey().getRouterName()+ " ...");
+            setProgressText(JDLocale.L("gui.config.routeripfinder.status.testingrouter", "Testing router") + " " + info2.getKey().getRouterName() + " ...");
             setProgress(i++ * 100 / size);
 
             JDUtilities.getConfiguration().save();
@@ -481,7 +480,7 @@ public class GetRouterInfo {
     }
 
     public Vector<RInfo> getRouterInfos() {
-        setProgressText(JDLocale.L("gui.config.routeripfinder.status.collectingrouterinfo","Collecting router informations..."));
+        setProgressText(JDLocale.L("gui.config.routeripfinder.status.collectingrouterinfo", "Collecting router informations..."));
         final RInfo infos = RouterInfoCollector.getRInfo(RouterInfoCollector.RInfo_ROUTERSEARCH);
         setProgress(25);
         infos.setReconnectMethode(null);
@@ -515,11 +514,11 @@ public class GetRouterInfo {
         };
         th2.getBroadcaster().addListener(th2.new WorkerListener() {
 
-            //@Override
+            // @Override
             public void onThreadException(Threader th, JDRunnable job, Exception e) {
             }
 
-            //@Override
+            // @Override
             public void onThreadFinished(Threader th, JDRunnable runnable) {
                 if (runnable == jupnp) {
                     isalv.isAlv = false;
@@ -527,7 +526,7 @@ public class GetRouterInfo {
                 }
             }
 
-            //@Override
+            // @Override
             public void onThreadStarts(Threader threader, JDRunnable runnable) {
             }
 
@@ -551,7 +550,7 @@ public class GetRouterInfo {
                 he.put("HTMLTagCount", "" + infos.countHtmlTags());
                 ArrayList<RInfo> ra;
                 try {
-                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.downloadlingsimilarmethods","Downloading similar router methods..."));
+                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.downloadlingsimilarmethods", "Downloading similar router methods..."));
                     setProgress(45);
                     String st = br.postPage("http://service.jdownloader.org/routerdb/getRouters.php", he);
                     setProgress(70);
@@ -565,7 +564,7 @@ public class GetRouterInfo {
                     return;
                 }
                 if (ra != null) {
-                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.sortingmethods","Sorting router methods..."));
+                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.sortingmethods", "Sorting router methods..."));
                     for (RInfo info : ra) {
                         if (info.isHaveUpnpReconnect()) upnp++;
 
@@ -600,7 +599,7 @@ public class GetRouterInfo {
                 }
                 routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
                 if (upnp > 0) {
-                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.searchingforupnp","Searching for UPnP..."));
+                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.searchingforupnp", "Searching for UPnP..."));
                     while (isalv.isAlv) {
                         try {
                             wait();
@@ -638,7 +637,7 @@ public class GetRouterInfo {
     @SuppressWarnings("unchecked")
     public RInfo getRouterData() {
 
-        setProgressText(JDLocale.L("gui.config.routeripfinder.status.collectingrouterinfo","Collecting router information..."));
+        setProgressText(JDLocale.L("gui.config.routeripfinder.status.collectingrouterinfo", "Collecting router information..."));
 
         final RInfo infos = RouterInfoCollector.getRInfo(RouterInfoCollector.RInfo_ROUTERSEARCH);
         infos.setReconnectMethode(null);
@@ -671,11 +670,11 @@ public class GetRouterInfo {
 
         th2.getBroadcaster().addListener(th2.new WorkerListener() {
 
-            //@Override
+            // @Override
             public void onThreadException(Threader th, JDRunnable job, Exception e) {
             }
 
-            //@Override
+            // @Override
             public void onThreadFinished(Threader th, JDRunnable runnable) {
                 if (runnable == jupnp) {
                     isalv.isAlv = false;
@@ -683,7 +682,7 @@ public class GetRouterInfo {
                 }
             }
 
-            //@Override
+            // @Override
             public void onThreadStarts(Threader threader, JDRunnable runnable) {
             }
         });
@@ -706,7 +705,7 @@ public class GetRouterInfo {
                     he.put("HTMLTagCount", "" + infos.countHtmlTags());
                     ArrayList<RInfo> ra;
                     try {
-                        setProgressText(JDLocale.L("gui.config.routeripfinder.status.downloadlingsimilarmethods","Downloading similar router methods..."));
+                        setProgressText(JDLocale.L("gui.config.routeripfinder.status.downloadlingsimilarmethods", "Downloading similar router methods..."));
                         String st = br.postPage("http://service.jdownloader.org/routerdb/getRouters.php", he);
                         // String st =
                         // br.postPage("http://localhost/router/getRouters.php",
@@ -717,7 +716,7 @@ public class GetRouterInfo {
                     } catch (Exception e) {
                         return;
                     }
-                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.sortingmethods","Sorting router methods..."));
+                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.sortingmethods", "Sorting router methods..."));
                     for (RInfo info : ra) {
                         // System.out.println(info.getReconnectMethode());
                         if (info.isHaveUpnpReconnect()) upnp++;
@@ -781,7 +780,7 @@ public class GetRouterInfo {
                             confirm = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.LF("gui.config.liveHeader.warning.upnpinactive", "Bitte aktivieren sie fals vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: Upnp Routern</a><br>drücken sie Ok wenn sie Upnp aktiviert haben oder abbrechen wenn sie fortfahren wollen!", infos.getRouterHost()), 600, false, CountdownConfirmDialog.STYLE_CANCEL | CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_STOP_COUNTDOWN | CountdownConfirmDialog.STYLE_NOTALWAYSONTOP);
                             if (confirm.result) {
                                 try {
-                                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.testingupnp","Testing UPnP..."));
+                                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.testingupnp", "Testing UPnP..."));
                                     for (int i = 0; i < 30 && !cancel; i++) {
                                         setProgress(i++ * 100 / 30);
                                         UPnPInfo upnpd = new UPnPInfo(InetAddress.getByName(infos.getRouterHost()), 10000);
@@ -836,7 +835,7 @@ public class GetRouterInfo {
                         infos.setReconnectMethodeClr(router.getReconnectMethodeClr());
                     }
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
                 setProgress(100);
             }
@@ -849,9 +848,9 @@ public class GetRouterInfo {
     }
 
     private void setProgress(final int val) {
-        new GuiRunnable<Object>(){
+        new GuiRunnable<Object>() {
 
-            //@Override
+            // @Override
             public Object runSave() {
                 if (progressBar != null) {
                     progressBar.setValue(val);
@@ -860,9 +859,9 @@ public class GetRouterInfo {
                 }
                 return null;
             }
-            
+
         }.start();
-       
+
     }
 
     private void setProgressText(String text) {
@@ -879,7 +878,7 @@ public class GetRouterInfo {
         final ProgressDialog progress = new ProgressDialog(SimpleGUI.CURRENTGUI, JDLocale.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, true);
         final GetRouterInfo routerInfo = new GetRouterInfo(progress);
         final Thread th = new Thread() {
-            //@Override
+            // @Override
             public void run() {
                 String pw = "";
                 String username = "";
@@ -912,7 +911,6 @@ public class GetRouterInfo {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, data.getRouterName());
                 }
 
-                
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, data.getRouterName());
                 progress.setVisible(false);
                 progress.dispose();
@@ -943,7 +941,7 @@ public class GetRouterInfo {
         System.out.println(r.size());
         for (RInfo info : r) {
             System.out.println(info.getRouterName());
-            System.out.println("\r\n\r\n"+info.getReconnectMethode());
+            System.out.println("\r\n\r\n" + info.getReconnectMethode());
         }
         System.exit(0);
     }

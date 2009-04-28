@@ -94,10 +94,7 @@ public class HTMLDialog extends JDialog implements ActionListener, HyperlinkList
 
         this.getRootPane().setDefaultButton(btnOk);
         this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        this.setVisible(true);
-
         this.setLocation(Screen.getCenterOfComponent(frame, this));
-        this.setVisible(false);
         this.setModal(true);
         this.setVisible(true);
 

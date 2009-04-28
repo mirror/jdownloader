@@ -4,8 +4,8 @@ import javax.swing.ImageIcon;
 
 public interface JDLabelContainer {
 
-    abstract public ImageIcon getIcon();
+    public ImageIcon getIcon();
 
-    abstract public String getLabel();
+    public String getLabel();
 
 }
