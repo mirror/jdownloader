@@ -55,6 +55,9 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
+import jd.controlling.LinkGrabberController;
+import jd.controlling.LinkGrabberControllerEvent;
+import jd.controlling.LinkGrabberControllerListener;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
@@ -341,7 +344,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -680,33 +683,39 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         linkGrabber = LinkGrabberPanel.getLinkGrabber();
         lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 24, 24));
         lgTaskPane.addPanel(new SingletonPanel(LinkAdder.class));
+        LinkGrabberController.getInstance().getBroadcaster().addListener(new LinkGrabberControllerListener() {
+            public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
+                switch (event.getID()) {
+                case LinkGrabberControllerEvent.ADDED:
+                    taskPane.switcher(dlTskPane);
+                    break;
+                case LinkGrabberControllerEvent.EMPTY:
+                    lgTaskPane.setPanelID(0);
+                    break;
+                }
+            }
 
+        });
         lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
+
         lgTaskPane.addActionListener(linkGrabber);
         lgTaskPane.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                System.out.println(e.getActionCommand());
                 switch (e.getID()) {
                 case DownloadTaskPane.ACTION_CLICK:
                     if (linkGrabber.hasLinks()) {
-
                         lgTaskPane.setPanelID(1);
                     } else {
                         lgTaskPane.setPanelID(0);
-
                     }
                     break;
                 case LinkGrabberTreeTableAction.GUI_ADD:
-                    lgTaskPane.setPanelID(0);
-                    return;
-                case LinkGrabberTreeTableAction.CLEAR:
                     lgTaskPane.setPanelID(0);
                     return;
                 }
             }
         });
         taskPane.add(lgTaskPane);
-
     }
 
     public LinkGrabberTaskPane getLgTaskPane() {
@@ -724,7 +733,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         dlTskPane.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                System.out.println(e.getActionCommand());
                 switch (e.getID()) {
                 case DownloadTaskPane.ACTION_CLICK:
 
@@ -744,7 +752,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         });
         taskPane.add(dlTskPane);
-
     }
 
     public JXCollapsiblePane getLeftcolPane() {
@@ -896,7 +903,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);

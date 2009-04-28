@@ -35,7 +35,7 @@ public class NewsUrlDe extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();       
+        String parameter = param.toString();
         synchronized (lock) {
             br.getPage(parameter);
             String link = br.getRedirectLocation();
@@ -46,7 +46,7 @@ public class NewsUrlDe extends PluginForDecrypt {
             if (link == null) return null;
             decryptedLinks.add(dl = createDownloadlink(link));
             dl.setProperties(param.getProperties());
-            dl.setProperty("referer", param.getCryptedUrl());
+            dl.setProperty("referer", param.getCryptedUrl());            
         }
         return decryptedLinks;
     }

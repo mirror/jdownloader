@@ -9,6 +9,7 @@ import java.util.Vector;
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.Property;
+import jd.controlling.LinkGrabberController;
 import jd.event.JDBroadcaster;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.nutils.io.JDIO;
@@ -148,7 +149,10 @@ public class LinkGrabberFilePackage extends Property {
     public void add(DownloadLink link) {
         synchronized (downloadLinks) {
             if (!downloadLinks.contains(link)) {
+                LinkGrabberFilePackage fp = LinkGrabberController.getInstance().getFPwithLink(link);                
                 downloadLinks.add(link);
+                getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK));
+                if (fp != null && fp != this) fp.remove(link);
             }
         }
     }
@@ -227,13 +231,15 @@ public class LinkGrabberFilePackage extends Property {
                     downloadLinks.add(index, link);
                 getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
             } else {
+                LinkGrabberFilePackage fp = LinkGrabberController.getInstance().getFPwithLink(link);
                 if (index > downloadLinks.size() - 1) {
                     downloadLinks.add(link);
                 } else if (index < 0) {
                     downloadLinks.add(0, link);
                 } else
-                    downloadLinks.add(index, link);
+                    downloadLinks.add(index, link);                
                 getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK));
+                if (fp != null && fp != this) fp.remove(link);
             }
         }
     }

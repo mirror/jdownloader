@@ -161,20 +161,12 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         }
     }
 
-    public void removeDownloadLink(DownloadLink link) {
-        if (link == null) return;
-        synchronized (packages) {
-            LinkGrabberFilePackage fptmp = getFPwithLink(link);
-            if (fptmp != null) fptmp.remove(link);
-        }
-    }
-
     public void removePackage(LinkGrabberFilePackage fp) {
         if (fp == null) return;
         synchronized (packages) {
             fp.getBroadcaster().removeListener(this);
             packages.remove(fp);
-            broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REMOVE_FILPACKAGE));
+            broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REMOVE_FILPACKAGE, fp));
         }
     }
 
@@ -280,6 +272,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         name = getNameMatch(name, "(.*)\\.rar$");
 
         name = getNameMatch(name, "(.*)\\.r\\d+$");
+        name = getNameMatch(name, "(.*?)\\d+$");
 
         /**
          * remove 7zip and hjmerge extensions
@@ -325,8 +318,10 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
             break;
         case LinkGrabberFilePackageEvent.ADD_LINK:
         case LinkGrabberFilePackageEvent.REMOVE_LINK:
-        case LinkGrabberFilePackageEvent.UPDATE_EVENT:
             broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE));
+            break;
+        case LinkGrabberFilePackageEvent.UPDATE_EVENT:
+            broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE, event.getSource()));
             break;
         default:
             break;

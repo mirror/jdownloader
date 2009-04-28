@@ -207,7 +207,9 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         continue;
                     }
                     if (!localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        localLink.getLinkStatus().reset();
+                        String tmp1=localLink.getLinkStatus().getStatusText();
+                        
+                        //localLink.getLinkStatus().reset();
                     }
                     if (localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 1) {
                         it.remove();

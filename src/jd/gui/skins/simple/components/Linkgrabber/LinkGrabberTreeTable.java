@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
+import javax.swing.DropMode;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -31,6 +32,7 @@ import javax.swing.event.TreeExpansionListener;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -43,6 +45,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.JXTreeTable;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
@@ -63,6 +66,9 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
     private LinkGrabberTreeTableRenderer cellRenderer;
     private TableColumnExt[] cols;
 
+    private Vector<DownloadLink> selectedLinks = new Vector<DownloadLink>();
+    private Vector<LinkGrabberFilePackage> selectedPackages = new Vector<LinkGrabberFilePackage>();
+
     public static final String PROPERTY_EXPANDED = "lg_expanded";
     public static final String PROPERTY_SELECTED = "lg_selected";
 
@@ -77,11 +83,11 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         cellRenderer = new LinkGrabberTreeTableRenderer(this);
         model = treeModel;
         createColumns();
-
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        this.getTreeSelectionModel().setSelectionMode(TreeSelectionModel.CONTIGUOUS_TREE_SELECTION);
         setEditable(false);
         setAutoscrolls(false);
         setColumnControlVisible(true);
@@ -90,6 +96,15 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         addMouseListener(this);
         addKeyListener(this);
         addMouseMotionListener(this);
+        if (JDUtilities.getJavaVersion() >= 1.6) {
+            // setDropMode(DropMode.ON_OR_INSERT_ROWS); /*muss noch geschaut
+            // werden wie man das genau macht*/
+            setDropMode(DropMode.USE_SELECTION);
+        } else {
+            setDropMode(DropMode.USE_SELECTION);
+        }
+        setDragEnabled(true);
+        setTransferHandler(new LinkGrabberTreeTableTransferHandler(this));
         this.getTableHeader().addMouseListener(this);
         UIManager.put("Table.focusCellHighlightBorder", null);
         setHighlighters(new Highlighter[] {});
@@ -97,8 +112,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
 
         addDisabledHighlighter();
 
-        
-        addExistsHighlighter();        
+        addExistsHighlighter();
         setTransferHandler(new LinkGrabberTreeTableTransferHandler(this));
         getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
@@ -136,6 +150,30 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
 
     public LinkGrabberTreeTableModel getLinkGrabberV2TreeTableModel() {
         return (LinkGrabberTreeTableModel) getTreeTableModel();
+    }
+
+    public void saveSelection() {
+        /* nicht löschen */
+        System.out.println("saveselection");
+        int[] rows = getSelectedRows();
+        synchronized (selectedLinks) {
+            synchronized (selectedPackages) {
+                selectedPackages.clear();
+                selectedLinks.clear();
+                TreePath path;
+                for (int element : rows) {
+                    path = getPathForRow(element);
+                    if (path == null) continue;
+                    if (path.getLastPathComponent() instanceof DownloadLink) {
+                        selectedLinks.add((DownloadLink) path.getLastPathComponent());
+                    } else if (path.getLastPathComponent() instanceof LinkGrabberFilePackage) {
+                        selectedPackages.add((LinkGrabberFilePackage) path.getLastPathComponent());
+                    }
+                }
+            }
+            System.out.println("saveselection" + selectedPackages.size());
+            System.out.println("saveselection" + selectedLinks.size());
+        }
     }
 
     public Vector<DownloadLink> getSelectedDownloadLinks() {
@@ -183,14 +221,28 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
 
     public void updateSelectionAndExpandStatus() {
         int i = 0;
-        while (getPathForRow(i) != null) {
-            if (getPathForRow(i).getLastPathComponent() instanceof LinkGrabberFilePackage) {
-                LinkGrabberFilePackage fp = (LinkGrabberFilePackage) getPathForRow(i).getLastPathComponent();
-                if (fp.getBooleanProperty(PROPERTY_EXPANDED, false)) {
-                    expandPath(getPathForRow(i));
+        synchronized (this.selectedLinks) {
+            synchronized (this.selectedPackages) {
+                this.getTreeSelectionModel().clearSelection();
+                while (getPathForRow(i) != null) {
+                    if (getPathForRow(i).getLastPathComponent() instanceof LinkGrabberFilePackage) {
+                        LinkGrabberFilePackage fp = (LinkGrabberFilePackage) getPathForRow(i).getLastPathComponent();
+                        if (fp.getBooleanProperty(PROPERTY_EXPANDED, false)) {
+                            expandPath(getPathForRow(i));
+                        }
+                        if (this.selectedPackages.contains(getPathForRow(i).getLastPathComponent())) {
+                            System.out.println("select package");
+
+                        }
+                    } else if (getPathForRow(i).getLastPathComponent() instanceof DownloadLink) {
+                        if (this.selectedLinks.contains(getPathForRow(i).getLastPathComponent())) {
+                            System.out.println("select link");
+                        }
+                    }
+                    i++;
                 }
             }
-            i++;
+
         }
     }
 
@@ -233,7 +285,6 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
     public void mouseReleased(MouseEvent e) {
         /* nicht auf headerclicks reagieren */
         if (e.getClickCount() == 1) {
-
             if (e.getSource() != this) return;
             TreePath path = getPathForLocation(e.getX(), e.getY());
             if (path == null) return;

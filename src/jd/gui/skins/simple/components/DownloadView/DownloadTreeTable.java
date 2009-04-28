@@ -107,10 +107,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         getTableHeader().setResizingAllowed(true);
         // this.setExpandsSelectedPaths(true);
 
-        if (JDUtilities.getJavaVersion() >= 1.6) {
-            setDropMode(DropMode.ON_OR_INSERT_ROWS);
-        }
-        setDragEnabled(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setColumnControlVisible(true);
@@ -123,10 +119,15 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         addMouseMotionListener(this);
         this.getTableHeader().addMouseListener(this);
         UIManager.put("Table.focusCellHighlightBorder", null);
-        setTransferHandler(new TreeTableTransferHandler(this));
-        if (JDUtilities.getJavaVersion() > 1.6) {
+
+        if (JDUtilities.getJavaVersion() >= 1.6) {
+            //setDropMode(DropMode.ON_OR_INSERT_ROWS); /*muss noch geschaut werden wie man das genau macht*/
+            setDropMode(DropMode.USE_SELECTION);
+        } else {
             setDropMode(DropMode.USE_SELECTION);
         }
+        setDragEnabled(true);
+        setTransferHandler(new TreeTableTransferHandler(this));
 
         this.setHighlighters(new Highlighter[] {});
         // setHighlighters(HighlighterFactory.createAlternateStriping(UIManager.
@@ -571,7 +572,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
      * Expansion
      */
     public synchronized void updateSelectionAndExpandStatus() {
-        int i = 0;
+        int i = 0;        
         while (getPathForRow(i) != null) {
             if (getPathForRow(i).getLastPathComponent() instanceof FilePackage) {
                 FilePackage fp = (FilePackage) getPathForRow(i).getLastPathComponent();

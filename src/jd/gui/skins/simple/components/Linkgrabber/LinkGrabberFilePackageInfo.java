@@ -18,7 +18,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class LinkGrabberFilePackageInfo extends JTabbedPanel implements LinkGrabberFilePackageListener, ActionListener {
+public class LinkGrabberFilePackageInfo extends JTabbedPanel implements  ActionListener {
 
     private static final long serialVersionUID = 5410296068527460629L;
 
@@ -53,16 +53,14 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements LinkGrab
         if (this.fp != null && this.fp == fp) {
             update();
             return;
-        }
-        if (this.fp != null) this.fp.getBroadcaster().removeListener(this);
+        }        
         this.fp = fp;
-        if (this.fp != null) {
-            fp.getBroadcaster().addListener(this);
+        if (this.fp != null) {            
             update();
         }
     }
 
-    private void update() {
+    public void update() {
         if (fp == null) return;
         notifyUpdate = false; /*
                                * wichtig: die set funktionen lösen eine action
@@ -166,32 +164,16 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements LinkGrab
         }
     }
 
-    public void handle_LinkGrabberFilePackageEvent(LinkGrabberFilePackageEvent event) {
-        if (this.fp == null) return;
-        if (event.getSource() != fp) return;
-        switch (event.getID()) {
-        case LinkGrabberFilePackageEvent.EMPTY_EVENT:
-            fp.getBroadcaster().removeListener(this);
-            fp = null;
-            break;
-        case LinkGrabberFilePackageEvent.UPDATE_EVENT:
-            update();
-            break;
-        default:
-            break;
-        }
-    }
-
     @Override
     public void onDisplay() {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void onHide() {
-        // TODO Auto-generated method stub
-        
+        if (this.fp == null) return;        
+        fp = null;
     }
 
 }

@@ -37,7 +37,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, LinkGrabberFilePackageListener, LinkCheckListener, ProgressControllerListener, LinkGrabberControllerListener {
+public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, LinkCheckListener, ProgressControllerListener, LinkGrabberControllerListener {
 
     private static final long serialVersionUID = 1607433619381447389L;
 
@@ -61,7 +61,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     private LinkCheck lc = LinkCheck.getLinkChecker();
     private Timer Update_Async;
-    private static LinkGrabberPanel INSTANCE;    
+    private static LinkGrabberPanel INSTANCE;
     private boolean visible = true;
 
     private LinkGrabberController LGINSTANCE = null;
@@ -146,7 +146,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     public synchronized void addToWaitingList(DownloadLink element) {
         waitingList.add(element);
         checkAlreadyinList(element);
-        LGINSTANCE.attachToPackagesFirstStage(element);        
+        LGINSTANCE.attachToPackagesFirstStage(element);
     }
 
     private void stopLinkGatherer() {
@@ -213,6 +213,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     @Override
     public void onDisplay() {
+        fireTableChanged(1, null);
         LGINSTANCE.getBroadcaster().addListener(this);
         visible = true;
         Update_Async.restart();
@@ -355,9 +356,8 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 fp = LGINSTANCE.getFPwithLink(selected_links.get(0));
                 String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
                 if (name != null) {
-                    LinkGrabberFilePackage nfp = new LinkGrabberFilePackage(name, this);
+                    LinkGrabberFilePackage nfp = new LinkGrabberFilePackage(name);
                     for (DownloadLink link : selected_links) {
-                        LGINSTANCE.removeDownloadLink(link);
                         LGINSTANCE.AddorMoveDownloadLink(nfp, link);
                     }
                 }
@@ -384,7 +384,8 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             case LinkGrabberTreeTableAction.DELETE:
                 for (DownloadLink link : selected_links) {
                     link.setProperty("removed", true);
-                    LGINSTANCE.removeDownloadLink(link);
+                    fp = LGINSTANCE.getFPwithLink(link);
+                    fp.remove(link);
                 }
                 return;
             case LinkGrabberTreeTableAction.CLEAR:
@@ -406,6 +407,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         for (int i = 0; i < all.size(); ++i) {
             confirmPackage(all.get(i), null);
         }
+        LGINSTANCE.getBroadcaster().fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.ADDED));
     }
 
     private void addToDownloadDirs(String downloadDirectory, String packageName) {
@@ -509,20 +511,24 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     public boolean hasLinks() {
         return waitingList.size() > 0 || LGINSTANCE.size() > 0;
     }
-
-    public void handle_LinkGrabberFilePackageEvent(LinkGrabberFilePackageEvent event) {
-        // TODO Auto-generated method stub
-
-    }
+    
 
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
         switch (event.getID()) {
+        case LinkGrabberControllerEvent.REMOVE_FILPACKAGE:
+            if (FilePackageInfo.getPackage() != null && FilePackageInfo.getPackage() == ((LinkGrabberFilePackage) event.getParameter())) {
+                this.hideFilePackageInfo();
+            }
         case LinkGrabberControllerEvent.REFRESH_STRUCTURE:
+            if (event.getParameter() != null) {
+                if (FilePackageInfo.getPackage() != null && FilePackageInfo.getPackage() == event.getParameter()) {
+                    FilePackageInfo.update();
+                }
+            }
             Update_Async.restart();
             break;
         default:
             break;
         }
     }
-
 }

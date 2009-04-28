@@ -56,7 +56,10 @@ public class HotFileCom extends PluginForHost {
             String waittime = br.getRegex("starthtimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waittime.trim()));
         }
-        this.sleep(60 * 1000l, link);
+        String waittime = br.getRegex("starttimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
+        long time = 60000l;
+        if (waittime != null) time = Long.parseLong(waittime.trim());
+        this.sleep(time, link);
         Form form = br.getForm(1);
         br.submitForm(form);
         String dl_url = br.getRegex("Downloading.*?<a href=\"(.*?/get/.*?)\">").getMatch(0);
@@ -79,7 +82,7 @@ public class HotFileCom extends PluginForHost {
     @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

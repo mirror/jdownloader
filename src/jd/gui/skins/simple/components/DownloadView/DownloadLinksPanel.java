@@ -108,6 +108,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     public void onDisplay() {
         visible = true;
         updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
+        fireTableTask();
         Update_Async.restart();
         JDUtilities.getDownloadController().getBroadcaster().addListener(this);
         internalTreeTable.removeKeyListener(internalTreeTable);
