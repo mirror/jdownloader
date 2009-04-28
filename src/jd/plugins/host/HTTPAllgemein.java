@@ -73,7 +73,7 @@ public class HTTPAllgemein extends PluginForHost {
     //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException {
         this.setBrowserExclusive();
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("httpviajd://", "http://"));
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://"));
         String basicauth = removeBasicAuthfromURL(downloadLink);
         if (basicauth == null) basicauth = (String) downloadLink.getProperty("basicauth", null);
         if (basicauth == null) {

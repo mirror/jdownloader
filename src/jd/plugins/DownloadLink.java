@@ -55,7 +55,7 @@ import jd.utils.JDUtilities;
 
 class DownloadLinkBroadcaster extends JDBroadcaster<DownloadLinkListener, DownloadLinkEvent> {
 
-    //@Override
+    // @Override
     protected void fireEvent(DownloadLinkListener listener, DownloadLinkEvent event) {
         listener.handle_DownloadLinkEvent(event);
     }
@@ -138,14 +138,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * geladen wurde
      */
     private transient PluginsC pluginForContainer;
-private transient boolean stopMark=false;
-    public boolean isStopMark() {
-    return stopMark;
-}
-
-public void setStopMark(boolean stopMark) {
-    this.stopMark = stopMark;
-}
 
     private String sourcePluginComment = null;
 
@@ -253,7 +245,7 @@ public void setStopMark(boolean stopMark) {
     }
 
     public void setPriority(int pr) {
-        if (pr <= 4 && pr >= -4) {
+        if (pr >= 0 && pr < 4) {
             this.priority = pr;
         } else
             this.priority = 0;
@@ -996,7 +988,7 @@ public void setStopMark(boolean stopMark) {
      * 
      * @return STring
      */
-    //@Override
+    // @Override
     public String toString() {
         return getName() + "-> " + getFileOutput() + "(" + getHost() + ")";
     }

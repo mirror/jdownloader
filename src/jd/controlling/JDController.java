@@ -481,7 +481,7 @@ public class JDController implements ControlListener {
                 }
             }
         }
-        if (watchdog != null && !watchdog.isAborted() && watchdog.isAlive()) { return Math.min(watchdog.getActiveDownloadControllers().size(), ret); }
+        if (watchdog != null && !watchdog.isAborted() && watchdog.isAlive()) { return Math.min(watchdog.ActiveDownloadControllers(), ret); }
         return ret;
     }
 
@@ -796,7 +796,7 @@ public class JDController implements ControlListener {
                 setDownloadStatus(DOWNLOAD_RUNNING);
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_START, this));
                 logger.info("StartDownloads");
-                watchdog = new DownloadWatchDog(this);
+                watchdog = DownloadWatchDog.getInstance();
                 watchdog.start();
                 return true;
             }

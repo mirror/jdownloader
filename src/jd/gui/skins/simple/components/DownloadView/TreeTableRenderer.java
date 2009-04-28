@@ -110,7 +110,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         strWaitIO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input");
     }
 
-    //@Override
+    // @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         hasFocus = false;
         column = this.table.getColumn(column).getModelIndex();
@@ -291,16 +291,12 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             ((JRendererLabel) co).setText("");
             if (dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
                 ((JRendererLabel) co).setIcon(imgExtract);
-
             } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 ((JRendererLabel) co).setIcon(imgFinished);
-
             } else if (dLink.getLinkStatus().isFailed()) {
                 ((JRendererLabel) co).setIcon(imgFailed);
-
             } else {
-
-                ((JRendererLabel) co).setIcon(null);
+                 ((JRendererLabel) co).setIcon(JDTheme.II("gui.images.priority" + dLink.getPriority(), 16, 16));                
             }
 
             ((JRendererLabel) co).setBorder(null);

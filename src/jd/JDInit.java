@@ -132,7 +132,7 @@ public class JDInit {
 
     public void initControllers() {
         DownloadController.getInstance();
-        //LinkGrabberController.getInstance();
+        // LinkGrabberController.getInstance();
     }
 
     public UIInterface initGUI(JDController controller) {
@@ -230,7 +230,7 @@ public class JDInit {
 
                     new GuiRunnable<Object>() {
 
-                        //@Override
+                        // @Override
                         public Object runSave() {
                             JOptionPane.showMessageDialog(null, JDLocale.L("installer.welcome", "Welcome to jDownloader."));
                             return null;
@@ -258,7 +258,7 @@ public class JDInit {
 
                     new GuiRunnable<Object>() {
 
-                        //@Override
+                        // @Override
                         public Object runSave() {
                             JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
                             return null;
@@ -273,7 +273,7 @@ public class JDInit {
                 logger.severe("INSTALL abgebrochen2");
                 new GuiRunnable<Object>() {
 
-                    //@Override
+                    // @Override
                     public Object runSave() {
                         JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation", "Error. User aborted installation."));
                         return null;
@@ -500,7 +500,7 @@ public class JDInit {
         new HostPluginWrapper("Files.To", "FilesTo", "http://[\\w\\.]*?files\\.to/get/[0-9]+/[a-zA-Z0-9]+");
         new HostPluginWrapper("File-Upload.net", "FileUploadnet", "((http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html)|(http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html))|(http://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)))");
         new HostPluginWrapper("GoogleGroups.com", "GoogleGroups", "http://.*?\\.googlegroups.com/web/.*");
-        new HostPluginWrapper("HTTP Links", "HTTPAllgemein", "httpviajd://[\\d\\w\\.:\\-@]*/.*\\.(otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|divx|dlc|doc|docx|dot|exe|flv|gif|gz|iso|java|jpg|jpeg|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|png|pdf|ppt|pptx|pps|ppz|pot|qt|rar|rsdf|rtf|snd|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|ts)");
+        new HostPluginWrapper("HTTP Links", "HTTPAllgemein", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|divx|dlc|doc|docx|dot|exe|flv|gif|gz|iso|java|jpg|jpeg|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|png|pdf|ppt|pptx|pps|ppz|pot|qt|rar|rsdf|rtf|snd|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|ts)");
         new HostPluginWrapper("ImageFap.com", "ImageFap", "http://[\\w\\.]*?imagefap.com/image.php\\?id=.*(&pgid=.*&gid=.*&page=.*)?");
         new HostPluginWrapper("MediaFire.Com", "MediafireCom", "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?.+|file/.+)");
         new HostPluginWrapper("MySpace.Com", "MySpaceCom", "myspace://.+");

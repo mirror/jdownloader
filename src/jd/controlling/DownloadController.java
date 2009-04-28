@@ -444,12 +444,11 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     public void onDownloadControllerEvent(DownloadControllerEvent event) {
         switch (event.getID()) {
+        case DownloadControllerEvent.ADD_DOWNLOADLINK:
+        case DownloadControllerEvent.REMOVE_DOWNLOADLINK:
         case DownloadControllerEvent.ADD_FILEPACKAGE:
-            this.fireStructureUpdate();
-            break;
         case DownloadControllerEvent.REMOVE_FILPACKAGE:
-            this.fireStructureUpdate();
-            break;
+            fireStructureUpdate();
         case DownloadControllerEvent.REFRESH_STRUCTURE:
             this.saveDownloadLinksAsync();
             break;
@@ -459,10 +458,11 @@ public class DownloadController implements FilePackageListener, DownloadControll
     public void onFilePackageEvent(FilePackageEvent event) {
         switch (event.getID()) {
         case FilePackageEvent.DOWNLOADLINK_ADDED:
+            this.getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_DOWNLOADLINK, event.getParameter()));
             this.fireStructureUpdate();
             break;
         case FilePackageEvent.DOWNLOADLINK_REMOVED:
-            this.fireStructureUpdate();
+            this.getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REMOVE_DOWNLOADLINK, event.getParameter()));
             break;
         case FilePackageEvent.FILEPACKAGE_UPDATE:
             this.fireStructureUpdate();

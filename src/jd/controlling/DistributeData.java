@@ -100,7 +100,8 @@ public class DistributeData extends Thread {
     static public boolean hasPluginFor(String tmp) {
         String data = tmp;
         if (DecryptPluginWrapper.getDecryptWrapper() == null) return false;
-
+        data = data.replaceAll("jd://", "http://");
+        data = data.replaceAll("jds://", "https://");
         for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
         }
@@ -115,6 +116,7 @@ public class DistributeData extends Thread {
             if (pHost.usePlugin() && pHost.canHandle(data)) return true;
         }
         data = data.replaceAll("http://", "httpviajd://");
+        data = data.replaceAll("https://", "httpsviajd://");
         for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
         }
@@ -228,13 +230,16 @@ public class DistributeData extends Thread {
     public Vector<DownloadLink> findLinks() {
         data = HTMLEntities.unhtmlentities(data);
         data = data.replaceAll("jd://", "http://");
+        data = data.replaceAll("jds://", "https://");
         Vector<DownloadLink> ret = findLinks(true);
         data = Encoding.urlDecode(data, true);
         ret.addAll(findLinks(true));
         data = data.replaceAll("--CUT--", "\n");
         data = data.replaceAll("http://", "httpviajd://");
+        data = data.replaceAll("https://", "httpsviajd://");
         ret.addAll(findLinks(true));
         data = data.replaceAll("httpviajd://", "http://");
+        data = data.replaceAll("httpsviajd://", "https://");
         return ret;
     }
 
@@ -387,7 +392,7 @@ public class DistributeData extends Thread {
         }
     }
 
-    //@Override
+    // @Override
     public void run() {
 
         Vector<DownloadLink> links = findLinks();

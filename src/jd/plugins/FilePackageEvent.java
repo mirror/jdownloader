@@ -18,4 +18,9 @@ public class FilePackageEvent extends JDEvent {
         // TODO Auto-generated constructor stub
     }
 
+    public FilePackageEvent(Object source, int ID, Object param) {
+        super(source, ID, param);
+        // TODO Auto-generated constructor stub
+    }
+
 }

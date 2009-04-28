@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Vector;
 
 import javax.swing.DropMode;
+import javax.swing.JCheckBox;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -55,6 +56,7 @@ import javax.swing.tree.TreePath;
 import jd.config.MenuItem;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.DownloadWatchDog;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.JDMenu;
 import jd.gui.skins.simple.SimpleGUI;
@@ -439,7 +441,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         int row = rowAtPoint(point);
         int col = getRealcolumnAtPoint(e.getX());
         JMenuItem tmp;
-
+        JCheckBox tmp2;
         if (!isRowSelected(row) && e.getButton() == MouseEvent.BUTTON3) {
             getTreeSelectionModel().clearSelection();
             getTreeSelectionModel().addSelectionPath(getPathForRow(row));
@@ -467,6 +469,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             Object obj = getPathForRow(row).getLastPathComponent();
             JPopupMenu popup = new JPopupMenu();
             if (obj instanceof FilePackage || obj instanceof DownloadLink) {
+                popup.add(tmp2 = new JCheckBox(new TreeTableAction(panel, JDLocale.L("gui.table.contextmenu.stopmark", "StopMark"), TreeTableAction.STOP_MARK, new Property("item", obj))));
+                tmp2.setSelected(DownloadWatchDog.getInstance().isStopMark(obj));
                 popup.add(new JMenuItem(new TreeTableAction(panel, JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TreeTableAction.DELETE, new Property("links", alllinks))));
                 popup.add(new JSeparator());
             }

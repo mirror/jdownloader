@@ -85,15 +85,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     private String password;
     private String dlpassword;
     private boolean extractAfterDownload = true;
-    private transient boolean stopMark = false;
-
-    public boolean isStopMark() {
-        return stopMark;
-    }
-
-    public void setStopMark(boolean stopMark) {
-        this.stopMark = stopMark;
-    }
 
     private long totalBytesLoaded_v2;
 
@@ -152,7 +143,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                     links_Disabled++;
                 }
                 link.getBroadcaster().addListener(this);
-                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED));
+                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED, link));
             }
         }
     }
@@ -180,7 +171,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 }
                 link.setFilePackage(this);
                 link.getBroadcaster().addListener(this);
-                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED));
+                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED, link));
             }
         }
     }
@@ -527,7 +518,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 }
                 link.getBroadcaster().removeListener(this);
                 link.setFilePackage(null);
-                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_REMOVED));
+                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_REMOVED, link));
                 if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_EMPTY));
             }
         }

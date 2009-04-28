@@ -43,6 +43,7 @@ public class TreeTableAction extends AbstractAction {
     public static final int DOWNLOAD_BROWSE_LINK = 7;
     public static final int EDIT_NAME = 11;
     public static final int EDIT_DIR = 101;
+    public static final int STOP_MARK = 600;
 
     private static final long serialVersionUID = 1L;
 

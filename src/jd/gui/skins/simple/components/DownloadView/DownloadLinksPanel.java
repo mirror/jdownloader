@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.JCheckBox;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
@@ -39,6 +40,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadControllerEvent;
 import jd.controlling.DownloadControllerListener;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.JDCollapser;
 import jd.gui.skins.simple.JTabbedPanel;
@@ -220,6 +222,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         Vector<FilePackage> selected_packages = new Vector<FilePackage>();
         Vector<DownloadLink> selected_links = new Vector<DownloadLink>();
         HashMap<String, Object> prop = new HashMap<String, Object>();
+        Object obj = null;
         FilePackage fp = null;
         DownloadLink link = null;
         File folder = null;
@@ -266,8 +269,17 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                 selected_links = (Vector<DownloadLink>) ((TreeTableAction) e.getSource()).getProperty().getProperty("links");
                 break;
             }
+        } else if (e.getSource() instanceof JCheckBox) {
+            switch (e.getID()) {
+            case TreeTableAction.STOP_MARK:
+                obj = ((TreeTableAction) ((JCheckBox) e.getSource()).getAction()).getProperty().getProperty("item");
+                break;
+            }
         }
         switch (e.getID()) {
+        case TreeTableAction.STOP_MARK:
+            DownloadWatchDog.getInstance().toggleStopMark(obj);
+            return;
         case TreeTableAction.EDIT_DIR: {
             JDFileChooser fc = new JDFileChooser();
             fc.setApproveButtonText(JDLocale.L("gui.btn_ok", "OK"));

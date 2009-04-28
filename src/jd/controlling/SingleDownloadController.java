@@ -48,11 +48,6 @@ public class SingleDownloadController extends Thread {
     private boolean aborted;
 
     /**
-     * Das übergeordnete Fenster
-     */
-    private JDController controller;
-
-    /**
      * Das Plugin, das den aktuellen Download steuert
      */
     private PluginForHost currentPlugin;
@@ -78,11 +73,10 @@ public class SingleDownloadController extends Thread {
      * @param dlink
      *            Link, der heruntergeladen werden soll
      */
-    public SingleDownloadController(JDController controller, DownloadLink dlink) {
+    public SingleDownloadController(DownloadLink dlink) {
         super("JD-StartDownloads");
         downloadLink = dlink;
         linkStatus = downloadLink.getLinkStatus();
-        this.controller = controller;
         setPriority(Thread.MIN_PRIORITY);
 
         downloadLink.setDownloadLinkController(this);
@@ -94,7 +88,6 @@ public class SingleDownloadController extends Thread {
     public SingleDownloadController abortDownload() {
         aborted = true;
         interrupt();
-
         return this;
     }
 
@@ -282,7 +275,7 @@ public class SingleDownloadController extends Thread {
         if (JDUtilities.getController().isContainerFile(new File(downloadLink.getFileOutput()))) {
             Interaction.handleInteraction(Interaction.INTERACTION_CONTAINER_DOWNLOAD, downloadLink);
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {
-                controller.loadContainerFile(new File(downloadLink.getFileOutput()));
+                JDUtilities.getController().loadContainerFile(new File(downloadLink.getFileOutput()));
             }
         }
 
@@ -487,7 +480,6 @@ public class SingleDownloadController extends Thread {
             downloadLink.setEnabled(false);
         }
 
-       
         DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 
@@ -523,7 +515,7 @@ public class SingleDownloadController extends Thread {
      * 
      * @see java.lang.Thread#run()
      */
-    //@Override
+    // @Override
     public void run() {
 
         /**
