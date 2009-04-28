@@ -20,6 +20,7 @@ public abstract class UserIO {
     public static final int NO_OK_OPTION = 1<<3;
     public static final int NO_CANCEL_OPTION = 1<<4;
     public static final int DONT_SHOW_AGAIN = 1<<5;
+    public static final int STYLE_LARGE = 1<<6;
     /**Return IDS
      * 
      */
@@ -27,6 +28,7 @@ public abstract class UserIO {
     public static final int RETURN_CANCEL = 1<<2;
     public static final int RETURN_DONT_SHOW_AGAIN = 1<<3;
     public static final int RETURN_SKIPPED_BY_DONT_SHOW = 1<<4;
+
     protected static UserIO INSTANCE = null;
 
     protected UserIO() {
@@ -68,4 +70,13 @@ public abstract class UserIO {
 
     abstract protected  int showConfirmDialog(int flag, String title, String message, ImageIcon icon, String okOption, String cancelOption);
 
+
+    public String requestInputDialog(int flag, String title, String message, String defaultMessage,ImageIcon icon, String okOption, String cancelOption) {
+        synchronized (INSTANCE) {
+            return showInputDialog(flag, title, message,defaultMessage, icon, okOption,cancelOption);
+        }
+        
+    }
+
+    abstract protected  String showInputDialog(int flag, String title, String message, String defaultMessage, ImageIcon icon, String okOption, String cancelOption);
 }

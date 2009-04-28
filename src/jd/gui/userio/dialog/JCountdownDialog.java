@@ -1,5 +1,8 @@
 package jd.gui.userio.dialog;
 
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 
@@ -7,17 +10,49 @@ import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.Formatter;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 
 public abstract class JCountdownDialog extends JDialog {
 
     private static final long serialVersionUID = 8114522313158766965L;
     protected Thread countdownThread;
     protected int countdown;
+
     protected JLabel countDownLabel;
 
     public JCountdownDialog(SimpleGUI currentgui) {
         super(currentgui);
         this.countDownLabel = new JLabel();
+        countDownLabel.setIcon(JDTheme.II("gui.images.cancel", 16, 16));
+        countDownLabel.setToolTipText(JDLocale.L("gui.dialog.countdown.tooltip", "This dialog closes after a certain time. Click here to stop the countdown"));
+        countDownLabel.addMouseListener(new MouseListener() {
+
+            public void mouseClicked(MouseEvent e) {
+               interrupt();
+               countDownLabel.removeMouseListener(this);
+                
+            }
+
+            public void mouseEntered(MouseEvent e) {
+                // TODO Auto-generated method stub
+                
+            }
+
+            public void mouseExited(MouseEvent e) {
+                // TODO Auto-generated method stub
+                
+            }
+
+            public void mousePressed(MouseEvent e) {
+                // TODO Auto-generated method stub
+                
+            }
+
+            public void mouseReleased(MouseEvent e) {
+                // TODO Auto-generated method stub
+                
+            }
+        });
         setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Please enter..."));
     }
 
@@ -25,7 +60,7 @@ public abstract class JCountdownDialog extends JDialog {
         if (countdownThread != null) {
             countdownThread.interrupt();
             countdownThread = null;
-            countDownLabel.setText("");
+            countDownLabel.setEnabled(false);
         }
     }
 
@@ -35,7 +70,7 @@ public abstract class JCountdownDialog extends JDialog {
         this.countdown = time;
         countdownThread = new Thread() {
 
-            //@Override
+            // @Override
             public void run() {
 
                 while (!isVisible()) {
@@ -54,14 +89,15 @@ public abstract class JCountdownDialog extends JDialog {
 
                     new GuiRunnable<Object>() {
 
-                        //@Override
+                        // @Override
                         public Object runSave() {
                             countDownLabel.setText(JDLocale.LF("gui.dialogs.countdown.label", "%s sec", left));
                             return null;
                         }
 
                     }.start();
-//                    if (c <= 3) JDSounds.P("sound.captcha.onCaptchaInputEmergency");
+                    // if (c <= 3)
+                    // JDSounds.P("sound.captcha.onCaptchaInputEmergency");
 
                     try {
                         Thread.sleep(1000);

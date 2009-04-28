@@ -23,7 +23,9 @@ public class JDImage {
     /**
      * Alle verfügbaren Bilder werden hier gespeichert
      */
-    public static HashMap<String, BufferedImage> imagesCache = new HashMap<String, BufferedImage>();
+    public static HashMap<String, BufferedImage> BUFFERED_IMAGE_CACHE = new HashMap<String, BufferedImage>();
+    public static HashMap<String, ImageIcon> IMAGE_ICON_CACHE = new HashMap<String, ImageIcon>();
+    public static HashMap<String, Image> SCALED_IMAGE_CACHE = new HashMap<String, Image>();
 
     public static ImageIcon iconToImage(Icon icon) {
         if (icon == null) return null;
@@ -44,14 +46,17 @@ public class JDImage {
     }
 
     public static ImageIcon getFileIcon(String ext) {
-
+        String id;
+        ImageIcon ret;
+        if ((ret = IMAGE_ICON_CACHE.get(id = "ext_" + ext + "")) != null) return ret;
         File file = null;
         try {
             file = File.createTempFile("icon", "." + ext);
 
             sun.awt.shell.ShellFolder shellFolder = sun.awt.shell.ShellFolder.getShellFolder(file);
-
-            return new ImageIcon(shellFolder.getIcon(true));
+            ret = new ImageIcon(shellFolder.getIcon(true));
+            IMAGE_ICON_CACHE.put(id, ret);
+            return ret;
 
         } catch (Throwable e) {
 
@@ -71,23 +76,58 @@ public class JDImage {
     }
 
     public static ImageIcon getScaledImageIcon(ImageIcon img, int width, int height) {
-        return new ImageIcon(getScaledImage((BufferedImage) img.getImage(), width, height));
+        ImageIcon ret;
+        String id;
+        long start = System.currentTimeMillis();
+        if ((ret = IMAGE_ICON_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) {
+            System.out.println("Return cached image: " + id + "(" + (System.currentTimeMillis() - start) + ")");
+            return ret;
+        }
+        ret = new ImageIcon(getScaledImage((BufferedImage) img.getImage(), width, height));
+        IMAGE_ICON_CACHE.put(id, ret);
+        System.out.println("Return new scaled image: " + id + "(" + (System.currentTimeMillis() - start) + ")");
 
+        return ret;
     }
 
     public static Image getScaledImage(ImageIcon img, int width, int height) {
-        return getScaledImage((BufferedImage) img.getImage(), width, height);
+        Image ret;
+        String id;
+        long start = System.currentTimeMillis();
+
+        if ((ret = SCALED_IMAGE_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) {
+            System.out.println("Return cached image: " + id + "(" + (System.currentTimeMillis() - start) + ")");
+            return ret;
+        }
+        ret = getScaledImage((BufferedImage) img.getImage(), width, height);
+        SCALED_IMAGE_CACHE.put(id, ret);
+        System.out.println("Return new scaled image: " + id + "(" + (System.currentTimeMillis() - start) + ")");
+        return ret;
 
     }
 
     public static Image getScaledImage(BufferedImage img, int width, int height) {
-        // corrects the viewport
+        Image ret;
+        String id;
+        long start = System.currentTimeMillis();
+
+        if ((ret = SCALED_IMAGE_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) {
+            System.out.println("Return cached image: " + id + "(" + (System.currentTimeMillis() - start) + ")");
+            return ret;
+        }
         if (img == null) return null;
+        if ((ret = SCALED_IMAGE_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) {
+            System.out.println("Return cached image: " + id + "(" + (System.currentTimeMillis() - start) + ")");
+            return ret;
+        }
         double faktor = Math.min((double) img.getWidth() / width, (double) img.getHeight() / height);
         width = (int) (img.getWidth() / faktor);
         height = (int) (img.getHeight() / faktor);
         if (faktor == 1.0) return img;
-        return img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+        ret = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+        SCALED_IMAGE_CACHE.put(id, ret);
+        System.out.println("Return new scaled image: " + id + "(" + (System.currentTimeMillis() - start) + ")");
+        return ret;
 
     }
 
@@ -101,27 +141,32 @@ public class JDImage {
      */
     public static BufferedImage getImage(String imageName) {
         File file;
+        long i = System.currentTimeMillis();
         if (!(file = JDUtilities.getResourceFile("jd/img/" + imageName + ".png")).exists()) return null;
-        if (!imagesCache.containsKey(imageName)) {
-            BufferedImage newImage;
-            try {
-                newImage = ImageIO.read(file);
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
-                return null;
-            }
-            imagesCache.put(imageName, newImage);
+        BufferedImage ret;
+        if ((ret = BUFFERED_IMAGE_CACHE.get(imageName)) != null) {
+            System.out.println("loaded cached image " + imageName + "(" + (System.currentTimeMillis() - i) + ")");
+            return ret;
+        }
 
+        try {
+            ret = ImageIO.read(file);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            return null;
         }
-        if (new ImageIcon(imagesCache.get(imageName)).getIconWidth() < 4) {
-            System.out.println(imageName);
-        }
-        return imagesCache.get(imageName);
+        BUFFERED_IMAGE_CACHE.put(imageName, ret);
+        System.out.println("loaded new image " + imageName + "(" + (System.currentTimeMillis() - i) + ")");
+        return ret;
+
     }
 
     public static ImageIcon getImageIcon(String string) {
-        // TODO Auto-generated method stub
-        return new ImageIcon(getImage(string));
+        ImageIcon ret;
+        if ((ret = IMAGE_ICON_CACHE.get(string)) != null) { return ret; }
+        ret = new ImageIcon(getImage(string));
+        IMAGE_ICON_CACHE.put(string, ret);
+        return ret;
     }
 }

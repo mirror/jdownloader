@@ -32,6 +32,7 @@ import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.Screen;
 import jd.utils.JDLocale;
@@ -52,9 +53,9 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     protected JPanel contentpane;
 
-    private int flag;
+    protected int flag;
 
-    private Object returnValue = null;
+    private int returnValue = -1;
 
     private ImageIcon icon;
 
@@ -77,7 +78,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
     }
 
     public void init() {
-        if ((flag & UserIO.DONT_SHOW_AGAIN) > 0) {
+        if (JDFlags.hasAllFlags(flag , UserIO.DONT_SHOW_AGAIN)) {
             SubConfiguration cfg = SubConfiguration.getConfig(DIALOGS_CONFIG);
             // System.out.println(cfg+toString()+"This restore" +
             // "DONT_SHOW_AGAIN_" + JDHash.getMD5(this.toString()) + " " +
@@ -138,11 +139,18 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         this.toFront();
         this.setAlwaysOnTop(true);
         SubConfiguration cfg = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
-        if ((flag & UserIO.NO_COUNTDOWN) == 0) this.countdown(Math.max(2, cfg.getIntegerProperty(SimpleGuiConstants.PARAM_INPUTTIMEOUT, 20)));
-
+        if (JDFlags.hasAllFlags(flag, UserIO.NO_COUNTDOWN)) this.countdown(Math.max(2, cfg.getIntegerProperty(SimpleGuiConstants.PARAM_INPUTTIMEOUT, 20)));
+this.packed();
         this.setVisible(true);
         this.toFront();
 
+    }
+/**
+ * may be overwritten to set focus to special components etc.
+ */
+    protected void packed() {
+        // TODO Auto-generated method stub
+        
     }
 
     public String toString() {
@@ -172,7 +180,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     private void setReturnValue(boolean b) {
         returnValue = b ? UserIO.RETURN_OK : UserIO.RETURN_CANCEL;
-        if ((flag & UserIO.DONT_SHOW_AGAIN) > 0) {
+        if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN)) {
 
             if (dont.isSelected()) {
                 returnValue = b ? UserIO.RETURN_OK | UserIO.RETURN_DONT_SHOW_AGAIN : UserIO.RETURN_CANCEL | UserIO.RETURN_DONT_SHOW_AGAIN;
@@ -188,7 +196,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     }
 
-    public Object getReturnValue() {
+    public int getReturnValue() {
         // TODO Auto-generated method stub
 
         return returnValue;

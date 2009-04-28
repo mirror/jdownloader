@@ -8,6 +8,7 @@ import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.userio.dialog.CaptchaDialog;
 import jd.gui.userio.dialog.ConfirmDialog;
+import jd.gui.userio.dialog.InputDialog;
 import jd.utils.JDTheme;
 
 public class SimpleUserIO extends UserIO {
@@ -43,7 +44,7 @@ public class SimpleUserIO extends UserIO {
         // ), "01234", null);
         // System.out.println("result: " + res);
 
-       System.out.println(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN|UserIO.NO_COUNTDOWN | UserIO.NO_OK_OPTION, "title23", "message final\r\n int flag, f\r\ninal String title, final\r\n S\r\ntring message, final Ima\r\ngeIcon icon, final String okOption, final String cancelOption) {", JDTheme.II("gui.clicknload", 32, 32), null, null));
+       System.out.println(UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE, "title23", "message final\r\n int flag, f\r\ninal String title, final\r\n S\r\ntring message, final Ima\r\ngeIcon icon, final String okOption, final String cancelOption) {","defaultvalue", JDTheme.II("gui.clicknload", 32, 32), null, null));
     }
 
     // @Override
@@ -54,6 +55,18 @@ public class SimpleUserIO extends UserIO {
             // @Override
             public Integer runSave() {
                 return new ConfirmDialog(flag, title, message, icon, okOption, cancelOption).getReturnID();
+            }
+        }.getReturnValue();
+    }
+
+    @Override
+    protected String showInputDialog(final int flag, final String title, final String message, final String defaultMessage, final ImageIcon icon, final String okOption, final String cancelOption) {
+        if ((flag & UserIO.NO_USER_INTERACTION) > 0) return defaultMessage;
+        return new GuiRunnable<String>() {
+
+            // @Override
+            public String runSave() {
+                return new InputDialog(flag, title, message,defaultMessage, icon, okOption, cancelOption).getReturnID();
             }
         }.getReturnValue();
     }

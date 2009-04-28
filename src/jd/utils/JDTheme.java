@@ -146,7 +146,7 @@ public class JDTheme {
         BufferedImage img = JDImage.getImage(string + "_" + width + "_" + height);
         if (img != null) return img;
         try {
-            logger.finer("Unscaled image: " + string + "_" + width + "_" + height);
+            
             return JDImage.getScaledImage(JDImage.getImage(string), width, height);
         } catch (Exception e) {
             logger.severe("Could not find image: " + string);
