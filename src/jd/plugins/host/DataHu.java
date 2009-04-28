@@ -37,12 +37,12 @@ public class DataHu extends PluginForHost {
         this.enablePremium("http://data.hu/premium.php");
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://data.hu/adatvedelem.php";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -54,7 +54,7 @@ public class DataHu extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -78,7 +78,7 @@ public class DataHu extends PluginForHost {
         return false;
     }
 
-    @Override
+    //@Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
@@ -103,7 +103,7 @@ public class DataHu extends PluginForHost {
         return ai;
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         login(account);
@@ -115,7 +115,7 @@ public class DataHu extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         getFileInformation(downloadLink);
@@ -130,30 +130,30 @@ public class DataHu extends PluginForHost {
 
     }
 
-    @Override
+    //@Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
 
-    @Override
+    //@Override
     public int getMaxConnections() {
         return 1;
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

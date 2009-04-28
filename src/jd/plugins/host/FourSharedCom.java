@@ -35,12 +35,12 @@ public class FourSharedCom extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://www.4shared.com/terms.jsp";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -53,7 +53,7 @@ public class FourSharedCom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -66,7 +66,7 @@ public class FourSharedCom extends PluginForHost {
         COUNTER--;
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         try {
             handleFree0(downloadLink);
@@ -102,20 +102,20 @@ public class FourSharedCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 2;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

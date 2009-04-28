@@ -38,12 +38,12 @@ public class RappersIn extends PluginForHost {
         return link.getDownloadURL().replaceAll("httpRappersIn://", "http://").replaceAll("viaRappersIn", "rappers.in");
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         URLConnectionAdapter urlConnection = br.openGetConnection(getDownloadUrl(downloadLink));
         if (!urlConnection.isOK()) return false;
@@ -51,20 +51,20 @@ public class RappersIn extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         downloadLink.setUrlDownload(getDownloadUrl(downloadLink));
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -87,7 +87,7 @@ public class RappersIn extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
         

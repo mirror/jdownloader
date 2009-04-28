@@ -40,12 +40,12 @@ public class BadongoCom extends PluginForHost {
         this.enablePremium("http://www.badongo.com/compare");
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://www.badongo.com/toc/";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         br.setCookiesExclusive(true);
         br.setCookie("http://www.badongo.com", "badongoL", "de");
@@ -73,12 +73,12 @@ public class BadongoCom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         getFileInformation(parameter);
         login(account);
@@ -105,7 +105,7 @@ public class BadongoCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         String link = null;
@@ -158,16 +158,16 @@ public class BadongoCom extends PluginForHost {
         if (br.containsHTML("Du hast Deine Download Quote überschritten")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
@@ -194,7 +194,7 @@ public class BadongoCom extends PluginForHost {
         }
     }
 
-    @Override
+    //@Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -215,7 +215,7 @@ public class BadongoCom extends PluginForHost {
         return ai;
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

@@ -84,7 +84,7 @@ public class Installer {
         // logger.info("ConfigDialog");
         new GuiRunnable<Object>() {
 
-            @Override
+            //@Override
             public Object runSave() {
                 ConfigEntriesPanel p = new ConfigEntriesPanel(configContainer);
                 JPanel panel = new JPanel(new BorderLayout());

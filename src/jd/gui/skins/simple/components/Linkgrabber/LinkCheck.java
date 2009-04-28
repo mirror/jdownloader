@@ -21,7 +21,7 @@ import jd.utils.JDLocale;
 
 class LinkCheckBroadcaster extends JDBroadcaster<LinkCheckListener, LinkCheckEvent> {
 
-    @Override
+    //@Override
     protected void fireEvent(LinkCheckListener listener, LinkCheckEvent event) {
         listener.handle_LinkCheckEvent(event);
     }

@@ -38,12 +38,12 @@ public class Youtube extends PluginForHost {
         enablePremium("http://www.youtube.com/login?next=/index");
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://youtube.com/t/terms";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         downloadLink.setFinalFileName(downloadLink.getStringProperty("finalname", "video.tmp"));
         br.setFollowRedirects(true);
@@ -56,12 +56,12 @@ public class Youtube extends PluginForHost {
         return false;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         br.setCookiesExclusive(true);
@@ -87,7 +87,7 @@ public class Youtube extends PluginForHost {
         }
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         login(account);
@@ -112,16 +112,16 @@ public class Youtube extends PluginForHost {
         }
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
@@ -135,7 +135,7 @@ public class Youtube extends PluginForHost {
         if (!br.getRegex("<title>YouTube - " + account.getUser() + "'s YouTube</title>").matches()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
     }
 
-    @Override
+    //@Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -151,7 +151,7 @@ public class Youtube extends PluginForHost {
         return ai;
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

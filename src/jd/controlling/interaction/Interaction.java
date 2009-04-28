@@ -240,7 +240,7 @@ public abstract class Interaction extends Property implements Serializable {
         this.trigger = trigger;
     }
 
-    @Override
+    //@Override
     public abstract String toString();
 
 }

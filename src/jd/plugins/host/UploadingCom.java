@@ -24,7 +24,7 @@ public class UploadingCom extends PluginForHost {
         this.enablePremium("http://www.uploading.com/premium/");
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://uploading.com/terms/";
     }
@@ -45,7 +45,7 @@ public class UploadingCom extends PluginForHost {
         if (br.getCookie("http://www.uploading.com/", "ulogin") == null || br.getCookie("http://www.uploading.com/", "upass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    @Override
+    //@Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
@@ -67,7 +67,7 @@ public class UploadingCom extends PluginForHost {
         return ai;
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         getFileInformation(link);
         login(account);
@@ -109,7 +109,7 @@ public class UploadingCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -124,12 +124,12 @@ public class UploadingCom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         br.setFollowRedirects(true);
@@ -151,31 +151,31 @@ public class UploadingCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 5;
     }
 
-    @Override
+    //@Override
     public int getTimegapBetweenConnections() {
         return 2500;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
 
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

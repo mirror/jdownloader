@@ -140,7 +140,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
         // "jAntiCaptcha active!"));
         // final String host = plugin.getHost();
         // jacThread = new Thread("JAC") {
-        // @Override
+        // //@Override
         // public void run() {
         //
         // String code = null;
@@ -234,7 +234,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
 
             private String code;
 
-            @Override
+            //@Override
             protected Object doInBackground() throws Exception {
                 CaptchaController cc = new CaptchaController(method, imagefile, null, null);
                 this.code = cc.getCode(flag | UserIO.NO_USER_INTERACTION);
@@ -289,7 +289,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
     public void keyTyped(KeyEvent e) {
     }
 
-    @Override
+    //@Override
     protected void onCountdown() {
         this.captchaText = textField.getText();
         this.dispose();

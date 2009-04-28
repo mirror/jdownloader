@@ -27,12 +27,12 @@ public class EgoshareCom extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://www.egoshare.com/faq.php";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -44,12 +44,12 @@ public class EgoshareCom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
@@ -112,20 +112,20 @@ public class EgoshareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

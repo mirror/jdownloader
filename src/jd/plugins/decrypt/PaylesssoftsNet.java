@@ -16,7 +16,7 @@ public class PaylesssoftsNet extends PluginForDecrypt {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String param = parameter.toString();
@@ -48,7 +48,7 @@ public class PaylesssoftsNet extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

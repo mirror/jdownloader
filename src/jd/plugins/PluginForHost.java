@@ -132,7 +132,7 @@ public abstract class PluginForHost extends Plugin {
         return false;
     }
 
-    @Override
+    //@Override
     public void clean() {
         dl = null;
         super.clean();
@@ -154,7 +154,7 @@ public abstract class PluginForHost extends Plugin {
         br.clearCookies(getHost());
     }
 
-    @Override
+    //@Override
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {
             SimpleGUI.displayConfig(config, 0);
@@ -203,7 +203,7 @@ public abstract class PluginForHost extends Plugin {
         accountWithoutUsername = b;
     }
 
-    @Override
+    //@Override
     public ArrayList<MenuItem> createMenuitems() {
 
         ArrayList<MenuItem> menuList = new ArrayList<MenuItem>();

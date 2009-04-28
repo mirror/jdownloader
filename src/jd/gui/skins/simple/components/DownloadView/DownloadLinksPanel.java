@@ -104,7 +104,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         }
     }
 
-    @Override
+    //@Override
     public void onDisplay() {
         visible = true;
         updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
@@ -115,7 +115,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         internalTreeTable.addKeyListener(internalTreeTable);
     }
 
-    @Override
+    //@Override
     public void onHide() {
         visible = false;
         JDUtilities.getDownloadController().getBroadcaster().removeListener(this);

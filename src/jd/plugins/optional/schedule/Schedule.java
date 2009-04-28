@@ -63,7 +63,7 @@ public class Schedule extends PluginOptional {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public String getIconKey() {
 
         return "gui.images.config.eventmanager";
@@ -81,11 +81,11 @@ public class Schedule extends PluginOptional {
 
             private static final long serialVersionUID = 4758934444244058336L;
 
-            @Override
+            //@Override
             public void onDisplay() {
             }
 
-            @Override
+            //@Override
             public void onHide() {
                 getPluginConfig().setProperty(PROPERTY_SCHEDULES, schedules);
                 getPluginConfig().save();
@@ -137,7 +137,7 @@ public class Schedule extends PluginOptional {
 
     }
 
-    @Override
+    //@Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
             initGUI();
@@ -217,40 +217,40 @@ public class Schedule extends PluginOptional {
         return 3;
     }
 
-    @Override
+    //@Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         menu.add(new MenuItem(getHost(), 0).setActionListener(this));
         return menu;
     }
 
-    @Override
+    //@Override
     public String getCoder() {
         return "JD-Team / Tudels";
     }
 
-    @Override
+    //@Override
     public String getHost() {
         return JDLocale.L("addons.schedule.name", "Schedule");
     }
 
-    @Override
+    //@Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public boolean initAddon() {
         logger.info("Schedule OK");
         return true;
     }
 
-    @Override
+    //@Override
     public void onExit() {
     }
 

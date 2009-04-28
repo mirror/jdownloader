@@ -62,7 +62,7 @@ public class MegasharesCom extends PluginForHost {
         }
     }
 
-    @Override
+    //@Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -96,7 +96,7 @@ public class MegasharesCom extends PluginForHost {
         br.setFollowRedirects(tmp);
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         login(account);
@@ -115,7 +115,7 @@ public class MegasharesCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         loadpage(downloadLink);
@@ -219,12 +219,12 @@ public class MegasharesCom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         setBrowserExclusive();
         loadpage(downloadLink);
@@ -251,31 +251,31 @@ public class MegasharesCom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
+    //@Override
     public int getTimegapBetweenConnections() {
         return 2000;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
 
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

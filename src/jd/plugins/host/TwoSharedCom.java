@@ -35,12 +35,12 @@ public class TwoSharedCom extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://www.2shared.com/terms.jsp";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         br.setCookiesExclusive(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -59,12 +59,12 @@ public class TwoSharedCom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
@@ -96,20 +96,20 @@ public class TwoSharedCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

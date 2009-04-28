@@ -61,7 +61,7 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
         this.acceptDirectories = acceptDirectories;
     }
 
-    @Override
+    //@Override
     public boolean accept(File f) {
         if (f.isDirectory()) return acceptDirectories;
         for (String element : extension) {
@@ -73,7 +73,7 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
     /**
      * Gibt die Filefilter Beschreibung zurück
      */
-    @Override
+    //@Override
     public String getDescription() {
         return this.description;
     }

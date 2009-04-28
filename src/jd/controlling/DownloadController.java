@@ -28,7 +28,7 @@ import jd.utils.JDUtilities;
 
 class DownloadControllerBroadcaster extends JDBroadcaster<DownloadControllerListener, DownloadControllerEvent> {
 
-    @Override
+    //@Override
     protected void fireEvent(DownloadControllerListener listener, DownloadControllerEvent event) {
         listener.onDownloadControllerEvent(event);
 

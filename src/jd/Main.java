@@ -37,6 +37,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
@@ -54,6 +55,7 @@ import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDEventQueue;
 import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.userio.SimpleUserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -163,9 +165,9 @@ public class Main {
                 JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
             }
         }
-
-        preInitChecks();
         UserIO.setInstance(SimpleUserIO.getInstance());
+        preInitChecks();
+        
         for (int i = 0; i < args.length; i++) {
 
             if (args[i].equals("-prot")) {
@@ -260,7 +262,7 @@ public class Main {
                     LOGGER.info("init Splash");
                     new GuiRunnable<Object>() {
 
-                        @Override
+                        // @Override
                         public Object runSave() {
                             try {
                                 splashScreen = new SplashScreen(JDTheme.I("gui.splash"));
@@ -348,6 +350,19 @@ public class Main {
             LOGGER.warning("Javacheck: Wrong Java Version! JDownloader needs at least Java 1.5 or higher!");
             System.exit(0);
         }
+        if(JDUtilities.getJavaVersion()<1.6 && !OSDetector.isMac()){
+            int returnValue = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN|UserIO.NO_CANCEL_OPTION,JDLocale.LF("gui.javacheck.newerjavaavailable.title","Outdated Javaversion found: %s!",JDUtilities.getJavaVersion()), JDLocale.L("gui.javacheck.newerjavaavailable.msg","Although JDownloader runs on your javaversion, we advise to install the latest java updates. \r\nJDownloader will run more stable, faster, and will look better. \r\n\r\nVisit http://jdownloader.org/download."), JDTheme.II("gui.images.warning",32,32), null,null);
+           if((returnValue&UserIO.RETURN_SKIPPED_BY_DONT_SHOW)==0){
+               try {
+                   JLinkButton.openURL("http://jdownloader.org/download/index?updatejava=1");
+               } catch (Exception e) {
+                   // TODO Auto-generated catch block
+                   e.printStackTrace();
+               }
+           }
+      
+        }
+        
 
     }
 
@@ -423,7 +438,7 @@ public class Main {
         Main.increaseSplashStatus();
         new GuiRunnable<Object>() {
 
-            @Override
+            // @Override
             public Object runSave() {
                 init.initGUI(controller);
                 return null;

@@ -78,7 +78,7 @@ public class Var extends Element {
         }
     }
 
-    @Override
+    //@Override
     public String parse(Hashtable<?, ?> params) {
         String value = null;
 
@@ -120,7 +120,7 @@ public class Var extends Element {
         }
     }
 
-    @Override
+    //@Override
     public String typeOfParam(String param) throws NoSuchElementException {
         throw new NoSuchElementException(param);
     }

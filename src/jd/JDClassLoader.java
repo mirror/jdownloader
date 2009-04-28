@@ -180,7 +180,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         return null;
     }
 
-    @Override
+    //@Override
     protected URL findResource(String name) {
 
         URL url;
@@ -231,7 +231,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         return null;
     }
 
-    @Override
+    //@Override
     public URL getResource(String name) {
 
         if (jars != null) {
@@ -267,7 +267,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         return null;
     }
 
-    @Override
+    //@Override
     public Enumeration<URL> getResources(String name) throws IOException {
         Vector<URL> urls = new Vector<URL>();
 
@@ -312,7 +312,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
      * System-Classloader geladen werden kann. Erst zum Schluß wird versucht,
      * diese Klasse selbst zu laden.
      */
-    @Override
+    //@Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         Class<?> c = findLoadedClass(name);
         if (c == null) {

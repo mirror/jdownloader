@@ -168,7 +168,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
     public abstract void save();
 
-    @Override
+    //@Override
     public void onDisplay() {
         System.out.println("Display " + this);
         loadConfigEntries();

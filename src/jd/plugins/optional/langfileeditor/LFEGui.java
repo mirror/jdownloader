@@ -1002,7 +1002,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             return this.getKey().compareToIgnoreCase(o.getKey());
         }
 
-        @Override
+        //@Override
         public String toString() {
             return this.getKey() + " = " + this.getLanguage();
         }
@@ -1041,7 +1041,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             return data.size();
         }
 
-        @Override
+        //@Override
         public String getColumnName(int col) {
             return columnNames[col];
         }
@@ -1058,17 +1058,17 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             return "";
         }
 
-        @Override
+        //@Override
         public Class<?> getColumnClass(int c) {
             return String.class;
         }
 
-        @Override
+        //@Override
         public boolean isCellEditable(int row, int col) {
             return true;
         }
 
-        @Override
+        //@Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 2) {
                 data.get(row).setLanguage((String) value);
@@ -1146,7 +1146,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 return tableData.size();
             }
 
-            @Override
+            //@Override
             public String getColumnName(int col) {
                 return columnNames[col];
             }
@@ -1169,13 +1169,13 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 return "";
             }
 
-            @Override
+            //@Override
             public Class<?> getColumnClass(int col) {
                 if (col == 0) return Integer.class;
                 return String.class;
             }
 
-            @Override
+            //@Override
             public boolean isCellEditable(int row, int col) {
                 return (col == 1);
             }
@@ -1183,11 +1183,11 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         }
     }
 
-    @Override
+    //@Override
     public void onDisplay() {
     }
 
-    @Override
+    //@Override
     public void onHide() {
         if (changed && JOptionPane.showConfirmDialog(this, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             saveLanguageFile(languageFile);

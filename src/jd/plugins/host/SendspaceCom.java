@@ -42,7 +42,7 @@ public class SendspaceCom extends PluginForHost {
         setStartIntervall(5000l);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://www.sendspace.com/terms.html";
     }
@@ -61,7 +61,7 @@ public class SendspaceCom extends PluginForHost {
         return false;
     }
 
-    @Override
+    //@Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
@@ -90,7 +90,7 @@ public class SendspaceCom extends PluginForHost {
         return ai;
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         getFileInformation(link);
         login(account);
@@ -102,7 +102,7 @@ public class SendspaceCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
@@ -121,12 +121,12 @@ public class SendspaceCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
@@ -170,20 +170,20 @@ public class SendspaceCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

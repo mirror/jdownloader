@@ -51,7 +51,7 @@ public class FindRouterIP {
     public FindRouterIP(final GUIConfigEntry ip) {
 
         new Thread() {
-            @Override
+            //@Override
             public void run() {
                 findIP(ip);
             }

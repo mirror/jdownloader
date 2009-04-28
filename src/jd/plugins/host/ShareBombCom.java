@@ -35,12 +35,12 @@ public class ShareBombCom extends PluginForHost {
         this.setStartIntervall(2000l);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://www1.sharebomb.com/tos";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
@@ -65,12 +65,12 @@ public class ShareBombCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         /* Link holen */
@@ -101,30 +101,30 @@ public class ShareBombCom extends PluginForHost {
 
     }
 
-    @Override
+    //@Override
     public int getMaxRetries() {
         return 1;
     }
 
-    @Override
+    //@Override
     public int getTimegapBetweenConnections() {
         return 2000;
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 3;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
         

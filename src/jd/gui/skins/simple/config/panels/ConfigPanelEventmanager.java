@@ -62,7 +62,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 
         private static final long serialVersionUID = 1155282457354673850L;
 
-        @Override
+        //@Override
         public Class<?> getColumnClass(int columnIndex) {
             return String.class;
         }
@@ -71,7 +71,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
             return 3;
         }
 
-        @Override
+        //@Override
         public String getColumnName(int column) {
             switch (column) {
             case 0:
@@ -216,7 +216,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         pop.setVisible(true);
     }
 
-    @Override
+    //@Override
     public void initPanel() {
     
 
@@ -271,7 +271,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
     
     }
 
-    @Override
+    //@Override
     public void load() {
     }
 
@@ -300,7 +300,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         this.changes = false;
     }
 
-    @Override
+    //@Override
     public void save() {
         subConfig.setProperty(Configuration.PARAM_INTERACTIONS, interactions);
         subConfig.save();

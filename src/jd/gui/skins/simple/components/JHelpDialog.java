@@ -73,7 +73,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
         d.getBtn1().setText(helpMsg);
         d.getBtn2().setText(JDLocale.L("gui.btn_ok", "OK"));
         d.action1 = d.new Action() {
-            @Override
+            //@Override
             public boolean doAction() {
                 try {
                     JLinkButton.openURL(url);
@@ -148,7 +148,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
 
             countdownThread = new Thread() {
 
-                @Override
+                //@Override
                 public void run() {
                     int c = countdown;
 

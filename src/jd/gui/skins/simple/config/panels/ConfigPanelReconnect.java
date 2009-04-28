@@ -107,7 +107,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
                     while (true) {
                         new GuiRunnable<Object>() {
 
-                            @Override
+                            //@Override
                             public Object runSave() {
                                 time.setText(Formatter.formatSeconds((System.currentTimeMillis() - timel) / 1000));
                                 time.setEnabled(true);
@@ -128,7 +128,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
             JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, 0);
             progress.setStatus(30);
             new Thread() {
-                @Override
+                //@Override
                 public void run() {
                     boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
@@ -166,7 +166,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         }
     }
 
-    @Override
+    //@Override
     public void initPanel() {
         /* 0=LiveHeader, 1=Extern, 2=Batch,3=CLR */
 
@@ -265,7 +265,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     }
 
-    @Override
+    //@Override
     public void load() {
         loadConfigEntries();
     }
@@ -275,7 +275,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         return PropertyType.getMax(ret, super.hasChanges(), ((ConfigPanel) tabbed.getSelectedComponent()).hasChanges());
     }
 
-    @Override
+    //@Override
     public void save() {
 
         saveConfigEntries();

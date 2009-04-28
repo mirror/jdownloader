@@ -33,7 +33,7 @@ public class WrzutaPl extends PluginForDecrypt {
         // TODO Auto-generated constructor stub
     }
 
-    @Override
+    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setCookiesExclusive(true);
@@ -67,7 +67,7 @@ public class WrzutaPl extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

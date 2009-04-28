@@ -26,7 +26,7 @@ import jd.utils.JDUtilities;
 
 class ProgressControllerBroadcaster extends JDBroadcaster<ProgressControllerListener, ProgressControllerEvent> {
 
-    @Override
+    //@Override
     protected void fireEvent(ProgressControllerListener listener, ProgressControllerEvent event) {
         listener.handle_ProgressControllerEvent(event);
 
@@ -108,7 +108,7 @@ public class ProgressController {
         setStatus(currentValue - 1);
     }
 
-    @Override
+    //@Override
     public void finalize() {
         if (finalizing) return;
         finished = true;
@@ -209,7 +209,7 @@ public class ProgressController {
         fireChanges();
     }
 
-    @Override
+    //@Override
     public String toString() {
         return "ProgressController " + id;
     }

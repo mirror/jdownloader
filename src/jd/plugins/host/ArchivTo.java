@@ -35,13 +35,13 @@ public class ArchivTo extends PluginForHost {
         // TODO Auto-generated constructor stub
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
 
         return "http://archiv.to/?Module=Policy";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         try {
             br.setFollowRedirects(true);
@@ -60,13 +60,13 @@ public class ArchivTo extends PluginForHost {
         return false;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
 
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         br.setCookiesExclusive(true);
@@ -83,20 +83,20 @@ public class ArchivTo extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

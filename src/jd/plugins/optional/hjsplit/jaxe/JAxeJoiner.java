@@ -51,14 +51,14 @@ public class JAxeJoiner extends AxeWriterWorker {
         sDestDir = sDir;
     }
 
-    @Override
+    //@Override
     protected boolean checkNoOverwrite(File f) {
         File fTemp = new File(sJoinedFile);
 
         return !fTemp.exists();
     }
 
-    @Override
+    //@Override
     protected void computeJobSize() {
         long lReturn = 0;
         int i = 1;
@@ -77,7 +77,7 @@ public class JAxeJoiner extends AxeWriterWorker {
         new File(sJoinedFile).delete();
     }
 
-    @Override
+    //@Override
     public void run() {
         File fToJoin, fTemp = null;
         InputStream is = null;

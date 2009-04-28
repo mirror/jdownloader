@@ -41,7 +41,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
         load();
     }
 
-    @Override
+    //@Override
     public void initPanel() {
         ConfigEntry conditionEntry;
 
@@ -59,12 +59,12 @@ ConfigGroup logging = new ConfigGroup(JDLocale.L("gui.config.general.logging", "
         this.add(panel, BorderLayout.NORTH);
     }
 
-    @Override
+    //@Override
     public void load() {
         loadConfigEntries();
     }
 
-    @Override
+    //@Override
     public void save() {
         saveConfigEntries();
         logger.setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));

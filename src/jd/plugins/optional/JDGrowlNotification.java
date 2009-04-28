@@ -30,22 +30,22 @@ public class JDGrowlNotification extends PluginOptional {
 
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
 
-    @Override
+    //@Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public String getHost() {
         return JDLocale.L("plugins.optional.jdgrowlnotification.name", "JDGrowlNotification");
     }
 
-    @Override
+    //@Override
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
         logger.info("Growl OK");
@@ -61,7 +61,7 @@ public class JDGrowlNotification extends PluginOptional {
         }
     }
 
-    @Override
+    //@Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
@@ -112,7 +112,7 @@ public class JDGrowlNotification extends PluginOptional {
         }
     }
 
-    @Override
+    //@Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
     }

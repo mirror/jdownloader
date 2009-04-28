@@ -53,7 +53,7 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
         this.setAnimated(SimpleGuiConstants.isAnimated());
         JDController.getInstance().addControlListener(new ConfigPropertyListener( SimpleGuiConstants.ANIMATION_ENABLED) {     
 
-            @Override
+            //@Override
             public void onPropertyChanged(Property source, String propertyName) {
                 setAnimated(SimpleGuiConstants.isAnimated());
                 

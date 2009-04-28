@@ -44,7 +44,7 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
         doInteraction(null);
     }
 
-    @Override
+    //@Override
     public boolean doInteraction(Object arg) {
         String command = Replacer.insertVariables(getStringProperty(PROPERTY_COMMAND));
         String parameter = Replacer.insertVariables(getStringProperty(PROPERTY_PARAMETER));
@@ -68,12 +68,12 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
         return true;
     }
 
-    @Override
+    //@Override
     public String getInteractionName() {
         return JDLocale.L("interaction.simpleExecute.name", "Programm/Script ausführen");
     }
 
-    @Override
+    //@Override
     public void initConfig() {
         ConfigEntry cfg;
         ConfigEntry conditionEntry;
@@ -96,7 +96,7 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
         cfg.setEnabledCondidtion(conditionEntry, "==", true);
     }
 
-    @Override
+    //@Override
     public String toString() {
         return JDLocale.L("interaction.simpleExecute.name", "Programm/Script ausführen");
     }

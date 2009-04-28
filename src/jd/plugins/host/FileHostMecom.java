@@ -39,7 +39,7 @@ public class FileHostMecom extends PluginForHost {
         this.enablePremium("http://www.filehostme.com/premium.html");
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://www.filehostme.com/tos.html";
     }
@@ -61,7 +61,7 @@ public class FileHostMecom extends PluginForHost {
         return false;
     }
 
-    @Override
+    //@Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         setBrowserExclusive();
@@ -86,7 +86,7 @@ public class FileHostMecom extends PluginForHost {
         return ai;
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -98,12 +98,12 @@ public class FileHostMecom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         getFileInformation(parameter);
         login(account);
@@ -159,7 +159,7 @@ public class FileHostMecom extends PluginForHost {
         return retcap;
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
@@ -196,20 +196,20 @@ public class FileHostMecom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

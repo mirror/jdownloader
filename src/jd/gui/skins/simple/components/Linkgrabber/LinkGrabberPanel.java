@@ -127,7 +127,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         }
     }
 
-    @Override
+    //@Override
     public void onHide() {
         LGINSTANCE.getBroadcaster().removeListener(this);
         Update_Async.stop();
@@ -211,7 +211,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         Update_Async.restart();
     }
 
-    @Override
+    //@Override
     public void onDisplay() {
         fireTableChanged(1, null);
         LGINSTANCE.getBroadcaster().addListener(this);

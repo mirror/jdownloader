@@ -68,7 +68,7 @@ public class Uploadedto extends PluginForHost {
 
     }
 
-    @Override
+    //@Override
     public int getTimegapBetweenConnections() {
         return 800;
     }
@@ -93,7 +93,7 @@ public class Uploadedto extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -123,7 +123,7 @@ public class Uploadedto extends PluginForHost {
         return ai;
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(downloadLink);
@@ -184,12 +184,12 @@ public class Uploadedto extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         correctURL(downloadLink);
@@ -216,7 +216,7 @@ public class Uploadedto extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -245,7 +245,7 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(downloadLink);
@@ -301,20 +301,20 @@ public class Uploadedto extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

@@ -13,7 +13,7 @@ public class RestartAction extends StartAction {
 
     private static final long serialVersionUID = 1333126351380171619L;
 
-    @Override
+    //@Override
     public void init() {
         this.setIconDim(new Dimension(24, 24));
         this.setIcon("gui.images.restart");

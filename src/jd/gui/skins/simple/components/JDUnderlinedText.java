@@ -13,7 +13,7 @@ public class JDUnderlinedText extends MouseAdapter {
     private Font originalFont;
 
     @SuppressWarnings("unchecked")
-    @Override
+    //@Override
     public void mouseEntered(MouseEvent evt) {
         if (!(evt.getSource() instanceof JComponent)) return;
         JComponent src = (JComponent) evt.getSource();
@@ -27,7 +27,7 @@ public class JDUnderlinedText extends MouseAdapter {
 
     }
 
-    @Override
+    //@Override
     public void mouseExited(MouseEvent evt) {
         if (!(evt.getSource() instanceof JComponent)) return;
         JComponent src = (JComponent) evt.getSource();

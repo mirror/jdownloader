@@ -36,7 +36,7 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
         this.setAnimated(SimpleGuiConstants.isAnimated());
         JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
 
-            @Override
+            //@Override
             public void onPropertyChanged(Property source, String propertyName) {
                 setAnimated(SimpleGuiConstants.isAnimated());
 

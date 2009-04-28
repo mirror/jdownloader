@@ -260,7 +260,7 @@ public class BasicWindow extends JFrame {
     private void initWindow() {
         final BasicWindow _this = this;
         addWindowListener(new WindowAdapter() {
-            @Override
+            //@Override
             public void windowClosing(WindowEvent event) {
                 Window window = event.getWindow();
                 _this.setVisible(true);
@@ -278,7 +278,7 @@ public class BasicWindow extends JFrame {
         setBackground(Color.LIGHT_GRAY);
     }
 
-    @Override
+    //@Override
     public void pack() {
         try {
             super.pack();

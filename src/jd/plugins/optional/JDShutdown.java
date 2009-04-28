@@ -58,7 +58,7 @@ public class JDShutdown extends PluginOptional {
         initConfig();
     }
 
-    @Override
+    //@Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == menuItem) {
             menuItem.setSelected(!menuItem.isSelected());
@@ -70,7 +70,7 @@ public class JDShutdown extends PluginOptional {
         }
     }
 
-    @Override
+    //@Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
         if (menuItem != null && menuItem.isSelected()) {
@@ -90,7 +90,7 @@ public class JDShutdown extends PluginOptional {
         }
     }
 
-    @Override
+    //@Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         if (menuItem == null) menuItem = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu", "Shutdown after downloads finished"), 0).setActionListener(this);
@@ -98,22 +98,22 @@ public class JDShutdown extends PluginOptional {
         return menu;
     }
 
-    @Override
+    //@Override
     public String getHost() {
         return JDLocale.L("plugins.optional.jdshutdown.name", "JDShutdown");
     }
 
-    @Override
+    //@Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public boolean initAddon() {
 
         JDUtilities.getController().addControlListener(this);
@@ -121,7 +121,7 @@ public class JDShutdown extends PluginOptional {
         return true;
     }
 
-    @Override
+    //@Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
     }

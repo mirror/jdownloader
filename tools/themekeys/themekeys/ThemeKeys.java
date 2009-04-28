@@ -210,7 +210,7 @@ public class ThemeKeys extends JFrame {
             return this.getKey().compareToIgnoreCase(o.getKey());
         }
 
-        @Override
+        //@Override
         public String toString() {
             return this.getKey() + ": " + isInSource() + " ; " + isInTheme();
         }
@@ -247,7 +247,7 @@ public class ThemeKeys extends JFrame {
 
         private final String[] columns = new String[] { "Key", "In Source?", "In Theme?" };
 
-        @Override
+        //@Override
         public Class<?> getColumnClass(int col) {
             if (col == 0) return String.class;
             return Boolean.class;
@@ -261,7 +261,7 @@ public class ThemeKeys extends JFrame {
             return themeData.size();
         }
 
-        @Override
+        //@Override
         public String getColumnName(int column) {
             return columns[column];
         }

@@ -80,7 +80,7 @@ public class RelinkUs extends PluginForDecrypt {
         }
     }
 
-    @Override
+    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
 
         this.progress = progress;
@@ -128,7 +128,7 @@ public class RelinkUs extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

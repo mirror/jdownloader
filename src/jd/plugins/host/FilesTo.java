@@ -34,12 +34,12 @@ public class FilesTo extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://www.files.to/content/aup";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             br.getPage(downloadLink.getDownloadURL());
@@ -55,12 +55,12 @@ public class FilesTo extends PluginForHost {
         return false;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
 
         if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -81,20 +81,20 @@ public class FilesTo extends PluginForHost {
         br.openDownload(downloadLink, url, true, 1).startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
     }
 

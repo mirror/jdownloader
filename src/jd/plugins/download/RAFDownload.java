@@ -63,7 +63,7 @@ public class RAFDownload extends DownloadInterface {
             start();
         }
 
-        @Override
+        //@Override
         public void run() {
             ChunkBuffer buf;
             while (!isInterrupted() || bufferList.size() > 0) {
@@ -146,7 +146,7 @@ public class RAFDownload extends DownloadInterface {
 
     }
 
-    @Override
+    //@Override
     protected void onChunksReady() {
         logger.finer("onCHunksReady");
         if (writer != null) {
@@ -279,7 +279,7 @@ public class RAFDownload extends DownloadInterface {
 
     }
 
-    @Override
+    //@Override
     protected void setupChunks() throws Exception {
         try {
 
@@ -399,7 +399,7 @@ public class RAFDownload extends DownloadInterface {
 
     }
 
-    @Override
+    //@Override
     protected boolean writeChunkBytes(Chunk chunk) {
         if (writeType) {
             ByteBuffer buffer = ByteBuffer.allocateDirect(chunk.buffer.limit());

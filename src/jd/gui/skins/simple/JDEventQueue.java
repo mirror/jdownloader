@@ -59,13 +59,13 @@ public class JDEventQueue extends EventQueue {
 
         }
 
-        @Override
+        //@Override
         public boolean isEnabled() {
             return c.isEditable() && c.isEnabled() && c.getSelectedText() != null;
         }
     }
 
-    @Override
+    //@Override
     protected void dispatchEvent(AWTEvent ev) {
         super.dispatchEvent(ev);
         if (!(ev instanceof MouseEvent)) { return; }
@@ -94,7 +94,7 @@ public class JDEventQueue extends EventQueue {
                 c.copy();
             }
 
-            @Override
+            //@Override
             public boolean isEnabled() {
                 return c.isEnabled() && c.getSelectedText() != null;
             }
@@ -107,7 +107,7 @@ public class JDEventQueue extends EventQueue {
                 c.paste();
             }
 
-            @Override
+            //@Override
             public boolean isEnabled() {
                 if (c.isEditable() && c.isEnabled()) {
                     Transferable contents = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(this);
@@ -134,7 +134,7 @@ public class JDEventQueue extends EventQueue {
                 c.selectAll();
             }
 
-            @Override
+            //@Override
             public boolean isEnabled() {
                 return c.isEnabled() && c.getText().length() > 0;
             }

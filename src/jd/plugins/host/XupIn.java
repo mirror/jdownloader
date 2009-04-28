@@ -36,12 +36,12 @@ public class XupIn extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -53,12 +53,12 @@ public class XupIn extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setDebug(true);
         this.getFileInformation(downloadLink);
@@ -89,21 +89,21 @@ public class XupIn extends PluginForHost {
 
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
+    //@Override
     public void reset() {
 
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

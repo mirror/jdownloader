@@ -56,7 +56,7 @@ public class DepositFiles extends PluginForHost {
         this.enablePremium("http://depositfiles.com/signup.php?ref=down1");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         getFileInformation(downloadLink);
@@ -126,7 +126,7 @@ public class DepositFiles extends PluginForHost {
         return false;
     }
 
-    @Override
+    //@Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         setBrowserExclusive();
@@ -162,7 +162,7 @@ public class DepositFiles extends PluginForHost {
         return ai;
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         login(account);
@@ -202,7 +202,7 @@ public class DepositFiles extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://depositfiles.com/en/agreem.html";
     }
@@ -211,7 +211,7 @@ public class DepositFiles extends PluginForHost {
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("\\.com(/.*?)?/files", ".com/de/files"));
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         correctUrl(downloadLink);
@@ -235,35 +235,35 @@ public class DepositFiles extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public int getTimegapBetweenConnections() {
         return 800;
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

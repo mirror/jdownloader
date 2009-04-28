@@ -87,7 +87,7 @@ public class MegaroticCom extends PluginForHost {
         }
     }
 
-    @Override
+    //@Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
@@ -117,7 +117,7 @@ public class MegaroticCom extends PluginForHost {
         return ai;
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         getFileInformation(parameter);
         login(account);
@@ -148,7 +148,7 @@ public class MegaroticCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://www.megarotic.com/terms/";
     }
@@ -166,7 +166,7 @@ public class MegaroticCom extends PluginForHost {
         }
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("sexuploader.com", "megarotic.com"));
@@ -195,12 +195,12 @@ public class MegaroticCom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getFileInformationString(DownloadLink downloadLink) {
         return (tempUnavailable ? "<Temp. unavailable> " : "") + downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")";
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -307,30 +307,30 @@ public class MegaroticCom extends PluginForHost {
         }
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink parameter) throws Exception {
         getFileInformation(parameter);
         handleFree0(parameter);
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
+    //@Override
     public void reset() {
         captchaPost = null;
         captchaURL = null;
         fields = null;
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
@@ -339,7 +339,7 @@ public class MegaroticCom extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), MU_PARAM_PORT, ports, JDLocale.L("plugins.host.megaupload.ports", "Use this port:")).setDefaultValue("80"));
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

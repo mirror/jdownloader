@@ -33,7 +33,7 @@ public class Document extends HTMLDocumentImpl {
         super(ucontext, rcontext, reader, documentURI);
     }
 
-    @Override
+    //@Override
     public void write(String arg0) {
         content.append(arg0);
         super.write(arg0);

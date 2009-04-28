@@ -35,12 +35,12 @@ public class ClipfishDe extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.clipfish.de/agb/";
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             URLConnectionAdapter urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
@@ -54,21 +54,21 @@ public class ClipfishDe extends PluginForHost {
         }
     }
 
-    @Override
+    //@Override
     public String getVersion() {
 
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         /* Nochmals das File überprüfen */
@@ -99,12 +99,12 @@ public class ClipfishDe extends PluginForHost {
         }
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

@@ -35,12 +35,12 @@ public class FilestoreTo extends PluginForHost {
         this.setStartIntervall(2000l);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://www.filestore.to/rules.php?setlang=en";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
 
@@ -67,12 +67,12 @@ public class FilestoreTo extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
@@ -90,25 +90,25 @@ public class FilestoreTo extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getTimegapBetweenConnections() {
         return 2000;
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 3;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
         

@@ -34,7 +34,7 @@ public class MyvideoDe extends PluginForDecrypt {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<ConversionMode> possibleconverts = new ArrayList<ConversionMode>();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -66,7 +66,7 @@ public class MyvideoDe extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

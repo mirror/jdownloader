@@ -101,7 +101,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
         return count;
     }
 
-    @Override
+    //@Override
     public Class<?> getColumnClass(int column) {
         switch (column) {
         case COL_HIDDEN:
@@ -128,7 +128,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
         return COLUMN_NAMES.length;
     }
 
-    @Override
+    //@Override
     public String getColumnName(int column) {
         return COLUMN_NAMES[column];
     }
@@ -188,13 +188,13 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
         return null;
     }
 
-    @Override
+    //@Override
     public boolean isCellEditable(Object node, int column) {
         return true;
     }
 
 
-    @Override
+    //@Override
     public void setValueAt(Object value, Object node, int col) {
         JDLogger.getLogger().info("NNNN");
     }

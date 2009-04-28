@@ -65,12 +65,12 @@ public class SplitFileFilter extends FileFilter {
         bIESafe = true;
     }
 
-    @Override
+    //@Override
     public boolean accept(File f) {
         return SplitFileFilter.isSplitFile(f.getName(), bIESafe) || f.isDirectory() || SplitFileFilter.isZippedSplitFile(f.getName());
     }
 
-    @Override
+    //@Override
     public String getDescription() {
         return "Files split using JAxe/HJSplit";
     }

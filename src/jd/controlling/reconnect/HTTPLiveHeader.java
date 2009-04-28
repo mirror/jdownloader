@@ -69,7 +69,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
         configuration = JDUtilities.getConfiguration();
     }
 
-    @Override
+    //@Override
     protected boolean runCommands(ProgressController progress) {
         String script;
         if (configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) == ReconnectMethod.CLR) {
@@ -508,11 +508,11 @@ public class HTTPLiveHeader extends ReconnectMethod {
 
     }
 
-    @Override
+    //@Override
     public void initConfig() {
     }
 
-    @Override
+    //@Override
     public String toString() {
         return JDLocale.L("interaction.liveHeader.name", "HTTP Live Header");
     }

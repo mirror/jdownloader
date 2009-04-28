@@ -217,7 +217,7 @@ public class Regex {
         this.matcher = matcher;
     }
 
-    @Override
+    //@Override
     public String toString() {
         StringBuilder ret = new StringBuilder();
         String[][] match = getMatches();

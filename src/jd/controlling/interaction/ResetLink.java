@@ -34,7 +34,7 @@ public class ResetLink extends Interaction implements Serializable {
 
     private static final String PARAM_LAST_OR_ALL = "LAST_OR_ALL";
 
-    @Override
+    //@Override
     public boolean doInteraction(Object arg) {
         logger.info("Starting Reset Link");
         int type = this.getIntegerProperty(PARAM_LAST_OR_ALL, 1);
@@ -58,17 +58,17 @@ public class ResetLink extends Interaction implements Serializable {
         return true;
     }
 
-    @Override
+    //@Override
     public String getInteractionName() {
         return JDLocale.L("interaction.resetLink.name", "Downloadlink zurücksetzen");
     }
 
-    @Override
+    //@Override
     public void initConfig() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this, PARAM_LAST_OR_ALL, new String[] { JDLocale.L("interaction.resetLink.options.all", "all Links"), JDLocale.L("interaction.resetLink.options.lastLink", "only last Link") }, JDLocale.L("interaction.resetLink.whichLink", "Welcher Link soll zurückgesetzt werden?")).setDefaultValue(1));
     }
 
-    @Override
+    //@Override
     public String toString() {
         return JDLocale.L("interaction.resetLink.name", "Downloadlink zurücksetzen");
     }

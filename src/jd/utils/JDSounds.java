@@ -104,7 +104,7 @@ public class JDSounds {
         playing = true;
         if (threated) {
             new Thread() {
-                @Override
+                //@Override
                 public void run() {
                     JDSounds.playMp3(f);
                     playing = false;

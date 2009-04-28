@@ -34,12 +34,12 @@ public class CountingInputStream extends InputStream {
         is = input;
     }
 
-    @Override
+    //@Override
     public int available() throws IOException {
         return is.available();
     }
 
-    @Override
+    //@Override
     public void close() throws IOException {
         is.close();
     }
@@ -63,24 +63,24 @@ public class CountingInputStream extends InputStream {
         return lRead;
     }
 
-    @Override
+    //@Override
     public void mark(int i) {
         is.mark(i);
     }
 
-    @Override
+    //@Override
     public boolean markSupported() {
         return is.markSupported();
     }
 
-    @Override
+    //@Override
     public int read() throws IOException {
         lRead++;
         iLastRead = 1;
         return is.read();
     }
 
-    @Override
+    //@Override
     public int read(byte[] ba) throws IOException {
         iLastRead = is.read(ba);
 
@@ -88,7 +88,7 @@ public class CountingInputStream extends InputStream {
         return iLastRead;
     }
 
-    @Override
+    //@Override
     public int read(byte[] ba, int off, int len) throws IOException {
         iLastRead = is.read(ba, off, len);
 
@@ -96,7 +96,7 @@ public class CountingInputStream extends InputStream {
         return iLastRead;
     }
 
-    @Override
+    //@Override
     public void reset() throws IOException {
         is.reset();
     }
@@ -105,7 +105,7 @@ public class CountingInputStream extends InputStream {
         lTotal = l;
     }
 
-    @Override
+    //@Override
     public long skip(long l) throws IOException {
         return is.skip(l);
     }

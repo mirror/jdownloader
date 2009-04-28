@@ -33,25 +33,25 @@ public class MyVideo extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return AGB;
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
         URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
         if (con.getResponseCode() == 200) { return true; }
         return false;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
 
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
 
@@ -70,21 +70,21 @@ public class MyVideo extends PluginForHost {
         }
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         /* TODO: Wert nachprüfen */
         return 1;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

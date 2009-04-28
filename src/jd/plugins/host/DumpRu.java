@@ -29,12 +29,12 @@ public class DumpRu extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://dump.ru/pages/about/";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             setBrowserExclusive();
@@ -67,12 +67,12 @@ public class DumpRu extends PluginForHost {
         return false;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         br.submitForm(br.getForm(1));
@@ -81,21 +81,21 @@ public class DumpRu extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         /* TODO: Wert nachprüfen */
         return 1;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

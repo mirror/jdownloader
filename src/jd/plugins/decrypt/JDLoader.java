@@ -39,7 +39,7 @@ public class JDLoader extends PluginForDecrypt {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String format = null;
@@ -74,7 +74,7 @@ public class JDLoader extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

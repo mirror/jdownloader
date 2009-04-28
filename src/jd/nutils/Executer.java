@@ -63,7 +63,7 @@ public class Executer extends Thread {
             dynbuf = buffer;
         }
 
-        @Override
+        //@Override
         public void run() {
             this.started = true;
             int num;
@@ -211,7 +211,7 @@ public class Executer extends Thread {
         return waitTimeout;
     }
 
-    @Override
+    //@Override
     public void run() {
         if (command == null || command.trim().length() == 0) {
             logger.severe("Execute Parameter error: No Command");

@@ -45,7 +45,7 @@ public class LogFormatter extends SimpleFormatter {
     private StringBuilder sb;
     private StringBuffer text;
     
-    @Override
+    //@Override
     public synchronized String format(LogRecord record) {
 
     	sb = new StringBuilder();

@@ -153,7 +153,7 @@ public class ControlEvent extends AWTEvent {
         this.parameter = parameter;
     }
 
-    @Override
+    //@Override
     public int getID() {
         return controlID;
     }
@@ -162,7 +162,7 @@ public class ControlEvent extends AWTEvent {
         return parameter;
     }
 
-    @Override
+    //@Override
     public String toString() {
         return "[source:" + source + ", controlID:" + controlID + ", parameter:" + parameter + "]";
     }

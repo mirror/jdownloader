@@ -176,7 +176,7 @@ public class UTILITIES {
      */
     public static Image loadImage(final File file) {
         GuiRunnable<Image> run = new GuiRunnable<Image>() {
-            @Override
+            //@Override
             public Image runSave() {
                 JFrame jf = new JFrame();
                 Image img = jf.getToolkit().getImage(file.getAbsolutePath());

@@ -1226,7 +1226,7 @@ public class LetterComperator {
      * 
      * @return parameterstring
      */
-    @Override
+    //@Override
     public String toString() {
         Hashtable<String, Object> hs = new Hashtable<String, Object>();
         // if(getDecodedValue().equalsIgnoreCase("v")&&getBothElementsNum()==3){

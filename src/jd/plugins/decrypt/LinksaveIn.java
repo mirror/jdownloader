@@ -38,7 +38,7 @@ public class LinksaveIn extends PluginForDecrypt {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
 
         br.getPage(param.getCryptedUrl());
@@ -102,12 +102,12 @@ public class LinksaveIn extends PluginForDecrypt {
         return new ArrayList<DownloadLink>();
     }
 
-    @Override
+    //@Override
     protected boolean isClickNLoadEnabled() {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

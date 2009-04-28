@@ -54,7 +54,7 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener 
         }
     }
 
-    @Override
+    //@Override
     public void initPanel() {
 
         JPanel buttons = new JPanel();
@@ -80,12 +80,12 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener 
         // add(routerScript);
     }
 
-    @Override
+    //@Override
     public void load() {
         loadConfigEntries();
     }
 
-    @Override
+    //@Override
     public void save() {
         saveConfigEntries();
     }

@@ -73,7 +73,7 @@ public class Netloadin extends PluginForHost {
         this.enablePremium("http://netload.in/index.php?refer_id=134847&id=39");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
 
         br.setDebug(true);
@@ -276,7 +276,7 @@ br.forceDebug(true);
         }
     }
 
-    @Override
+    //@Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -302,12 +302,12 @@ br.forceDebug(true);
         return ai;
     }
 
-    @Override
+    //@Override
     public int getTimegapBetweenConnections() {
         return 800;
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
 
         getFileInformation(downloadLink);
@@ -374,7 +374,7 @@ br.forceDebug(true);
         }
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         link.setProperty("nochunk", false);
     }
@@ -384,12 +384,12 @@ br.forceDebug(true);
         if (br.containsHTML(FILE_DAMAGED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"), 20 * 60 * 1000l);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException {
 
         try {
@@ -437,26 +437,26 @@ br.forceDebug(true);
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    @Override
+    //@Override
     public String getFileInformationString(DownloadLink downloadLink) {
         return downloadLink.getName() + " (" + fileStatusText + ")";
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
 
     }

@@ -41,14 +41,14 @@ public class UnixSplitJoiner extends JAxeJoiner {
         super(sFile, sDir);
     }
 
-    @Override
+    //@Override
     protected boolean checkNoOverwrite(File f) {
         File fTemp = new File(sJoinedFile);
 
         return !fTemp.exists();
     }
 
-    @Override
+    //@Override
     protected void computeJobSize() {
         long lReturn = 0;
         int i = 0;
@@ -63,7 +63,7 @@ public class UnixSplitJoiner extends JAxeJoiner {
         lJobSize = lReturn;
     }
 
-    @Override
+    //@Override
     protected void doCleanup() {
         new File(sJoinedFile).delete();
     }
@@ -77,7 +77,7 @@ public class UnixSplitJoiner extends JAxeJoiner {
         return "." + new String(ca);
     }
 
-    @Override
+    //@Override
     public void run() {
         File fToJoin, fTemp = null;
         InputStream is = null;

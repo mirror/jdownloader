@@ -146,7 +146,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
         // addHighlighter(new FilepackageRowHighlighter(this, Color.RED,
         // Color.BLUE, Color.RED, Color.BLUE) {
-        // @Override
+        // //@Override
         // public boolean doHighlight(FilePackage fp) {
         // return true;
         // }
@@ -154,7 +154,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         addHighlighter(new PainterHighlighter(HighlightPredicate.IS_FOLDER, getFolderPainter(this)));
 
         // Highlighter extendPrefWidth = new AbstractHighlighter() {
-        // @Override
+        // //@Override
         // protected Component doHighlight(Component component, ComponentAdapter
         // adapter) {
         // Dimension dim = component.getPreferredSize();
@@ -210,7 +210,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 100);
 
         addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
-            @Override
+            //@Override
             public boolean doHighlight(DownloadLink dLink) {
                 return dLink.getLinkStatus().getRemainingWaittime() > 0 || dLink.getPlugin() == null || dLink.getPlugin().getRemainingHosterWaittime() > 0;
             }
@@ -222,7 +222,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 120);
 
         addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
-            @Override
+            //@Override
             public boolean doHighlight(DownloadLink link) {
                 return link.getLinkStatus().hasStatus(LinkStatus.ERROR_POST_PROCESS);
             }
@@ -234,7 +234,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         Color background = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100);
 
         addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
-            @Override
+            //@Override
             public boolean doHighlight(DownloadLink link) {
                 return !link.isEnabled();
             }

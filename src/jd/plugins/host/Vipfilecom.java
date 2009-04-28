@@ -38,12 +38,12 @@ public class Vipfilecom extends PluginForHost {
         enablePremium("http://vip-file.com/tmpl/premium_en.php");
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://vip-file.com/tmpl/terms.php";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         String downloadURL = downloadLink.getDownloadURL();
         this.setBrowserExclusive();
@@ -62,12 +62,12 @@ public class Vipfilecom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         /* DownloadLink holen, 2x der Location folgen */
@@ -86,7 +86,7 @@ public class Vipfilecom extends PluginForHost {
         br.openDownload(downloadLink, link, true, 0).startDownload();
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         Form form = br.getForm(1);
@@ -98,20 +98,20 @@ public class Vipfilecom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

@@ -71,7 +71,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         initConfig();
     }
 
-    @Override
+    //@Override
     public String getIconKey() {
         return "gui.images.addons.merge";
     }
@@ -84,7 +84,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
      * ins kontextmenü der gui die menüpunkte zu schreiben
      */
     @SuppressWarnings("unchecked")
-    @Override
+    //@Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
         DownloadLink link;
@@ -133,7 +133,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         }
     }
 
-    @Override
+    //@Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
@@ -146,7 +146,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         return menu;
     }
 
-    @Override
+    //@Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem) {
             menuitemActionPerformed(e, (MenuItem) e.getSource());
@@ -164,14 +164,14 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             JDFileChooser fc = new JDFileChooser("_JDHJSPLIT_");
             fc.setMultiSelectionEnabled(true);
             FileFilter ff = new FileFilter() {
-                @Override
+                //@Override
                 public boolean accept(File pathname) {
                     if (isStartVolume(pathname)) return true;
                     if (pathname.isDirectory()) return true;
                     return false;
                 }
 
-                @Override
+                //@Override
                 public String getDescription() {
                     return JDLocale.L("plugins.optional.hjsplit.filefilter", "HJSPLIT-Startvolumes");
                 }
@@ -515,22 +515,22 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         return link;
     }
 
-    @Override
+    //@Override
     public String getHost() {
         return JDLocale.L("plugins.optional.jdhjsplit.name", "JD-HJMerge");
     }
 
-    @Override
+    //@Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
         return true;
@@ -546,7 +546,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         ce.setDefaultValue(true);
     }
 
-    @Override
+    //@Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
     }

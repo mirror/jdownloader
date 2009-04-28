@@ -62,7 +62,7 @@ public class JDLowSpeed extends PluginOptional {
         cfg.setDefaultValue("40");
     }
 
-    @Override
+    //@Override
     public void actionPerformed(ActionEvent e) {
         MenuItem mi = (MenuItem) e.getSource();
         if (mi.getActionID() == 0) {
@@ -78,7 +78,7 @@ public class JDLowSpeed extends PluginOptional {
         }
     }
 
-    @Override
+    //@Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
         if (subConfig.getBooleanProperty(PROPERTY_ENABLED, false)) {
@@ -133,7 +133,7 @@ public class JDLowSpeed extends PluginOptional {
         }
     }
 
-    @Override
+    //@Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
@@ -142,22 +142,22 @@ public class JDLowSpeed extends PluginOptional {
         return menu;
     }
 
-    @Override
+    //@Override
     public String getHost() {
         return JDLocale.L("plugins.optional.jdlowspeed.name", "Low-Speed Detection");
     }
 
-    @Override
+    //@Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
         logger.info("JDLowSpeed detection ok");
@@ -221,7 +221,7 @@ public class JDLowSpeed extends PluginOptional {
         }
     }
 
-    @Override
+    //@Override
     public void onExit() {
     }
 

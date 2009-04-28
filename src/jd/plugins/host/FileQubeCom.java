@@ -32,12 +32,12 @@ public class FileQubeCom extends PluginForHost {
         //this.setStartIntervall(5000l);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://www.fileqube.com/terms.html";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -53,12 +53,12 @@ public class FileQubeCom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         String linkurl = br.getRegex("Copy file</strong></a></span>\\s+<span[^>]*><a href=\"(.*?)\"").getMatch(0);
@@ -69,20 +69,20 @@ public class FileQubeCom extends PluginForHost {
 
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
         

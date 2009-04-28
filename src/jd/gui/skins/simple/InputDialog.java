@@ -62,7 +62,7 @@ public class InputDialog extends JDialog implements ActionListener, KeyListener 
 
         countdownThread = new Thread() {
 
-            @Override
+            //@Override
             public void run() {
                 int c = countdown;
                 while (!isVisible()) {

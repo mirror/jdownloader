@@ -565,7 +565,7 @@ public abstract class Request {
         this.readTimeout = readTimeout;
     }
 
-    @Override
+    //@Override
     public String toString() {
         if (!requested) { return "Request not sent yet"; }
 
@@ -585,11 +585,11 @@ public abstract class Request {
     public Request toHeadRequest() throws MalformedURLException {
         Request ret = new Request(this.getUrl() + "") {
 
-            @Override
+            //@Override
             public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
             }
 
-            @Override
+            //@Override
             public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
                 httpConnection.setRequestMethod("HEAD");
             }

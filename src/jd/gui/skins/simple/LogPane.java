@@ -161,7 +161,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
 
     }
 
-    @Override
+    //@Override
     public String toString() {
         String content = logField.getSelectedText();
         if (content == null || content.length() == 0) {
@@ -170,7 +170,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
         return content;
     }
 
-    @Override
+    //@Override
     public void onDisplay() {
         /*
          * enable autoscrolling by setting the caret to the last position
@@ -188,7 +188,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
         logField.setCaretPosition(logField.getText().length());
     }
 
-    @Override
+    //@Override
     public void onHide() {
         JDUtilities.getController().removeControlListener(this);
     }

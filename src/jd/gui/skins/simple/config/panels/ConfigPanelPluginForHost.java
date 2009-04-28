@@ -67,7 +67,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         private static final long serialVersionUID = 1155282457354673850L;
 
-        @Override
+        //@Override
         public Class<?> getColumnClass(int columnIndex) {
             return getValueAt(0, columnIndex).getClass();
         }
@@ -76,7 +76,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             return 6;
         }
 
-        @Override
+        //@Override
         public String getColumnName(int column) {
             switch (column) {
             case 0:
@@ -134,12 +134,12 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             return null;
         }
 
-        @Override
+        //@Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
             return columnIndex == 3 || columnIndex == 4 || columnIndex == 5;
         }
 
-        @Override
+        //@Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 3) {
                 if ((Boolean) value) {
@@ -231,7 +231,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         loadEntry(pluginsForHost.get(table.getSelectedRow()));
     }
 
-    @Override
+    //@Override
     public void initPanel() {
 
         tableModel = new InternalTableModel();
@@ -318,7 +318,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         this.add(bpanel, "spanx,gapleft 10, gapright 10");
     }
 
-    @Override
+    //@Override
     public void load() {
     }
 
@@ -346,7 +346,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public void mouseReleased(MouseEvent e) {
     }
 
-    @Override
+    //@Override
     public void save() {
         Vector<String> priority = new Vector<String>();
         for (HostPluginWrapper plg : pluginsForHost) {

@@ -73,7 +73,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
         return subPanels;
     }
 
-    @Override
+    //@Override
     public void initPanel() {
         if (inited) return;
         this.inited = true;
@@ -129,7 +129,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
 
     }
 
-    @Override
+    //@Override
     public void load() {
         loadConfigEntries();
     }
@@ -146,7 +146,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
 
     }
 
-    @Override
+    //@Override
     public void save() {
         if (subPanels != null) {
             for (int i = 0; i < subPanels.size(); i++) {

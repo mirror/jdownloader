@@ -29,12 +29,12 @@ public class YouPornCom extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://youporn.com/terms";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink parameter) throws IOException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -45,28 +45,28 @@ public class YouPornCom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink link) throws Exception {
         getFileInformation(link);
         br.openDownload(link, link.getDownloadURL()).startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public String getVersion() {
 
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

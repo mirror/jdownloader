@@ -22,17 +22,17 @@ abstract public class TaskButton extends TaskPanel {
 
     private boolean collapsed = false;
 
-    @Override
+    //@Override
     public boolean isCollapsed() {
         return collapsed;
     }
 
-    @Override
+    //@Override
     public void setDeligateCollapsed(boolean collapsed) {
         setCollapsed(collapsed);
     }
 
-    @Override
+    //@Override
     public void setCollapsed(boolean collapsed) {
         super.setCollapsed(true);
         boolean oldValue = isCollapsed();
@@ -41,7 +41,7 @@ abstract public class TaskButton extends TaskPanel {
         firePropertyChange("collapsed", oldValue, isCollapsed());
     }
 
-    @Override
+    //@Override
     public void mouseReleased(MouseEvent e) {
         broadcastEvent(new ActionEvent(this, ACTION_CLICK, "Toggle"));
     }

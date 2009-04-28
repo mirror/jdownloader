@@ -113,7 +113,7 @@ public abstract class PluginForDecrypt extends Plugin {
         return dl;
     }
 
-    @Override
+    //@Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
@@ -278,7 +278,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 this.plg = plg;
             }
 
-            @Override
+            //@Override
             public void run() {
                 ArrayList<DownloadLink> links = plg.decryptLink(decryptableLink);
                 for (DownloadLink link : links) {

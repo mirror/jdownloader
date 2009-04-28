@@ -43,7 +43,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
     }
 
     @SuppressWarnings("unchecked")
-    @Override
+    //@Override
     public boolean canImport(TransferSupport info) {
         if (isDragging) {
             if (draggingObjects == null) return false;
@@ -74,7 +74,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
         }
     }
 
-    @Override
+    //@Override
     protected Transferable createTransferable(JComponent c) {
         isDragging = true;
         Vector<LinkGrabberFilePackage> packages = treeTable.getSelectedFilePackages();
@@ -91,7 +91,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
         return new StringSelection("JDAFFE");
     }
 
-    @Override
+    //@Override
     protected void exportDone(JComponent source, Transferable data, int action) {
         isDragging = false;
     }
@@ -201,13 +201,13 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
         return true;
     }
 
-    @Override
+    //@Override
     public int getSourceActions(JComponent c) {
         return MOVE;
     }
 
     @SuppressWarnings("unchecked")
-    @Override
+    //@Override
     public boolean importData(TransferSupport info) {
         try {
             Transferable tr = info.getTransferable();

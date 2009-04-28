@@ -13,7 +13,7 @@ public class ExitAction extends StartAction {
 
     private static final long serialVersionUID = -1428029294638573437L;
 
-    @Override
+    //@Override
     public void init() {
         this.setIconDim(new Dimension(24, 24));
         this.setIcon("gui.images.exit");

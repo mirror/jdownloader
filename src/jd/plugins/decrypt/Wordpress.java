@@ -49,7 +49,7 @@ public class Wordpress extends PluginForDecrypt {
         defaultPasswords.put("blogload.org", new String[] { "blogload.org" });
     }
 
-    @Override
+    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
 //        System.out.println(param);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -86,7 +86,7 @@ public class Wordpress extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

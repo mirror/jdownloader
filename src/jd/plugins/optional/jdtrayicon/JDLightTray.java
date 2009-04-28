@@ -82,27 +82,27 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         initConfig();
     }
 
-    @Override
+    //@Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
 
-    @Override
+    //@Override
     public String getHost() {
         return JDLocale.L("plugins.optional.JDLightTray.name", "JDLightTrayIcon");
     }
 
-    @Override
+    //@Override
     public String getRequirements() {
         return "JRE 1.6+";
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public boolean initAddon() {
         if (JDUtilities.getJavaVersion() < 1.6) {
             logger.severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + JDUtilities.getJavaVersion());
@@ -135,7 +135,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_TOOLTIP, JDLocale.L("plugins.optional.JDLightTray.tooltip", "Show Tooltip")).setDefaultValue(true));
     }
 
-    @Override
+    //@Override
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             logger.info("JDLightTrayIcon Init complete");
@@ -225,7 +225,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         tit.show(e);
     }
 
-    @Override
+    //@Override
     public void onExit() {
         if (trayIcon != null) SystemTray.getSystemTray().remove(trayIcon);
         JDUtilities.getController().removeControlListener(this);

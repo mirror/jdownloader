@@ -79,7 +79,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
         return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
     }
 
-    @Override
+    //@Override
     public void run() {
         while (true) {
             waitFlag = true;

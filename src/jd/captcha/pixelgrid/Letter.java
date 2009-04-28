@@ -813,7 +813,7 @@ public class Letter extends PixelGrid {
      * @param owner
      *            the owner to set
      */
-    @Override
+    //@Override
     public void setOwner(JAntiCaptcha owner) {
         this.owner = owner;
     }
@@ -878,7 +878,7 @@ public class Letter extends PixelGrid {
         return object;
     }
 
-    @Override
+    //@Override
     public String toString() {
         return getDecodedValue() + " [" + getSourcehash() + "][" + getGoodDetections() + "/" + getBadDetections() + "]";
     }

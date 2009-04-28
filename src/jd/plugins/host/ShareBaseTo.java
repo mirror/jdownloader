@@ -39,12 +39,12 @@ public class ShareBaseTo extends PluginForHost {
         this.enablePremium("http://sharebase.to/premium/");
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://sharebase.to/terms/";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         /* damit neue links mit .de als .to in die liste kommen */
         setBrowserExclusive();
@@ -72,7 +72,7 @@ public class ShareBaseTo extends PluginForHost {
         }
     }
 
-    @Override
+    //@Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -88,12 +88,12 @@ public class ShareBaseTo extends PluginForHost {
         return ai;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         login(account);
@@ -117,7 +117,7 @@ public class ShareBaseTo extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         /* für links welche noch mit .de in der liste stehen */
@@ -153,20 +153,20 @@ public class ShareBaseTo extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 2;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
         

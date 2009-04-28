@@ -34,12 +34,12 @@ public class Zippysharecom extends PluginForHost {
         br.setFollowRedirects(true);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://www.zippyshare.com/terms.html";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL().replaceAll("locale=..", "locale=en"));
@@ -53,12 +53,12 @@ public class Zippysharecom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         String linkurl = new Regex(br, Pattern.compile("'(http.*?www.*?zippyshare\\.com.*?)';", Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -70,20 +70,20 @@ public class Zippysharecom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

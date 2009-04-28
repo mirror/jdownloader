@@ -30,6 +30,7 @@ import javax.swing.UIManager.LookAndFeelInfo;
 
 import jd.config.SubConfiguration;
 import jd.config.container.JDLabelContainer;
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
@@ -173,22 +174,23 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
     public static void setUIManager() {
         if (uiInitated) return;
         uiInitated = true;
-        String key = "os.name";
+    
         installJGoodies();
         if (JDUtilities.getJavaVersion() >= 1.6) installSubstance();
 
         // installSynthetica();
 
-        String value = System.getProperty(key);
+      
         // System.setProperty(key, "Windows XP"); /*dieser eintrag sorgt dafür
         // das JD unter linux nicht mehr startet*/
 
         try {
+            JDLogger.getLogger().info("Use Look & Feel: "+getPlaf().getClassName());
             UIManager.setLookAndFeel(getPlaf().getClassName());
         } catch (Exception e) {
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-        System.setProperty(key, value);
+       
         // try {
         // UIManager.setLookAndFeel(
         // "com.jgoodies.looks.windows.WindowsLookAndFeel");
@@ -279,7 +281,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
         this.className = className;
     }
 
-    @Override
+    //@Override
     public boolean equals(Object obj) {
         return (obj instanceof JDLookAndFeelManager) && ((JDLookAndFeelManager) obj).getClassName() != null && ((JDLookAndFeelManager) obj).getClassName().equals(className);
     }
@@ -292,7 +294,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
         this.className = className;
     }
 
-    @Override
+    //@Override
     public String toString() {
         if (className == null) return null;
         if (staticName != null) return staticName;

@@ -31,12 +31,12 @@ public class HotFileCom extends PluginForHost {
         // TODO Auto-generated constructor stub
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://hotfile.com/terms-of-service.html";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
@@ -48,7 +48,7 @@ public class HotFileCom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink link) throws Exception {
         getFileInformation(link);
         if (br.containsHTML("You are currently downloading")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
@@ -68,18 +68,18 @@ public class HotFileCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public void reset() {
         // TODO Auto-generated method stub
 
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

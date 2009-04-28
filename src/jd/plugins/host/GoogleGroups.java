@@ -36,12 +36,12 @@ public class GoogleGroups extends PluginForHost {
         // TODO Auto-generated constructor stub
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://groups.google.com/intl/de/googlegroups/terms_of_service3.html";
     }
 
-    @Override
+    //@Override
     public boolean checkLinks(DownloadLink[] urls) {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -87,18 +87,18 @@ public class GoogleGroups extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         checkLinks(new DownloadLink[] { downloadLink });
         return downloadLink.isAvailable();
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // .googlegroups.com/web/
@@ -110,20 +110,20 @@ public class GoogleGroups extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

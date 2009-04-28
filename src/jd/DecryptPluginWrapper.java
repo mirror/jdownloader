@@ -36,7 +36,7 @@ public class DecryptPluginWrapper extends PluginWrapper {
         this(host, className, patternSupported, 0);
     }
 
-    @Override
+    //@Override
     public PluginForDecrypt getPlugin() {
         return (PluginForDecrypt) super.getPlugin();
     }

@@ -106,25 +106,25 @@ public class JDPremiumCollector extends PluginOptional {
         t.start();
     }
 
-    @Override
+    //@Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
             fetchAccounts();
         }
     }
 
-    @Override
+    //@Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    //@Override
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
         return true;
     }
 
-    @Override
+    //@Override
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             fetchAccounts();
@@ -143,12 +143,12 @@ public class JDPremiumCollector extends PluginOptional {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_ACCOUNTS2, JDLocale.L("plugins.optional.premiumcollector.onlyValid2", "Remove invalid and expired accounts")).setDefaultValue(true));
     }
 
-    @Override
+    //@Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
     }
 
-    @Override
+    //@Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
 
@@ -157,17 +157,17 @@ public class JDPremiumCollector extends PluginOptional {
         return menu;
     }
 
-    @Override
+    //@Override
     public String getIconKey() {
         return "gui.images.taskpanes.premium";
     }
 
-    @Override
+    //@Override
     public String getHost() {
         return JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector");
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -187,7 +187,7 @@ public class JDPremiumCollector extends PluginOptional {
             this.pc = pc;
         }
 
-        @Override
+        //@Override
         public void run() {
             ArrayList<Account> accounts = new ArrayList<Account>();
             for (String[] acc : accs) {

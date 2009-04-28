@@ -33,11 +33,11 @@ public class AddonPane extends JTabbedPanel implements ActionListener {
     public void actionPerformed(ActionEvent e) {
     }
 
-    @Override
+    //@Override
     public void onDisplay() {
     }
 
-    @Override
+    //@Override
     public void onHide() {
     }
 

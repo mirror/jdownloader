@@ -59,17 +59,17 @@ public class Loop extends Element {
         this.global_vars = global_vars;
     }
 
-    @Override
+    //@Override
     public void add(Element node) {
         data.addElement(node);
     }
 
-    @Override
+    //@Override
     public void add(String text) {
         data.addElement(text);
     }
 
-    @Override
+    //@Override
     @SuppressWarnings("unchecked")
     public String parse(Hashtable<?, ?> p) {
         if (!p.containsKey(name)) {
@@ -155,7 +155,7 @@ public class Loop extends Element {
         this.control_val = process_var(control_val);
     }
 
-    @Override
+    //@Override
     public String typeOfParam(String param) throws NoSuchElementException {
         for (Object o : data) {
             if (o.getClass().getName().endsWith(".String")) {

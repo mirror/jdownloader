@@ -137,7 +137,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
         countdownThread = new Thread() {
 
-            @Override
+            //@Override
             public void run() {
 
                 while (!isVisible() && isDisplayable()) {

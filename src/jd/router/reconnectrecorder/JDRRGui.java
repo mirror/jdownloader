@@ -255,7 +255,7 @@ public class JDRRGui extends JDialog implements ActionListener {
                 return imageGood.getWidth(this);
             }
 
-            @Override
+            //@Override
             public void paintComponent(Graphics g) {
                 if (status == 0) {
                     g.drawImage(imageProgress, 0, 0, null);

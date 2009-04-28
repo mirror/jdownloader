@@ -62,7 +62,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
         this.flag = flag;
     }
 
-    @Override
+    //@Override
     public PluginOptional getPlugin() {
         return (PluginOptional) loadedPlugin;
     }
@@ -116,7 +116,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
         return "OPTIONAL_PLUGIN_" + loadedPlugin.getHost();
     }
 
-    @Override
+    //@Override
     public int compareTo(PluginWrapper plg) {
         return getPlugin().getHost().toLowerCase().compareTo(plg.getPlugin().getHost().toLowerCase());
     }

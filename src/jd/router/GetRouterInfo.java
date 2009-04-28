@@ -515,11 +515,11 @@ public class GetRouterInfo {
         };
         th2.getBroadcaster().addListener(th2.new WorkerListener() {
 
-            @Override
+            //@Override
             public void onThreadException(Threader th, JDRunnable job, Exception e) {
             }
 
-            @Override
+            //@Override
             public void onThreadFinished(Threader th, JDRunnable runnable) {
                 if (runnable == jupnp) {
                     isalv.isAlv = false;
@@ -527,7 +527,7 @@ public class GetRouterInfo {
                 }
             }
 
-            @Override
+            //@Override
             public void onThreadStarts(Threader threader, JDRunnable runnable) {
             }
 
@@ -671,11 +671,11 @@ public class GetRouterInfo {
 
         th2.getBroadcaster().addListener(th2.new WorkerListener() {
 
-            @Override
+            //@Override
             public void onThreadException(Threader th, JDRunnable job, Exception e) {
             }
 
-            @Override
+            //@Override
             public void onThreadFinished(Threader th, JDRunnable runnable) {
                 if (runnable == jupnp) {
                     isalv.isAlv = false;
@@ -683,7 +683,7 @@ public class GetRouterInfo {
                 }
             }
 
-            @Override
+            //@Override
             public void onThreadStarts(Threader threader, JDRunnable runnable) {
             }
         });
@@ -851,7 +851,7 @@ public class GetRouterInfo {
     private void setProgress(final int val) {
         new GuiRunnable<Object>(){
 
-            @Override
+            //@Override
             public Object runSave() {
                 if (progressBar != null) {
                     progressBar.setValue(val);
@@ -879,7 +879,7 @@ public class GetRouterInfo {
         final ProgressDialog progress = new ProgressDialog(SimpleGUI.CURRENTGUI, JDLocale.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, true);
         final GetRouterInfo routerInfo = new GetRouterInfo(progress);
         final Thread th = new Thread() {
-            @Override
+            //@Override
             public void run() {
                 String pw = "";
                 String username = "";

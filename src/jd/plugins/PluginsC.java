@@ -74,7 +74,7 @@ public abstract class PluginsC extends Plugin {
 
     public abstract ContainerStatus callDecryption(File file);
 
-    @Override
+    //@Override
     public synchronized boolean canHandle(String data) {
         if (data == null) { return false; }
         String match = new Regex(data, this.getSupportedLinks()).getMatch(-1);
@@ -86,7 +86,7 @@ public abstract class PluginsC extends Plugin {
         return null;
     }
 
-    @Override
+    //@Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }

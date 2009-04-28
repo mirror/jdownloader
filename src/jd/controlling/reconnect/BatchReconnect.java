@@ -43,7 +43,7 @@ public class BatchReconnect extends ReconnectMethod {
         configuration = SubConfiguration.getConfig("BATCHRECONNECT");
     }
 
-    @Override
+    //@Override
     public void initConfig() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, PROPERTY_TERMINAL, JDLocale.L("interaction.batchreconnect.terminal", "Interpreter")));
@@ -60,7 +60,7 @@ public class BatchReconnect extends ReconnectMethod {
       
     }
 
-    @Override
+    //@Override
     protected boolean runCommands(ProgressController progress) {
         int waitForReturn = configuration.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, -1);
         String executeIn = configuration.getStringProperty(PROPERTY_RECONNECT_EXECUTE_FOLDER);
@@ -84,7 +84,7 @@ public class BatchReconnect extends ReconnectMethod {
         return true;
     }
 
-    @Override
+    //@Override
     public String toString() {
         return JDLocale.L("interaction.batchreconnect.toString", "Batch reconnect durchführen");
     }

@@ -89,7 +89,7 @@ public class LinkAdder extends JTabbedPanel {
 
     }
 
-    @Override
+    //@Override
     public void onDisplay() {
         this.mainClipBoardEnabled = ClipboardHandler.getClipboard().isEnabled();
         ClipboardHandler.getClipboard().setEnabled(false);
@@ -142,7 +142,7 @@ public class LinkAdder extends JTabbedPanel {
         if (text.getText().contains(newText)) return;
         new GuiRunnable<Object>() {
 
-            @Override
+            //@Override
             public Object runSave() {
                 text.setText(text.getText() + "\r\n" + newText);
                 return null;
@@ -151,7 +151,7 @@ public class LinkAdder extends JTabbedPanel {
 
     }
 
-    @Override
+    //@Override
     public void onHide() {
         setClipboard(false);
         ClipboardHandler.getClipboard().setEnabled(mainClipBoardEnabled);

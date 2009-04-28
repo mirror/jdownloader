@@ -102,7 +102,7 @@ public class DragNDrop extends JComponent implements DropTargetListener {
      * @param g
      *            Graphicobjekt
      */
-    @Override
+    //@Override
     public void paintComponent(Graphics g) {
         g.drawImage(image, 0, 0, null);
     }

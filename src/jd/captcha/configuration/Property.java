@@ -253,7 +253,7 @@ public class Property implements Serializable {
      * 
      * @return PropertyString
      */
-    @Override
+    //@Override
     public String toString() {
         return "Property(" + saveCount + "): " + properties;
     }

@@ -77,7 +77,7 @@ public class PackageManager extends Interaction implements Serializable {
 
     }
 
-    @Override
+    //@Override
     public boolean doInteraction(Object arg) {
         checkNewInstalled();
 
@@ -149,7 +149,7 @@ public class PackageManager extends Interaction implements Serializable {
 
     }
 
-    @Override
+    //@Override
     public String getInteractionName() {
         return JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
     }
@@ -228,7 +228,7 @@ public class PackageManager extends Interaction implements Serializable {
 
     }
 
-    @Override
+    //@Override
     public void initConfig() {
     }
 
@@ -263,7 +263,7 @@ public class PackageManager extends Interaction implements Serializable {
                 WebUpdater.getConfig("JDU").save();
 
                 new Thread() {
-                    @Override
+                    //@Override
                     public void run() {
                         try {
                             Thread.sleep(1000);
@@ -308,7 +308,7 @@ public class PackageManager extends Interaction implements Serializable {
 
     }
 
-    @Override
+    //@Override
     public String toString() {
         return JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
     }

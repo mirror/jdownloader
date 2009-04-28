@@ -19,7 +19,7 @@ public class Handler extends sun.net.www.protocol.http.Handler {
         this.proxyPort = port;
     }
 
-    @Override
+    //@Override
     protected URLConnection openConnection(URL u) throws IOException {
 
         return openConnection(u, (Proxy) null);

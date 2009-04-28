@@ -123,7 +123,7 @@ public class JDAboutDialog extends JDialog {
     private void getPage(final JTextPane textPane) {
         new Thread() {
 
-            @Override
+            //@Override
             public void run() {
                 try {
                     Browser br = new Browser();

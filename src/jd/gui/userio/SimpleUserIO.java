@@ -22,12 +22,12 @@ public class SimpleUserIO extends UserIO {
         return INSTANCE;
     }
 
-    @Override
+    // @Override
     protected String showCaptchaDialog(final int flag, final String methodname, final File captchafile, final String suggestion, final String explain) {
         if ((flag & UserIO.NO_USER_INTERACTION) > 0) return suggestion;
         return new GuiRunnable<String>() {
 
-            @Override
+            // @Override
             public String runSave() {
                 return new CaptchaDialog(flag, methodname, captchafile, suggestion, explain).getCaptchaText();
             }
@@ -43,17 +43,17 @@ public class SimpleUserIO extends UserIO {
         // ), "01234", null);
         // System.out.println("result: " + res);
 
-        UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN|UserIO.NO_OK_OPTION, "title", "message final\r\n int flag, f\r\ninal String title, final\r\n S\r\ntring message, final Ima\r\ngeIcon icon, final String okOption, final String cancelOption) {", JDTheme.II("gui.clicknload", 32, 32), null, null);
+       System.out.println(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN|UserIO.NO_COUNTDOWN | UserIO.NO_OK_OPTION, "title23", "message final\r\n int flag, f\r\ninal String title, final\r\n S\r\ntring message, final Ima\r\ngeIcon icon, final String okOption, final String cancelOption) {", JDTheme.II("gui.clicknload", 32, 32), null, null));
     }
 
-    @Override
-    protected boolean showConfirmDialog(final int flag, final String title, final String message, final ImageIcon icon, final String okOption, final String cancelOption) {
-        if ((flag & UserIO.NO_USER_INTERACTION) > 0) return false;
-        return new GuiRunnable<Boolean>() {
+    // @Override
+    protected int showConfirmDialog(final int flag, final String title, final String message, final ImageIcon icon, final String okOption, final String cancelOption) {
+        if ((flag & UserIO.NO_USER_INTERACTION) > 0) return 0;
+        return new GuiRunnable<Integer>() {
 
-            @Override
-            public Boolean runSave() {
-                return new ConfirmDialog(flag, title, message, icon, okOption, cancelOption).getReturnValue();
+            // @Override
+            public Integer runSave() {
+                return new ConfirmDialog(flag, title, message, icon, okOption, cancelOption).getReturnID();
             }
         }.getReturnValue();
     }

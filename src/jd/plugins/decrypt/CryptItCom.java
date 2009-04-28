@@ -123,7 +123,7 @@ public class CryptItCom extends PluginForDecrypt {
         return new String(cipher).trim();
     }
 
-    @Override
+    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -192,7 +192,7 @@ public class CryptItCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

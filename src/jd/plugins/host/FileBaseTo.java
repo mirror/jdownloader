@@ -35,12 +35,12 @@ public class FileBaseTo extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://filebase.to/tos/";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         // br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -55,12 +55,12 @@ public class FileBaseTo extends PluginForHost {
 
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         String formact = downloadLink.getDownloadURL();
@@ -79,20 +79,20 @@ public class FileBaseTo extends PluginForHost {
         br.openDownload(downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName())).startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

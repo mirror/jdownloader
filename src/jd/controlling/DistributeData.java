@@ -387,7 +387,7 @@ public class DistributeData extends Thread {
         }
     }
 
-    @Override
+    //@Override
     public void run() {
 
         Vector<DownloadLink> links = findLinks();

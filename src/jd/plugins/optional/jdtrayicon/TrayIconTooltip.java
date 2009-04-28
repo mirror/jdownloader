@@ -152,7 +152,7 @@ public class TrayIconTooltip {
             this.p = p;
         }
 
-        @Override
+        //@Override
         public void run() {
             try {
                 Thread.sleep(1000);

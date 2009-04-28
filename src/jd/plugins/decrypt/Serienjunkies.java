@@ -166,7 +166,7 @@ public class Serienjunkies extends PluginForDecrypt {
         return ret;
     }
 
-    @Override
+    //@Override
     public synchronized boolean canHandle(String data) {
         boolean cat = false;
         if (data == null) return false;
@@ -679,12 +679,12 @@ public class Serienjunkies extends PluginForDecrypt {
         return dlink;
     }
 
-    @Override
+    //@Override
     public String cutMatches(String data) {
         return data.replaceAll("(?i)http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es).*", "--CUT--");
     }
 
-    @Override
+    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
         Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
@@ -695,7 +695,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
             ar = new GuiRunnable<ArrayList<DownloadLink>>() {
 
-                @Override
+                //@Override
                 public ArrayList<DownloadLink> runSave() {
                     SerienjunkiesSJTable sjt = new SerienjunkiesSJTable(SimpleGUI.CURRENTGUI, ar2);
 
@@ -932,7 +932,7 @@ public class Serienjunkies extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    //@Override
     public CryptedLink[] getDecryptableLinks(String data) {
         String[] links = new Regex(data, "http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*", Pattern.CASE_INSENSITIVE).getColumn(-1);
         ArrayList<CryptedLink> ret = new ArrayList<CryptedLink>();
@@ -1023,7 +1023,7 @@ public class Serienjunkies extends PluginForDecrypt {
         return useScat[0];
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -1044,7 +1044,7 @@ public class Serienjunkies extends PluginForDecrypt {
         new GuiRunnable<Object>() {
             private static final long serialVersionUID = 8726498576488124702L;
 
-            @Override
+            //@Override
             public Object runSave() {
 
                 new Dialog(SimpleGUI.CURRENTGUI) {
@@ -1067,7 +1067,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                 this.var = var;
                             }
 
-                            @Override
+                            //@Override
                             public String toString() {
                                 return name;
                             }
@@ -1160,7 +1160,7 @@ public class Serienjunkies extends PluginForDecrypt {
             this.cryptedLink = cryptedLink;
         }
 
-        @Override
+        //@Override
         public void run() {
             try {
                 LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -1402,7 +1402,7 @@ class SerienjunkiesSJTable extends JDialog {
 
         countdownThread = new Thread() {
 
-            @Override
+            //@Override
             public void run() {
 
                 while (!isVisible() && isDisplayable()) {
@@ -1475,12 +1475,12 @@ class SerienjunkiesTM extends AbstractTableModel {
         return m_columns.length;
     }
 
-    @Override
+    //@Override
     public String getColumnName(int column) {
         return m_columns[column].m_title;
     }
 
-    @Override
+    //@Override
     public boolean isCellEditable(int nRow, int nCol) {
         return false;
     }

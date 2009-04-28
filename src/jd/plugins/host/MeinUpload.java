@@ -45,7 +45,7 @@ public class MeinUpload extends PluginForHost {
         enablePremium("http://meinupload.com/register.php?g=2");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         if (br.getRedirectLocation() != null) {
@@ -55,7 +55,7 @@ public class MeinUpload extends PluginForHost {
         handleFree0(downloadLink);
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
@@ -134,7 +134,7 @@ public class MeinUpload extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -161,12 +161,12 @@ public class MeinUpload extends PluginForHost {
         return ai;
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         login(account);
@@ -195,12 +195,12 @@ public class MeinUpload extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.clearCookies("mein-upload.com");
@@ -218,20 +218,20 @@ public class MeinUpload extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

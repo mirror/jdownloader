@@ -103,7 +103,7 @@ public class AgbDialog extends JDialog implements ActionListener {
 
         countdownThread = new Thread() {
 
-            @Override
+            //@Override
             public void run() {
                 int c = countdown;
 

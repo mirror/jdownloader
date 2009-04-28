@@ -46,13 +46,13 @@ public class RbaDe extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public String getVersion() {
 
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return AGB_LINK;
     }
@@ -84,7 +84,7 @@ public class RbaDe extends PluginForHost {
         return fileName.toString();
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink link) throws PluginException, IOException {
         Browser br = new Browser();
         br.clearCookies(getHost());
@@ -130,7 +130,7 @@ public class RbaDe extends PluginForHost {
         }
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
 
@@ -144,11 +144,11 @@ public class RbaDe extends PluginForHost {
         }
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
         

@@ -55,7 +55,7 @@ import jd.utils.JDUtilities;
 
 class DownloadLinkBroadcaster extends JDBroadcaster<DownloadLinkListener, DownloadLinkEvent> {
 
-    @Override
+    //@Override
     protected void fireEvent(DownloadLinkListener listener, DownloadLinkEvent event) {
         listener.handle_DownloadLinkEvent(event);
     }
@@ -988,7 +988,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * 
      * @return STring
      */
-    @Override
+    //@Override
     public String toString() {
         return getName() + "-> " + getFileOutput() + "(" + getHost() + ")";
     }

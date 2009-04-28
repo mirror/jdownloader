@@ -52,7 +52,7 @@ public class ConvertDialog extends JFrame {
             this.ext = ext;
         }
 
-        @Override
+        //@Override
         public String toString() {
             return text;
         }
@@ -132,7 +132,7 @@ public class ConvertDialog extends JFrame {
         if (displaymodes.size() == 1) // Bei einer einzigen Auswahl
         { return displaymodes.get(0); } // diese zurückgeben
         GuiRunnable<ConversionMode> run = new GuiRunnable<ConversionMode>() {
-            @Override
+            //@Override
             public ConversionMode runSave() {
                 if (ConvertDialog.keepformat) {
                     boolean newFormatChoosable = false;

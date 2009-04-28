@@ -17,7 +17,7 @@ import jd.utils.JDUtilities;
 
 class LinkGrabberControllerBroadcaster extends JDBroadcaster<LinkGrabberControllerListener, LinkGrabberControllerEvent> {
 
-    @Override
+    //@Override
     protected void fireEvent(LinkGrabberControllerListener listener, LinkGrabberControllerEvent event) {
         listener.onLinkGrabberControllerEvent(event);
     }

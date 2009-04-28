@@ -297,7 +297,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         if (redrawinprogress) return;
         redrawinprogress = true;
         new GuiRunnable<Object>() {
-            @Override
+            //@Override
             public Object runSave() {
                 synchronized (Lock) {
                     try {

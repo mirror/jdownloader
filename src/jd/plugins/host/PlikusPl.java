@@ -17,12 +17,12 @@ public class PlikusPl extends PluginForHost {
         setStartIntervall(5000l);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://www.osemka.pl/html/regulamin/#regulamin_plikus";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -34,12 +34,12 @@ public class PlikusPl extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         Form form = br.getForm(0);
@@ -49,26 +49,26 @@ public class PlikusPl extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
+    //@Override
     public int getTimegapBetweenConnections() {
         return 2500;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
 
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
         

@@ -53,7 +53,7 @@ public abstract class ChartAPI extends JComponent {
             this.path = path;
         }
 
-        @Override
+        //@Override
         public void run() {
             BufferedImage image = null;
             try {
@@ -174,7 +174,7 @@ public abstract class ChartAPI extends JComponent {
             this.transparentRGB = color.getRGB();
         }
 
-        @Override
+        //@Override
         public int filterRGB(int x, int y, int rgb) {
 
             if (Colors.getColorDifference(rgb, transparentRGB) > 40.0) return rgb | 0x44000000;

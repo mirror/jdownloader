@@ -35,7 +35,7 @@ public class Wiireloaded extends PluginForDecrypt {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         int submitvalue = getPluginConfig().getIntegerProperty("WIIReloaded_SubmitValue", 5);
         String parameter = param.toString();
@@ -138,7 +138,7 @@ public class Wiireloaded extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

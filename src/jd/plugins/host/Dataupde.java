@@ -33,12 +33,12 @@ public class Dataupde extends PluginForHost {
 
     private String downloadurl;
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://www.dataup.de/agb";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             downloadurl = downloadLink.getDownloadURL();
@@ -58,13 +58,13 @@ public class Dataupde extends PluginForHost {
         return false;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
 
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -100,21 +100,21 @@ public class Dataupde extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
 
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

@@ -38,7 +38,7 @@ public class RapidFolderCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         br.setFollowRedirects(false);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -71,7 +71,7 @@ public class RapidFolderCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

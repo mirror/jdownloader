@@ -74,7 +74,7 @@ public class MySpaceCom extends PluginForDecrypt {
         setConfigElements();
     }
 
-    @Override
+    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setCookiesExclusive(true);
@@ -271,7 +271,7 @@ public class MySpaceCom extends PluginForDecrypt {
         return ret;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

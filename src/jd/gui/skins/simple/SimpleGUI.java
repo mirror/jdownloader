@@ -193,7 +193,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
             JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
 
-                @Override
+                //@Override
                 public void onPropertyChanged(Property source, String propertyName) {
 
                 }
@@ -213,7 +213,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         this.setAnimate();
         JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
 
-            @Override
+            //@Override
             public void onPropertyChanged(Property source, String propertyName) {
                 setAnimate();
             }
@@ -403,7 +403,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // break;
         // // case JDAction.APP_RECONNECT:
         // // new Thread() {
-        // // @Override
+        // // //@Override
         // // public void run() {
         // // doReconnect();
         // // }
@@ -512,7 +512,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     public synchronized void addLinksToGrabber(final Vector<DownloadLink> links, final boolean hideGrabber) {
         new GuiRunnable<Object>() {
 
-            @Override
+            //@Override
             public Object runSave() {
                 logger.info("Add links to Linkgrabber: " + links.size());
                 DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
@@ -1001,7 +1001,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         GuiRunnable<Boolean> run = new GuiRunnable<Boolean>() {
 
-            @Override
+            //@Override
             public Boolean runSave() {
                 Object[] options = { JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No") };
                 int n = JOptionPane.showOptionDialog(SimpleGUI.this, message, title, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
@@ -1015,7 +1015,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     public boolean showCountdownConfirmDialog(final String string, final int sec) {
         return new GuiRunnable<Boolean>() {
-            @Override
+            //@Override
             public Boolean runSave() {
                 return CountdownConfirmDialog.showCountdownConfirmDialog(SimpleGUI.this, string, sec);
 
@@ -1030,7 +1030,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         final String msg = toHTML ? "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + message + "</font>" : message;
 
         return new GuiRunnable<Integer>() {
-            @Override
+            //@Override
             public Integer runSave() {
                 try {
                     return JHelpDialog.showHelpMessage(SimpleGUI.this, title, msg, new URL(url), helpMsg, sec);
@@ -1047,7 +1047,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     public boolean showHTMLDialog(final String title, final String htmlQuestion) {
         return new GuiRunnable<Boolean>() {
-            @Override
+            //@Override
             public Boolean runSave() {
 
                 return HTMLDialog.showDialog(SimpleGUI.this, title, htmlQuestion);
@@ -1063,7 +1063,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         new GuiRunnable<Object>() {
 
-            @Override
+            //@Override
             public Object runSave() {
 
                 JOptionPane.showMessageDialog(SimpleGUI.this, string);
@@ -1077,7 +1077,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     public String showTextAreaDialog(final String title, final String question, final String def) {
 
         GuiRunnable<String> run = new GuiRunnable<String>() {
-            @Override
+            //@Override
             public String runSave() {
                 return TextAreaDialog.showDialog(SimpleGUI.this, title, question, def);
             }
@@ -1093,7 +1093,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     public String showUserInputDialog(final String string, final String def) {
         GuiRunnable<String> run = new GuiRunnable<String>() {
-            @Override
+            //@Override
             public String runSave() {
                 return JOptionPane.showInputDialog(SimpleGUI.this, string, def);
             }
@@ -1105,7 +1105,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     public String[] showTextAreaDialog(final String title, final String questionOne, final String questionTwo, final String defaultOne, final String defaultTwo) {
 
         GuiRunnable<String[]> run = new GuiRunnable<String[]>() {
-            @Override
+            //@Override
             public String[] runSave() {
                 return TextAreaDialog.showDialog(SimpleGUI.this, title, questionOne, questionTwo, defaultOne, defaultTwo);
             }
@@ -1117,7 +1117,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     public String[] showTwoTextFieldDialog(final String title, final String questionOne, final String questionTwo, final String defaultOne, final String defaultTwo) {
 
         GuiRunnable<String[]> run = new GuiRunnable<String[]>() {
-            @Override
+            //@Override
             public String[] runSave() {
                 return TwoTextFieldDialog.showDialog(SimpleGUI.this, title, questionOne, questionTwo, defaultOne, defaultTwo);
             }
@@ -1129,7 +1129,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     public static void displayConfig(final ConfigContainer container, final int i) {
         new GuiRunnable<Object>() {
 
-            @Override
+            //@Override
             public Object runSave() {
                 ConfigEntriesPanel cep;
                 JDCollapser.getInstance().setContentPanel(cep = new ConfigEntriesPanel(container));
@@ -1199,7 +1199,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     public void showAccountInformation(final PluginForHost pluginForHost, final Account account) {
         new GuiRunnable<Object>() {
 
-            @Override
+            //@Override
             public Object runSave() {
                 AccountInfo ai;
                 try {

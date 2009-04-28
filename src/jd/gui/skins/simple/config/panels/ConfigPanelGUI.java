@@ -66,7 +66,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         load();
     }
 
-    @Override
+    //@Override
     public void initPanel() {
         ConfigContainer container = new ConfigContainer(this);
 
@@ -246,12 +246,12 @@ public class ConfigPanelGUI extends ConfigPanel {
 
     }
 
-    @Override
+    //@Override
     public void load() {
         loadConfigEntries();
     }
 
-    @Override
+    //@Override
     public void save() {
         cep.save();
         subConfig.save();

@@ -54,7 +54,7 @@ public class Conditional extends Element {
         data[0] = new Vector<Object>();
     }
 
-    @Override
+    //@Override
     public void add(Element node) {
         if (data[1] != null) {
             data[1].addElement(node);
@@ -63,7 +63,7 @@ public class Conditional extends Element {
         }
     }
 
-    @Override
+    //@Override
     public void add(String text) {
         if (data[1] != null) {
             data[1].addElement(text);
@@ -82,7 +82,7 @@ public class Conditional extends Element {
         }
     }
 
-    @Override
+    //@Override
     public String parse(Hashtable<?, ?> params) {
         if (!params.containsKey(name)) {
             control_val = false;
@@ -139,7 +139,7 @@ public class Conditional extends Element {
         this.control_val = process_var(control_val);
     }
 
-    @Override
+    //@Override
     public String typeOfParam(String param) throws NoSuchElementException {
         for (Vector<Object> element : data) {
             if (element == null) {

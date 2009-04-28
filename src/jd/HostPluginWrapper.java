@@ -38,7 +38,7 @@ public class HostPluginWrapper extends PluginWrapper {
         this(host, className, patternSupported, 0);
     }
 
-    @Override
+    //@Override
     public PluginForHost getPlugin() {
         return (PluginForHost) super.getPlugin();
     }

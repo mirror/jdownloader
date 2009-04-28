@@ -381,7 +381,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         Color background = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100);
 
         addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
-            @Override
+            //@Override
             public boolean doHighlight(DownloadLink link) {
                 return !link.isEnabled();
             }
@@ -413,7 +413,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         Color background = JDTheme.C("gui.color.linkgrabber.error_exists", "ff7f00", 120);
 
         addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
-            @Override
+            //@Override
             public boolean doHighlight(DownloadLink link) {
                 if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return true;
                 return false;

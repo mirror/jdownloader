@@ -613,7 +613,7 @@ public class PixelObject implements Comparable<PixelObject> {
 
     }
 
-    @Override
+    //@Override
     public String toString() {
         return super.toString() + " " + getLocation()[0] + "-" + getLocation()[1];
     }

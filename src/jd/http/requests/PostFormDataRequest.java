@@ -57,7 +57,7 @@ public class PostFormDataRequest extends Request {
 
     }
 
-    @Override
+    //@Override
     public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
         httpConnection.setDoOutput(true);
 
@@ -127,7 +127,7 @@ public class PostFormDataRequest extends Request {
 
     }
 
-    @Override
+    //@Override
     public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
         httpConnection.setRequestMethod("POST");
         httpConnection.setRequestProperty("Content-Type", encodeType + "; boundary=" + boundary.substring(2));

@@ -57,7 +57,7 @@ public class TreeTableTransferHandler extends TransferHandler {
     }
 
     @SuppressWarnings("unchecked")
-    @Override
+    //@Override
     public boolean canImport(TreeTableTransferHandler.TransferSupport info) {
         if (isDragging) {
             if (draggingObjects == null) return false;
@@ -85,7 +85,7 @@ public class TreeTableTransferHandler extends TransferHandler {
         }
     }
 
-    @Override
+    //@Override
     protected Transferable createTransferable(JComponent c) {
         isDragging = true;
         Vector<FilePackage> packages = treeTable.getSelectedFilePackages();
@@ -102,7 +102,7 @@ public class TreeTableTransferHandler extends TransferHandler {
         return new StringSelection("JDAFFE");
     }
 
-    @Override
+    //@Override
     protected void exportDone(JComponent source, Transferable data, int action) {
         isDragging = false;
     }
@@ -211,13 +211,13 @@ public class TreeTableTransferHandler extends TransferHandler {
         return true;
     }
 
-    @Override
+    //@Override
     public int getSourceActions(JComponent c) {
         return MOVE;
     }
 
     @SuppressWarnings("unchecked")
-    @Override
+    //@Override
     public boolean importData(TreeTableTransferHandler.TransferSupport info) {
         try {
             Transferable tr = info.getTransferable();

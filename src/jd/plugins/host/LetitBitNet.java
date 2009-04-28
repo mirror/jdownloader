@@ -41,12 +41,12 @@ public class LetitBitNet extends PluginForHost {
         enablePremium("http://letitbit.net/");
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://letitbit.net/page/terms.php";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -65,12 +65,12 @@ public class LetitBitNet extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         Form form = br.getForm(3);
@@ -82,7 +82,7 @@ public class LetitBitNet extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         Form dl1 = br.getFormbyProperty("id", "dvifree");
@@ -139,20 +139,20 @@ public class LetitBitNet extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
     }
 }

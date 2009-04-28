@@ -68,7 +68,7 @@ public class ImageComponent extends JComponent {
      * 
      * @param g
      */
-    @Override
+    //@Override
     public void paintComponent(Graphics g) {
         g.drawImage(image, 0, 0, null);
     }

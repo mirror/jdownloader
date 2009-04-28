@@ -32,12 +32,12 @@ public class VimeoCom extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return AGB;
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
 
@@ -67,12 +67,12 @@ public class VimeoCom extends PluginForHost {
         return new Regex(this.clipData, "<" + tag + ">(.*?)</" + tag + ">").getMatch(0);
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setDebug(true);
         getFileInformation(downloadLink);
@@ -80,21 +80,21 @@ public class VimeoCom extends PluginForHost {
 
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         /* TODO: Wert nachprüfen */
         return 20;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

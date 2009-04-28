@@ -47,7 +47,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
         JDUtilities.getController().addControlListener(this);
         this.setFloatable(false);
         this.setLayout(new MigLayout(" ins 0", "[][][][][][][][][][][][][][grow,fill]"));
-        if (noTitlePane) {
+        if (noTitlePane||true) {
 
             IconMenuBar mb = new IconMenuBar();
             JMenu menu = new JMenu("");
@@ -232,7 +232,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
     public void controlEvent(final ControlEvent event) {
         new GuiRunnable<Object>() {
 
-            @Override
+            //@Override
             public Object runSave() {
                 switch (event.getID()) {
                 case ControlEvent.CONTROL_DOWNLOAD_START:

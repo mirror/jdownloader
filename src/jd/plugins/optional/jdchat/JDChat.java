@@ -620,7 +620,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     }
 
-    @Override
+    //@Override
     public void actionPerformed(ActionEvent e) {
 
         if (!((MenuItem) e.getSource()).isSelected()) {
@@ -726,7 +726,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         updateNamesPanel();
     }
 
-    @Override
+    //@Override
     public void controlEvent(ControlEvent e) {
 
         if (e.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
@@ -754,7 +754,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
     }
 
-    @Override
+    //@Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
@@ -820,12 +820,12 @@ public class JDChat extends PluginOptional implements ControlListener {
         return nick;
     }
 
-    @Override
+    //@Override
     public String getHost() {
         return JDLocale.L("plugins.optional.jdchat.name", "JD Chat");
     }
 
-    @Override
+    //@Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
@@ -839,12 +839,12 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public boolean initAddon() {
         NAMES = new ArrayList<User>();
         sb = new StringBuilder();
@@ -916,11 +916,11 @@ public class JDChat extends PluginOptional implements ControlListener {
 
             private static final long serialVersionUID = 2138710083573682339L;
 
-            @Override
+            //@Override
             public void onDisplay() {
             }
 
-            @Override
+            //@Override
             public void onHide() {
             }
 
@@ -1157,7 +1157,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     }
 
-    @Override
+    //@Override
     public void onExit() {
         NAMES.clear();
         this.setLoggedIn(false);
@@ -1367,7 +1367,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             SimpleGUI.CURRENTGUI.getTaskPane().switcher(tp);
             JDUtilities.getController().addControlListener(this);
             new Thread() {
-                @Override
+                //@Override
                 public void run() {
 
                     initIRC();
@@ -1389,7 +1389,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
     }
 
-    @Override
+    //@Override
     public String getIconKey() {
 
         return "gui.images.chat";
@@ -1437,7 +1437,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     private void startAwayObserver() {
         Thread th = new Thread() {
-            @Override
+            //@Override
             public void run() {
                 while (true) {
                     if (System.currentTimeMillis() - lastAction > AWAY_TIMEOUT) {

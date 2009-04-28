@@ -67,7 +67,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
         imgFailed = JDTheme.II("gui.images.bad", 16, 16);
     }
 
-    @Override
+    //@Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         hasFocus = false;
         column = this.table.getColumn(column).getModelIndex();

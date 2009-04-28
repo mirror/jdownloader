@@ -67,7 +67,7 @@ public class CPluginWrapper extends PluginWrapper {
         return null;
     }
 
-    @Override
+    //@Override
     public boolean canHandle(String data) {
         return getPlugin().canHandle(data);
     }

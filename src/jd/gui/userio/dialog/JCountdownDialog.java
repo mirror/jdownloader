@@ -36,7 +36,7 @@ public abstract class JCountdownDialog extends JDialog {
         this.countdown = time;
         countdownThread = new Thread() {
 
-            @Override
+            //@Override
             public void run() {
 
                 while (!isVisible()) {
@@ -55,7 +55,7 @@ public abstract class JCountdownDialog extends JDialog {
 
                     new GuiRunnable<Object>() {
 
-                        @Override
+                        //@Override
                         public Object runSave() {
                             countDownLabel.setText(JDLocale.LF("gui.dialogs.countdown.label", "%s sec", left));
                             return null;

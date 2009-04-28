@@ -37,7 +37,7 @@ public class FilelobsterCom extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -85,7 +85,7 @@ public class FilelobsterCom extends PluginForHost {
         }
     }
 
-    @Override
+    //@Override
     // TODO: AntiCaptcha Method would allow simultanous connections
     // if user is quick; he can enter captchas one-by-one and then server allow
     // him simulatanous downloads
@@ -94,12 +94,12 @@ public class FilelobsterCom extends PluginForHost {
         return 10;
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://filelobster.com/tos.html";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.filelobster.com/", "lang", "english");
@@ -113,20 +113,20 @@ public class FilelobsterCom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
     }
 

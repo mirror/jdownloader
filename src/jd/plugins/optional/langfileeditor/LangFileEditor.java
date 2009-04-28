@@ -42,28 +42,28 @@ public class LangFileEditor extends PluginOptional {
         lfe = new SingletonPanel(LFEGui.class);
     }
 
-    @Override
+    //@Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
             SimpleGUI.CURRENTGUI.getContentPane().display(lfe.getPanel());
         }
     }
 
-    @Override
+    //@Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    //@Override
     public boolean initAddon() {
         return true;
     }
 
-    @Override
+    //@Override
     public void onExit() {
     }
 
-    @Override
+    //@Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
 
@@ -72,22 +72,22 @@ public class LangFileEditor extends PluginOptional {
         return menu;
     }
 
-    @Override
+    //@Override
     public String getCoder() {
         return "Greeny";
     }
 
-    @Override
+    //@Override
     public String getIconKey() {
         return "gui.splash.languages";
     }
 
-    @Override
+    //@Override
     public String getHost() {
         return JDLocale.L("plugins.optional.langfileeditor.name", "Language File Editor");
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

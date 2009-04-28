@@ -69,7 +69,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         initConfig();
     }
 
-    @Override
+    //@Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
         if (event.getID() == ControlEvent.CONTROL_PLUGIN_INACTIVE && event.getSource() instanceof PluginForHost) {
@@ -81,27 +81,27 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         }
     }
 
-    @Override
+    //@Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
 
-    @Override
+    //@Override
     public String getHost() {
         return JDLocale.L("plugins.optional.infoFileWriter.name", "Info File Writer");
     }
 
-    @Override
+    //@Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
         return true;
@@ -117,7 +117,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         config.addEntry(txtInfo = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_INFO_STRING, JDLocale.L("plugins.optional.infoFileWriter.content", "Content:")).setDefaultValue(INFO_STRING_DEFAULT));
     }
 
-    @Override
+    //@Override
     public void actionPerformed(ActionEvent e) {
         JComboBox cmb = ((JComboBox) ((GUIConfigEntry) cmbVars.getGuiListener()).getInput()[0]);
         if (cmb.getSelectedIndex() < 0) return;
@@ -125,7 +125,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         txt.insert("%" + Replacer.getKey(cmb.getSelectedIndex()) + "%", txt.getCaretPosition());
     }
 
-    @Override
+    //@Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
     }

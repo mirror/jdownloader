@@ -53,7 +53,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
         private static final long serialVersionUID = 1155282457354673850L;
 
-        @Override
+        //@Override
         public Class<?> getColumnClass(int columnIndex) {
             return getValueAt(0, columnIndex).getClass();
         }
@@ -62,7 +62,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             return 5;
         }
 
-        @Override
+        //@Override
         public String getColumnName(int column) {
             switch (column) {
             case 0:
@@ -99,12 +99,12 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             return null;
         }
 
-        @Override
+        //@Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
             return columnIndex == 0;
         }
 
-        @Override
+        //@Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 0) {
                 OptionalPluginWrapper plgWrapper = pluginsOptional.get(row);
@@ -157,7 +157,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         SimpleGUI.displayConfig(pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig(), 0);
     }
 
-    @Override
+    //@Override
     public void initPanel() {
         panel.setLayout(new MigLayout("ins 10,wrap 2", "[fill,grow 10]10[fill,grow]", "[fill,grow,null:150000:null][]"));
 
@@ -201,7 +201,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
     }
 
-    @Override
+    //@Override
     public void load() {
     }
 
@@ -223,7 +223,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     public void mouseReleased(MouseEvent e) {
     }
 
-    @Override
+    //@Override
     public void save() {
     }
 }

@@ -44,7 +44,7 @@ public class ShareOnlineBiz extends PluginForHost {
         this.enablePremium("http://www.share-online.biz/service.php?p=31353834353B4A44616363");
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://share-online.biz/rules.php";
     }
@@ -74,7 +74,7 @@ public class ShareOnlineBiz extends PluginForHost {
         return false;
     }
 
-    @Override
+    //@Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         setBrowserExclusive();
@@ -99,7 +99,7 @@ public class ShareOnlineBiz extends PluginForHost {
         return ai;
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.share-online.biz", "king_mylang", "en");
@@ -120,12 +120,12 @@ public class ShareOnlineBiz extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         DownloadLink downloadLink = parameter;
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -163,7 +163,7 @@ public class ShareOnlineBiz extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(downloadLink);
@@ -231,20 +231,20 @@ public class ShareOnlineBiz extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

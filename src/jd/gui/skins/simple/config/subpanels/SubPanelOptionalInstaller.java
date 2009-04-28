@@ -44,7 +44,7 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
 
         private static final long serialVersionUID = 1L;
 
-        @Override
+        //@Override
         public Class<?> getColumnClass(int columnIndex) {
             return getValueAt(0, columnIndex).getClass();
         }
@@ -53,7 +53,7 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
             return 5;
         }
 
-        @Override
+        //@Override
         public String getColumnName(int column) {
             switch (column) {
             case 0:
@@ -97,12 +97,12 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
             return "";
         }
 
-        @Override
+        //@Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
             return columnIndex == 4;
         }
 
-        @Override
+        //@Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 4) {
                 PackageData element = packageData.get(row);
@@ -138,7 +138,7 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
         }
     }
 
-    @Override
+    //@Override
     public void initPanel() {
 
         panel.setLayout(new MigLayout("ins 10,wrap 2", "[fill,grow 10]10[fill,grow]", "[fill,grow,null:150000:null][]"));
@@ -231,11 +231,11 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
         add(panel);
     }
 
-    @Override
+    //@Override
     public void load() {
     }
 
-    @Override
+    //@Override
     public void save() {
 
     }

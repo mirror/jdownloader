@@ -233,7 +233,7 @@ public class JDInit {
 
                     new GuiRunnable<Object>() {
 
-                        @Override
+                        //@Override
                         public Object runSave() {
                             JOptionPane.showMessageDialog(null, JDLocale.L("installer.welcome", "Welcome to jDownloader."));
                             return null;
@@ -261,7 +261,7 @@ public class JDInit {
 
                     new GuiRunnable<Object>() {
 
-                        @Override
+                        //@Override
                         public Object runSave() {
                             JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
                             return null;
@@ -276,7 +276,7 @@ public class JDInit {
                 logger.severe("INSTALL abgebrochen2");
                 new GuiRunnable<Object>() {
 
-                    @Override
+                    //@Override
                     public Object runSave() {
                         JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation", "Error. User aborted installation."));
                         return null;

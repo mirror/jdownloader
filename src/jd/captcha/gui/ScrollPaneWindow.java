@@ -63,7 +63,7 @@ public class ScrollPaneWindow extends BasicWindow {
      * @param y
      * @param cmp
      */
-    @Override
+    //@Override
     public void setComponent(final int x, final int y, final Component cmp) {
         if (cmp == null) { return; }
         SwingUtilities.invokeLater(new Runnable() {
@@ -81,7 +81,7 @@ public class ScrollPaneWindow extends BasicWindow {
      * @param y
      * @param img
      */
-    @Override
+    //@Override
     public void setImage(final int x, final int y, final Image img) {
         if (img == null) { return; }
         SwingUtilities.invokeLater(new Runnable() {
@@ -99,7 +99,7 @@ public class ScrollPaneWindow extends BasicWindow {
      * @param y
      * @param cmp
      */
-    @Override
+    //@Override
     public void setText(final int x, final int y, final Object cmp) {
         if (cmp == null) { return;
         // final ScrollPaneWindow _this=this;

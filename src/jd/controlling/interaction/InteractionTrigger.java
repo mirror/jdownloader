@@ -97,7 +97,7 @@ public class InteractionTrigger implements Serializable {
         return description;
     }
 
-    @Override
+    //@Override
     public String toString() {
         return name + " (" + description + ")";
     }

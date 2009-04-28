@@ -42,7 +42,7 @@ public class SdxCc extends PluginForDecrypt {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = cryptedLink.getCryptedUrl();
@@ -69,7 +69,7 @@ public class SdxCc extends PluginForDecrypt {
         return decryptedLinks.size() > 0 ? decryptedLinks : null;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

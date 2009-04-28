@@ -70,12 +70,12 @@ public class ImageFap extends PluginForHost {
         return null;
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://imagefap.com/faq.php";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             br.getPage(downloadLink.getDownloadURL());
@@ -102,12 +102,12 @@ public class ImageFap extends PluginForHost {
         return false;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -133,20 +133,20 @@ public class ImageFap extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

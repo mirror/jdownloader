@@ -48,7 +48,7 @@ public class LinkCryptWs extends PluginForDecrypt {
      * @see jd.plugins.PluginForDecrypt#decryptIt(jd.plugins.CryptedLink,
      * jd.controlling.ProgressController)
      */
-    @Override
+    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -98,7 +98,7 @@ public class LinkCryptWs extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

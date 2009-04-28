@@ -31,7 +31,7 @@ public class MegauploadComFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String id = Request.parseQuery(param.getCryptedUrl()).get("f");
         String url = "http://www.megaupload.com/xml/folderfiles.php?folderid=" + id;
@@ -45,7 +45,7 @@ public class MegauploadComFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

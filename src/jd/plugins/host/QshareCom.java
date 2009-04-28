@@ -41,7 +41,7 @@ public class QshareCom extends PluginForHost {
         this.enablePremium("http://s1.qshare.com/index.php?sysm=sys_page&sysf=site&site=buy");
     }
 
-    @Override
+    //@Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
@@ -98,7 +98,7 @@ public class QshareCom extends PluginForHost {
         return ai;
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         br.setFollowRedirects(true);
@@ -133,7 +133,7 @@ public class QshareCom extends PluginForHost {
 
     }
 
-    @Override
+    //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String user = account.getUser();
         String pass = account.getPass();
@@ -207,12 +207,12 @@ public class QshareCom extends PluginForHost {
 
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://s1.qshare.com/index.php?sysm=sys_page&sysf=site&site=terms";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -224,25 +224,25 @@ public class QshareCom extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

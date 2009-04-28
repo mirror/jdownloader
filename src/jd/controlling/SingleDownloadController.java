@@ -523,7 +523,7 @@ public class SingleDownloadController extends Thread {
      * 
      * @see java.lang.Thread#run()
      */
-    @Override
+    //@Override
     public void run() {
 
         /**

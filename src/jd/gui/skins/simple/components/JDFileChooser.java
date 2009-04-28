@@ -60,7 +60,7 @@ public class JDFileChooser extends JFileChooser {
         return super.createDialog(parent);
         }
 
-    @Override
+    //@Override
     public File getSelectedFile() {
         File ret = super.getSelectedFile();
 
@@ -73,7 +73,7 @@ public class JDFileChooser extends JFileChooser {
         return ret;
     }
 
-    @Override
+    //@Override
     public File[] getSelectedFiles() {
         File[] ret = super.getSelectedFiles();
 

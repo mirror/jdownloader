@@ -65,7 +65,7 @@ class BasicLinkButtonUI extends MetalButtonUI {
     public BasicLinkButtonUI() {
     }
 
-    @Override
+    //@Override
     protected void paintText(Graphics g, JComponent com, Rectangle rect, String s) {
         JLinkButton bn = (JLinkButton) com;
         ButtonModel bnModel = bn.getModel();
@@ -433,7 +433,7 @@ public class JLinkButton extends JButton {
      * private void setDefault() { UIManager.getDefaults().put("LinkButtonUI",
      * "BasicLinkButtonUI"); }
      */
-    @Override
+    //@Override
     public String getUIClassID() {
         return "LinkButtonUI";
     }
@@ -462,7 +462,7 @@ public class JLinkButton extends JButton {
         return isLinkVisited;
     }
 
-    @Override
+    //@Override
     protected String paramString() {
         String str;
         if (linkBehavior == ALWAYS_UNDERLINE) {
@@ -551,7 +551,7 @@ public class JLinkButton extends JButton {
         repaint();
     }
 
-    @Override
+    //@Override
     public void updateUI() {
         setUI(BasicLinkButtonUI.createUI(this));
     }

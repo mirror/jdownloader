@@ -99,7 +99,7 @@ public class User implements Comparable<Object> {
 
     }
 
-    @Override
+    //@Override
     public String toString() {
         switch (rank) {
         case RANK_OP:

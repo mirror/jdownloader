@@ -33,12 +33,12 @@ public class YourFilesBiz extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "http://yourfiles.biz/rules.php";
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -56,12 +56,12 @@ public class YourFilesBiz extends PluginForHost {
         br.setCookie("http://yourfiles.to/", "yab_mylang", "en");
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         String url = br.getRegex(Pattern.compile("document.location=\"(http.*?getfile\\.php.*?)\"'>", Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -75,20 +75,20 @@ public class YourFilesBiz extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
         

@@ -52,7 +52,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
     public abstract String getRequirements();
 
-    @Override
+    //@Override
     public Pattern getSupportedLinks() {
         return null;
     }

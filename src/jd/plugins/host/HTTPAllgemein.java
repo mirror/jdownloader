@@ -37,12 +37,12 @@ public class HTTPAllgemein extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return "";
     }
 
-    @Override
+    //@Override
     public String getFileInformationString(DownloadLink parameter) {
         return "(" + contentType + ")" + parameter.getName();
     }
@@ -70,7 +70,7 @@ public class HTTPAllgemein extends PluginForHost {
         return null;
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException {
         this.setBrowserExclusive();
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("httpviajd://", "http://"));
@@ -123,12 +123,12 @@ public class HTTPAllgemein extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
@@ -160,23 +160,23 @@ public class HTTPAllgemein extends PluginForHost {
 
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
         link.setProperty("nochunkload", false);
         link.setProperty("nochunk", false);
         link.setProperty("basicauth", null);
     }
 
-    @Override
+    //@Override
     public void resetPluginGlobals() {
     }
 

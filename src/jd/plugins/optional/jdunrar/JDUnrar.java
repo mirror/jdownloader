@@ -87,7 +87,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      * das controllevent fängt heruntergeladene file ab und wertet sie aus
      */
     @SuppressWarnings("unchecked")
-    @Override
+    //@Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
         DownloadLink link;
@@ -456,7 +456,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         return "gui.images.addons.unrar";
     }
 
-    @Override
+    //@Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
@@ -494,7 +494,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     return false;
                 }
 
-                @Override
+                //@Override
                 public String getDescription() {
                     return JDLocale.L("plugins.optional.jdunrar.filefilter", "Rar-Startvolumes");
                 }
@@ -604,7 +604,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     return false;
                 }
 
-                @Override
+                //@Override
                 public String getDescription() {
                     return JDLocale.L("plugins.optional.jdunrar.filefilter.extractto", "Extract Directory");
                 }
@@ -646,22 +646,22 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     }
 
-    @Override
+    //@Override
     public String getHost() {
         return JDLocale.L("plugins.optional.jdunrar.name", "JD-Unrar");
     }
 
-    @Override
+    //@Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
         return true;
@@ -693,13 +693,13 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, passwordConfig));
         SubConfiguration.getConfig(PasswordList.PROPERTY_PASSWORDLIST).addConfigurationListener(new ConfigurationListener() {
 
-            @Override
+            //@Override
             public void onPostSave(SubConfiguration subConfiguration) {
                 // TODO Auto-generated method stub
 
             }
 
-            @Override
+            //@Override
             public void onPreSave(SubConfiguration subConfiguration) {
                 PasswordList.cleanList();
             }
@@ -862,7 +862,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         return UnrarWrapper.isUnrarCommandValid(path, reset);
     }
 
-    @Override
+    //@Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
     }
@@ -1331,7 +1331,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     }
 
     @SuppressWarnings("unchecked")
-    @Override
+    //@Override
     public Object interact(String command, Object parameter) {
 
         if (command.equals("getPasswordList")) {

@@ -19,7 +19,7 @@ import jd.utils.JDUtilities;
 
 class LinkGrabberFilePackageBroadcaster extends JDBroadcaster<LinkGrabberFilePackageListener, LinkGrabberFilePackageEvent> {
 
-    @Override
+    //@Override
     protected void fireEvent(LinkGrabberFilePackageListener listener, LinkGrabberFilePackageEvent event) {
         listener.handle_LinkGrabberFilePackageEvent(event);
     }

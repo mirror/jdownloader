@@ -91,7 +91,7 @@ public class CryptedLink extends Property {
     /**
      * Gibt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
      */
-    @Override
+    //@Override
     public String toString() {
         return this.cryptedUrl;
     }

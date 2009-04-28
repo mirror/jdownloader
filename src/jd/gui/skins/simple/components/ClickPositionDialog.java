@@ -80,7 +80,7 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
 
         countdownThread = new Thread() {
 
-            @Override
+            //@Override
             public void run() {
 
                 while (!isVisible() && isDisplayable()) {

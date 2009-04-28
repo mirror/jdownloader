@@ -55,7 +55,7 @@ public class JDFileReg {
             JDIO.writeLocalFile(JDUtilities.getResourceFile("tmp/installcnl.reg"), "Windows Registry Editor Version 5.00\r\n\r\n\r\n\r\n" + sb.toString());
 
             if (!SubConfiguration.getConfig("CNL2").getBooleanProperty("INSTALLED", false)) {
-                if (UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("gui.cnl.install.title", "Click'n'Load Installation"), JDLocale.L("gui.cnl.install.text", "Click'n'load is a very comfortable way to add links to JDownloader. \r\nTo install Click'n'Load, JDownloader has to set some registry entries. \r\nYou might have to confirm some Windows messages to continue."), JDTheme.II("gui.clicknload", 48, 48), null, null)) {
+                if ((UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("gui.cnl.install.title", "Click'n'Load Installation"), JDLocale.L("gui.cnl.install.text", "Click'n'load is a very comfortable way to add links to JDownloader. \r\nTo install Click'n'Load, JDownloader has to set some registry entries. \r\nYou might have to confirm some Windows messages to continue."), JDTheme.II("gui.clicknload", 48, 48), null, null)&UserIO.RETURN_OK)>0) {
                     JDUtilities.runCommand("regedit.exe", new String[] { "installcnl.reg" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
                     JDUtilities.runCommand("regedit.exe", new String[] { "/e", "test.reg", "HKEY_CLASSES_ROOT\\.dlc" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
                     if (JDUtilities.getResourceFile("tmp/test.reg").exists()) {

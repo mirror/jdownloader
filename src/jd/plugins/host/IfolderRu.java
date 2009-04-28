@@ -37,12 +37,12 @@ public class IfolderRu extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    //@Override
     public String getAGBLink() {
         return ("http://ifolder.ru/agreement");
     }
 
-    @Override
+    //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException, InterruptedException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -57,7 +57,7 @@ public class IfolderRu extends PluginForHost {
         return true;
     }
 
-    @Override
+    //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         boolean do_download = false;
         getFileInformation(downloadLink);
@@ -118,22 +118,22 @@ public class IfolderRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
     }
 
-    @Override
+    //@Override
     public void reset() {
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    @Override
+    //@Override
     public int getMaxSimultanFreeDownloadNum() {
         /* Tested up to 10 parallel downloads */
         return 10;
     }
 
-    @Override
+    //@Override
     public void reset_downloadlink(DownloadLink link) {
     }
 

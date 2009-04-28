@@ -114,7 +114,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
                     }
                     new GuiRunnable<Object>() {
 
-                        @Override
+                        //@Override
                         public Object runSave() {
                             JDRRGui jd = new JDRRGui(SimpleGUI.CURRENTGUI, ((JTextField) ip.getInput()[0]).getText());
                             jd.setModal(true);
@@ -195,7 +195,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
             });
             searchField.addFocusListener(new FocusAdapter() {
 
-                @Override
+                //@Override
                 public void focusGained(FocusEvent e) {
 
                     if (searchField.getText().equals(text)) {
@@ -203,7 +203,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
                     }
                 }
 
-                @Override
+                //@Override
                 public void focusLost(FocusEvent e) {
                     if (searchField.getText().equals("")) {
 
@@ -298,7 +298,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
 
     }
 
-    @Override
+    //@Override
     public void initPanel() {
 
         this.setLayout(new MigLayout("ins 0 30 0 0, wrap 2", "[grow 10,fill][grow,fill]", "[]5[]5[]"));
@@ -339,12 +339,12 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
         // add(routerScript);
     }
 
-    @Override
+    //@Override
     public void load() {
         loadConfigEntries();
     }
 
-    @Override
+    //@Override
     public void save() {
         saveConfigEntries();
 

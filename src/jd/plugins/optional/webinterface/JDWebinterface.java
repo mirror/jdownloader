@@ -69,32 +69,32 @@ public class JDWebinterface extends PluginOptional {
         cfg.setDefaultValue("JD");
     }
 
-    @Override
+    //@Override
     public void actionPerformed(ActionEvent e) {
 
     }
 
-    @Override
+    //@Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
 
-    @Override
+    //@Override
     public String getCoder() {
         return "jiaz";
     }
 
-    @Override
+    //@Override
     public String getHost() {
         return JDLocale.L("plugins.optional.webinterface.name", "WebInterface");
     }
 
-    @Override
+    //@Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    //@Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -108,7 +108,7 @@ public class JDWebinterface extends PluginOptional {
         }
     }
 
-    @Override
+    //@Override
     public boolean initAddon() {
         @SuppressWarnings("unused")
         JDSimpleWebserver server = new JDSimpleWebserver();
@@ -116,7 +116,7 @@ public class JDWebinterface extends PluginOptional {
         return true;
     }
 
-    @Override
+    //@Override
     public void onExit() {
     }
 }
