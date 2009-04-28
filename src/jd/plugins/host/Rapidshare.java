@@ -191,7 +191,7 @@ public class Rapidshare extends PluginForHost {
 
     }
 
-    //@Override
+    // @Override
     public int getTimegapBetweenConnections() {
         return 100;
     }
@@ -200,7 +200,7 @@ public class Rapidshare extends PluginForHost {
      * Bietet der hoster eine Möglichkeit mehrere links gleichzeitig zu prüfen,
      * kann das über diese Funktion gemacht werden.
      */
-    //@Override
+    // @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
         logger.finest("OnlineCheck: " + urls.length + " links");
@@ -308,7 +308,7 @@ public class Rapidshare extends PluginForHost {
         return new Regex(downloadURL, "files/(\\d+)/").getMatch(0);
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         try {
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
@@ -476,7 +476,7 @@ public class Rapidshare extends PluginForHost {
                 }
                 final String passToThread = msg;
                 new Thread() {
-                    //@Override
+                    // @Override
                     public void run() {
                         TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI, "Speedtest result", "Your speedtest results", passToThread);
                     }
@@ -490,13 +490,13 @@ public class Rapidshare extends PluginForHost {
 
     }
 
-    //@Override
+    // @Override
     public String getSessionInfo() {
         if (selectedServer != null) return " @ " + selectedServer;
         return "";
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         try {
             if (account.getBooleanProperty("PREMCOLLECTOR", false)) {
@@ -701,7 +701,7 @@ public class Rapidshare extends PluginForHost {
                 }
                 final String passToThread = msg;
                 new Thread() {
-                    //@Override
+                    // @Override
                     public void run() {
                         TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI, JDLocale.L("plugins.host.rapidshare.speedtestresult.title", "Speedtest result"), JDLocale.L("plugins.host.rapidshare.speedtestresult.message", "Your speedtest results"), passToThread);
                     }
@@ -748,7 +748,7 @@ public class Rapidshare extends PluginForHost {
         return error2;
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://rapidshare.com/faq.html";
     }
@@ -844,7 +844,7 @@ public class Rapidshare extends PluginForHost {
         return postTarget;
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         if (System.currentTimeMillis() - LAST_FILE_CHECK < 250) {
             try {
@@ -887,7 +887,7 @@ public class Rapidshare extends PluginForHost {
         return postTarget;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -896,12 +896,12 @@ public class Rapidshare extends PluginForHost {
         logger.severe("Unknown error(" + id + "). please add this htmlcode to your bugreport:\r\n" + req);
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
@@ -941,14 +941,9 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                ArrayList<PackageData> all = new PackageManager().getPackageData();
-                PackageData dat = all.get((int) (Math.random() * (all.size() - 1)));
-                String url = dat.getStringProperty("url");
-                String link = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.host.rapidshare.speedtest.link", "Enter a Rapidshare.com Link"), url);
+                String link = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.host.rapidshare.speedtest.link", "Enter a Rapidshare.com Link"), "Please enter a Rapidshare Link");
                 if (link == null) return;
-                if (!canHandle(link)) {
-                    link = url;
-                }
+                if (!canHandle(link)) return;
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName("RS Speedtest");
                 for (Entry<String, String> n : serverMap.entrySet()) {
@@ -993,7 +988,7 @@ public class Rapidshare extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
 
         AccountInfo ai = new AccountInfo(this, account);
@@ -1051,7 +1046,7 @@ public class Rapidshare extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
     }
 
