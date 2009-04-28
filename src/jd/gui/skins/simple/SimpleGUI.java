@@ -25,9 +25,9 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.event.WindowStateListener;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
@@ -195,42 +195,14 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         JPanel p;
         // menuBar = new JDMenuBar();
-        this.setGlassPane(p = new JPanel());
-        p.addMouseListener(new MouseListener() {
 
-            public void mouseClicked(MouseEvent e) {
-                // TODO Auto-generated method stub
-                System.out.println("clicked");
-            }
-
-            public void mouseEntered(MouseEvent e) {
-                System.out.println("enter");
-
-            }
-
-            public void mouseExited(MouseEvent e) {
-                System.out.println("exit");
-
-            }
-
-            public void mousePressed(MouseEvent e) {
-                // TODO Auto-generated method stub
-
-            }
-
-            public void mouseReleased(MouseEvent e) {
-                // TODO Auto-generated method stub
-
-            }
-        });
-
-        p.setOpaque(false);
         statusBar = new JDStatusBar();
 
         // RootPaneUI ui = this.getRootPane().getUI();
-        mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48_noShadow"), 48, 48);
-        mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48"), 48, 48);
+
         if (isSubstance()) {
+            mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48_noShadow"), 48, 48);
+            mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48"), 48, 48);
             this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
 
             JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
@@ -241,13 +213,16 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 }
 
             });
+            noTitlePane = false;
         } else {
+            mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48_noShadow"), 32, 32);
+            mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48"), 32, 32);
             this.noTitlePane = true;
 
         }
         this.setEnabled(false);
         this.setWaiting(true);
-        noTitlePane = false;
+
         toolBar = new JDToolBar(noTitlePane, mainMenuIcon);
 
         // System.out.println(ui);
@@ -322,6 +297,14 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 }
             }
         }.start();
+        this.addWindowStateListener(new WindowStateListener() {
+
+            public void windowStateChanged(WindowEvent e) {
+               SimpleGUI.this.titleUI.getTitlePane().repaint();
+                
+            }
+
+        });
 
     }
 
@@ -343,9 +326,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         if (!mainMenuRollOverStatus) return;
         this.mainMenuRollOverStatus = false;
         toolBar.setMainMenuIcon(mainMenuIcon);
-        this.titleUI.setMainMenuIcon(mainMenuIcon);
+        if (titleUI != null) this.titleUI.setMainMenuIcon(mainMenuIcon);
         toolBar.setToolTipText(null);
-        titleUI.setToolTipText(null);
+        if (titleUI != null) titleUI.setToolTipText(null);
 
     }
 
@@ -353,9 +336,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         if (mainMenuRollOverStatus) return;
         this.mainMenuRollOverStatus = true;
         toolBar.setMainMenuIcon(mainMenuIconRollOver);
-        this.titleUI.setMainMenuIcon(mainMenuIconRollOver);
+        if (titleUI != null) this.titleUI.setMainMenuIcon(mainMenuIconRollOver);
         toolBar.setToolTipText("Click to open the main menu");
-        titleUI.setToolTipText("Click to open the main menu");
+        if (titleUI != null) titleUI.setToolTipText("Click to open the main menu");
 
     }
 
