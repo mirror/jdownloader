@@ -32,6 +32,7 @@ import javax.swing.event.TreeExpansionListener;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.tree.TreePath;
+
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.LinkGrabberController;
@@ -84,7 +85,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
-        setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);        
+        setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setEditable(false);
         setAutoscrolls(false);
         setColumnControlVisible(true);
@@ -381,7 +382,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         Color background = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100);
 
         addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
-            //@Override
+            // @Override
             public boolean doHighlight(DownloadLink link) {
                 return !link.isEnabled();
             }
@@ -413,7 +414,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         Color background = JDTheme.C("gui.color.linkgrabber.error_exists", "ff7f00", 120);
 
         addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
-            //@Override
+            // @Override
             public boolean doHighlight(DownloadLink link) {
                 if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return true;
                 return false;

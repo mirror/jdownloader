@@ -1,6 +1,5 @@
 package jd.gui.skins.simple;
 
-import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -9,7 +8,6 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
 import jd.config.MenuItem;
-import jd.nutils.JDImage;
 
 public class JDMenu extends JMenu {
 
@@ -17,18 +15,6 @@ public class JDMenu extends JMenu {
 
     public JDMenu(String l) {
         super(l);
-    }
-
-    protected static JMenuItem createMenuItem(MenuAction action) {
-        JMenuItem menuItem = new JMenuItem(action);
-        if (menuItem.getIcon() instanceof ImageIcon) {
-            ImageIcon icon = (ImageIcon) menuItem.getIcon();
-            menuItem.setIcon(JDImage.getScaledImageIcon(icon, 16, 16));
-        }
-        if (action.getAccelerator() != null) {
-            menuItem.setAccelerator(action.getAccelerator());
-        }
-        return menuItem;
     }
 
     public static JMenuItem getJMenuItem(final MenuItem mi) {

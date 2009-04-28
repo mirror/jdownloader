@@ -119,7 +119,7 @@ public class TrayIconTooltip {
     }
 
     public void hide() {
-        new GuiRunnable() {
+        new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {

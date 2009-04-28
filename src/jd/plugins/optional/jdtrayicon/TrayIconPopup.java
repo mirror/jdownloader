@@ -24,7 +24,6 @@ import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Point;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -46,7 +45,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.gui.skins.simple.MenuAction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -59,7 +57,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
 
     private static final int ACTION_EXIT = 11;
     private static final int ACTION_LOAD = 0;
-    private static final int ACTION_LOG = 7;
     private static final int ACTION_PAUSE = 3;
     private static final int ACTION_RECONNECT = 8;
     private static final int ACTION_START = 1;
@@ -116,9 +113,13 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             addDisabledMenuEntry(JDTheme.II("gui.images.next"), JDLocale.L("plugins.trayicon.popup.menu.start", "Download Starten"));
         }
 
-        /*if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
-            addMenuEntry(ACTION_PAUSE, JDTheme.II("gui.images.stop_after"), JDLocale.L("plugins.trayicon.popup.menu.pause", "Nach diesem Download anhalten"));
-        }*/
+        /*
+         * if (JDUtilities.getController().getDownloadStatus() ==
+         * JDController.DOWNLOAD_RUNNING) { addMenuEntry(ACTION_PAUSE,
+         * JDTheme.II("gui.images.stop_after"),
+         * JDLocale.L("plugins.trayicon.popup.menu.pause",
+         * "Nach diesem Download anhalten")); }
+         */
 
         addMenuEntry(ACTION_ADD, JDTheme.II("gui.images.add"), JDLocale.L("plugins.trayicon.popup.menu.add", "Downloads hinzufügen"));
         addMenuEntry(ACTION_UPDATE, JDTheme.II("gui.images.update_manager"), JDLocale.L("plugins.trayicon.popup.menu.update", "JD aktualisieren"));
@@ -194,9 +195,9 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             return JDTheme.II("gui.images.reconnect_disabled");
         }
     }
-    
+
     private ImageIcon getPremiumImage() {
-    	if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, false)) {
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, false)) {
             return JDTheme.II("gui.images.premium_enabled");
         } else {
             return JDTheme.II("gui.images.premium_disabled");
@@ -262,7 +263,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     }
 
     private void initTopPanel() {
-        //ImageIcon logo = new ImageIcon(JDImage.getImage("logo/logo_32_32"));
+        // ImageIcon logo = new ImageIcon(JDImage.getImage("logo/logo_32_32"));
         JDUtilities.addToGridBag(topPanel, new JLabel(JDLocale.L("plugins.trayicon.popup.title", "JDownloader") + " 0." + JDUtilities.getRevision(), null, SwingConstants.LEFT), 0, 0, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_NORTH_WEST);
     }
 
@@ -308,24 +309,25 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             simplegui.setVisible(!simplegui.isVisible());
             return;
         }
-        JDLogger.getLogger().info(" ACTIOn " + entries.get(row));
+        JDLogger.getLogger().info("Action " + entries.get(row));
         switch (entries.get(row)) {
 
         case TrayIconPopup.ACTION_ADD:
-            simplegui.actionPerformed(new ActionEvent(this, MenuAction.ITEMS_ADD, null));
+            /**
+             * TODO
+             */
+            // simplegui.actionPerformed(new ActionEvent(this,
+            // MenuAction.ITEMS_ADD, null));
             break;
-   
         case TrayIconPopup.ACTION_LOAD:
             /**
              * TODO
              */
-//            simplegui.actionPerformed(new ActionEvent(this, MenuAction.APP_LOAD_DLC, null));
-            break;
-        case TrayIconPopup.ACTION_LOG:
-            simplegui.actionPerformed(new ActionEvent(this, MenuAction.APP_LOG, null));
+            // simplegui.actionPerformed(new ActionEvent(this,
+            // MenuAction.APP_LOAD_DLC, null));
             break;
         case TrayIconPopup.ACTION_PAUSE:
-           JDUtilities.getController().pauseDownloads(true);
+            JDUtilities.getController().pauseDownloads(true);
             break;
         case TrayIconPopup.ACTION_RECONNECT:
             simplegui.doManualReconnect();
@@ -338,7 +340,8 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             /**
              * TODO
              */
-//            simplegui.actionPerformed(new ActionEvent(this, JDAction.MenuAction, null));
+            // simplegui.actionPerformed(new ActionEvent(this,
+            // JDAction.MenuAction, null));
             break;
         case TrayIconPopup.ACTION_TOGGLE_RECONNECT:
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
@@ -351,8 +354,8 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             JDUtilities.getController().exit();
             break;
         case TrayIconPopup.ACTION_TOGGLE_PREMIUM:
-        	JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, false));
-        	break;
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, false));
+            break;
         }
         dispose();
     }
@@ -390,8 +393,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
                 SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, value);
                 SubConfiguration.getConfig("DOWNLOAD").save();
             }
-        }
-        if (e.getSource() == spMaxDls) {
+        } else if (e.getSource() == spMaxDls) {
             int value = (Integer) spMaxDls.getValue();
 
             if (max != value) {
