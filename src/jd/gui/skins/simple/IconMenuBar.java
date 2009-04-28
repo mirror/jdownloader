@@ -6,7 +6,6 @@ import java.awt.Image;
 
 import javax.swing.JMenuBar;
 
-import jd.nutils.JDImage;
 import jd.utils.JDTheme;
 
 public class IconMenuBar extends JMenuBar {
@@ -27,7 +26,7 @@ public class IconMenuBar extends JMenuBar {
         this.setMinimumSize(new Dimension(width, height));
     }
 
-    //@Override
+    // @Override
     public void paint(Graphics g) {
         // super.paint(g);
         g.drawImage(appIcon, 0, 0, null);
