@@ -30,7 +30,6 @@ import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.nutils.OSDetector;
-import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.MacOSController;
@@ -89,7 +88,6 @@ public abstract class UnitTest {
         Interaction.initTriggers();
 
         JDTheme.setTheme("default");
-        JDSounds.setSoundTheme("default");
 
         final JDInit init = new JDInit(null);
         init.init();

@@ -37,7 +37,6 @@ import jd.gui.UserIO;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.Screen;
 import jd.utils.JDLocale;
-import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
@@ -87,7 +86,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
     public void init() {
 
         // countdown = ;
-        JDSounds.PT("sound.captcha.onCaptchaInput");
+//        JDSounds.PT("sound.captcha.onCaptchaInput");
         this.setModal(true);
         // this.addWindowListener(new WindowListener() {
         //

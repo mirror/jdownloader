@@ -13,16 +13,14 @@ public class MouseAreaListener implements MouseMotionListener, MouseListener {
     private int xEnd;
 
     public MouseAreaListener(int i, int j, int k, int l) {
-       this.xStart=i;
-       this.yStart=j;
-       this.xEnd=k;
-       this.yEnd=l;
+        this.xStart = i;
+        this.yStart = j;
+        this.xEnd = k;
+        this.yEnd = l;
     }
 
     public boolean isOverIcon(Point p) {
-        if (p.x >= xStart && p.x <= xEnd) {
-            if (p.y <= yEnd&&p.y>=yStart) { return true; }
-        }
+        if (p.x >= xStart && p.x <= xEnd && p.y >= yStart && p.y <= yEnd) return true;
         return false;
     }
 
@@ -30,45 +28,34 @@ public class MouseAreaListener implements MouseMotionListener, MouseListener {
         if (isOverIcon(e.getPoint())) {
             SimpleGUI.CURRENTGUI.onMainMenuMouseClick(e);
         }
-
     }
 
     public void mouseDragged(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseMoved(MouseEvent e) {
         if (isOverIcon(e.getPoint()) && !over) {
             over = true;
-           
-            SimpleGUI.CURRENTGUI.onMainMenuMouseEnter(e);
+            SimpleGUI.CURRENTGUI.onMainMenuMouseEnter();
         } else if (!isOverIcon(e.getPoint()) && over) {
             over = false;
-      
-            SimpleGUI.CURRENTGUI.onMainMenuMouseExit(e);
+            SimpleGUI.CURRENTGUI.onMainMenuMouseExit();
         }
 
     }
 
     public void mouseEntered(MouseEvent e) {
         mouseMoved(e);
-
     }
 
     public void mouseExited(MouseEvent e) {
         mouseMoved(e);
-
     }
 
     public void mousePressed(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void mouseReleased(MouseEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
 }

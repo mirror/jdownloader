@@ -39,7 +39,6 @@ import java.util.logging.Logger;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -106,7 +105,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
-import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
@@ -329,20 +327,19 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     public void onMainMenuMouseClick(MouseEvent e) {
         JPopupMenu popup = new JPopupMenu();
-       
+
         // menu.setSize(50,50);
-       
-//        menu.setPreferredSize(mb.getMinimumSize());
-//        menu.setMinimumSize(mb.getMinimumSize());
 
+        // menu.setPreferredSize(mb.getMinimumSize());
+        // menu.setMinimumSize(mb.getMinimumSize());
 
-        JDStartMenu.createMenu(popup); 
-       
+        JDStartMenu.createMenu(popup);
+
         popup.show(e.getComponent(), e.getPoint().x, e.getPoint().y);
-//        mb.add(menu);
+        // mb.add(menu);
     }
 
-    public void onMainMenuMouseExit(MouseEvent e) {
+    public void onMainMenuMouseExit() {
         if (!mainMenuRollOverStatus) return;
         this.mainMenuRollOverStatus = false;
         toolBar.setMainMenuIcon(mainMenuIcon);
@@ -352,7 +349,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     }
 
-    public void onMainMenuMouseEnter(MouseEvent e) {
+    public void onMainMenuMouseEnter() {
         if (mainMenuRollOverStatus) return;
         this.mainMenuRollOverStatus = true;
         toolBar.setMainMenuIcon(mainMenuIconRollOver);
@@ -409,7 +406,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
      */
 
     public void actionPerformed(ActionEvent e) {
-        JDSounds.PT("sound.gui.clickToolbar");
+//        JDSounds.PT("sound.gui.clickToolbar");
         // switch (e.getID()) {
         // // case JDAction.ITEMS_MOVE_UP:
         // // case JDAction.ITEMS_MOVE_DOWN:
@@ -423,7 +420,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -982,7 +979,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);

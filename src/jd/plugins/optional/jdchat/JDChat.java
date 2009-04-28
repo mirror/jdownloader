@@ -64,7 +64,6 @@ import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
-import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
@@ -686,7 +685,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                 if (changed) {
 
                     if (!SimpleGUI.CURRENTGUI.isActive() && conn != null && msg2.contains(conn.getNick())) {
-                        JDSounds.PT("sound.gui.selectPackage");
+//                        JDSounds.PT("sound.gui.selectPackage");
                         SimpleGUI.CURRENTGUI.toFront();
                     }
 

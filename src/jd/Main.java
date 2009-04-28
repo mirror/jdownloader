@@ -37,7 +37,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
@@ -64,7 +63,6 @@ import jd.update.WebUpdater;
 import jd.utils.CheckJava;
 import jd.utils.JDFileReg;
 import jd.utils.JDLocale;
-import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.MacOSController;
@@ -288,7 +286,6 @@ public class Main {
             LOGGER.info("init Localisation");
             Main.increaseSplashStatus();
 
-            JDSounds.setSoundTheme("default");
             start(args);
         } else {
             if (args.length > 0) {

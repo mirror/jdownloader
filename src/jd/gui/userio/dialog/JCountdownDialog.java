@@ -7,7 +7,6 @@ import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.Formatter;
 import jd.utils.JDLocale;
-import jd.utils.JDSounds;
 
 public abstract class JCountdownDialog extends JDialog {
 
@@ -62,7 +61,7 @@ public abstract class JCountdownDialog extends JDialog {
                         }
 
                     }.start();
-                    if (c <= 3) JDSounds.P("sound.captcha.onCaptchaInputEmergency");
+//                    if (c <= 3) JDSounds.P("sound.captcha.onCaptchaInputEmergency");
 
                     try {
                         Thread.sleep(1000);

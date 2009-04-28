@@ -33,7 +33,6 @@ import jd.config.SubConfiguration;
 import jd.nutils.Formatter;
 import jd.nutils.Screen;
 import jd.utils.JDLocale;
-import jd.utils.JDSounds;
 import jd.utils.JDUtilities;
 
 public class InputDialog extends JDialog implements ActionListener, KeyListener {
@@ -56,7 +55,7 @@ public class InputDialog extends JDialog implements ActionListener, KeyListener 
     public InputDialog(final JFrame owner, final String title, final String def) {
         super(owner);
         countdown = Math.max(2, SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getIntegerProperty(SimpleGuiConstants.PARAM_INPUTTIMEOUT, 20));
-        JDSounds.PT("sound.captcha.onCaptchaInput");
+//        JDSounds.PT("sound.captcha.onCaptchaInput");
         this.setModal(true);
         this.setLayout(new GridBagLayout());
 
@@ -81,7 +80,7 @@ public class InputDialog extends JDialog implements ActionListener, KeyListener 
                     } else {
                         setTitle("[" + Formatter.formatSeconds(c) + "]");
                     }
-                    if (c <= 3) JDSounds.P("sound.captcha.onCaptchaInputEmergency");
+//                    if (c <= 3) JDSounds.P("sound.captcha.onCaptchaInputEmergency");
 
                     try {
                         Thread.sleep(1000);
