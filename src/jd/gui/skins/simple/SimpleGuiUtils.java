@@ -79,6 +79,7 @@ public class SimpleGuiUtils {
         SimpleGuiConstants.GUI_CONFIG.setProperty("DIMENSION_OF_" + key, child.getSize());
         if (child instanceof JFrame) SimpleGuiConstants.GUI_CONFIG.setProperty("MAXIMIZED_STATE_OF_" + key, ((JFrame) child).getExtendedState());
         SimpleGuiConstants.GUI_CONFIG.save();
+        System.out.println("Save dim "+child.getSize());
     }
 
     public static void saveLastLocation(Component parent, String key) {
@@ -90,6 +91,7 @@ public class SimpleGuiUtils {
         if (parent.isShowing()) {
             SimpleGuiConstants.GUI_CONFIG.setProperty("LOCATION_OF_" + key, parent.getLocationOnScreen());
             SimpleGuiConstants.GUI_CONFIG.save();
+            System.out.println("Save loc "+parent.getLocationOnScreen());
         }
     
     }

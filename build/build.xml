@@ -119,8 +119,8 @@
 			<attribute name="Created-By" value="JD-Team" />
 		</manifest>
 
-		<mkdir dir="${dist}/pluginressourcen/108__JDTrayLight/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/108__JDTrayLight/plugins/JDLightTray.jar" manifest="Manifest.MF">
+		<mkdir dir="${dist}/pluginressourcen/128__JDTray/plugins" />
+		<jar jarfile="${dist}/pluginressourcen/128__JDTray/plugins/JDTray.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/jdtrayicon/**" />
 			</fileset>
@@ -161,12 +161,7 @@
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/118__JDLowSpeed/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/118__JDLowSpeed/plugins/JDLowSpeed.jar" manifest="Manifest.MF">
-			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/JDLowSpeed*" />
-			</fileset>
-		</jar>
+	
 
 		<mkdir dir="${dist}/pluginressourcen/120__JDLangFileEditor/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/120__JDLangFileEditor/plugins/JDLangFileEditor.jar" manifest="Manifest.MF">

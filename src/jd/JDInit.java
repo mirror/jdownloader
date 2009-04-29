@@ -610,7 +610,7 @@ public class JDInit {
 
         new OptionalPluginWrapper("JDRemoteControl", 1.5);
 
-        new OptionalPluginWrapper("JDLowSpeed", 1.5);
+//        new OptionalPluginWrapper("JDLowSpeed", 1.5);
 
         new OptionalPluginWrapper("jdchat.JDChat", 1.5);
 
@@ -627,6 +627,8 @@ public class JDInit {
         new OptionalPluginWrapper("JDPremiumCollector", 1.5);
 
         new OptionalPluginWrapper("JDGrowlNotification", 1.5);
+        new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5);
+        
 
     }
 

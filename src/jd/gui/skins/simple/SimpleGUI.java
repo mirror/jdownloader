@@ -60,7 +60,6 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
-import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
@@ -113,6 +112,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdesktop.swingworker.SwingWorker;
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.JXFrame;
 import org.jdesktop.swingx.JXLabel;
@@ -193,6 +193,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private boolean mainMenuRollOverStatus = false;
 
+    private SwingWorker cursorworker;
+
     /**
      * Das Hauptfenster wird erstellt. Singleton. Use SimpleGUI.createGUI
      */
@@ -211,8 +213,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         this.setWaiting(true);
 
         if (isSubstance()) {
-            mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48_noShadow"), 48, 48);
-            mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48"), 48, 48);
+            mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 54, 54);
+            mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
             this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
 
             // JDController.getInstance().addControlListener(new
@@ -228,8 +230,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             noTitlePane = false;
 
         } else {
-            mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48_noShadow"), 32, 32);
-            mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48"), 32, 32);
+            mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 32, 32);
+            mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 32, 32);
             this.noTitlePane = true;
 
         }
@@ -256,45 +258,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             }
 
         });
-        this.addWindowListener(new WindowListener() {
 
-            public void windowActivated(WindowEvent e) {
-                JDLogger.getLogger().info("I");
-
-            }
-
-            public void windowClosed(WindowEvent e) {
-                JDLogger.getLogger().info("I");
-
-            }
-
-            public void windowClosing(WindowEvent e) {
-                // TODO Auto-generated method stub
-                JDLogger.getLogger().info("I");
-
-            }
-
-            public void windowDeactivated(WindowEvent e) {
-                // TODO Auto-generated method stub
-                JDLogger.getLogger().info("I");
-            }
-
-            public void windowDeiconified(WindowEvent e) {
-                // TODO Auto-generated method stub
-                JDLogger.getLogger().info("I");
-            }
-
-            public void windowIconified(WindowEvent e) {
-                // TODO Auto-generated method stub
-                JDLogger.getLogger().info("I");
-            }
-
-            public void windowOpened(WindowEvent e) {
-                // TODO Auto-generated method stub
-                JDLogger.getLogger().info("I");
-            }
-
-        });
         ArrayList<Image> list = new ArrayList<Image>();
 
         list.add(JDImage.getImage("logo/logo_14_14"));
@@ -338,7 +302,11 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         setVisible(true);
 
         ClipboardHandler.getClipboard();
-
+        this.contentPanel.addMouseListener(new JDMouseListener() {
+            public void mouseEntered(MouseEvent e) {
+                System.out.println("Entered");
+            }
+        });
         new Thread("guiworker") {
             public void run() {
                 while (true) {
@@ -358,6 +326,55 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     }
 
+    /**
+     * Workaround the substance bug, that the resizecursor does not get resetted
+     * if the movement is fast.
+     */
+    public void setCursor(Cursor c) {
+        // System.out.println("set cursor " + c);
+        if (this.getCursor() == c) return;
+        if (isSubstance()) {
+            switch (c.getType()) {
+            case Cursor.E_RESIZE_CURSOR:
+            case Cursor.N_RESIZE_CURSOR:
+            case Cursor.S_RESIZE_CURSOR:
+            case Cursor.W_RESIZE_CURSOR:
+            case Cursor.NW_RESIZE_CURSOR:
+            case Cursor.NE_RESIZE_CURSOR:
+            case Cursor.SE_RESIZE_CURSOR:
+            case Cursor.SW_RESIZE_CURSOR:
+                final Cursor cc = c;
+                if (cursorworker != null) {
+                    cursorworker.cancel(true);
+                    cursorworker = null;
+                }
+                this.cursorworker = new SwingWorker() {
+
+                    @Override
+                    protected Object doInBackground() throws Exception {
+                        Thread.sleep(2000);
+
+                        return null;
+                    }
+
+                    public void done() {
+                        if (cursorworker == this) {
+                            if (getCursor() == cc) {
+                                System.out.println("Reset cursor");
+                                setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                            }
+                            cursorworker = null;
+                        }
+                    }
+
+                };
+                cursorworker.execute();
+            }
+        }
+        super.setCursor(c);
+
+    }
+
     private void initWaitPane() {
         JXPanel glass = new JXPanel(new MigLayout("ins 80,wrap 1", "[fill,grow]", "[fill,grow]"));
         JXLabel lbl = new JXLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_128_128"), 300, 300));
@@ -365,7 +382,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         JProgressBar prg;
         glass.add(prg = new JProgressBar(), "alignx center, aligny center");
         prg.setStringPainted(false);
-    
+
         prg.setIndeterminate(true);
         glass.setOpaque(false);
         glass.setAlpha(0.5f);

@@ -135,7 +135,7 @@ public class JDSubstanceTitlePane extends SubstanceTitlePane {
 
         GhostPaintingUtils.paintGhostImages(this, graphics);
 
-        graphics.drawImage(logo, JDToolBar.LEFTGAP, height - (48 - JDToolBar.DISPLAY), 48 + JDToolBar.LEFTGAP, height, 0, 0, 48, 48 - JDToolBar.DISPLAY, null);
+        graphics.drawImage(logo, JDToolBar.LEFTGAP, height - (JDToolBar.IMGSIZE - JDToolBar.DISPLAY), JDToolBar.IMGSIZE + JDToolBar.LEFTGAP, height, 0, 0, JDToolBar.IMGSIZE, JDToolBar.IMGSIZE - JDToolBar.DISPLAY, null);
         // long end = System.nanoTime();
         // System.out.println(end - start);
         graphics.dispose();
@@ -143,7 +143,7 @@ public class JDSubstanceTitlePane extends SubstanceTitlePane {
 
     public void setLogo(Image mainMenuIcon) {
         logo = mainMenuIcon;
-        this.repaint(0, 0, 48, 48);
+        this.repaint(0, 0, JDToolBar.IMGSIZE, JDToolBar.IMGSIZE);
 
     }
 

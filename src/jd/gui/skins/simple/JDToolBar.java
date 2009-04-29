@@ -33,9 +33,11 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     private static final Object BUTTON_CONSTRAINTS = "gaptop 2";
 
-    public static final int DISPLAY = 32;
+    public static final int DISPLAY = 28;
 
     public static final int LEFTGAP = 2;
+
+    public static final int IMGSIZE = 54;
 
     private JButton playButton;
     private JToggleButton pauseButton;
@@ -93,7 +95,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
         setPause(false);
         logo = mainMenuIcon;
         MouseAreaListener ml;
-        this.addMouseMotionListener(ml = new MouseAreaListener(LEFTGAP, 0, 48 + LEFTGAP, 48));
+        this.addMouseMotionListener(ml = new MouseAreaListener(LEFTGAP, 0, IMGSIZE + LEFTGAP, IMGSIZE));
         this.addMouseListener(ml);
     }
 
@@ -103,7 +105,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
             ((Graphics2D) g).drawImage(logo, LEFTGAP, 0, 32 + LEFTGAP, 32, 0, 0, 32, 32, null);
 
         } else {
-            ((Graphics2D) g).drawImage(logo, LEFTGAP, 0, 48 + LEFTGAP, DISPLAY, 0, 48 - DISPLAY, 48, 48, null);
+            ((Graphics2D) g).drawImage(logo, LEFTGAP, 0, IMGSIZE + LEFTGAP, DISPLAY, 0, IMGSIZE - DISPLAY, IMGSIZE, IMGSIZE, null);
         }
     }
 
