@@ -5,6 +5,7 @@ import java.awt.event.ActionListener;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.ImageIcon;
 
 import jd.config.Property;
 
@@ -26,6 +27,7 @@ public class LinkGrabberTreeTableAction extends AbstractAction {
     public static final int DELETE = 999;
     public static final int DELETE_OFFLINE = 9991;
     public static final int CLEAR = 9999;
+    public static final int EXT_FILTER = 99999;
 
     private int actionID;
     private ActionListener actionListener;
@@ -33,17 +35,18 @@ public class LinkGrabberTreeTableAction extends AbstractAction {
     private Property property;
     private String ressourceName;
 
-    public LinkGrabberTreeTableAction(ActionListener actionListener, String ressourceName, int actionID) {
-        this(actionListener, ressourceName, actionID, null);
+    public LinkGrabberTreeTableAction(ActionListener actionListener, ImageIcon icon, String ressourceName, int actionID) {
+        this(actionListener, icon, ressourceName, actionID, null);
     }
 
-    public LinkGrabberTreeTableAction(ActionListener actionListener, String ressourceName, int actionID, Property obj) {
+    public LinkGrabberTreeTableAction(ActionListener actionListener, ImageIcon icon,String ressourceName, int actionID, Property obj) {
         super();
         this.ressourceName = ressourceName;
         this.actionID = actionID;
         this.actionListener = actionListener;
         property = obj;
         putValue(Action.NAME, ressourceName);
+        putValue(Action.SMALL_ICON, icon);
     }
 
     public void actionPerformed(ActionEvent e) {

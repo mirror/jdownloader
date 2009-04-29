@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
@@ -53,6 +54,11 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     private Thread gatherer;
     private boolean gatherer_running = false;
     private ProgressController pc;
+    private ArrayList<String> extensionFilter;
+
+    public ArrayList<String> getExtensionFilter() {
+        return extensionFilter;
+    }
 
     private LinkGrabberFilePackageInfo filePackageInfo;
     private Timer gathertimer;
@@ -79,6 +85,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         super(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
         internalTreeTable = new LinkGrabberTreeTable(new LinkGrabberTreeTableModel(this), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
+        this.extensionFilter = new ArrayList<String>();
         this.add(scrollPane, "cell 0 0");
         filePackageInfo = new LinkGrabberFilePackageInfo();
         Update_Async = new Timer(250, this);
@@ -136,7 +143,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     public synchronized void addLinks(DownloadLink[] linkList) {
         for (DownloadLink element : linkList) {
             if (LGINSTANCE.isDupe(element)) continue;
-            if(LGINSTANCE.isFiltered(element))continue;
+            if (LGINSTANCE.isFiltered(element)) continue;
             addToWaitingList(element);
         }
         Update_Async.restart();
@@ -399,6 +406,16 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                     selected_links.elementAt(i).setPriority(prio);
                 }
                 return;
+
+            case LinkGrabberTreeTableAction.EXT_FILTER:
+                String ext = (String) prop.get("extension");
+                this.extensionFilter.remove(ext);
+                if (!((JCheckBoxMenuItem) arg0.getSource()).isSelected()) {
+
+                    this.extensionFilter.add(ext);
+                }
+
+                return;
             }
         }
     }
@@ -474,8 +491,6 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         }
         JDUtilities.getDownloadController().addPackage(fp);
     }
-
- 
 
     public void checkAlreadyinList(DownloadLink link) {
         if (JDUtilities.getDownloadController().getFirstDownloadLinkwithURL(link.getDownloadURL()) != null) {
