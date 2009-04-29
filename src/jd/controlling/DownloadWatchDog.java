@@ -494,7 +494,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                             int ret = 0;
                             if (Interaction.areInteractionsInProgress() && activeDownloads < getSimultanDownloadNum() && !pause) {
                                 if (!reachedStopMark()) {
-                                    System.out.println("stopmarke nicht");
+                                    // System.out.println("stopmarke nicht");
                                     ret = setDownloadActive();
                                 } else {
                                     System.out.println("stopmarke!!");
@@ -504,7 +504,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
                                 if (pause && !hasInProgressLinks || !hasTempDisabledLinks && !hasInProgressLinks && !hasWaittimeLinks && getNextDownloadLink() == null && activeDownloads == 0) {
                                     stopCounter--;
-                                    System.out.println("stop?");
+                                    // System.out.println("stop?");
                                     if (stopCounter == 0) {
                                         totalSpeed = 0;
                                         break;
@@ -513,7 +513,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                 }
                             }
                         } catch (Exception e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            JDLogger.exception(e);
                         }
                         try {
                             Thread.sleep(1000);

@@ -14,13 +14,12 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.utils;
-
 import java.util.ArrayList;
 
 import jd.http.Browser;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
+import jd.utils.JDUtilities;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.EcmaError;
@@ -71,8 +70,6 @@ public class JavaScript {
                     }
                 }
             } catch (Exception e) {
-                // TODO Auto-generated catch block
-
                 System.out.println(e.getMessage() + "\r\n" + lib);
             }
             String content = new Regex(code, ">(.+?)</script").getMatch(0);
@@ -83,9 +80,7 @@ public class JavaScript {
                     String res = Context.toString(result);
                     res = eval(res, cx, scope, br);
                     rep += res;
-
                 } catch (EcmaError e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace(System.err);
                     System.out.println(e.getMessage() + "\r\n" + content);
                 }
