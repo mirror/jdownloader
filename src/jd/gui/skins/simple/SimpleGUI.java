@@ -18,6 +18,7 @@ package jd.gui.skins.simple;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
@@ -42,6 +43,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JProgressBar;
 import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
@@ -58,6 +60,7 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
+import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
@@ -89,6 +92,7 @@ import jd.gui.skins.simple.config.panels.ConfigPanelGUI;
 import jd.gui.skins.simple.config.panels.ConfigPanelGeneral;
 import jd.gui.skins.simple.config.panels.ConfigPanelPluginForHost;
 import jd.gui.skins.simple.config.panels.ConfigPanelReconnect;
+import jd.gui.skins.simple.listener.JDMouseListener;
 import jd.gui.skins.simple.startmenu.JDStartMenu;
 import jd.gui.skins.simple.tasks.AddonTaskPane;
 import jd.gui.skins.simple.tasks.ConfigTaskPane;
@@ -111,9 +115,13 @@ import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.JXFrame;
+import org.jdesktop.swingx.JXLabel;
 import org.jdesktop.swingx.JXLoginDialog;
+import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTitledSeparator;
 import org.jdesktop.swingx.JXLoginPane.Status;
+import org.jdesktop.swingx.image.StackBlurFilter;
+import org.jdesktop.swingx.painter.AbstractPainter;
 import org.jvnet.lafwidget.LafWidget;
 import org.jvnet.lafwidget.utils.LafConstants.AnimationKind;
 
@@ -193,35 +201,38 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         SimpleGuiConstants.GUI_CONFIG = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
         JDLookAndFeelManager.setUIManager();
 
-        // JPanel p;
-        // menuBar = new JDMenuBar();
+        /**
+         * Init panels
+         */
 
         statusBar = new JDStatusBar();
-
-        // RootPaneUI ui = this.getRootPane().getUI();
+        initWaitPane();
+        this.setEnabled(false);
+        this.setWaiting(true);
 
         if (isSubstance()) {
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48_noShadow"), 48, 48);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48"), 48, 48);
             this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
 
-            JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
-
-                // @Override
-                public void onPropertyChanged(Property source, String propertyName) {
-
-                }
-
-            });
+            // JDController.getInstance().addControlListener(new
+            // ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
+            //
+            // // @Override
+            // public void onPropertyChanged(Property source, String
+            // propertyName) {
+            //
+            // }
+            //
+            // });
             noTitlePane = false;
+
         } else {
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48_noShadow"), 32, 32);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48"), 32, 32);
             this.noTitlePane = true;
 
         }
-        this.setEnabled(false);
-        this.setWaiting(true);
 
         toolBar = new JDToolBar(noTitlePane, mainMenuIcon);
 
@@ -236,7 +247,54 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             }
 
         });
+        this.addWindowStateListener(new WindowStateListener() {
 
+            public void windowStateChanged(WindowEvent e) {
+                SimpleGUI.this.titleUI.getTitlePane().repaint();
+                System.out.println("CURSOR SET");
+                setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+            }
+
+        });
+        this.addWindowListener(new WindowListener() {
+
+            public void windowActivated(WindowEvent e) {
+                JDLogger.getLogger().info("I");
+
+            }
+
+            public void windowClosed(WindowEvent e) {
+                JDLogger.getLogger().info("I");
+
+            }
+
+            public void windowClosing(WindowEvent e) {
+                // TODO Auto-generated method stub
+                JDLogger.getLogger().info("I");
+
+            }
+
+            public void windowDeactivated(WindowEvent e) {
+                // TODO Auto-generated method stub
+                JDLogger.getLogger().info("I");
+            }
+
+            public void windowDeiconified(WindowEvent e) {
+                // TODO Auto-generated method stub
+                JDLogger.getLogger().info("I");
+            }
+
+            public void windowIconified(WindowEvent e) {
+                // TODO Auto-generated method stub
+                JDLogger.getLogger().info("I");
+            }
+
+            public void windowOpened(WindowEvent e) {
+                // TODO Auto-generated method stub
+                JDLogger.getLogger().info("I");
+            }
+
+        });
         ArrayList<Image> list = new ArrayList<Image>();
 
         list.add(JDImage.getImage("logo/logo_14_14"));
@@ -297,34 +355,48 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 }
             }
         }.start();
-        this.addWindowStateListener(new WindowStateListener() {
-
-            public void windowStateChanged(WindowEvent e) {
-                SimpleGUI.this.titleUI.getTitlePane().repaint();
-
-            }
-
-        });
 
     }
-public void onLAFChanged(){
-    if (isSubstance()) {
-        mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48_noShadow"), 48, 48);
-        mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48"), 48, 48);
-        this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
 
-        JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
-
-            // @Override
-            public void onPropertyChanged(Property source, String propertyName) {
-
-            }
-
-        });
-        noTitlePane = false;
-    }
+    private void initWaitPane() {
+        JXPanel glass = new JXPanel(new MigLayout("ins 80,wrap 1", "[fill,grow]", "[fill,grow]"));
+        JXLabel lbl = new JXLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_128_128"), 300, 300));
+        glass.add(lbl, "alignx center, aligny center");
+        JProgressBar prg;
+        glass.add(prg = new JProgressBar(), "alignx center, aligny center");
+        prg.setStringPainted(false);
     
-}
+        prg.setIndeterminate(true);
+        glass.setOpaque(false);
+        glass.setAlpha(0.5f);
+        AbstractPainter fgPainter = (AbstractPainter) lbl.getForegroundPainter();
+        StackBlurFilter filter = new StackBlurFilter();
+        fgPainter.setFilters(filter);
+        glass.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        this.setWaitPane(glass);
+        glass.addMouseListener(new JDMouseListener());
+
+    }
+
+    public void onLAFChanged() {
+        if (isSubstance()) {
+            mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48_noShadow"), 48, 48);
+            mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48"), 48, 48);
+            this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
+
+            JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
+
+                // @Override
+                public void onPropertyChanged(Property source, String propertyName) {
+
+                }
+
+            });
+            noTitlePane = false;
+        }
+
+    }
+
     public void onMainMenuMouseClick(MouseEvent e) {
         JPopupMenu popup = new JPopupMenu();
 
@@ -422,7 +494,7 @@ public void onLAFChanged(){
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -981,7 +1053,7 @@ public void onLAFChanged(){
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);

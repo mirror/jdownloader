@@ -12,6 +12,7 @@ import java.awt.Window;
 import javax.swing.JMenuBar;
 import javax.swing.JRootPane;
 
+import jd.gui.skins.simple.listener.MouseAreaListener;
 import jd.gui.skins.simple.startmenu.JDStartMenu;
 
 import org.jvnet.lafwidget.animation.effects.GhostPaintingUtils;

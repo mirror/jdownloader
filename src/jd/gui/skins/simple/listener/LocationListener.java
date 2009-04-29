@@ -14,11 +14,13 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple;
+package jd.gui.skins.simple.listener;
 
 import java.awt.Component;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+
+import jd.gui.skins.simple.SimpleGuiUtils;
 
 public class LocationListener implements WindowListener {
 

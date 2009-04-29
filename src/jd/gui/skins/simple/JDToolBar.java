@@ -21,6 +21,7 @@ import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
+import jd.gui.skins.simple.listener.MouseAreaListener;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

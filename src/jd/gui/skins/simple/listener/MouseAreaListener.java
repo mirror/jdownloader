@@ -1,9 +1,11 @@
-package jd.gui.skins.simple;
+package jd.gui.skins.simple.listener;
 
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+
+import jd.gui.skins.simple.SimpleGUI;
 
 public class MouseAreaListener implements MouseMotionListener, MouseListener {
     private boolean over = false;

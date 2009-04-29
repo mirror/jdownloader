@@ -23,6 +23,7 @@ import java.text.DecimalFormat;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.border.Border;
 
@@ -104,6 +105,10 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
     private String strTTFailed;
 
+    private String lblDisabled;
+
+    private String lblTTDisabled;
+
     private static Color COL_PROGRESS_ERROR = new Color(0xCC3300);
 
     TreeTableRenderer(DownloadTreeTable downloadTreeTable) {
@@ -143,18 +148,22 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         strTTFinished = JDLocale.L("gui.treetable.tooltip.finished", "Download has finished successfully");
         strTTStopMark = JDLocale.L("gui.treetable.tooltip.stopmark", "Stopmark is set. After this Link/Package, no further downloads will start");
         strTTExtract = JDLocale.L("gui.treetable.tooltip.extract", "A post-download module(extracter,...) is running");
+        lblTTDisabled= JDLocale.L("gui.treetable.tooltip.disabled", "This download(s) are disabled. Rightclick ->enable/reset to reactivate them.");
+        
     }
 
     // @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         hasFocus = false;
         column = this.table.getColumn(column).getModelIndex();
+      
         if (value instanceof FilePackage) {
             co = getFilePackageCell(table, value, isSelected, hasFocus, row, column);
             if (!((FilePackage) value).isEnabled()) {
                 co.setEnabled(false);
-
+                ((JComponent) co).setToolTipText(lblTTDisabled);
                 progress.setString("");
+             
             } else {
 
                 co.setEnabled(true);
@@ -165,6 +174,9 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             if (!((DownloadLink) value).isEnabled()) {
                 co.setEnabled(false);
                 progress.setString("");
+
+                ((JComponent) co).setToolTipText(lblTTDisabled);
+
             } else {
 
                 co.setEnabled(true);
@@ -186,7 +198,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             clearSB();
-
+            ((JComponent) co).setToolTipText(null);
             ((JRendererLabel) co).setIcon(dLink.getIcon());
             ((JRendererLabel) co).setText(dLink.getName());
             ((JRendererLabel) co).setBorder(leftGap);
@@ -195,7 +207,8 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         case DownloadTreeTableModel.COL_HOSTER:
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            clearSB();
+            
+            ((JComponent) co).setToolTipText(null);clearSB();
             ((JRendererLabel) co).setBorder(null);
             if (dLink.getPlugin() == null) {
                 ((JRendererLabel) co).setText("plugin missing");
@@ -213,12 +226,14 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
             if (dLink.getPlugin() == null) {
                 co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                ((JComponent) co).setToolTipText(null);
                 ((JRendererLabel) co).setIcon(null);
                 ((JRendererLabel) co).setText(strPluginError);
                 ((JRendererLabel) co).setBorder(null);
                 return co;
             } else if (!dLink.getPlugin().getWrapper().usePlugin()) {
                 co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                ((JComponent) co).setToolTipText(null);
                 ((JRendererLabel) co).setIcon(null);
                 ((JRendererLabel) co).setText(strPluginDisabled);
                 ((JRendererLabel) co).setBorder(null);
@@ -235,6 +250,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
                 progress.setMaximum(dLink.getPluginProgress().getTotal());
                 progress.setValue(dLink.getPluginProgress().getCurrent());
+                progress.setToolTipText(null);
                 return progress;
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
@@ -250,7 +266,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                     sb.append(c.format(10000 * progress.getPercentComplete() / 100.0)).append("% (").append(progress.getValue() / 1000).append('/').append(progress.getMaximum() / 1000).append(strSecondsAbrv).append(')');
                 }
                 progress.setString(sb.toString());
-
+                progress.setToolTipText(null);
                 return progress;
             } else if (dLink.getDownloadCurrent() > 0) {
                 if (!dLink.getLinkStatus().isPluginActive()) {
@@ -296,7 +312,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                     }
                 }
                 progress.setMaximum(10000);
-
+                progress.setToolTipText(null);
                 progress.setValue(dLink.getPercent());
                 return progress;
             }
@@ -316,7 +332,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             } else {
                 progress.setString("");
             }
-
+            progress.setToolTipText(null);
             return progress;
 
             // co = super.getTableCellRendererComponent(table, value,
@@ -328,7 +344,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         case DownloadTreeTableModel.COL_STATUS_ICON:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             ((JRendererLabel) co).setText("");
-
+            ((JRendererLabel) co).setToolTipText(null);
             if (dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
                 ((JRendererLabel) co).setIcon(imgExtract);
                 ((JRendererLabel) co).setToolTipText(strTTExtract);
@@ -367,6 +383,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
         case DownloadTreeTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            ((JRendererLabel) co).setToolTipText(null);
             ((JRendererLabel) co).setIcon(null);
             if (dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
 
@@ -390,6 +407,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         }
         co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         ((JRendererLabel) co).setBorder(null);
+        ((JRendererLabel) co).setToolTipText(null);
         return co;
     }
 
@@ -401,11 +419,12 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             ((JRendererLabel) co).setText(fp.getName());
             ((JRendererLabel) co).setIcon(fp.getBooleanProperty(DownloadTreeTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
             ((JRendererLabel) co).setBorder(null);
+            ((JComponent) co).setToolTipText(null);
             return co;
 
         case DownloadTreeTableModel.COL_HOSTER:
             value = fp.getHoster();
-
+          
             break;
 
         case DownloadTreeTableModel.COL_PROGRESS:
@@ -437,18 +456,19 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 }
                 progress.setString(sb.toString());
             }
-
+            progress.setToolTipText(null);
             return progress;
         case DownloadTreeTableModel.COL_STATUS_ICON:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             ((JRendererLabel) co).setText("");
             ((JRendererLabel) co).setIcon(null);
+            ((JComponent) co).setToolTipText(null);
             if (fp.isFinished()) {
                 ((JRendererLabel) co).setIcon(this.imgFinished);
             } else if (JDController.getInstance().getWatchdog() != null && JDController.getInstance().getWatchdog().isStopMark(value)) {
                 ((JRendererLabel) co).setIcon(imgStopMark);
                 ((JRendererLabel) co).setToolTipText(strTTStopMark);
-                
+
             } else if (fp.getTotalDownloadSpeed() > 0) {
 
             } else if (fp.getLinksInProgress() > 0) {
@@ -456,17 +476,13 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             } else {
 
             }
-            
-            
-        
-            
-            
-            
+
             ((JRendererLabel) co).setBorder(null);
             return co;
 
         case DownloadTreeTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            ((JComponent) co).setToolTipText(null);
             if (fp.isFinished()) {
                 ((JRendererLabel) co).setText("");
             } else if (fp.getTotalDownloadSpeed() > 0) {
@@ -486,6 +502,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         }
         co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         ((JRendererLabel) co).setBorder(null);
+        ((JComponent) co).setToolTipText(null);
         return co;
     }
 
