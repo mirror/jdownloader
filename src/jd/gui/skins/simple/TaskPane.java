@@ -49,13 +49,13 @@ public class TaskPane extends JXTaskPaneContainer implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() instanceof TaskPanel) {
-//            TaskPanel source = ((TaskPanel) e.getSource());
-//
-//            if (source != lastSource) {
-//                lastSource = source;
-//                switcher(null);
-//            }
+        if (e.getSource() instanceof TaskPanel&&e.getID()==TaskPanel.ACTION_TOGGLE) {
+            TaskPanel source = ((TaskPanel) e.getSource());
+
+            if (source != lastSource) {
+                lastSource = source;
+                switcher(null);
+            }
         }
     }
 

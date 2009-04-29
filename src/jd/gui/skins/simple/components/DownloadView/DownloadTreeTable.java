@@ -470,12 +470,13 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             JPopupMenu popup = new JPopupMenu();
 
             if (obj instanceof FilePackage || obj instanceof DownloadLink) {
-                popup.add(tmp2 = new JCheckBoxMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.stopsign", 16, 16), JDLocale.L("gui.table.contextmenu.stopmark", "Stop sign"), TreeTableAction.STOP_MARK, new Property("item", obj))));
-                tmp2.setSelected(DownloadWatchDog.getInstance().isStopMark(obj));
+                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.stopsign", 16, 16), JDLocale.L("gui.table.contextmenu.stopmark", "Stop sign"), TreeTableAction.STOP_MARK, new Property("item", obj))));
+                if(!DownloadWatchDog.getInstance().isStopMark(obj))tmp.setIcon(tmp.getDisabledIcon());
+              
                 if (obj instanceof DownloadLink) {
-                    tmp2.setEnabled(!((DownloadLink) obj).getLinkStatus().hasStatus(LinkStatus.FINISHED));
+                    tmp.setEnabled(!((DownloadLink) obj).getLinkStatus().hasStatus(LinkStatus.FINISHED));
                 } else {
-                    tmp2.setEnabled(!((FilePackage) obj).isFinished());
+                    tmp.setEnabled(!((FilePackage) obj).isFinished());
                 }
                 popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TreeTableAction.DELETE, new Property("links", alllinks))));
 
@@ -488,7 +489,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDLocale.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + this.getModel().getColumnName(col) + ")", TreeTableAction.SORT, new Property("col", col))));
                 popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.edit", 16, 16), JDLocale.L("gui.table.contextmenu.editpackagename", "Paketname ändern") + " (" + sfp.size() + ")", TreeTableAction.EDIT_NAME, new Property("packages", sfp))));
                 popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.save", 16, 16), JDLocale.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern") + " (" + sfp.size() + ")", TreeTableAction.EDIT_DIR, new Property("packages", sfp))));
-                tmp.setIconTextGap(16);
+              
                 popup.add(new JSeparator());
             }
             if (obj instanceof DownloadLink) {

@@ -268,7 +268,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                 link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
                 break;
             case TreeTableAction.STOP_MARK:
-                obj = ((TreeTableAction) ((JCheckBoxMenuItem) e.getSource()).getAction()).getProperty().getProperty("item");
+                obj = ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("item");
                 break;
             }
         } else if (e.getSource() instanceof TreeTableAction) {
