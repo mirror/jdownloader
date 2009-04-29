@@ -279,7 +279,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      * @return Der nächste DownloadLink oder null
      */
     public DownloadLink getNextDownloadLink() {
-
+        if (this.reachedStopMark()) return null;
         DownloadLink nextDownloadLink = null;
         DownloadLink returnDownloadLink = null;
         try {
@@ -507,9 +507,9 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
                                 if (pause && !hasInProgressLinks || !hasTempDisabledLinks && !hasInProgressLinks && !hasWaittimeLinks && getNextDownloadLink() == null && activeDownloads == 0) {
                                     stopCounter--;
+                                    System.out.println("stop?");
                                     if (stopCounter == 0) {
                                         totalSpeed = 0;
-
                                         break;
                                     }
 
