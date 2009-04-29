@@ -445,6 +445,10 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             ((JRendererLabel) co).setIcon(null);
             if (fp.isFinished()) {
                 ((JRendererLabel) co).setIcon(this.imgFinished);
+            } else if (JDController.getInstance().getWatchdog() != null && JDController.getInstance().getWatchdog().isStopMark(value)) {
+                ((JRendererLabel) co).setIcon(imgStopMark);
+                ((JRendererLabel) co).setToolTipText(strTTStopMark);
+                
             } else if (fp.getTotalDownloadSpeed() > 0) {
 
             } else if (fp.getLinksInProgress() > 0) {
@@ -452,6 +456,12 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             } else {
 
             }
+            
+            
+        
+            
+            
+            
             ((JRendererLabel) co).setBorder(null);
             return co;
 

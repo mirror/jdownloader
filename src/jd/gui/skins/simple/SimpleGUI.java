@@ -266,10 +266,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         setName("MAINFRAME");
         Dimension dim = SimpleGuiUtils.getLastDimension(this, null);
         if (dim == null) {
-            dim = new Dimension(1000, 680);
+            dim = new Dimension(200, 400);
         }
         setPreferredSize(dim);
-        setMinimumSize(new Dimension(1000, 680));
+        setMinimumSize(new Dimension(200, 400));
         setLocation(SimpleGuiUtils.getLastLocation(null, null, this));
         pack();
 
@@ -307,7 +307,24 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         });
 
     }
+public void onLAFChanged(){
+    if (isSubstance()) {
+        mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48_noShadow"), 48, 48);
+        mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48"), 48, 48);
+        this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
 
+        JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
+
+            // @Override
+            public void onPropertyChanged(Property source, String propertyName) {
+
+            }
+
+        });
+        noTitlePane = false;
+    }
+    
+}
     public void onMainMenuMouseClick(MouseEvent e) {
         JPopupMenu popup = new JPopupMenu();
 

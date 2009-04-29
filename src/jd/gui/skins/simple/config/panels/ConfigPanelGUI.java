@@ -275,10 +275,10 @@ public class ConfigPanelGUI extends ConfigPanel {
                                 JDUtilities.restartJD();
                             }
                             UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
-                            // SimpleGUI.CURRENTGUI.updateDecoration();
+                           
 
                             SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
-
+                            SimpleGUI.CURRENTGUI.onLAFChanged();
                         } catch (Exception e) {
                             JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
                         }

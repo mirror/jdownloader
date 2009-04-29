@@ -132,7 +132,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
                 linkgrabber.showFilePackageInfo(pkg);
             }
         });
-        prioDescs = new String[] { JDLocale.L("gui.treetable.tooltip.priority0", "Def. Priority"), JDLocale.L("gui.treetable.tooltip.priority1", "High Priority"), JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority") };
+        prioDescs = new String[] { JDLocale.L("gui.treetable.tooltip.priority0", "No Priority"), JDLocale.L("gui.treetable.tooltip.priority1", "High Priority"), JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority") };
     }
 
     public TableCellRenderer getCellRenderer(int row, int col) {
