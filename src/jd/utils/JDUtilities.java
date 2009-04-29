@@ -318,7 +318,7 @@ public class JDUtilities {
         }
         return null;
 
-    }
+    } 
 
     public static String getUserInput(String message, DownloadLink link) throws InterruptedException {
 
