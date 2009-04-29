@@ -344,18 +344,24 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
             return;
         }
         case TreeTableAction.DOWNLOAD_RESET: {
-            boolean b = true;
-            if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                b = false;
-                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDLocale.LF("gui.downloadlist.delete.size_packagev2", "%s links", selected_links.size()) + ")")) {
-                    b = true;
+             final Vector<DownloadLink> links = selected_links;
+            new Thread() {
+                public void run() {
+
+                    boolean b = true;
+                    if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+                        b = false;
+                        if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDLocale.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")")) {
+                            b = true;
+                        }
+                    }
+                    if (b) {
+                        for (int i = 0; i < links.size(); i++) {
+                            links.elementAt(i).reset();
+                        }
+                    }
                 }
-            }
-            if (b) {
-                for (int i = 0; i < selected_links.size(); i++) {
-                    selected_links.elementAt(i).reset();
-                }
-            }
+            }.start();
             return;
         }
         case TreeTableAction.DOWNLOAD_COPY_PASSWORD: {

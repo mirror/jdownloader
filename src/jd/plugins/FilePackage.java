@@ -727,7 +727,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 Set<String> hosterList = new HashSet<String>();
                 synchronized (downloadLinks) {
                     for (DownloadLink dl : downloadLinks) {
-                        hosterList.add(dl.getHost());
+                       if(dl.getHost()!=null) hosterList.add(dl.getHost());
                     }
                 }
                 ListHoster = hosterList.toString();

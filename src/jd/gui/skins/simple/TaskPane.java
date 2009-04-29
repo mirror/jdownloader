@@ -50,12 +50,12 @@ public class TaskPane extends JXTaskPaneContainer implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof TaskPanel) {
-            TaskPanel source = ((TaskPanel) e.getSource());
-
-            if (source != lastSource) {
-                lastSource = source;
-                switcher(null);
-            }
+//            TaskPanel source = ((TaskPanel) e.getSource());
+//
+//            if (source != lastSource) {
+//                lastSource = source;
+//                switcher(null);
+//            }
         }
     }
 
@@ -66,16 +66,24 @@ public class TaskPane extends JXTaskPaneContainer implements ActionListener {
             src.broadcastEvent(new ActionEvent(src, TaskPanel.ACTION_CLICK, "Click"));
             SimpleGUI.CURRENTGUI.hideSideBar(false);
         }
+        new GuiRunnable() {
 
-        for (TaskPanel p : panels) {
-            if (p != lastSource) {
-                p.setSpecial(false);
-                p.setDeligateCollapsed(true);
-            } else {
-                p.setSpecial(true);
-                p.setDeligateCollapsed(false);
+            @Override
+            public Object runSave() {
+                for (TaskPanel p : panels) {
+                    if (p != lastSource) {
+                        p.setSpecial(false);
+                        p.setDeligateCollapsed(true);
+                    } else {
+                        p.setSpecial(true);
+                        p.setDeligateCollapsed(false);
+                    }
+                }
+                return null;
             }
-        }
+
+        }.start();
+
     }
 
 }
