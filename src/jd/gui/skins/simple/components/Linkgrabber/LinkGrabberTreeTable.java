@@ -12,7 +12,6 @@ import java.awt.event.MouseMotionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -43,7 +42,6 @@ import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.DownloadView.DownloadLinkRowHighlighter;
 import jd.gui.skins.simple.components.DownloadView.DownloadTreeTable;
 import jd.gui.skins.simple.components.DownloadView.JColumnControlButton;
-import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
@@ -72,7 +70,6 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
     private Vector<DownloadLink> selectedLinks = new Vector<DownloadLink>();
     private Vector<LinkGrabberFilePackage> selectedPackages = new Vector<LinkGrabberFilePackage>();
     private String[] prioDescs;
-    
 
     public static final String PROPERTY_EXPANDED = "lg_expanded";
     public static final String PROPERTY_USEREXPAND = "lg_userexpand";
@@ -101,7 +98,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         addMouseListener(this);
         addKeyListener(this);
         addMouseMotionListener(this);
-     
+
         if (JDUtilities.getJavaVersion() >= 1.6) {
             // setDropMode(DropMode.ON_OR_INSERT_ROWS); /*muss noch geschaut
             // werden wie man das genau macht*/
@@ -322,7 +319,14 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         }
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
 
-            if (getPathForRow(row) == null) { return; }
+            if (getPathForRow(row) == null) {
+                if (LinkGrabberController.getInstance().getPackages().size() == 0) {
+                    JPopupMenu popup = new JPopupMenu();
+                    popup.add(buildExtMenu());
+                    if (popup.getComponentCount() != 0) popup.show(this, point.x, point.y);
+                }
+                return;
+            }
             Vector<DownloadLink> alllinks = getAllSelectedDownloadLinks();
             int links_enabled = 0;
             for (DownloadLink next : alllinks) {
@@ -348,10 +352,11 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
             }
             if (obj instanceof LinkGrabberFilePackage || obj instanceof DownloadLink) {
                 popup.add(buildpriomenu(alllinks));
-                popup.add(buildExtMenu(alllinks));
+                popup.add(buildExtMenu());
                 Set<String> hoster = linkgrabber.getHosterList(alllinks);
                 popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.addselected", 16, 16), JDLocale.L("gui.linkgrabberv2.onlyselectedhoster", "Keep only selected Hoster") + " (" + hoster.size() + ")", LinkGrabberTreeTableAction.SELECT_HOSTER, new Property("hoster", hoster))));
                 popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.newpackage", 16, 16), JDLocale.L("gui.table.contextmenu.newpackage", "In neues Paket verschieben") + " (" + alllinks.size() + ")", LinkGrabberTreeTableAction.NEW_PACKAGE, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.newpackage", 16, 16), JDLocale.L("gui.table.contextmenu.mergepackage", "In einzelnes Paket verschieben") + " (" + alllinks.size() + ")", LinkGrabberTreeTableAction.MERGE_PACKAGE, new Property("links", alllinks))));
                 popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.password", 16, 16), JDLocale.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + alllinks.size() + ")", LinkGrabberTreeTableAction.SET_PW, new Property("links", alllinks))));
                 popup.add(new JSeparator());
                 HashMap<String, Object> prop = new HashMap<String, Object>();
@@ -367,33 +372,15 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         }
     }
 
-    private JMenuItem buildExtMenu(Vector<DownloadLink> links) {
+    private JMenuItem buildExtMenu() {
         JMenuItem tmp;
         JMenu men = new JMenu(JDLocale.L("gui.table.contextmenu.filetype", "Filter"));
-        ArrayList<String> extensions = new ArrayList<String>();
-        String ext = null;
-        HashMap<String,DownloadLink> linkmap= new HashMap<String,DownloadLink> ();
-        
-        for (DownloadLink l : links) {
-            ext = JDIO.getFileExtension(l.getName());
-            if (ext != null && ext.trim().length() > 1) {
-                ext=ext.trim();
-               if(!extensions.contains(ext)) {
-                   linkmap.put(ext,l);
-                   extensions.add(ext);
-               }
-            }
-
-        }
-        Collections.sort(extensions);
-
+        ArrayList<String> extensions = linkgrabber.getExtensions();
         men.setIcon(JDTheme.II("gui.images.filter", 16, 16));
         for (String e : extensions) {
-            men.add(tmp = new JCheckBoxMenuItem(new LinkGrabberTreeTableAction(linkgrabber, linkmap.get(e).getIcon(), "*." + e, LinkGrabberTreeTableAction.EXT_FILTER,new Property("extension", ext))));
-
-            tmp.setSelected(!this.linkgrabber.getExtensionFilter().contains(e));
+            men.add(tmp = new JCheckBoxMenuItem(new LinkGrabberTreeTableAction(linkgrabber, null, "*." + e, LinkGrabberTreeTableAction.EXT_FILTER, new Property("extension", e))));
+            tmp.setSelected(!LinkGrabberConstants.getExtensionFilter().contains(e));
         }
-       
         return men;
     }
 
@@ -408,7 +395,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
             prop = new HashMap<String, Object>();
             prop.put("links", links);
             prop.put("prio", new Integer(i));
-            prioPopup.add(tmp = new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.priority"+i, 16, 16), prioDescs[i], LinkGrabberTreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
+            prioPopup.add(tmp = new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.priority" + i, 16, 16), prioDescs[i], LinkGrabberTreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
 
             if (prio != null && i == prio) {
                 tmp.setEnabled(false);

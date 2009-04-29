@@ -1,6 +1,7 @@
 package jd.gui.skins.simple.components.Linkgrabber;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.config.SubConfiguration;
 import jd.parser.Regex;
@@ -10,7 +11,16 @@ public class LinkGrabberConstants {
     public static final String PARAM_ONLINECHECK = "PARAM_ONLINECHECK";
     public static final String CONFIG = "LINKGRABBER";
     public static final String IGNORE_LIST = "IGNORE_LIST";
+    private static final HashSet<String> extensionFilter = new HashSet<String>();
+    
+    
 
+    public static HashSet<String> getExtensionFilter() {
+        return extensionFilter;
+    }
+    
+    
+    
     public static SubConfiguration getConfig() {
         return SubConfiguration.getConfig(LinkGrabberConstants.CONFIG);
     }

@@ -5,7 +5,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -30,6 +32,7 @@ import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
 import jd.nutils.io.JDFileFilter;
+import jd.nutils.io.JDIO;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -54,11 +57,6 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     private Thread gatherer;
     private boolean gatherer_running = false;
     private ProgressController pc;
-    private ArrayList<String> extensionFilter;
-
-    public ArrayList<String> getExtensionFilter() {
-        return extensionFilter;
-    }
 
     private LinkGrabberFilePackageInfo filePackageInfo;
     private Timer gathertimer;
@@ -85,7 +83,6 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         super(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
         internalTreeTable = new LinkGrabberTreeTable(new LinkGrabberTreeTableModel(this), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
-        this.extensionFilter = new ArrayList<String>();
         this.add(scrollPane, "cell 0 0");
         filePackageInfo = new LinkGrabberFilePackageInfo();
         Update_Async = new Timer(250, this);
@@ -117,7 +114,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 Vector<LinkGrabberFilePackage> fps = LGINSTANCE.getPackages();
                 int count = 0;
                 for (LinkGrabberFilePackage fp : fps) {
-                    count += 1 + fp.size();
+                    count += 1 + fp.getDownloadLinks().size();
                 }
                 if (count > (internalTreeTable.getSize().getHeight() / 16.0)) {
                     for (LinkGrabberFilePackage fp : fps) {
@@ -171,6 +168,26 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         }
     }
 
+    public ArrayList<String> getExtensions() {
+        ArrayList<String> extensions = new ArrayList<String>();
+        String ext = null;
+        synchronized (LGINSTANCE.getPackagesUnfiltered()) {
+            for (LinkGrabberFilePackage fp : LGINSTANCE.getPackagesUnfiltered()) {
+                synchronized (fp.getDownloadLinksUnFiltered()) {
+                    for (DownloadLink l : fp.getDownloadLinksUnFiltered()) {
+                        ext = JDIO.getFileExtension(l.getName());
+                        if (ext != null && ext.trim().length() > 1) {
+                            if (!extensions.contains(ext.trim())) extensions.add(ext.trim());
+                        }
+                    }
+                }
+            }
+
+        }
+        Collections.sort(extensions);
+        return extensions;
+    }
+
     private void startLinkGatherer() {
         if (gatherer != null && gatherer.isAlive()) { return; }
         gatherer = new Thread() {
@@ -188,7 +205,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                         pc.addToMax(currentList.size());
                         waitingList.removeAll(currentList);
                     }
-                    if (false) {
+                    if (!LinkGrabberConstants.isLinkCheckEnabled()) {
                         /* kein online check, kein multithreaded nötig */
                         afterLinkGrabber(currentList);
                     } else {
@@ -256,7 +273,9 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         String pw = "";
         HashMap<String, Object> prop = new HashMap<String, Object>();
         LinkGrabberFilePackage fp;
+        String ext = null;
         Set<String> hoster = null;
+        String name = null;
         JDFileChooser fc;
         int col = 0;
         boolean b = false;
@@ -314,7 +333,11 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 case LinkGrabberTreeTableAction.DELETE:
                 case LinkGrabberTreeTableAction.SET_PW:
                 case LinkGrabberTreeTableAction.NEW_PACKAGE:
+                case LinkGrabberTreeTableAction.MERGE_PACKAGE:
                     selected_links = (Vector<DownloadLink>) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("links");
+                    break;
+                case LinkGrabberTreeTableAction.EXT_FILTER:
+                    ext = (String) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("extension");
                     break;
                 }
             } else if (arg0.getSource() instanceof LinkGrabberTreeTableAction) {
@@ -359,9 +382,12 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                     }
                 }
                 break;
+            case LinkGrabberTreeTableAction.MERGE_PACKAGE:
+                fp = LGINSTANCE.getFPwithLink(selected_links.get(0));
+                name = fp.getName();
             case LinkGrabberTreeTableAction.NEW_PACKAGE:
                 fp = LGINSTANCE.getFPwithLink(selected_links.get(0));
-                String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
+                if (name == null) name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
                 if (name != null) {
                     LinkGrabberFilePackage nfp = new LinkGrabberFilePackage(name);
                     for (DownloadLink link : selected_links) {
@@ -408,13 +434,11 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 return;
 
             case LinkGrabberTreeTableAction.EXT_FILTER:
-                String ext = (String) prop.get("extension");
-                this.extensionFilter.remove(ext);
+                LinkGrabberConstants.getExtensionFilter().remove(ext);
                 if (!((JCheckBoxMenuItem) arg0.getSource()).isSelected()) {
-
-                    this.extensionFilter.add(ext);
+                    LinkGrabberConstants.getExtensionFilter().add(ext);
                 }
-
+                Update_Async.restart();
                 return;
             }
         }

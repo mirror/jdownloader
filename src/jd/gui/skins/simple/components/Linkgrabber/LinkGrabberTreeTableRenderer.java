@@ -99,7 +99,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
     }
 
     private Component getDownloadLinkCell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        dLink = (DownloadLink) value;
+        dLink = (DownloadLink) value;        
         switch (column) {
         case LinkGrabberTreeTableModel.COL_PACK_FILE:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -194,7 +194,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             break;
         case LinkGrabberTreeTableModel.COL_STATUS:
             int failedCount = fp.countFailedLinks(false);
-            int size = fp.size();
+            int size = fp.getDownloadLinks().size();
             if (failedCount > 0) {
                 value = JDLocale.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size));
             } else {

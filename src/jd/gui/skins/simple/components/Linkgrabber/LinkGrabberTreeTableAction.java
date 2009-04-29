@@ -12,6 +12,7 @@ public class LinkGrabberTreeTableAction extends AbstractAction {
 
     private static final long serialVersionUID = 1220090161204767583L;
     public static final int NEW_PACKAGE = 100;
+    public static final int MERGE_PACKAGE = 110;
     public static final int EDIT_DIR = 101;
     public static final int SORT = 103;
     public static final int SORT_ALL = 1031;
@@ -38,7 +39,9 @@ public class LinkGrabberTreeTableAction extends AbstractAction {
         this(actionListener, icon, ressourceName, actionID, null);
     }
 
+
     public LinkGrabberTreeTableAction(ActionListener actionListener, ImageIcon icon, String ressourceName, int actionID, Property property) {
+
         super();
         this.ressourceName = ressourceName;
         this.actionID = actionID;

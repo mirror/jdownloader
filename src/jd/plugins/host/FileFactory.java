@@ -43,7 +43,6 @@ public class FileFactory extends PluginForHost {
     private static final String CAPTCHA_WRONG = "Download code was incorrect";
     private static final String DOWNLOAD_LIMIT = "(Thank you for waiting|exceeded the download limit)";
 
-    private static final String FILENAME = "<h1>(.*)</h1>";
     private static final String FILESIZE = "<span>(.*? (B|KB|MB)) file";
 
     private static final String NO_SLOT = "no free download slots";
@@ -63,12 +62,12 @@ public class FileFactory extends PluginForHost {
         this.enablePremium("http://www.filefactory.com/info/premium.php");
     }
 
-    //@Override
+    // @Override
     public int getTimegapBetweenConnections() {
         return 200;
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         try {
             handleFree0(parameter);
@@ -179,12 +178,12 @@ public class FileFactory extends PluginForHost {
 
     }
 
-    //@Override
+    // @Override
     public int getMaxRetries() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
@@ -234,7 +233,7 @@ public class FileFactory extends PluginForHost {
         return ai;
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String user = account.getUser();
         String pass = account.getPass();
@@ -285,12 +284,12 @@ public class FileFactory extends PluginForHost {
         return;
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.filefactory.com/info/terms.php";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws Exception, PluginException {
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
@@ -320,10 +319,10 @@ public class FileFactory extends PluginForHost {
                 downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.filefactorycom.errors.nofreeslots", "No slots free available"));
             } else {
                 if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                String fileName = Encoding.htmlDecode(new Regex(br.toString().replaceAll("\\&\\#8203\\;", ""), FILENAME).getMatch(0));
-                String fileSize = new Regex(br.toString(), FILESIZE).getMatch(0);
-
-                downloadLink.setName(fileName);
+                String fileName = br.getRegex("<title>(.*?) - FileFactory</title>").getMatch(0);
+                String fileSize = br.getRegex(FILESIZE).getMatch(0);
+                if (fileName == null || fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                downloadLink.setName(fileName.trim());
                 downloadLink.setDownloadSize(Regex.getSize(fileSize));
 
             }
@@ -333,29 +332,29 @@ public class FileFactory extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void init() {
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
     }
 

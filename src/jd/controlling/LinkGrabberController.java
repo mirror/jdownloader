@@ -2,6 +2,7 @@ package jd.controlling;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Vector;
 
@@ -30,10 +31,10 @@ class LinkGrabberControllerBroadcaster extends JDBroadcaster<LinkGrabberControll
 public class LinkGrabberController implements LinkGrabberFilePackageListener, LinkGrabberControllerListener {
 
     protected static Vector<LinkGrabberFilePackage> packages = new Vector<LinkGrabberFilePackage>();
+    protected static Vector<LinkGrabberFilePackage> publicpackages = new Vector<LinkGrabberFilePackage>();
 
     private static LinkGrabberController INSTANCE = null;
     private boolean lastSort = false;
-    public static boolean ONLINECHECK = true;
 
     private String PACKAGENAME_UNSORTED;
     private String PACKAGENAME_UNCHECKED;
@@ -54,7 +55,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
         getBroadcaster().addListener(this);
 
-        filter = LinkGrabberConstants.getLinkFilterPattern();
+        filter = LinkGrabberConstants.getLinkFilterPattern();        
         JDController.getInstance().addControlListener(this.cpl = new ConfigPropertyListener(LinkGrabberConstants.IGNORE_LIST) {
 
             // @Override
@@ -75,8 +76,20 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         return broadcaster;
     }
 
-    public Vector<LinkGrabberFilePackage> getPackages() {
+    public Vector<LinkGrabberFilePackage> getPackagesUnfiltered() {
         return packages;
+    }
+    
+    public Vector<LinkGrabberFilePackage> getPackages() {
+        synchronized(packages){
+            synchronized(publicpackages){
+                publicpackages.clear();
+                for (LinkGrabberFilePackage fp:packages){
+                    if (fp.getDownloadLinks().size()>0) publicpackages.add(fp);
+                }
+            }
+        }
+        return publicpackages;
     }
 
     public int indexOf(LinkGrabberFilePackage fp) {
@@ -117,7 +130,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
             DownloadLink dl = null;
             for (Iterator<LinkGrabberFilePackage> it = packages.iterator(); it.hasNext();) {
                 fp = it.next();
-                for (Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator(); it2.hasNext();) {
+                for (Iterator<DownloadLink> it2 = fp.getDownloadLinksUnFiltered().iterator(); it2.hasNext();) {
                     dl = it2.next();
                     if (dl.getDownloadURL().trim().replaceAll("httpviajd", "http").equalsIgnoreCase(link.getDownloadURL().trim().replaceAll("httpviajd", "http"))) { return true; }
                 }
@@ -236,7 +249,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 }
             }
             if (fp == null) {
-                if (ONLINECHECK) {
+                if (LinkGrabberConstants.isLinkCheckEnabled()) {
                     fp = getFPwithName(PACKAGENAME_UNCHECKED);
                     if (fp == null) {
                         fp = new LinkGrabberFilePackage(PACKAGENAME_UNCHECKED, this);
@@ -288,13 +301,11 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     private String cleanFileName(String name) {
         /** remove rar extensions */
-
+        name = getNameMatch(name, "(.*?)\\d+$");
         name = getNameMatch(name, "(.*)\\.part[0]*[1].rar$");
         name = getNameMatch(name, "(.*)\\.part[0-9]+.rar$");
         name = getNameMatch(name, "(.*)\\.rar$");
-
         name = getNameMatch(name, "(.*)\\.r\\d+$");
-        name = getNameMatch(name, "(.*?)\\d+$");
 
         /**
          * remove 7zip and hjmerge extensions

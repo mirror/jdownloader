@@ -72,7 +72,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         synchronized (fps) {
             for (LinkGrabberFilePackage fp : fps) {
                 tot += fp.getDownloadSize(false);
-                links += fp.size();
+                links += fp.getDownloadLinks().size();
             }
         }
         downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", links));
