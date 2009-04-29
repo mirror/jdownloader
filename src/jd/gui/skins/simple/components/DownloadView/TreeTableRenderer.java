@@ -105,7 +105,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
     private String strTTFailed;
 
-    private String lblDisabled;
+//    private String lblDisabled;
 
     private String lblTTDisabled;
 

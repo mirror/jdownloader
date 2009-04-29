@@ -13,7 +13,6 @@ import javax.swing.JMenuBar;
 import javax.swing.JRootPane;
 
 import jd.gui.skins.simple.listener.MouseAreaListener;
-import jd.gui.skins.simple.startmenu.JDStartMenu;
 
 import org.jvnet.lafwidget.animation.effects.GhostPaintingUtils;
 import org.jvnet.substance.SubstanceLookAndFeel;
@@ -30,17 +29,18 @@ import org.jvnet.substance.utils.SubstanceTitlePane;
 public class JDSubstanceTitlePane extends SubstanceTitlePane {
 
     private static final long serialVersionUID = -2571143182567635859L;
-    private SubstanceColorScheme scheme;
+    // private SubstanceColorScheme scheme;
     private Image logo;
     private MouseAreaListener listener;
 
     public JDSubstanceTitlePane(JRootPane root, SubstanceRootPaneUI ui, Image logo) {
         super(root, ui);
         this.logo = logo;
-        final JRootPane rootPane = this.getRootPane();
+        // final JRootPane rootPane = this.getRootPane();
 
-        SubstanceSkin skin = SubstanceCoreUtilities.getSkin(rootPane);
-        scheme = skin.getMainDefaultColorScheme(DecorationAreaType.PRIMARY_TITLE_PANE);
+        // SubstanceSkin skin = SubstanceCoreUtilities.getSkin(rootPane);
+        // scheme =
+        // skin.getMainDefaultColorScheme(DecorationAreaType.PRIMARY_TITLE_PANE);
 
     }
 
@@ -53,11 +53,11 @@ public class JDSubstanceTitlePane extends SubstanceTitlePane {
         return null;
     }
 
-//    private void extendMenu() {
-//        menuBar.getMenu(0).removeAll();
-//
-//        JDStartMenu.createMenu(menuBar.getMenu(0));
-//    }
+    // private void extendMenu() {
+    // menuBar.getMenu(0).removeAll();
+    //
+    // JDStartMenu.createMenu(menuBar.getMenu(0));
+    // }
 
     private Window getWindow() {
         return this.window;

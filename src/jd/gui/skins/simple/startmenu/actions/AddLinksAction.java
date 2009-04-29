@@ -2,18 +2,17 @@ package jd.gui.skins.simple.startmenu.actions;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.JMenuItem;
-
 public class AddLinksAction extends StartAction {
+
+    private static final long serialVersionUID = -6021279859279954997L;
 
     @Override
     public void init() {
-        // TODO Auto-generated method stub
-        
+
     }
 
     public void actionPerformed(ActionEvent e) {
-        // TODO Auto-generated method stub
-        
+
     }
+
 }

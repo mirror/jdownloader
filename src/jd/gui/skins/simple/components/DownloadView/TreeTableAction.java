@@ -20,11 +20,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.ImageIcon;
 
 import jd.config.Property;
-import jd.utils.JDTheme;
 
 public class TreeTableAction extends AbstractAction {
 
@@ -54,23 +52,20 @@ public class TreeTableAction extends AbstractAction {
 
     private Property property;
     private String ressourceName;
-   
 
     public TreeTableAction(ActionListener actionListener, String ressourceName, int actionID) {
-        this(actionListener, null,ressourceName, actionID, null);
+        this(actionListener, null, ressourceName, actionID, null);
     }
 
-    public TreeTableAction(ActionListener actionListener, ImageIcon imageIcon, String ressourceName, int actionID, Property obj) {
+    public TreeTableAction(ActionListener actionListener, ImageIcon imageIcon, String ressourceName, int actionID, Property property) {
         super();
         this.ressourceName = ressourceName;
         this.actionID = actionID;
         this.actionListener = actionListener;
-        property = obj;
+        this.property = property;
 
-putValue(Action.SMALL_ICON, imageIcon);
-
-        putValue(Action.NAME, ressourceName);
-
+        putValue(AbstractAction.SMALL_ICON, imageIcon);
+        putValue(AbstractAction.NAME, ressourceName);
     }
 
     public void actionPerformed(ActionEvent e) {

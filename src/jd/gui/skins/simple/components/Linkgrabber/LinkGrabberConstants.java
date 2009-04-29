@@ -24,7 +24,6 @@ public class LinkGrabberConstants {
         if (filter == null) return null;
 
         String[] lines = Regex.getLines(filter);
-        StringBuilder sb = new StringBuilder();
         ArrayList<String> ret = new ArrayList<String>();
         for (String line : lines) {
             if (line.trim().startsWith("#") || line.trim().length() == 0) continue;
@@ -33,5 +32,4 @@ public class LinkGrabberConstants {
         return ret.toArray(new String[] {});
     }
 
-    
 }

@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.ImageIcon;
 
 import jd.config.Property;
@@ -39,14 +38,15 @@ public class LinkGrabberTreeTableAction extends AbstractAction {
         this(actionListener, icon, ressourceName, actionID, null);
     }
 
-    public LinkGrabberTreeTableAction(ActionListener actionListener, ImageIcon icon,String ressourceName, int actionID, Property obj) {
+    public LinkGrabberTreeTableAction(ActionListener actionListener, ImageIcon icon, String ressourceName, int actionID, Property property) {
         super();
         this.ressourceName = ressourceName;
         this.actionID = actionID;
         this.actionListener = actionListener;
-        property = obj;
-        putValue(Action.NAME, ressourceName);
-        putValue(Action.SMALL_ICON, icon);
+        this.property = property;
+
+        putValue(AbstractAction.NAME, ressourceName);
+        putValue(AbstractAction.SMALL_ICON, icon);
     }
 
     public void actionPerformed(ActionEvent e) {

@@ -54,8 +54,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     private static final Object hiddenstopMark = new Object();
     private Object stopMark = nostopMark;
 
-    @SuppressWarnings("unchecked")
-    private HashMap<Class, Integer> activeHosts = new HashMap<Class, Integer>();
+    private HashMap<Class<?>, Integer> activeHosts = new HashMap<Class<?>, Integer>();
 
     private Logger logger = jd.controlling.JDLogger.getLogger();
 
@@ -227,7 +226,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         return 0;
     }
 
-    @SuppressWarnings("unchecked")
     private void activateDownload(DownloadLink link, SingleDownloadController con) {
         synchronized (DownloadControllers) {
             if (DownloadControllers.containsKey(link)) return;
@@ -236,7 +234,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 this.activeDownloads++;
             }
         }
-        Class cl = link.getPlugin().getClass();
+        Class<?> cl = link.getPlugin().getClass();
         synchronized (this.activeHosts) {
             if (activeHosts.containsKey(cl)) {
                 int count = activeHosts.get(cl);
@@ -247,7 +245,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void deactivateDownload(DownloadLink link) {
         synchronized (DownloadControllers) {
             if (!DownloadControllers.containsKey(link)) {
@@ -259,7 +256,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 this.activeDownloads--;
             }
         }
-        Class cl = link.getPlugin().getClass();
+        Class<?> cl = link.getPlugin().getClass();
         synchronized (this.activeHosts) {
             if (activeHosts.containsKey(cl)) {
                 int count = activeHosts.get(cl);
