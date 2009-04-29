@@ -34,6 +34,7 @@ gui.images.password=default/font-x-generic
 gui.images.resume=default/software-update-available
 gui.images.dlc=default/merge
 gui.clicknload=logo/cnl
+gui.images.stopsign=default/process-stop
 gui.images.sort =default/edit-select-all
 gui.images.load = default/document-open
 gui.images.next = default/media-playback-start
