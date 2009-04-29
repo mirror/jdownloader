@@ -56,6 +56,7 @@ gui.images.package_opened=default/package-x-generic
 gui.images.downloadorder=default/edit-redo
 gui.images.edit =default/edit-clear
 gui.images.networkerror=default/network-error
+gui.images.removefailed=default/network-error
 gui.images.proxy=default/network-server
 gui.images.network=default/network-idle
 gui.images.logout=default/system-log-out
@@ -112,6 +113,8 @@ gui.images.minimize.right=default/minimize_right
 gui.images.chat=default/internet-group-chat
 gui.images.enabled=default/enabled
 gui.images.disabled=default/disabled
+gui.images.filter=default/edit-find-replace
+gui.images.addselected=default/edit-find
 #colors
 gui.color.statusbar.maxspeedhighlight=ff0c03
 gui.color.htmlTooltip_background=94baff
