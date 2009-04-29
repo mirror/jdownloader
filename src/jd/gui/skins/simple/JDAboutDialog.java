@@ -67,7 +67,7 @@ public class JDAboutDialog extends JDialog {
         devs.add(new String[] { " gluewurm", " ---", " Developing innovative ideas, Bugfixing, Technical-Feasibility-Advisor" });
         devs.add(new String[] { " Greeny", " greeny@jdownloader.org", " LangFileEditor, Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" });
         devs.add(new String[] { " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." });
-        devs.add(new String[] { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins,Support,Bugfixing,JDownloader core" });
+        devs.add(new String[] { " jiaz", " jiaz@jdownloader.org", " JDownloader core, Framework, Addons/Plugins, Support, Server Administration" });
         devs.add(new String[] { " scr4ve", " scr4ve@jdownloader.org", " Security Stuff, Addons, Decrypter-Plugins, Support and Bugfixing" });
         devs.add(new String[] { " Sheadox", " sheadox@jdownloader.org", " Hoster plugins, Decrypt plugins, Support" });
         devs.add(new String[] { " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" });
@@ -124,7 +124,7 @@ public class JDAboutDialog extends JDialog {
     private void getPage(final JTextPane textPane) {
         new Thread() {
 
-            //@Override
+            // @Override
             public void run() {
                 try {
                     Browser br = new Browser();
@@ -135,7 +135,7 @@ public class JDAboutDialog extends JDialog {
                         }
                     });
                 } catch (IOException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
 

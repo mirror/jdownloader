@@ -341,49 +341,6 @@ public class DownloadController implements FilePackageListener, DownloadControll
         return ret;
     }
 
-    public void removeCompletedPackages() {
-        Vector<FilePackage> packagestodelete = new Vector<FilePackage>();
-        synchronized (packages) {
-            for (FilePackage fp : packages) {
-                if (fp.getLinksWithStatus(LinkStatus.FINISHED).size() == fp.size()) packagestodelete.add(fp);
-            }
-        }
-        for (FilePackage fp : packagestodelete) {
-            removePackage(fp);
-        }
-    }
-
-    public void removeCompletedDownloadLinks() {
-        Vector<DownloadLink> downloadstodelete = new Vector<DownloadLink>();
-        synchronized (packages) {
-            for (FilePackage fp : packages) {
-                downloadstodelete.addAll(fp.getLinksWithStatus(LinkStatus.FINISHED));
-            }
-        }
-        for (DownloadLink dl : downloadstodelete) {
-            dl.getFilePackage().remove(dl);
-        }
-    }
-
-    public DownloadLink getDownloadLinkAfter(DownloadLink lastElement) {
-        synchronized (packages) {
-            for (FilePackage fp : packages) {
-                DownloadLink dl = fp.getLinkAfter(lastElement);
-                if (dl != null) return dl;
-            }
-        }
-        return null;
-    }
-
-    public DownloadLink getDownloadLinkBefore(DownloadLink lastElement) {
-        synchronized (packages) {
-            for (FilePackage fp : packages) {
-                DownloadLink dl = fp.getLinkBefore(lastElement);
-                if (dl != null) return dl;
-            }
-        }
-        return null;
-    }
 
     public DownloadLink getFirstDownloadLinkwithURL(String url) {
         if (url == null) return null;

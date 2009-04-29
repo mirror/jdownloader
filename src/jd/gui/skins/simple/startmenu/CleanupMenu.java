@@ -1,9 +1,9 @@
 package jd.gui.skins.simple.startmenu;
 
-
 import jd.gui.skins.simple.startmenu.actions.CleanupDownloads;
 import jd.gui.skins.simple.startmenu.actions.CleanupPackages;
-
+import jd.gui.skins.simple.startmenu.actions.RemoveDisabledAction;
+import jd.gui.skins.simple.startmenu.actions.RemoveDupesAction;
 
 public class CleanupMenu extends JStartMenu {
 
@@ -14,6 +14,8 @@ public class CleanupMenu extends JStartMenu {
 
         this.add(new CleanupDownloads());
         this.add(new CleanupPackages());
+        this.add(new RemoveDupesAction());
+        this.add(new RemoveDisabledAction());
     }
 
 }

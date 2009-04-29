@@ -3,11 +3,14 @@ package jd.gui.skins.simple.startmenu.actions;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 
-import javax.swing.JMenuItem;
-
 import jd.gui.skins.simple.JDAboutDialog;
 
 public class AboutAction extends StartAction {
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -353145605693194634L;
 
     @Override
     public void init() {

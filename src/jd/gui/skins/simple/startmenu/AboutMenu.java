@@ -2,6 +2,7 @@ package jd.gui.skins.simple.startmenu;
 
 import jd.gui.skins.simple.startmenu.actions.AboutAction;
 import jd.gui.skins.simple.startmenu.actions.KnowledgeAction;
+import jd.gui.skins.simple.startmenu.actions.LatestChanges;
 
 public class AboutMenu extends JStartMenu {
 
@@ -12,6 +13,7 @@ public class AboutMenu extends JStartMenu {
         this.setIconTextGap(15);
         this.add(new AboutAction());
         this.add(new KnowledgeAction());
+        this.add(new LatestChanges());
 
     }
 

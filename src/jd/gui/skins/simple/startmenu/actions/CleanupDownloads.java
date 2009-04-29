@@ -2,8 +2,12 @@ package jd.gui.skins.simple.startmenu.actions;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
+import java.util.Vector;
 
 import jd.controlling.DownloadController;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 
 public class CleanupDownloads extends StartAction {
 
@@ -20,11 +24,16 @@ public class CleanupDownloads extends StartAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        DownloadController.getInstance().removeCompletedDownloadLinks();
-    }
-
-    protected void interrupt() {       
-
+        DownloadController dlc = DownloadController.getInstance();
+        Vector<DownloadLink> downloadstodelete = new Vector<DownloadLink>();
+        synchronized (dlc.getPackages()) {
+            for (FilePackage fp : dlc.getPackages()) {
+                downloadstodelete.addAll(fp.getLinksWithStatus(LinkStatus.FINISHED));
+            }
+        }
+        for (DownloadLink dl : downloadstodelete) {
+            dl.getFilePackage().remove(dl);
+        }
     }
 
 }

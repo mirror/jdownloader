@@ -3,9 +3,12 @@ package jd.gui.skins.simple.startmenu.actions;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 
-import javax.swing.JMenuItem;
-
 public class RemoveFailedAction extends StartAction {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -5425871515927494136L;
+
     @Override
     public void init() {
         this.setIconDim(new Dimension(24, 24));

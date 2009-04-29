@@ -3,11 +3,14 @@ package jd.gui.skins.simple.startmenu.actions;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 
-import javax.swing.JMenuItem;
-
 import jd.gui.skins.simple.components.JLinkButton;
 
 public class KnowledgeAction extends StartAction {
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 2227665710503234763L;
 
     @Override
     public void init() {
