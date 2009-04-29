@@ -51,14 +51,12 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     private HashMap<DownloadLink, SingleDownloadController> DownloadControllers = new HashMap<DownloadLink, SingleDownloadController>();
 
     private static final Object nostopMark = new Object();
+    private static final Object hiddenstopMark = new Object();
     private Object stopMark = nostopMark;
 
     @SuppressWarnings("unchecked")
     private HashMap<Class, Integer> activeHosts = new HashMap<Class, Integer>();
 
-    /**
-     * Der Logger
-     */
     private Logger logger = jd.controlling.JDLogger.getLogger();
 
     private boolean pause = false;
@@ -84,6 +82,9 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     }
 
     void start() {
+        synchronized (stopMark) {
+            if (stopMark == hiddenstopMark) setStopMark(nostopMark);
+        }
         startWatchDogThread();
     }
 
@@ -91,16 +92,21 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         synchronized (stopMark) {
             if (entry == null) entry = nostopMark;
             stopMark = entry;
+            if (entry instanceof DownloadLink) {
+                DownloadController.getInstance().fireDownloadLinkUpdate(entry);
+            } else if (entry instanceof FilePackage) {
+                DownloadController.getInstance().fireDownloadLinkUpdate(((FilePackage) entry).get(0));
+            }
         }
     }
 
     public void toggleStopMark(Object entry) {
         synchronized (stopMark) {
             if (entry == null || entry == stopMark) {
-                stopMark = nostopMark;
+                setStopMark(nostopMark);
                 return;
             }
-            stopMark = entry;
+            setStopMark(entry);
         }
     }
 
@@ -108,7 +114,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         return stopMark;
     }
 
-    public boolean isStopMark(Object item) {        
+    public boolean isStopMark(Object item) {
         return stopMark == item;
     }
 
@@ -562,6 +568,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
     private boolean reachedStopMark() {
         synchronized (stopMark) {
+            if (stopMark == hiddenstopMark) return true;
             if (stopMark instanceof DownloadLink) {
                 if (((DownloadLink) stopMark).isEnabled() && (((DownloadLink) stopMark).getLinkStatus().isPluginActive() || ((DownloadLink) stopMark).getLinkStatus().hasStatus(LinkStatus.FINISHED))) return true;
                 return false;
@@ -591,7 +598,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         case DownloadControllerEvent.REMOVE_FILPACKAGE:
         case DownloadControllerEvent.REMOVE_DOWNLOADLINK:
             synchronized (stopMark) {
-                if (this.stopMark != null && this.stopMark == event.getParameter()) this.stopMark = nostopMark;
+                if (this.stopMark != null && this.stopMark == event.getParameter()) setStopMark(hiddenstopMark);
             }
             break;
         }
