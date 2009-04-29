@@ -1,5 +1,6 @@
 package jd.gui.skins.simple;
 
+import java.awt.EventQueue;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
@@ -30,13 +31,13 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
     private JDCollapser() {
         super();
         this.setVisible(false);
-//        this.setCollapsed(true);
+        // this.setCollapsed(true);
         this.addMouseListener(this);
         getContentPane().setLayout(new MigLayout("ins 0,wrap 1", "[grow, fill]", "[grow,fill]"));
         this.setAnimated(SimpleGuiConstants.isAnimated());
         JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
 
-            //@Override
+            // @Override
             public void onPropertyChanged(Property source, String propertyName) {
                 setAnimated(SimpleGuiConstants.isAnimated());
 
@@ -45,28 +46,29 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
         });
         this.addPropertyChangeListener(new PropertyChangeListener() {
 
-            public void propertyChange(PropertyChangeEvent evt) {
-                
-                if(!SimpleGuiConstants.isAnimated()){
-                    if("collapsed".equals(evt.getPropertyName())){
-                        
-                        if(((Boolean)evt.getNewValue())){
-                            JDCollapser.this.setVisible(false);
-                        }else{
-                            JDCollapser.this.setVisible(true);
+            public void propertyChange(final PropertyChangeEvent evt) {
+                EventQueue.invokeLater(new Runnable() {
+                    public void run() {
+                        if (!SimpleGuiConstants.isAnimated()) {
+                            if ("collapsed".equals(evt.getPropertyName())) {
+
+                                if (((Boolean) evt.getNewValue())) {
+                                    JDCollapser.this.setVisible(false);
+                                } else {
+                                    JDCollapser.this.setVisible(true);
+                                }
+
+                            }
+
+                        } else {
+                            if (evt.getPropertyName() == JXCollapsiblePane.ANIMATION_STATE_KEY) {
+                                if (evt.getNewValue().equals("collapsed")) {
+                                    JDCollapser.this.setVisible(false);
+                                }
+                            }
                         }
-                    
                     }
-                   
-                }else{
-                    if (evt.getPropertyName() == JXCollapsiblePane.ANIMATION_STATE_KEY) {
-                        if (evt.getNewValue().equals("collapsed")) {
-                            JDCollapser.this.setVisible(false);
-                        }
-                    }
-                }
-              
-                
+                });
 
             }
 
@@ -121,11 +123,10 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
         // JScrollPane sp;
 
         getContentPane().add(new JScrollPane(panel), "height n:n:" + (int) (SimpleGUI.CURRENTGUI.getHeight() * 0.65));
-        
-//      getContentPane().add(panel);
-      setCollapsed(false);
-      revalidate();
-     
+
+        // getContentPane().add(panel);
+        setCollapsed(false);
+        revalidate();
 
     }
 }
