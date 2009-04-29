@@ -32,6 +32,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
@@ -41,6 +42,7 @@ import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadControllerEvent;
 import jd.controlling.DownloadControllerListener;
 import jd.controlling.DownloadWatchDog;
+import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.JDCollapser;
 import jd.gui.skins.simple.JTabbedPanel;
@@ -259,7 +261,15 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
             case TreeTableAction.DOWNLOAD_BROWSE_LINK:
                 link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
                 break;
+            case TreeTableAction.STOP_MARK:
+                Object oldsm = JDController.getInstance().getWatchdog().getStopMark();
+                obj = ((TreeTableAction) ((JCheckBoxMenuItem) e.getSource()).getAction()).getProperty().getProperty("item");
+                if (oldsm == obj) obj = null;
+                JDController.getInstance().getWatchdog().setStopMark(obj);
+
+                break;
             }
+
         } else if (e.getSource() instanceof TreeTableAction) {
             switch (e.getID()) {
             case TreeTableAction.SORT_ALL:

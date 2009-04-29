@@ -38,6 +38,7 @@ import java.util.Vector;
 
 import javax.swing.DropMode;
 import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -441,7 +442,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         int row = rowAtPoint(point);
         int col = getRealcolumnAtPoint(e.getX());
         JMenuItem tmp;
-        JCheckBox tmp2;
+        JCheckBoxMenuItem tmp2;
         if (!isRowSelected(row) && e.getButton() == MouseEvent.BUTTON3) {
             getTreeSelectionModel().clearSelection();
             getTreeSelectionModel().addSelectionPath(getPathForRow(row));
@@ -469,11 +470,12 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             Object obj = getPathForRow(row).getLastPathComponent();
             JPopupMenu popup = new JPopupMenu();
             if (obj instanceof FilePackage || obj instanceof DownloadLink) {
-                popup.add(tmp2 = new JCheckBox(new TreeTableAction(panel, JDLocale.L("gui.table.contextmenu.stopmark", "StopMark"), TreeTableAction.STOP_MARK, new Property("item", obj))));
+                popup.add(tmp2 = new JCheckBoxMenuItem(new TreeTableAction(panel, JDLocale.L("gui.table.contextmenu.stopmark", "StopMark"), TreeTableAction.STOP_MARK, new Property("item", obj))));
                 tmp2.setSelected(DownloadWatchDog.getInstance().isStopMark(obj));
                 popup.add(new JMenuItem(new TreeTableAction(panel, JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TreeTableAction.DELETE, new Property("links", alllinks))));
                 popup.add(new JSeparator());
             }
+
             popup.add(createExtrasMenu(obj));
             if (obj instanceof FilePackage) {
                 popup.add(new JMenuItem(new TreeTableAction(panel, JDLocale.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TreeTableAction.DOWNLOAD_DIR, new Property("folder", new File(((FilePackage) obj).getDownloadDirectory())))));
@@ -567,7 +569,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         if (path == null) return;
         int column = getRealcolumnAtPoint(e.getX());
         if (path != null && path.getLastPathComponent() instanceof FilePackage) {
-            if (column == 1 && e.getButton() == MouseEvent.BUTTON1) {
+            if (column == 1 && e.getButton() == MouseEvent.BUTTON1 && e.getX() < 20) {
                 if (e.getClickCount() == 1) {
                     FilePackage fp = (FilePackage) path.getLastPathComponent();
                     if (fp.getBooleanProperty(PROPERTY_EXPANDED, false)) {

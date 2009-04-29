@@ -205,6 +205,7 @@ public class JDController implements ControlListener {
         eventSender = getEventSender();
         INSTANCE = this;
         JDUtilities.setController(this);
+       
     }
 
     /**
@@ -260,6 +261,9 @@ public class JDController implements ControlListener {
             return;
         }
         switch (event.getID()) {
+        case ControlEvent.CONTROL_INIT_COMPLETE:
+            watchdog = DownloadWatchDog.getInstance();
+            break;
         case ControlEvent.CONTROL_ON_FILEOUTPUT:
             File[] list = (File[]) event.getParameter();
 
