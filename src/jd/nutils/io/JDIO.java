@@ -16,6 +16,7 @@
 
 package jd.nutils.io;
 
+import java.awt.Component;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.BufferedInputStream;
@@ -35,7 +36,6 @@ import java.nio.channels.FileChannel;
 import java.util.Vector;
 
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 
 import jd.controlling.JDLogger;
 import jd.nutils.JDHash;
@@ -126,7 +126,7 @@ public class JDIO {
      * Speichert ein Objekt
      * 
      * @param frame
-     *            ein Fenster
+     *            eine Komponente
      * @param objectToSave
      *            Das zu speichernde Objekt
      * @param fileOutput
@@ -140,7 +140,7 @@ public class JDIO {
      * @param asXML
      *            Soll das Objekt in eine XML Datei gespeichert werden?
      */
-    public static void saveObject(JFrame frame, Object objectToSave, File fileOutput, String name, String extension, boolean asXML) {
+    public static void saveObject(Component frame, Object objectToSave, File fileOutput, String name, String extension, boolean asXML) {
         if (fileOutput == null) {
             JDFileFilter fileFilter = new JDFileFilter(extension, extension, true);
             JFileChooser fileChooserSave = new JFileChooser();
@@ -216,7 +216,7 @@ public class JDIO {
      * Lädt ein Objekt aus einer Datei
      * 
      * @param frame
-     *            Ein übergeordnetes Fenster
+     *            Eine übergeordnete Komponente
      * @param fileInput
      *            Falls das Objekt aus einer bekannten Datei geladen werden
      *            soll, wird hier die Datei angegeben. Falls nicht, kann der
@@ -225,7 +225,7 @@ public class JDIO {
      *            Soll das Objekt von einer XML Datei aus geladen werden?
      * @return Das geladene Objekt
      */
-    public static Object loadObject(JFrame frame, File fileInput, boolean asXML) {
+    public static Object loadObject(Component frame, File fileInput, boolean asXML) {
         Object objectLoaded = null;
         if (fileInput == null) {
             JFileChooser fileChooserLoad = new JFileChooser();

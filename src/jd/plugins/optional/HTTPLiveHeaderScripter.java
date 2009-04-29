@@ -37,7 +37,6 @@ import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenu;
@@ -58,10 +57,10 @@ import javax.xml.parsers.ParserConfigurationException;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.reconnect.HTTPLiveHeader;
-import jd.gui.skins.simple.SimpleGuiUtils;
+import jd.gui.skins.simple.JTabbedPanel;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.gui.skins.simple.listener.LocationListener;
 import jd.http.Encoding;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
@@ -100,41 +99,25 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         return doc;
     }
 
-    private JFrame frame;
+    private JTabbedPanel tabbedPanel;
 
-    private JMenuItem menEditAddDefine;
+    private JMenuItem menHelpWiki, menEditAddDefine, menEditAddRequest, menEditAddWait, menEditValidate;
 
-    private JMenuItem menEditAddRequest;
-
-    // private JMenuItem menEditAddVariable;
-    private JMenuItem menEditAddWait;
-
-    private JMenuItem menEditValidate;
-
-    private JMenuItem menExit;
-
-    private JMenuItem menImportFile;
-
-    private JMenuItem menImportHTTPLive;
-
-    private JMenuItem menImportJDLH;
-
-    private JMenuItem menSave;
+    private JMenuItem menImportFile, menImportHTTPLive, menImportJDLH, menSave;
 
     private JTextArea textArea;
 
-    private JMenuItem menHelpWiki;
-
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == menImportHTTPLive) {
+        if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
+            initGUI();
+            SimpleGUI.CURRENTGUI.getContentPane().display(tabbedPanel);
+        } else if (e.getSource() == menImportHTTPLive) {
             importFF();
         } else if (e.getSource() == menHelpWiki) {
             try {
                 JLinkButton.openURL(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.wikilink", "http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen"));
-
             } catch (Exception e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
         } else if (e.getSource() == menImportJDLH) {
@@ -144,11 +127,11 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             fc.setApproveButtonText(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.openfile", "Open"));
             fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fc.setFileFilter(new JDFileFilter(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.desc", "XML-File"), ".xml", true));
-            fc.showSaveDialog(frame);
+            fc.showSaveDialog(tabbedPanel);
             File ret = fc.getSelectedFile();
             if (ret == null || !ret.exists()) { return; }
             try {
-                Vector<String> save = (Vector<String>) JDIO.loadObject(frame, ret, true);
+                Vector<String> save = (Vector<String>) JDIO.loadObject(tabbedPanel, ret, true);
                 textArea.setText(save.get(2));
             } catch (Exception e2) {
                 textArea.setText(JDIO.getLocalFile(ret));
@@ -159,11 +142,10 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             fc.setApproveButtonText(JDLocale.L("gui.btn_save", "Save"));
             fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fc.setFileFilter(new JDFileFilter(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.desc", "XML-File"), ".xml", true));
-            fc.showSaveDialog(frame);
+            fc.showSaveDialog(tabbedPanel);
             File ret = fc.getSelectedFile();
             if (ret == null) { return; }
             if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("xml")) {
-
                 ret = new File(ret.getAbsolutePath() + ".xml");
             }
             Vector<String> save = new Vector<String>();
@@ -175,16 +157,13 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             save.add(textArea.getText());
             save.add("?s).*" + manu.toLowerCase() + ".*");
 
-            JDIO.saveObject(frame, save, ret, null, null, true);
-        } else if (e.getSource() == menExit) {
-            frame.dispose();
+            JDIO.saveObject(tabbedPanel, save, ret, null, null, true);
         } else if (e.getSource() == menEditValidate) {
             if (validate()) {
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.validate.ok", "Script is Valid."));
             }
         } else if (e.getSource() == menEditAddRequest) {
-
-            if (!validate()) { return; }
+            if (!validate()) return;
             String script = textArea.getText();
             int id = Math.max(script.lastIndexOf("[[[/STEP]]]") + 11, script.lastIndexOf("[[[HSRC]]]") + 9);
             StringBuilder sb = new StringBuilder();
@@ -194,7 +173,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             sb.append("          [[[REQUEST]]]" + "\r\n\r\n");
             sb.append("          [[[/REQUEST]]]" + "\r\n");
             sb.append("     [[[/STEP]]]" + "\r\n");
-
             sb.append(script.substring(id).trim());
             textArea.setText(sb + "");
         } else if (e.getSource() == menEditAddDefine) {
@@ -207,7 +185,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             sb.append("     [[[STEP]]]" + "\r\n");
             sb.append("          [[[DEFINE variablename=\"VALUE\"/]]]" + "\r\n");
             sb.append("     [[[/STEP]]]" + "\r\n");
-
             sb.append(script.substring(id).trim());
             textArea.setText(sb + "");
         } else if (e.getSource() == menEditAddWait) {
@@ -220,13 +197,8 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             sb.append("     [[[STEP]]]" + "\r\n");
             sb.append("          [[[WAIT seconds=\"3\"/]]]" + "\r\n");
             sb.append("     [[[/STEP]]]" + "\r\n");
-
             sb.append(script.substring(id).trim());
             textArea.setText(sb + "");
-        } else if (frame == null || !frame.isVisible()) {
-            initGUI();
-        } else {
-            frame.dispose();
         }
     }
 
@@ -325,16 +297,9 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        /*
-         * if (frame == null || !frame.isVisible()) { menu.add(new
-         * MenuItem(JDLocale
-         * .L("plugins.optional.httpliveheaderscripter.action.start",
-         * "Start Scripter"), 0).setActionListener(this)); } else { menu.add(new
-         * MenuItem
-         * (JDLocale.L("plugins.optional.httpliveheaderscripter.action.end",
-         * "Exit Scripter"), 0).setActionListener(this)); }
-         */
+
         menu.add(new MenuItem(getHost(), 0).setActionListener(this));
+
         return menu;
     }
 
@@ -348,6 +313,94 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     public String getVersion() {
         return getVersion("$Revision$");
+    }
+
+    public boolean initAddon() {
+        return true;
+    }
+
+    private void initGUI() {
+        if (tabbedPanel != null) return;
+
+        tabbedPanel = new JTabbedPanel() {
+
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public void onDisplay() {
+            }
+
+            @Override
+            public void onHide() {
+            }
+
+        };
+
+        textArea = new JTextArea();
+        textArea.setText("[[[HSRC]]]\r\n\r\n\r\n[[[/HSRC]]]");
+        textArea.setEditable(true);
+        textArea.requestFocusInWindow();
+
+        tabbedPanel.setLayout(new BorderLayout());
+        tabbedPanel.add(buildMenu(), BorderLayout.PAGE_START);
+        tabbedPanel.add(new JScrollPane(textArea), BorderLayout.CENTER);
+    }
+
+    private JMenuBar buildMenu() {
+        // Filemenu
+        JMenu menFile = new JMenu(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file", "File"));
+
+        menImportFile = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.importfile", "Open file"));
+        menSave = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.save", "Save file"));
+        menImportHTTPLive = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.importhhtplive", "Import Firefox LiveHeader Script"));
+        menImportJDLH = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.importjdlh", "Import JD-LiveHeader Script"));
+
+        menImportFile.addActionListener(this);
+        menSave.addActionListener(this);
+        menImportHTTPLive.addActionListener(this);
+        menImportJDLH.addActionListener(this);
+
+        menFile.add(menImportFile);
+        menFile.add(menSave);
+        menFile.add(new JSeparator());
+        menFile.add(menImportHTTPLive);
+        menFile.add(menImportJDLH);
+
+        // EditMenu
+        JMenu menEdit = new JMenu(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit", "Edit"));
+
+        menEditValidate = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.validate", "Validate current script"));
+        menEditAddRequest = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.addrequest", "Add request tag"));
+        menEditAddDefine = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.adddefine", "Add define tag"));
+        menEditAddWait = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.addwait", "Add wait tag"));
+
+        menEditValidate.addActionListener(this);
+        menEditAddRequest.addActionListener(this);
+        menEditAddDefine.addActionListener(this);
+        menEditAddWait.addActionListener(this);
+
+        menEdit.add(menEditValidate);
+        menEdit.add(new JSeparator());
+        menEdit.add(menEditAddRequest);
+        menEdit.add(menEditAddDefine);
+        menEdit.add(menEditAddWait);
+
+        // HelpMenu
+        JMenu menHelp = new JMenu(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.help", "Help"));
+
+        menHelpWiki = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.help.wiki", "Howto"));
+        menHelpWiki.addActionListener(this);
+
+        menHelp.add(menHelpWiki);
+
+        JMenuBar menuBar = new JMenuBar();
+        menuBar.add(menFile);
+        menuBar.add(menEdit);
+        menuBar.add(menHelp);
+        return menuBar;
+    }
+
+    public void onExit() {
     }
 
     private void importFF() {
@@ -468,7 +521,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         JOptionPane op = new JOptionPane(panel, JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_CANCEL_OPTION, icon);
         // JDialog dialog = new
         // JDialog(SwingUtilities.getWindowAncestor(btnSelectRouter), );
-        JDialog dialog = op.createDialog(frame, JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"));
+        JDialog dialog = op.createDialog(tabbedPanel, JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"));
         dialog.add(op);
         dialog.setModal(true);
         dialog.setPreferredSize(new Dimension(400, 500));
@@ -485,98 +538,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             }
             textArea.setText(data[2]);
         }
-    }
-
-    public boolean initAddon() {
-        return true;
-    }
-
-    private void initGUI() {
-        frame = new JFrame();
-        frame.setTitle(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.title", "HTTP Live Header Script creater"));
-        frame.setIconImage(JDTheme.I("gui.images.config.reconnect"));
-        frame.setPreferredSize(new Dimension(600, 600));
-        frame.setName("HTTPLIVEHEADERCREATER");
-        frame.addWindowListener(new LocationListener());
-        frame.setLayout(new BorderLayout());
-        initMenu();
-
-        textArea = new JTextArea();
-        JScrollPane scrollPane = new JScrollPane(textArea);
-        // Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        textArea.setText("[[[HSRC]]]\r\n\r\n\r\n[[[/HSRC]]]");
-        frame.setResizable(true);
-        textArea.setEditable(true);
-        textArea.requestFocusInWindow();
-
-        frame.add(scrollPane, BorderLayout.CENTER);
-
-        frame.pack();
-        SimpleGuiUtils.restoreWindow(null, frame);
-        frame.setVisible(true);
-    }
-
-    private void initMenu() {
-        JMenuBar menuBar = new JMenuBar();
-        frame.setJMenuBar(menuBar);
-
-        JMenu menFile = new JMenu(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file", "File"));
-        JMenu menEdit = new JMenu(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit", "Edit"));
-        JMenu menHelp = new JMenu(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.help", "Help"));
-        menuBar.add(menFile);
-        menuBar.add(menEdit);
-        menuBar.add(menHelp);
-        // Filemenu
-        menImportHTTPLive = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.importhhtplive", "Import Firefox LiveHeader Script"));
-        menImportJDLH = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.importjdlh", "Import JD-LiveHeader Script"));
-        menImportFile = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.importfile", "Open file"));
-        menSave = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.save", "Save file"));
-
-        menExit = new JMenuItem(JDLocale.L("gui.btn_exit", "Exit"));
-        menImportHTTPLive.addActionListener(this);
-        menImportJDLH.addActionListener(this);
-        menImportFile.addActionListener(this);
-        menSave.addActionListener(this);
-        menExit.addActionListener(this);
-
-        menFile.add(menImportFile);
-
-        menFile.add(menSave);
-        menFile.add(new JSeparator());
-        menFile.add(menImportHTTPLive);
-        menFile.add(menImportJDLH);
-        menFile.add(new JSeparator());
-        menFile.add(menExit);
-
-        // EditMenu
-        menEditValidate = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.validate", "Validate current script"));
-        menEditAddRequest = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.addrequest", "Add request tag"));
-        menEditAddDefine = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.adddefine", "Add define tag"));
-        menEditAddWait = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.addwait", "Add wait tag"));
-        // menEditAddVariable = new
-        // JMenuItem(JDLocale.L(
-        // "plugins.optional.httpliveheaderscripter.gui.menu.edit.addvariable",
-        // "Add variable"));
-
-        menEditValidate.addActionListener(this);
-        menEditAddRequest.addActionListener(this);
-        menEditAddDefine.addActionListener(this);
-        menEditAddWait.addActionListener(this);
-        // menEditAddVariable.addActionListener(this);
-
-        // HelpMenu
-        menHelpWiki = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.help.wiki", "Howto"));
-        menHelpWiki.addActionListener(this);
-
-        menHelp.add(menHelpWiki);
-        menEdit.add(menEditValidate);
-        menEdit.add(new JSeparator());
-        menEdit.add(menEditAddRequest);
-        menEdit.add(menEditAddDefine);
-        menEdit.add(menEditAddWait);
-    }
-
-    public void onExit() {
     }
 
     private boolean validate() {
