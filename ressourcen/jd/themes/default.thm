@@ -51,7 +51,8 @@ gui.images.upload=default/go-up
 gui.images.warning=default/dialog-warning
 gui.images.link=default/mime/text-x-generic-template
 gui.images.package_closed=default/package-x-generic_close
-gui.images.package_error=default/document-open_error
+gui.images.package_closed_error=default/package-x-generic_close_failed
+gui.images.package_open_error=default/package-x-generic_failed
 gui.images.package_opened=default/package-x-generic
 gui.images.downloadorder=default/edit-redo
 gui.images.edit =default/edit-clear
@@ -97,7 +98,7 @@ gui.images.logomenu=default/logomenu
 gui.images.taskpanes.download=default/go-down
 gui.images.go_bottom=default/go-bottom
 gui.images.go_top=default/go-top
-
+gui.images.offlinefile=default/document-offline
 gui.images.priority0=default/prio_0
 
 gui.images.priority1=default/prio_1
