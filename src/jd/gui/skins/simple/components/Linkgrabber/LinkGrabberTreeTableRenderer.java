@@ -95,6 +95,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             break;
         case LinkGrabberTreeTableModel.COL_HOSTER:
             value = dLink.getPlugin().getHost();
+            
             break;
         case LinkGrabberTreeTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -144,6 +145,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             break;
         case LinkGrabberTreeTableModel.COL_HOSTER:
             value = fp.getHoster();
+         
             break;
         case LinkGrabberTreeTableModel.COL_STATUS:
             int failedCount = fp.countFailedLinks(false);
