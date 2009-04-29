@@ -47,6 +47,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     private int lastfail = 0;
     private long lastFailCount = 0;
     private String hosts;
+    static int i = 0;
     private transient LinkGrabberFilePackageBroadcaster broadcaster = new LinkGrabberFilePackageBroadcaster();
 
     public LinkGrabberFilePackage() {
@@ -290,7 +291,8 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public Vector<DownloadLink> getDownloadLinks() {
-        System.out.println("filter again");
+
+        System.out.println("filter again" + i++);
         synchronized (downloadLinks) {
             synchronized (LinkGrabberConstants.getExtensionFilter()) {
                 synchronized (publicLinks) {
@@ -364,9 +366,12 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
         synchronized (downloadLinks) {
-            this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
-            getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
-            if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
+            synchronized (this.publicLinks) {
+                this.publicLinks = new Vector<DownloadLink>(downloadLinks);
+                this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
+                getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+                if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
+            }
         }
     }
 

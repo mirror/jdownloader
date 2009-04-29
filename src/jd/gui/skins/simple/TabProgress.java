@@ -152,7 +152,7 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         } else {
             this.setVisible(true);
         }
-        this.setTitle(JDLocale.LF("gui.progresspane.title", "%s modules running", controllers.size()));
+        this.setTitle(JDLocale.LF("gui.progresspane.title", "%s modules running", "" + controllers.size()));
         this.revalidate();
         this.repaint();
     }

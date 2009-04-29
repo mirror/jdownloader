@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 import jd.config.SubConfiguration;
+import jd.controlling.LinkGrabberController;
 import jd.parser.Regex;
 
 public class LinkGrabberConstants {
@@ -12,15 +13,14 @@ public class LinkGrabberConstants {
     public static final String CONFIG = "LINKGRABBER";
     public static final String IGNORE_LIST = "IGNORE_LIST";
     private static final HashSet<String> extensionFilter = new HashSet<String>();
-    
-    
 
     public static HashSet<String> getExtensionFilter() {
-        return extensionFilter;
+        synchronized (extensionFilter) {
+            if (LinkGrabberController.getInstance().size() == 0) extensionFilter.clear();
+            return extensionFilter;
+        }
     }
-    
-    
-    
+
     public static SubConfiguration getConfig() {
         return SubConfiguration.getConfig(LinkGrabberConstants.CONFIG);
     }

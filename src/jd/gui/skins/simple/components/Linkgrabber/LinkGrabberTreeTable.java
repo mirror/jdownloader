@@ -320,11 +320,11 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
 
             if (getPathForRow(row) == null) {
-                if (LinkGrabberController.getInstance().getPackages().size() == 0) {
-                    JPopupMenu popup = new JPopupMenu();
-                    popup.add(buildExtMenu());
-                    if (popup.getComponentCount() != 0) popup.show(this, point.x, point.y);
-                }
+                JPopupMenu popup = new JPopupMenu();
+                popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.add_all", 16, 16), JDLocale.L("gui.linkgrabberv2.lg.addall", "Add all packages"), LinkGrabberTreeTableAction.ADD_ALL)));
+                popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.removefailed", 16, 16), JDLocale.L("gui.linkgrabberv2.lg.rmoffline", "Remove all Offline"), LinkGrabberTreeTableAction.DELETE_OFFLINE)));
+                popup.add(buildExtMenu());
+                if (popup.getComponentCount() != 0) popup.show(this, point.x, point.y);
                 return;
             }
             Vector<DownloadLink> alllinks = getAllSelectedDownloadLinks();

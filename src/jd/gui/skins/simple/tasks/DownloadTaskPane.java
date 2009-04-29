@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.Timer;
 
@@ -23,7 +22,6 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
     public static final int ACTION_SHOW_PANEL = 1;
     public static final int ACTION_STARTSTOP = 2;
 
-    private JButton startStop;
     private JLabel packages;
     private JLabel downloadlinks;
     private JLabel totalsize;
@@ -32,12 +30,13 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
     private JLabel eta;
     private JLabel downloadlist;
     private JLabel progresslabel;
+    private Timer fadeTimer;
 
     public DownloadTaskPane(String string, ImageIcon ii) {
         super(string, ii, "downloadtask");
         initGUI();
 
-        Timer fadeTimer = new Timer(2000, this);
+        fadeTimer = new Timer(2000, this);
         fadeTimer.setInitialDelay(0);
         fadeTimer.start();
     }
@@ -62,7 +61,7 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
         if (JDUtilities.getController().getSpeedMeter() > 1024) {
             speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s"));
 
-            long etanum = (tot - loaded) / JDUtilities.getController().getSpeedMeter();            
+            long etanum = (tot - loaded) / JDUtilities.getController().getSpeedMeter();
             eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", Formatter.formatSeconds(etanum)));
         } else {
             eta.setText("");
@@ -97,14 +96,9 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-
-        if (e.getSource() == startStop) {
-            this.broadcastEvent(new ActionEvent(this, ACTION_STARTSTOP, ((JButton) e.getSource()).getName()));
-            return;
-        } else {
-            update();
+        if (e.getSource() == fadeTimer) {
+            if (!this.isCollapsed()) update();
         }
-
     }
 
 }

@@ -2,7 +2,6 @@ package jd.controlling;
 
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Vector;
 
@@ -38,6 +37,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     private String PACKAGENAME_UNSORTED;
     private String PACKAGENAME_UNCHECKED;
+    private String PACKAGENAME_OFFLINE;
 
     private LinkGrabberControllerBroadcaster broadcaster;
 
@@ -53,9 +53,10 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     private LinkGrabberController() {
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
+        PACKAGENAME_OFFLINE = JDLocale.L("gui.linkgrabber.package.offline", "offline");
         getBroadcaster().addListener(this);
 
-        filter = LinkGrabberConstants.getLinkFilterPattern();        
+        filter = LinkGrabberConstants.getLinkFilterPattern();
         JDController.getInstance().addControlListener(this.cpl = new ConfigPropertyListener(LinkGrabberConstants.IGNORE_LIST) {
 
             // @Override
@@ -79,13 +80,13 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public Vector<LinkGrabberFilePackage> getPackagesUnfiltered() {
         return packages;
     }
-    
+
     public Vector<LinkGrabberFilePackage> getPackages() {
-        synchronized(packages){
-            synchronized(publicpackages){
+        synchronized (packages) {
+            synchronized (publicpackages) {
                 publicpackages.clear();
-                for (LinkGrabberFilePackage fp:packages){
-                    if (fp.getDownloadLinks().size()>0) publicpackages.add(fp);
+                for (LinkGrabberFilePackage fp : packages) {
+                    if (fp.getDownloadLinks().size() > 0) publicpackages.add(fp);
                 }
             }
         }
@@ -119,6 +120,27 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 if (fp.contains(link)) return fp;
             }
             return null;
+        }
+    }
+
+    public void MergeSingleOffline() {
+        synchronized (packages) {
+            LinkGrabberFilePackage fp2 = getFPwithName(PACKAGENAME_OFFLINE);
+            if (fp2 == null) {
+                fp2 = new LinkGrabberFilePackage(PACKAGENAME_OFFLINE, this);
+            }
+            Vector<LinkGrabberFilePackage> fps = new Vector<LinkGrabberFilePackage>(packages);
+            for (LinkGrabberFilePackage fp : fps) {
+                synchronized (fp.getDownloadLinksUnFiltered()) {
+                    Vector<DownloadLink> links = new Vector<DownloadLink>(fp.getDownloadLinksUnFiltered());
+                    for (DownloadLink dl : links) {
+                        if (dl.isAvailabilityChecked() && !dl.isAvailable() && links.size() == 1) {
+                            this.AddorMoveDownloadLink(fp2, dl);
+                            System.out.println("move to offline");
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -199,9 +221,12 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public void removePackage(LinkGrabberFilePackage fp) {
         if (fp == null) return;
         synchronized (packages) {
-            fp.getBroadcaster().removeListener(this);
-            packages.remove(fp);
-            broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REMOVE_FILPACKAGE, fp));
+            synchronized (publicpackages) {
+                fp.getBroadcaster().removeListener(this);
+                packages.remove(fp);
+                publicpackages.remove(fp);
+                broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REMOVE_FILPACKAGE, fp));
+            }
         }
     }
 

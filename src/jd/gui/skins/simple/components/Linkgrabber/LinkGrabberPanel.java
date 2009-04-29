@@ -219,7 +219,8 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 lc.getBroadcaster().removeListener(INSTANCE);
                 pc.finalize();
                 pc.getBroadcaster().removeListener(INSTANCE);
-                gatherer_running = false;
+                LGINSTANCE.MergeSingleOffline();
+                gatherer_running = false;                
             }
         };
         gatherer.start();
@@ -288,7 +289,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 case LinkGrabberTreeTableAction.CLEAR:
                     stopLinkGatherer();
                     lc.abortLinkCheck();
-                    selected_packages = new Vector<LinkGrabberFilePackage>(fps);
+                    selected_packages = new Vector<LinkGrabberFilePackage>(LGINSTANCE.getPackagesUnfiltered());
                     break;
                 case LinkGrabberTreeTableAction.ADD_SELECTED:
                     selected_packages = new Vector<LinkGrabberFilePackage>(this.internalTreeTable.getSelectedFilePackages());

@@ -137,7 +137,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (fp == null || !notifyUpdate) return;
         if (e.getSource() == txtName) {
-            fp.setName(txtName.getText());
+            fp.setName(txtName.getText());            
         } else if (e.getSource() == brwSaveTo) {
             fp.setDownloadDirectory(brwSaveTo.getText());
         } else if (e.getSource() == txtComment) {
