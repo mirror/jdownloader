@@ -96,8 +96,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     private DownloadLinksPanel panel;
 
-
-
     public DownloadTreeTable(DownloadTreeTableModel treeModel, final DownloadLinksPanel panel) {
         super(treeModel);
         cellRenderer = new TreeTableRenderer(this);
@@ -208,7 +206,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         // addHighlighter(new
         // ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, Color.GRAY,
         // Color.BLACK));
-
     }
 
     public static Painter<Component> getFolderPainter(JXTreeTable table) {
@@ -475,8 +472,13 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             if (obj instanceof FilePackage || obj instanceof DownloadLink) {
                 popup.add(tmp2 = new JCheckBoxMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.stopsign", 16, 16), JDLocale.L("gui.table.contextmenu.stopmark", "Stop sign"), TreeTableAction.STOP_MARK, new Property("item", obj))));
                 tmp2.setSelected(DownloadWatchDog.getInstance().isStopMark(obj));
-
+                if (obj instanceof DownloadLink) {
+                    tmp2.setEnabled(!((DownloadLink) obj).getLinkStatus().hasStatus(LinkStatus.FINISHED));
+                } else {
+                    tmp2.setEnabled(!((FilePackage) obj).isFinished());
+                }
                 popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TreeTableAction.DELETE, new Property("links", alllinks))));
+
                 popup.add(new JSeparator());
             }
 
@@ -507,12 +509,12 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 HashMap<String, Object> prop = new HashMap<String, Object>();
                 prop.put("links", alllinks);
                 prop.put("boolean", true);
-                popup.add(tmp = new JMenuItem(new TreeTableAction(panel,  JDTheme.II("gui.images.ok", 16, 16), JDLocale.L("gui.table.contextmenu.enable", "aktivieren") + " (" + links_disabled + ")", TreeTableAction.DE_ACTIVATE, new Property("infos", prop))));
+                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.ok", 16, 16), JDLocale.L("gui.table.contextmenu.enable", "aktivieren") + " (" + links_disabled + ")", TreeTableAction.DE_ACTIVATE, new Property("infos", prop))));
                 if (links_disabled == 0) tmp.setEnabled(false);
                 prop = new HashMap<String, Object>();
                 prop.put("links", alllinks);
                 prop.put("boolean", false);
-                popup.add(tmp = new JMenuItem(new TreeTableAction(panel,  JDTheme.II("gui.images.bad", 16, 16), JDLocale.L("gui.table.contextmenu.disable", "deaktivieren") + " (" + links_enabled + ")", TreeTableAction.DE_ACTIVATE, new Property("infos", prop))));
+                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.bad", 16, 16), JDLocale.L("gui.table.contextmenu.disable", "deaktivieren") + " (" + links_enabled + ")", TreeTableAction.DE_ACTIVATE, new Property("infos", prop))));
                 if (links_enabled == 0) tmp.setEnabled(false);
                 popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.resume", 16, 16), JDLocale.L("gui.table.contextmenu.resume", "fortsetzen") + " (" + resumlinks.size() + ")", TreeTableAction.DOWNLOAD_RESUME, new Property("links", resumlinks))));
                 if (resumlinks.size() == 0) tmp.setEnabled(false);
@@ -544,13 +546,12 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
             prioPopup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.priority" + i, 16, 16), names[i], TreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
 
-
             if (prio != null && i == prio) {
                 tmp.setEnabled(false);
                 prioPopup.setIcon(JDTheme.II("gui.images.priority" + i, 16, 16));
             } else {
                 tmp.setEnabled(true);
-               
+
             }
 
         }
