@@ -321,16 +321,31 @@ public class JDUtilities {
     }
 
     public static String getUserInput(String message, DownloadLink link) throws InterruptedException {
-        return getUserInput(message, null, link);
+
+        try {
+            link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
+            link.requestGuiUpdate();
+            String code = getUserInput(message, null, link);
+
+            link.requestGuiUpdate();
+            return code;
+
+        } finally {
+            link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO);
+        }
     }
 
     public static String getUserInput(String message, String defaultmessage, DownloadLink link) throws InterruptedException {
-        link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
-        link.requestGuiUpdate();
-        String code = getUserInput(message, defaultmessage);
-        link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO);
-        link.requestGuiUpdate();
-        return code;
+        try {
+            link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
+            link.requestGuiUpdate();
+            String code = getUserInput(message, defaultmessage);
+
+            link.requestGuiUpdate();
+            return code;
+        } finally {
+            link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO);
+        }
     }
 
     public static String getUserInput(String message, CryptedLink link) throws InterruptedException {

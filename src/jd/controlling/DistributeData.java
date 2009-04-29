@@ -26,9 +26,11 @@ import java.util.logging.Logger;
 import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.event.ControlEvent;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTMLEntities;
+import jd.nutils.JDFlags;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.parser.html.HTMLParser;
@@ -37,6 +39,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 /**
@@ -400,11 +403,25 @@ public class DistributeData extends Thread {
         Vector<DownloadLink> links = findLinks();
 
         if (links.size() == 0 && !disableDeepEmergencyScan) {
+            String[] ls = HTMLParser.getHttpLinks(data, null);
+            if (ls.length > 0) {
+                String txt = "\r\n";
+                for (String l : ls)
+                    txt += l + "\r\n";
+                logger.warning("No supported links found -> search for links in source code of all urls");
 
-            logger.info("No supported links found -> search for links in source code of all urls");
+                String title = JDLocale.L("gui.dialog.deepdecrypt.title", "Deep decryption?");
+                String message = JDLocale.LF("gui.dialog.deepdecrypt.message", "JDownloader has not found anything on %s\r\n-------------------------------\r\nJD now loads this page to look for further links.", txt + "");
+                int res = UserIO.getInstance().requestConfirmDialog(0, title, message, JDTheme.II("gui.images.search", 32, 32), JDLocale.L("gui.btn_continue", "Continue"), null);
+                if (JDFlags.hasAllFlags(res, UserIO.RETURN_OK)) {
 
-            data = getLoadLinkString(data);
-            links = findLinks();
+
+                    data = getLoadLinkString(data);
+
+                    links = findLinks();
+                }
+            }
+
         }
 
         Collections.sort(links);

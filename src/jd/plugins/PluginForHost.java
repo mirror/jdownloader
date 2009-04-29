@@ -99,12 +99,16 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public String getCaptchaCode(String method, File file, int flag, DownloadLink link, String defaultValue, String explain) throws PluginException, InterruptedException {
+        try{
         link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
         link.requestGuiUpdate();
         String cc = new CaptchaController(method, file, defaultValue, explain).getCode(flag);
 
         if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         return cc;
+        }finally{
+            link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO); 
+        }
     }
 
     private static final String AGB_CHECKED = "AGB_CHECKED";

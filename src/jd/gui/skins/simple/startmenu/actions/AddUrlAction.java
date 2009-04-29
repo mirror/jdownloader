@@ -23,7 +23,7 @@ public class AddUrlAction extends StartAction {
         this.setIcon("gui.images.url");
         this.setShortDescription("gui.menu.action.addurl.desc");
         this.setName("gui.menu.action.addurl.name");
-        this.setMnemonic("gui.menu.addurl.action.mnem", "gui.menu.action.addurl.name");
+        this.setMnemonic("gui.menu.action.addurl.mnem", "gui.menu.action.addurl.name");
         this.setAccelerator("gui.menu.action.addurl.accel");
     }
 

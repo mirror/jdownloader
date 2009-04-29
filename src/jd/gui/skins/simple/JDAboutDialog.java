@@ -59,7 +59,7 @@ public class JDAboutDialog extends JDialog {
 
         Vector<String[]> devs = new Vector<String[]>();
         devs.add(new String[] { " Botzi", " botzi@jdownloader.org", " Hoster / Decrypter / Addons, Bugfixing, Database backend, No Support" });
-        devs.add(new String[] { " coalado", " support@jdownloader.org", " JDownloader core, ocr, gui, reconnect, container, website, project administration" });
+        devs.add(new String[] { " coalado", " support@jdownloader.org", " JDownloader core, Framework, OCR, Swing GUI, Reconnect, Container, Website, Project Administration" });
         devs.add(new String[] { " djuzi", " djuzi@jdownloader.org", " Hoster/Decrypter plugins, Bug fixes, Localizing, PL Translation" });
         devs.add(new String[] { " DwD", " dwd@jdownloader.org", " hoster, ocr, decrypter, extractor, reconnect" });
         devs.add(new String[] { " eXecuTe", " jd.execute@gmail.com", " command line support, language editor, newsfeed addon, tango theme, some plugins" });
@@ -71,6 +71,7 @@ public class JDAboutDialog extends JDialog {
         devs.add(new String[] { " scr4ve", " scr4ve@jdownloader.org", " Security Stuff, Addons, Decrypter-Plugins, Support and Bugfixing" });
         devs.add(new String[] { " Sheadox", " sheadox@jdownloader.org", " Hoster plugins, Decrypt plugins, Support" });
         devs.add(new String[] { " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" });
+        devs.add(new String[] { " Andrei", " andrei030@hotmail.com", " Logo Design" });
 
         Collections.sort(devs, new Comparator<String[]>() {
 

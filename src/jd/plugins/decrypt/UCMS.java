@@ -33,6 +33,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+import jd.utils.JavaScript;
 
 public class UCMS extends PluginForDecrypt {
 
@@ -44,7 +45,7 @@ public class UCMS extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -67,6 +68,7 @@ public class UCMS extends PluginForDecrypt {
                     pass = null;
                 }
             }
+           
             String forms[][] = br.getRegex(Pattern.compile("<FORM ACTION=\"([^\"]*)\" ENCTYPE=\"multipart/form-data\" METHOD=\"POST\" NAME=\"(mirror|download)[^\"]*\"(.*?)</FORM>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
             for (String[] element : forms) {
                 for (int retry = 0; retry < 5; retry++) {
@@ -157,7 +159,7 @@ public class UCMS extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

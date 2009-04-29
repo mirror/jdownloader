@@ -17,6 +17,7 @@ import jd.gui.skins.simple.SimpleGUI;
 public class JDLabelListRenderer extends JLabel implements ListCellRenderer {
 
     private static final long serialVersionUID = 3607383089555373774L;
+    private boolean printClosedImage=false;
 
     public JDLabelListRenderer() {
         if (SimpleGUI.isSubstance()) {
@@ -27,6 +28,10 @@ public class JDLabelListRenderer extends JLabel implements ListCellRenderer {
 
         setHorizontalTextPosition(JLabel.RIGHT);
 
+    }
+
+    public JDLabelListRenderer(boolean b) {
+      this.printClosedImage=b;
     }
 
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -51,7 +56,7 @@ public class JDLabelListRenderer extends JLabel implements ListCellRenderer {
             }
         }
 
-        if (index == -1) {
+        if (index == -1&&!printClosedImage) {
             setIcon(null);
             setText(((JDLabelContainer) value).getLabel());
             setFont(list.getFont());
