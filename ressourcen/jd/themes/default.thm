@@ -9,6 +9,7 @@ gui.icons.delete=default/edit-delete
 
 ##
 gui.images.add = default/list-add
+gui.images.stopmark=default/record
 gui.images.cancel=default/emblem-unreadable
 gui.images.taskpanes.addons=default/mail-attachment
 gui.images.config.addons = default/mail-attachment
@@ -17,6 +18,7 @@ gui.images.config.network_local = default/network-idle
 gui.images.config.gui = default/preferences-desktop-wallpaper
 gui.images.config.reconnect = default/view-refresh
 gui.images.config.host = default/internet-web-browser
+gui.images.browse=default/internet-web-browser
 gui.images.addons.unrar=default/package-x-generic
 gui.images.addons.merge=default/merge
 gui.images.config.ocr = default/format-text-italic
@@ -27,9 +29,12 @@ gui.images.config.tip = default/dialog-information
 gui.images.captcha.methods=default/font-x-generic
 gui.images.configuration = default/preferences-desktop
 gui.images.delete = default/list-remove
-
+gui.images.newpackage=default/folder-new
+gui.images.password=default/font-x-generic
+gui.images.resume=default/software-update-available
+gui.images.dlc=default/merge
 gui.clicknload=logo/cnl
-
+gui.images.sort =default/edit-select-all
 gui.images.load = default/document-open
 gui.images.next = default/media-playback-start
 gui.images.save = default/document-save
@@ -37,8 +42,10 @@ gui.images.stop = default/media-playback-stop
 gui.images.terminal = default/utilities-terminal
 gui.images.update_manager = default/software-update-available
 gui.images.help = default/help-browser
+gui.images.reset=default/system-software-update
 gui.images.exit=default/system-log-out
 gui.images.restart=default/go-jump
+gui.images.url=default/go-jump
 gui.images.upload=default/go-up
 gui.images.warning=default/dialog-warning
 gui.images.link=default/mime/text-x-generic-template
@@ -46,6 +53,7 @@ gui.images.package_closed=default/package-x-generic_close
 gui.images.package_error=default/document-open_error
 gui.images.package_opened=default/package-x-generic
 gui.images.downloadorder=default/edit-redo
+gui.images.edit =default/edit-clear
 gui.images.networkerror=default/network-error
 gui.images.proxy=default/network-server
 gui.images.network=default/network-idle
@@ -87,7 +95,9 @@ gui.images.logomenu=default/logomenu
 gui.images.taskpanes.download=default/go-down
 gui.images.go_bottom=default/go-bottom
 gui.images.go_top=default/go-top
+
 gui.images.priority0=default/prio_0
+
 gui.images.priority1=default/prio_1
 gui.images.priority2=default/prio_2
 gui.images.priority3=default/prio_3
