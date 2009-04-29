@@ -6,6 +6,7 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -15,6 +16,7 @@ import javax.swing.JToolBar;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import jd.Main;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.Property;
@@ -25,9 +27,11 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
 import jd.gui.skins.simple.listener.MouseAreaListener;
+import jd.http.Browser;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.WebUpdate;
 import net.miginfocom.swing.MigLayout;
 
 public class JDToolBar extends JToolBar implements ControlListener {
@@ -57,6 +61,8 @@ public class JDToolBar extends JToolBar implements ControlListener {
     private boolean noTitlePainter;
 
     private JToggleButton reconnectButton;
+
+    private JToggleButton update;
 
     public JDToolBar(boolean noTitlePane, Image mainMenuIcon) {
         super(JToolBar.HORIZONTAL);
@@ -138,6 +144,33 @@ public class JDToolBar extends JToolBar implements ControlListener {
             public void actionPerformed(ActionEvent e) {
                 SimpleGUI.CURRENTGUI.doManualReconnect();
 
+            }
+
+        });
+
+        add(update = new JToggleButton(JDTheme.II("gui.images.update", 24, 24)), BUTTON_CONSTRAINTS);
+        update.setToolTipText(JDLocale.L("gui.menu.action.update.desc", "Check for new updates"));
+
+        if (Main.isBeta()) {
+            update.setEnabled(false);
+            update.setToolTipText("This is a BETA version. Updates for betaversions are only available at jdownloader.org");
+            Browser br = new Browser();
+            try {
+                br.getPage("http://update1.jdownloader.org/update_" + JDUtilities.getRevision());
+                if (br.getRequest().getHttpConnection().isOK()) {
+                    update.setEnabled(true);
+                    update.setToolTipText("Update to " + br + " available!");
+
+                }
+            } catch (IOException e1) {
+
+            }
+
+        }
+        update.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                new WebUpdate().doWebupdate(false);
             }
 
         });
