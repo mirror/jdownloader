@@ -38,6 +38,7 @@ import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberConstants;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.nutils.OSDetector;
@@ -140,7 +141,19 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         if (!OSDetector.isWindows()) ce.setEnabled(false);
+        ConfigContainer lg = new ConfigContainer(this, JDLocale.L("gui.config.gui.linggrabber", "Linkgrabber"));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lg));
 
+        lg.setGroup(new ConfigGroup(JDLocale.L("gui.config.gui.linggrabber", "General Linkgrabber Settings"), JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32)));
+
+        lg.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig(LinkGrabberConstants.CONFIG), LinkGrabberConstants.PARAM_ONLINECHECK, JDLocale.L("gui.config.linkgrabber.onlincheck", "Check linkinfo and onlinestatus")));
+        ce.setDefaultValue(true);
+        
+        lg.setGroup(new ConfigGroup(JDLocale.L("gui.config.gui.linggrabber.ignorelist", "Linkfilter"), JDTheme.II("gui.images.filter", 32, 32)));
+
+        lg.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, SubConfiguration.getConfig(LinkGrabberConstants.CONFIG), LinkGrabberConstants.IGNORE_LIST, JDLocale.L("gui.config.linkgrabber.iognorelist", "The linkfilter is used to filter links based on regular expressions.")));
+        ce.setDefaultValue("#Ignorefiletype 'olo':\r\n\r\n.+?\\.olo\r\n\r\n#Ignore hoster 'examplehost.com'_\r\n\r\n.*?examplehost\\.com.*?");
+        
         // Browser Tab
         Object[] browserArray = (Object[]) subConfig.getProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, null);
         if (browserArray == null) {

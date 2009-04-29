@@ -28,7 +28,7 @@ class ProgressControllerBroadcaster extends JDBroadcaster<ProgressControllerList
 
     //@Override
     protected void fireEvent(ProgressControllerListener listener, ProgressControllerEvent event) {
-        listener.handle_ProgressControllerEvent(event);
+        listener.onProgressControllerEvent(event);
 
     }
 

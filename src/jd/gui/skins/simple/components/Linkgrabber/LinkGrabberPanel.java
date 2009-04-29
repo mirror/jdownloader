@@ -136,6 +136,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     public synchronized void addLinks(DownloadLink[] linkList) {
         for (DownloadLink element : linkList) {
             if (LGINSTANCE.isDupe(element)) continue;
+            if(LGINSTANCE.isFiltered(element))continue;
             addToWaitingList(element);
         }
         Update_Async.restart();
@@ -474,6 +475,8 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         JDUtilities.getDownloadController().addPackage(fp);
     }
 
+ 
+
     public void checkAlreadyinList(DownloadLink link) {
         if (JDUtilities.getDownloadController().getFirstDownloadLinkwithURL(link.getDownloadURL()) != null) {
             link.getLinkStatus().setErrorMessage("Already in Downloadlist");
@@ -482,7 +485,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     }
 
     @SuppressWarnings("unchecked")
-    public void handle_LinkCheckEvent(LinkCheckEvent event) {
+    public void onLinkCheckEvent(LinkCheckEvent event) {
         switch (event.getID()) {
         case LinkCheckEvent.AFTER_CHECK:
             if (event.getParameter() instanceof Vector) {
@@ -499,7 +502,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         }
     }
 
-    public void handle_ProgressControllerEvent(ProgressControllerEvent event) {
+    public void onProgressControllerEvent(ProgressControllerEvent event) {
         if (event.getSource() == this.pc) {
             lc.abortLinkCheck();
             this.stopLinkGatherer();

@@ -5,7 +5,10 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Vector;
 
+import jd.config.ConfigPropertyListener;
+import jd.config.Property;
 import jd.event.JDBroadcaster;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberConstants;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackageEvent;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackageListener;
@@ -17,7 +20,7 @@ import jd.utils.JDUtilities;
 
 class LinkGrabberControllerBroadcaster extends JDBroadcaster<LinkGrabberControllerListener, LinkGrabberControllerEvent> {
 
-    //@Override
+    // @Override
     protected void fireEvent(LinkGrabberControllerListener listener, LinkGrabberControllerEvent event) {
         listener.onLinkGrabberControllerEvent(event);
     }
@@ -37,6 +40,10 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     private LinkGrabberControllerBroadcaster broadcaster;
 
+    private String[] filter;
+
+    private ConfigPropertyListener cpl;
+
     public synchronized static LinkGrabberController getInstance() {
         if (INSTANCE == null) INSTANCE = new LinkGrabberController();
         return INSTANCE;
@@ -46,6 +53,21 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
         PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
         getBroadcaster().addListener(this);
+
+        filter = LinkGrabberConstants.getLinkFilterPattern();
+        JDController.getInstance().addControlListener(this.cpl = new ConfigPropertyListener(LinkGrabberConstants.IGNORE_LIST) {
+
+            // @Override
+            public void onPropertyChanged(Property source, String propertyName) {
+                filter = LinkGrabberConstants.getLinkFilterPattern();
+            }
+
+        });
+    }
+
+    protected void finalize() {
+        JDController.getInstance().removeControlListener(cpl);
+        System.out.println("REMOVED LISTENER " + cpl);
     }
 
     public synchronized JDBroadcaster<LinkGrabberControllerListener, LinkGrabberControllerEvent> getBroadcaster() {
@@ -337,6 +359,17 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         default:
             break;
         }
+    }
+
+    public boolean isFiltered(DownloadLink element) {
+        if (filter == null) return false;
+        for (String f : filter) {
+            if (element.getDownloadURL().matches(f) || element.getName().matches(f)) {
+                JDLogger.getLogger().finer("Filtered link: " + element.getName() + " due to filter entry " + f);
+                return true;
+            }
+        }
+        return false;
     }
 
 }

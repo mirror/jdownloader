@@ -23,7 +23,7 @@ class LinkCheckBroadcaster extends JDBroadcaster<LinkCheckListener, LinkCheckEve
 
     //@Override
     protected void fireEvent(LinkCheckListener listener, LinkCheckEvent event) {
-        listener.handle_LinkCheckEvent(event);
+        listener.onLinkCheckEvent(event);
     }
 
 }
@@ -201,7 +201,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
         }
     }
 
-    public void handle_ProgressControllerEvent(ProgressControllerEvent event) {
+    public void onProgressControllerEvent(ProgressControllerEvent event) {
         if (event.getSource() == this.pc) {
             this.abortLinkCheck();
             getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.ABORT));

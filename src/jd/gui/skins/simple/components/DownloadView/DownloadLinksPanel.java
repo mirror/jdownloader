@@ -514,7 +514,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         }
     }
 
-    public void handle_LinkCheckEvent(LinkCheckEvent event) {
+    public void onLinkCheckEvent(LinkCheckEvent event) {
         switch (event.getID()) {
         case LinkCheckEvent.ABORT:
         case LinkCheckEvent.STOP:
