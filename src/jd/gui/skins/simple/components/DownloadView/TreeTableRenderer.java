@@ -124,8 +124,8 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         imgExtract = JDTheme.II("gui.images.update_manager", 16, 16);
         imgStopMark = JDTheme.II("gui.images.stopmark", 16, 16);
         imgPriority1 = JDTheme.II("gui.images.priority1", 16, 16);
-        imgPriority2 = JDTheme.II("gui.images.priority1", 16, 16);
-        imgPriority3 = JDTheme.II("gui.images.priority1", 16, 16);
+        imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
+        imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
     }
 
     private void initLocale() {
@@ -135,14 +135,14 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         strPluginError = JDLocale.L("gui.treetable.error.plugin", "Plugin error");
         strSecondsAbrv = JDLocale.L("gui.treetable.seconds", "sec");
         strWaitIO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input");
-        strTTPriority1= JDLocale.L("gui.treetable.tooltip.priority1", "High Priority");
-        strTTPriority2= JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority");
-        strTTPriority3= JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority");
-        
-        strTTFailed= JDLocale.L("gui.treetable.tooltip.failed", "Download failed. See logs for details. Rightclick->reset to retry");
-        strTTFinished= JDLocale.L("gui.treetable.tooltip.finished", "Download has finished successfully");
-        strTTStopMark= JDLocale.L("gui.treetable.tooltip.stopmark", "Stopmark is set. After this Link/Package, no further downloads will start");
-        strTTExtract= JDLocale.L("gui.treetable.tooltip.extract", "A post-download module(extracter,...) is running");
+        strTTPriority1 = JDLocale.L("gui.treetable.tooltip.priority1", "High Priority");
+        strTTPriority2 = JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority");
+        strTTPriority3 = JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority");
+
+        strTTFailed = JDLocale.L("gui.treetable.tooltip.failed", "Download failed. See logs for details. Rightclick->reset to retry");
+        strTTFinished = JDLocale.L("gui.treetable.tooltip.finished", "Download has finished successfully");
+        strTTStopMark = JDLocale.L("gui.treetable.tooltip.stopmark", "Stopmark is set. After this Link/Package, no further downloads will start");
+        strTTExtract = JDLocale.L("gui.treetable.tooltip.extract", "A post-download module(extracter,...) is running");
     }
 
     // @Override
@@ -197,12 +197,12 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             clearSB();
             ((JRendererLabel) co).setBorder(null);
-            if(dLink.getPlugin()==null){
-                ((JRendererLabel) co).setText("plugin missing"); 
-            }else{
-            sb.append(dLink.getPlugin().getHost());
-            sb.append(dLink.getPlugin().getSessionInfo());
-            ((JRendererLabel) co).setText(sb.toString());
+            if (dLink.getPlugin() == null) {
+                ((JRendererLabel) co).setText("plugin missing");
+            } else {
+                sb.append(dLink.getPlugin().getHost());
+                sb.append(dLink.getPlugin().getSessionInfo());
+                ((JRendererLabel) co).setText(sb.toString());
             }
             // ((JRendererLabel)
             // co).setIcon(JDImage.getScaledImageIcon(dLink.getPlugin
@@ -328,11 +328,11 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         case DownloadTreeTableModel.COL_STATUS_ICON:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             ((JRendererLabel) co).setText("");
-            
+
             if (dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
                 ((JRendererLabel) co).setIcon(imgExtract);
                 ((JRendererLabel) co).setToolTipText(strTTExtract);
-            } else if (JDController.getInstance().getWatchdog()!=null&&JDController.getInstance().getWatchdog().isStopMark(value)) {
+            } else if (JDController.getInstance().getWatchdog() != null && JDController.getInstance().getWatchdog().isStopMark(value)) {
                 ((JRendererLabel) co).setIcon(imgStopMark);
                 ((JRendererLabel) co).setToolTipText(strTTStopMark);
             } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
@@ -342,24 +342,23 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 ((JRendererLabel) co).setIcon(imgFailed);
                 ((JRendererLabel) co).setToolTipText(strTTFailed);
             } else {
-                switch(dLink.getPriority()){
+                switch (dLink.getPriority()) {
                 case 0:
-                 
+                default:
                     break;
                 case 1:
-                    ((JRendererLabel) co).setIcon(imgPriority1);  
+                    ((JRendererLabel) co).setIcon(imgPriority1);
                     ((JRendererLabel) co).setToolTipText(strTTPriority1);
                     break;
                 case 2:
-                    ((JRendererLabel) co).setIcon(imgPriority2);  
+                    ((JRendererLabel) co).setIcon(imgPriority2);
                     ((JRendererLabel) co).setToolTipText(strTTPriority2);
                     break;
-                case 3: 
-                    ((JRendererLabel) co).setIcon(imgPriority3);   
-                        ((JRendererLabel) co).setToolTipText(strTTPriority3);
+                case 3:
+                    ((JRendererLabel) co).setIcon(imgPriority3);
+                    ((JRendererLabel) co).setToolTipText(strTTPriority3);
                     break;
                 }
-                          
             }
 
             ((JRendererLabel) co).setBorder(null);

@@ -91,6 +91,11 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     public void setStopMark(Object entry) {
         synchronized (stopMark) {
             if (entry == null) entry = nostopMark;
+            if (stopMark instanceof DownloadLink) {
+                DownloadController.getInstance().fireDownloadLinkUpdate(stopMark);
+            } else if (stopMark instanceof FilePackage) {
+                DownloadController.getInstance().fireDownloadLinkUpdate(((FilePackage) stopMark).get(0));
+            }
             stopMark = entry;
             if (entry instanceof DownloadLink) {
                 DownloadController.getInstance().fireDownloadLinkUpdate(entry);

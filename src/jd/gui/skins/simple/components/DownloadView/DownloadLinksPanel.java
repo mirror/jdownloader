@@ -31,7 +31,6 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
@@ -39,10 +38,10 @@ import javax.swing.Timer;
 
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
+import jd.controlling.DownloadController;
 import jd.controlling.DownloadControllerEvent;
 import jd.controlling.DownloadControllerListener;
 import jd.controlling.DownloadWatchDog;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.JDCollapser;
 import jd.gui.skins.simple.JTabbedPanel;
@@ -194,6 +193,13 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                                 job_links.add(dl);
                             }
                         }
+                    } else if (Param instanceof Vector) {
+                        for (DownloadLink dl : (Vector<DownloadLink>) Param) {
+                            if (!job_links.contains(dl)) {
+                                changed = true;
+                                job_links.add(dl);
+                            }
+                        }
                     }
                     break;
                 }
@@ -262,14 +268,9 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                 link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
                 break;
             case TreeTableAction.STOP_MARK:
-                Object oldsm = JDController.getInstance().getWatchdog().getStopMark();
                 obj = ((TreeTableAction) ((JCheckBoxMenuItem) e.getSource()).getAction()).getProperty().getProperty("item");
-                if (oldsm == obj) obj = null;
-                JDController.getInstance().getWatchdog().setStopMark(obj);
-
                 break;
             }
-
         } else if (e.getSource() instanceof TreeTableAction) {
             switch (e.getID()) {
             case TreeTableAction.SORT_ALL:
@@ -277,12 +278,6 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                 break;
             case TreeTableAction.DELETE:
                 selected_links = (Vector<DownloadLink>) ((TreeTableAction) e.getSource()).getProperty().getProperty("links");
-                break;
-            }
-        } else if (e.getSource() instanceof JCheckBox) {
-            switch (e.getID()) {
-            case TreeTableAction.STOP_MARK:
-                obj = ((TreeTableAction) ((JCheckBox) e.getSource()).getAction()).getProperty().getProperty("item");
                 break;
             }
         }
@@ -405,6 +400,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
             for (int i = 0; i < selected_links.size(); i++) {
                 selected_links.elementAt(i).setPriority(prio);
             }
+            DownloadController.getInstance().fireDownloadLinkUpdate(selected_links);
             return;
         }
         case TreeTableAction.CHECK:
