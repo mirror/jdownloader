@@ -33,7 +33,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-import jd.utils.JavaScript;
 
 public class UCMS extends PluginForDecrypt {
 
@@ -68,7 +67,7 @@ public class UCMS extends PluginForDecrypt {
                     pass = null;
                 }
             }
-           
+
             String forms[][] = br.getRegex(Pattern.compile("<FORM ACTION=\"([^\"]*)\" ENCTYPE=\"multipart/form-data\" METHOD=\"POST\" NAME=\"(mirror|download)[^\"]*\"(.*?)</FORM>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
             for (String[] element : forms) {
                 for (int retry = 0; retry < 5; retry++) {
