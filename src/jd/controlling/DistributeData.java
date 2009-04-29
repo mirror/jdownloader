@@ -16,7 +16,6 @@
 
 package jd.controlling;
 
-import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -405,7 +404,6 @@ public class DistributeData extends Thread {
             logger.info("No supported links found -> search for links in source code of all urls");
 
             data = getLoadLinkString(data);
-            data=data;
             links = findLinks();
         }
 
@@ -449,7 +447,7 @@ public class DistributeData extends Thread {
 
         for (String l : links) {
             Browser br = new Browser();
-        
+
             try {
                 new URL(l);
                 pc.setStatusText(JDLocale.LF("gui.addurls.progress.get", "Parse %s URL(s). Get %s links", links.length, l));
@@ -464,7 +462,7 @@ public class DistributeData extends Thread {
                 }
 
             } catch (Exception e1) {
-             
+
             }
             pc.setStatusText(JDLocale.LF("gui.addurls.progress.found", "Parse %s URL(s). Found %s links", links.length, i));
             pc.increase(1);

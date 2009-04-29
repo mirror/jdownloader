@@ -28,7 +28,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.event.WindowStateListener;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
@@ -60,6 +59,7 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
+import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
@@ -147,7 +147,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         return (LogPane) logPanel.getPanel();
     }
 
-    private Logger logger = jd.controlling.JDLogger.getLogger();
+    private Logger logger = JDLogger.getLogger();
 
     private TabProgress progressBar;
 
@@ -193,7 +193,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private boolean mainMenuRollOverStatus = false;
 
-    private SwingWorker cursorworker;
+    private SwingWorker<Object, Object> cursorworker;
 
     /**
      * Das Hauptfenster wird erstellt. Singleton. Use SimpleGUI.createGUI
@@ -339,7 +339,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     cursorworker.cancel(true);
                     cursorworker = null;
                 }
-                this.cursorworker = new SwingWorker() {
+                this.cursorworker = new SwingWorker<Object, Object>() {
 
                     @Override
                     protected Object doInBackground() throws Exception {
@@ -366,6 +366,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     }
 
+    @SuppressWarnings("unchecked")
     private void initWaitPane() {
         JXPanel glass = new JXPanel(new MigLayout("ins 80,wrap 1", "[fill,grow]", "[fill,grow][]"));
         JXLabel lbl = new JXLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_128_128"), 300, 300));
@@ -502,7 +503,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -1061,7 +1062,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);

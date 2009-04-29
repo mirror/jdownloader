@@ -49,7 +49,7 @@ public class TaskPane extends JXTaskPaneContainer implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() instanceof TaskPanel&&e.getID()==TaskPanel.ACTION_TOGGLE) {
+        if (e.getSource() instanceof TaskPanel && e.getID() == TaskPanel.ACTION_TOGGLE) {
             TaskPanel source = ((TaskPanel) e.getSource());
 
             if (source != lastSource) {
@@ -66,7 +66,7 @@ public class TaskPane extends JXTaskPaneContainer implements ActionListener {
             src.broadcastEvent(new ActionEvent(src, TaskPanel.ACTION_CLICK, "Click"));
             SimpleGUI.CURRENTGUI.hideSideBar(false);
         }
-        new GuiRunnable() {
+        new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {

@@ -31,7 +31,6 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
@@ -344,7 +343,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
             return;
         }
         case TreeTableAction.DOWNLOAD_RESET: {
-             final Vector<DownloadLink> links = selected_links;
+            final Vector<DownloadLink> links = selected_links;
             new Thread() {
                 public void run() {
 

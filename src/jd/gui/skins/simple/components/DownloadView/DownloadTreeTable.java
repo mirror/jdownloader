@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Vector;
 
 import javax.swing.DropMode;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -441,7 +440,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         int row = rowAtPoint(point);
         int col = getRealcolumnAtPoint(e.getX());
         JMenuItem tmp;
-        JCheckBoxMenuItem tmp2;
         if (!isRowSelected(row) && e.getButton() == MouseEvent.BUTTON3) {
             getTreeSelectionModel().clearSelection();
             getTreeSelectionModel().addSelectionPath(getPathForRow(row));
@@ -471,8 +469,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
             if (obj instanceof FilePackage || obj instanceof DownloadLink) {
                 popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.stopsign", 16, 16), JDLocale.L("gui.table.contextmenu.stopmark", "Stop sign"), TreeTableAction.STOP_MARK, new Property("item", obj))));
-                if(!DownloadWatchDog.getInstance().isStopMark(obj))tmp.setIcon(tmp.getDisabledIcon());
-              
+                if (!DownloadWatchDog.getInstance().isStopMark(obj)) tmp.setIcon(tmp.getDisabledIcon());
+
                 if (obj instanceof DownloadLink) {
                     tmp.setEnabled(!((DownloadLink) obj).getLinkStatus().hasStatus(LinkStatus.FINISHED));
                 } else {
@@ -489,7 +487,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDLocale.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + this.getModel().getColumnName(col) + ")", TreeTableAction.SORT, new Property("col", col))));
                 popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.edit", 16, 16), JDLocale.L("gui.table.contextmenu.editpackagename", "Paketname ändern") + " (" + sfp.size() + ")", TreeTableAction.EDIT_NAME, new Property("packages", sfp))));
                 popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.save", 16, 16), JDLocale.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern") + " (" + sfp.size() + ")", TreeTableAction.EDIT_DIR, new Property("packages", sfp))));
-              
+
                 popup.add(new JSeparator());
             }
             if (obj instanceof DownloadLink) {

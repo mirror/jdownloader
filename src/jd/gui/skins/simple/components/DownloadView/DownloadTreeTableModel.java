@@ -42,15 +42,6 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
     /** table column names */
     static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.treetable.header_1.tree", "F"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"), JDLocale.L("gui.treetable.header_4.statusicon", "Status Icon"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
 
-    /**
-     * Creates a DownloadTreeTableModel
-     * 
-     * @param allLinks
-     * @param downloadLinksTreeTable
-     * 
-     * @param aList
-     *            the ProjectList to start out with.
-     */
     public DownloadTreeTableModel() {
         super("root");
     }
@@ -101,7 +92,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
         return count;
     }
 
-    //@Override
+    // @Override
     public Class<?> getColumnClass(int column) {
         switch (column) {
         case COL_HIDDEN:
@@ -128,7 +119,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
         return COLUMN_NAMES.length;
     }
 
-    //@Override
+    // @Override
     public String getColumnName(int column) {
         return COLUMN_NAMES[column];
     }
@@ -188,13 +179,12 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
         return null;
     }
 
-    //@Override
+    // @Override
     public boolean isCellEditable(Object node, int column) {
         return true;
     }
 
-
-    //@Override
+    // @Override
     public void setValueAt(Object value, Object node, int col) {
         JDLogger.getLogger().info("NNNN");
     }

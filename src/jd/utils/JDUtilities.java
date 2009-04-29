@@ -44,13 +44,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
-import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
-
-import javax.swing.ImageIcon;
 
 import jd.CPluginWrapper;
 import jd.HostPluginWrapper;
@@ -61,6 +59,7 @@ import jd.config.DatabaseConnector;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
+import jd.controlling.JDLogger;
 import jd.gui.UIInterface;
 import jd.http.Browser;
 import jd.http.JDProxy;
@@ -118,11 +117,6 @@ public class JDUtilities {
      * nur 1 UserIO Dialog gleichzeitig (z.b.PW,Captcha)
      */
     public static Integer userio_lock = new Integer(0);
-
-    /**
-     * Der Logger für Meldungen
-     */
-    public static Logger logger = null;
 
     private static String LATEST_IP = null;
 
@@ -200,11 +194,11 @@ public class JDUtilities {
      */
     public static void addToGridBag(Container cont, Component comp, int x, int y, int width, int height, int weightX, int weightY, Insets insets, int fill, int anchor) {
         if (cont == null) {
-            jd.controlling.JDLogger.getLogger().severe("Container ==null");
+            JDLogger.getLogger().severe("Container ==null");
             return;
         }
         if (comp == null) {
-            jd.controlling.JDLogger.getLogger().severe("Componente ==null");
+            JDLogger.getLogger().severe("Componente ==null");
             return;
         }
         JDUtilities.addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
@@ -327,12 +321,7 @@ public class JDUtilities {
     }
 
     public static String getUserInput(String message, DownloadLink link) throws InterruptedException {
-        link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
-        link.requestGuiUpdate();
-        String code = getUserInput(message);
-        link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO);
-        link.requestGuiUpdate();
-        return code;
+        return getUserInput(message, null, link);
     }
 
     public static String getUserInput(String message, String defaultmessage, DownloadLink link) throws InterruptedException {
@@ -345,10 +334,7 @@ public class JDUtilities {
     }
 
     public static String getUserInput(String message, CryptedLink link) throws InterruptedException {
-        link.getProgressController().setStatusText(JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
-        String password = getUserInput(message);
-        link.getProgressController().setStatusText(null);
-        return password;
+        return getUserInput(message, null, link);
     }
 
     public static String getUserInput(String message, String defaultmessage, CryptedLink link) throws InterruptedException {
@@ -356,14 +342,6 @@ public class JDUtilities {
         String password = getUserInput(message, defaultmessage);
         link.getProgressController().setStatusText(null);
         return password;
-    }
-
-    public static String getUserInput(String message) throws InterruptedException {
-        synchronized (userio_lock) {
-            if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
-            String password = JDUtilities.getGUI().showCountdownUserInputDialog(message, null);
-            return password;
-        }
     }
 
     public static String getUserInput(String message, String defaultmessage) throws InterruptedException {
@@ -405,7 +383,7 @@ public class JDUtilities {
                 // fileSize = file.length();
 
             } catch (FileNotFoundException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
                 return 0;
             }
 
@@ -417,7 +395,7 @@ public class JDUtilities {
             return checksum;
 
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
             return 0;
         }
 
@@ -452,10 +430,6 @@ public class JDUtilities {
         return JDUtilities.getController().getUiInterface();
     }
 
-    public static ImageIcon getImageIcon(String imageName) {
-        return new ImageIcon(imageName);
-    }
-
     /**
      * Prüft anhand der Globalen IP Check einstellungen die IP
      * 
@@ -474,7 +448,7 @@ public class JDUtilities {
             br.setReadTimeout(5000);
         }
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-            jd.controlling.JDLogger.getLogger().finer("IP Check is disabled. return current Milliseconds");
+            JDLogger.getLogger().finer("IP Check is disabled. return current Milliseconds");
             return System.currentTimeMillis() + "";
         }
 
@@ -482,29 +456,29 @@ public class JDUtilities {
         String patt = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
 
         try {
-            jd.controlling.JDLogger.getLogger().finer("IP Check via " + site);
+            JDLogger.getLogger().finer("IP Check via " + site);
             Pattern pattern = Pattern.compile(patt);
             Matcher matcher = pattern.matcher(br.getPage(site));
             if (matcher.find()) {
                 if (matcher.groupCount() > 0) {
                     return LATEST_IP = matcher.group(1);
                 } else {
-                    jd.controlling.JDLogger.getLogger().severe("Primary bad Regex: " + patt);
+                    JDLogger.getLogger().severe("Primary bad Regex: " + patt);
 
                 }
             }
-            jd.controlling.JDLogger.getLogger().info("Primary IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + br.toString());
+            JDLogger.getLogger().info("Primary IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + br.toString());
 
         }
 
         catch (Exception e1) {
-            jd.controlling.JDLogger.getLogger().severe("url not found. " + e1.toString());
+            JDLogger.getLogger().severe("url not found. " + e1.toString());
 
         }
 
         try {
 
-            jd.controlling.JDLogger.getLogger().finer("http://service.jdownloader.org/tools/getip.php");
+            JDLogger.getLogger().finer("http://service.jdownloader.org/tools/getip.php");
 
             Pattern pattern = Pattern.compile(patt);
             Matcher matcher = pattern.matcher(br.getPage("http://service.jdownloader.org/tools/getip.php"));
@@ -512,7 +486,7 @@ public class JDUtilities {
                 if (matcher.groupCount() > 0) {
                     return LATEST_IP = matcher.group(1);
                 } else {
-                    jd.controlling.JDLogger.getLogger().severe("Primary bad Regex: " + patt);
+                    JDLogger.getLogger().severe("Primary bad Regex: " + patt);
                 }
             }
             LATEST_IP = null;
@@ -520,8 +494,8 @@ public class JDUtilities {
         }
 
         catch (Exception e1) {
-            jd.controlling.JDLogger.getLogger().severe("url not found. " + e1.toString());
-            jd.controlling.JDLogger.getLogger().info("Sec. IP Check failed.");
+            JDLogger.getLogger().severe("url not found. " + e1.toString());
+            JDLogger.getLogger().info("Sec. IP Check failed.");
 
         }
         LATEST_IP = null;
@@ -565,7 +539,7 @@ public class JDUtilities {
             File homeDir = JDUtilities.getJDHomeDirectoryFromEnvironment();
             // String url = null;
             // Url Encode des pfads für den Classloader
-            jd.controlling.JDLogger.getLogger().finest("Create Classloader: for: " + homeDir.getAbsolutePath());
+            JDLogger.getLogger().finest("Create Classloader: for: " + homeDir.getAbsolutePath());
             jdClassLoader = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
 
         }
@@ -603,7 +577,7 @@ public class JDUtilities {
                 currentDir = currentDir.getParentFile();
             }
         } catch (URISyntaxException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
         }
 
         // JDUtilities.getLogger().info("RunDir: " + currentDir);
@@ -622,7 +596,7 @@ public class JDUtilities {
         // System.out.println("ENV " + envDir);
         if (envDir == null) {
             envDir = "." + System.getProperty("file.separator") + ".jd_home/";
-            jd.controlling.JDLogger.getLogger().info("JD_HOME from current directory:" + envDir);
+            JDLogger.getLogger().info("JD_HOME from current directory:" + envDir);
         }
         // System.out.println("ENV " + envDir);
         File jdHomeDir = new File(envDir);
@@ -638,13 +612,19 @@ public class JDUtilities {
         ret.append(' ');
         ret.append(JDUtilities.JD_VERSION);
         ret.append(JDUtilities.getRevision());
-        if (Main.isBeta()) ret.append(JDLocale.L("gui.mainframe.title.beta", "-->BETA Version<--"));
-//        if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0) {
-//            ret.append(' ');
-//            ret.append(JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR:"));
-//            ret.append(' ');
-//            ret.append(JDUtilities.getController().getWaitingUpdates().size());
-//        }
+        if (Main.isBeta()) {
+            ret.append(' ');
+            ret.append(JDLocale.L("gui.mainframe.title.beta", "-->BETA Version<--"));
+        }
+        // if (JDUtilities.getController() != null &&
+        // JDUtilities.getController().getWaitingUpdates() != null &&
+        // JDUtilities.getController().getWaitingUpdates().size() > 0) {
+        // ret.append(' ');
+        // ret.append(JDLocale.L("gui.mainframe.title.updatemessage",
+        // "-->UPDATES VERFÜGBAR:"));
+        // ret.append(' ');
+        // ret.append(JDUtilities.getController().getWaitingUpdates().size());
+        // }
         return ret.toString();
     }
 
@@ -747,7 +727,7 @@ public class JDUtilities {
         for (int i = 0; i < priority.size(); i++) {
             for (int b = plgs.size() - 1; b >= 0; b--) {
                 if (plgs.get(b).getHost() == null) {
-                    jd.controlling.JDLogger.getLogger().info("OO");
+                    JDLogger.getLogger().info("OO");
                 }
                 if (plgs.get(b).getHost().equalsIgnoreCase(priority.get(i))) {
                     HostPluginWrapper plg = plgs.remove(b);
@@ -796,7 +776,7 @@ public class JDUtilities {
 
     public static void restartJD() {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
-        jd.controlling.JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", }, getResourceFile(".").getAbsolutePath(), 0));
+        JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", }, getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
 
     }
@@ -836,7 +816,7 @@ public class JDUtilities {
         System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
         System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);
 
-        jd.controlling.JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
+        JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
     }
 
@@ -966,7 +946,7 @@ public class JDUtilities {
         try {
             return new GetExplorer().openExplorer(path);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
             return false;
         }
     }

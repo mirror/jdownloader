@@ -19,7 +19,6 @@ package jd.gui.skins.simple.components.DownloadView;
 import java.awt.Color;
 import java.awt.Component;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -106,7 +105,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
     private String strTTFailed;
 
-//    private String lblDisabled;
+    // private String lblDisabled;
 
     private String lblTTDisabled;
 
@@ -129,9 +128,9 @@ public class TreeTableRenderer extends DefaultTableRenderer {
     }
 
     private void initIcons() {
-        icon_fp_open =       JDTheme.II("gui.images.package_opened", 16, 16);
+        icon_fp_open = JDTheme.II("gui.images.package_opened", 16, 16);
         icon_fp_open_error = JDTheme.II("gui.images.package_open_error", 16, 16);
-        icon_fp_closed = JDTheme.II("gui.images.package_closed", 16, 16);       
+        icon_fp_closed = JDTheme.II("gui.images.package_closed", 16, 16);
         icon_fp_closed_error = JDTheme.II("gui.images.package_closed_error", 16, 16);
         imgFinished = JDTheme.II("gui.images.ok", 16, 16);
         imgFailed = JDTheme.II("gui.images.bad", 16, 16);
@@ -374,7 +373,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 ((JRendererLabel) co).setIcon(imgFailed);
                 ((JRendererLabel) co).setToolTipText(strTTFailed);
             } else {
-               
+
                 switch (dLink.getPriority()) {
                 case 0:
                 default:
@@ -434,15 +433,14 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         case DownloadTreeTableModel.COL_PART:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             ((JRendererLabel) co).setText(fp.getName());
-            if (fp.getLinksFailed()>0) {
+            if (fp.getLinksFailed() > 0) {
                 ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(DownloadTreeTable.PROPERTY_EXPANDED, false) ? icon_fp_closed_error : icon_fp_open_error);
-                
+
             } else {
                 ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(DownloadTreeTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
-                
+
             }
-           
-            
+
             ((JRendererLabel) co).setBorder(null);
             ((JComponent) co).setToolTipText(null);
             return co;

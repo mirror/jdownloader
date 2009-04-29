@@ -21,20 +21,12 @@ public class LinkGrabberTreeTableModel extends AbstractTreeTableModel {
     static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.linkgrabber.header.packagesfiles", "Pakete/Dateien"), JDLocale.L("gui.treetable.header.size", "Größe"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status") };
 
     private LinkGrabberController lgi;
-    private LinkGrabberPanel panel;
 
-    /**
-     * Creates a {@link ProjectsTreeTableModel}
-     * 
-     * @param allLinks
-     * @param downloadLinksTreeTable
-     * 
-     * @param aList
-     *            the ProjectList to start out with.
-     */
+    // private LinkGrabberPanel panel;
+
     public LinkGrabberTreeTableModel(LinkGrabberPanel treeTable) {
         super("root");
-        panel = treeTable;
+        // panel = treeTable;
         lgi = LinkGrabberController.getInstance();
     }
 
@@ -48,7 +40,7 @@ public class LinkGrabberTreeTableModel extends AbstractTreeTableModel {
             child = getPackages().get(index);
         } else if (parent instanceof LinkGrabberFilePackage) {
             LinkGrabberFilePackage pack = (LinkGrabberFilePackage) parent;
-            child = pack.getDownloadLinks().get(index);            
+            child = pack.getDownloadLinks().get(index);
         } else if (parent instanceof DownloadLink) {
             // for now, DownloadLinks do not have Children
             /* mirrors here */

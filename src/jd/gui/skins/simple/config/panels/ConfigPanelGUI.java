@@ -66,7 +66,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         load();
     }
 
-    //@Override
+    // @Override
     public void initPanel() {
         ConfigContainer container = new ConfigContainer(this);
 
@@ -131,12 +131,6 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         ext.setGroup(null);
 
-        // ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER,
-        // subConfig, SimpleGuiConstants.PARAM_NUM_PREMIUM_CONFIG_FIELDS,
-        // JDLocale.L("gui.config.gui.premiumconfigfilednum",
-        // "How many Premiumaccount fields should be displayed"), 1, 10));
-        // ce.setDefaultValue(5);
-        // ce.setPropertyType(PropertyType.NEEDS_RESTART);
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, "FILE_REGISTER", JDLocale.L("gui.config.gui.reg_protocols", "Link ccf/dlc/rsdf to JDownloader")));
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
@@ -148,12 +142,12 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         lg.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig(LinkGrabberConstants.CONFIG), LinkGrabberConstants.PARAM_ONLINECHECK, JDLocale.L("gui.config.linkgrabber.onlincheck", "Check linkinfo and onlinestatus")));
         ce.setDefaultValue(true);
-        
+
         lg.setGroup(new ConfigGroup(JDLocale.L("gui.config.gui.linggrabber.ignorelist", "Linkfilter"), JDTheme.II("gui.images.filter", 32, 32)));
 
         lg.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, SubConfiguration.getConfig(LinkGrabberConstants.CONFIG), LinkGrabberConstants.IGNORE_LIST, JDLocale.L("gui.config.linkgrabber.iognorelist", "The linkfilter is used to filter links based on regular expressions.")));
-        ce.setDefaultValue("#Ignorefiletype 'olo':\r\n\r\n.+?\\.olo\r\n\r\n#Ignore hoster 'examplehost.com'_\r\n\r\n.*?examplehost\\.com.*?");
-        
+        ce.setDefaultValue("#Ignorefiletype 'olo':\r\n\r\n.+?\\.olo\r\n\r\n#Ignore hoster 'examplehost.com':\r\n\r\n.*?examplehost\\.com.*?");
+
         // Browser Tab
         Object[] browserArray = (Object[]) subConfig.getProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, null);
         if (browserArray == null) {
@@ -256,12 +250,12 @@ public class ConfigPanelGUI extends ConfigPanel {
 
     }
 
-    //@Override
+    // @Override
     public void load() {
         loadConfigEntries();
     }
 
-    //@Override
+    // @Override
     public void save() {
         cep.save();
         subConfig.save();
@@ -288,7 +282,6 @@ public class ConfigPanelGUI extends ConfigPanel {
                                 JDUtilities.restartJD();
                             }
                             UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
-                           
 
                             SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
                             SimpleGUI.CURRENTGUI.onLAFChanged();
