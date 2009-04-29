@@ -1,6 +1,5 @@
 package jd.gui.skins.simple.startmenu.actions;
 
-import java.awt.Dimension;
 import java.awt.event.KeyEvent;
 import java.lang.reflect.Field;
 
@@ -14,29 +13,30 @@ import jd.utils.JDTheme;
 public abstract class StartAction extends AbstractAction {
 
     private static final long serialVersionUID = -7331375722486190184L;
-    private Dimension dimension;
 
-    public StartAction() {
+    public StartAction(String menukey, String iconkey) {
         super();
-        dimension = new Dimension(16, 16);
-        this.init();
+
+        setIcon(iconkey);
+        setName(JDLocale.L("gui.menu." + menukey + ".name", menukey));
+        setMnemonic(JDLocale.L("gui.menu." + menukey + ".mnem", "-"), JDLocale.L("gui.menu." + menukey + ".name", menukey));
+        setAccelerator(JDLocale.L("gui.menu." + menukey + ".accel", "-"));
     }
 
     protected void setIcon(String key) {
-        putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, (int) dimension.getWidth(), (int) dimension.getHeight()));
+        putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, 24, 24));
     }
 
-    protected void setAccelerator(String key) {
-        String acceleratorString = JDLocale.L(key, "-");
+    private void setAccelerator(String acceleratorString) {
         if (acceleratorString != null && acceleratorString.length() > 0) {
             putValue(AbstractAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(acceleratorString));
         }
     }
 
-    protected void setMnemonic(String key, String keyname) {
-        char mnemonic = JDLocale.L(key, "-").charAt(0);
+    private void setMnemonic(String key, String keyname) {
+        char mnemonic = key.charAt(0);
 
-        if (mnemonic != 0 && JDLocale.L(key, "-").contentEquals("-") == false) {
+        if (mnemonic != 0 && !key.contentEquals("-")) {
             Class<?> b = KeyEvent.class;
             Field f;
             try {
@@ -44,24 +44,15 @@ public abstract class StartAction extends AbstractAction {
                 int m = (Integer) f.get(null);
                 putValue(AbstractAction.MNEMONIC_KEY, m);
 
-                putValue(AbstractAction.DISPLAYED_MNEMONIC_INDEX_KEY, JDLocale.L(keyname, keyname).indexOf(m));
+                putValue(AbstractAction.DISPLAYED_MNEMONIC_INDEX_KEY, keyname.indexOf(m));
             } catch (Exception e) {
                 JDLogger.exception(e);
             }
         }
     }
 
-    protected void setName(String string) {
-        putValue(AbstractAction.NAME, JDLocale.L(string, string));
+    private void setName(String string) {
+        putValue(AbstractAction.NAME, string);
     }
 
-    protected void setIconDim(Dimension dimension) {
-        this.dimension = dimension;
-    }
-
-    protected void setShortDescription(String string) {
-//        putValue(AbstractAction.SHORT_DESCRIPTION, JDLocale.L(string, string));
-    }
-
-    abstract public void init();
 }

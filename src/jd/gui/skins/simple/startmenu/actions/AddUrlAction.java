@@ -1,6 +1,5 @@
 package jd.gui.skins.simple.startmenu.actions;
 
-import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.event.ActionEvent;
@@ -15,16 +14,8 @@ public class AddUrlAction extends StartAction {
 
     private static final long serialVersionUID = -7185006215784212976L;
 
-    // private boolean abort;
-
-    @Override
-    public void init() {
-        this.setIconDim(new Dimension(24, 24));
-        this.setIcon("gui.images.url");
-        this.setShortDescription("gui.menu.action.addurl.desc");
-        this.setName("gui.menu.action.addurl.name");
-        this.setMnemonic("gui.menu.action.addurl.mnem", "gui.menu.action.addurl.name");
-        this.setAccelerator("gui.menu.action.addurl.accel");
+    public AddUrlAction() {
+        super("action.addurl", "gui.images.url");
     }
 
     public void actionPerformed(ActionEvent e) {

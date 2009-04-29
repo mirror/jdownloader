@@ -1,6 +1,5 @@
 package jd.gui.skins.simple.startmenu.actions;
 
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 
 import jd.gui.skins.simple.SimpleGUI;
@@ -13,15 +12,8 @@ public class ExitAction extends StartAction {
 
     private static final long serialVersionUID = -1428029294638573437L;
 
-    //@Override
-    public void init() {
-        this.setIconDim(new Dimension(24, 24));
-        this.setIcon("gui.images.exit");
-        this.setShortDescription("gui.menu.action.exit.desc");
-        this.setName("gui.menu.action.exit.name");
-        this.setMnemonic("gui.menu.exit.action.mnem", "gui.menu.action.exit.name");
-        this.setAccelerator("gui.menu.action.exit.accel");
-
+    public ExitAction() {
+        super("action.exit", "gui.images.exit");
     }
 
     public void actionPerformed(ActionEvent e) {

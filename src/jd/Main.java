@@ -43,7 +43,6 @@ import javax.swing.JOptionPane;
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
-import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
@@ -357,11 +356,9 @@ public class Main {
                 try {
                     JLinkButton.openURL("http://jdownloader.org/download/index?updatejava=1");
                 } catch (Exception e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
-
         }
 
     }
@@ -400,7 +397,6 @@ public class Main {
                 br.getPage("http://update1.jdownloader.org/betas/beta_" + JDUtilities.getRevision());
                 if (br.getRequest().getHttpConnection().isOK()) {
                     BETA = false;
-
                 }
             } catch (IOException e1) {
 
@@ -436,7 +432,7 @@ public class Main {
 
         LOGGER.info("init Webupdate");
         Main.increaseSplashStatus();
-     
+
         new WebUpdate().doWebupdate(false);
 
         LOGGER.info("init plugins");
@@ -483,30 +479,7 @@ public class Main {
         } catch (Exception e) {
             // TODO: handle exception
         }
-        if(!Main.isBeta())        init.checkUpdate();
-
-        // logger.info(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).
-        // getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS,
-        // false).toString());
-        // if ((JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) &&
-        // (JDUtilities.getConfiguration().getBooleanProperty(Configuration.
-        // LOGGER_FILELOG, false) || level.equals(Level.ALL) ||
-        // level.equals(Level.FINER) || level.equals(Level.FINE)) &&
-        // !JDInitFlags.SWITCH_DEBUG &&
-        // (!JDUtilities.getSubConfig(SimpleGuiConstants
-        // .GUICONFIGNAME).getBooleanProperty
-        // (SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false))) {
-        // JDUtilities.getGUI().showHelpMessage(JDLocale.L(
-        // "main.start.logwarning.title", "Logwarnung"),
-        // JDLocale.LF("main.start.logwarning.body",
-        // "ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet."
-        // , level.getName(),
-        // JDUtilities.getConfiguration().getBooleanProperty(Configuration
-        // .LOGGER_FILELOG, false) ? JDLocale.L("main.status.active", "an") :
-        // JDLocale.L("main.status.inactive", "aus")), true,
-        // JDLocale.L("main.urls.faq",
-        // "http://jdownloader.org/faq.php?lng=deutsch"), null, 10);
-        // }
+        if (!Main.isBeta()) init.checkUpdate();
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
 
@@ -517,7 +490,7 @@ public class Main {
         } catch (InterruptedException e) {
             LOGGER.log(Level.SEVERE, "Exception occured", e);
         }
-        new PackageManager().interact(this);
+        if (!Main.isBeta()) new PackageManager().interact(this);
 
     }
 }

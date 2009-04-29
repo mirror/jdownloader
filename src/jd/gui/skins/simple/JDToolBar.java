@@ -6,7 +6,6 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -27,7 +26,6 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
 import jd.gui.skins.simple.listener.MouseAreaListener;
-import jd.http.Browser;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -139,7 +137,6 @@ public class JDToolBar extends JToolBar implements ControlListener {
         if (Main.isBeta()) {
             update.setEnabled(false);
             update.setToolTipText("This is a BETA version. Updates for betaversions are only available at jdownloader.org");
-            
 
         }
         update.addActionListener(new ActionListener() {

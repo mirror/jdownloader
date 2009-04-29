@@ -1,6 +1,5 @@
 package jd.gui.skins.simple.startmenu.actions;
 
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
@@ -13,14 +12,8 @@ public class AddContainerAction extends StartAction {
 
     private static final long serialVersionUID = 4713690050852393405L;
 
-    @Override
-    public void init() {
-        this.setIconDim(new Dimension(24, 24));
-        this.setIcon("gui.images.load");
-        this.setShortDescription("gui.menu.action.load.desc");
-        this.setName("gui.menu.action.load.name");
-        this.setMnemonic("gui.menu.action.load.mnem", "gui.menu.action.load.name");
-        this.setAccelerator("gui.menu.action.load.accel");
+    public AddContainerAction() {
+        super("action.load", "gui.images.load");
     }
 
     public void actionPerformed(ActionEvent e) {
