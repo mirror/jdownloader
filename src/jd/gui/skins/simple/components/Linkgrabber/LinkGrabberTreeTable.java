@@ -67,6 +67,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
 
     private Vector<DownloadLink> selectedLinks = new Vector<DownloadLink>();
     private Vector<LinkGrabberFilePackage> selectedPackages = new Vector<LinkGrabberFilePackage>();
+    private String[] prioDescs;
 
     public static final String PROPERTY_EXPANDED = "lg_expanded";
     public static final String PROPERTY_USEREXPAND = "lg_userexpand";
@@ -131,6 +132,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
                 linkgrabber.showFilePackageInfo(pkg);
             }
         });
+        prioDescs = new String[] { JDLocale.L("gui.treetable.tooltip.priority0", "Def. Priority"), JDLocale.L("gui.treetable.tooltip.priority1", "High Priority"), JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority") };
     }
 
     public TableCellRenderer getCellRenderer(int row, int col) {
@@ -368,7 +370,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
             prop = new HashMap<String, Object>();
             prop.put("links", links);
             prop.put("prio", new Integer(i));
-            prioPopup.add(tmp = new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, Integer.toString(i), LinkGrabberTreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
+            prioPopup.add(tmp = new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, prioDescs[i], LinkGrabberTreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
             tmp.setIcon(JDTheme.II("gui.images.priority" + i, 16, 16));
             if (prio != null && i == prio) {
                 tmp.setEnabled(false);

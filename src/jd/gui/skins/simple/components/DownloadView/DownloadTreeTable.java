@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Vector;
 
 import javax.swing.DropMode;
-import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -96,6 +95,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
     private TableColumnExt[] cols;
 
     private DownloadLinksPanel panel;
+
+    private String[] prioDescs;
 
     public DownloadTreeTable(DownloadTreeTableModel treeModel, final DownloadLinksPanel panel) {
         super(treeModel);
@@ -207,6 +208,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         // addHighlighter(new
         // ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, Color.GRAY,
         // Color.BLACK));
+        prioDescs = new String[] { JDLocale.L("gui.treetable.tooltip.priority0", "Def. Priority"), JDLocale.L("gui.treetable.tooltip.priority1", "High Priority"), JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority") };
     }
 
     public static Painter<Component> getFolderPainter(JXTreeTable table) {
@@ -527,7 +529,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             prop = new HashMap<String, Object>();
             prop.put("links", links);
             prop.put("prio", new Integer(i));
-            prioPopup.add(tmp = new JMenuItem(new TreeTableAction(panel, Integer.toString(i), TreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
+            prioPopup.add(tmp = new JMenuItem(new TreeTableAction(panel, prioDescs[i], TreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
             tmp.setIcon(JDTheme.II("gui.images.priority" + i, 16, 16));
             if (prio != null && i == prio) {
                 tmp.setEnabled(false);
