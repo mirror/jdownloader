@@ -376,11 +376,11 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     private void initWaitPane() {
-        JXPanel glass = new JXPanel(new MigLayout("ins 80,wrap 1", "[fill,grow]", "[fill,grow]"));
+        JXPanel glass = new JXPanel(new MigLayout("ins 80,wrap 1", "[fill,grow]", "[fill,grow][]"));
         JXLabel lbl = new JXLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_128_128"), 300, 300));
         glass.add(lbl, "alignx center, aligny center");
         JProgressBar prg;
-        glass.add(prg = new JProgressBar(), "alignx center, aligny center");
+        glass.add(prg = new JProgressBar(), "alignx center, aligny center,shrink");
         prg.setStringPainted(false);
 
         prg.setIndeterminate(true);
