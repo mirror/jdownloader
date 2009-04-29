@@ -55,7 +55,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
     private List<?> oldList;
 
     private boolean waitFlag;
-    private boolean tempdisabled = false;
+    private boolean tempdisabled = true;
 
     /**
      */

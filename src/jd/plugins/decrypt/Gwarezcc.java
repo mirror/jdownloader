@@ -51,7 +51,7 @@ public class Gwarezcc extends PluginForDecrypt {
         setConfigElements();
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -140,14 +140,15 @@ public class Gwarezcc extends PluginForDecrypt {
                             form.put("recaptcha_challenge_field", challenge);
                             form.put("recaptcha_response_field", code);
                             br.submitForm(form);
+                        } else {
+                            Form cap = br.getForm(0);
+                            URLConnectionAdapter con = br.cloneBrowser().openGetConnection("captcha/captcha.php");
+                            File captchaFile = this.getLocalCaptchaFile(this);
+                            Browser.download(captchaFile, con);
+                            String code = getCaptchaCode(captchaFile, this, param);
+                            cap.put("sicherheitscode", code);
+                            br.submitForm(cap);
                         }
-                        Form cap = br.getForm(0);
-                        URLConnectionAdapter con = br.cloneBrowser().openGetConnection("captcha/captcha.php");
-                        File captchaFile = this.getLocalCaptchaFile(this);
-                        Browser.download(captchaFile, con);
-                        String code = getCaptchaCode(captchaFile, this, param);
-                        cap.put("sicherheitscode", code);
-                        br.submitForm(cap);
 
                     }
                     if (linkString == null) linkString = br.getRegex("<meta http-equiv=\"refresh\".*?URL=(.*?)\">").getMatch(0);
@@ -190,7 +191,7 @@ public class Gwarezcc extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

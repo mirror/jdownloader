@@ -55,6 +55,7 @@ import javax.swing.ImageIcon;
 import jd.CPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.JDClassLoader;
+import jd.Main;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
 import jd.config.SubConfiguration;
@@ -637,12 +638,13 @@ public class JDUtilities {
         ret.append(' ');
         ret.append(JDUtilities.JD_VERSION);
         ret.append(JDUtilities.getRevision());
-//        if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0) {
-//            ret.append(' ');
-//            ret.append(JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR:"));
-//            ret.append(' ');
-//            ret.append(JDUtilities.getController().getWaitingUpdates().size());
-//        }
+        if (Main.isBeta()) ret.append(JDLocale.L("gui.mainframe.title.beta", "-->BETA Version:"));
+        if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0) {
+            ret.append(' ');
+            ret.append(JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR:"));
+            ret.append(' ');
+            ret.append(JDUtilities.getController().getWaitingUpdates().size());
+        }
         return ret.toString();
     }
 

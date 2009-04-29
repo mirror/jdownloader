@@ -80,6 +80,10 @@ public class Main {
     private static String instanceID = Main.class.getName();
     private static boolean instanceStarted = false;
 
+    public static boolean isBeta() {
+        return BETA;
+    }
+
     public static String getCaptcha(String path, String host) {
 
         boolean hasMethod = JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host);
@@ -165,7 +169,7 @@ public class Main {
         }
         UserIO.setInstance(SimpleUserIO.getInstance());
         preInitChecks();
-        
+
         for (int i = 0; i < args.length; i++) {
 
             if (args[i].equals("-prot")) {
@@ -347,19 +351,18 @@ public class Main {
             LOGGER.warning("Javacheck: Wrong Java Version! JDownloader needs at least Java 1.5 or higher!");
             System.exit(0);
         }
-        if(JDUtilities.getJavaVersion()<1.6 && !OSDetector.isMac()){
-            int returnValue = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN|UserIO.NO_CANCEL_OPTION,JDLocale.LF("gui.javacheck.newerjavaavailable.title","Outdated Javaversion found: %s!",JDUtilities.getJavaVersion()), JDLocale.L("gui.javacheck.newerjavaavailable.msg","Although JDownloader runs on your javaversion, we advise to install the latest java updates. \r\nJDownloader will run more stable, faster, and will look better. \r\n\r\nVisit http://jdownloader.org/download."), JDTheme.II("gui.images.warning",32,32), null,null);
-           if((returnValue&UserIO.RETURN_SKIPPED_BY_DONT_SHOW)==0){
-               try {
-                   JLinkButton.openURL("http://jdownloader.org/download/index?updatejava=1");
-               } catch (Exception e) {
-                   // TODO Auto-generated catch block
-                   e.printStackTrace();
-               }
-           }
-      
+        if (JDUtilities.getJavaVersion() < 1.6 && !OSDetector.isMac()) {
+            int returnValue = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, JDLocale.LF("gui.javacheck.newerjavaavailable.title", "Outdated Javaversion found: %s!", JDUtilities.getJavaVersion()), JDLocale.L("gui.javacheck.newerjavaavailable.msg", "Although JDownloader runs on your javaversion, we advise to install the latest java updates. \r\nJDownloader will run more stable, faster, and will look better. \r\n\r\nVisit http://jdownloader.org/download."), JDTheme.II("gui.images.warning", 32, 32), null, null);
+            if ((returnValue & UserIO.RETURN_SKIPPED_BY_DONT_SHOW) == 0) {
+                try {
+                    JLinkButton.openURL("http://jdownloader.org/download/index?updatejava=1");
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+
         }
-        
 
     }
 
@@ -404,8 +407,7 @@ public class Main {
         if (init.loadConfiguration() == null) {
 
             JOptionPane.showMessageDialog(null, "JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
-        }
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, true);
+        }        
         if (JDInitFlags.SWITCH_DEBUG) {
             LOGGER.info("DEBUG MODE ACTIVATED");
             LOGGER.setLevel(Level.ALL);

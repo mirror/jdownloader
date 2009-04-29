@@ -301,7 +301,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         this.getLeftcolPane().setAnimated(true);
         setVisible(true);
 
-        ClipboardHandler.getClipboard();
+        ClipboardHandler.getClipboard().setTempDisableD(false);
         this.contentPanel.addMouseListener(new JDMouseListener() {
             public void mouseEntered(MouseEvent e) {
                 System.out.println("Entered");
@@ -316,7 +316,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                         }
                     });
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(5000);
                     } catch (InterruptedException e) {
                         jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     }
