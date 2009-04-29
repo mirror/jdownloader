@@ -5,9 +5,9 @@ import java.awt.event.KeyEvent;
 import java.lang.reflect.Field;
 
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.KeyStroke;
 
+import jd.controlling.JDLogger;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 
@@ -23,13 +23,13 @@ public abstract class StartAction extends AbstractAction {
     }
 
     protected void setIcon(String key) {
-        putValue(Action.SMALL_ICON, JDTheme.II(key, (int) dimension.getWidth(), (int) dimension.getHeight()));
+        putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, (int) dimension.getWidth(), (int) dimension.getHeight()));
     }
 
     protected void setAccelerator(String key) {
         String acceleratorString = JDLocale.L(key, "-");
         if (acceleratorString != null && acceleratorString.length() > 0) {
-            putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(acceleratorString));
+            putValue(AbstractAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(acceleratorString));
         }
     }
 
@@ -42,17 +42,17 @@ public abstract class StartAction extends AbstractAction {
             try {
                 f = b.getField("VK_" + Character.toUpperCase(mnemonic));
                 int m = (Integer) f.get(null);
-                putValue(Action.MNEMONIC_KEY, m);
+                putValue(AbstractAction.MNEMONIC_KEY, m);
 
-                putValue(Action.DISPLAYED_MNEMONIC_INDEX_KEY, JDLocale.L(keyname, keyname).indexOf(m));
+                putValue(AbstractAction.DISPLAYED_MNEMONIC_INDEX_KEY, JDLocale.L(keyname, keyname).indexOf(m));
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                JDLogger.exception(e);
             }
         }
     }
 
     protected void setName(String string) {
-        putValue(Action.NAME, JDLocale.L(string, string));
+        putValue(AbstractAction.NAME, JDLocale.L(string, string));
     }
 
     protected void setIconDim(Dimension dimension) {
@@ -60,7 +60,7 @@ public abstract class StartAction extends AbstractAction {
     }
 
     protected void setShortDescription(String string) {
-        putValue(Action.SHORT_DESCRIPTION, JDLocale.L(string, string));
+//        putValue(AbstractAction.SHORT_DESCRIPTION, JDLocale.L(string, string));
     }
 
     abstract public void init();

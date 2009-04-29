@@ -43,10 +43,4 @@ public class AddUrlAction extends StartAction {
         DistributeData.loadAndParse(link);
     }
 
-    protected void interrupt() {
-        // abort = true;
-        Thread.currentThread().interrupt();
-
-    }
-
 }
