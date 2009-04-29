@@ -493,7 +493,8 @@ public class JDInit {
         new HostPluginWrapper("Data.hu", "DataHu", "http://[\\w\\.]*?data.hu/get/.+/.+", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("DataUp.de", "Dataupde", "http://[\\w\\.]*?dataup\\.de/\\d+/(.*)");
         new HostPluginWrapper("Dump.ru", "DumpRu", "http://[\\w\\.]*?dump\\.ru/file/[0-9]+");
-        new HostPluginWrapper("4Shared.com", "FourSharedCom", "http://[\\w\\.]*?4shared.com/file/\\d+?/.*?/.*");
+       
+        new HostPluginWrapper("4Shared.com", "FourSharedCom", "http://[\\w\\.]*?4shared.com/file/\\d+?/.*");
         new HostPluginWrapper("FastShare.org", "FastShareorg", "http://[\\w\\.]*?fastshare\\.org/download/(.*)");
         new HostPluginWrapper("FileBase.To", "FileBaseTo", "http://[\\w\\.]*?filebase\\.to/files/\\d{1,}/.*");
         // new HostPluginWrapper("FileMojo.Com", "FileMojoCom",

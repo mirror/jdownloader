@@ -405,6 +405,7 @@ public class DistributeData extends Thread {
             logger.info("No supported links found -> search for links in source code of all urls");
 
             data = getLoadLinkString(data);
+            data=data;
             links = findLinks();
         }
 

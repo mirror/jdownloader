@@ -43,7 +43,19 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
 
     private ImageIcon imgFailed;
 
-    private ImageIcon icon_fp_error;
+
+
+    private ImageIcon imgFileFailed;
+
+    private ImageIcon imgPriority1;
+
+    private ImageIcon imgPriority2;
+
+    private ImageIcon imgPriority3;
+
+    private ImageIcon icon_fp_open_error;
+
+    private ImageIcon icon_fp_closed_error;
 
     public LinkGrabberTreeTableRenderer(LinkGrabberTreeTable linkgrabberTreeTable) {
 
@@ -60,14 +72,19 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
     }
 
     private void initIcons() {
-        icon_fp_open = JDTheme.II("gui.images.package_closed", 16, 16);
-        icon_fp_error = JDTheme.II("gui.images.package_error", 16, 16);
-        icon_fp_closed = JDTheme.II("gui.images.package_opened", 16, 16);
+        icon_fp_open =       JDTheme.II("gui.images.package_opened", 16, 16);
+        icon_fp_open_error = JDTheme.II("gui.images.package_open_error", 16, 16);
+        icon_fp_closed = JDTheme.II("gui.images.package_closed", 16, 16);       
+        icon_fp_closed_error = JDTheme.II("gui.images.package_closed_error", 16, 16);
         imgFinished = JDTheme.II("gui.images.ok", 16, 16);
         imgFailed = JDTheme.II("gui.images.bad", 16, 16);
+        imgFileFailed = JDTheme.II("gui.images.offlinefile", 16, 16);
+        imgPriority1 = JDTheme.II("gui.images.priority1", 16, 16);
+        imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
+        imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
     }
 
-    //@Override
+    // @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         hasFocus = false;
         column = this.table.getColumn(column).getModelIndex();
@@ -86,7 +103,12 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
         switch (column) {
         case LinkGrabberTreeTableModel.COL_PACK_FILE:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ((JRendererLabel) co).setIcon(dLink.getIcon());
+            if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
+                ((JRendererLabel) co).setIcon(this.imgFileFailed);
+            } else {
+                ((JRendererLabel) co).setIcon(dLink.getIcon());
+            }
+
             ((JRendererLabel) co).setText(dLink.getName());
             ((JRendererLabel) co).setBorder(leftGap);
             return co;
@@ -95,7 +117,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             break;
         case LinkGrabberTreeTableModel.COL_HOSTER:
             value = dLink.getPlugin().getHost();
-            
+
             break;
         case LinkGrabberTreeTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -105,7 +127,29 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
                 sb.append(strUnchecked);
             } else {
                 if (dLink.isAvailable()) {
-                    ((JRendererLabel) co).setIcon(imgFinished);
+                    if (dLink.getPriority() > 0) {
+                        switch (dLink.getPriority()) {
+                        case 0:
+                        default:
+                            break;
+                        case 1:
+                            ((JRendererLabel) co).setIcon(imgPriority1);
+
+                            break;
+                        case 2:
+                            ((JRendererLabel) co).setIcon(imgPriority2);
+
+                            break;
+                        case 3:
+                            ((JRendererLabel) co).setIcon(imgPriority3);
+
+                            break;
+                        }
+
+                    } else {
+                        ((JRendererLabel) co).setIcon(imgFinished);
+                    }
+
                     sb.append(strOnline);
                 } else {
                     ((JRendererLabel) co).setIcon(imgFailed);
@@ -134,9 +178,10 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             ((JRendererLabel) co).setText(fp.getName());
             if (fp.countFailedLinks(false) > 0) {
-                ((JRendererLabel) co).setIcon(icon_fp_error);
+                ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false) ? icon_fp_closed_error : icon_fp_open_error);
+                
             } else {
-                ((JRendererLabel) co).setIcon(fp.getBooleanProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
+                ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
             }
             ((JRendererLabel) co).setBorder(null);
             return co;
@@ -145,7 +190,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             break;
         case LinkGrabberTreeTableModel.COL_HOSTER:
             value = fp.getHoster();
-         
+
             break;
         case LinkGrabberTreeTableModel.COL_STATUS:
             int failedCount = fp.countFailedLinks(false);

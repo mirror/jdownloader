@@ -372,10 +372,16 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         JMenu men = new JMenu(JDLocale.L("gui.table.contextmenu.filetype", "Filter"));
         ArrayList<String> extensions = new ArrayList<String>();
         String ext = null;
+        HashMap<String,DownloadLink> linkmap= new HashMap<String,DownloadLink> ();
+        
         for (DownloadLink l : links) {
             ext = JDIO.getFileExtension(l.getName());
             if (ext != null && ext.trim().length() > 1) {
-               if(!extensions.contains(ext.trim())) extensions.add(ext.trim());
+                ext=ext.trim();
+               if(!extensions.contains(ext)) {
+                   linkmap.put(ext,l);
+                   extensions.add(ext);
+               }
             }
 
         }
@@ -383,7 +389,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
 
         men.setIcon(JDTheme.II("gui.images.filter", 16, 16));
         for (String e : extensions) {
-            men.add(tmp = new JCheckBoxMenuItem(new LinkGrabberTreeTableAction(linkgrabber, null, "*." + e, LinkGrabberTreeTableAction.EXT_FILTER,new Property("extension", ext))));
+            men.add(tmp = new JCheckBoxMenuItem(new LinkGrabberTreeTableAction(linkgrabber, linkmap.get(e).getIcon(), "*." + e, LinkGrabberTreeTableAction.EXT_FILTER,new Property("extension", ext))));
 
             tmp.setSelected(!this.linkgrabber.getExtensionFilter().contains(e));
         }
