@@ -14,8 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.utils;
-
 import java.io.File;
 import java.io.FilenameFilter;
 import java.text.SimpleDateFormat;
@@ -30,6 +28,7 @@ import jd.gui.skins.simple.components.JDFileChooser;
 import jd.nutils.io.JDIO;
 import jd.nutils.zip.Zip;
 import jd.parser.Regex;
+import jd.utils.Upload;
 
 public class PackageCreaterRS {
     public static void main(String[] args) {

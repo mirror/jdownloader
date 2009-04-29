@@ -1,8 +1,9 @@
-package jd.parser;
+package tests;
 
 import java.io.IOException;
 
 import jd.http.Browser;
+import jd.parser.JavaScript;
 
 import org.xml.sax.SAXException;
 

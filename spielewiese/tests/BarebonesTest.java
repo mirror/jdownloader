@@ -1,4 +1,4 @@
-package jd.parser;
+package tests;
 
 import java.awt.EventQueue;
 import java.io.InputStream;

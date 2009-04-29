@@ -1,4 +1,4 @@
-package jd.nutils;
+package tests;
 
 import java.lang.reflect.Constructor;
 import java.net.URL;
