@@ -249,15 +249,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             }
 
         });
-        this.addWindowStateListener(new WindowStateListener() {
-
-            public void windowStateChanged(WindowEvent e) {
-                SimpleGUI.this.titleUI.getTitlePane().repaint();
-                System.out.println("CURSOR SET");
-                setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
-            }
-
-        });
 
         ArrayList<Image> list = new ArrayList<Image>();
 
