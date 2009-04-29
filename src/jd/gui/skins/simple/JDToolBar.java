@@ -139,15 +139,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
         if (Main.isBeta()) {
             update.setEnabled(false);
             update.setToolTipText("This is a BETA version. Updates for betaversions are only available at jdownloader.org");
-            Browser br = new Browser();
-            try {
-                br.getPage("http://update1.jdownloader.org/update_" + JDUtilities.getRevision());
-                if (br.getRequest().getHttpConnection().isOK()) {
-                    update.setEnabled(true);
-                    update.setToolTipText("Update to " + br + " available!");
-                }
-            } catch (IOException e1) {
-            }
+            
 
         }
         update.addActionListener(new ActionListener() {

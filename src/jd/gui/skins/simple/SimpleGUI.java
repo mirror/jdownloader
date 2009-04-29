@@ -50,6 +50,7 @@ import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
+import jd.Main;
 import jd.config.ConfigContainer;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
@@ -99,6 +100,7 @@ import jd.gui.skins.simple.tasks.DownloadTaskPane;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
 import jd.gui.skins.simple.tasks.LogTaskPane;
 import jd.gui.skins.simple.tasks.TaskPanel;
+import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
@@ -279,7 +281,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         setName("MAINFRAME");
         Dimension dim = SimpleGuiUtils.getLastDimension(this, null);
         if (dim == null) {
-            dim = new Dimension(400, 100);
+            dim = new Dimension(800, 600);
         }
         setPreferredSize(dim);
         setMinimumSize(new Dimension(400, 100));
@@ -503,7 +505,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -934,6 +936,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
                         JDUtilities.getController().startDownloads();
                     }
+                    
 
                     break;
                 case ControlEvent.CONTROL_PLUGIN_ACTIVE:
@@ -1062,7 +1065,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);

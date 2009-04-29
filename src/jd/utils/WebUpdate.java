@@ -144,7 +144,7 @@ public class WebUpdate implements ControlListener {
                 if (files != null) {
                     JDUtilities.getController().setWaitingUpdates(files);
                 }
-                if (!guiCall && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
+                if ((!guiCall && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false))||Main.isBeta()) {
                     logger.severe("Webupdater disabled");
                     progress.finalize();
                     return;

@@ -25,6 +25,7 @@ import java.util.logging.Level;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import jd.Main;
 import jd.OptionalPluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
@@ -79,6 +80,7 @@ public class PackageManager extends Interaction implements Serializable {
 
     //@Override
     public boolean doInteraction(Object arg) {
+        if(Main.isBeta())return false;
         checkNewInstalled();
 
         SubConfiguration config = WebUpdater.getConfig("JDU");

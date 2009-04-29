@@ -73,11 +73,11 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
 
     public void setDeligateCollapsed(boolean collapsed) {
       
-       if(collapsed){
-           System.out.println(collapsed+" - "+this);
-       }else{
-           System.out.println(collapsed+" - "+this);
-       }
+//       if(collapsed){
+//           System.out.println(collapsed+" - "+this);
+//       }else{
+//           System.out.println(collapsed+" - "+this);
+//       }
         super.setCollapsed(collapsed);
     }
 

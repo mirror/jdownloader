@@ -74,7 +74,7 @@ import jd.utils.WebUpdate;
 
 public class Main {
 
-    private static final boolean BETA = true;
+    private static boolean BETA = true;
     private static Logger LOGGER;
     private static SplashScreen splashScreen;
     private static String instanceID = Main.class.getName();
@@ -393,7 +393,19 @@ public class Main {
         final JDInit init = new JDInit(splashScreen);
 
         init.init();
+        if (isBeta()) {
+            Browser br = new Browser();
+            br.setDebug(true);
+            try {
+                br.getPage("http://update1.jdownloader.org/betas/beta_" + JDUtilities.getRevision());
+                if (br.getRequest().getHttpConnection().isOK()) {
+                    BETA = false;
 
+                }
+            } catch (IOException e1) {
+
+            }
+        }
         LOGGER.info("init Configuration");
         Main.increaseSplashStatus();
 
@@ -407,7 +419,7 @@ public class Main {
         if (init.loadConfiguration() == null) {
 
             JOptionPane.showMessageDialog(null, "JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
-        }        
+        }
         if (JDInitFlags.SWITCH_DEBUG) {
             LOGGER.info("DEBUG MODE ACTIVATED");
             LOGGER.setLevel(Level.ALL);
@@ -424,7 +436,7 @@ public class Main {
 
         LOGGER.info("init Webupdate");
         Main.increaseSplashStatus();
-        if (Main.BETA) JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, true);
+     
         new WebUpdate().doWebupdate(false);
 
         LOGGER.info("init plugins");
@@ -471,7 +483,7 @@ public class Main {
         } catch (Exception e) {
             // TODO: handle exception
         }
-        init.checkUpdate();
+        if(!Main.isBeta())        init.checkUpdate();
 
         // logger.info(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).
         // getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS,
