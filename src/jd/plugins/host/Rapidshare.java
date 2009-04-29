@@ -271,6 +271,7 @@ public class Rapidshare extends PluginForHost {
                 case 2:
                     u.setAvailable(true);
                     u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.directdownload", "Direct Download"));
+                    break;
                 case 3:
                     u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.servernotavailable", "Server temp. not available. Try later!"));
                     u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.servernotavailable", "Server temp. not available. Try later!"));
