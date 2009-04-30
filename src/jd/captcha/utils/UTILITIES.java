@@ -21,22 +21,17 @@ import java.awt.Image;
 import java.awt.Insets;
 import java.awt.MediaTracker;
 import java.io.File;
-import java.io.StringReader;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.captcha.JAntiCaptcha;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.GuiRunnable;
 
-import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
 
 /**
  * Diese Klasse beinhaltet mehrere Hilfsfunktionen
@@ -176,7 +171,7 @@ public class UTILITIES {
      */
     public static Image loadImage(final File file) {
         GuiRunnable<Image> run = new GuiRunnable<Image>() {
-            //@Override
+            // @Override
             public Image runSave() {
                 JFrame jf = new JFrame();
                 Image img = jf.getToolkit().getImage(file.getAbsolutePath());
@@ -217,30 +212,6 @@ public class UTILITIES {
 
         return ret;
 
-    }
-
-    /**
-     * @param xmlString
-     * @param validating
-     * @return XML Dokument
-     */
-    public static Document parseXmlString(String xmlString, boolean validating) {
-        if (xmlString == null) return null;
-        try {
-            // Create a builder factory
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setValidating(validating);
-
-            InputSource inSource = new InputSource(new StringReader(xmlString));
-
-            // Create the builder and parse the file
-            Document doc = factory.newDocumentBuilder().parse(inSource);
-
-            return doc;
-        } catch (Exception e) {
-            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
-        }
-        return null;
     }
 
     /**

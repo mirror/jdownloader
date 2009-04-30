@@ -713,7 +713,7 @@ public class JAntiCaptcha {
      */
 
     private Document createXMLFromLetterDB() {
-        Document xml = UTILITIES.parseXmlString("<jDownloader></jDownloader>", false);
+        Document xml = JDUtilities.parseXmlString("<jDownloader></jDownloader>", false);
         if (letterMap != null) {
             Element element = xml.createElement("map");
             xml.getFirstChild().appendChild(element);
@@ -907,7 +907,7 @@ public class JAntiCaptcha {
             }
             return;
         }
-        doc = UTILITIES.parseXmlString(JDIO.getLocalFile(f), false);
+        doc = JDUtilities.parseXmlString(JDIO.getLocalFile(f), false);
         if (doc == null) {
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.severe("" + "jacinfo.xml" + " is missing2");
@@ -1568,7 +1568,7 @@ public class JAntiCaptcha {
         if (f.exists()) {
             str = JDIO.getLocalFile(f);
         }
-        Document mth = UTILITIES.parseXmlString(str, false);
+        Document mth = JDUtilities.parseXmlString(str, false);
         logger.info("Get file: " + f);
         if (mth == null) {
             if (JAntiCaptcha.isLoggerActive()) {

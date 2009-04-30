@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -49,6 +50,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
+
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.CPluginWrapper;
 import jd.HostPluginWrapper;
@@ -72,6 +75,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
+
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 
 /**
  * @author astaldo/JD-Team
@@ -318,7 +324,7 @@ public class JDUtilities {
         }
         return null;
 
-    } 
+    }
 
     public static String getUserInput(String message, DownloadLink link) throws InterruptedException {
 
@@ -1000,6 +1006,25 @@ public class JDUtilities {
         }
         return ret.toString();
 
+    }
+
+    public static Document parseXmlString(String xmlString, boolean validating) {
+        if (xmlString == null) return null;
+        try {
+            // Create a builder factory
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setValidating(validating);
+
+            InputSource inSource = new InputSource(new StringReader(xmlString));
+
+            // Create the builder and parse the file
+            Document doc = factory.newDocumentBuilder().parse(inSource);
+
+            return doc;
+        } catch (Exception e) {
+            JDLogger.exception(e);
+        }
+        return null;
     }
 
 }

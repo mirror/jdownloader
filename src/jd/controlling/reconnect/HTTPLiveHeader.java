@@ -18,7 +18,6 @@ package jd.controlling.reconnect;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Vector;
@@ -27,10 +26,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jd.config.Configuration;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -48,8 +46,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 import sun.misc.BASE64Encoder;
 
@@ -69,7 +65,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
         configuration = JDUtilities.getConfiguration();
     }
 
-    //@Override
+    // @Override
     protected boolean runCommands(ProgressController progress) {
         String script;
         if (configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) == ReconnectMethod.CLR) {
@@ -116,7 +112,12 @@ public class HTTPLiveHeader extends ReconnectMethod {
             br.setAuth(ip, user, pass);
         }
         try {
-            xmlScript = HTTPLiveHeader.parseXmlString(script, false);
+            xmlScript = JDUtilities.parseXmlString(script, false);
+            if (xmlScript == null) {
+                progress.finalize();
+                logger.severe("Error while parsing the xml string: " + script);
+                return false;
+            }
             Node root = xmlScript.getChildNodes().item(0);
             if (root == null || !root.getNodeName().equalsIgnoreCase("HSRC")) {
                 progress.finalize();
@@ -276,18 +277,8 @@ public class HTTPLiveHeader extends ReconnectMethod {
                     }
                 }
             }
-
-        } catch (SAXException e) {
-            progress.finalize();
-            logger.severe(e.getMessage());
-            return false;
-        } catch (ParserConfigurationException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-            progress.finalize();
-            logger.severe(e.getMessage());
-            return false;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.exception(e);
             progress.finalize();
             logger.severe(e.getCause() + " : " + e.getMessage());
             return false;
@@ -413,13 +404,12 @@ public class HTTPLiveHeader extends ReconnectMethod {
                 }
                 return br;
             } catch (IOException e) {
-
                 logger.severe("IO Error: " + e.getLocalizedMessage());
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                JDLogger.exception(e);
                 return null;
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.exception(e);
             return null;
         }
 
@@ -436,19 +426,6 @@ public class HTTPLiveHeader extends ReconnectMethod {
         }
 
         return ret;
-    }
-
-    private static Document parseXmlString(String xmlString, boolean validating) throws SAXException, IOException, ParserConfigurationException {
-        // Create a builder factory
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setValidating(validating);
-
-        InputSource inSource = new InputSource(new StringReader(xmlString));
-
-        // Create the builder and parse the file
-        Document doc = factory.newDocumentBuilder().parse(inSource);
-
-        return doc;
     }
 
     private static String[] splitLines(String source) {
@@ -508,11 +485,11 @@ public class HTTPLiveHeader extends ReconnectMethod {
 
     }
 
-    //@Override
+    // @Override
     public void initConfig() {
     }
 
-    //@Override
+    // @Override
     public String toString() {
         return JDLocale.L("interaction.liveHeader.name", "HTTP Live Header");
     }

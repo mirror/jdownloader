@@ -24,8 +24,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -51,8 +49,6 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jd.PluginWrapper;
 import jd.config.MenuItem;
@@ -73,8 +69,6 @@ import jd.utils.JDUtilities;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 public class HTTPLiveHeaderScripter extends PluginOptional {
     public HTTPLiveHeaderScripter(PluginWrapper wrapper) {
@@ -83,20 +77,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     public static int getAddonInterfaceVersion() {
         return 3;
-    }
-
-    public static Document parseXmlString(String xmlString, boolean validating) throws SAXException, IOException, ParserConfigurationException {
-
-        // Create a builder factory
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setValidating(validating);
-
-        InputSource inSource = new InputSource(new StringReader(xmlString));
-
-        // Create the builder and parse the file
-        Document doc = factory.newDocumentBuilder().parse(inSource);
-
-        return doc;
     }
 
     private JTabbedPanel tabbedPanel;
@@ -558,7 +538,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         Document xmlScript;
 
         try {
-            xmlScript = HTTPLiveHeaderScripter.parseXmlString(script, false);
+            xmlScript = JDUtilities.parseXmlString(script, false);
             Node root = xmlScript.getChildNodes().item(0);
             if (root == null || !root.getNodeName().equalsIgnoreCase("HSRC")) {
                 String error = "Root Node must be [[[HSRC]]]*[/HSRC]";

@@ -16,7 +16,9 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 
+import jd.controlling.JDLogger;
 import jd.utils.JDUtilities;
+import sun.awt.shell.ShellFolder;
 
 public class JDImage {
 
@@ -53,7 +55,7 @@ public class JDImage {
         try {
             file = File.createTempFile("icon", "." + ext);
 
-            sun.awt.shell.ShellFolder shellFolder = sun.awt.shell.ShellFolder.getShellFolder(file);
+            ShellFolder shellFolder = ShellFolder.getShellFolder(file);
             ret = new ImageIcon(shellFolder.getIcon(true));
             IMAGE_ICON_CACHE.put(id, ret);
             return ret;
@@ -77,10 +79,8 @@ public class JDImage {
 
     public static ImageIcon getScaledImageIcon(ImageIcon img, int width, int height) {
         ImageIcon ret;
-        String id;        
-        if ((ret = IMAGE_ICON_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) {
-            return ret;
-        }
+        String id;
+        if ((ret = IMAGE_ICON_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) { return ret; }
         ret = new ImageIcon(getScaledImage((BufferedImage) img.getImage(), width, height));
         IMAGE_ICON_CACHE.put(id, ret);
         return ret;
@@ -89,9 +89,7 @@ public class JDImage {
     public static Image getScaledImage(ImageIcon img, int width, int height) {
         Image ret;
         String id;
-        if ((ret = SCALED_IMAGE_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) {
-            return ret;
-        }
+        if ((ret = SCALED_IMAGE_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) { return ret; }
         ret = getScaledImage((BufferedImage) img.getImage(), width, height);
         SCALED_IMAGE_CACHE.put(id, ret);
         return ret;
@@ -101,13 +99,9 @@ public class JDImage {
     public static Image getScaledImage(BufferedImage img, int width, int height) {
         Image ret;
         String id;
-        if ((ret = SCALED_IMAGE_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) {
-            return ret;
-        }
+        if ((ret = SCALED_IMAGE_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) { return ret; }
         if (img == null) return null;
-        if ((ret = SCALED_IMAGE_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) {
-            return ret;
-        }
+        if ((ret = SCALED_IMAGE_CACHE.get(id = img.hashCode() + "_" + width + "x" + height)) != null) { return ret; }
         double faktor = Math.min((double) img.getWidth() / width, (double) img.getHeight() / height);
         width = (int) (img.getWidth() / faktor);
         height = (int) (img.getHeight() / faktor);
@@ -127,18 +121,15 @@ public class JDImage {
      *         kann
      */
     public static BufferedImage getImage(String imageName) {
-        File file;        
+        File file;
         if (!(file = JDUtilities.getResourceFile("jd/img/" + imageName + ".png")).exists()) return null;
         BufferedImage ret;
-        if ((ret = BUFFERED_IMAGE_CACHE.get(imageName)) != null) {
-            return ret;
-        }
+        if ((ret = BUFFERED_IMAGE_CACHE.get(imageName)) != null) { return ret; }
 
         try {
             ret = ImageIO.read(file);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.exception(e);
             return null;
         }
         BUFFERED_IMAGE_CACHE.put(imageName, ret);
