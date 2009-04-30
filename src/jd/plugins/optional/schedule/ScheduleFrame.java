@@ -16,7 +16,6 @@
 
 package jd.plugins.optional.schedule;
 
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Calendar;
@@ -37,10 +36,13 @@ import jd.config.SubConfiguration;
 import jd.nutils.Formatter;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class ScheduleFrame extends JPanel implements ActionListener {
 
     private static final long serialVersionUID = 3069680111186861393L;
+
+    private final String COMPONENT_WIDTH = "w 150!";
 
     private final String dateFormat = "HH:mm:ss | dd.MM.yy";
 
@@ -99,32 +101,32 @@ public class ScheduleFrame extends JPanel implements ActionListener {
 
         stop_start = new JCheckBox();
 
-        setLayout(new GridLayout(9, 2));
+        this.setLayout(new MigLayout("wrap 2"));
 
         this.add(new JLabel(JDLocale.L("addons.schedule.menu.maxdl", " max. Downloads")));
-        this.add(maxdls);
+        this.add(maxdls, COMPONENT_WIDTH);
 
         this.add(new JLabel(JDLocale.L("addons.schedule.menu.maxspeed", " max. DownloadSpeed")));
-        this.add(maxspeed);
+        this.add(maxspeed, COMPONENT_WIDTH);
 
         this.add(new JLabel(JDLocale.L("addons.schedule.menu.premium", "Premium")));
-        this.add(premium);
+        this.add(premium, COMPONENT_WIDTH);
 
         this.add(new JLabel(JDLocale.L("addons.schedule.menu.reconnect", " Reconnect ?")));
-        this.add(reconnect);
+        this.add(reconnect, COMPONENT_WIDTH);
 
         this.add(new JLabel(JDLocale.L("addons.schedule.menu.start_stop", " Start/Stop DL ?")));
-        this.add(stop_start);
+        this.add(stop_start, COMPONENT_WIDTH);
 
         this.add(new JLabel(JDLocale.L("addons.schedule.menu.time", " Select Time:")));
-        this.add(time);
+        this.add(time, COMPONENT_WIDTH);
 
         this.add(new JLabel(JDLocale.L("addons.schedule.menu.redo", " Redo in h:")));
-        this.add(repeat);
+        this.add(repeat, COMPONENT_WIDTH);
 
         label = new JLabel(title);
         this.add(label);
-        this.add(start);
+        this.add(start, COMPONENT_WIDTH);
 
         this.add(status);
 
