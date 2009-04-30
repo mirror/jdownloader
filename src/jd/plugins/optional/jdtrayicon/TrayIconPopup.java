@@ -247,7 +247,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         spMax = new JSpinner();
         spMax.setModel(new SpinnerNumberModel(maxspeed, 0, Integer.MAX_VALUE, 50));
         spMax.setPreferredSize(new Dimension(60, 20));
-        spMax.setToolTipText(JDLocale.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen(kb/s) [0:unendlich]"));
+        spMax.setToolTipText(JDLocale.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen (KB/s) [0:unendlich]"));
         spMax.addChangeListener(this);
 
         spMaxDls = new JSpinner();

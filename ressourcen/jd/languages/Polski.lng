@@ -854,7 +854,7 @@ gui.titleaddaction = Teraz trwa:
 gui.tooltip.statusbar.max_chunks = Maks. il. połączeń/plik
 gui.tooltip.statusbar.premium = Wł/Wył pobieranie przy użyciu kont Premium
 gui.tooltip.statusbar.simultan_downloads = Maksymalna ilość równoczesnych transferów
-gui.tooltip.statusbar.speedlimiter = Limit prędkości pobierania (kB/s) [0=brak limitu]
+gui.tooltip.statusbar.speedlimiter = Limit prędkości pobierania (KB/s) [0=brak limitu]
 gui.treetable.error.plugin = Błąd wtyczki
 gui.treetable.header.size = Rozmiar
 gui.treetable.header_1.tree = Pakiety

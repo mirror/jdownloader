@@ -55,7 +55,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         spMax = new JSpinner();
         spMax.setModel(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
         spMax.setPreferredSize(new Dimension(60, 20));
-        spMax.setToolTipText(JDLocale.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen(kb/s) [0:unendlich]"));
+        spMax.setToolTipText(JDLocale.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen (KB/s) [0:unendlich]"));
         spMax.addChangeListener(this);
         colorizeSpinnerSpeed();
 
