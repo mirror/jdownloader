@@ -255,7 +255,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         });
         highlighter.setPainter(new MattePainter<Component>(Colors.getColor(getBackground().darker(), 50)));
 
-        table.setHighlighters(highlighter);
+        table.addHighlighter(highlighter);
         table.addHighlighter(new PainterHighlighter(HighlightPredicate.ROLLOVER_ROW, new MattePainter<Component>(Colors.getColor(getBackground().brighter(), 50))));
 
         table.setDragEnabled(true);
