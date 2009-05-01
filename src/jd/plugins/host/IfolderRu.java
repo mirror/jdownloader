@@ -104,18 +104,17 @@ public class IfolderRu extends PluginForHost {
 
             br.submitForm(captchaForm);
 
-            String directLink = br.getRegex("Ссылка для скачивания файла:<br><br><a href=\"(.+?)\"").getMatch(0);
+            String directLink = br.getRegex("id=\"download_file_href\"\\s+href=\"(.*?)\"").getMatch(0);
             if (directLink != null) {
-                dl = br.openDownload(downloadLink, directLink);
-                dl.setResume(true);
+                dl = br.openDownload(downloadLink, directLink, true, -2);
                 do_download = true;
                 break;
             }
         }
-        if (do_download) {
-            dl.startDownload();
+        if (!do_download) {
+            throw new PluginException(LinkStatus.ERROR_FATAL);
         } else
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            dl.startDownload();
     }
 
     //@Override
