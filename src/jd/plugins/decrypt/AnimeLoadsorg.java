@@ -32,7 +32,7 @@ public class AnimeLoadsorg extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> links = new ArrayList<String>();
@@ -40,28 +40,27 @@ public class AnimeLoadsorg extends PluginForDecrypt {
 
         br.setCookiesExclusive(true);
         br.clearCookies(host);
-        
-        if(parameter.contains("crypt")) {
-        	links.add(parameter);
+
+        if (parameter.contains("crypt")) {
+            links.add(parameter);
         } else {
-        	br.getPage(parameter);
-        	String[][] help = br.getRegex("<a href=\"(crypt\\.php.*?)\"").getMatches();
-        	
-        	for(String[] help1 : help)
-        		links.add(help1[0]);
+            br.getPage(parameter);
+            String[][] help = br.getRegex("<a href=\"(crypt\\.php.*?)\"").getMatches();
+
+            for (String[] help1 : help)
+                links.add(help1[0]);
         }
-        
-        
-        for(String link : links) {
-        	br.getPage(link);
-        	decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(br.getRegex("iframe src=\'(.*?)\'").getMatch(0))));
+
+        for (String link : links) {
+            br.getPage(link);
+            String dllink = Encoding.htmlDecode(br.getRegex("iframe src=\'(.*?)\'").getMatch(0));
+            decryptedLinks.add(createDownloadlink(dllink));
         }
-        
 
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

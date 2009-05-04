@@ -19,6 +19,7 @@ package jd.plugins;
 import java.awt.Color;
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -150,6 +151,11 @@ public abstract class PluginForDecrypt extends Plugin {
         ArrayList<DownloadLink> tmpLinks = null;
         try {
             tmpLinks = decryptIt(curcryptedLink, progress);
+        } catch (SocketTimeoutException e2) {
+            progress.setStatusText("Serverproblem?");
+            progress.setColor(Color.RED);
+            progress.finalize(15000l);
+            return new ArrayList<DownloadLink>();
         } catch (UnknownHostException e) {
             progress.setStatusText("No InternetConnection?");
             progress.setColor(Color.RED);

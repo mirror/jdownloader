@@ -313,20 +313,24 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         int row = rowAtPoint(point);
         int col = getRealcolumnAtPoint(e.getX());
 
+        if (getPathForRow(row) == null) {
+            getTreeSelectionModel().clearSelection();
+            if (e.getButton() == MouseEvent.BUTTON3) {
+                JPopupMenu popup = new JPopupMenu();
+                popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.add_all", 16, 16), JDLocale.L("gui.linkgrabberv2.lg.addall", "Add all packages"), LinkGrabberTreeTableAction.ADD_ALL)));
+                popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.removefailed", 16, 16), JDLocale.L("gui.linkgrabberv2.lg.rmoffline", "Remove all Offline"), LinkGrabberTreeTableAction.DELETE_OFFLINE)));
+                popup.add(buildExtMenu());
+                if (popup.getComponentCount() != 0) popup.show(this, point.x, point.y);
+            }
+            return;
+        }
+        
         if (!isRowSelected(row) && e.getButton() == MouseEvent.BUTTON3) {
             getTreeSelectionModel().clearSelection();
             getTreeSelectionModel().addSelectionPath(getPathForRow(row));
         }
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
 
-            if (getPathForRow(row) == null) {
-                JPopupMenu popup = new JPopupMenu();
-                popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.add_all", 16, 16), JDLocale.L("gui.linkgrabberv2.lg.addall", "Add all packages"), LinkGrabberTreeTableAction.ADD_ALL)));
-                popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.removefailed", 16, 16), JDLocale.L("gui.linkgrabberv2.lg.rmoffline", "Remove all Offline"), LinkGrabberTreeTableAction.DELETE_OFFLINE)));
-                popup.add(buildExtMenu());
-                if (popup.getComponentCount() != 0) popup.show(this, point.x, point.y);
-                return;
-            }
             Vector<DownloadLink> alllinks = getAllSelectedDownloadLinks();
             int links_enabled = 0;
             for (DownloadLink next : alllinks) {

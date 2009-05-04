@@ -440,6 +440,12 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         int row = rowAtPoint(point);
         int col = getRealcolumnAtPoint(e.getX());
         JMenuItem tmp;
+        
+        if (getPathForRow(row) == null) {
+            getTreeSelectionModel().clearSelection();            
+            return;
+        }
+        
         if (!isRowSelected(row) && e.getButton() == MouseEvent.BUTTON3) {
             getTreeSelectionModel().clearSelection();
             getTreeSelectionModel().addSelectionPath(getPathForRow(row));
@@ -470,12 +476,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             if (obj instanceof FilePackage || obj instanceof DownloadLink) {
                 popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.stopsign", 16, 16), JDLocale.L("gui.table.contextmenu.stopmark", "Stop sign"), TreeTableAction.STOP_MARK, new Property("item", obj))));
                 if (!DownloadWatchDog.getInstance().isStopMark(obj)) tmp.setIcon(tmp.getDisabledIcon());
-
-                if (obj instanceof DownloadLink) {
-                    tmp.setEnabled(!((DownloadLink) obj).getLinkStatus().hasStatus(LinkStatus.FINISHED));
-                } else {
-                    tmp.setEnabled(!((FilePackage) obj).isFinished());
-                }
                 popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TreeTableAction.DELETE, new Property("links", alllinks))));
 
                 popup.add(new JSeparator());

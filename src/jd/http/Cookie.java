@@ -20,6 +20,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import jd.controlling.JDLogger;
+
 public class Cookie {
 
     private static final String[] dateformats = new String[] { "EEE, dd-MMM-yyyy hh:mm:ss z", "EEE, dd MMM yyyy hh:mm:ss z", "EEE MMM dd hh:mm:ss z yyyy", "EEE, dd-MMM-yyyy hh:mm:ss z" };
@@ -71,7 +73,7 @@ public class Cookie {
             return;
         }
         this.expireTime = -1;
-        System.out.println("Cookie: no Format for " + expires + " found!");
+        JDLogger.getLogger().warning("Cookie: no Format for " + expires + " found!");
         return;
     }
 
@@ -94,7 +96,7 @@ public class Cookie {
             return false;
         }
         if (this.hostTime == -1) {
-            System.out.println("Cookie: no HostTime found! ExpireStatus cannot be checked " + this.host + " " + this.key);
+            JDLogger.getLogger().warning("Cookie: no HostTime found! ExpireStatus cannot be checked " + this.host + " " + this.key);
             return false;
         } else {
             long check = (System.currentTimeMillis() - this.creationTime) + this.hostTime;
@@ -137,7 +139,7 @@ public class Cookie {
             return;
         }
         this.hostTime = -1;
-        System.out.println("Cookie: no Format for " + Date + " found!");
+        JDLogger.getLogger().warning("Cookie: no Format for " + Date + " found!");
         return;
     }
 
