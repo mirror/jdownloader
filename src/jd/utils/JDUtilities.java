@@ -1039,7 +1039,6 @@ public class JDUtilities {
     public static String getAttribute(Node childNode, String key) {
         NamedNodeMap att = childNode.getAttributes();
         if (att == null || att.getNamedItem(key) == null) {
-            JDLogger.getLogger().info("ERROR: XML Attribute missing: " + key);
             return null;
         }
         return att.getNamedItem(key).getNodeValue();
