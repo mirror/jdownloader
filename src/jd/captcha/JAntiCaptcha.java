@@ -84,18 +84,6 @@ import org.w3c.dom.NodeList;
 public class JAntiCaptcha {
 
     /**
-     * Static counter. Falls zu debug zecen mal global ein counter gebraucht
-     * wird
-     */
-    public static int counter = 0;
-
-    /**
-     * Static counter. Falls zu debug zecen mal global ein counter gebraucht
-     * wird
-     */
-    public static int counterB = 0;
-
-    /**
      * Logger
      */
     private static Logger logger = UTILITIES.getLogger();
@@ -301,13 +289,9 @@ public class JAntiCaptcha {
      * Fenster die eigentlich nur zur Entwicklung sind um Basic GUI Elemente zu
      * haben
      */
-    // private BasicWindow bw1;
     private BasicWindow bw2;
 
     private BasicWindow bw3;
-
-    @SuppressWarnings("unused")
-    private BasicWindow bw4;
 
     private JFrame f;
 
@@ -315,8 +299,8 @@ public class JAntiCaptcha {
      * Bildtyp. Falls dieser von jpg unterschiedlich ist, muss zuerst
      * konvertiert werden.
      */
-
     private String imageType;
+
     /**
      * jas Script Instanz. Sie verarbneitet das JACScript und speichert die
      * Parameter
@@ -347,10 +331,6 @@ public class JAntiCaptcha {
 
     private boolean showDebugGui = false;
 
-    /**
-     * Pfad zum SourceBild (Standalone). Wird aus der jacinfo.xml gelesen
-     */
-    // private String sourceImage;
     private Vector<ScrollPaneWindow> spw = new Vector<ScrollPaneWindow>();
 
     private Captcha workingCaptcha;
@@ -360,8 +340,6 @@ public class JAntiCaptcha {
     public boolean isExtern() {
         return extern;
     }
-
-    // private String os;
 
     private String command;
 
@@ -556,7 +534,6 @@ public class JAntiCaptcha {
             String ext = JDIO.getFileExtension(this.srcFile);
             ImageIO.write((RenderedImage) this.sourceImage, ext, file);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             JDLogger.exception(e);
             return null;
         }
@@ -1434,7 +1411,6 @@ public class JAntiCaptcha {
             try {
                 image = ImageIO.read(element);
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
             System.out.println(element.getAbsolutePath());
@@ -1646,11 +1622,11 @@ public class JAntiCaptcha {
     }
 
     private void setLetterMaxNum(int parseInt) {
-
+        // TODO ?
     }
 
     private void setLetterMinNum(int parseInt) {
-
+        // TODO ?
     }
 
     /**

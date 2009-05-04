@@ -40,23 +40,21 @@ public class BasicWindow extends JFrame {
     private static final long serialVersionUID = 8474181150357563979L;
 
     /**
-     * Zeigt ein Image in einem neuen fenster an.Die fenster Positionieren sich
-     * von Links oben nach rechts uten von selbst
+     * Zeigt ein Image in einem neuen Fenster an.
      * 
      * @param img
-     * @return BasicWindow Das neue fenster
+     * @return Das neue fenster
      */
     public static BasicWindow showImage(Image img) {
         return BasicWindow.showImage(img, img.toString());
     }
 
     /**
-     * Zeigt ein image in einem Neuen fenster an. Das fenster positioniert sich
-     * im nächsten Freien bereich
+     * Zeigt ein Image in einem neuen Fenster an.
      * 
      * @param img
      * @param title
-     * @return BasicWindow das neue fenster
+     * @return Das neue Fenster
      */
     public static BasicWindow showImage(Image img, String title) {
         BasicWindow w = new BasicWindow();

@@ -170,7 +170,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         icon.setPreferredSize(new Dimension(MENUENTRY_ICON_WIDTH, MENUENTRY_HEIGHT));
     }
 
-    // Checken ob es ein neues Update verf�gbar ist
+    // Checken ob es ein neues Update verfügbar ist
     private boolean checkUpdate(Point p) {
         if (mouseOverRow != getRow(p)) {
             mouseOverRow = getRow(p);
