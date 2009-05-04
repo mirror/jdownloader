@@ -37,10 +37,10 @@ public class CrystalWarezIN extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String parameter = param.toString();
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();        
         synchronized (lock) {
             br.getPage(parameter);
             if (parameter.matches(patternLink_Protected)) {
@@ -50,7 +50,7 @@ public class CrystalWarezIN extends PluginForDecrypt {
                     URLConnectionAdapter con = br.cloneBrowser().openGetConnection("http://crystal-warez.in/securimage_show.php");
                     Browser.download(file, con);
                     code = getCaptchaCode(file, this, param);
-                    Form form = br.getForm(1);
+                    Form form = br.getForm(2);
                     form.put("captcha", code);
                     br.submitForm(form);
                     if (br.containsHTML("Code ist falsch")) code = null;
@@ -64,7 +64,7 @@ public class CrystalWarezIN extends PluginForDecrypt {
                 }
             } else {
                 String[] mirrors = br.getRegex(patternLink_Protected).getColumn(0);
-                String pw = br.getRegex("<b>Passwort:</b></td>.*?<td.*?>(<i>)?(.*?)(</i>)?</td>").getMatch(1);
+                String pw = br.getRegex("<td>Passwort:</td>.*?<td>(.*?)</td>").getMatch(0);
                 for (String element : mirrors) {
 
                     DownloadLink dl = createDownloadlink(element);
@@ -76,7 +76,7 @@ public class CrystalWarezIN extends PluginForDecrypt {
         }
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
