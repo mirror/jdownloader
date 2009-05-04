@@ -116,7 +116,7 @@ public abstract class Plugin implements ActionListener {
         Calendar calendar = Calendar.getInstance();
         String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar) + new Random().nextInt(999);
 
-        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getHost() + "/" + date + extension);
+        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getHost() + "_" + date + extension);
         dest.deleteOnExit();
         return dest;
     }
