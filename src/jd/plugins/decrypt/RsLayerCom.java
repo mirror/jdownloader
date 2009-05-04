@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -58,20 +59,16 @@ public class RsLayerCom extends PluginForDecrypt {
         return false;
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         br.getPage(parameter);
         if (parameter.indexOf("/link-") != -1) {
-            String link = br.getFrameLink(0);
-            if (link == null) {
-                return null;
-            } else {
-                decryptedLinks.add(createDownloadlink(link));
-            }
-
+            String link = br.getRegex("<frame.*?src=\"(.*?)\".*?>").getMatch(0);
+            if (link == null) return null;
+            decryptedLinks.add(createDownloadlink(link));
         } else if (parameter.indexOf("/directory-") != -1) {
             boolean cont = false;
             for (int i = 1; i < 6; i++) {
@@ -113,8 +110,8 @@ public class RsLayerCom extends PluginForDecrypt {
                 progress.setRange(layerLinks.length);
                 for (String element : layerLinks) {
                     br.getPage("http://rs-layer.com/link-" + element + ".html");
-                    String link = br.getFrameLink(0);
-                    if (link != null) decryptedLinks.add(createDownloadlink(link));
+                    String link = br.getRegex("<frame.*?name=\"file\".*?src=\"(.*?;.*?)\".*?>").getMatch(0);
+                    if (link != null) decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
                     progress.increase(1);
                 }
             }
@@ -124,7 +121,7 @@ public class RsLayerCom extends PluginForDecrypt {
 
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

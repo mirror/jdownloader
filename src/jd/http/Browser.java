@@ -887,7 +887,7 @@ public class Browser {
         return request.read();
     }
 
-    //@Override
+    // @Override
     public String toString() {
         if (request == null) { return "Browser. no request yet"; }
         return request.toString();
@@ -904,23 +904,7 @@ public class Browser {
     public boolean containsHTML(String regex) {
         return new Regex(this, regex).matches();
     }
-    
-    /**
-     * Returns the framesource
-     */
-    public String getFrameLink(int group) {
-    	return Encoding.htmlDecode(new Regex(this, "<frame.*?src=\"(.*?)\".*?>").getMatch(group));
-    }
-    
-    /**
-     * Submits a frame
-     */
-    public String submitFrame(int group) throws IOException {
-    	String link = getFrameLink(group);
-    	if(link == null) return null;
-    	return getPage(link);
-    }
-    
+
     /**
      * Reads the content behind a con and returns them. Note: if con==null, the
      * current request is read. This is usefull for redirects. Note #2: if a
@@ -1464,11 +1448,11 @@ public class Browser {
             return new Test();
         }
 
-        //@Override
+        // @Override
         public void run() throws Exception {
 
-           this.testRequestIntervalLimitExclusive();
-           this.testRequestIntervalLimitGlobal();
+            this.testRequestIntervalLimitExclusive();
+            this.testRequestIntervalLimitGlobal();
             this.proxyAuthTest();
 
         }
@@ -1476,12 +1460,11 @@ public class Browser {
         private void proxyAuthTest() throws UnitTestException {
             Browser.init();
             log("init Proxy");
-            
-            JDProxy pr = new JDProxy(Proxy.Type.HTTP,this.getStringProperty("proxy_ip") , getIntegerProperty("proxy_port"));
+
+            JDProxy pr = new JDProxy(Proxy.Type.HTTP, this.getStringProperty("proxy_ip"), getIntegerProperty("proxy_port"));
             String user = this.getStringProperty("proxy_user");
             String pass = this.getStringProperty("proxy_pass");
-            
-            
+
             if (user != null && user.trim().length() > 0) {
                 pr.setUser(user);
             }
@@ -1489,19 +1472,19 @@ public class Browser {
                 pr.setPass(pass);
             }
             Browser.setGlobalProxy(pr);
-           
+
             Browser br = new Browser();
-            try{
-            br.getPage("http://jdownloader.org");
-            }catch(Exception e){
-                throw new UnitTestException("proxy error: "+e.getLocalizedMessage());
-                
+            try {
+                br.getPage("http://jdownloader.org");
+            } catch (Exception e) {
+                throw new UnitTestException("proxy error: " + e.getLocalizedMessage());
+
             }
-            if(br.getHttpConnection().isOK()){
+            if (br.getHttpConnection().isOK()) {
                 log("proxy ok");
-            }else{
+            } else {
                 log("proxy  FAILED");
-                throw new UnitTestException("proxy error: "+br.getHttpConnection().toString());
+                throw new UnitTestException("proxy error: " + br.getHttpConnection().toString());
             }
         }
 
@@ -1588,7 +1571,7 @@ public class Browser {
                             br.getPage(string);
                         } catch (IOException e) {
                             // TODO Auto-generated catch block
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                         }
                     }
 
