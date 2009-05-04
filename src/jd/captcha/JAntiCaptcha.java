@@ -826,7 +826,7 @@ public class JAntiCaptcha {
      * Exportiert die aktelle Datenbank als PONG einzelbilder
      */
     public void exportDB() {
-        File path = UTILITIES.directoryChooser("");
+        File path = UTILITIES.directoryChooser();
         File file;
         BufferedImage img;
         int i = 0;
@@ -1473,7 +1473,7 @@ public class JAntiCaptcha {
     }
 
     public void importDB() {
-        importDB(UTILITIES.directoryChooser(""));
+        importDB(UTILITIES.directoryChooser());
     }
 
     /**

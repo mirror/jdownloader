@@ -57,14 +57,9 @@ public class UTILITIES {
      * @param path
      * @return User Input /null
      */
-    public static File directoryChooser(String path) {
+    public static File directoryChooser() {
         JFileChooser fc = new JFileChooser();
-
         fc.setApproveButtonText("OK");
-        if (path != null) {
-            fc.setCurrentDirectory(new File(path));
-        }
-
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         if (fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
         return null;

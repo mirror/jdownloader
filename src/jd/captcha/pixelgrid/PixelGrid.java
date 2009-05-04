@@ -33,10 +33,10 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
-import jd.captcha.configuration.Property;
 import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
+import jd.config.Property;
 import jd.nutils.Colors;
 
 import com.sun.image.codec.jpeg.ImageFormatException;
@@ -463,34 +463,39 @@ public class PixelGrid extends Property {
         return true;
 
     }
-    public void cleanByHSBValue(Comparator<float[]> comparator) {  
+
+    public void cleanByHSBValue(Comparator<float[]> comparator) {
         for (int x = 0; x < getWidth(); x++) {
-            for (int y = 0; y < getHeight(); y++) {              
-                if(comparator.compare(null,Colors.rgb2hsb(this.getPixelValue(x, y)))==1){
+            for (int y = 0; y < getHeight(); y++) {
+                if (comparator.compare(null, Colors.rgb2hsb(this.getPixelValue(x, y))) == 1) {
                     this.setPixelValue(x, y, getMaxPixelValue());
-                }                 
+                }
 
             }
         }
     }
-    
-    
+
     /**
-     * enbtfernt eine farbe... die tolleranz gibt die farbdistanz an die njoch entfernt wird
-     * @param i vergleichsfarbe
-     * @param d  tolleranz
+     * enbtfernt eine farbe... die tolleranz gibt die farbdistanz an die njoch
+     * entfernt wird
+     * 
+     * @param i
+     *            vergleichsfarbe
+     * @param d
+     *            tolleranz
      */
     public void cleanByColor(int i, double d) {
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                if(Colors.getColorDifference(i, this.getPixelValue(x, y))<d){
+                if (Colors.getColorDifference(i, this.getPixelValue(x, y)) < d) {
                     this.setPixelValue(x, y, getMaxPixelValue());
-                }              
+                }
 
             }
         }
         // grid = newgrid;
     }
+
     /**
      * Entfernt Alle Pixel die über getBackgroundSampleCleanContrast an avg
      * liegen
@@ -1128,7 +1133,7 @@ public class PixelGrid extends Property {
                 }
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
 
         return;
@@ -1308,17 +1313,17 @@ public class PixelGrid extends Property {
      */
     public String getString() {
         int avg = getAverage();
-        StringBuilder ret =new StringBuilder();
+        StringBuilder ret = new StringBuilder();
 
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
-                if(isElement(getPixelValue(x, y), avg))
+                if (isElement(getPixelValue(x, y), avg))
                     ret.append('*');
                 else
                     ret.append((int) Math.floor(9 * (getPixelValue(x, y) / getMaxPixelValue())));
 
             }
-            ret.append(new char[] {'\r', '\n'});
+            ret.append(new char[] { '\r', '\n' });
         }
 
         return ret.toString();
@@ -1696,13 +1701,13 @@ public class PixelGrid extends Property {
             fos.close();
         } catch (FileNotFoundException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (ImageFormatException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (IOException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
     }
 

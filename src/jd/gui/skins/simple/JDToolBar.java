@@ -8,7 +8,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
-import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
@@ -47,9 +46,8 @@ public class JDToolBar extends JToolBar implements ControlListener {
     private JButton playButton;
     private JToggleButton pauseButton;
     private JButton stopButton;
-    protected int pause = -1;
+    private int pause = -1;
     private JToggleButton clipboard;
-    // private JToggleButton premium;
     private JToggleButton reconnect;
 
     private SpeedMeterPanel speedmeter;
@@ -69,26 +67,6 @@ public class JDToolBar extends JToolBar implements ControlListener {
         JDUtilities.getController().addControlListener(this);
         this.setFloatable(false);
         this.setLayout(new MigLayout("ins 0,gap 0", "[][][][][][][][][][][][][][grow,fill]"));
-
-        // IconMenuBar mb = new IconMenuBar();
-        // JMenu menu = new JMenu("");
-        // // menu.setSize(50,50);
-        //
-        // menu.setPreferredSize(mb.getMinimumSize());
-        // menu.setMinimumSize(mb.getMinimumSize());
-        // menu.setOpaque(false);
-        // menu.setBackground(null);
-        //
-        // JDStartMenu.createMenu(menu);
-        // mb.add(menu);
-
-        // add(mb, "gapright 15");
-        // mb.setVisible(false);
-        JPanel bt = new JPanel();
-        bt.setVisible(false);
-
-        // bt.setContentAreaFilled(false);
-        // bt.setBorderPainted(false);
 
         noTitlePainter = noTitlePane;
         if (noTitlePainter) {
@@ -255,7 +233,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
         pauseButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                if (JDToolBar.this.pause >= 0) {
+                if (pause >= 0) {
                     setPause(false);
                 } else {
                     setPause(true);
@@ -269,10 +247,9 @@ public class JDToolBar extends JToolBar implements ControlListener {
         stopButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                if (JDToolBar.this.pause > 0) {
+                if (pause > 0) {
                     setPause(false);
                 }
-
                 JDUtilities.getController().stopDownloads();
             }
 
@@ -289,19 +266,19 @@ public class JDToolBar extends JToolBar implements ControlListener {
         if (SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, true)) {
             add(speedmeter, "cell 0 13,dock east,hidemode 3,height 30,width 30:200:300");
         }
-
     }
 
     private void setPause(boolean b) {
         if (b) {
             pauseButton.setSelected(true);
-            JDToolBar.this.pause = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            pause = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
             SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 1);
         } else {
             pauseButton.setSelected(false);
-            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, Math.max(JDToolBar.this.pause, 0));
-            JDToolBar.this.pause = -1;
+            if (pause >= 0) SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, pause);
+            pause = -1;
         }
+        SubConfiguration.getConfig("DOWNLOAD").save();
     }
 
     public void controlEvent(final ControlEvent event) {

@@ -1178,12 +1178,10 @@ public class JACScript {
         if (current instanceof Float) { return Float.parseFloat(arg); }
         if (current instanceof Double) { return Double.parseDouble(arg); }
         if (current instanceof Boolean) { return arg.equalsIgnoreCase("true"); }
-        if (current == null) {
-            if (JAntiCaptcha.isLoggerActive()) {
+        if (JAntiCaptcha.isLoggerActive()) {
+            if (current == null) {
                 logger.severe("Parameter " + key + " ist nicht initialisiert worden!");
-            }
-        } else {
-            if (JAntiCaptcha.isLoggerActive()) {
+            } else {
                 logger.severe(current + "Typ " + current.getClass() + " wird nicht unterstützt");
             }
         }
