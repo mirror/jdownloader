@@ -211,9 +211,6 @@ public class ConfigPanelCaptcha extends ConfigPanel {
 
     public JACInfo[] createJACInfos() {
         File[] methods = JAntiCaptcha.getMethods("jd/captcha/methods/");
-        for (File method : methods) {
-            System.out.println(method);
-        }
         JACInfo[] infos = new JACInfo[methods.length];
         for (int i = 0; i < infos.length; ++i) {
             infos[i] = parseJACInfoXml(methods[i]);
