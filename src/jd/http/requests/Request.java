@@ -188,7 +188,7 @@ public abstract class Request {
             cookie.setExpires(expires);
             cookie.setValue(next.getValue());
             cookie.setKey(next.getKey());
-            cookie.setTimeDifferece(Date);
+            cookie.setHostTime(Date);
         }
 
         return cookies;
@@ -356,17 +356,15 @@ public abstract class Request {
         } catch (Exception e) {
             String path = this.getHttpConnection().getURL().getFile();
             if (!path.endsWith("/")) {
-              
-                    int lastSlash = path.lastIndexOf("/");
-                    if(lastSlash>0){
-                        
-                   
+
+                int lastSlash = path.lastIndexOf("/");
+                if (lastSlash > 0) {
+
                     path = path.substring(0, path.lastIndexOf("/"));
-                    }else{
-                        path="";
-                    }
-             
-               
+                } else {
+                    path = "";
+                }
+
             }
             red = "http://" + this.getHttpConnection().getURL().getHost() + (red.charAt(0) == '/' ? red : path + "/" + red);
         }
@@ -575,7 +573,7 @@ public abstract class Request {
         this.readTimeout = readTimeout;
     }
 
-    //@Override
+    // @Override
     public String toString() {
         if (!requested) { return "Request not sent yet"; }
 
@@ -595,11 +593,11 @@ public abstract class Request {
     public Request toHeadRequest() throws MalformedURLException {
         Request ret = new Request(this.getUrl() + "") {
 
-            //@Override
+            // @Override
             public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
             }
 
-            //@Override
+            // @Override
             public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
                 httpConnection.setRequestMethod("HEAD");
             }

@@ -20,77 +20,67 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import jd.controlling.JDLogger;
-
 public class Cookie {
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z", Locale.UK);
-    private Date expires = null;
-    private String formatedexpires = null;
+
+    private static final String[] dateformats = new String[] { "EEE, dd-MMM-yyyy hh:mm:ss z", "EEE, dd MMM yyyy hh:mm:ss z", "EEE MMM dd hh:mm:ss z yyyy", "EEE, dd-MMM-yyyy hh:mm:ss z" };
+
     private String path;
     private String host;
     private String value;
     private String key;
     private String domain;
-    private long timedifference;
+
+    private long hostTime = -1;
+    private long creationTime = System.currentTimeMillis();
+    private long expireTime = -1;
 
     public Cookie(String host, String key, String value) {
         this.host = host;
         this.key = key;
         this.value = value;
-        this.timedifference = 0;
     }
 
     public Cookie() {
-        // TODO Auto-generated constructor stub
     }
 
     public void setHost(String host) {
         this.host = host;
-
     }
 
     public void setPath(String path) {
         this.path = path;
-
     }
 
     public void setExpires(String expires) {
         if (expires == null) {
-            this.expires = null;
-            this.formatedexpires = null;
+            this.expireTime = -1;
+            // System.out.println("setExpire: Cookie: no expireDate found! " +
+            // this.host + " " + this.key);
             return;
         }
-        try {
-            this.expires = DATE_FORMAT.parse(expires);
-        } catch (Exception e) {
+        Date expireDate = null;
+        for (String format : dateformats) {
             try {
-                this.expires = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.UK).parse(expires);
+                expireDate = new SimpleDateFormat(format, Locale.UK).parse(expires);
+                break;
             } catch (Exception e2) {
-                try {
-                    this.expires = new SimpleDateFormat("EEE MMM dd hh:mm:ss z yyyy", Locale.UK).parse(expires);
-                } catch (Exception e3) {
-                    try {
-                        this.expires = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z", Locale.UK).parse(expires);
-                    } catch (Exception e4) {
-                        JDLogger.getLogger().severe("CookieParser failed: " + expires);
-                        this.expires = null;
-                        this.formatedexpires = null;
-                        return;
-                    }
-                }
             }
         }
-        this.formatedexpires = DATE_FORMAT.format(this.expires);
+        if (expireDate != null) {
+            this.expireTime = expireDate.getTime();
+            return;
+        }
+        this.expireTime = -1;
+        System.out.println("Cookie: no Format for " + expires + " found!");
+        return;
     }
 
     public void setValue(String value) {
         this.value = value;
-
     }
 
     public void setKey(String key) {
         this.key = key;
-
     }
 
     public void setDomain(String domain) {
@@ -98,78 +88,57 @@ public class Cookie {
     }
 
     public boolean isExpired() {
-        if (expires == null || formatedexpires == null) return false;
-        String Current = DATE_FORMAT.format(new Date());
-        try {
-            long a = DATE_FORMAT.parse(Current).getTime() - this.timedifference;
-            long b = DATE_FORMAT.parse(formatedexpires).getTime();
-            @SuppressWarnings("unused")
-            boolean c = a > b;
-            // return c;
-            /*
-             * TODO: rausfinden wie richtig das expire date berechnet wird,denn
-             * anscheinend handelt das jeder browser anders
-             */
-        } catch (Exception e1) {
-            JDLogger.getLogger().severe("CookieParser failed: " + expires);
+        if (this.expireTime == -1) {
+            // System.out.println("isexpired: no expireDate found! " + this.host
+            // + " " + this.key);
             return false;
         }
-        return false;
-    }
-
-    public void setTimeDifferece(String Date) {
-        if (Date == null || Date.length() < 6) {
-            this.timedifference = 0;
-            return;
-        }
-        String Current = DATE_FORMAT.format(new Date());
-        Date ResponseDate;
-        String ResponseDate2;
-        try {
-            ResponseDate = DATE_FORMAT.parse(Date);
-        } catch (Exception e) {
-            try {
-                ResponseDate = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.UK).parse(Date);
-            } catch (Exception e2) {
-                try {
-                    ResponseDate = new SimpleDateFormat("EEE MMM dd hh:mm:ss z yyyy", Locale.UK).parse(Date);
-                } catch (Exception e3) {
-                    try {
-                        ResponseDate = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z", Locale.UK).parse(Date);
-                    } catch (Exception e4) {
-                        JDLogger.getLogger().severe("CookieParser failed: " + expires);
-                        this.timedifference = 0;
-                        return;
-                    }
-                }
-            }
-
-        }
-        ResponseDate2 = DATE_FORMAT.format(ResponseDate);
-        try {
-            this.timedifference = DATE_FORMAT.parse(Current).getTime() - DATE_FORMAT.parse(ResponseDate2).getTime();
-        } catch (Exception e) {
-            this.timedifference = 0;
-            return;
-        }
-    }
-
-    public Date getExpires() {
-        return expires;
-    }
-
-    public void setExpires(Date expires) {
-        this.expires = expires;
-        if (expires != null) {
-            try {
-                formatedexpires = DATE_FORMAT.format(expires);
-            } catch (Exception e1) {
-                JDLogger.getLogger().severe("CookieParser failed: " + expires);
-                formatedexpires = null;
-            }
+        if (this.hostTime == -1) {
+            System.out.println("Cookie: no HostTime found! ExpireStatus cannot be checked " + this.host + " " + this.key);
+            return false;
         } else {
-            formatedexpires = null;
+            long check = (System.currentTimeMillis() - this.creationTime) + this.hostTime;
+            // System.out.println(this.host + " " + this.key + " " +
+            // this.creationTime + " " + this.hostTime + " " + this.expireTime +
+            // " " + check);
+            if (check > this.expireTime) {
+                // System.out.println("Expired: " + this.host + " " + this.key);
+                return true;
+            } else
+                return false;
         }
+    }
+
+    public long getHostTime() {
+        return this.hostTime;
+    }
+
+    public long getExpireDate() {
+        return this.expireTime;
+    }
+
+    public void setHostTime(String Date) {
+        if (Date == null) {
+            this.hostTime = -1;
+            // System.out.println("Cookie: no HostTime found! " + this.host +
+            // " " + this.key);
+            return;
+        }
+        Date ResponseDate = null;
+        for (String format : dateformats) {
+            try {
+                ResponseDate = new SimpleDateFormat(format, Locale.UK).parse(Date);
+                break;
+            } catch (Exception e2) {
+            }
+        }
+        if (ResponseDate != null) {
+            this.hostTime = ResponseDate.getTime();
+            return;
+        }
+        this.hostTime = -1;
+        System.out.println("Cookie: no Format for " + Date + " found!");
+        return;
     }
 
     public String getPath() {

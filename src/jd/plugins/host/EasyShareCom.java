@@ -3,7 +3,6 @@ package jd.plugins.host;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
@@ -28,7 +27,7 @@ public class EasyShareCom extends PluginForHost {
         /* brauche neuen prem account zum einbauen und testen */
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.easy-share.com/tos.html";
     }
@@ -53,17 +52,17 @@ public class EasyShareCom extends PluginForHost {
 
     }
 
-    private Date isExpired(Account account) throws MalformedURLException, PluginException {
+    private Cookie isExpired(Account account) throws MalformedURLException, PluginException {
         HashMap<String, Cookie> cookies = br.getCookies().get("easy-share.com");
         Cookie premstatus = cookies.get("PREMIUMSTATUS");
         if (premstatus == null || !premstatus.getValue().equalsIgnoreCase("ACTIVE")) {
             account.setEnabled(false);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
-        return premstatus.getExpires();
+        return premstatus;
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -73,7 +72,7 @@ public class EasyShareCom extends PluginForHost {
             return ai;
         }
         try {
-            ai.setValidUntil(isExpired(account).getTime());
+            ai.setValidUntil(isExpired(account).getExpireDate());
         } catch (PluginException e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
             ai.setValid(false);
@@ -83,7 +82,7 @@ public class EasyShareCom extends PluginForHost {
         return ai;
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.easy-share.com", "language", "en");
@@ -98,12 +97,12 @@ public class EasyShareCom extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
@@ -141,7 +140,7 @@ public class EasyShareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         login(account);
@@ -151,20 +150,20 @@ public class EasyShareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
     }
 }

@@ -21,9 +21,12 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -34,14 +37,39 @@ public class Odsiebiecom extends PluginForHost {
 
     public Odsiebiecom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium();
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://odsiebie.com/tresc/faq.html";
     }
 
-    //@Override
+    public void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();       
+        br.setDebug(true);
+        br.getPage("http://odsiebie.com/logowanie.html");
+        br.postPage("http://odsiebie.com/logowanie.html?login", "luser=" + Encoding.urlEncode(account.getUser()) + "&lpass=" + Encoding.urlEncode(account.getPass()) + "&sub=Zaloguj+mnie");
+        if (br.getCookie("http://odsiebie.com/", "gb_col") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://odsiebie.com/", "gg_info") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);        
+    }
+
+    // @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        this.setBrowserExclusive();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        ai.setStatus("Free Membership");
+        ai.setValid(true);
+        return ai;
+    }
+
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -56,22 +84,30 @@ public class Odsiebiecom extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 1;
+    }
+
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         /* Nochmals das File überprüfen */
         String finalfn = downloadLink.getName();
         getFileInformation(downloadLink);
+        if (account != null){
+            login(account);            
+            br.getPage(downloadLink.getDownloadURL());
+        }
         String downloadurl;
         /*
          * Zuerst schaun ob wir nen Button haben oder direkt das File vorhanden
          * ist
          */
         String steplink = br.getRegex("class=\"pob..\"\\s+href=\"/pobierz/(.*?)\">").getMatch(0);
+        br.setDebug(true);
         if (steplink == null) {
             /* Kein Button, also muss der Link irgendwo auf der Page sein */
             /* Film,Mp3 */
@@ -92,6 +128,9 @@ public class Odsiebiecom extends PluginForHost {
             br.getPage(downloadurl);
             Form capform = br.getFormbyProperty("name", "wer");
             int i = 0;
+            Browser brc = br.cloneBrowser();
+            URLConnectionAdapter fake = brc.openGetConnection("http://odsiebie.com/v_fake.php");
+            fake.disconnect();
             while (capform != null) {
                 String adrs[] = capform.getRegex("<img src=\"(.*?)\">").getColumn(0);
                 String adr = null;
@@ -102,7 +141,7 @@ public class Odsiebiecom extends PluginForHost {
                     }
                 }
                 if (adr == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                URLConnectionAdapter con = br.openGetConnection(adr);
+                URLConnectionAdapter con = brc.openGetConnection(adr);
                 File file = this.getLocalCaptchaFile(this);
                 Browser.download(file, con);
                 String code = getCaptchaCode(file, downloadLink);
@@ -140,20 +179,25 @@ public class Odsiebiecom extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        this.handlePremium(downloadLink, null);
+    }
+
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
     }
 

@@ -73,7 +73,7 @@ public class Netloadin extends PluginForHost {
         this.enablePremium("http://netload.in/index.php?refer_id=134847&id=39");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
 
         br.setDebug(true);
@@ -199,13 +199,11 @@ public class Netloadin extends PluginForHost {
     }
 
     private void handleFastLink(DownloadLink downloadLink) throws Exception {
-br.forceDebug(true);
+        br.forceDebug(true);
         String url = br.getRegex("<a class=\"download_fast_link\" href=\"(.*?)\">Start Free Download</a>").getMatch(0);
-    
 
-     url=   Encoding.htmlDecode(url);
-     url="http://netload.in/"+url;
-
+        url = Encoding.htmlDecode(url);
+        url = "http://netload.in/" + url;
 
         sleep(10000, downloadLink);
         br.setFollowRedirects(false);
@@ -276,7 +274,7 @@ br.forceDebug(true);
         }
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -302,12 +300,12 @@ br.forceDebug(true);
         return ai;
     }
 
-    //@Override
+    // @Override
     public int getTimegapBetweenConnections() {
         return 800;
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
 
         getFileInformation(downloadLink);
@@ -374,7 +372,7 @@ br.forceDebug(true);
         }
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         link.setProperty("nochunk", false);
     }
@@ -384,12 +382,12 @@ br.forceDebug(true);
         if (br.containsHTML(FILE_DAMAGED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"), 20 * 60 * 1000l);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException {
 
         try {
@@ -416,6 +414,7 @@ br.forceDebug(true);
                 downloadLink.setFinalFileName(entries[0]);
                 downloadLink.setDupecheckAllowed(true);
                 fileStatusText = JDLocale.L("plugins.hoster.netloadin.errors.mightbeoffline", "Might be offline");
+                downloadLink.getLinkStatus().setStatusText(fileStatusText);
                 return true;
             }
 
@@ -427,7 +426,10 @@ br.forceDebug(true);
             downloadLink.setDownloadSize((int) Regex.getSize(entries[2] + " bytes"));
 
             downloadLink.setMD5Hash(entries[4].trim());
-            if (entries[3].equalsIgnoreCase("online")) { return true; }
+            if (entries[3].equalsIgnoreCase("online")) {
+                if (fileStatusText != null) downloadLink.getLinkStatus().setStatusText(fileStatusText);
+                return true;
+            }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } catch (PluginException e2) {
             throw e2;
@@ -437,26 +439,26 @@ br.forceDebug(true);
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    //@Override
+    // @Override
     public String getFileInformationString(DownloadLink downloadLink) {
         return downloadLink.getName() + " (" + fileStatusText + ")";
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
 
     }
