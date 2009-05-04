@@ -60,13 +60,15 @@ public class ConfigPanelCaptcha extends ConfigPanel {
             case 2:
                 return String.class;
             case 3:
+                return String.class;
+            case 4:
                 return Boolean.class;
             }
             return String.class;
         }
 
         public int getColumnCount() {
-            return 4;
+            return 5;
         }
 
         public String getColumnName(int column) {
@@ -76,8 +78,10 @@ public class ConfigPanelCaptcha extends ConfigPanel {
             case 1:
                 return JDLocale.L("gui.config.jac.column.method", "Methode");
             case 2:
-                return JDLocale.L("gui.config.jac.column.author", "Author");
+                return JDLocale.L("gui.config.jac.column.service", "Services");
             case 3:
+                return JDLocale.L("gui.config.jac.column.author", "Author");
+            case 4:
                 return JDLocale.L("gui.config.jac.column.extern", "Extern");
             }
             return super.getColumnName(column);
@@ -99,8 +103,10 @@ public class ConfigPanelCaptcha extends ConfigPanel {
             case 1:
                 return methods[rowIndex].name + " : " + (configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[rowIndex].name, true) ? JDLocale.L("gui.config.jac.status.auto", "Automatische Erkennung") : JDLocale.L("gui.config.jac.status.noauto", "Manuelle Eingabe"));
             case 2:
-                return methods[rowIndex].author;
+                return methods[rowIndex].services;
             case 3:
+                return methods[rowIndex].author;
+            case 4:
                 return methods[rowIndex].isExtern;
             }
             return null;
@@ -159,9 +165,12 @@ public class ConfigPanelCaptcha extends ConfigPanel {
                 column.setPreferredWidth(600);
                 break;
             case 2:
-                column.setPreferredWidth(150);
+                column.setPreferredWidth(200);
                 break;
             case 3:
+                column.setPreferredWidth(150);
+                break;
+            case 4:
                 column.setPreferredWidth(60);
                 break;
             }
@@ -222,11 +231,10 @@ public class ConfigPanelCaptcha extends ConfigPanel {
             Node childNode = nl.item(i);
 
             if (childNode.getNodeName().equals("method")) {
+                jacinfo.services = JDUtilities.getAttribute(childNode, "name");
                 jacinfo.author = JDUtilities.getAttribute(childNode, "author");
-                // methodname = JDUtilities.getAttribute(childNode, "name");
                 String extern = JDUtilities.getAttribute(childNode, "type");
                 if (extern != null && extern.equalsIgnoreCase("extern")) jacinfo.isExtern = true;
-                ;
             }
         }
 
@@ -236,6 +244,8 @@ public class ConfigPanelCaptcha extends ConfigPanel {
     private class JACInfo {
 
         private final String name;
+
+        private String services;
 
         private String author;
 

@@ -22,7 +22,6 @@ import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.FileFilter;
@@ -343,20 +342,9 @@ public class JAntiCaptcha {
     private int letterNum;
 
     /**
-     * Name des Authors der entsprechenden methode. Wird aus der jacinfo.xml
-     * Datei geladen
-     */
-    private String methodAuthor;
-
-    /**
      * ordnername der methode
      */
     private String methodDirName;
-
-    /**
-     * Methodenname. Wird aus der jacinfo.xml geladen
-     */
-    private String methodName;
 
     /**
      * Pfad zur Resulotfile. dort wird der Captchacode hineingeschrieben.
@@ -822,30 +810,6 @@ public class JAntiCaptcha {
         w.setVisible(true);
     }
 
-    /**
-     * Exportiert die aktelle Datenbank als PONG einzelbilder
-     */
-    public void exportDB() {
-        File path = UTILITIES.directoryChooser();
-        File file;
-        BufferedImage img;
-        int i = 0;
-        for (Letter letter : letterDB) {
-            img = (BufferedImage) letter.getFullImage();
-            file = new File(path + "/letterDB_" + getMethodName() + "/" + i++ + "_" + letter.getDecodedValue() + ".png");
-            file.mkdirs();
-            try {
-                if (JAntiCaptcha.isLoggerActive()) {
-                    logger.info("Write Db: " + file);
-                }
-                ImageIO.write(img, "png", file);
-            } catch (IOException e) {
-
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-            }
-        }
-    }
-
     private String getCodeFromFileName(String name, String captchaHash) {
         String[] matches = new Regex(name, "captcha_(.*?)_code(.*?)\\.(.*?)").getRow(0);
         if (matches != null && matches.length > 0) return matches[1];
@@ -922,8 +886,8 @@ public class JAntiCaptcha {
 
             if (childNode.getNodeName().equals("method")) {
 
-                setMethodAuthor(JDUtilities.getAttribute(childNode, "author"));
-                setMethodName(JDUtilities.getAttribute(childNode, "name"));
+//                setMethodAuthor(JDUtilities.getAttribute(childNode, "author"));
+//                setMethodName(JDUtilities.getAttribute(childNode, "name"));
                 try {
                     this.extern = JDUtilities.getAttribute(childNode, "type").equalsIgnoreCase("extern");
                 } catch (Exception e) {
@@ -931,15 +895,13 @@ public class JAntiCaptcha {
                 }
 
                 // this.os = JDUtilities.getAttribute(childNode, "os");
-            }
-            if (childNode.getNodeName().equals("command")) {
+            } else if (childNode.getNodeName().equals("command")) {
 
                 this.srcFile = JDUtilities.getAttribute(childNode, "src");
                 this.dstFile = JDUtilities.getAttribute(childNode, "dst");
                 this.command = JDUtilities.getAttribute(childNode, "cmd");
 
-            }
-            if (childNode.getNodeName().equals("format")) {
+            } else if (childNode.getNodeName().equals("format")) {
                 try {
                     setLetterNum(Integer.parseInt(JDUtilities.getAttribute(childNode, "letterNum")));
                 } catch (Exception e) {
@@ -955,9 +917,7 @@ public class JAntiCaptcha {
 
                 setImageType(JDUtilities.getAttribute(childNode, "type"));
 
-            }
-
-            if (childNode.getNodeName().equals("result")) {
+            } else if (childNode.getNodeName().equals("result")) {
 
                 setResultFile(JDUtilities.getAttribute(childNode, "file"));
 
@@ -1431,24 +1391,10 @@ public class JAntiCaptcha {
     }
 
     /**
-     * @return the methodAuthor
-     */
-    public String getMethodAuthor() {
-        return methodAuthor;
-    }
-
-    /**
      * @return the method
      */
     public String getMethodDirName() {
         return methodDirName;
-    }
-
-    /**
-     * @return the methodName
-     */
-    public String getMethodName() {
-        return methodName;
     }
 
     /**
@@ -1735,28 +1681,6 @@ public class JAntiCaptcha {
 
         methodDirName = methodName;
 
-    }
-
-    /**
-     * @param methodAuthor
-     *            the methodAuthor to set
-     */
-    public void setMethodAuthor(String methodAuthor) {
-        if (JAntiCaptcha.isLoggerActive()) {
-            logger.finer("SET PARAMETER: [methodAuthor] = " + methodAuthor);
-        }
-        this.methodAuthor = methodAuthor;
-    }
-
-    /**
-     * @param methodName
-     *            the methodName to set
-     */
-    public void setMethodName(String methodName) {
-        if (JAntiCaptcha.isLoggerActive()) {
-            logger.finer("SET PARAMETER: [methodName] = " + methodName);
-        }
-        this.methodName = methodName;
     }
 
     /**
