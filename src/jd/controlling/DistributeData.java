@@ -266,40 +266,49 @@ public class DistributeData extends Thread {
         // Edit Coa:
         // Hier werden auch die SourcePLugins in die Downloadlinks gesetzt
         ArrayList<DownloadLink> alldecrypted = handleDecryptPlugins();
-
+        ArrayList<HostPluginWrapper> pHostAll = JDUtilities.getPluginsForHost();
         for (DownloadLink decrypted : alldecrypted) {
-            ArrayList<HostPluginWrapper> pHostAll = JDUtilities.getPluginsForHost();
-            for (HostPluginWrapper pHost : pHostAll) {
-                try {
-                    if (pHost.usePlugin() && pHost.canHandle(decrypted.getDownloadURL())) {
-                        Vector<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != FilePackage.getDefaultFilePackage() ? decrypted.getFilePackage() : null);
-
-                        for (int c = 0; c < dLinks.size(); c++) {
-                            dLinks.get(c).addSourcePluginPasswords(foundPasswords);
-                            dLinks.get(c).addSourcePluginPasswords(decrypted.getSourcePluginPasswords());
-                            dLinks.get(c).setSourcePluginComment(decrypted.getSourcePluginComment());
-                            dLinks.get(c).setName(decrypted.getName());
-                            dLinks.get(c).setFinalFileName(decrypted.getFinalFileName());
-                            dLinks.get(c).setBrowserUrl(decrypted.getBrowserUrl());
-                            if (decrypted.isAvailabilityChecked()) dLinks.get(c).setAvailable(decrypted.isAvailable());
-                            dLinks.get(c).setProperties(decrypted.getProperties());
-                            dLinks.get(c).getLinkStatus().setStatusText(decrypted.getLinkStatus().getStatusString());
-                            dLinks.get(c).setDownloadSize(decrypted.getDownloadSize());
-                            dLinks.get(c).setSubdirectory(decrypted);
-                        }
-                        links.addAll(dLinks);
-                        break;
-                    }
-                } catch (Exception e) {
-                    logger.severe("Decrypter/Search Fehler: " + e.getMessage());
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-                }
+            if (!checkdecrypted(pHostAll, foundPasswords, links, decrypted)) {
+                decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("http://", "httpviajd://"));
+                decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("https://", "httpsviajd://"));
+                checkdecrypted(pHostAll, foundPasswords, links, decrypted);
             }
         }
         // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die
         // Plugins der Hoster geschickt
         useHoster(foundPasswords, links);
         return links;
+    }
+
+    private boolean checkdecrypted(ArrayList<HostPluginWrapper> pHostAll, Vector<String> foundPasswords, Vector<DownloadLink> links, DownloadLink decrypted) {
+        boolean gothost = false;
+        for (HostPluginWrapper pHost : pHostAll) {
+            try {
+                if (pHost.usePlugin() && pHost.canHandle(decrypted.getDownloadURL())) {
+                    Vector<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != FilePackage.getDefaultFilePackage() ? decrypted.getFilePackage() : null);
+                    for (int c = 0; c < dLinks.size(); c++) {
+                        dLinks.get(c).addSourcePluginPasswords(foundPasswords);
+                        dLinks.get(c).addSourcePluginPasswords(decrypted.getSourcePluginPasswords());
+                        dLinks.get(c).setSourcePluginComment(decrypted.getSourcePluginComment());
+                        dLinks.get(c).setName(decrypted.getName());
+                        dLinks.get(c).setFinalFileName(decrypted.getFinalFileName());
+                        dLinks.get(c).setBrowserUrl(decrypted.getBrowserUrl());
+                        if (decrypted.isAvailabilityChecked()) dLinks.get(c).setAvailable(decrypted.isAvailable());
+                        dLinks.get(c).setProperties(decrypted.getProperties());
+                        dLinks.get(c).getLinkStatus().setStatusText(decrypted.getLinkStatus().getStatusString());
+                        dLinks.get(c).setDownloadSize(decrypted.getDownloadSize());
+                        dLinks.get(c).setSubdirectory(decrypted);
+                    }
+                    gothost = true;
+                    links.addAll(dLinks);
+                    break;
+                }
+            } catch (Exception e) {
+                logger.severe("Decrypter/Search Fehler: " + e.getMessage());
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            }
+        }
+        return gothost;
     }
 
     private void useHoster(Vector<String> passwords, Vector<DownloadLink> links) {
@@ -414,7 +423,6 @@ public class DistributeData extends Thread {
                 String message = JDLocale.LF("gui.dialog.deepdecrypt.message", "JDownloader has not found anything on %s\r\n-------------------------------\r\nJD now loads this page to look for further links.", txt + "");
                 int res = UserIO.getInstance().requestConfirmDialog(0, title, message, JDTheme.II("gui.images.search", 32, 32), JDLocale.L("gui.btn_continue", "Continue"), null);
                 if (JDFlags.hasAllFlags(res, UserIO.RETURN_OK)) {
-
 
                     data = getLoadLinkString(data);
 

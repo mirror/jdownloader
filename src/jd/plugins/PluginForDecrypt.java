@@ -111,7 +111,7 @@ public abstract class PluginForDecrypt extends Plugin {
      */
 
     protected DownloadLink createDownloadlink(String link) {
-        DownloadLink dl = new DownloadLink(null, null, getHost(), Encoding.htmlDecode(link), true);
+        DownloadLink dl = new DownloadLink(null, null, getHost(), Encoding.urlDecode(link, true), true);
         return dl;
     }
 

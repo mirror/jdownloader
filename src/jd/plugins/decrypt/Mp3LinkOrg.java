@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Encoding;
 import jd.http.HTMLEntities;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -65,9 +64,9 @@ public class Mp3LinkOrg extends PluginForDecrypt {
             if (link.matches(pattern_Album)) {
                 link = br.getRegex("document\\.location\\s+=\\s+'(.*?)'").getMatch(0);
             } else if (link.matches(pattern_Song))
-                link = br.getRedirectLocation().replaceFirst("http", "httpviajd");
+                link = br.getRedirectLocation();
             
-            DownloadLink dlink = createDownloadlink(Encoding.htmlDecode(link));
+            DownloadLink dlink = createDownloadlink(link);
             FilePackage fp = FilePackage.getInstance();
             fp.setName(HTMLEntities.unhtmlentities(filename));
             fp.add(dlink);
