@@ -25,6 +25,7 @@ import java.awt.FlowLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -91,7 +92,6 @@ import jd.gui.skins.simple.config.panels.ConfigPanelGUI;
 import jd.gui.skins.simple.config.panels.ConfigPanelGeneral;
 import jd.gui.skins.simple.config.panels.ConfigPanelPluginForHost;
 import jd.gui.skins.simple.config.panels.ConfigPanelReconnect;
-import jd.gui.skins.simple.listener.JDMouseListener;
 import jd.gui.skins.simple.startmenu.JDStartMenu;
 import jd.gui.skins.simple.tasks.AddonTaskPane;
 import jd.gui.skins.simple.tasks.ConfigTaskPane;
@@ -293,7 +293,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         setVisible(true);
 
         ClipboardHandler.getClipboard().setTempDisableD(false);
-        this.contentPanel.addMouseListener(new JDMouseListener() {
+        this.contentPanel.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) {
                 System.out.println("Entered");
             }
@@ -371,10 +371,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         JXPanel glass = new JXPanel(new MigLayout("ins 80,wrap 1", "[fill,grow]", "[fill,grow][]"));
         JXLabel lbl = new JXLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_128_128"), 300, 300));
         glass.add(lbl, "alignx center, aligny center");
-        JProgressBar prg;
-        glass.add(prg = new JProgressBar(), "alignx center, aligny center,shrink");
+        JProgressBar prg = new JProgressBar();
+        glass.add(prg, "alignx center, aligny center,shrink");
         prg.setStringPainted(false);
-
         prg.setIndeterminate(true);
         glass.setOpaque(false);
         glass.setAlpha(0.5f);
@@ -383,8 +382,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         fgPainter.setFilters(filter);
         glass.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         this.setWaitPane(glass);
-        glass.addMouseListener(new JDMouseListener());
-
     }
 
     public void onLAFChanged() {

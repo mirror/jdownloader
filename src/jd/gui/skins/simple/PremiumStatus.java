@@ -2,8 +2,8 @@ package jd.gui.skins.simple;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.TreeMap;
@@ -43,7 +43,6 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
 
     private static final long serialVersionUID = 7290466989514173719L;
     private static final long UNLIMITED = 10l * 1024l * 1024l * 1024l;
-    private static final String DEBUG = "";
     private static final int BARCOUNT = 9;
     private TreeMap<String, ArrayList<AccountInfo>> map;
     private TreeMap<String, Long> mapSize;
@@ -65,12 +64,12 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         super();
         bars = new TinyProgressBar[BARCOUNT];
         logger = JDLogger.getLogger();
-        lbl = new JLabel(JDLocale.L("gui.statusbar.premiumloadlabel", "< add Accounts"));
+        lbl = new JLabel(JDLocale.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
         refresher = new Timer(1000 * 60 * 15, this);
         refresher.setInitialDelay(1000 * 60 * 15);
         refresher.setRepeats(true);
 
-        this.setLayout(new MigLayout(DEBUG + "ins 0", "[]", "[]"));
+        this.setLayout(new MigLayout("ins 0", "[]", "[]"));
 
         JDController.getInstance().addControlListener(this);
         AccountManager.getInstance().addAccountListener(this);
@@ -110,7 +109,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         premium.setContentAreaFilled(false);
         premium.setBorderPainted(false);
         add(premium);
-        premium.addMouseListener(new MouseListener() {
+        premium.addMouseListener(new MouseAdapter() {
 
             public void mouseClicked(MouseEvent e) {
                 if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
@@ -136,18 +135,6 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                 }
             }
 
-            public void mouseEntered(MouseEvent e) {
-            }
-
-            public void mouseExited(MouseEvent e) {
-            }
-
-            public void mousePressed(MouseEvent e) {
-            }
-
-            public void mouseReleased(MouseEvent e) {
-            }
-
         });
         add(new JSeparator(JSeparator.VERTICAL), "height 16,aligny center");
         add(lbl, "hidemode 3");
@@ -155,7 +142,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         for (int i = 0; i < BARCOUNT; i++) {
             TinyProgressBar pg = new TinyProgressBar();
             bars[i] = pg;
-            bars[i].addMouseListener(new MouseListener() {
+            bars[i].addMouseListener(new MouseAdapter() {
 
                 public void mouseClicked(MouseEvent arg0) {
 
@@ -175,22 +162,6 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                     }
                 }
 
-                public void mouseEntered(MouseEvent arg0) {
-
-                }
-
-                public void mouseExited(MouseEvent arg0) {
-
-                }
-
-                public void mousePressed(MouseEvent arg0) {
-
-                }
-
-                public void mouseReleased(MouseEvent arg0) {
-
-                }
-
             });
 
             pg.setVisible(false);
@@ -207,35 +178,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         this.onUpdate();
     }
 
-    // private JMenu createExtrasMenu(Object obj) {
-    // JMenu pluginPopup = new JMenu("Premium");
-    // ArrayList<MenuItem> entries = new ArrayList<MenuItem>();
-    //
-    // if (entries != null && entries.size() > 0) {
-    // for (MenuItem next : entries) {
-    // JMenuItem mi = JDMenu.getJMenuItem(next);
-    // if (mi == null) {
-    // pluginPopup.addSeparator();
-    // } else {
-    // pluginPopup.add(mi);
-    // }
-    // }
-    // } else {
-    // pluginPopup.setEnabled(false);
-    // }
-    // return pluginPopup;
-    // }
-
-    protected void showDetails(PluginForHost plugin) {
-        // ConfigEntriesPanel panel = new
-        // ConfigEntriesPanel(plugin.getConfig());
-        //
-        // Component comp = panel.getComponent(0);
-        // if (comp instanceof JTabbedPane) {
-        // ((JTabbedPane) comp).setSelectedIndex(((JTabbedPane)
-        // comp).getTabCount() - 1);
-        // }
-        // SimpleGUI.CURRENTGUI.getContentPane().display(panel);
+    private void showDetails(PluginForHost plugin) {
         SimpleGUI.displayConfig(plugin.getConfig(), 1);
     }
 
@@ -297,7 +240,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         if (redrawinprogress) return;
         redrawinprogress = true;
         new GuiRunnable<Object>() {
-            //@Override
+            // @Override
             public Object runSave() {
                 synchronized (Lock) {
                     try {
