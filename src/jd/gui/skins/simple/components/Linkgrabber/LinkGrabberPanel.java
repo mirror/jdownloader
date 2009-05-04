@@ -98,7 +98,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     public void showFilePackageInfo(LinkGrabberFilePackage fp) {
         filePackageInfo.setPackage(fp);
         JDCollapser.getInstance().setContentPanel(filePackageInfo);
-        JDCollapser.getInstance().setTitle(JDLocale.L("gui.linkgrabber.packagetab.title", "FilePackage"));
+        JDCollapser.getInstance().setTitle(JDLocale.L("gui.linkgrabber.packagetab.title", "File package"));
         JDCollapser.getInstance().setVisible(true);
         JDCollapser.getInstance().setCollapsed(false);
     }
@@ -158,7 +158,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             gatherer_running = false;
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
-                    pc.setStatusText(pc.getStatusText() + ": Aborted");
+                    pc.setStatusText(pc.getStatusText() + ": " + JDLocale.L("gui.linkgrabber.aborted","Aborted"));
                     pc.finalize(5000l);
                 }
             });
@@ -518,7 +518,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     public void checkAlreadyinList(DownloadLink link) {
         if (JDUtilities.getDownloadController().getFirstDownloadLinkwithURL(link.getDownloadURL()) != null) {
-            link.getLinkStatus().setErrorMessage("Already in Downloadlist");
+            link.getLinkStatus().setErrorMessage(JDLocale.L("gui.linkgrabber.alreadyindl","Already on Download List"));
             link.getLinkStatus().addStatus(LinkStatus.ERROR_ALREADYEXISTS);
         }
     }
