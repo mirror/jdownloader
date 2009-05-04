@@ -1311,6 +1311,27 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         }.waitForEDT();
     }
 
+    public void closeWindow() {
+        if (!OSDetector.isMac()) {
+            boolean doIt;
+            if (!SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+                doIt = showConfirmDialog(JDLocale.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"));
+            } else {
+                doIt = true;
+            }
+            if (doIt) {
+                contentPanel.getRightPanel().onHide();
+                SimpleGuiUtils.saveLastLocation(this, null);
+                SimpleGuiUtils.saveLastDimension(this, null);
+                SimpleGuiConstants.GUI_CONFIG.save();
+                JDUtilities.getController().exit();
+
+            }
+        } else {
+            this.setVisible(false);
+        }
+    }
+
     public void windowActivated(WindowEvent e) {
     }
 
@@ -1318,26 +1339,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public void windowClosing(WindowEvent e) {
-        if (!OSDetector.isMac()) {
-            if (e.getComponent() == this) {
-                boolean doIt;
-                if (!SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                    doIt = showConfirmDialog(JDLocale.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"));
-                } else {
-                    doIt = true;
-                }
-                if (doIt) {
-                    SimpleGuiUtils.saveLastLocation(e.getComponent(), null);
-                    SimpleGuiUtils.saveLastDimension(e.getComponent(), null);
-                    SimpleGuiConstants.GUI_CONFIG.save();
-                    JDUtilities.getController().exit();
-
-                }
-            }
-        } else {
-            e.getWindow().setVisible(false);
-        }
-
+        if (e.getComponent() == this) closeWindow();
     }
 
     public void windowDeactivated(WindowEvent e) {

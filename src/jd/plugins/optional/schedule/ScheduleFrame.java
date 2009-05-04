@@ -46,6 +46,7 @@ public class ScheduleFrame extends JPanel implements ActionListener {
 
     private final String dateFormat = "HH:mm:ss | dd.MM.yy";
 
+    private String name;
     private Timer c;
     private SpinnerDateModel date_model;
     private JLabel label;
@@ -60,12 +61,11 @@ public class ScheduleFrame extends JPanel implements ActionListener {
     private Timer t;
     private JSpinner time;
 
-    // Konstruktor des Fensters und Aussehen
-    public ScheduleFrame(String title) {
-        initGUI(title);
+    public ScheduleFrame(ScheduleFrameSettings settings) {
+        initGUI(settings);
     }
 
-    private void initGUI(String title) {
+    private void initGUI(ScheduleFrameSettings settings) {
         c = new Timer(1000, this);
 
         t = new Timer(10000, this);
@@ -76,30 +76,32 @@ public class ScheduleFrame extends JPanel implements ActionListener {
         start.setBorderPainted(false);
         start.setFocusPainted(false);
 
-        maxdls = new JSpinner(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
+        maxdls = new JSpinner(new SpinnerNumberModel(settings.getMaxDls(), 1, 20, 1));
         maxdls.setBorder(BorderFactory.createEmptyBorder());
 
-        maxspeed = new JSpinner(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED), 0, Integer.MAX_VALUE, 50));
+        maxspeed = new JSpinner(new SpinnerNumberModel(settings.getMaxSpeed(), 0, Integer.MAX_VALUE, 50));
         maxspeed.setBorder(BorderFactory.createEmptyBorder());
 
         time = new JSpinner(date_model);
         time.setToolTipText("Select your time. Format: HH:mm:ss | dd.MM.yy");
         time.setEditor(new JSpinner.DateEditor(time, dateFormat));
         time.setBorder(BorderFactory.createEmptyBorder());
+        if (settings.getTime() != null) time.setValue(settings.getTime());
 
-        repeat = new JSpinner(new SpinnerNumberModel(0, 0, 24, 1));
+        repeat = new JSpinner(new SpinnerNumberModel(settings.getRepeat(), 0, 24, 1));
         repeat.setBorder(BorderFactory.createEmptyBorder());
         repeat.setToolTipText("Enter h | 0 = disable");
 
         premium = new JCheckBox();
-        premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM));
+        premium.setSelected(settings.isPremium());
 
         reconnect = new JCheckBox();
-        reconnect.setSelected(!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT));
+        reconnect.setSelected(settings.isReconnect());
 
         status = new JLabel(JDLocale.L("addons.schedule.menu.running", " Not Running!"));
 
         stop_start = new JCheckBox();
+        stop_start.setSelected(settings.isStartStop());
 
         this.setLayout(new MigLayout("wrap 2"));
 
@@ -124,7 +126,7 @@ public class ScheduleFrame extends JPanel implements ActionListener {
         this.add(new JLabel(JDLocale.L("addons.schedule.menu.redo", " Redo in h:")));
         this.add(repeat, COMPONENT_WIDTH);
 
-        label = new JLabel(title);
+        label = new JLabel(name = settings.getName());
         this.add(label);
         this.add(start, COMPONENT_WIDTH);
 
@@ -208,6 +210,18 @@ public class ScheduleFrame extends JPanel implements ActionListener {
 
     public JLabel getStatusLabel() {
         return status;
+    }
+
+    public ScheduleFrameSettings getSettings() {
+        ScheduleFrameSettings result = new ScheduleFrameSettings(name, false);
+        result.setMaxDls((Integer) maxdls.getValue());
+        result.setMaxSpeed((Integer) maxspeed.getValue());
+        result.setPremium(premium.isSelected());
+        result.setReconnect(reconnect.isSelected());
+        result.setRepeat((Integer) repeat.getValue());
+        result.setStartStop(stop_start.isSelected());
+        result.setTime((Date) time.getValue());
+        return result;
     }
 
 }

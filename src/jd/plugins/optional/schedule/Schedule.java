@@ -41,7 +41,7 @@ import net.miginfocom.swing.MigLayout;
 
 public class Schedule extends PluginOptional {
 
-    private static final String PROPERTY_SCHEDULES = "PROPERTY_SCHEDULES";
+    private static final String PROPERTY_SCHEDULES = "PROPERTY_SCHEDULES_V2";
 
     private JPanel panel;
     private JPanel aPanel;
@@ -63,17 +63,20 @@ public class Schedule extends PluginOptional {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getIconKey() {
-
         return "gui.images.config.eventmanager";
     }
 
     @SuppressWarnings("unchecked")
     private void initGUI() {
-        if (schedules != null) return;
+        if (tabbedPanel != null) return;
 
-        schedules = (Vector<ScheduleFrame>) getPluginConfig().getProperty(PROPERTY_SCHEDULES, new Vector<ScheduleFrame>());
+        Vector<ScheduleFrameSettings> scheduleSettings = (Vector<ScheduleFrameSettings>) getPluginConfig().getProperty(PROPERTY_SCHEDULES, new Vector<ScheduleFrameSettings>());
+        schedules = new Vector<ScheduleFrame>();
+        for (ScheduleFrameSettings scheduleSetting : scheduleSettings) {
+            schedules.add(new ScheduleFrame(scheduleSetting));
+        }
         logger.finer("Scheduler: restored " + schedules.size() + " schedules");
         reloadList();
 
@@ -81,13 +84,17 @@ public class Schedule extends PluginOptional {
 
             private static final long serialVersionUID = 4758934444244058336L;
 
-            //@Override
+            // @Override
             public void onDisplay() {
             }
 
-            //@Override
+            // @Override
             public void onHide() {
-                getPluginConfig().setProperty(PROPERTY_SCHEDULES, schedules);
+                Vector<ScheduleFrameSettings> scheduleSettings = new Vector<ScheduleFrameSettings>();
+                for (ScheduleFrame schedule : schedules) {
+                    scheduleSettings.add(schedule.getSettings());
+                }
+                getPluginConfig().setProperty(PROPERTY_SCHEDULES, scheduleSettings);
                 getPluginConfig().save();
 
                 status.stop();
@@ -137,13 +144,13 @@ public class Schedule extends PluginOptional {
 
     }
 
-    //@Override
+    // @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
             initGUI();
             SimpleGUI.CURRENTGUI.getContentPane().display(tabbedPanel);
         } else if (e.getSource() == add) {
-            schedules.add(new ScheduleFrame(JDLocale.L("addons.schedule.menu.schedule", "Schedule") + " " + (schedules.size() + 1)));
+            schedules.add(new ScheduleFrame(new ScheduleFrameSettings(JDLocale.L("addons.schedule.menu.schedule", "Schedule") + " " + (schedules.size() + 1), true)));
             reloadList();
             list.setSelectedIndex(schedules.size() - 1);
             SwingUtilities.updateComponentTreeUI(aPanel);
@@ -217,40 +224,40 @@ public class Schedule extends PluginOptional {
         return 3;
     }
 
-    //@Override
+    // @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         menu.add(new MenuItem(getHost(), 0).setActionListener(this));
         return menu;
     }
 
-    //@Override
+    // @Override
     public String getCoder() {
         return "JD-Team / Tudels";
     }
 
-    //@Override
+    // @Override
     public String getHost() {
         return JDLocale.L("addons.schedule.name", "Schedule");
     }
 
-    //@Override
+    // @Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public boolean initAddon() {
         logger.info("Schedule OK");
         return true;
     }
 
-    //@Override
+    // @Override
     public void onExit() {
     }
 
