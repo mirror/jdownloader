@@ -77,6 +77,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
 /**
@@ -1025,6 +1027,22 @@ public class JDUtilities {
             JDLogger.exception(e);
         }
         return null;
+    }
+
+    /**
+     * Gibt das Attribut zu key in childNode zurück
+     * 
+     * @param childNode
+     * @param key
+     * @return String Atribut
+     */
+    public static String getAttribute(Node childNode, String key) {
+        NamedNodeMap att = childNode.getAttributes();
+        if (att == null || att.getNamedItem(key) == null) {
+            JDLogger.getLogger().info("ERROR: XML Attribute missing: " + key);
+            return null;
+        }
+        return att.getNamedItem(key).getNodeValue();
     }
 
 }

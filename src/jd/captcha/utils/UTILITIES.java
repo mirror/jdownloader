@@ -26,12 +26,8 @@ import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
-import jd.captcha.JAntiCaptcha;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.GuiRunnable;
-
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
 
 /**
  * Diese Klasse beinhaltet mehrere Hilfsfunktionen
@@ -63,24 +59,6 @@ public class UTILITIES {
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         if (fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
         return null;
-    }
-
-    /**
-     * Gibt das Attribut zu key in childNode zurück
-     * 
-     * @param childNode
-     * @param key
-     * @return String Atribut
-     */
-    public static String getAttribute(Node childNode, String key) {
-        NamedNodeMap att = childNode.getAttributes();
-        if (att == null || att.getNamedItem(key) == null) {
-            if (JAntiCaptcha.isLoggerActive()) {
-                logger.info("ERROR: XML Attribute missing: " + key);
-            }
-            return null;
-        }
-        return att.getNamedItem(key).getNodeValue();
     }
 
     /**

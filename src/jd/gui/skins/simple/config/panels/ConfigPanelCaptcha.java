@@ -17,8 +17,6 @@
 package jd.gui.skins.simple.config.panels;
 
 import java.awt.Dimension;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.File;
 
 import javax.swing.JScrollPane;
@@ -37,11 +35,17 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
+import jd.nutils.io.JDIO;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+public class ConfigPanelCaptcha extends ConfigPanel {
 
     private class InternalTableModel extends AbstractTableModel {
 
@@ -53,12 +57,16 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
                 return Boolean.class;
             case 1:
                 return String.class;
+            case 2:
+                return String.class;
+            case 3:
+                return Boolean.class;
             }
             return String.class;
         }
 
         public int getColumnCount() {
-            return 2;
+            return 4;
         }
 
         public String getColumnName(int column) {
@@ -67,6 +75,10 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
                 return JDLocale.L("gui.config.jac.column.use", "Verwenden");
             case 1:
                 return JDLocale.L("gui.config.jac.column.method", "Methode");
+            case 2:
+                return JDLocale.L("gui.config.jac.column.author", "Author");
+            case 3:
+                return JDLocale.L("gui.config.jac.column.extern", "Extern");
             }
             return super.getColumnName(column);
         }
@@ -75,15 +87,30 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
             return methods.length;
         }
 
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return columnIndex == 0;
+        }
+
         public Object getValueAt(int rowIndex, int columnIndex) {
 
             switch (columnIndex) {
             case 0:
-                return configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[rowIndex].getName(), true);
+                return configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[rowIndex].name, true);
             case 1:
-                return methods[rowIndex].getName() + " : " + (configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[rowIndex].getName(), true) ? JDLocale.L("gui.config.jac.status.auto", "Automatische Erkennung") : JDLocale.L("gui.config.jac.status.noauto", "Manuelle Eingabe"));
+                return methods[rowIndex].name + " : " + (configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[rowIndex].name, true) ? JDLocale.L("gui.config.jac.status.auto", "Automatische Erkennung") : JDLocale.L("gui.config.jac.status.noauto", "Manuelle Eingabe"));
+            case 2:
+                return methods[rowIndex].author;
+            case 3:
+                return methods[rowIndex].isExtern;
             }
             return null;
+        }
+
+        public void setValueAt(Object value, int row, int col) {
+            if (col == 0) {
+                System.out.println(value + " == " + row + " x " + col);
+                configuration.setProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[row].name, value);
+            }
         }
     }
 
@@ -95,7 +122,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 
     private ConfigContainer container;
 
-    private File[] methods;
+    private JACInfo[] methods;
 
     private JTable table;
 
@@ -104,22 +131,21 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
     public ConfigPanelCaptcha(Configuration configuration) {
         super();
         this.configuration = configuration;
-        methods = JAntiCaptcha.getMethods("jd/captcha/methods/");
+        methods = createJACInfos(JAntiCaptcha.getMethods("jd/captcha/methods/"));
         initPanel();
         load();
     }
 
     public void initPanel() {
         setupContainer();
-        panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]","[][][fill,grow]"));
-        panel.add(cep = new ConfigEntriesPanel(container),"spanx");
-     
+        panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]", "[][][fill,grow]"));
+        panel.add(cep = new ConfigEntriesPanel(container), "spanx");
+
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setEditingRow(0);
-        table.addMouseListener(this);
 
         TableColumn column = null;
         for (int c = 0; c < tableModel.getColumnCount(); c++) {
@@ -127,11 +153,16 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
             switch (c) {
             case 0:
                 column.setMaxWidth(80);
-                column.setPreferredWidth(50);
-
+                column.setPreferredWidth(60);
                 break;
             case 1:
                 column.setPreferredWidth(600);
+                break;
+            case 2:
+                column.setPreferredWidth(150);
+                break;
+            case 3:
+                column.setPreferredWidth(60);
                 break;
             }
         }
@@ -144,23 +175,6 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 
     public void load() {
         loadConfigEntries();
-    }
-
-    public void mouseClicked(MouseEvent e) {
-        configuration.setProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[table.getSelectedRow()].getName(), !configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[table.getSelectedRow()].getName(), true));
-        tableModel.fireTableRowsUpdated(table.getSelectedRow(), table.getSelectedRow());
-    }
-
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mousePressed(MouseEvent e) {
-    }
-
-    public void mouseReleased(MouseEvent e) {
     }
 
     public void save() {
@@ -185,6 +199,52 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
         container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(95));
 
         ce2.setEnabledCondidtion(ce1, "==", false);
+    }
+
+    public JACInfo[] createJACInfos(File[] file) {
+        System.out.println(file[0].getAbsolutePath());
+        JACInfo[] infos = new JACInfo[file.length];
+        for (int i = 0; i < infos.length; ++i) {
+            infos[i] = parseJACInfoXml(file[i]);
+        }
+        return infos;
+    }
+
+    private JACInfo parseJACInfoXml(File dir) {
+        JACInfo jacinfo = new JACInfo(dir.getName());
+        File xml = new File(dir.getAbsolutePath() + "/jacinfo.xml");
+        if (!xml.exists()) return null;
+        Document doc = JDUtilities.parseXmlString(JDIO.getLocalFile(xml), false);
+        if (doc == null) return null;
+
+        NodeList nl = doc.getFirstChild().getChildNodes();
+        for (int i = 0; i < nl.getLength(); i++) {
+            Node childNode = nl.item(i);
+
+            if (childNode.getNodeName().equals("method")) {
+                jacinfo.author = JDUtilities.getAttribute(childNode, "author");
+                // methodname = JDUtilities.getAttribute(childNode, "name");
+                String extern = JDUtilities.getAttribute(childNode, "type");
+                if (extern != null && extern.equalsIgnoreCase("extern")) jacinfo.isExtern = true;
+                ;
+            }
+        }
+
+        return jacinfo;
+    }
+
+    private class JACInfo {
+
+        private final String name;
+
+        private String author;
+
+        private boolean isExtern;
+
+        private JACInfo(String name) {
+            this.name = name;
+        }
+
     }
 
 }

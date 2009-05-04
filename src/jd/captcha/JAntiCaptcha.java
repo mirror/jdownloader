@@ -655,7 +655,7 @@ public class JAntiCaptcha {
 
                     tmp = new Letter();
                     tmp.setOwner(this);
-                    String id = UTILITIES.getAttribute(childNode, "id");
+                    String id = JDUtilities.getAttribute(childNode, "id");
                     if (!tmp.setTextGrid(childNode.getTextContent())) {
 
                         logger.severe("Error in Letters DB line: " + i + ":" + childNode.getTextContent() + " id:" + id);
@@ -668,8 +668,8 @@ public class JAntiCaptcha {
                     }
                     tmp.setSourcehash(att.getNamedItem("captchaHash").getNodeValue());
                     tmp.setDecodedValue(att.getNamedItem("value").getNodeValue());
-                    tmp.setBadDetections(Integer.parseInt(UTILITIES.getAttribute(childNode, "bad")));
-                    tmp.setGoodDetections(Integer.parseInt(UTILITIES.getAttribute(childNode, "good")));
+                    tmp.setBadDetections(Integer.parseInt(JDUtilities.getAttribute(childNode, "bad")));
+                    tmp.setGoodDetections(Integer.parseInt(JDUtilities.getAttribute(childNode, "good")));
                     letterDB.add(tmp);
                 } else if (childNode.getNodeName().equals("map")) {
                     if (JAntiCaptcha.isLoggerActive()) {
@@ -922,44 +922,44 @@ public class JAntiCaptcha {
 
             if (childNode.getNodeName().equals("method")) {
 
-                setMethodAuthor(UTILITIES.getAttribute(childNode, "author"));
-                setMethodName(UTILITIES.getAttribute(childNode, "name"));
+                setMethodAuthor(JDUtilities.getAttribute(childNode, "author"));
+                setMethodName(JDUtilities.getAttribute(childNode, "name"));
                 try {
-                    this.extern = UTILITIES.getAttribute(childNode, "type").equalsIgnoreCase("extern");
+                    this.extern = JDUtilities.getAttribute(childNode, "type").equalsIgnoreCase("extern");
                 } catch (Exception e) {
                     // TODO: handle exception
                 }
 
-                // this.os = UTILITIES.getAttribute(childNode, "os");
+                // this.os = JDUtilities.getAttribute(childNode, "os");
             }
             if (childNode.getNodeName().equals("command")) {
 
-                this.srcFile = UTILITIES.getAttribute(childNode, "src");
-                this.dstFile = UTILITIES.getAttribute(childNode, "dst");
-                this.command = UTILITIES.getAttribute(childNode, "cmd");
+                this.srcFile = JDUtilities.getAttribute(childNode, "src");
+                this.dstFile = JDUtilities.getAttribute(childNode, "dst");
+                this.command = JDUtilities.getAttribute(childNode, "cmd");
 
             }
             if (childNode.getNodeName().equals("format")) {
                 try {
-                    setLetterNum(Integer.parseInt(UTILITIES.getAttribute(childNode, "letterNum")));
+                    setLetterNum(Integer.parseInt(JDUtilities.getAttribute(childNode, "letterNum")));
                 } catch (Exception e) {
                 }
                 try {
-                    setLetterMinNum(Integer.parseInt(UTILITIES.getAttribute(childNode, "minLetterNum")));
+                    setLetterMinNum(Integer.parseInt(JDUtilities.getAttribute(childNode, "minLetterNum")));
                 } catch (Exception e) {
                 }
                 try {
-                    setLetterMaxNum(Integer.parseInt(UTILITIES.getAttribute(childNode, "maxLetterNum")));
+                    setLetterMaxNum(Integer.parseInt(JDUtilities.getAttribute(childNode, "maxLetterNum")));
                 } catch (Exception e) {
                 }
 
-                setImageType(UTILITIES.getAttribute(childNode, "type"));
+                setImageType(JDUtilities.getAttribute(childNode, "type"));
 
             }
 
             if (childNode.getNodeName().equals("result")) {
 
-                setResultFile(UTILITIES.getAttribute(childNode, "file"));
+                setResultFile(JDUtilities.getAttribute(childNode, "file"));
 
             }
 

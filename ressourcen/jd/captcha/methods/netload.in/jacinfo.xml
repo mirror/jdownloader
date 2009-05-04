@@ -1,5 +1,4 @@
 <jDownloader>
-  <method name="JAntiCaptcha_Netload" author="Coalado" />
+  <method name="netload.in" author="Coalado" />
   <format type="png" letterNum="4"/>
-
 </jDownloader>

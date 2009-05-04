@@ -1,5 +1,4 @@
 <jDownloader>
-  <method name="JAntiCaptcha" author="JDTeam" />
+  <method name="rs-layer.com" author="JD-Team" />
   <format type="png" letterNum="6"/>
-
 </jDownloader>
