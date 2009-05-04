@@ -26,12 +26,12 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 public class Configuration extends SubConfiguration implements Serializable {
+
     public static final String AUTOTRAIN_ERROR_LEVEL = "AUTOTRAIN_ERROR_LEVEL";
 
     public static final String CONFIG_INTERACTIONS = "EVENTS";
 
     public static final String JAC_SHOW_TIMEOUT = "JAC_SHOW_TIMEOUT";
-
 
     public static final String PARAM_CAPTCHA_JAC_DISABLE = "CAPTCHA_JAC_DISBALE";
 
@@ -95,9 +95,9 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW = "SHOW_CONTAINER_ONLOAD_OVERVIEW";
 
-    public static final String PARAM_UNRAR_INSTANCE = "UNRAR_INSTANCE";
+    // public static final String PARAM_UNRAR_INSTANCE = "UNRAR_INSTANCE";
 
-    public static final String PARAM_UPDATE_HASH = "UPDATE_HASH";
+    // public static final String PARAM_UPDATE_HASH = "UPDATE_HASH";
 
     public static final String PARAM_UPDATE_VERSION = "UPDATE_VERSION";
 

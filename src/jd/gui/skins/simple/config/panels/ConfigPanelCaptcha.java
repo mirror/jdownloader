@@ -99,9 +99,9 @@ public class ConfigPanelCaptcha extends ConfigPanel {
 
             switch (columnIndex) {
             case 0:
-                return configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[rowIndex].name, true);
+                return configuration.getBooleanProperty(jacKeyForMethod(methods[rowIndex].name), true);
             case 1:
-                return methods[rowIndex].name + " : " + (configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[rowIndex].name, true) ? JDLocale.L("gui.config.jac.status.auto", "Automatische Erkennung") : JDLocale.L("gui.config.jac.status.noauto", "Manuelle Eingabe"));
+                return methods[rowIndex].name + " : " + (configuration.getBooleanProperty(jacKeyForMethod(methods[rowIndex].name), true) ? JDLocale.L("gui.config.jac.status.auto", "Automatische Erkennung") : JDLocale.L("gui.config.jac.status.noauto", "Manuelle Eingabe"));
             case 2:
                 return methods[rowIndex].services;
             case 3:
@@ -115,7 +115,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         public void setValueAt(Object value, int row, int col) {
             if (col == 0) {
                 System.out.println(value + " == " + row + " x " + col);
-                configuration.setProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[row].name, value);
+                configuration.setProperty(jacKeyForMethod(methods[row].name), value);
             }
         }
     }
@@ -239,6 +239,10 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         }
 
         return jacinfo;
+    }
+
+    private String jacKeyForMethod(String method) {
+        return Configuration.PARAM_JAC_METHODS + "_" + method;
     }
 
     private class JACInfo {
