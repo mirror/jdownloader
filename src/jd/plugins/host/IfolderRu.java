@@ -112,7 +112,7 @@ public class IfolderRu extends PluginForHost {
             }
         }
         if (!do_download) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
         } else
             dl.startDownload();
     }
