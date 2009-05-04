@@ -85,7 +85,7 @@ public class DreiDlAm extends PluginForDecrypt {
         return linksReturn;
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -93,6 +93,7 @@ public class DreiDlAm extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.clearCookies("3dl.am");
         br.getPage("http://3dl.am");
+        br.getPage("http://3dl.am/index.php");
         link = param;
         if (new Regex(parameter, PluginPattern.DECRYPTER_3DLAM_2).matches()) {
             ArrayList<String> links = decryptFromStart(parameter);
@@ -124,7 +125,7 @@ public class DreiDlAm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
