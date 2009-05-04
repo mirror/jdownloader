@@ -1,4 +1,4 @@
 <jDownloader>
-  <method type="extern" os="windows" />
+  <method type="extern" os="windows" name="megaupload.com" author="coalado" />
   <command cmd="tools\windows\captcha\megaupload.com\Megaupload.bat" src="tools\windows\captcha\megaupload.com\megaupload.gif" dst="tools\windows\captcha\megaupload.com\Megaupload.txt" />
 </jDownloader>

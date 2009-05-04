@@ -137,7 +137,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
     public ConfigPanelCaptcha(Configuration configuration) {
         super();
         this.configuration = configuration;
-        methods = createJACInfos(JAntiCaptcha.getMethods("jd/captcha/methods/"));
+        methods = createJACInfos();
         initPanel();
         load();
     }
@@ -192,7 +192,6 @@ public class ConfigPanelCaptcha extends ConfigPanel {
     }
 
     public PropertyType hasChanges() {
-
         return PropertyType.getMax(super.hasChanges(), cep.hasChanges());
     }
 
@@ -210,11 +209,14 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         ce2.setEnabledCondidtion(ce1, "==", false);
     }
 
-    public JACInfo[] createJACInfos(File[] file) {
-        System.out.println(file[0].getAbsolutePath());
-        JACInfo[] infos = new JACInfo[file.length];
+    public JACInfo[] createJACInfos() {
+        File[] methods = JAntiCaptcha.getMethods("jd/captcha/methods/");
+        for (File method : methods) {
+            System.out.println(method);
+        }
+        JACInfo[] infos = new JACInfo[methods.length];
         for (int i = 0; i < infos.length; ++i) {
-            infos[i] = parseJACInfoXml(file[i]);
+            infos[i] = parseJACInfoXml(methods[i]);
         }
         return infos;
     }

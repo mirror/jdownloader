@@ -137,26 +137,13 @@ public class JAntiCaptcha {
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.severe("Resource dir nicht gefunden: " + path);
             }
-
         }
 
         File[] entries = dir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
-                // ));
-
-                if (pathname.isDirectory() && new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml").exists()) {
-                    String content = JDIO.getLocalFile(new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml"));
-                    if (content.contains("extern") && OSDetector.isLinux() && !content.contains("linux")) return false;
-                    if (content.contains("extern") && OSDetector.isMac() && !content.contains("mac")) return false;
-                    if (content.contains("extern") && OSDetector.isWindows() && !content.contains("windows")) return false;
-
-                    return true;
-                } else {
-                    return false;
-                }
+                File method = new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml");
+                return (pathname.isDirectory() && method.exists() && isAvailableExternMethod(method));
             }
-
         });
         return entries;
     }
@@ -170,13 +157,19 @@ public class JAntiCaptcha {
      * @return true/false
      */
     public static boolean hasMethod(String methodsPath, String methodName) {
-        boolean ret = JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/jacinfo.xml").exists();
-        if (!ret) { return false; }
-        String content = JDIO.getLocalFile(JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/jacinfo.xml"));
-        if (content.contains("extern") && OSDetector.isLinux() && !content.contains("linux")) return false;
-        if (content.contains("extern") && OSDetector.isMac() && !content.contains("mac")) return false;
-        if (content.contains("extern") && OSDetector.isWindows() && !content.contains("windows")) return false;
+        File method = JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/jacinfo.xml");
+        return (method.exists() && isAvailableExternMethod(method));
+    }
 
+    private static boolean isAvailableExternMethod(File jacinfo) {
+        String content = JDIO.getLocalFile(jacinfo);
+        if (content.contains("extern")) {
+            if (OSDetector.isLinux() && !content.contains("linux")) {
+                return false;
+            } else if (OSDetector.isMac() && !content.contains("mac")) {
+                return false;
+            } else if (OSDetector.isWindows() && !content.contains("windows")) { return false; }
+        }
         return true;
     }
 
@@ -886,8 +879,9 @@ public class JAntiCaptcha {
 
             if (childNode.getNodeName().equals("method")) {
 
-//                setMethodAuthor(JDUtilities.getAttribute(childNode, "author"));
-//                setMethodName(JDUtilities.getAttribute(childNode, "name"));
+                // setMethodAuthor(JDUtilities.getAttribute(childNode,
+                // "author"));
+                // setMethodName(JDUtilities.getAttribute(childNode, "name"));
                 try {
                     this.extern = JDUtilities.getAttribute(childNode, "type").equalsIgnoreCase("extern");
                 } catch (Exception e) {
