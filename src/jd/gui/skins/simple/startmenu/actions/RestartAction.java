@@ -24,6 +24,7 @@ public class RestartAction extends StartAction {
             doIt = true;
         }
         if (doIt) {
+            SimpleGUI.CURRENTGUI.getContentPane().getRightPanel().onHide();
             SimpleGuiUtils.saveLastLocation(SimpleGUI.CURRENTGUI, null);
             SimpleGuiUtils.saveLastDimension(SimpleGUI.CURRENTGUI, null);
             SimpleGuiConstants.GUI_CONFIG.save();

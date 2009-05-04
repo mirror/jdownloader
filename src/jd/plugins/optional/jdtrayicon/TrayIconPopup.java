@@ -351,6 +351,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             new WebUpdate().doWebupdate(true);
             break;
         case TrayIconPopup.ACTION_EXIT:
+            SimpleGUI.CURRENTGUI.getContentPane().getRightPanel().onHide();
             JDUtilities.getController().exit();
             break;
         case TrayIconPopup.ACTION_TOGGLE_PREMIUM:
