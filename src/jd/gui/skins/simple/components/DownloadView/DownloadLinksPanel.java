@@ -76,7 +76,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     private int job_ID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
     private ArrayList<DownloadLink> job_links = new ArrayList<DownloadLink>();
 
-    private boolean lastSort = false;
+    private boolean lastSort = true;
 
     protected Logger logger = jd.controlling.JDLogger.getLogger();
 

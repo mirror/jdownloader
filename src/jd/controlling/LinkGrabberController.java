@@ -33,7 +33,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     protected static Vector<LinkGrabberFilePackage> publicpackages = new Vector<LinkGrabberFilePackage>();
 
     private static LinkGrabberController INSTANCE = null;
-    private boolean lastSort = false;
+    private boolean lastSort = true;
 
     private String PACKAGENAME_UNSORTED;
     private String PACKAGENAME_UNCHECKED;
