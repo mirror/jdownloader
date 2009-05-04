@@ -39,6 +39,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
 import jd.http.requests.Request;
@@ -516,7 +517,7 @@ abstract public class DownloadInterface {
             maxspeed *= TIME_BASE / 1000;
             long max = Math.max(MIN_BUFFERSIZE, maxspeed);
             long bufferSize = Math.min(MAX_BUFFERSIZE, max);
-            // logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+
+            //logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+
             // max);
             bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
             if (speedDebug) {
@@ -975,6 +976,8 @@ abstract public class DownloadInterface {
 
     private boolean resume = false;
 
+    private boolean fixWrongContentDispositionHeader = false;
+
     protected boolean speedDebug = false;
 
     protected long totaleLinkBytesLoaded = 0;
@@ -1015,6 +1018,14 @@ abstract public class DownloadInterface {
     // }
     //
     // }
+
+    public void setFilenameFix(boolean b) {
+        this.fixWrongContentDispositionHeader = b;
+    }
+
+    public boolean fixFilename() {
+        return this.fixWrongContentDispositionHeader;
+    }
 
     private DownloadInterface(PluginForHost plugin, DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
@@ -1087,6 +1098,7 @@ abstract public class DownloadInterface {
         if (this.downloadLink.getFinalFileName() == null) {
             String name = Plugin.getFileNameFormHeader(request.getHttpConnection());
             this.downloadLink.setFinalFileName(name);
+            if (this.fixWrongContentDispositionHeader) this.downloadLink.setFinalFileName(Encoding.htmlDecode(name));
         }
         String range = request.getHttpConnection().getHeaderField("Content-Range");
         String length = new Regex(range, ".*?\\/(\\d+)").getMatch(0);
@@ -1730,6 +1742,7 @@ abstract public class DownloadInterface {
         if (this.downloadLink.getFinalFileName() == null && connection != null && connection.isContentDisposition()) {
             String name = Plugin.getFileNameFormHeader(connection);
             this.downloadLink.setFinalFileName(name);
+            if (this.fixWrongContentDispositionHeader) this.downloadLink.setFinalFileName(Encoding.htmlDecode(name));
         }
         downloadLink.getLinkStatus().setStatusText(null);
         if (connection == null || !connection.isOK()) {

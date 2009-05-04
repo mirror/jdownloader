@@ -80,7 +80,7 @@ public class HTTPAllgemein extends PluginForHost {
             basicauth = (String) downloadLink.getProperty("pass", null);
             if (basicauth != null) basicauth = "Basic " + Encoding.Base64Encode(basicauth);
         }
-        if (basicauth != null) {
+        if (basicauth != null) {            
             br.getHeaders().put("Authorization", basicauth);
         }
         br.setFollowRedirects(true);
