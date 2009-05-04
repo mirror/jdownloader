@@ -223,7 +223,7 @@ public class JAntiCaptcha {
             }
 
         });
-        ScrollPaneWindow w = new ScrollPaneWindow(jac);
+        ScrollPaneWindow w = new ScrollPaneWindow();
         w.setTitle(" Test Captchas: " + file.getAbsolutePath());
 
         w.resizeWindow(100);
@@ -1010,7 +1010,7 @@ public class JAntiCaptcha {
             LetterComperator lc;
             ScrollPaneWindow w = null;
             if (isShowDebugGui()) {
-                w = new ScrollPaneWindow(this);
+                w = new ScrollPaneWindow();
 
                 w.setTitle(" Letter " + letter.getId());
             }
@@ -1202,7 +1202,7 @@ public class JAntiCaptcha {
 
             ScrollPaneWindow w = null;
             if (isShowDebugGui()) {
-                w = new ScrollPaneWindow(this);
+                w = new ScrollPaneWindow();
 
                 w.setTitle(" Letter " + letter.getId());
             }

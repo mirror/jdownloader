@@ -34,26 +34,20 @@ import javax.swing.SwingUtilities;
 public class ScrollPaneWindow extends BasicWindow {
 
     private static final long serialVersionUID = 4174011156785741071L;
-    private JPanel panel;
-    public JScrollPane scrollPane;
 
-    /**
-     * @param owner
-     */
-    public ScrollPaneWindow(Object owner) {
-        super(owner);
+    private JPanel panel;
+
+    public ScrollPaneWindow() {
+        super();
         panel = new JPanel();
-        setLayout(new BorderLayout());
         panel.setLayout(new GridBagLayout());
-        scrollPane = new JScrollPane(panel);
-        this.add(scrollPane, BorderLayout.CENTER);
+        setLayout(new BorderLayout());
+        add(new JScrollPane(panel), BorderLayout.CENTER);
         setSize(200, 200);
         setLocation(0, 0);
         setTitle("new ScrollPaneWindow");
+        refreshUI();
         setVisible(true);
-        pack();
-        repack();
-
     }
 
     /**
@@ -63,13 +57,12 @@ public class ScrollPaneWindow extends BasicWindow {
      * @param y
      * @param cmp
      */
-    //@Override
+    // @Override
     public void setComponent(final int x, final int y, final Component cmp) {
-        if (cmp == null) { return; }
+        if (cmp == null) return;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 panel.add(cmp, getGBC(x, y, 1, 1));
-
             }
         });
     }
@@ -81,15 +74,10 @@ public class ScrollPaneWindow extends BasicWindow {
      * @param y
      * @param img
      */
-    //@Override
+    // @Override
     public void setImage(final int x, final int y, final Image img) {
-        if (img == null) { return; }
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                panel.add(new ImageComponent(img), getGBC(x, y, 1, 1));
-
-            }
-        });
+        if (img == null) return;
+        setComponent(x, y, new ImageComponent(img));
     }
 
     /**
@@ -99,21 +87,10 @@ public class ScrollPaneWindow extends BasicWindow {
      * @param y
      * @param cmp
      */
-    //@Override
+    // @Override
     public void setText(final int x, final int y, final Object cmp) {
-        if (cmp == null) { return;
-        // final ScrollPaneWindow _this=this;
-        }
-
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                JTextField tf = new JTextField();
-                tf.setText(cmp.toString());
-                panel.add(tf, getGBC(x, y, 1, 1));
-                ;
-            }
-        });
-
+        if (cmp == null) return;
+        setComponent(x, y, new JTextField(cmp.toString()));
     }
 
 }

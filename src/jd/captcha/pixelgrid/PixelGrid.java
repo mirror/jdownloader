@@ -1157,7 +1157,7 @@ public class PixelGrid extends Property {
         boolean showdebug = false;
         ScrollPaneWindow w = null;
         if (showdebug) {
-            w = new ScrollPaneWindow(owner);
+            w = new ScrollPaneWindow();
         }
         if (showdebug) {
             w.setTitle("getObjects2");
