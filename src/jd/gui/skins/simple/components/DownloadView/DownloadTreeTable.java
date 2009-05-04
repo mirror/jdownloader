@@ -127,8 +127,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             // setDropMode(DropMode.ON_OR_INSERT_ROWS); /*muss noch geschaut
             // werden wie man das genau macht*/
             setDropMode(DropMode.USE_SELECTION);
-        } else {
-            setDropMode(DropMode.USE_SELECTION);
         }
         setDragEnabled(true);
         setTransferHandler(new TreeTableTransferHandler(this));
@@ -440,12 +438,12 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         int row = rowAtPoint(point);
         int col = getRealcolumnAtPoint(e.getX());
         JMenuItem tmp;
-        
+
         if (getPathForRow(row) == null) {
-            getTreeSelectionModel().clearSelection();            
+            getTreeSelectionModel().clearSelection();
             return;
         }
-        
+
         if (!isRowSelected(row) && e.getButton() == MouseEvent.BUTTON3) {
             getTreeSelectionModel().clearSelection();
             getTreeSelectionModel().addSelectionPath(getPathForRow(row));

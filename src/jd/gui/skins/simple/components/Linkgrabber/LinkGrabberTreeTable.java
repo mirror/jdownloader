@@ -103,8 +103,6 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
             // setDropMode(DropMode.ON_OR_INSERT_ROWS); /*muss noch geschaut
             // werden wie man das genau macht*/
             setDropMode(DropMode.USE_SELECTION);
-        } else {
-            setDropMode(DropMode.USE_SELECTION);
         }
         setDragEnabled(true);
         setTransferHandler(new LinkGrabberTreeTableTransferHandler(this));
@@ -324,7 +322,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
             }
             return;
         }
-        
+
         if (!isRowSelected(row) && e.getButton() == MouseEvent.BUTTON3) {
             getTreeSelectionModel().clearSelection();
             getTreeSelectionModel().addSelectionPath(getPathForRow(row));
