@@ -40,8 +40,8 @@ public class HotFileCom extends PluginForHost {
     public boolean getFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
-        String filename = br.getRegex("Downloading(.*?)\\(.*?\\)</h2>").getMatch(0);
-        String filesize = br.getRegex("Downloading.*?\\((.*?)\\)</h2>").getMatch(0);
+        String filename = br.getRegex("Downloading(.*?)\\([^\\s]*\\)</h2>").getMatch(0);
+        String filesize = br.getRegex("Downloading.*?\\(([^\\s]*)\\)</h2>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.trim()));
