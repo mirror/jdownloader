@@ -110,7 +110,11 @@ public class BluehostTo extends PluginForHost {
         Form form = br.getForm(1);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        br.openDownload(downloadLink, form);
+        dl = br.openDownload(downloadLink, form);
+        if (!dl.getConnection().isContentDisposition()) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP already loading", 5 * 60 * 1000l);
+        }
         dl.startDownload();
     }
 
