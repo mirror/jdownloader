@@ -449,6 +449,7 @@ public class JDInit {
         new DecryptPluginWrapper("superuploader.net", "SuperUploaderNet", "http://[\\w\\.]*?superuploader\\.net/.*?\\.html");
         new DecryptPluginWrapper("easy-share.com", "EasyShareFolder", "http://[\\w\\.]*?easy-share\\.com/f/\\d+/");
         new DecryptPluginWrapper("mp3link.org", "Mp3LinkOrg", "http://[\\w\\.]*?mp3link\\.org/.*?/(song|album).+");
+        new DecryptPluginWrapper("4shared.com", "FourSharedFolder", "http://[\\w\\.]*?4shared.com/dir/\\d+/[a-zA-Z0-9]+/?");
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
 
@@ -587,10 +588,9 @@ public class JDInit {
         new HostPluginWrapper("LeteckaPosta.cz", "LeteckaPostaCz", "http://[\\w\\.]*?leteckaposta\\.cz/[0-9]+.");
         new HostPluginWrapper("ShareGadget.com", "ShareGadgetCom", "http://[\\w\\.]*?sharegadget\\.com/[0-9]+.");
         new HostPluginWrapper("Uptal.com", "UptalCom", "http://[\\w\\.]*?uptal\\.com/\\?d=[A-Fa-f0-9]+");
-        new HostPluginWrapper("IFile.it", "IFileIt", "http://[\\w\\.]*?ifile\\.it/[A-Za-z0-9]+.*");
-        new HostPluginWrapper("Mihd.net", "IFileIt", "http://[\\w\\.]*?mihd\\.net/[A-Za-z0-9]+.*");
-        new HostPluginWrapper("BitRoad.net", "BitRoadNet", "http://[\\w\\.]*?bitroad\\.net/download/[A-Fa-f0-9]+/.*");
-
+        new HostPluginWrapper("IFile.it", "IFileIt", "http://[\\w\\.]*?ifile\\.it/[A-Za-z0-9]+/?");
+        new HostPluginWrapper("Mihd.net", "IFileIt", "http://[\\w\\.]*?mihd\\.net/[A-Za-z0-9]+/?");
+        new HostPluginWrapper("BitRoad.net", "BitRoadNet", "http://[\\w\\.]*?bitroad\\.net/download/[A-Fa-f0-9]+/.*?\\.html");
 
         // Hoster from Extern
         new HostPluginWrapper("iFolder.ru", "IfolderRu", "http://[\\w\\.]*?ifolder\\.ru/\\d+");

@@ -81,9 +81,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     }
 
     void start() {
-        synchronized (stopMark) {
-            if (stopMark == hiddenstopMark) setStopMark(nostopMark);
-        }
+        stopMark = nostopMark;
         startWatchDogThread();
     }
 
