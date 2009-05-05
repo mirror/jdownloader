@@ -31,19 +31,19 @@ public class FalinksCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         try {
             br.getPage(parameter);
-            String pw = br.getRegex("</form>\npw: (.*?)\n.*?</td>").getMatch(0);
+            String pw = br.getRegex("<b>Passwort =(.*?)</b>").getMatch(0);
             String[] links = br.getRegex("\\<input type=\"hidden\" name=\"url\" value=\"(.*?)\" \\/\\>").getColumn(0);
             progress.setRange(links.length);
             for (String link : links) {
                 DownloadLink dlLink = createDownloadlink(link);
-                dlLink.addSourcePluginPassword(pw);
+                if (pw != null) dlLink.addSourcePluginPassword(pw.trim());
                 decryptedLinks.add(dlLink);
                 progress.increase(1);
             }
@@ -54,7 +54,7 @@ public class FalinksCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
