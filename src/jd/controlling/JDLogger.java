@@ -27,7 +27,7 @@ public class JDLogger {
             console = new ConsoleHandler();
             console.setLevel(Level.ALL);
             console.setFormatter(formatter);
-            LOGGER.addHandler(console);
+            LOGGER.addHandler(console);            
 
             LOGGER.setLevel(Level.ALL);
             LOGGER.addHandler(JDLogHandler.getHandler());

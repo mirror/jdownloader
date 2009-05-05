@@ -24,7 +24,7 @@ import jd.controlling.JDLogger;
 
 public class Cookie {
 
-    private static final String[] dateformats = new String[] { "EEE, dd-MMM-yyyy hh:mm:ss z", "EEE, dd MMM yyyy hh:mm:ss z", "EEE MMM dd hh:mm:ss z yyyy", "EEE, dd-MMM-yyyy hh:mm:ss z", "EEEE, dd-MMM-yy hh:mm:ss z" };
+    private static final String[] dateformats = new String[] { "EEE, dd-MMM-yyyy HH:mm:ss z", "EEE, dd MMM yyyy HH:mm:ss z", "EEE MMM dd HH:mm:ss z yyyy", "EEE, dd-MMM-yyyy HH:mm:ss z", "EEEE, dd-MMM-yy HH:mm:ss z" };
 
     private String path;
     private String host;
@@ -68,6 +68,7 @@ public class Cookie {
                 expireDate = sdf.parse(expires);
                 break;
             } catch (Exception e2) {
+                e2.printStackTrace();
             }
         }
         if (expireDate != null) {
@@ -75,7 +76,7 @@ public class Cookie {
             return;
         }
         this.expireTime = -1;
-        JDLogger.getLogger().warning("Cookie: no Format for " + expires + " found!");
+        JDLogger.getLogger().severe("Cookie: no Format for " + expires + " found!");
         return;
     }
 
@@ -98,7 +99,7 @@ public class Cookie {
             return false;
         }
         if (this.hostTime == -1) {
-            JDLogger.getLogger().warning("Cookie: no HostTime found! ExpireStatus cannot be checked " + this.host + " " + this.key);
+            JDLogger.getLogger().severe("Cookie: no HostTime found! ExpireStatus cannot be checked " + this.host + " " + this.key);
             return false;
         } else {
             long check = (System.currentTimeMillis() - this.creationTime) + this.hostTime;
@@ -143,7 +144,7 @@ public class Cookie {
             return;
         }
         this.hostTime = -1;
-        JDLogger.getLogger().warning("Cookie: no Format for " + Date + " found!");
+        JDLogger.getLogger().severe("Cookie: no Format for " + Date + " found!");
         return;
     }
 

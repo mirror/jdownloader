@@ -43,8 +43,7 @@ public class RemixShareCom extends PluginForHost {
     // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://remixshare.com", "lang_en", "english");
-        br.forceDebug(true);
+        br.setCookie("http://remixshare.com", "lang_en", "english");        
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());        
         br.setFollowRedirects(false);
