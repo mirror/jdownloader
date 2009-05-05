@@ -46,7 +46,7 @@ public class RemixShareCom extends PluginForHost {
         br.setCookie("http://remixshare.com", "lang_en", "english");
         br.forceDebug(true);
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(downloadLink.getDownloadURL());        
         br.setFollowRedirects(false);
         if (br.containsHTML("Error Code: 600")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("Download:</span>&nbsp;<span class='title_darkgrey' title='.*?'>(.*?)<", Pattern.CASE_INSENSITIVE)).getMatch(0));

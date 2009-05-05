@@ -300,8 +300,6 @@ public class Browser {
             throw new IOException("requestIntervalTime Exception");
         }
 
-        ;
-
         assignURLToBrowserInstance(request.getJDPUrl(), this);
         request.connect();
         assignURLToBrowserInstance(request.getHttpConnection().getURL(), null);

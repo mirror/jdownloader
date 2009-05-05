@@ -411,15 +411,13 @@ public abstract class Request {
     private void initDefaultHeader() {
 
         headers = new RequestHeader();
-        headers.put("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.4) Gecko/2008111317 Ubuntu/8.04 (hardy) Firefox/3.0.4");
+        headers.put("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042513 Ubuntu/8.04 (hardy) Firefox/3.0.10");
         headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         headers.put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
         headers.put("Accept-Encoding", "gzip,deflate");
         headers.put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-        headers.put("Pragma", "no-cache");
 
         headers.put("Cache-Control", "no-cache");
-
         headers.put("Pragma", "no-cache");
         headers.put("Connection", "close");
 
