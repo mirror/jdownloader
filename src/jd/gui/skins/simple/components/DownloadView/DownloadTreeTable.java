@@ -473,7 +473,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
             if (obj instanceof FilePackage || obj instanceof DownloadLink) {
                 popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.stopsign", 16, 16), JDLocale.L("gui.table.contextmenu.stopmark", "Stop sign"), TreeTableAction.STOP_MARK, new Property("item", obj))));
-                if (!DownloadWatchDog.getInstance().isStopMark(obj)) tmp.setIcon(tmp.getDisabledIcon());
+                if (DownloadWatchDog.getInstance().isStopMark(obj)) tmp.setIcon(tmp.getDisabledIcon());
                 popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TreeTableAction.DELETE, new Property("links", alllinks))));
 
                 popup.add(new JSeparator());

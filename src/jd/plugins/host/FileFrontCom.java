@@ -29,37 +29,38 @@ public class FileFrontCom extends PluginForHost {
 
     public FileFrontCom(PluginWrapper wrapper) {
         super(wrapper);
-        //this.setStartIntervall(5000l);
+        // this.setStartIntervall(5000l);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://aup.legal.filefront.com/";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.setDebug(true);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Error 404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Filename</th>\\s+<td[^>]*>(.*?)</td>").getMatch(0);
         String filesize = br.getRegex("Size</th>\\s+<td[^>]*>(.*?)\\s\\(").getMatch(0);
-        br.toString();
-        //System.out.println(filename+" "+filesize);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
+        br.setFollowRedirects(true);
         String nextpageurl = br.getRegex("POST\\sDOWNLOAD\\sPAGE.\\s-->\\s+<a href=\"(.*?)\"").getMatch(0);
         if (nextpageurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.getPage(nextpageurl);
@@ -71,22 +72,22 @@ public class FileFrontCom extends PluginForHost {
 
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

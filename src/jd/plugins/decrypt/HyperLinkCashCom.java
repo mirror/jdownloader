@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -30,17 +31,23 @@ public class HyperLinkCashCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getPage(parameter); 
+        br.getPage(parameter);
         String dlink = br.getRegex("<td>\\s+<center>\\s+<a href=\"(.*?)\"").getMatch(0);
+        if (dlink == null) {
+            Form form = br.getForm(0);
+            br.submitForm(form);
+            dlink = br.getRegex("<td>\\s+<center>\\s+<a href=\"(.*?)\"").getMatch(0);
+            if (dlink == null) return null;
+        }
         decryptedLinks.add(createDownloadlink(dlink));
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

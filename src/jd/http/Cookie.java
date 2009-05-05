@@ -24,7 +24,7 @@ import jd.controlling.JDLogger;
 
 public class Cookie {
 
-    private static final String[] dateformats = new String[] { "EEE, dd-MMM-yyyy hh:mm:ss z", "EEE, dd MMM yyyy hh:mm:ss z", "EEE MMM dd hh:mm:ss z yyyy", "EEE, dd-MMM-yyyy hh:mm:ss z" };
+    private static final String[] dateformats = new String[] { "EEE, dd-MMM-yyyy hh:mm:ss z", "EEE, dd MMM yyyy hh:mm:ss z", "EEE MMM dd hh:mm:ss z yyyy", "EEE, dd-MMM-yyyy hh:mm:ss z", "EEEE, dd-MMM-yy hh:mm:ss z" };
 
     private String path;
     private String host;
@@ -63,7 +63,9 @@ public class Cookie {
         Date expireDate = null;
         for (String format : dateformats) {
             try {
-                expireDate = new SimpleDateFormat(format, Locale.UK).parse(expires);
+                SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.UK);
+                sdf.setLenient(false);
+                expireDate = sdf.parse(expires);
                 break;
             } catch (Exception e2) {
             }
@@ -129,7 +131,9 @@ public class Cookie {
         Date ResponseDate = null;
         for (String format : dateformats) {
             try {
-                ResponseDate = new SimpleDateFormat(format, Locale.UK).parse(Date);
+                SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.UK);
+                sdf.setLenient(false);
+                ResponseDate = sdf.parse(Date);
                 break;
             } catch (Exception e2) {
             }

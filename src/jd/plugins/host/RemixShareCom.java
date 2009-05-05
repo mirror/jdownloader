@@ -35,20 +35,21 @@ public class RemixShareCom extends PluginForHost {
         this.setStartIntervall(500l);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://remixshare.com/information/";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.setCookie("http://remixshare.com", "lang_en", "english");
         br.forceDebug(true);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
         if (br.containsHTML("Error Code: 600")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("Download:</span>&nbsp;<span[^>]*>(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("Download:</span>&nbsp;<span class='title_darkgrey' title='.*?'>(.*?)<", Pattern.CASE_INSENSITIVE)).getMatch(0));
         String filesize = br.getRegex("</span></td><td[^>]*>(.*?)\\|").getMatch(0);
         if (filename == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
@@ -57,12 +58,12 @@ public class RemixShareCom extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         Form down = br.getFormbyProperty("name", "downform");
@@ -76,22 +77,22 @@ public class RemixShareCom extends PluginForHost {
 
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

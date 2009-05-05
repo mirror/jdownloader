@@ -50,7 +50,7 @@ public class Form extends Property {
 
     private String htmlcode = null;
 
-    private MethodType method;
+    private MethodType method=MethodType.GET;
 
     private String encoding;
 
