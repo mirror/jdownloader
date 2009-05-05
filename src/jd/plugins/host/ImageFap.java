@@ -25,7 +25,6 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -110,6 +109,7 @@ public class ImageFap extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
+        String pfilename = downloadLink.getName();
         br.getPage(downloadLink.getDownloadURL());
         br.setDebug(true);
         String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
@@ -122,14 +122,15 @@ public class ImageFap extends PluginForHost {
         /* DownloadLink holen */
         String imagelink = DecryptLink(new Regex(br, Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
 
-        String filename = Plugin.extractFileNameFromURL(imagelink);
-        downloadLink.setFinalFileName(filename);
+        // String filename = Plugin.extractFileNameFromURL(imagelink);
+        // downloadLink.setFinalFileName(filename);
         if (gallery_name != null) downloadLink.addSubdirectory(gallery_name);
         dl = br.openDownload(downloadLink, imagelink);
         if (dl.getConnection().getResponseCode() == 404) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        downloadLink.setFinalFileName(pfilename);
         dl.startDownload();
     }
 
