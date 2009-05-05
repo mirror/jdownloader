@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -51,7 +52,7 @@ public class BluehostTo extends PluginForHost {
 
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -68,7 +69,7 @@ public class BluehostTo extends PluginForHost {
         return ai;
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         this.setBrowserExclusive();
         getFileInformation(downloadLink);
@@ -93,7 +94,7 @@ public class BluehostTo extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         getFileInformation(downloadLink);
@@ -102,23 +103,23 @@ public class BluehostTo extends PluginForHost {
         String[] dat = page.split("\\, ");
         int time = Integer.parseInt(dat[4]);
         if (time > 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.bluehostto.time", "BH free only allowed from 0 PM to 10 AM"), time * 1000l);
-
+        br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
-        String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"1\\; URL=(.*?)\" />").getMatch(0);
-        br.getPage(redirect);
-        br.clearCookies("bluehost.to");
-        br.submitForm(br.getForm(1));
+        this.sleep(2000, downloadLink);
         br.getPage(downloadLink.getDownloadURL());
-        br.openDownload(downloadLink, br.getForm(1));
+        Form form = br.getForm(1);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.setFollowRedirects(true);
+        br.openDownload(downloadLink, form);
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://bluehost.to/agb.php";
     }
 
-    //@Override
+    // @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null) return false;
 
@@ -159,7 +160,7 @@ public class BluehostTo extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         correctUrl(downloadLink);
         // dateiname, dateihash, dateisize, dateidownloads, zeit bis HH
@@ -179,25 +180,25 @@ public class BluehostTo extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 
