@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Vector;
 
 import jd.PluginWrapper;
@@ -63,12 +64,12 @@ public class ProtectorTO extends PluginForDecrypt {
          * String link = "dlc://protector.to/container/" + currentDate + "/" +
          * folderID + "_1.dlc"; decryptedLinks.add(createDownloadlink(link));
          */
-        synchronized (lock) {
+        synchronized (lock) {            
             if (param.getStringProperty("referer", null) != null) {
                 br.getHeaders().put("Referer", param.getStringProperty("referer", null));
             }
             if (param.getProperty("protector_cookies", null) != null) {
-                br.getCookies().putAll((HashMap<String, HashMap<String, Cookie>>) param.getProperty("protector_cookies", null));
+                br.getCookies().putAll((HashMap<String,LinkedHashMap<String, Cookie>>) param.getProperty("protector_cookies", null));
             }
             br.getPage(parameter + "?jd=1");
             if (br.getRedirectLocation() != null) {

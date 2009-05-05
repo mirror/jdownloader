@@ -211,8 +211,7 @@ public abstract class Request {
             String header = cookieHeaders.get(i);
 
             cookies.addAll(parseCookies(header, host, Date));
-        }
-
+        }        
     }
 
     public Request connect() throws IOException {
@@ -417,8 +416,8 @@ public abstract class Request {
         headers.put("Accept-Encoding", "gzip,deflate");
         headers.put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
 
-        headers.put("Cache-Control", "no-cache");
-        headers.put("Pragma", "no-cache");
+        //headers.put("Cache-Control", "no-cache");
+        //headers.put("Pragma", "no-cache");
         headers.put("Connection", "close");
 
     }

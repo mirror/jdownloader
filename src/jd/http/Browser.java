@@ -31,6 +31,7 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -82,8 +83,8 @@ public class Browser {
         return GLOBAL_PROXY;
     }
 
-    private static HashMap<String, HashMap<String, Cookie>> COOKIES = new HashMap<String, HashMap<String, Cookie>>();
-    private HashMap<String, HashMap<String, Cookie>> cookies = new HashMap<String, HashMap<String, Cookie>>();
+    private static HashMap<String, LinkedHashMap<String, Cookie>> COOKIES = new HashMap<String, LinkedHashMap<String, Cookie>>();
+    private HashMap<String, LinkedHashMap<String, Cookie>> cookies = new HashMap<String, LinkedHashMap<String, Cookie>>();
 
     private boolean debug = false;
 
@@ -112,7 +113,7 @@ public class Browser {
     public void forwardCookies(Request request) throws MalformedURLException {
         if (request == null) { return; }
         String host = Browser.getHost(request.getUrl());
-        HashMap<String, Cookie> cookies = getCookies().get(host);
+        LinkedHashMap<String, Cookie> cookies = getCookies().get(host);
         if (cookies == null) { return; }
 
         for (Iterator<Entry<String, Cookie>> it = cookies.entrySet().iterator(); it.hasNext();) {
@@ -147,7 +148,7 @@ public class Browser {
             return null;
     }
 
-    public HashMap<String, HashMap<String, Cookie>> getCookies() {
+    public HashMap<String, LinkedHashMap<String, Cookie>> getCookies() {
 
         if (this.cookiesExclusive) return cookies;
         return COOKIES;
@@ -157,9 +158,9 @@ public class Browser {
         String host;
 
         host = Browser.getHost(url);
-        HashMap<String, Cookie> cookies;
+        LinkedHashMap<String, Cookie> cookies;
         if (!getCookies().containsKey(host) || (cookies = getCookies().get(host)) == null) {
-            cookies = new HashMap<String, Cookie>();
+            cookies = new LinkedHashMap<String, Cookie>();
             getCookies().put(host, cookies);
         }
 
@@ -186,9 +187,9 @@ public class Browser {
     public void updateCookies(Request request) throws MalformedURLException {
         if (request == null) { return; }
         String host = Browser.getHost(request.getUrl());
-        HashMap<String, Cookie> cookies = getCookies().get(host);
+        LinkedHashMap<String, Cookie> cookies = getCookies().get(host);
         if (cookies == null) {
-            cookies = new HashMap<String, Cookie>();
+            cookies = new LinkedHashMap<String, Cookie>();
             getCookies().put(host, cookies);
         }
         for (Cookie cookie : request.getCookies()) {
@@ -1077,10 +1078,10 @@ public class Browser {
         if (b) {
             this.cookies.clear();
 
-            for (Iterator<Entry<String, HashMap<String, Cookie>>> it = COOKIES.entrySet().iterator(); it.hasNext();) {
-                Entry<String, HashMap<String, Cookie>> next = it.next();
-                HashMap<String, Cookie> tmp;
-                cookies.put(next.getKey(), tmp = new HashMap<String, Cookie>());
+            for (Iterator<Entry<String, LinkedHashMap<String, Cookie>>> it = COOKIES.entrySet().iterator(); it.hasNext();) {
+                Entry<String, LinkedHashMap<String, Cookie>> next = it.next();
+                LinkedHashMap<String, Cookie> tmp;
+                cookies.put(next.getKey(), tmp = new LinkedHashMap<String, Cookie>());
                 tmp.putAll(next.getValue());
 
             }
