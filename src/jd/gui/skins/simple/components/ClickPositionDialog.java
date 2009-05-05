@@ -39,6 +39,7 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import jd.controlling.JDLogger;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.nutils.Formatter;
 import jd.nutils.Screen;
 import jd.utils.JDLocale;
@@ -68,7 +69,13 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
 
     public static ClickPositionDialog show(final Frame owner, final File image, final String title, final String msg, final int countdown, final Point defaultResult) {
         synchronized (JDUtilities.userio_lock) {
-            return new ClickPositionDialog(owner, image, title, msg, countdown, defaultResult);
+            GuiRunnable<ClickPositionDialog> run = new GuiRunnable<ClickPositionDialog>() {
+                // @Override
+                public ClickPositionDialog runSave() {
+                    return new ClickPositionDialog(owner, image, title, msg, countdown, defaultResult);
+                }
+            };
+            return run.getReturnValue();
         }
     }
 
@@ -80,7 +87,7 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
 
         countdownThread = new Thread() {
 
-            //@Override
+            // @Override
             public void run() {
 
                 while (!isVisible() && isDisplayable()) {

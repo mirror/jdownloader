@@ -40,13 +40,13 @@ public class Charts4You extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         br.getPage(parameter);
-
+        if (br.containsHTML("Es existiert kein Eintrag")) return decryptedLinks;
         File file = this.getLocalCaptchaFile(this);
         String name = br.getRegex("Details zum Download von (.*?) \\- Charts4you").getMatch(0);
         String pass = br.getRegex(Pattern.compile("Passwort.*?</td>.*?<input type=\"text\" value=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
@@ -60,7 +60,7 @@ public class Charts4You extends PluginForDecrypt {
         form.put("button.x", p.x + "");
         form.put("button.y", p.y + "");
         br.submitForm(form);
-        String[] links = br.getRegex("url=(.*?)\"").getColumn(0);
+        String[] links = br.getRegex("out/\\?url=(.*?)\"").getColumn(0);
         FilePackage fp = FilePackage.getInstance();
         fp.setName(name);
         for (String link2 : links) {
@@ -72,7 +72,7 @@ public class Charts4You extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
