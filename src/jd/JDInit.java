@@ -451,6 +451,7 @@ public class JDInit {
         new DecryptPluginWrapper("Hex.io", "HexIo", "http://[\\w\\.]*?hex\\.io/[a-zA-Z0-9]+");
         new DecryptPluginWrapper("HyperLinkCash.com", "HyperLinkCashCom", "http://[\\w\\.]*?hyperlinkcash\\.com/link\\.php\\?r=[a-zA-Z0-9%]+(&k=[a-zA-Z0-9%]+)?");
         new DecryptPluginWrapper("rom-news.org", "RomNewsOrg", "http://[\\w\\.]*?download\\.rom-news\\.org/[a-zA-Z0-9]+");
+        new DecryptPluginWrapper("quicklink.me", "QuickLinkMe", "http://[\\w\\.]*?quicklink\\.me/\\?l=[a-zA-Z0-9]+");
 
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");

@@ -340,7 +340,10 @@ public class Rapidshare extends PluginForHost {
             // Fehlerbehandlung auf der ersten Seite
             if (freeOrPremiumSelectPostURL == null) {
                 String error = null;
-                if ((error = findError(br + "")) != null) { throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error)); }
+                if ((error = findError(br + "")) != null) {
+                    if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
+                    throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
+                }
                 reportUnknownError(br, 1);
                 logger.warning("could not get newURL");
                 throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -586,7 +589,10 @@ public class Rapidshare extends PluginForHost {
                 freeOrPremiumSelectPostURL = new Regex(br, PATTERN_FIND_MIRROR_URL).getMatch(0);
                 // Fehlerbehandlung auf der ersten Seite
                 if (freeOrPremiumSelectPostURL == null) {
-                    if ((error = findError(br + "")) != null) { throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error)); }
+                    if ((error = findError(br + "")) != null) {
+                        if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
+                        throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
+                    }
                     reportUnknownError(br, 1);
                     logger.warning("could not get newURL");
                     throw new PluginException(LinkStatus.ERROR_RETRY);
