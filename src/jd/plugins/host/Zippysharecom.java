@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -61,12 +62,24 @@ public class Zippysharecom extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String linkurl = new Regex(br, Pattern.compile("'(http.*?www.*?zippyshare\\.com.*?)';", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
-        String downloadURL = Encoding.htmlDecode(linkurl);
-        sleep(10000l, downloadLink);
+        String[] linkurls = new Regex(br, Pattern.compile("'(http.*?www.*?zippyshare\\.com.*?)';", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        if (linkurls == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         br.setFollowRedirects(true);
+        String downloadURL=null;
+        for(int i=0;i<linkurls.length;i++)
+        {
+            downloadURL = Encoding.htmlDecode(linkurls[i]);
+            URLConnectionAdapter con = br.openGetConnection(downloadURL);
+            if (!con.isContentDisposition()) {
+                con.disconnect();
+            }else
+            {
+                con.disconnect();
+                break;
+            }
+        }
         dl = br.openDownload(downloadLink, downloadURL);
+        sleep(10000l, downloadLink);
         dl.startDownload();
     }
 
