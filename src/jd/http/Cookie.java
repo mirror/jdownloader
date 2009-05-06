@@ -67,8 +67,7 @@ public class Cookie {
                 sdf.setLenient(false);
                 expireDate = sdf.parse(expires);
                 break;
-            } catch (Exception e2) {
-                e2.printStackTrace();
+            } catch (Exception e2) {                
             }
         }
         if (expireDate != null) {

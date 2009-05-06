@@ -269,9 +269,11 @@ public class DistributeData extends Thread {
         ArrayList<HostPluginWrapper> pHostAll = JDUtilities.getPluginsForHost();
         for (DownloadLink decrypted : alldecrypted) {
             if (!checkdecrypted(pHostAll, foundPasswords, links, decrypted)) {
-                decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("http://", "httpviajd://"));
-                decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("https://", "httpsviajd://"));
-                checkdecrypted(pHostAll, foundPasswords, links, decrypted);
+                if (decrypted.getDownloadURL() != null) {
+                    decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("http://", "httpviajd://"));
+                    decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("https://", "httpsviajd://"));
+                    checkdecrypted(pHostAll, foundPasswords, links, decrypted);
+                }
             }
         }
         // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die

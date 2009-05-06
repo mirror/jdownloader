@@ -50,7 +50,7 @@ public class Form extends Property {
 
     private String htmlcode = null;
 
-    private MethodType method=MethodType.GET;
+    private MethodType method = MethodType.GET;
 
     private String encoding;
 
@@ -173,7 +173,9 @@ public class Form extends Property {
     // try {
     // if (submit == value || submit.equalsIgnoreCase(value)) return true;
     // } catch (NullPointerException e) {
-    // // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+    // //
+    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,
+    // "Exception occured",e);
     // }
     // }
     // return false;
@@ -189,7 +191,7 @@ public class Form extends Property {
                 baseurl = new URL(baseURL);
             } catch (MalformedURLException e) {
 
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
         }
         String ret = action;
@@ -297,10 +299,13 @@ public class Form extends Property {
      */
     public void remove(String key) {
         for (InputField ipf : this.inputfields) {
+            if (ipf.getKey() == null && key == null) {
+                inputfields.remove(ipf);
+                return;
+            }
             if (ipf.getKey() != null && ipf.getKey().equalsIgnoreCase(key)) {
                 inputfields.remove(ipf);
                 return;
-
             }
         }
     }
