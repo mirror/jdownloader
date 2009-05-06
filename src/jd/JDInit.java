@@ -380,7 +380,6 @@ public class JDInit {
         new DecryptPluginWrapper("rapidshare.mu", "RapidshareMu", "http://[\\w\\.]*?rapidshare.mu/[a-zA-Z0-9]+");
         new DecryptPluginWrapper("Rapidshark.net", "rapidsharknet", "http://[\\w\\.]*?rapidshark\\.net/(safe\\.php\\?id=)?.+");
         new DecryptPluginWrapper("rapidspread.com", "RapidSpreadCom", "http://[\\w\\.]*?rapidspread\\.com/file\\.jsp\\?id=\\w+");
-        new DecryptPluginWrapper("rappers.in", "RappersIn", "http://[\\w\\.]*?rappers\\.in/([\\w-]+|artist\\.php\\?.+)");
         new DecryptPluginWrapper("r-b-a.de", "RbaDe", "http://[\\w\\.]*?r-b-a\\.de/(index\\.php\\?ID=4101&(amp;)?BATTLE=\\d+(&sid=\\w+)?)|http://[\\w\\.]*?r-b-a\\.de/index\\.php\\?ID=4100(&direction=last)?&MEMBER=\\d+(&sid=\\w+)?");
         new DecryptPluginWrapper("Redirect Services", "Redirecter", PluginPattern.decrypterPattern_Redirecter_Plugin());
         new DecryptPluginWrapper("relink.us", "RelinkUs", "http://[\\w\\.]*?relink\\.us\\/(go\\.php\\?id=[a-zA-Z0-9]+|f/[a-zA-Z0-9]+)");
@@ -513,7 +512,6 @@ public class JDInit {
         new HostPluginWrapper("MyVideo.de", "MyVideo", "http://[\\w\\.]*?myvideo.*?\\.llnwd\\.net/d[\\d]+/(movie[\\d]+/.+/|movies/.+/)[\\d]+\\.flv");
         new HostPluginWrapper("OdSiebie.com", "Odsiebiecom", "http://[\\w\\.]*?odsiebie\\.com/(pokaz|pobierz)/\\d+---[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Przeslij.net", "Przeslijnet", "http://www[\\d]?\\.przeslij\\.net/download\\.php\\?file=(.*)");
-        new HostPluginWrapper("Rappers.in", "RappersIn", "(httpRappersIn://[\\w\\.]*?.+)");
         new HostPluginWrapper("R-b-a.De", "RbaDe", "http://[\\w\\.]*?r-b-a\\.de/download\\.php\\?FILE=(\\d+)-(\\d)\\.mp3&PATH=(\\d)");
         new HostPluginWrapper("Roms.Zophar.Net", "RomsZopharNet", "http://[\\w\\.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}");
         new HostPluginWrapper("RomHustler.Net", "RomHustlerNet", "http://[\\w\\.]*?romhustler\\.net/download/.*?/\\d+");
