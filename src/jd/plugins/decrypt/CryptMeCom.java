@@ -16,17 +16,26 @@
 
 package jd.plugins.decrypt;
 
+import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.ClickPositionDialog;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class CryptMeCom extends PluginForDecrypt {
@@ -35,7 +44,7 @@ public class CryptMeCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -65,14 +74,55 @@ public class CryptMeCom extends PluginForDecrypt {
         String folderId = new Regex(parameter, "folder/([a-zA-Z0-9]+)\\.html").getMatch(0);
         int folderSize = br.getRegex("<a onclick=\"return newpopup\\(('.*?', '.*?')\\);\" ").count();
         for (int i = 1; i <= folderSize; i++) {
-            br.getPage("http://crypt-me.com/go.php?id=" + folderId + "&lk=" + i);
-            String encodedLink = br.getRegex("<iframe src=\"http://anonym.to/\\?(.*?)\"").getMatch(0);
-            decryptedLinks.add(createDownloadlink(encodedLink));
+            String url = "http://crypt-me.com/go.php?id=" + folderId + "&lk=" + i;
+            br.getPage(url);
+            File file = this.getLocalCaptchaFile(this);
+            Form form = new Form();
+            form.setAction(url);
+            br.setDebug(true);
+            Browser.download(file, br.cloneBrowser().openGetConnection("http://crypt-me.com/kreiscaptcha.php"));
+            ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, "Captcha", JDLocale.L("plugins.decrypt.charts4you.captcha", "Please click on the Circle with a gap"), 20, null);
+            if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
+            Point p = d.result;
+            form.put("button", "send");
+            form.put("button.x", p.x + "");
+            form.put("button.y", p.y + "");
+            br.submitForm(form);
+            String c = br.getRegex("c=\"(.*?)\"").getMatch(0);
+            String x = br.getRegex("x\\(\"(.*?)\"\\)").getMatch(0);
+            String f = this.decrypt1(c);
+            String dec2 = this.decrypt2(f, x);
+
+//            String encodedLink = br.getRegex("<iframe src=\"http://anonym.to/\\?(.*?)\"").getMatch(0);
+//            decryptedLinks.add(createDownloadlink(encodedLink));
         }
         return decryptedLinks;
     }
 
-    //@Override
+    private String decrypt1(String in) {
+        String ret = "";
+        for (int i = 0; i < in.length(); i++) {
+            if (i % 3 == 0) {
+                ret += "%";
+            } else {
+                ret += in.charAt(i);
+            }
+        }
+        return Encoding.htmlDecode(ret);
+    }
+
+    private String decrypt2(String f, String x) {
+        f = f.replaceAll("document\\.write\\(r\\)", "return r");       
+        Context cx = Context.enter();
+        Scriptable scope = cx.initStandardObjects();
+        String fun = "function f(){z=\"" + x + "\"; " + f + "\nreturn x(z)} f()";
+        Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+        String ret = Context.toString(result);
+        /* hier fehlt viel vom entschlüsselten */
+        return ret;
+    }
+
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
