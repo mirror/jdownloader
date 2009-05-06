@@ -18,12 +18,10 @@ package jd.plugins.host;
 
 import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
-import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDMediaConvert;
 
 public class MyVideo extends PluginForHost {
@@ -33,31 +31,29 @@ public class MyVideo extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return AGB;
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
-        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
-        if (con.getResponseCode() == 200) { return true; }
-        return false;
+        /*
+         * warum sollte ein video das der decrypter sagte es sei online, offline
+         * sein ;)
+         */
+        return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
-
-        dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
-        dl.setChunkNum(1);
-        dl.setResume(false);
+        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {
                 ConversionMode convertto = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
@@ -70,21 +66,21 @@ public class MyVideo extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         /* TODO: Wert nachprüfen */
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

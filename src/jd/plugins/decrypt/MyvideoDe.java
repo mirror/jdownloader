@@ -34,7 +34,7 @@ public class MyvideoDe extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<ConversionMode> possibleconverts = new ArrayList<ConversionMode>();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -50,7 +50,7 @@ public class MyvideoDe extends PluginForDecrypt {
         String serverpath = br.getRegex(Pattern.compile("<link rel='image_src'.*?href='(.*?)thumbs/.*?'.*?/><link", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (videoid == null || serverpath == null) return null;
         String link = serverpath + videoid + ".flv";
-        String name = Encoding.htmlDecode(br.getRegex(Pattern.compile("<td class='globalHd'>(.*?)</td>", Pattern.CASE_INSENSITIVE)).getMatch(0).trim());
+        String name = Encoding.htmlDecode(br.getRegex(Pattern.compile("<h1 class='globalHd'>(.*?)</h1>", Pattern.CASE_INSENSITIVE)).getMatch(0).trim());
         possibleconverts.add(ConversionMode.AUDIOMP3);
         possibleconverts.add(ConversionMode.VIDEOFLV);
         possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
@@ -66,7 +66,7 @@ public class MyvideoDe extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
