@@ -16,15 +16,12 @@
 
 package jd.plugins.host;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDMediaConvert;
 
 public class ClipfishDe extends PluginForHost {
@@ -35,40 +32,35 @@ public class ClipfishDe extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.clipfish.de/agb/";
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
-            URLConnectionAdapter urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
-            if (!urlConnection.isOK()) return false;
-            downloadLink.setDownloadSize(urlConnection.getLongContentLength());
-            return true;
-        } catch (IOException e) {
-            logger.severe(e.getMessage());
-            downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return false;
-        }
+        /*
+         * warum sollte ein video das der decrypter sagte es sei online, offline
+         * sein ;)
+         */
+        return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
 
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         /* Nochmals das File überprüfen */
@@ -76,13 +68,12 @@ public class ClipfishDe extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-        br.openGetConnection(downloadLink.getDownloadURL());
+
         URLConnectionAdapter urlConnection;
-        dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
-        dl.setChunkNum(1);
-        dl.setResume(false);
+        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
         urlConnection = dl.connect();
         if (urlConnection.getLongContentLength() == 0) {
+            urlConnection.disconnect();
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }
@@ -99,12 +90,12 @@ public class ClipfishDe extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 
