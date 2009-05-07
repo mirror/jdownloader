@@ -386,8 +386,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     public void onLAFChanged() {
         if (isSubstance()) {
-            mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48_noShadow"), 48, 48);
-            mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_48_48"), 48, 48);
+           
+            
+            mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 54, 54);
+            mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
             this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
 
             JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {

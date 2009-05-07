@@ -16,6 +16,7 @@
 
 package jd.captcha.specials;
 
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.File;
@@ -36,6 +37,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.Colors;
 import jd.nutils.JDHash;
+import jd.nutils.JDImage;
 import jd.parser.html.Form;
 import jd.utils.JDUtilities;
 
@@ -135,31 +137,34 @@ public class MegaUpload {
     public static void saveBoders(File file) throws IOException {
 
         String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
-        String hoster = "megaupload.com";
+        String hoster = "megaupload.com2";
 
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
-        BufferedImage captchaImage = ImageIO.read(file);
-        BasicWindow.showImage(captchaImage);
+        Image captchaImage = ImageIO.read(file);
+//        captchaImage=JDImage.getScaledImage((BufferedImage)captchaImage,64, 64);
+//        BasicWindow.showImage(captchaImage);
 
         Captcha captcha = Captcha.getCaptcha(captchaImage, jac);
-        BasicWindow.showImage(captcha.getImage(1));
+//        BasicWindow.showImage(captcha.getImage(1));
         int[][] grid = new int[captcha.getWidth()][captcha.getHeight()];
         for (int x = 0; x < captcha.getWidth(); x++) {
             for (int y = 0; y < captcha.getHeight(); y++) {
-                int avg = captcha.getAverage(x, y, 3, 3);
+                int avg = captcha.getAverage(x, y, 2, 2);
                 double dif = Math.min(Colors.getColorDifference(avg, 0), Colors.getColorDifference(avg, 0xffffff));
 
                 if (dif > 43.0) {
                     grid[x][y] = 0;
                 } else {
-                    grid[x][y] = captcha.grid[x][y];
+                    grid[x][y] = 0xffffff;
                 }
 
             }
         }
         captcha.setGrid(grid);
+        captcha.blurIt(2);
+        captcha.toBlackAndWhite(0.99);
         try {
-            BasicWindow.showImage(captcha.getImage(1));
+//            BasicWindow.showImage(captcha.getImage(1));
             file = JDUtilities.getResourceFile("caps/mu/borders/" + System.currentTimeMillis() + ".png");
             file.mkdirs();
             ImageIO.write((RenderedImage) captcha.getImage(1), "png", file);

@@ -43,7 +43,7 @@ public class Changelog {
     private void load() throws SVNException {
 
         Subversion svn = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/src/");
-        ArrayList<SVNLogEntry> entries = svn.getChangeset(4812, 4936);
+        ArrayList<SVNLogEntry> entries = svn.getChangeset(4936, 5547);
         HashMap<String, Change> map = new HashMap<String, Change>();
         for (SVNLogEntry logEntry : entries) {
 
