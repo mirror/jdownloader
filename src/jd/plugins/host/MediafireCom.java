@@ -28,6 +28,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
+
 public class MediafireCom extends PluginForHost {
 
     static private final String offlinelink = "tos_aup_violation";
@@ -36,12 +39,12 @@ public class MediafireCom extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.mediafire.com/terms_of_service.php";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
@@ -75,22 +78,21 @@ public class MediafireCom extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String url = null;
         br.setDebug(true);
         for (int i = 0; i < 3; i++) {
             getFileInformation(downloadLink);
             if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
-                url = br.getRedirectLocation();                
+                url = br.getRedirectLocation();
             } else {
-                if (!br.containsHTML("\\s+cu\\('"))
-                {   
+                if (!br.containsHTML("\\s+cu\\('")) {
                     String passCode;
                     DownloadLink link = downloadLink;
                     Form form = br.getFormbyProperty("name", "form_password");
@@ -108,58 +110,47 @@ public class MediafireCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
                     } else {
                         link.setProperty("pass", passCode);
-                    } 
+                    }
                 }
-                
+
                 String qk = null, pk = null, r = null;
                 String[] parameters = br.getRegex("\\s+cu\\('(.*?)','(.*?)','(.*?)'\\);").getRow(0);
                 qk = parameters[0];
                 pk = parameters[1];
                 r = parameters[2];
-                
+
                 br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + qk + "&pk=" + pk + "&r=" + r);
+
                 String error = br.getRegex("var et=(.*?);").getMatch(0);
                 if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-                url = br.getRegex("(http\\:\\/\\/\".*?)\\+'\"").getMatch(0);
-                String finalurl = null;
-                String value;
-                String[] variables = new Regex(url, "\\+(.*?)\\+").getColumn(0);
-                String mL = br.getRegex("var mL='(.*?)'").getMatch(0);
-                String mH = br.getRegex("var mH='(.*?)'").getMatch(0);
-                String mY = br.getRegex("var mY='(.*?)'").getMatch(0);
-                finalurl="http://"+mL+"/";
-                for(i=0;i<variables.length;i++)
-                {     
-                    value = br.getRegex("var "+variables[i]+"='(.*?)';").getMatch(0);
-                    if (variables[i].equalsIgnoreCase("'/' ") || variables[i].equalsIgnoreCase("'/'")) value = null;
-                    if (variables[i].equalsIgnoreCase(" 'g/'")) value = null;
-                    if (variables[i].equalsIgnoreCase("mL")) value = null;
-                    if (variables[i].equalsIgnoreCase("mH")) value = null;
-
-                    if (value!=null && value!="null") finalurl= finalurl + value;
-                }
-                url = finalurl + "g/"+mH+"/"+mY;
-                if (url.contains("/g/")) throw new PluginException(LinkStatus.ERROR_RETRY);
+                String js = br.getRegex("'Your download is starting.*?(http.*)\\+ '\"> Click here to start download..</a>'").getMatch(0).trim();
+                String vars = br.getRegex("<!--(.*?)function").getMatch(0).trim();
+                Context cx = Context.enter();                                         
+                Scriptable scope = cx.initStandardObjects();
+                String eval = "function f(){\r\n" + vars + "\r\n return \"" + js + ";\r\n}\r\n f();";           
+                Object result = cx.evaluateString(scope, eval, "<cmd>", 1, null);
+           
+                url = Context.toString(result);
             }
         }
         dl = br.openDownload(downloadLink, url, true, 1);
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 
