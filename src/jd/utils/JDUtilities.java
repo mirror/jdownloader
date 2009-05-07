@@ -46,11 +46,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
+import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.CPluginWrapper;
@@ -313,7 +315,8 @@ public class JDUtilities {
     }
 
     /**
-     * verschlüsselt string mit der übergebenen encryption (Containerpluginname
+     * verschlüsselt string mit der übergebenen encryption
+     * (Containerpluginname
      * 
      * @param string
      * @param encryption
@@ -425,8 +428,8 @@ public class JDUtilities {
     }
 
     /**
-     * Gibt das aktuelle Working Directory zurück. Beim FileBrowser etc wird das
-     * gebraucht.
+     * Gibt das aktuelle Working Directory zurück. Beim FileBrowser etc wird
+     * das gebraucht.
      * 
      * @return
      */
@@ -959,7 +962,34 @@ public class JDUtilities {
     public synchronized static DatabaseConnector getDatabaseConnector() {
 
         if (dbconnect == null) {
-            dbconnect = new DatabaseConnector();
+
+            try {
+                dbconnect = new DatabaseConnector();
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                JDLogger.exception(e);
+                String configpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
+                Logger logger = JDLogger.getLogger();
+                if (e.getMessage().equals("Database broken!")) {
+                    logger.severe("Database broken! Creating fresh Database");
+
+                    if (!new File(configpath + "database.script").delete()||!new File(configpath + "database.properties").delete()) {
+                        logger.severe("Could not delete broken Database");
+                        JOptionPane.showMessageDialog(null, "Could not delete broken database. Please remove the JD_HOME/config directory and restart JD");
+
+                    }
+                }
+
+                try {
+                    dbconnect = new DatabaseConnector();
+                } catch (Exception e1) {
+                    JDLogger.exception(e1);
+                    JOptionPane.showMessageDialog(null, "Could not create database. Please remove the JD_HOME/config directory and restart JD");
+                   
+                    System.exit(1);
+                }
+            }
+
         }
         return dbconnect;
 
@@ -1038,9 +1068,7 @@ public class JDUtilities {
      */
     public static String getAttribute(Node childNode, String key) {
         NamedNodeMap att = childNode.getAttributes();
-        if (att == null || att.getNamedItem(key) == null) {
-            return null;
-        }
+        if (att == null || att.getNamedItem(key) == null) { return null; }
         return att.getNamedItem(key).getNodeValue();
     }
 

@@ -49,7 +49,9 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import jd.config.ConfigEntry;
+import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
+import jd.config.Property;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
@@ -57,6 +59,7 @@ import jd.event.ControlListener;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.JDTextField;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -318,6 +321,16 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             account.setEnabled(false);
 
             info = new JXCollapsiblePane();
+            info.setAnimated(SimpleGuiConstants.isAnimated());
+            JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
+
+                // @Override
+                public void onPropertyChanged(Property source, String propertyName) {
+                    info.setAnimated(SimpleGuiConstants.isAnimated());
+
+                }
+
+            });
             info.setCollapsed(true);
             info.addPropertyChangeListener(new PropertyChangeListener() {
 

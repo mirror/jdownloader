@@ -145,6 +145,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
         clipboard.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
+
                 if (clipboard.isSelected()) {
                     clipboard.setIcon(JDTheme.II("gui.images.clipboard_enabled", 24, 24));
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true);
@@ -152,7 +153,9 @@ public class JDToolBar extends JToolBar implements ControlListener {
                     clipboard.setIcon(JDTheme.II("gui.images.clipboard_disabled", 24, 24));
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
                 }
-                JDUtilities.getConfiguration().save();
+                if (JDUtilities.getConfiguration().isChanges()) {
+                    JDUtilities.getConfiguration().save();
+                }
                 ClipboardHandler.getClipboard().setEnabled(clipboard.isSelected());
             }
 
@@ -173,7 +176,9 @@ public class JDToolBar extends JToolBar implements ControlListener {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
 
                 }
-                JDUtilities.getConfiguration().save();
+                if (JDUtilities.getConfiguration().isChanges()) {
+                    JDUtilities.getConfiguration().save();
+                }
 
             }
 

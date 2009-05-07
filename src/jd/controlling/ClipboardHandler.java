@@ -153,6 +153,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
      * @param enabled
      */
     public void setEnabled(boolean enabled2) {
+        if (enabled == enabled2) return;
         if (enabled2) {
             JDLogger.getLogger().info("ClipBoard Observation enabled");
         } else {

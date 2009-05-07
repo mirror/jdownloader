@@ -29,10 +29,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.JOptionPane;
-
+import jd.controlling.JDLogger;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
@@ -49,68 +49,75 @@ public class DatabaseConnector implements Serializable {
     private static Connection con = null;
 
     static {
+        // try {
+        // Class.forName("org.hsqldb.jdbcDriver");
         try {
-            Class.forName("org.hsqldb.jdbcDriver");
+            Class.forName("org.hsqldb.jdbcDriver").newInstance();
+
+        } catch (IllegalAccessException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         } catch (ClassNotFoundException e) {
-            throw new Error(e);
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
+
     }
 
     /**
      * Constructor
+     * 
+     * @throws Exception
      */
     @SuppressWarnings("unused")
-    public DatabaseConnector() {
-        try {
-            if (con != null) return;
-            logger.finer("Loading database");
+    public DatabaseConnector() throws SQLException {
 
-            if (!checkDatabaseHeader()) {
-                logger.severe("Database broken! Creating fresh Database");
-                if (!new File(configpath + "database.script").delete()) {
-                    logger.severe("Could not delete broken Database");
-                    JOptionPane.showMessageDialog(null, "Could not delete broken database. Please remove the JD_HOME/config directory and restart JD");
-                    System.exit(1);
-
-                }
-            }
-
-            con = DriverManager.getConnection("jdbc:hsqldb:file:" + configpath + "database;shutdown=true", "sa", "");
-            con.setAutoCommit(true);
-            con.createStatement().executeUpdate("SET LOGSIZE 1");
-
-            if (!new File(configpath + "database.script").exists()) {
-                logger.finer("No configuration database found. Creating new one.");
-
-                con.createStatement().executeUpdate("CREATE TABLE config (name VARCHAR(256), obj OTHER)");
-                con.createStatement().executeUpdate("CREATE TABLE links (name VARCHAR(256), obj OTHER)");
-
-                PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
-                logger.finer("Starting database wrapper");
-
-                File f = null;
-                for (String tmppath : new File(configpath).list()) {
-                    try {
-                        if (tmppath.endsWith(".cfg")) {
-                            logger.finest("Wrapping " + tmppath);
-
-                            Object props = JDIO.loadObject(null, f = JDUtilities.getResourceFile("config/" + tmppath), false);
-
-                            if (props != null) {
-                                pst.setString(1, tmppath.split(".cfg")[0]);
-                                pst.setObject(2, props);
-                                pst.execute();
-                            }
-                        }
-                    } catch (Exception e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-                    }
-                }
-            }
-
-        } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+        if (con != null) return;
+        logger.finer("Loading database");
+        if (new File(configpath + "database.script").exists()) {
+             if (!checkDatabaseHeader()) { throw new
+             SQLException("Database broken!");
+            
+             }
         }
+
+        con = DriverManager.getConnection("jdbc:hsqldb:file:" + configpath + "database;shutdown=true", "sa", "");
+
+        con.setAutoCommit(true);
+        con.createStatement().executeUpdate("SET LOGSIZE 1");
+
+        if (!new File(configpath + "database.script").exists()) {
+            logger.finer("No configuration database found. Creating new one.");
+
+            con.createStatement().executeUpdate("CREATE TABLE config (name VARCHAR(256), obj OTHER)");
+            con.createStatement().executeUpdate("CREATE TABLE links (name VARCHAR(256), obj OTHER)");
+
+            PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
+            logger.finer("Starting database wrapper");
+
+            File f = null;
+            for (String tmppath : new File(configpath).list()) {
+                try {
+                    if (tmppath.endsWith(".cfg")) {
+                        logger.finest("Wrapping " + tmppath);
+
+                        Object props = JDIO.loadObject(null, f = JDUtilities.getResourceFile("config/" + tmppath), false);
+
+                        if (props != null) {
+                            pst.setString(1, tmppath.split(".cfg")[0]);
+                            pst.setObject(2, props);
+                            pst.execute();
+                        }
+                    }
+                } catch (Exception e) {
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                }
+            }
+        }
+
     }
 
     /**
@@ -125,15 +132,19 @@ public class DatabaseConnector implements Serializable {
         boolean databaseok = true;
 
         FileInputStream fis = null;
+        BufferedReader in = null;
         try {
             fis = new FileInputStream(f);
-            BufferedReader in = new BufferedReader(new InputStreamReader(fis));
+            in = new BufferedReader(new InputStreamReader(fis));
             String line = "";
             int counter = 0;
 
-            while (counter < 7) {
+            main: while (counter < 7) {
                 line = in.readLine();
-
+                if (line == null) {
+                    databaseok = false;
+                    break main;
+                }
                 switch (counter) {
                 case 0:
                     if (!line.equals("CREATE SCHEMA PUBLIC AUTHORIZATION DBA")) {
@@ -180,13 +191,20 @@ public class DatabaseConnector implements Serializable {
                     break;
                 }
             }
-            in.close();
-            fis.close();
+
         } catch (FileNotFoundException e) {
             databaseok = false;
         } catch (IOException e) {
             databaseok = false;
+
+        } finally {
             try {
+                in.close();
+
+            } catch (IOException e1) {
+            }
+            try {
+
                 fis.close();
             } catch (IOException e1) {
             }
@@ -211,7 +229,9 @@ public class DatabaseConnector implements Serializable {
             }
         } catch (Exception e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.getLogger().warning("Database not available. Create new one: " + name);
+            JDLogger.exception(Level.FINEST, e);
+
         }
 
         return ret;
@@ -222,6 +242,7 @@ public class DatabaseConnector implements Serializable {
      */
     public void saveConfiguration(String name, Object data) {
         dbdata.put(name, data);
+        System.out.println("save " + name);
         try {
             ResultSet rs = con.createStatement().executeQuery("SELECT COUNT(name) FROM config WHERE name = '" + name + "'");
             rs.next();
@@ -235,8 +256,18 @@ public class DatabaseConnector implements Serializable {
                 pst.setObject(2, data);
                 pst.execute();
             }
+
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            try {
+                System.out.println("First save "+name);
+                PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
+                pst.setString(1, name);
+                pst.setObject(2, data);
+                pst.execute();
+            } catch (Exception e2) {
+                JDLogger.getLogger().warning("Database save error: " + name);
+                JDLogger.exception(Level.FINEST, e2);
+            }
         }
     }
 
@@ -261,7 +292,9 @@ public class DatabaseConnector implements Serializable {
             rs.next();
             return rs.getObject(2);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+
+            JDLogger.exception(Level.FINEST, e);
+            JDLogger.getLogger().warning("Database not available. Create new one: links");
         }
         return null;
     }

@@ -9,7 +9,11 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
+import jd.config.ConfigPropertyListener;
+import jd.config.Property;
+import jd.controlling.JDController;
 import jd.gui.skins.simple.Factory;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
@@ -42,6 +46,16 @@ public class CollapseButton extends JPanel {
         collapsible = new JXCollapsiblePane();
         collapsible.setCollapsed(true);
         collapsible.setLayout(new MigLayout("ins 0,wrap 1,gap 0 0", "grow,fill"));
+        collapsible.setAnimated(SimpleGuiConstants.isAnimated());
+        JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
+
+            // @Override
+            public void onPropertyChanged(Property source, String propertyName) {
+                collapsible.setAnimated(SimpleGuiConstants.isAnimated());
+
+            }
+
+        });
         add(collapsible);
 
     }

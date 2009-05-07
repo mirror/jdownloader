@@ -22,6 +22,8 @@ public class JDSubstanceUI extends SubstanceRootPaneUI {
 
     public void setMainMenuIcon(Image mainMenuIcon) {
         logo = mainMenuIcon;
+        if(titlePane!=null)
+  
         titlePane.setLogo(logo);
     }
 

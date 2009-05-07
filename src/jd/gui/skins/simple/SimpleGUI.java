@@ -212,7 +212,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         this.setEnabled(false);
         this.setWaiting(true);
 
-        if (isSubstance()) {
+        if (isSubstance()&&SimpleGuiConstants.GUI_CONFIG.getBooleanProperty( SimpleGuiConstants.DECORATION_ENABLED, true)) {
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 54, 54);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
             this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
@@ -455,7 +455,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     public void updateDecoration() {
 
-        if (UIManager.getLookAndFeel().getSupportsWindowDecorations()) {
+        if (UIManager.getLookAndFeel().getSupportsWindowDecorations()&&SimpleGuiConstants.GUI_CONFIG.getBooleanProperty( SimpleGuiConstants.DECORATION_ENABLED, true)) {
             setUndecorated(true);
             getRootPane().setWindowDecorationStyle(JRootPane.FRAME);
             JFrame.setDefaultLookAndFeelDecorated(true);

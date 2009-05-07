@@ -101,8 +101,12 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")).setGroup(feel));
         ce.setDefaultValue(false);
-
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.ANIMATION_ENABLED, JDLocale.L("gui.config.gui.animationenabled", "Enable extended effects.")).setGroup(feel));
+        ConfigGroup perf = new ConfigGroup(JDLocale.L("gui.config.gui.performance", "Performance"), JDTheme.II("gui.images.performance", 32, 32));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.ANIMATION_ENABLED, JDLocale.L("gui.config.gui.animationenabled", "Enable extended effects.")).setGroup(perf));
+        ce.setDefaultValue(true);
+   
+        
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.DECORATION_ENABLED, JDLocale.L("gui.config.gui.decoration", "Enable Windowdecoration")).setGroup(perf));
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         // Extended Tab
@@ -131,10 +135,10 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         ext.setGroup(null);
 
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, "FILE_REGISTER", JDLocale.L("gui.config.gui.reg_protocols", "Link ccf/dlc/rsdf to JDownloader")));
-        ce.setDefaultValue(true);
-        ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        if (!OSDetector.isWindows()) ce.setEnabled(false);
+//        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, "FILE_REGISTER", JDLocale.L("gui.config.gui.reg_protocols", "Link ccf/dlc/rsdf to JDownloader")));
+//        ce.setDefaultValue(true);
+//        ce.setPropertyType(PropertyType.NEEDS_RESTART);
+//        if (!OSDetector.isWindows()) ce.setEnabled(false);
         ConfigContainer lg = new ConfigContainer(this, JDLocale.L("gui.config.gui.linggrabber", "Linkgrabber"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lg));
 

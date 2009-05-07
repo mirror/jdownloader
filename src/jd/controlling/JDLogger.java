@@ -1,5 +1,6 @@
 package jd.controlling;
 
+import java.sql.SQLException;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
@@ -38,7 +39,7 @@ public class JDLogger {
     }
 
     public static void exception(Exception e) {
-        getLogger().log(Level.SEVERE,"Exception occured",e);
+        exception(Level.SEVERE,e);
         
     }
 
@@ -50,6 +51,11 @@ public class JDLogger {
 
     public static void addHeader(String string) {
        getLogger().info("\r\n\r\n--------------------------------------"+string+"-----------------------------------");
+        
+    }
+
+    public static void exception(Level finest, Exception e) {
+        getLogger().log(finest,finest.getName()+" Exception occured",e);
         
     }
     

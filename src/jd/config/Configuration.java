@@ -152,6 +152,7 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public void save() {
         JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", this);
+        changes=false;
     }
 
 }

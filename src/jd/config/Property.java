@@ -42,7 +42,7 @@ public class Property implements Serializable {
     private HashMap<String, Integer> propertiesHashes;
 
     private long saveCount = 0;
-
+protected transient boolean  changes=false;
     /**
      * 
      */
@@ -61,6 +61,7 @@ public class Property implements Serializable {
 
     public Property(String value, Object obj) {
         this();
+       
         setProperty(value, obj);
     }
 
@@ -264,6 +265,8 @@ public class Property implements Serializable {
         Object old = getProperty(key);
 
         properties.put(key, value);
+        
+        //changes
         if(propertiesHashes==null){
             propertiesHashes= new HashMap<String, Integer>();
         }
@@ -280,31 +283,38 @@ public class Property implements Serializable {
         try {
             if (old == null && value != null) {
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+                this.changes=true;
                 return;
             } else if (value instanceof Comparable) {
                 if (((Comparable<Comparable<?>>) value).compareTo((Comparable<?>) old) != 0) {
                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
-
+                    this.changes=true;
                 }
                 return;
             } else if (value instanceof Object) {
                 if (!value.equals(old)||oldHash!=value.hashCode()) {
                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
-
+                    this.changes=true;
                 } 
                 return;
             } else {
                 if (value != old) {
                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+                    this.changes=true;
                 }
 
             }
         } catch (Exception e) {
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+            this.changes=true;
         }
 
         // logger.finer("Config property: " + key + " = " + value+" - "+this);
 
+    }
+
+    public boolean isChanges() {
+        return changes;
     }
 
     /**

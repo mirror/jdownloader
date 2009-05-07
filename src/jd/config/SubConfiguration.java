@@ -80,9 +80,11 @@ public class SubConfiguration extends Property implements Serializable {
     }
 
     public void save() {
+        
         this.fireEventPreSave();
         JDUtilities.getDatabaseConnector().saveConfiguration(name, this.getProperties());
         this.fireEventPostSave();
+        changes=false;
     }
 
     public synchronized static SubConfiguration getConfig(String name) {
