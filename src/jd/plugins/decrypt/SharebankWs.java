@@ -29,42 +29,47 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class SharebankWs extends PluginForDecrypt {
-    private static final String REGEX_FOLDER = "http://[\\w\\.]*?sharebank\\.ws/\\?v=[a-zA-Z0-9]+";
-    private static final String REGEX_DLLINK = "http://[\\w\\.]*?sharebank\\.ws/\\?go=([a-zA-Z0-9]+)";
+    private static final String REGEX_FOLDER = ".*?ws/\\?v=[a-zA-Z0-9]+";
+    private static final String REGEX_DLLINK = ".*?ws/\\?go=([a-zA-Z0-9]+)";
 
     public SharebankWs(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = param.toString();
-        Regex urlGoRegex = new Regex(url, Pattern.compile(REGEX_DLLINK));
+        String pref = "http://sharebank.ws";
         String[] links = null;
         if (url.matches(REGEX_FOLDER)) {
             br.getPage(url);
             links = br.getRegex(Pattern.compile("go=(.*?)'")).getColumn(0);
-
-        } else if (urlGoRegex.matches()) {
-            links = new String[] { urlGoRegex.getMatch(0) };
+        } else if (url.matches(REGEX_DLLINK)) {
+            links = new Regex(url, REGEX_DLLINK).getColumn(0);
         } else {
             logger.severe("Ungültiges Pattern in der JDinit für Sharebank.Ws");
         }
 
         progress.setRange(links.length);
+        if (url.contains("mygeek")) {
+            pref = "http://mygeek.ws";
+        }
         for (String element : links) {
             /* Get the security id and save them */
             Browser brc = br.cloneBrowser();
-            brc.getPage("http://sharebank.ws/?go=" + element);
+            brc.getPage(pref + "/?go=" + element);
             String finalLink = null;
             for (int retry = 0; retry < 5; retry++) {
                 String securityId = brc.getRegex(Pattern.compile("(go=.*?&q1=.*?&q2=.*?)>")).getMatch(0);
-                brc.getPage("http://sharebank.ws/?" + securityId);
+                brc.getPage(pref + "/?" + securityId);
                 finalLink = brc.getRegex(Pattern.compile(">document.location='(.*?)';<")).getMatch(0);
                 if (finalLink == null) {
                     finalLink = brc.getRegex(Pattern.compile("base64_decode\\('(.*?)'\\)")).getMatch(0);
                     finalLink = Encoding.Base64Decode(finalLink);
+                }
+                if (finalLink == null && brc.getRedirectLocation() != null) {
+                    finalLink = brc.getRedirectLocation();
                 }
                 if (finalLink != null && !finalLink.startsWith("?go")) {
                     break;
@@ -79,7 +84,7 @@ public class SharebankWs extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

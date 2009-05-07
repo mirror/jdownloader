@@ -17,59 +17,51 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 public class SdxCc extends PluginForDecrypt {
-    /*
-     * Achtung Seite ist sooo langsam, dass es ständig timeouts gibt!
-     */
-    private static final Pattern PATTERN_DOWNLOADLINK = Pattern.compile("<td align='center' valign='bottom'><b><a href='(.+?)' target='_blank'><u><h2>D O W N L O A D</h2></u></a></b>", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_PASSWORD = Pattern.compile("</tr><tr><td align='center' class='tbl2'>Passwort:<br>(.+?)</td></tr><tr>", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_FOLDER_NAME = Pattern.compile("<script type='text/javascript' src='\\.\\./\\.\\./includes/forum\\.js'></script><font size='\\+\\d+'><b>(.+?)</b></font>");
-    private static final Pattern PATTERN_UPPLOADER = Pattern.compile("</tr><tr><td align='center' class='tbl2'><a href='profile\\.php\\?id=\\d+'>.+?</a>");
-    private static final Pattern PATTERN_BETWEEN_NAME_UPLOADER = Pattern.compile(PATTERN_FOLDER_NAME.toString() + "(.+?)" + PATTERN_UPPLOADER.toString(), Pattern.MULTILINE | Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_ANYLINK = Pattern.compile("<a href=('|\")(.+?)('|\")");
 
     public SdxCc(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String url = cryptedLink.getCryptedUrl();
-        String page = br.getPage(url);
-        String pw = new Regex(page, PATTERN_PASSWORD).getMatch(0);
-        String name = new Regex(page, PATTERN_FOLDER_NAME).getMatch(0);
-        name = name != null ? name.trim() : "";
+        br.getPage(cryptedLink.toString());
+        String pw = br.getRegex("Passwort:<br.*?/>(.*?)</td>").getMatch(0);
         pw = pw != null ? pw.trim() : "sdx.cc";
         br.setFollowRedirects(false);
-        for (String link : new Regex(page, PATTERN_DOWNLOADLINK).getColumn(0)) {
-            br.getPage(br.getBaseURL() + link);
-            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+        for (String link : br.getRegex("align='center'.*?><a href=\"(.*?file.+?)\"").getColumn(0)) {
+            Browser brc = br.cloneBrowser();
+            brc.getPage(link);
+            String red = brc.getRedirectLocation();
+            decryptedLinks.add(createDownloadlink(red));
         }
-        for (String link : new Regex(new Regex(page, PATTERN_BETWEEN_NAME_UPLOADER).getMatch(1), PATTERN_ANYLINK).getColumn(1)) {
+
+        String[] links = br.getRegex("<center><a href='(.*?)'").getColumn(0);
+        for (String link : links) {
             decryptedLinks.add(createDownloadlink(link));
         }
-        FilePackage fp = FilePackage.getInstance();
-        fp.setName(name);
+        links=br.getRegex("<br />.*?<a href='(http.*?)'").getColumn(0);
+        for (String link : links) {
+            decryptedLinks.add(createDownloadlink(link));
+        }
+
         for (DownloadLink dlLink : decryptedLinks) {
-            dlLink.setFilePackage(fp);
             dlLink.addSourcePluginPassword(pw);
             dlLink.setDecrypterPassword(pw);
         }
         return decryptedLinks.size() > 0 ? decryptedLinks : null;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
