@@ -38,26 +38,27 @@ public class LinksaveIn extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-
+        br.setCookie("http://linksave.in/", "Linksave_Language", "german");
         br.getPage(param.getCryptedUrl());
         br.forceDebug(true);
-        // Linksave_Besucherpasswort=%FEd10fb83.64625
 
         Form form = br.getFormbyProperty("name", "form");
-        while (form != null) {
+        for (int retry = 0; retry < 5; retry++) {
+            if (form == null) break;
+            if (form.containsHTML("besucherpasswort")) {
+                String pw = getUserInput("Besucherpasswort", param);
+                form.put("besucherpasswort", pw);
+            }
             String url = "captcha/cap.php?hsh=" + form.getRegex("\\/captcha\\/cap\\.php\\?hsh=([^\"]+)").getMatch(0);
             File captchaFile = this.getLocalCaptchaFile(this);
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(url));
-
             Linksave.prepareCaptcha(captchaFile);
-
             String captchaCode = getCaptchaCode(captchaFile, this, param);
-            if (captchaCode == null) return null;
             form.put("code", captchaCode);
             br.submitForm(form);
-            if (br.containsHTML("Captcha-code ist falsch")) {
+            if (br.containsHTML("Captcha-code ist falsch") || br.containsHTML("Besucherpasswort ist falsch")) {
                 br.getPage(param.getCryptedUrl());
                 form = br.getFormbyProperty("name", "form");
             } else {
@@ -102,12 +103,12 @@ public class LinksaveIn extends PluginForDecrypt {
         return new ArrayList<DownloadLink>();
     }
 
-    //@Override
+    // @Override
     protected boolean isClickNLoadEnabled() {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
