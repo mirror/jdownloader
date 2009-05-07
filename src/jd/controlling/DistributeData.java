@@ -79,6 +79,8 @@ public class DistributeData extends Thread {
 
     private String orgData;
 
+    private boolean filterNormalHTTP = false;
+
     /**
      * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll. Die
      * übergebenen Daten werden durch einen URLDecoder geschickt.
@@ -102,11 +104,14 @@ public class DistributeData extends Thread {
         this.startDownload = startDownload;
     }
 
-    static public boolean hasPluginFor(String tmp) {
+    public void setFilterNormalHTTP(boolean b) {
+        this.filterNormalHTTP = b;
+    }
+
+    static public boolean hasPluginFor(String tmp, boolean filterNormalHTTP) {
         String data = tmp;
         if (DecryptPluginWrapper.getDecryptWrapper() == null) return false;
         data = data.replaceAll("jd://", "http://");
-        data = data.replaceAll("jds://", "https://");
         for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
         }
@@ -120,8 +125,10 @@ public class DistributeData extends Thread {
         for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
             if (pHost.usePlugin() && pHost.canHandle(data)) return true;
         }
-        data = data.replaceAll("http://", "httpviajd://");
-        data = data.replaceAll("https://", "httpsviajd://");
+        if (!filterNormalHTTP) {
+            data = data.replaceAll("http://", "httpviajd://");
+            data = data.replaceAll("https://", "httpsviajd://");
+        }
         for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
         }
@@ -235,16 +242,15 @@ public class DistributeData extends Thread {
     public Vector<DownloadLink> findLinks() {
         data = HTMLEntities.unhtmlentities(data);
         data = data.replaceAll("jd://", "http://");
-        data = data.replaceAll("jds://", "https://");
         Vector<DownloadLink> ret = findLinks(true);
         data = Encoding.urlDecode(data, true);
         ret.addAll(findLinks(true));
-        data = data.replaceAll("--CUT--", "\n");
-        data = data.replaceAll("http://", "httpviajd://");
-        data = data.replaceAll("https://", "httpsviajd://");
-        ret.addAll(findLinks(true));
-        data = data.replaceAll("httpviajd://", "http://");
-        data = data.replaceAll("httpsviajd://", "https://");
+        if (!filterNormalHTTP) {
+            data = data.replaceAll("--CUT--", "\n");
+            data = data.replaceAll("http://", "httpviajd://");
+            data = data.replaceAll("https://", "httpsviajd://");
+            ret.addAll(findLinks(true));
+        }
         return ret;
     }
 
@@ -270,9 +276,11 @@ public class DistributeData extends Thread {
         for (DownloadLink decrypted : alldecrypted) {
             if (!checkdecrypted(pHostAll, foundPasswords, links, decrypted)) {
                 if (decrypted.getDownloadURL() != null) {
-                    decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("http://", "httpviajd://"));
-                    decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("https://", "httpsviajd://"));
-                    checkdecrypted(pHostAll, foundPasswords, links, decrypted);
+                    if (!filterNormalHTTP) {
+                        decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("http://", "httpviajd://"));
+                        decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("https://", "httpsviajd://"));
+                        checkdecrypted(pHostAll, foundPasswords, links, decrypted);
+                    }
                 }
             }
         }
@@ -283,6 +291,8 @@ public class DistributeData extends Thread {
     }
 
     private boolean checkdecrypted(ArrayList<HostPluginWrapper> pHostAll, Vector<String> foundPasswords, Vector<DownloadLink> links, DownloadLink decrypted) {
+        if (decrypted.getDownloadURL() == null) return true;
+        if (LinkGrabberController.isFiltered(decrypted)) return true;
         boolean gothost = false;
         for (HostPluginWrapper pHost : pHostAll) {
             try {
@@ -322,7 +332,10 @@ public class DistributeData extends Thread {
                         dLink.addSourcePluginPasswords(passwords);
                     }
                 }
-                links.addAll(dl);
+                for (DownloadLink dll : dl) {
+                    if (LinkGrabberController.isFiltered(dll)) continue;
+                    links.add(dll);
+                }
                 if (pHost.isAcceptOnlyURIs()) {
                     data = pHost.getPlugin().cutMatches(data);
                 } else {

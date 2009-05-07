@@ -48,7 +48,7 @@ public class Rlslog extends PluginForDecrypt {
             passwords = HTMLParser.findPasswords(comment);
             String[] links = new Regex(comment, "rel=\"nofollow\">(.*?)</a>", Pattern.CASE_INSENSITIVE).getColumn(0);
             for (String link : links) {
-                if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link)) {
+                if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link,true)) {
                     DownloadLink dLink = createDownloadlink(link);
                     dLink.addSourcePluginPasswords(passwords);
                     decryptedLinks.add(dLink);
@@ -71,7 +71,7 @@ public class Rlslog extends PluginForDecrypt {
                     passwords = HTMLParser.findPasswords(comment);
                     String[] links = new Regex(comment, "rel=\"nofollow\">(.*?)</a>", Pattern.CASE_INSENSITIVE).getColumn(0);
                     for (String link : links) {
-                        if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link)) {
+                        if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link,true)) {
                             DownloadLink dLink = createDownloadlink(link);
                             dLink.addSourcePluginPasswords(passwords);
                             decryptedLinks.add(dLink);

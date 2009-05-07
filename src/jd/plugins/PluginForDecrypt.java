@@ -29,6 +29,7 @@ import java.util.logging.Level;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.CaptchaController;
+import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -194,7 +195,7 @@ public abstract class PluginForDecrypt extends Plugin {
         return tmpLinks;
     }
 
-    protected String getCaptchaCode(File captchaFile, Plugin plg, CryptedLink param) throws DecrypterException  {
+    protected String getCaptchaCode(File captchaFile, Plugin plg, CryptedLink param) throws DecrypterException {
         return this.getCaptchaCode(plg.getHost(), captchaFile, 0, param, null, null);
     }
 
@@ -217,10 +218,10 @@ public abstract class PluginForDecrypt extends Plugin {
      * @param explain
      *            (Special captcha? needs explaination? then use this parameter)
      * @return
-     * @throws DecrypterException 
+     * @throws DecrypterException
      * @throws PluginException
      * @throws InterruptedException
-     * @throws DecrypterException 
+     * @throws DecrypterException
      */
     public String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws DecrypterException {
         link.getProgressController().setStatusText(JDLocale.LF("gui.linkgrabber.waitinguserio", "Waiting for user input: %s", method));
@@ -287,11 +288,14 @@ public abstract class PluginForDecrypt extends Plugin {
 
             // @Override
             public void run() {
+                if (LinkGrabberController.isFiltered(decryptableLink)) return;
                 ArrayList<DownloadLink> links = plg.decryptLink(decryptableLink);
                 for (DownloadLink link : links) {
                     link.setBrowserUrl(decryptableLink.getCryptedUrl());
                 }
-                decryptedLinks.addAll(links);
+                synchronized (decryptedLinks) {
+                    decryptedLinks.addAll(links);
+                }
             }
 
             public void go() throws Exception {

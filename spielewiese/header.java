@@ -1,6 +1,3 @@
-import java.util.ArrayList;
-import java.util.TimeZone;
-
 import jd.http.Cookie;
 
 public class header {

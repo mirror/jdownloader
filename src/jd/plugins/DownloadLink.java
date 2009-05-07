@@ -267,7 +267,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public int compareTo(DownloadLink o) {
-        return getDownloadURL().compareTo(o.getDownloadURL());
+        String t1 = this.getDownloadURL().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://");
+        String t2 = o.getDownloadURL().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://");
+        return t1.compareTo(t2);
     }
 
     /**
@@ -432,7 +434,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Der Hoster, auf dem dieser Link verweist
      */
     public String getHost() {
-        if(host==null)return null;
+        if (host == null) return null;
         return host.toLowerCase();
     }
 

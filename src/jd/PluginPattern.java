@@ -56,7 +56,7 @@ public class PluginPattern {
         for (String pattern : listType2) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/blog\\.php\\?id=[\\d]+)");
         }
-        String[] listType3 = { "sky-porn.info/blog", "best-movies.us" };
+        String[] listType3 = { "sky-porn.info/blog", "best-movies.us/enter" };
         for (String pattern : listType3) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\?p=[\\d]+)");
         }

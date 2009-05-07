@@ -13,6 +13,7 @@ import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackageEvent;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackageListener;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDLocale;
@@ -41,7 +42,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     private LinkGrabberControllerBroadcaster broadcaster;
 
-    private String[] filter;
+    private static String[] filter;
 
     private ConfigPropertyListener cpl;
 
@@ -154,7 +155,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 fp = it.next();
                 for (Iterator<DownloadLink> it2 = fp.getDownloadLinksUnFiltered().iterator(); it2.hasNext();) {
                     dl = it2.next();
-                    if (dl.getDownloadURL().trim().replaceAll("httpviajd", "http").equalsIgnoreCase(link.getDownloadURL().trim().replaceAll("httpviajd", "http"))) { return true; }
+                    if (dl.compareTo(link) == 0) return true;
                 }
             }
             return false;
@@ -397,15 +398,32 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         }
     }
 
-    public boolean isFiltered(DownloadLink element) {
-        if (filter == null) return false;
-        for (String f : filter) {
-            if (element.getDownloadURL().matches(f) || element.getName().matches(f)) {
-                JDLogger.getLogger().finer("Filtered link: " + element.getName() + " due to filter entry " + f);
-                return true;
+    public static boolean isFiltered(DownloadLink element) {
+        synchronized (filter) {
+            if (filter == null) return false;
+            for (String f : filter) {
+                String t = element.getDownloadURL().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://");
+                if (t.matches(f) || element.getName().matches(f)) {
+                    JDLogger.getLogger().finer("Filtered link: " + element.getName() + " due to filter entry " + f);
+                    return true;
+                }
             }
+            return false;
         }
-        return false;
+    }
+    
+    public static boolean isFiltered(CryptedLink element) {
+        synchronized (filter) {
+            if (filter == null) return false;
+            for (String f : filter) {
+                String t = element.getCryptedUrl().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://");
+                if (t.matches(f)) {
+                    JDLogger.getLogger().finer("Filtered link: due to filter entry " + f);
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
 }
