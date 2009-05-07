@@ -27,6 +27,7 @@ import java.util.Vector;
 import javax.swing.UIManager;
 
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.http.Encoding;
 import jd.http.requests.PostRequest;
 import jd.nutils.io.JDFileFilter;
@@ -122,7 +123,12 @@ public class JDLocale {
      * @return
      */
     public static String LF(String key, String def, Object... args) {
-        return String.format(JDLocale.L(key, def), args);
+        try {
+            return String.format(JDLocale.L(key, def), args);
+        } catch (Exception e) {
+            JDLogger.getLogger().severe("FIXME: " + key);
+            return "FIXME: " + key;
+        }
     }
 
     public static void parseLanguageFile(File file, HashMap<Integer, String> data) {
@@ -154,7 +160,7 @@ public class JDLocale {
             f.close();
         } catch (IOException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
 
     }
@@ -238,7 +244,7 @@ public class JDLocale {
 
             return Encoding.UTF8Decode(Encoding.htmlDecode(new Regex(r.load(), "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getMatch(0)));
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             return null;
         }
     }
