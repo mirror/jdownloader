@@ -16,6 +16,7 @@
 
 package jd.controlling.reconnect;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -23,7 +24,9 @@ import java.util.logging.Logger;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
+import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
+import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -62,7 +65,7 @@ public class Reconnecter {
         boolean ipChangeSuccess = false;
         IS_RECONNECTING = true;
         if (Reconnecter.isGlobalDisabled()) {
-            
+
             if (System.currentTimeMillis() - lastIPUpdate > 1000 * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) {
                 ipChangeSuccess = Reconnecter.checkExternalIPChange();
                 JDUtilities.getGUI().displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."), 60000);
@@ -88,7 +91,7 @@ public class Reconnecter {
             logger.info("DO RECONNECT NOW");
             boolean interrupt = SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);
             if (interrupt) {
-//                controller.pauseDownloads(true);
+                // controller.pauseDownloads(true);
 
                 for (FilePackage fp : controller.getPackages()) {
                     for (DownloadLink nextDownloadLink : fp.getDownloadLinks()) {
@@ -134,12 +137,12 @@ public class Reconnecter {
     }
 
     public static boolean doReconnectIfRequested() {
-        boolean ret=false;
-        if (RECONNECT_REQUESTS > 0){
-            try{
-            ret=Reconnecter.doReconnect();
-            }catch(Exception e){
-                logger.finest("Reconnect failed. Exception "+e.getMessage());
+        boolean ret = false;
+        if (RECONNECT_REQUESTS > 0) {
+            try {
+                ret = Reconnecter.doReconnect();
+            } catch (Exception e) {
+                logger.finest("Reconnect failed. Exception " + e.getMessage());
             }
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, ret);
             JDUtilities.getConfiguration().save();
@@ -179,16 +182,47 @@ public class Reconnecter {
 
     public static boolean waitForNewIP(long i) {
         Reconnecter.requestReconnect();
+        final ProgressController progress = new ProgressController(JDLocale.LF("gui.reconnect.progress.status", "Reconnect running: %s m:s", "0:00s"), 2);
         if (i > 0) {
             i += System.currentTimeMillis();
         }
+        progress.setStatus(1);
+        final long startTime = System.currentTimeMillis();
         boolean ret;
+        Thread timer = new Thread() {
+            public void run() {
+                while (true) {
+                    progress.setStatusText(JDLocale.LF("gui.reconnect.progress.status", "Reconnect running: %s m:s", Formatter.formatSeconds((System.currentTimeMillis() - startTime) / 1000)));
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                }
+
+            }
+        };
+        timer.start();
         while (!(ret = Reconnecter.doReconnectIfRequested()) && (System.currentTimeMillis() < i || i <= 0)) {
             try {
                 Thread.sleep(300);
             } catch (InterruptedException e) {
+                ret=false;
+                break;
             }
         }
+        timer.interrupt();
+        
+        if (!ret) {
+            progress.setColor(Color.RED);
+            progress.setStatusText(JDLocale.LF("gui.reconnect.progress.status.failed", "Reconnect failed"));
+
+        } else {
+            progress.setStatusText(JDLocale.LF("gui.reconnect.progress.status.success", "Reconnect successfull"));
+
+        }
+
+        progress.finalize(4000);
         return ret;
     }
 

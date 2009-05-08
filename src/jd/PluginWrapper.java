@@ -112,7 +112,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
 
                     if (!entry.equals()) {
                         if (!manualupdate) {
-                            new WebUpdater().updateUpdatefIle(entry);
+                            new WebUpdater().updateUpdatefile(entry);
                             logger.info("Updated plugin: " + plg);
                         } else {
                             logger.info("New plugin: " + plg + " available, but update-on-the-fly is disabled!");

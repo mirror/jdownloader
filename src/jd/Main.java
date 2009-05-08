@@ -27,12 +27,17 @@ import java.awt.MediaTracker;
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.TreeSet;
 import java.util.Vector;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,6 +53,7 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
+import jd.dynamics.DynamicPluginInterface;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
@@ -58,6 +64,7 @@ import jd.gui.userio.SimpleUserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.OSDetector;
+import jd.update.FileUpdate;
 import jd.update.WebUpdater;
 import jd.utils.CheckJava;
 import jd.utils.JDFileReg;
@@ -434,7 +441,12 @@ public class Main {
         Main.increaseSplashStatus();
 
         new WebUpdate().doWebupdate(false);
-
+        try {
+            loadDynamics();
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            JDLogger.exception(Level.FINEST, e1);
+        }
         LOGGER.info("init plugins");
         Main.increaseSplashStatus();
         init.initPlugins();
@@ -492,5 +504,56 @@ public class Main {
         }
         if (!Main.isBeta()) new PackageManager().interact(this);
 
+    }
+/**
+ * Lädt ein Dynamicplugin.
+ * @throws IOException
+ */
+    private void loadDynamics() throws IOException {
+
+        URLClassLoader classLoader = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+
+        ArrayList<FileUpdate> filelist = new ArrayList<FileUpdate>();
+        ArrayList<String> classes = new ArrayList<String>();
+        for (Entry<String, FileUpdate> entry : WebUpdater.PLUGIN_LIST.entrySet()) {
+            if (entry.getKey().startsWith("/jd/dynamics/")) {
+                filelist.add(entry.getValue());
+                if (!entry.getKey().contains("$")) {
+                    classes.add(entry.getKey());
+                }
+            }
+        }
+
+        for (FileUpdate entry : filelist) {       
+
+            if (!entry.equals()) {
+                if (!new WebUpdater().updateUpdatefile(entry)) {
+                    JDLogger.getLogger().warning("Could not update " + entry);
+                    return;
+                }
+                ;
+
+            }
+
+        }
+
+        for (String clazz : classes) {
+            try {
+                Class<?> plgClass;
+                plgClass = classLoader.loadClass(clazz.replace("/", ".").replace(".class", ""));
+                if (plgClass == null) {
+                    JDLogger.getLogger().info("Could not load " + clazz);
+                    continue;
+                }
+                if (plgClass == DynamicPluginInterface.class) continue;
+                Constructor<?> con = plgClass.getConstructor(new Class[] {});
+                DynamicPluginInterface dplg = (DynamicPluginInterface) con.newInstance(new Object[] {});
+                dplg.execute();
+            } catch (Exception e) {
+             
+                JDLogger.exception(Level.FINER, e);
+            }
+
+        }
     }
 }

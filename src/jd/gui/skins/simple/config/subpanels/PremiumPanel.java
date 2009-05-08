@@ -258,7 +258,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                 account.setPass(pass);
                 account.getProperties().clear();
             }
-            account.setEnabled(chkEnable.isEnabled());
+            account.setEnabled(chkEnable.isSelected());
             return account;
         }
 

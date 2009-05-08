@@ -83,11 +83,16 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         /* LOOK */
         ConfigGroup lookGroup = new ConfigGroup(JDLocale.L("gui.config.gui.view", "Look"), JDTheme.II("gui.images.config.gui", 32, 32));
+if(JDTheme.getThemeIDs().size()<=1){
+    JDTheme.getThemeIDs().get(0);
+    subConfig.setProperty(SimpleGuiConstants.PARAM_THEME, JDTheme.getThemeIDs().get(0));
+    subConfig.save();
+}else{    
 
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")).setGroup(lookGroup));
         ce.setDefaultValue("default");
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-
+}
         if (JDLookAndFeelManager.getSupportedLookAndFeels().length > 1) {
             look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDLookAndFeelManager.PARAM_PLAF, JDLookAndFeelManager.getSupportedLookAndFeels(), JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroup(lookGroup));
             ce.setDefaultValue(JDLookAndFeelManager.getPlaf());

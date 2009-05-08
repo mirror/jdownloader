@@ -19,6 +19,7 @@ package jd.plugins;
 import java.util.Date;
 
 import jd.config.Property;
+import jd.controlling.AccountManager;
 import jd.parser.Regex;
 
 public class AccountInfo extends Property {
@@ -53,6 +54,12 @@ public class AccountInfo extends Property {
 
     public void setCreateTime(long createTime) {
         this.account_createTime = createTime;
+        fireChange();
+    }
+
+    private void fireChange() {
+        AccountManager.getInstance().fireChange(this.getAccount());
+        
     }
 
     public Account getAccount() {
@@ -162,10 +169,12 @@ public class AccountInfo extends Property {
 
     public void setAccount(Account account) {
         this.account = account;
+        fireChange();
     }
 
     public void setAccountBalance(long parseInt) {
         this.account_accountBalance = parseInt;
+        fireChange();
     }
 
     public void setAccountBalance(String string) {
@@ -174,23 +183,31 @@ public class AccountInfo extends Property {
 
     public void setExpired(boolean b) {
         this.account_expired = b;
-        if (b) this.setTrafficLeft(-1);
+        if (b) {
+            this.setTrafficLeft(-1);
+        }else{
+        fireChange();
+        }
     }
 
     public void setFilesNum(long parseInt) {
         this.account_filesNum = parseInt;
+        fireChange();
     }
 
     public void setNewPremiumPoints(long newPremiumPoints) {
         this.account_newPremiumPoints = newPremiumPoints;
+        fireChange();
     }
 
     public void setPlugin(PluginForHost plugin) {
         this.plugin = plugin;
+        fireChange();
     }
 
     public void setPremiumPoints(long parseInt) {
         this.account_premiumPoints = parseInt;
+        fireChange();
     }
 
     public void setPremiumPoints(String string) {
@@ -199,10 +216,12 @@ public class AccountInfo extends Property {
 
     public void setStatus(String string) {
         this.account_status = string;
+        fireChange();
     }
 
     public void setTrafficLeft(long size) {
         this.account_trafficLeft = size;
+        fireChange();
     }
 
     public void setTrafficLeft(String freeTraffic) {
@@ -211,22 +230,27 @@ public class AccountInfo extends Property {
 
     public void setTrafficMax(long trafficMax) {
         this.account_trafficMax = trafficMax;
+        fireChange();
     }
 
     public void setTrafficShareLeft(long size) {
         this.account_trafficShareLeft = size;
+        fireChange();
     }
 
     public void setUsedSpace(long usedSpace) {
         this.account_usedSpace = usedSpace;
+        fireChange();
     }
 
     public void setUsedSpace(String string) {
         this.setUsedSpace(Regex.getSize(string));
+        fireChange();
     }
 
     public void setValid(boolean b) {
         this.account_valid = b;
+        fireChange();
     }
 
     /**
@@ -236,6 +260,10 @@ public class AccountInfo extends Property {
      */
     public void setValidUntil(long validUntil) {
         this.account_validUntil = validUntil;
-        if (validUntil != -1 && validUntil < new Date().getTime()) this.setExpired(true);
+        if (validUntil != -1 && validUntil < new Date().getTime()) {
+            this.setExpired(true);
+        }else{
+            fireChange();
+        }
     }
 }

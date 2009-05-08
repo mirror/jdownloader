@@ -326,7 +326,7 @@ public class WebUpdater implements Serializable {
             try {
                 log("Update file: " + file.getLocalPath());
 
-                if (updateUpdatefIle(file)) {
+                if (updateUpdatefile(file)) {
 
                     log(file.toString());
                     log("Successfull\r\n");
@@ -356,7 +356,7 @@ public class WebUpdater implements Serializable {
         }
     }
 
-    public boolean updateUpdatefIle(FileUpdate file) throws IOException {
+    public boolean updateUpdatefile(FileUpdate file) throws IOException {
 
         file.reset(getAvailableServers());
         return file.update();

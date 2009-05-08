@@ -44,6 +44,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
     private static final long serialVersionUID = 7290466989514173719L;
     private static final long UNLIMITED = 10l * 1024l * 1024l * 1024l;
     private static final int BARCOUNT = 9;
+    private static final long ACCOUNT_UPDATE_DELAY = 15 * 60 * 1000;
     private TreeMap<String, ArrayList<AccountInfo>> map;
     private TreeMap<String, Long> mapSize;
     private TinyProgressBar[] bars;
@@ -58,6 +59,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
     private Object Lock = new Object();
     private boolean redrawinprogress = false;
     private JToggleButton premium;
+    private Thread updater;
 
     @SuppressWarnings("unchecked")
     public PremiumStatus() {
@@ -66,7 +68,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         logger = JDLogger.getLogger();
         lbl = new JLabel(JDLocale.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
         refresher = new Timer(1000 * 60 * 15, this);
-        refresher.setInitialDelay(1000 * 60 * 15);
+        refresher.setInitialDelay(2000);
         refresher.setRepeats(true);
 
         this.setLayout(new MigLayout("ins 0", "[]", "[]"));
@@ -82,10 +84,11 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         premium.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
+                if(JDUtilities.getConfiguration().isChanges()){
                 if (premium.isSelected()) {
                     premium.setIcon(JDTheme.II("gui.images.premium_enabled", 16, 16));
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
-
+             
                 } else {
                     premium.setIcon(JDTheme.II("gui.images.premium_disabled", 16, 16));
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, false);
@@ -99,6 +102,8 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                 }
 
                 JDUtilities.getConfiguration().save();
+                }
+
 
             }
 
@@ -175,6 +180,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         config = SubConfiguration.getConfig("PREMIUMSTATUS");
         this.map = (TreeMap<String, ArrayList<AccountInfo>>) config.getProperty(MAP_PROP, new TreeMap<String, ArrayList<AccountInfo>>());
         this.mapSize = (TreeMap<String, Long>) config.getProperty(MAPSIZE_PROP, new TreeMap<String, Long>());
+        refresher.start();
         this.onUpdate();
     }
 
@@ -195,11 +201,22 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                         for (Account a : helpPlugin.getPremiumAccounts()) {
                             if (a.isEnabled()) {
                                 try {
-                                    int to = helpPlugin.getBrowser().getConnectTimeout();
-                                    helpPlugin.getBrowser().setConnectTimeout(5000);
+                                    AccountInfo ai = null;
 
-                                    AccountInfo ai = helpPlugin.getAccountInformation(a);
-                                    helpPlugin.getBrowser().setConnectTimeout(to);
+                                    if (a.getProperty(AccountInfo.PARAM_INSTANCE) != null) {
+                                        ai = (AccountInfo) a.getProperty(AccountInfo.PARAM_INSTANCE);
+                                        if ((System.currentTimeMillis() - ai.getCreateTime()) >= ACCOUNT_UPDATE_DELAY) {
+
+                                            ai = null;
+                                        }
+                                    }
+                                    if (ai == null) {
+                                        int to = helpPlugin.getBrowser().getConnectTimeout();
+                                        helpPlugin.getBrowser().setConnectTimeout(5000);
+
+                                        ai = helpPlugin.getAccountInformation(a);
+                                        helpPlugin.getBrowser().setConnectTimeout(to);
+                                    }
                                     if (ai.isValid()) {
                                         if (!map.containsKey(wrapper.getHost())) {
                                             mapSize.put(wrapper.getHost(), 0l);
@@ -227,7 +244,8 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
             this.setMapSize(mapSize);
             save();
         }
-        onUpdate();
+        redraw();
+        
     }
 
     private void save() {
@@ -270,7 +288,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                             bars[i].setValue(left);
 
                             if (left >= 0) {
-                                // bars[i].setString(JDUtilities.formatKbReadable
+                                //bars[i].setString(JDUtilities.formatKbReadable
                                 // (left
                                 // /
                                 // 1024));
@@ -322,27 +340,31 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
     }
 
     public void controlEvent(ControlEvent event) {
-        onUpdate();
+        // onUpdate();
     }
 
     public void onUpdate() {
-        refresher.stop();
-        refresher.setDelay(2000);
-        refresher.setInitialDelay(2000);
-        refresher.restart();
+        if(updater!=null)return;
+       updater= new Thread("PremiumStatusUpdater"){
+            public void run(){
+                updatePremium();
+                updater=null;
+            }
+        };
+        updater.start();
     }
 
     public void actionPerformed(ActionEvent arg0) {
         if (arg0.getSource() == this.refresher) {
-            refresher.stop();
-            if (refresher.getDelay() == 1000 * 60 * 15) {
-                updatePremium();
-            } else {
-                redraw();
-            }
-            refresher.setDelay(1000 * 60 * 15);
-            refresher.setInitialDelay(1000 * 60 * 15);
-            refresher.restart();
+            // refresher.stop();
+            // if (refresher.getDelay() == 1000 * 60 * 15) {
+            updatePremium();
+            // } else {
+            // redraw();
+            // }
+            // refresher.setDelay(1000 * 60 * 15);
+            // refresher.setInitialDelay(1000 * 60 * 15);
+            // refresher.restart();
         }
     }
 

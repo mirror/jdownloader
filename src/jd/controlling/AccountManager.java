@@ -24,7 +24,7 @@ public class AccountManager extends SubConfiguration implements ControlListener 
         super("AccountManager");
         this.broadcaster = new JDBroadcaster<AccountListener, AccountsUpdateEvent>() {
 
-            //@Override
+            // @Override
             protected void fireEvent(AccountListener listener, AccountsUpdateEvent event) {
                 listener.onUpdate();
             }
@@ -32,6 +32,10 @@ public class AccountManager extends SubConfiguration implements ControlListener 
         };
         JDController.getInstance().addControlListener(this);
 
+    }
+
+    public void fireChange(Object account) {
+        broadcaster.fireEvent(new AccountsUpdateEvent(account, AccountsUpdateEvent.CHANGED));
     }
 
     private void init() {
@@ -98,13 +102,13 @@ public class AccountManager extends SubConfiguration implements ControlListener 
         return ret;
     }
 
-    //@Override
+    // @Override
     public synchronized void setProperty(String key, Object value) {
         init();
         super.setProperty(key, value);
     }
 
-    //@Override
+    // @Override
     public Object getProperty(String key, Object def) {
         init();
         return super.getProperty(key, def);
@@ -127,7 +131,7 @@ public class AccountManager extends SubConfiguration implements ControlListener 
 
     }
 
-    //@Override
+    // @Override
     public void save() {
         init();
         super.save();

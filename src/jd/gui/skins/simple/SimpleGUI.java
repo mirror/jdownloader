@@ -212,7 +212,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         this.setEnabled(false);
         this.setWaiting(true);
 
-        if (isSubstance()&&SimpleGuiConstants.GUI_CONFIG.getBooleanProperty( SimpleGuiConstants.DECORATION_ENABLED, true)) {
+        if (isSubstance() && SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.DECORATION_ENABLED, true)) {
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 54, 54);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
             this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
@@ -386,8 +386,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     public void onLAFChanged() {
         if (isSubstance()) {
-           
-            
+
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 54, 54);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
             this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
@@ -457,7 +456,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     public void updateDecoration() {
 
-        if (UIManager.getLookAndFeel().getSupportsWindowDecorations()&&SimpleGuiConstants.GUI_CONFIG.getBooleanProperty( SimpleGuiConstants.DECORATION_ENABLED, true)) {
+        if (UIManager.getLookAndFeel().getSupportsWindowDecorations() && SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.DECORATION_ENABLED, true)) {
             setUndecorated(true);
             getRootPane().setWindowDecorationStyle(JRootPane.FRAME);
             JFrame.setDefaultLookAndFeelDecorated(true);
@@ -502,7 +501,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -1061,7 +1060,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);
@@ -1076,32 +1075,49 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public void doManualReconnect() {
-        boolean restart = false;
+
         if (!SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
             int confirm = JOptionPane.showConfirmDialog(this, JDLocale.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"), "", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
-                boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
+                final boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
 
-                restart = JDUtilities.getController().stopDownloads();
-                if (Reconnecter.waitForNewIP(1)) {
-                    showMessageDialog(JDLocale.L("gui.reconnect.success", "Reconnect erfolgreich"));
-                } else {
-                    showMessageDialog(JDLocale.L("gui.reconnect.failed", "Reconnect fehlgeschlagen"));
-                }
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, tmp);
+                new Thread() {
+                    public void run() {
+                        
+                        boolean restart = false;
+                        restart = JDUtilities.getController().stopDownloads();
+                        if (Reconnecter.waitForNewIP(1)) {
+                            showMessageDialog(JDLocale.L("gui.reconnect.success", "Reconnect erfolgreich"));
+                        } else {
+                            showMessageDialog(JDLocale.L("gui.reconnect.failed", "Reconnect fehlgeschlagen"));
+                        }
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, tmp);
+
+                        if (restart) {
+                            JDUtilities.getController().startDownloads();
+                        }
+                    }
+                }.start();
+
             }
         } else {
-            restart = JDUtilities.getController().stopDownloads();
-            if (Reconnecter.waitForNewIP(1)) {
-                showMessageDialog(JDLocale.L("gui.reconnect.success", "Reconnect erfolgreich"));
-            } else {
-                showMessageDialog(JDLocale.L("gui.reconnect.failed", "Reconnect fehlgeschlagen"));
-            }
+            new Thread() {
+                public void run() {
+                    boolean restart = false;
+                    restart = JDUtilities.getController().stopDownloads();
+                    if (Reconnecter.waitForNewIP(1)) {
+                        showMessageDialog(JDLocale.L("gui.reconnect.success", "Reconnect erfolgreich"));
+                    } else {
+                        showMessageDialog(JDLocale.L("gui.reconnect.failed", "Reconnect fehlgeschlagen"));
+                    }
+                    if (restart) {
+                        JDUtilities.getController().startDownloads();
+                    }
+                }
+            }.start();
         }
-        if (restart) {
-            JDUtilities.getController().startDownloads();
-        }
+
     }
 
     public String showCountdownUserInputDialog(final String message, final String def) {

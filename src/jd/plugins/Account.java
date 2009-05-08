@@ -17,6 +17,7 @@
 package jd.plugins;
 
 import jd.config.Property;
+import jd.controlling.AccountManager;
 
 public class Account extends Property {
 
@@ -64,28 +65,48 @@ public class Account extends Property {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+        fireChange();
     }
 
     public void setPass(String pass) {
+        if (this.pass == pass) return;
+        if (pass != null) pass = pass.trim();
+        if (this.pass != null && this.pass.equals(pass)) return;
+
         this.pass = pass;
-        if (this.pass != null) this.pass = this.pass.trim();
+
+        setProperty(AccountInfo.PARAM_INSTANCE, null);
+        fireChange();
     }
 
     public void setStatus(String status) {
         this.status = status;
+        fireChange();
     }
 
     public void setTempDisabled(boolean tempDisabled) {
         this.tmpDisabledTime = System.currentTimeMillis();
         this.tempDisabled = tempDisabled;
+        fireChange();
     }
 
     public void setUser(String user) {
+
+        if (this.user == user) return;
+        if (user != null) user = user.trim();
+        if (this.user != null && this.user.equals(user)) return;
         this.user = user;
-        if (this.user != null) this.user = this.user.trim();
+        setProperty(AccountInfo.PARAM_INSTANCE, null);
+        fireChange();
+
     }
 
-    //@Override
+    private void fireChange() {
+        AccountManager.getInstance().fireChange(this);
+
+    }
+
+    // @Override
     public String toString() {
         return user + ":" + pass + " " + status + " " + enabled + " " + super.toString();
     }

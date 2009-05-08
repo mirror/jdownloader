@@ -99,15 +99,15 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public String getCaptchaCode(String method, File file, int flag, DownloadLink link, String defaultValue, String explain) throws PluginException, InterruptedException {
-        try{
-        link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
-        link.requestGuiUpdate();
-        String cc = new CaptchaController(method, file, defaultValue, explain).getCode(flag);
+        try {
+            link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
+            link.requestGuiUpdate();
+            String cc = new CaptchaController(method, file, defaultValue, explain).getCode(flag);
 
-        if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        return cc;
-        }finally{
-            link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO); 
+            if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            return cc;
+        } finally {
+            link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO);
         }
     }
 
@@ -136,7 +136,7 @@ public abstract class PluginForHost extends Plugin {
         return false;
     }
 
-    //@Override
+    // @Override
     public void clean() {
         dl = null;
         super.clean();
@@ -158,7 +158,7 @@ public abstract class PluginForHost extends Plugin {
         br.clearCookies(getHost());
     }
 
-    //@Override
+    // @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {
             SimpleGUI.displayConfig(config, 0);
@@ -188,6 +188,7 @@ public abstract class PluginForHost extends Plugin {
             AccountInfo ai = (AccountInfo) account.getProperty(AccountInfo.PARAM_INSTANCE);
             if ((System.currentTimeMillis() - ai.getCreateTime()) < 5 * 60 * 1000) return ai;
         }
+        System.out.println("Get Accountonfo " + account);
         AccountInfo ret = fetchAccountInfo(account);
         if (ret == null) return null;
         account.setProperty(AccountInfo.PARAM_INSTANCE, ret);
@@ -207,7 +208,7 @@ public abstract class PluginForHost extends Plugin {
         accountWithoutUsername = b;
     }
 
-    //@Override
+    // @Override
     public ArrayList<MenuItem> createMenuitems() {
 
         ArrayList<MenuItem> menuList = new ArrayList<MenuItem>();
