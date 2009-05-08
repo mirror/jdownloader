@@ -292,7 +292,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public Vector<DownloadLink> getDownloadLinks() {
 
-        System.out.println("filter again" + i++);
+      
         synchronized (downloadLinks) {
             synchronized (LinkGrabberConstants.getExtensionFilter()) {
                 synchronized (publicLinks) {

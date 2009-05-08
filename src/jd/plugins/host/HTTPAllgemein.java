@@ -116,7 +116,7 @@ public class HTTPAllgemein extends PluginForHost {
             this.contentType = urlConnection.getContentType();
             urlConnection.disconnect();
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             if (urlConnection != null && urlConnection.isConnected() == true) urlConnection.disconnect();
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }

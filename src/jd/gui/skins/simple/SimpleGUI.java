@@ -64,6 +64,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
+import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
@@ -1002,6 +1003,15 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public void displayMiniWarning(final String shortWarn, final String toolTip, final int showtime) {
+       new Thread(){
+           public void run(){
+               ProgressController pc = new ProgressController(shortWarn, 10);
+               pc.setColor(Color.RED);
+               pc.setStatus(10);
+               pc.finalize(showtime);
+           }
+       }.start();
+        
         // if (shortWarn == null) {
         // SwingUtilities.invokeLater(new Runnable() {
         // public void run() {
@@ -1084,7 +1094,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
                 new Thread() {
                     public void run() {
-                        
+
                         boolean restart = false;
                         restart = JDUtilities.getController().stopDownloads();
                         if (Reconnecter.waitForNewIP(1)) {

@@ -992,7 +992,9 @@ public class Rapidshare extends PluginForHost {
             return br;
         }
     }
-
+    public boolean useIcon(){
+        return true;
+    }
     // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
 

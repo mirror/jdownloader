@@ -252,6 +252,7 @@ public class Netloadin extends PluginForHost {
 
     private void login(Account account) throws IOException, PluginException {
         setBrowserExclusive();
+    
         br.getPage("http://netload.in/index.php");
         br.postPage("http://netload.in/index.php", "txtuser=" + Encoding.urlEncode(account.getUser()) + "&txtpass=" + Encoding.urlEncode(account.getPass()) + "&txtcheck=login&txtlogin=");
         String cookie = br.getCookie("http://netload.in/", "cookie_user");
@@ -285,6 +286,7 @@ public class Netloadin extends PluginForHost {
         }
         try {
             isExpired(account);
+            account=account;
         } catch (PluginException e) {
             ai.setExpired(true);
             return ai;
@@ -304,7 +306,9 @@ public class Netloadin extends PluginForHost {
     public int getTimegapBetweenConnections() {
         return 800;
     }
-
+    public boolean useIcon(){
+        return true;
+    }
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
 

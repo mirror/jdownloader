@@ -58,6 +58,7 @@ public class AccountInfo extends Property {
     }
 
     private void fireChange() {
+        this.account_createTime = System.currentTimeMillis();
         AccountManager.getInstance().fireChange(this.getAccount());
         
     }

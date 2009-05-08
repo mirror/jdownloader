@@ -46,7 +46,9 @@ public class Uploadedto extends PluginForHost {
         // "Premium connections # (>1 causes higher traffic)"), 1,
         // 20).setDefaultValue(1).setStep(1));
     }
-
+    public boolean useIcon(){
+        return true;
+    }
     /**
      * Korrigiert den Downloadlink in ein einheitliches Format
      * 

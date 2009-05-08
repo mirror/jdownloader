@@ -207,7 +207,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             clearSB();
-            ((JComponent) co).setToolTipText(null);
+            //((JComponent) co).setToolTipText(null);
             if (dLink.getLinkStatus().isFailed()) {
                 ((JRendererLabel) co).setIcon(this.imgFileFailed);
             } else {
@@ -215,6 +215,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             }
 
             ((JRendererLabel) co).setText(dLink.getName());
+            ((JRendererLabel) co).setToolTipText(dLink.getName()+" - "+dLink.getFileInfomationString()); 
             ((JRendererLabel) co).setBorder(leftGap);
 
             return co;
@@ -222,15 +223,26 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
-            ((JComponent) co).setToolTipText(null);
+          
             clearSB();
             ((JRendererLabel) co).setBorder(null);
             if (dLink.getPlugin() == null) {
+                ((JComponent) co).setToolTipText(null);
                 ((JRendererLabel) co).setText("plugin missing");
             } else {
-                sb.append(dLink.getPlugin().getHost());
-                sb.append(dLink.getPlugin().getSessionInfo());
-                ((JRendererLabel) co).setText(sb.toString());
+                if(dLink.getPlugin().useIcon()){
+                    sb.append(dLink.getPlugin().getHost());
+                    sb.append(dLink.getPlugin().getSessionInfo());
+                    ((JRendererLabel) co).setText(dLink.getPlugin().getSessionInfo());
+                    ((JRendererLabel) co).setIcon(dLink.getPlugin().getHosterIcon());
+                    ((JComponent) co).setToolTipText(sb.toString());
+                }else{
+                    sb.append(dLink.getPlugin().getHost());
+                    sb.append(dLink.getPlugin().getSessionInfo());
+                    ((JRendererLabel) co).setText(sb.toString());
+                    ((JComponent) co).setToolTipText(sb.toString()); 
+                }
+             
             }
             // ((JRendererLabel)
             // co).setIcon(JDImage.getScaledImageIcon(dLink.getPlugin

@@ -4,6 +4,7 @@ import java.awt.Component;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.border.Border;
 
@@ -43,8 +44,6 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
 
     private ImageIcon imgFailed;
 
-
-
     private ImageIcon imgFileFailed;
 
     private ImageIcon imgPriority1;
@@ -72,9 +71,9 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
     }
 
     private void initIcons() {
-        icon_fp_open =       JDTheme.II("gui.images.package_opened", 16, 16);
+        icon_fp_open = JDTheme.II("gui.images.package_opened", 16, 16);
         icon_fp_open_error = JDTheme.II("gui.images.package_open_error", 16, 16);
-        icon_fp_closed = JDTheme.II("gui.images.package_closed", 16, 16);       
+        icon_fp_closed = JDTheme.II("gui.images.package_closed", 16, 16);
         icon_fp_closed_error = JDTheme.II("gui.images.package_closed_error", 16, 16);
         imgFinished = JDTheme.II("gui.images.ok", 16, 16);
         imgFailed = JDTheme.II("gui.images.bad", 16, 16);
@@ -99,7 +98,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
     }
 
     private Component getDownloadLinkCell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        dLink = (DownloadLink) value;        
+        dLink = (DownloadLink) value;
         switch (column) {
         case LinkGrabberTreeTableModel.COL_PACK_FILE:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -116,7 +115,23 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             value = dLink.getDownloadSize() > 0 ? Formatter.formatReadable(dLink.getDownloadSize()) : "~";
             break;
         case LinkGrabberTreeTableModel.COL_HOSTER:
-            value = dLink.getPlugin().getHost();
+
+            if (dLink.getPlugin().useIcon()) {
+                co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                clearSB();
+                sb.append(dLink.getPlugin().getHost());
+                sb.append(dLink.getPlugin().getSessionInfo());
+                ((JRendererLabel) co).setText(dLink.getPlugin().getSessionInfo());
+                ((JRendererLabel) co).setIcon(dLink.getPlugin().getHosterIcon());
+                ((JComponent) co).setToolTipText(sb.toString());
+
+                ((JRendererLabel) co).setBorder(null);
+                return co;
+
+            } else {
+
+                value = dLink.getPlugin().getHost();
+            }
 
             break;
         case LinkGrabberTreeTableModel.COL_STATUS:
@@ -179,7 +194,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             ((JRendererLabel) co).setText(fp.getName());
             if (fp.countFailedLinks(false) > 0) {
                 ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false) ? icon_fp_closed_error : icon_fp_open_error);
-                
+
             } else {
                 ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
             }

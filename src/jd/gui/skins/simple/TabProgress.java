@@ -219,7 +219,10 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
             bar.setValue(controller.getPercent());
             bar.setStringPainted(true);
             bar.setString(controller.getStatusText());
+            if(controller.getColor()!=null){
             bar.setBackground(controller.getColor());
+            bar.setForeground(controller.getColor().brighter());
+            }
         }
 
         public void actionPerformed(ActionEvent arg0) {

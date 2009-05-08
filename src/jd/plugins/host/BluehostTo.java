@@ -163,7 +163,9 @@ public class BluehostTo extends PluginForHost {
 
         return true;
     }
-
+    public boolean useIcon(){
+        return true;
+    }
     // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         correctUrl(downloadLink);
