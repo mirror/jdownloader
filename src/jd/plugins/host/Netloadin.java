@@ -286,7 +286,7 @@ public class Netloadin extends PluginForHost {
         }
         try {
             isExpired(account);
-            account=account;
+     
         } catch (PluginException e) {
             ai.setExpired(true);
             return ai;
