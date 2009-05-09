@@ -40,6 +40,7 @@ public class SuperSharePl extends PluginForHost {
     //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.setCookie("http://supershare.pl", "yab_mylang", "en");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("File name:</b></td>\\s+<td[^>]+>(.*?)</td>").getMatch(0);
