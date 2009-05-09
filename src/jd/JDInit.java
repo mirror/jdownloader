@@ -594,6 +594,7 @@ public class JDInit {
         new HostPluginWrapper("IFile.it", "IFileIt", "http://[\\w\\.]*?ifile\\.it/[A-Za-z0-9]+/?");
         new HostPluginWrapper("Mihd.net", "IFileIt", "http://[\\w\\.]*?mihd\\.net/[A-Za-z0-9]+/?");
         new HostPluginWrapper("BitRoad.net", "BitRoadNet", "http://[\\w\\.]*?bitroad\\.net/download/[A-Fa-f0-9]+/.*?\\.html");
+        new HostPluginWrapper("MaxUpload.Eu", "MaxUploadEu", "http://[\\w\\.]*?maxupload\\.eu/../\\d+");
 
         // Hoster from Extern
         new HostPluginWrapper("iFolder.ru", "IfolderRu", "http://[\\w\\.]*?ifolder\\.ru/\\d+");
