@@ -179,7 +179,7 @@ public class ShareOnlineBiz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         /* CaptchaCode holen */
-        String captchaCode = getCaptchaCode(captchaFile, downloadLink);
+        String captchaCode = getCaptchaCode("egoshare.com", captchaFile, downloadLink);
         Form form = br.getForm(1);
         String passCode = null;
         if (form.containsHTML("name=downloadpw")) {
