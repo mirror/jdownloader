@@ -41,12 +41,13 @@ public class JACTest {
 
     private void go() {
         String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
-        String hoster = "megaupload.com";
+        String hoster = "megaupload.com2";
 
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
 
-//       jac.setShowDebugGui(true);
-//       LetterComperator.CREATEINTERSECTIONLETTER = true;
+
+ jac.setShowDebugGui(true);
+    LetterComperator.CREATEINTERSECTIONLETTER = true;
         //
         // jac.exportDB();
         // UTILITIES.getLogger().info("has method:
@@ -54,9 +55,9 @@ public class JACTest {
 
         //
         // Megaupload2.writeDB();
-// jac.importDB();
-// jac.importDB(); 
- //MegaUpload.main(null);
+        //jac.importDB();
+        // jac.importDB();
+        // MegaUpload.main(null);
         //
         jac.displayLibrary();
 
@@ -65,17 +66,17 @@ public class JACTest {
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment
         // ().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+
         // "securedin1730080724541.jpg"),4);
- File[] list = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster).listFiles();
- int id=(int)(Math.random()*(list.length-1));
-
- System.out.println("ID: "+id);
- File f = list[id];
+        File[] list = JDUtilities.getResourceFile("/captchas/" + hoster).listFiles();
+        int id = (int) (Math.random() * (list.length - 1));
+id=37;
+        System.out.println("ID: " + id);
+        File f = list[id];
 
         System.out.println(f + "");
         jac.showPreparedCaptcha(f);
-if(JOptionPane.showConfirmDialog(null, "train")==JOptionPane.OK_OPTION){
-    f.renameTo(new File("C:\\Users\\coalado\\Desktop\\caps\\"+f.getName()));
-}
+        if (JOptionPane.showConfirmDialog(null, "train") == JOptionPane.OK_OPTION) {
+            f.renameTo(new File("C:\\Users\\coalado\\Desktop\\caps\\" + f.getName()));
+        }
         // UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.
         // loadImage(new
         //File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()

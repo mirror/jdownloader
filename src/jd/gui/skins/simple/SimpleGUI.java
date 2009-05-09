@@ -174,7 +174,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private boolean noTitlePane = false;
 
-    private JXCollapsiblePane leftcolPane;
+ 
 
     private JDSeparator sep;
 
@@ -288,9 +288,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         pack();
 
         setExtendedState(SimpleGuiConstants.GUI_CONFIG.getIntegerProperty("MAXIMIZED_STATE_OF_" + this.getName(), JFrame.NORMAL));
-        this.getLeftcolPane().setAnimated(false);
+       
         this.hideSideBar(SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_SIDEBAR_COLLAPSED, false));
-        this.getLeftcolPane().setAnimated(true);
+     
         setVisible(true);
 
         ClipboardHandler.getClipboard().setTempDisableD(false);
@@ -715,19 +715,20 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         setContentPane(panel);
         panel.add(this.toolBar, "spanx");
 
-        leftcolPane = new JDCollapsiblePane();
-        leftcolPane.add(new JScrollPane(taskPane));
+      
 
-        panel.add(leftcolPane, "spany 2");
+        panel.add(taskPane, "hidemode 2,spany 2");
         sep = new JDSeparator();
 
-        leftcolPane.addPropertyChangeListener(sep);
+        
         panel.add(sep, "gapright 2,spany 2");
 
         panel.add(contentPanel);
         // sp.setBorder(null);
+/*
 
-        panel.add(JDCollapser.getInstance(), "hidemode 3,gaptop 15,cell 2 2,growx,pushx");
+ */
+        panel.add(JDCollapser.getInstance(), "hidemode 3,gaptop 15,cell 2 2,growx,pushx,growy,pushy");
         // panel.add(generalPurposeTasks, "cell 0 2");
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
         panel.add(progressBar, "spanx,hidemode 3,cell 0 3");
@@ -912,9 +913,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         taskPane.add(dlTskPane);
     }
 
-    public JXCollapsiblePane getLeftcolPane() {
-        return leftcolPane;
-    }
+
 
     public void controlEvent(final ControlEvent event) {
         // Moved the whole content of this method into a Runnable run by
@@ -1325,7 +1324,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 }
                 if (container.getGroup() != null) {
                     JDCollapser.getInstance().setTitle(container.getGroup().getName());
-                    JDCollapser.getInstance().setIcon(container.getGroup().getIcon());
+//                    JDCollapser.getInstance().setIcon(container.getGroup().getIcon());
                 } else {
                     JDCollapser.getInstance().setTitle(JDLocale.L("gui.panels.collapsibleconfig", "Settings"));
                     JDCollapser.getInstance().setIcon(JDTheme.II("gui.images.config.addons", 24, 24));
@@ -1488,13 +1487,16 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public void hideSideBar(boolean b) {
-        if (getLeftcolPane() == null || getLeftcolPane().isCollapsed() == b) return;
+       if (this.getTaskPane() == null || getTaskPane().isVisible() == !b) return;
         if (b) {
-            getLeftcolPane().setCollapsed(true);
+           if(this.sep!=null)this.sep.setMinimized(b);
+            getTaskPane().setVisible(!b);
             this.contentPanel.display(linkListPane);
 
         } else {
-            getLeftcolPane().setCollapsed(false);
+            if(this.sep!=null) this.sep.setMinimized(b);
+            getTaskPane().setVisible(!b);
+          
 
         }
 

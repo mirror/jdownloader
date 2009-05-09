@@ -64,6 +64,8 @@ public class Account extends Property {
     }
 
     public void setEnabled(boolean enabled) {
+        if(this.enabled==enabled)return;
+        System.out.println(this +": "+enabled);
         this.enabled = enabled;
         fireChange();
     }
@@ -80,6 +82,8 @@ public class Account extends Property {
     }
 
     public void setStatus(String status) {
+        if(this.status==status)return;
+        if(this.status!=null &&this.status.equals(status))return;
         this.status = status;
         fireChange();
     }

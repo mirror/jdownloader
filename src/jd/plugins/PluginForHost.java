@@ -185,7 +185,14 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
-
+        if (account.getPass() == null || account.getUser() == null) {
+            // frische INstanz
+            return null;
+        }
+        if(account.getPass().trim().length()==0 &&account.getUser().trim().length()==0){
+            // frische INstanz
+            return null; 
+        }
         if (account.getProperty(AccountInfo.PARAM_INSTANCE) != null) {
             AccountInfo ai = (AccountInfo) account.getProperty(AccountInfo.PARAM_INSTANCE);
             if ((System.currentTimeMillis() - ai.getCreateTime()) < 5 * 60 * 1000) return ai;
@@ -193,31 +200,30 @@ public abstract class PluginForHost extends Plugin {
         System.out.println("Get Accountonfo " + account);
         try {
             AccountInfo ret = fetchAccountInfo(account);
-          
+
             if (ret == null) return null;
-            
-            if(ret.isExpired()){
+
+            if (ret.isExpired()) {
                 account.setEnabled(false);
                 account.setProperty(AccountInfo.PARAM_INSTANCE, null);
-                String shortWarn=JDLocale.LF("gui.shortwarn.accountdisabled.expired","Account %s(%s) got disabled(expired)",this.getHost(),account.getUser());
-                
+                String shortWarn = JDLocale.LF("gui.shortwarn.accountdisabled.expired", "Account %s(%s) got disabled(expired)", this.getHost(), account.getUser());
+
                 JDController.getInstance().getUiInterface().displayMiniWarning(shortWarn, shortWarn, 10000);
-            }else if(!ret.isValid()){
+            } else if (!ret.isValid()) {
                 account.setEnabled(false);
                 account.setProperty(AccountInfo.PARAM_INSTANCE, null);
-                String shortWarn=JDLocale.LF("gui.shortwarn.accountdisabled.invalid","Account %s(%s) got disabled(invalid)",this.getHost(),account.getUser());
-                
+                String shortWarn = JDLocale.LF("gui.shortwarn.accountdisabled.invalid", "Account %s(%s) got disabled(invalid)", this.getHost(), account.getUser());
+
                 JDController.getInstance().getUiInterface().displayMiniWarning(shortWarn, shortWarn, 10000);
             }
-            
-         
+
             account.setProperty(AccountInfo.PARAM_INSTANCE, ret);
             return ret;
         } catch (PluginException e) {
             account.setEnabled(false);
             account.setProperty(AccountInfo.PARAM_INSTANCE, null);
-            String shortWarn=JDLocale.LF("gui.shortwarn.accountdisabled","Account %s(%s) got disabled: %s",this.getHost(),account.getUser(),e.getMessage());
-            
+            String shortWarn = JDLocale.LF("gui.shortwarn.accountdisabled", "Account %s(%s) got disabled: %s", this.getHost(), account.getUser(), e.getMessage());
+
             JDController.getInstance().getUiInterface().displayMiniWarning(shortWarn, shortWarn, 10000);
             throw e;
         }
@@ -743,9 +749,11 @@ public abstract class PluginForHost extends Plugin {
     public String getSessionInfo() {
         return "";
     }
-public boolean useIcon(){
-    return false;
-}
+
+    public boolean useIcon() {
+        return false;
+    }
+
     public final ImageIcon getHosterIcon() {
         Image image = JDImage.getImage("hosterlogos/" + getHost());
         if (image == null) image = createDefaultIcon();

@@ -28,6 +28,7 @@ import javax.swing.ImageIcon;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 
+import jd.JDInitFlags;
 import jd.config.SubConfiguration;
 import jd.config.container.JDLabelContainer;
 import jd.controlling.JDLogger;
@@ -59,6 +60,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
             // if (clname.endsWith("WindowsLookAndFeel")) continue;
             // if (clname.endsWith("WindowsClassicLookAndFeel")) continue;
             //       
+          
             if (clname.contains("Substance") && JDUtilities.getJavaVersion() >= 1.6) {
 
                 ret.add(new JDLookAndFeelManager(lafis[i]));
@@ -79,6 +81,14 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
                 JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
                 lafm.setName("Windows Style");
                 ret.add(lafm);
+            }else if(clname.endsWith("MetalLookAndFeel")&&OSDetector.isLinux()){
+                JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
+                lafm.setName("Light(Metal)");
+                ret.add(lafm);
+            }else if(JDInitFlags.SWITCH_DEBUG){
+                JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
+                lafm.setName(lafis[i].getName()+ "(debug)");
+                ret.add(lafm); 
             }
 
         }

@@ -47,18 +47,22 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  */
 public class MegaUpload {
+    private static final String[] STATICMATCH = new String[] { "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "1234567890"};
+;
     public static Letter[] getLetters(Captcha captcha) {
 
-        captcha.toBlackAndWhite(0.45);
+        //captcha.toBlackAndWhite(0.45);
 
-        LetterComperator.MATCH_TABLE = new String[] { "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "1234567890"
-
-        };
-
-        captcha.clean();
+        LetterComperator.MATCH_TABLE = STATICMATCH;
+        
+//        Object file;
+        getBorders(captcha);
+        
+//        BasicWindow.showImage(captcha.getImage(2));
+        //captcha.clean();
         ArrayList<Letter> ret = new ArrayList<Letter>();
         for (int i = 0; i < 4; i++) {
-            int averageWidth = Math.min(captcha.getWidth(), (int) (captcha.getWidth() / (4 - i)) + 6);
+            int averageWidth = Math.min(captcha.getWidth(), (int) (captcha.getWidth() / (4 - i)) + 20);
             Letter first = new Letter(averageWidth, captcha.getHeight());
 
             first.setId(i);
@@ -73,9 +77,23 @@ public class MegaUpload {
                     }
                 }
             }
-
+//BasicWindow.showImage(first.getImage(2));
             LetterComperator r = captcha.owner.getLetter(first);
             if (r == null) return null;
+            /*
+             * param.scanAngleLeft=0;
+param.scanAngleRight=0;
+param.scanAngleSteps=2;
+             */
+            captcha.owner.getJas().set("scanAngleLeft", -10);
+            captcha.owner.getJas().set("scanAngleRight", 10);
+            captcha.owner.getJas().set("scanAngleSteps", 1);
+//            captcha.owner.setShowDebugGui(true);
+//             LetterComperator.CREATEINTERSECTIONLETTER = true;
+//            LetterComperator.MATCH_TABLE =new String[]{r.getDecodedValue(),r.getDecodedValue(),r.getDecodedValue(),r.getDecodedValue()};
+//            r = captcha.owner.getLetter(first);
+//            LetterComperator.MATCH_TABLE=STATICMATCH;
+            
             first.detected = r;
             Letter b = r.getB();
             // int[] offset = new
@@ -89,10 +107,10 @@ public class MegaUpload {
                     if (x < captcha.getWidth() && y < captcha.getHeight() && x > 0 && y > 0) {
                         if (x < b.getWidth() && y < b.getHeight() && b.getGrid()[x][y] < 100) {
                             setValue(captcha, x, y, 0xffffff);
-                            // setValue(captcha,x-1,y,0xffffff);
-                            // setValue(captcha,x+1,y,0xffffff);
-                            // setValue(captcha,x,y-1,0xffffff);
-                            // setValue(captcha,x,y+1,0xffffff);
+//                             setValue(captcha,x-1,y,0xffffff);
+                             //setValue(captcha,x+1,y,0xffffff);
+                             //setValue(captcha,x,y-1,0xffffff);
+//                             setValue(captcha,x,y+1,0xffffff);
 
                         } else {
                             // captcha.getGrid()[x][y]=0x00ff00;
@@ -101,26 +119,52 @@ public class MegaUpload {
 
                 }
             }
-            // BasicWindow.showImage(b.getImage(3));
-            // BasicWindow.showImage(r.getIntersectionLetter().getImage(3));
-            // BasicWindow.showImage(captcha.getImage(3));
+//             BasicWindow.showImage(b.getImage(3));
+//           BasicWindow.showImage(r.getIntersectionLetter().getImage(3));
+//             BasicWindow.showImage(captcha.getImage(3));
 
             ret.add(first);
+            System.out.println(r.getDecodedValue() + "");
             if (i < 3) {
-                System.out.println(r.getDecodedValue() + "");
+               
 
                 captcha.crop(offset[0] + b.getWidth() / 2, 0, 0, 0);
 
-                // BasicWindow.showImage(captcha.getImage(3));
-                captcha.removeSmallObjects(0.95, 0.95, 25);
+//                BasicWindow.showImage(captcha.getImage(3));
+                captcha.removeSmallObjects(0.95, 0.95, 15);
                 captcha.clean();
-                // BasicWindow.showImage(captcha.getImage(3));
+//                 BasicWindow.showImage(captcha.getImage(3));
 
             }
         }
         if (ret.size() < 4) return null;
         return ret.toArray(new Letter[] {});
 
+    }
+
+    private static void getBorders(Captcha captcha) {
+
+ 
+//        BasicWindow.showImage(captcha.getImage(1));
+        int[][] grid = new int[captcha.getWidth()][captcha.getHeight()];
+        for (int x = 0; x < captcha.getWidth(); x++) {
+            for (int y = 0; y < captcha.getHeight(); y++) {
+                int avg = captcha.getAverage(x, y, 2, 2);
+                double dif = Math.min(Colors.getColorDifference(avg, 0), Colors.getColorDifference(avg, 0xffffff));
+
+                if (dif > 43.0) {
+                    grid[x][y] = 0;
+                } else {
+                    grid[x][y] = 0xffffff;
+                }
+
+            }
+        }
+        captcha.setGrid(grid);
+        captcha.blurIt(2);
+        captcha.toBlackAndWhite(0.99);
+    
+        
     }
 
     private static void setValue(Captcha captcha, int x, int y, int value) {
@@ -175,7 +219,7 @@ public class MegaUpload {
         }
     }
 
-    public static void main(String args[]) throws IOException {
+    public static void ma3in(String args[]) throws IOException {
 
         int i = 0;
         HashMap<String, File> map = new HashMap<String, File>();

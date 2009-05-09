@@ -248,7 +248,7 @@ break;
             break;
 
         }
-        this.firePropertyChange(getConfigEntry().getPropertyName(), null, getText());
+//        this.firePropertyChange(getConfigEntry().getPropertyName(), null, getText());
     }
 
     private void firePropertyChange(String propertyName, Object object, Object text) {

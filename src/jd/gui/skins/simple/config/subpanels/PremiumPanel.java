@@ -240,7 +240,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             createPanel(nr);
         }
 
-        public void setAccount(Account account) {
+        public synchronized void setAccount(Account account) {
             boolean sel = account.isEnabled();
             this.account = account;
             txtUsername.setText(account.getUser());
@@ -249,7 +249,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             setEnabled(sel);
         }
 
-        public Account getAccount() {
+        public synchronized Account getAccount() {
             String pass = new String(txtPassword.getPassword());
             if (account == null) return null;
             if (txtUsername.getText().length() == 0 && pass.length() == 0) return null;
@@ -318,7 +318,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
             this.account = new Account(txtUsername.getText(), new String(txtPassword.getPassword()));
 
-            account.setEnabled(false);
+//            account.setEnabled(false);
 
             info = new JXCollapsiblePane();
             info.setAnimated(SimpleGuiConstants.isAnimated());
@@ -357,8 +357,10 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
         //@Override
         public void setEnabled(final boolean flag) {
             if (flag == txtPassword.isEnabled()) return;
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
+            new GuiRunnable<Object> (){
+
+                @Override
+                public Object runSave() {
                     if (premiumActivated) {
                         chkEnable.setForeground((flag) ? ACTIVE : INACTIVE);
                     } else {
@@ -371,8 +373,14 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                     btnCheck.setEnabled(flag);
                     lblPassword.setEnabled(flag);
                     lblUsername.setEnabled(flag);
+                    return null;
                 }
-            });
+                
+            }.waitForEDT();
+        
+                 
+                
+          
         }
 
         private JTextField getTextField(String text) {

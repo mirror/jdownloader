@@ -86,8 +86,9 @@ public abstract class ConfigPanel extends JTabbedPanel {
                     panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
                    
                     JScrollPane sp;
-                        panel.add(sp=new JScrollPane(c), "spanx,growy,pushy");
-                    sp.setBorder(null);
+                    panel.add(c, "spanx,growy,pushy");
+//                        panel.add(sp=new JScrollPane(c), "spanx,growy,pushy");
+//                    sp.setBorder(null);
                     break;
                 default:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright 20" : "gapright 20");

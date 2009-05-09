@@ -67,6 +67,10 @@ public class Installer {
         configContainer.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")));
         if (!OSDetector.isMac()) {
             ce.setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
+        } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Downloads").exists()) {
+            ce.setDefaultValue(new File(System.getProperty("user.home") + "/Downloads"));
+        } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Download").exists()) {
+            ce.setDefaultValue(new File(System.getProperty("user.home") + "/Download"));
         } else {
             ce.setDefaultValue(new File(System.getProperty("user.home") + "/Downloads"));
         }
@@ -84,7 +88,7 @@ public class Installer {
         // logger.info("ConfigDialog");
         new GuiRunnable<Object>() {
 
-            //@Override
+            // @Override
             public Object runSave() {
                 ConfigEntriesPanel p = new ConfigEntriesPanel(configContainer);
                 JPanel panel = new JPanel(new BorderLayout());

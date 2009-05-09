@@ -6,6 +6,8 @@ import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import javax.swing.ImageIcon;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import jd.config.ConfigPropertyListener;
@@ -14,9 +16,8 @@ import jd.controlling.JDController;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
-import org.jdesktop.swingx.JXTaskPane;
 
-public class JDCollapser extends JXTaskPane implements MouseListener {
+public class JDCollapser extends JPanel implements MouseListener {
 
     private static final long serialVersionUID = 6864885344815243560L;
     private static JDCollapser INSTANCE = null;
@@ -30,49 +31,10 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
 
     private JDCollapser() {
         super();
-        this.setVisible(false);
+        this.setVisible(true);
         // this.setCollapsed(true);
         this.addMouseListener(this);
-        getContentPane().setLayout(new MigLayout("ins 0,wrap 1", "[grow, fill]", "[grow,fill]"));
-        this.setAnimated(SimpleGuiConstants.isAnimated());
-        JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
-
-            // @Override
-            public void onPropertyChanged(Property source, String propertyName) {
-                setAnimated(SimpleGuiConstants.isAnimated());
-
-            }
-
-        });
-        this.addPropertyChangeListener(new PropertyChangeListener() {
-
-            public void propertyChange(final PropertyChangeEvent evt) {
-                EventQueue.invokeLater(new Runnable() {
-                    public void run() {
-                        if (!SimpleGuiConstants.isAnimated()) {
-                            if ("collapsed".equals(evt.getPropertyName())) {
-
-                                if (((Boolean) evt.getNewValue())) {
-                                    JDCollapser.this.setVisible(false);
-                                } else {
-                                    JDCollapser.this.setVisible(true);
-                                }
-
-                            }
-
-                        } else {
-                            if (evt.getPropertyName() == JXCollapsiblePane.ANIMATION_STATE_KEY) {
-                                if (evt.getNewValue().equals("collapsed")) {
-                                    JDCollapser.this.setVisible(false);
-                                }
-                            }
-                        }
-                    }
-                });
-
-            }
-
-        });
+   
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -94,17 +56,7 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
     }
 
     public void setCollapsed(boolean b) {
-        if (b == this.isCollapsed()) return;
-        super.setCollapsed(b);
-        if (b) {
-            if (panel != null) {
-                panel.onHide();
-                panel = null;
-            }
-
-        } else {
-            setVisible(true);
-        }
+      this.setVisible(!b);
     }
 
     public void setContentPanel(JTabbedPanel panel2) {
@@ -114,19 +66,29 @@ public class JDCollapser extends JXTaskPane implements MouseListener {
             this.panel.onHide();
 
         }
-        getContentPane().removeAll();
-        getContentPane().setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[shrink 100]"));
+        removeAll();
+       setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
 
         this.panel = panel2;
         panel.onDisplay();
 
         // JScrollPane sp;
 
-        getContentPane().add(new JScrollPane(panel), "height n:n:" + (int) (SimpleGUI.CURRENTGUI.getHeight() * 0.65));
+        add(panel);
 
         // getContentPane().add(panel);
         setCollapsed(false);
         revalidate();
 
+    }
+
+    public void setTitle(String l) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void setIcon(ImageIcon ii) {
+        // TODO Auto-generated method stub
+        
     }
 }

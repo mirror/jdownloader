@@ -239,6 +239,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                                  
                                     helpPlugin.getBrowser().setConnectTimeout(to);
                                 }
+                                if(ai==null)continue;
                                 if (ai.isValid()&&!ai.isExpired()) {
                                     if (!map.containsKey(wrapper.getHost())) {
                                         mapSize.put(wrapper.getHost(), 0l);
