@@ -133,6 +133,12 @@ public abstract class PluginForHost extends Plugin {
 
     private String premiumurl = null;
 
+    private boolean canResume = false;
+
+    public void setResume(boolean b) {
+        canResume = b;
+    }
+
     public boolean checkLinks(DownloadLink[] urls) {
         return false;
     }
@@ -189,9 +195,9 @@ public abstract class PluginForHost extends Plugin {
             // frische INstanz
             return null;
         }
-        if(account.getPass().trim().length()==0 &&account.getUser().trim().length()==0){
+        if (account.getPass().trim().length() == 0 && account.getUser().trim().length() == 0) {
             // frische INstanz
-            return null; 
+            return null;
         }
         if (account.getProperty(AccountInfo.PARAM_INSTANCE) != null) {
             AccountInfo ai = (AccountInfo) account.getProperty(AccountInfo.PARAM_INSTANCE);
@@ -406,22 +412,13 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public boolean ignoreHosterWaittime(DownloadLink link) {
-        if (!this.enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) { return false; }
-
-        Account currentAccount = null;
-
+        if (!this.enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return false;
         ArrayList<Account> accounts = getPremiumAccounts();
-
         synchronized (accounts) {
             for (int i = 0; i < accounts.size(); i++) {
-                if (!accounts.get(i).isTempDisabled() && accounts.get(i).isEnabled()) {
-
-                    currentAccount = accounts.get(i);
-                    break;
-                }
+                if (!accounts.get(i).isTempDisabled() && accounts.get(i).isEnabled()) { return true; }
             }
         }
-        if (currentAccount != null) return true;
         return false;
     }
 
@@ -458,11 +455,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public boolean canResume(DownloadLink link) {
-        /*
-         * TODO: hier sollte resumefähigkeit geprüft werden und nicht ob der
-         * hoster premium accoutns hat
-         */
-        return ignoreHosterWaittime(link) ? true : false;
+        return canResume;
     }
 
     public abstract void handleFree(DownloadLink link) throws Exception;
@@ -477,9 +470,9 @@ public abstract class PluginForHost extends Plugin {
         putLastTimeStarted(System.currentTimeMillis());
         if (!isAGBChecked()) {
             logger.severe("AGB not signed : " + getPluginID());
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);            
+            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
             return;
-        }        
+        }
 
         Long t = 0l;
 
