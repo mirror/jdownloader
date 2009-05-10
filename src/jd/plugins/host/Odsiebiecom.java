@@ -46,12 +46,11 @@ public class Odsiebiecom extends PluginForHost {
     }
 
     public void login(Account account) throws IOException, PluginException {
-        this.setBrowserExclusive();       
-        br.setDebug(true);
+        this.setBrowserExclusive();
         br.getPage("http://odsiebie.com/logowanie.html");
         br.postPage("http://odsiebie.com/logowanie.html?login", "luser=" + Encoding.urlEncode(account.getUser()) + "&lpass=" + Encoding.urlEncode(account.getPass()) + "&sub=Zaloguj+mnie");
         if (br.getCookie("http://odsiebie.com/", "gb_col") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        if (br.getCookie("http://odsiebie.com/", "gg_info") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);        
+        if (br.getCookie("http://odsiebie.com/", "gg_info") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
     // @Override
@@ -97,8 +96,8 @@ public class Odsiebiecom extends PluginForHost {
         /* Nochmals das File überprüfen */
         String finalfn = downloadLink.getName();
         getFileInformation(downloadLink);
-        if (account != null){
-            login(account);            
+        if (account != null) {
+            login(account);
             br.getPage(downloadLink.getDownloadURL());
         }
         String downloadurl;
@@ -107,7 +106,6 @@ public class Odsiebiecom extends PluginForHost {
          * ist
          */
         String steplink = br.getRegex("class=\"pob..\"\\s+href=\"/pobierz/(.*?)\">").getMatch(0);
-        br.setDebug(true);
         if (steplink == null) {
             /* Kein Button, also muss der Link irgendwo auf der Page sein */
             /* Film,Mp3 */

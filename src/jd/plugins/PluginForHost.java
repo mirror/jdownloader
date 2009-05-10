@@ -477,20 +477,9 @@ public abstract class PluginForHost extends Plugin {
         putLastTimeStarted(System.currentTimeMillis());
         if (!isAGBChecked()) {
             logger.severe("AGB not signed : " + getPluginID());
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
-            downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("plugins.hoster.error.agb", "TOC not signed"));
+            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);            
             return;
-        }
-
-        if (downloadLink.isDupeCheckallowed()) {
-            /* check ob Datei existiert oder bereits geladen wird */
-            System.out.println("PreDupeChecked: checking...");
-            if (DownloadInterface.preDownloadCheckFailed(downloadLink)) {
-                System.out.println("PreDupeChecked: mirror already loading!");
-                return;
-            }
-            System.out.println("PreDupeChecked: no mirror found!");
-        }
+        }        
 
         Long t = 0l;
 

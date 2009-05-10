@@ -1,14 +1,16 @@
 package jd.controlling;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Vector;
 
 import jd.config.ConfigPropertyListener;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.event.JDBroadcaster;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberConstants;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackageEvent;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackageListener;
@@ -30,42 +32,103 @@ class LinkGrabberControllerBroadcaster extends JDBroadcaster<LinkGrabberControll
 
 public class LinkGrabberController implements LinkGrabberFilePackageListener, LinkGrabberControllerListener {
 
-    protected static Vector<LinkGrabberFilePackage> packages = new Vector<LinkGrabberFilePackage>();
-    protected static Vector<LinkGrabberFilePackage> publicpackages = new Vector<LinkGrabberFilePackage>();
+    public static final String PARAM_ONLINECHECK = "PARAM_ONLINECHECK";
+    public static final String CONFIG = "LINKGRABBER";
+    public static final String IGNORE_LIST = "IGNORE_LIST";
+
+    private static Vector<LinkGrabberFilePackage> packages = new Vector<LinkGrabberFilePackage>();
+    private static final HashSet<String> extensionFilter = new HashSet<String>();
 
     private static LinkGrabberController INSTANCE = null;
     private boolean lastSort = true;
-
-    private String PACKAGENAME_UNSORTED;
-    private String PACKAGENAME_UNCHECKED;
-    private String PACKAGENAME_OFFLINE;
 
     private LinkGrabberControllerBroadcaster broadcaster;
 
     private static String[] filter;
 
     private ConfigPropertyListener cpl;
+    private LinkGrabberFilePackage FP_UNSORTED;
+    private LinkGrabberFilePackage FP_UNCHECKED;
+    private LinkGrabberFilePackage FP_OFFLINE;
+    private LinkGrabberFilePackage FP_FILTERED;
 
     public synchronized static LinkGrabberController getInstance() {
         if (INSTANCE == null) INSTANCE = new LinkGrabberController();
         return INSTANCE;
     }
 
+    public LinkGrabberFilePackage getFILTERPACKAGE() {
+        return this.FP_FILTERED;
+    }
+
     private LinkGrabberController() {
-        PACKAGENAME_UNSORTED = JDLocale.L("gui.linkgrabber.package.unsorted", "various");
-        PACKAGENAME_UNCHECKED = JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked");
-        PACKAGENAME_OFFLINE = JDLocale.L("gui.linkgrabber.package.offline", "offline");
         getBroadcaster().addListener(this);
 
-        filter = LinkGrabberConstants.getLinkFilterPattern();
-        JDController.getInstance().addControlListener(this.cpl = new ConfigPropertyListener(LinkGrabberConstants.IGNORE_LIST) {
+        filter = getLinkFilterPattern();
+        JDController.getInstance().addControlListener(this.cpl = new ConfigPropertyListener(IGNORE_LIST) {
 
             // @Override
             public void onPropertyChanged(Property source, String propertyName) {
-                filter = LinkGrabberConstants.getLinkFilterPattern();
+                filter = getLinkFilterPattern();
             }
 
         });
+
+        FP_UNSORTED = new LinkGrabberFilePackage(JDLocale.L("gui.linkgrabber.package.unsorted", "various"), this);
+        FP_UNCHECKED = new LinkGrabberFilePackage(JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked"), this);
+        FP_OFFLINE = new LinkGrabberFilePackage(JDLocale.L("gui.linkgrabber.package.offline", "offline"), this);
+        FP_OFFLINE.setIgnore(true);
+        FP_FILTERED = new LinkGrabberFilePackage(JDLocale.L("gui.linkgrabber.package.filtered", "filtered"));
+        FP_FILTERED.setIgnore(true);
+    }
+
+    public HashSet<String> getExtensionFilter() {
+        return extensionFilter;
+    }
+
+    public boolean isLinkCheckEnabled() {
+        return SubConfiguration.getConfig(CONFIG).getBooleanProperty(PARAM_ONLINECHECK, true);
+    }
+
+    public void clearExtensionFilter() {
+        synchronized (extensionFilter) {
+            extensionFilter.clear();
+            this.FP_FILTERED.setDownloadLinks(new Vector<DownloadLink>());
+        }
+    }
+
+    public void FilterExtension(String ext, boolean b) {
+        boolean c = false;
+        synchronized (extensionFilter) {
+            if (!b) {
+                if (!extensionFilter.contains(ext)) {
+                    extensionFilter.add(ext);
+                    c = true;
+                } else {
+                    return;
+                }
+            } else {
+                if (extensionFilter.contains(ext)) {
+                    extensionFilter.remove(ext);
+                    c = true;
+                } else {
+                    return;
+                }
+            }
+        }
+        if (c) broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.FILTER_CHANGED));
+    }
+
+    public String[] getLinkFilterPattern() {
+        String filter = SubConfiguration.getConfig(CONFIG).getStringProperty(IGNORE_LIST, null);
+        if (filter == null) return null;
+        String[] lines = Regex.getLines(filter);
+        ArrayList<String> ret = new ArrayList<String>();
+        for (String line : lines) {
+            if (line.trim().startsWith("#") || line.trim().length() == 0) continue;
+            ret.add(line.trim());
+        }
+        return ret.toArray(new String[] {});
     }
 
     protected void finalize() {
@@ -78,25 +141,22 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         return broadcaster;
     }
 
-    public Vector<LinkGrabberFilePackage> getPackagesUnfiltered() {
-        return packages;
-    }
-
     public Vector<LinkGrabberFilePackage> getPackages() {
-        synchronized (packages) {
-            synchronized (publicpackages) {
-                publicpackages.clear();
-                for (LinkGrabberFilePackage fp : packages) {
-                    if (fp.getDownloadLinks().size() > 0) publicpackages.add(fp);
-                }
-            }
-        }
-        return publicpackages;
+        return packages;
     }
 
     public int indexOf(LinkGrabberFilePackage fp) {
         synchronized (packages) {
             return packages.indexOf(fp);
+        }
+    }
+
+    public boolean isExtensionFiltered(DownloadLink link) {
+        synchronized (extensionFilter) {
+            for (String ext : extensionFilter) {
+                if (link.getName().endsWith(ext)) { return true; }
+            }
+            return false;
         }
     }
 
@@ -115,9 +175,9 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public LinkGrabberFilePackage getFPwithLink(DownloadLink link) {
         synchronized (packages) {
             if (link == null) return null;
-            LinkGrabberFilePackage fp = null;
-            for (Iterator<LinkGrabberFilePackage> it = packages.iterator(); it.hasNext();) {
-                fp = it.next();
+            Vector<LinkGrabberFilePackage> fps = new Vector<LinkGrabberFilePackage>(packages);
+            fps.add(this.FP_FILTERED);
+            for (LinkGrabberFilePackage fp : fps) {
                 if (fp.contains(link)) return fp;
             }
             return null;
@@ -126,18 +186,13 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     public void MergeSingleOffline() {
         synchronized (packages) {
-            LinkGrabberFilePackage fp2 = getFPwithName(PACKAGENAME_OFFLINE);
-            if (fp2 == null) {
-                fp2 = new LinkGrabberFilePackage(PACKAGENAME_OFFLINE, this);
-            }
             Vector<LinkGrabberFilePackage> fps = new Vector<LinkGrabberFilePackage>(packages);
             for (LinkGrabberFilePackage fp : fps) {
-                synchronized (fp.getDownloadLinksUnFiltered()) {
-                    Vector<DownloadLink> links = new Vector<DownloadLink>(fp.getDownloadLinksUnFiltered());
+                synchronized (fp.getDownloadLinks()) {
+                    Vector<DownloadLink> links = new Vector<DownloadLink>(fp.getDownloadLinks());
                     for (DownloadLink dl : links) {
                         if (dl.isAvailabilityChecked() && !dl.isAvailable() && links.size() == 1) {
-                            this.AddorMoveDownloadLink(fp2, dl);
-                            System.out.println("move to offline");
+                            this.AddorMoveDownloadLink(FP_OFFLINE, dl);
                         }
                     }
                 }
@@ -153,7 +208,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
             DownloadLink dl = null;
             for (Iterator<LinkGrabberFilePackage> it = packages.iterator(); it.hasNext();) {
                 fp = it.next();
-                for (Iterator<DownloadLink> it2 = fp.getDownloadLinksUnFiltered().iterator(); it2.hasNext();) {
+                for (Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator(); it2.hasNext();) {
                     dl = it2.next();
                     if (dl.compareTo(link) == 0) return true;
                 }
@@ -167,7 +222,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
             if (!packages.contains(fp)) {
                 packages.add(fp);
                 fp.getBroadcaster().addListener(this);
-                broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.ADD_FILEPACKAGE));
+                broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.ADD_FILEPACKAGE, fp));
             }
         }
     }
@@ -195,7 +250,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                     packages.add(0, fp);
                 } else
                     packages.add(index, fp);
-                broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.ADD_FILEPACKAGE));
+                broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE, fp));
             } else {
                 if (index > packages.size() - 1) {
                     packages.add(fp);
@@ -204,7 +259,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 } else
                     packages.add(index, fp);
                 fp.getBroadcaster().addListener(this);
-                broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.ADD_FILEPACKAGE));
+                broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.ADD_FILEPACKAGE, fp));
             }
         }
     }
@@ -212,22 +267,17 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public void AddorMoveDownloadLink(LinkGrabberFilePackage fp, DownloadLink link) {
         synchronized (packages) {
             LinkGrabberFilePackage fptmp = getFPwithLink(link);
-            addPackage(fp);
             fp.add(link);
             if (fptmp != null && fp != fptmp) fptmp.remove(link);
-            broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE));
         }
     }
 
     public void removePackage(LinkGrabberFilePackage fp) {
         if (fp == null) return;
         synchronized (packages) {
-            synchronized (publicpackages) {
-                fp.getBroadcaster().removeListener(this);
-                packages.remove(fp);
-                publicpackages.remove(fp);
-                broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REMOVE_FILPACKAGE, fp));
-            }
+            fp.getBroadcaster().removeListener(this);
+            packages.remove(fp);
+            broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REMOVE_FILPACKAGE, fp));
         }
     }
 
@@ -263,28 +313,48 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE));
     }
 
+    public void FilterPackages() {
+        synchronized (packages) {
+            synchronized (extensionFilter) {
+                Vector<LinkGrabberFilePackage> fps = new Vector<LinkGrabberFilePackage>(packages);
+                fps.add(this.FP_FILTERED);
+                for (LinkGrabberFilePackage fp : fps) {
+                    if (fp == this.FP_UNCHECKED || fp == this.FP_OFFLINE || fp == this.FP_UNSORTED) continue;
+                    synchronized (fp.getDownloadLinks()) {
+                        Vector<DownloadLink> links = new Vector<DownloadLink>(fp.getDownloadLinks());
+                        for (DownloadLink dl : links) {
+                            if (this.isExtensionFiltered(dl)) {
+                                this.AddorMoveDownloadLink(FP_FILTERED, dl);
+                            } else {
+                                this.attachToPackagesSecondStage(dl);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public void attachToPackagesFirstStage(DownloadLink link) {
         synchronized (packages) {
             String packageName;
             LinkGrabberFilePackage fp = null;
-            if (link.getFilePackage() != FilePackage.getDefaultFilePackage()) {
-                packageName = link.getFilePackage().getName();
-                fp = getFPwithName(packageName);
-                if (fp == null) {
-                    fp = new LinkGrabberFilePackage(packageName, this);
+            if (this.isExtensionFiltered(link)) {
+                fp = this.FP_FILTERED;
+            } else {
+                if (link.getFilePackage() != FilePackage.getDefaultFilePackage()) {
+                    packageName = link.getFilePackage().getName();
+                    fp = getFPwithName(packageName);
+                    if (fp == null) {
+                        fp = new LinkGrabberFilePackage(packageName, this);
+                    }
                 }
             }
             if (fp == null) {
-                if (LinkGrabberConstants.isLinkCheckEnabled()) {
-                    fp = getFPwithName(PACKAGENAME_UNCHECKED);
-                    if (fp == null) {
-                        fp = new LinkGrabberFilePackage(PACKAGENAME_UNCHECKED, this);
-                    }
+                if (isLinkCheckEnabled()) {
+                    fp = this.FP_UNCHECKED;
                 } else {
-                    fp = getFPwithName(PACKAGENAME_UNSORTED);
-                    if (fp == null) {
-                        fp = new LinkGrabberFilePackage(PACKAGENAME_UNSORTED, this);
-                    }
+                    fp = this.FP_UNSORTED;
                 }
             }
             AddorMoveDownloadLink(fp, link);
@@ -298,7 +368,10 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public synchronized void attachToPackagesSecondStage(DownloadLink link) {
         String packageName;
         boolean autoPackage = false;
-        if (link.getFilePackage() != FilePackage.getDefaultFilePackage()) {
+        if (this.isExtensionFiltered(link)) {
+            AddorMoveDownloadLink(this.FP_FILTERED, link);
+            return;
+        } else if (link.getFilePackage() != FilePackage.getDefaultFilePackage()) {
             packageName = link.getFilePackage().getName();
         } else {
             autoPackage = true;
@@ -358,7 +431,6 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     }
 
     private int comparepackages(String a, String b) {
-
         int c = 0;
         for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
             if (a.charAt(i) == b.charAt(i)) {
@@ -373,11 +445,14 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         switch (event.getID()) {
         case LinkGrabberFilePackageEvent.EMPTY_EVENT:
             removePackage(((LinkGrabberFilePackage) event.getSource()));
-            if (packages.size() == 0) broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.EMPTY));
+            if (packages.size() == 0 && this.FP_FILTERED.size() == 0) {
+                clearExtensionFilter();
+                broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.EMPTY));
+            }
             break;
         case LinkGrabberFilePackageEvent.ADD_LINK:
         case LinkGrabberFilePackageEvent.REMOVE_LINK:
-            broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE));
+            addPackage(((LinkGrabberFilePackage) event.getSource()));
             break;
         case LinkGrabberFilePackageEvent.UPDATE_EVENT:
             broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE, event.getSource()));
@@ -392,6 +467,9 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         case LinkGrabberControllerEvent.ADD_FILEPACKAGE:
         case LinkGrabberControllerEvent.REMOVE_FILPACKAGE:
             broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE));
+            break;
+        case LinkGrabberControllerEvent.FILTER_CHANGED:
+            FilterPackages();
             break;
         default:
             break;
@@ -411,7 +489,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
             return false;
         }
     }
-    
+
     public static boolean isFiltered(CryptedLink element) {
         synchronized (filter) {
             if (filter == null) return false;

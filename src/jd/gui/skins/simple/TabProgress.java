@@ -16,6 +16,7 @@
 
 package jd.gui.skins.simple;
 
+import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
@@ -187,6 +188,8 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         private JButton cancel;
         private boolean attached = false;
         private ProgressController controller = null;
+        private Color bgc;
+        private Color fgc;
 
         public void setAttached(boolean attached) {
             this.attached = attached;
@@ -197,6 +200,8 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
             this.add(label = new JLabel());
             this.add(bar = new JProgressBar());
             this.add(cancel = new JButton(JDTheme.II("gui.images.cancel", 16, 16)), "width 16!,height 16!");
+            bgc = bar.getBackground();
+            fgc = bar.getForeground();
             cancel.setBorderPainted(false);
             cancel.setContentAreaFilled(false);
             cancel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -219,9 +224,12 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
             bar.setValue(controller.getPercent());
             bar.setStringPainted(true);
             bar.setString(controller.getStatusText());
-            if(controller.getColor()!=null){
-            bar.setBackground(controller.getColor());
-            bar.setForeground(controller.getColor().brighter());
+            if (controller.getColor() != null) {
+                bar.setBackground(controller.getColor());
+                bar.setForeground(controller.getColor().brighter());
+            } else {
+                bar.setBackground(bgc);
+                bar.setForeground(fgc);
             }
         }
 

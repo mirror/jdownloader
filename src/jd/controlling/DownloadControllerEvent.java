@@ -29,4 +29,5 @@ public class DownloadControllerEvent extends JDEvent {
     public static final int ADD_DOWNLOADLINK = 4;
 
     public static final int REMOVE_DOWNLOADLINK = 5;
+    
 }

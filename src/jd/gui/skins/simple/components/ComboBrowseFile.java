@@ -16,11 +16,10 @@
 
 package jd.gui.skins.simple.components;
 
-import java.awt.Component;
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.EventObject;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -28,63 +27,11 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
-import javax.swing.JTable;
-import javax.swing.event.CellEditorListener;
 import javax.swing.filechooser.FileFilter;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
 
 import jd.config.SubConfiguration;
 import jd.utils.JDLocale;
 import net.miginfocom.swing.MigLayout;
-
-class ComboBrowseFileEditor implements TableCellEditor, ActionListener {
-
-    private boolean stop = false;
-
-    public void actionPerformed(ActionEvent e) {
-        stop = true;
-    }
-
-    public void addCellEditorListener(CellEditorListener l) {
-    }
-
-    public void cancelCellEditing() {
-    }
-
-    public Object getCellEditorValue() {
-        return null;
-    }
-
-    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-        stop = false;
-        ComboBrowseFile btn = (ComboBrowseFile) value;
-        btn.addActionListener(this);
-        return btn;
-    }
-
-    public boolean isCellEditable(EventObject anEvent) {
-        return true;
-    }
-
-    public void removeCellEditorListener(CellEditorListener l) {
-    }
-
-    public boolean shouldSelectCell(EventObject anEvent) {
-        return false;
-    }
-
-    public boolean stopCellEditing() {
-        return stop;
-    }
-
-}
-
-class ComboBrowseFileRenderer implements TableCellRenderer {
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        return (ComboBrowseFile) value;
-    }
-}
 
 public class ComboBrowseFile extends JPanel implements ActionListener {
 
@@ -99,8 +46,6 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     private JComboBox cmboInput;
 
     private File currentPath;
-
-    private boolean editable = true;
 
     private Vector<String> files;
 
@@ -134,20 +79,16 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        ActionEvent event = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "");
-
         if (e.getSource() == cmboInput) {
             Object sel = cmboInput.getSelectedItem();
             if (sel != null) {
                 setCurrentPath(new File(sel.toString()));
-                dispatchEvent(event);
             }
         } else if (e.getSource() == btnBrowse) {
             setCurrentPath(getPath());
-            dispatchEvent(event);
         }
         for (ActionListener l : listenerList) {
-            l.actionPerformed(event);
+            l.actionPerformed(e);
         }
     }
 
@@ -187,7 +128,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     }
 
     public boolean getEditable() {
-        return editable;
+        return cmboInput.isEditable();
     }
 
     /**
@@ -222,7 +163,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         this.setLayout(new MigLayout("insets 0", "[left, grow]15px[]", ""));
 
         cmboInput = new JComboBox(files);
-        cmboInput.setEditable(editable);
+        cmboInput.setEditable(false);
         cmboInput.addActionListener(this);
         if (cmboInput.getItemCount() > 0) cmboInput.setSelectedIndex(0);
 
@@ -230,7 +171,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         btnBrowse.addActionListener(this);
 
         this.add(cmboInput, "grow");
-        this.add(btnBrowse, "wrap");        
+        this.add(btnBrowse, "wrap");
     }
 
     /**
@@ -259,20 +200,27 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
         SubConfiguration.getConfig("GUI").setProperty(getName(), new Vector<String>(files.subList(0, Math.min(files.size(), 20))));
         SubConfiguration.getConfig("GUI").save();
-
-        cmboInput.invalidate();
         cmboInput.setSelectedIndex(0);
+        /* EXPERIMENTAL: rausgenommen da freezes verursacht hat */
+        // cmboInput.invalidate();
     }
 
-    public void setEditable(boolean value) {
-        cmboInput.setEditable(value);
-        editable = value;
+    public void setEditable(final boolean value) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                cmboInput.setEditable(value);
+            }
+        });
     }
 
     // @Override
-    public void setEnabled(boolean value) {
-        cmboInput.setEnabled(value);
-        btnBrowse.setEnabled(value);
+    public void setEnabled(final boolean value) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                cmboInput.setEnabled(value);
+                btnBrowse.setEnabled(value);
+            }
+        });
     }
 
     /**
@@ -310,9 +258,16 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         }
     }
 
-    public void setText(String text) {
-        if (text == null) text = "";
-        setCurrentPath(new File(text));
+    public void setText(final String text) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                if (text == null) {
+                    setCurrentPath(new File(""));
+                } else {
+                    setCurrentPath(new File(text));
+                }
+            }
+        });
     }
 
     /**
@@ -335,11 +290,4 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         listenerList.remove(l);
     }
 
-    public static ComboBrowseFileEditor getTableCellEditor() {
-        return new ComboBrowseFileEditor();
-    }
-
-    public static ComboBrowseFileRenderer getTableCellRenderer() {
-        return new ComboBrowseFileRenderer();
-    }
 }

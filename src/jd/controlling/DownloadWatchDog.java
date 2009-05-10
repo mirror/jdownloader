@@ -194,7 +194,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                         links.elementAt(i).getLinkStatus().setStatus(LinkStatus.TODO);
                         links.elementAt(i).getLinkStatus().resetWaitTime();
                     }
-
                 }
             }
         }

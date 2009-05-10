@@ -254,7 +254,6 @@ public class Rapidshare extends PluginForHost {
             for (DownloadLink u : urls) {
                 u.setDownloadSize(Long.parseLong(matches[i][2]));
                 u.setFinalFileName(matches[i][1]);
-                u.setDupecheckAllowed(true);
                 u.setMD5Hash(matches[i][6]);
                 // 0=File not found 1=File OK 2=File OK (direct download)
                 // 3=Server down 4=File abused 5
@@ -292,8 +291,7 @@ public class Rapidshare extends PluginForHost {
             }
             return true;
         } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
-            System.err.println(br);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);            
             return false;
         }
 
@@ -860,8 +858,7 @@ public class Rapidshare extends PluginForHost {
         correctURL(downloadLink);
 
         LAST_FILE_CHECK = System.currentTimeMillis();
-        checkLinks(new DownloadLink[] { downloadLink });
-        return downloadLink.isAvailable();
+        return checkLinks(new DownloadLink[] { downloadLink });
 
     }
 

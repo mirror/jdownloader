@@ -33,7 +33,6 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     private static final long serialVersionUID = 5865820033205069205L;
     private String downloadDirectory;
     private Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
-    private Vector<DownloadLink> publicLinks = new Vector<DownloadLink>();
     private String name = "";
     private boolean extractAfterDownload = true;
     private boolean useSubDir = true;
@@ -41,14 +40,21 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     private String password = "";
     private long size = -1;
 
-    private long lastSizeCalc = 0;
-    private String dlpassword = "";
+    private long lastSizeCalc = 0;    
     private boolean lastSort = false;
     private int lastfail = 0;
     private long lastFailCount = 0;
     private String hosts;
-    static int i = 0;
+    private boolean ignorePackage = false;
     private transient LinkGrabberFilePackageBroadcaster broadcaster = new LinkGrabberFilePackageBroadcaster();
+
+    public boolean isIgnored() {
+        return ignorePackage;
+    }
+
+    public void setIgnore(boolean b) {
+        ignorePackage = b;
+    }
 
     public LinkGrabberFilePackage() {
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
@@ -75,8 +81,8 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     public synchronized long getDownloadSize(boolean forceUpdate) {
         if (!forceUpdate && System.currentTimeMillis() - lastSizeCalc < 5000) return size;
         long newsize = 0;
-        synchronized (this.publicLinks) {
-            for (DownloadLink element : publicLinks) {
+        synchronized (downloadLinks) {
+            for (DownloadLink element : downloadLinks) {
                 newsize += element.getDownloadSize();
             }
         }
@@ -88,8 +94,8 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     public synchronized int countFailedLinks(boolean forceUpdate) {
         if (!forceUpdate && System.currentTimeMillis() - lastFailCount < 5000) return lastfail;
         int newfail = 0;
-        synchronized (this.publicLinks) {
-            for (DownloadLink dl : publicLinks) {
+        synchronized (downloadLinks) {
+            for (DownloadLink dl : downloadLinks) {
                 if ((dl.isAvailabilityChecked() && !dl.isAvailable())) {
                     newfail++;
                 }
@@ -112,8 +118,8 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public int indexOf(DownloadLink link) {
-        synchronized (this.publicLinks) {
-            return this.publicLinks.indexOf(link);
+        synchronized (downloadLinks) {
+            return this.downloadLinks.indexOf(link);
         }
     }
 
@@ -146,17 +152,13 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public void add(DownloadLink link) {
         synchronized (downloadLinks) {
-            synchronized (this.publicLinks) {
-                if (!downloadLinks.contains(link)) {
-                    LinkGrabberFilePackage fp = LinkGrabberController.getInstance().getFPwithLink(link);
-                    if (!this.publicLinks.contains(link)) {
-                        this.publicLinks.add(link);
-                    }
-                    downloadLinks.add(link);
-                    getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK));
-                    if (fp != null && fp != this) fp.remove(link);
-                }
+            if (!downloadLinks.contains(link)) {
+                LinkGrabberFilePackage fp = LinkGrabberController.getInstance().getFPwithLink(link);
+                downloadLinks.add(link);
+                getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK, link));
+                if (fp != null && fp != this) fp.remove(link);
             }
+
         }
     }
 
@@ -182,7 +184,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void updateData() {
-        synchronized (this.publicLinks) {
+        synchronized (downloadLinks) {
             String password = this.password;
             StringBuilder comment = new StringBuilder(this.comment);
 
@@ -194,11 +196,8 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
             Vector<String> dlpwList = new Vector<String>();
 
-            for (DownloadLink element : this.publicLinks) {
-                pws = JDUtilities.passwordStringToArray(element.getSourcePluginPassword());
-
-                String dlpw = element.getStringProperty("pass", null);
-                if (dlpw != null && !dlpwList.contains(dlpw)) dlpwList.add(dlpw);
+            for (DownloadLink element : downloadLinks) {
+                pws = JDUtilities.passwordStringToArray(element.getSourcePluginPassword());                
                 for (String element2 : pws) {
                     if (pwList.indexOf(element2) < 0) {
                         pwList.add(element2);
@@ -217,8 +216,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                 cmt = cmt.substring(1);
             }
             this.comment = cmt;
-            this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
-            this.dlpassword = JDUtilities.passwordArrayToString(dlpwList.toArray(new String[dlpwList.size()]));
+            this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));            
         }
     }
 
@@ -241,7 +239,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                     downloadLinks.add(0, link);
                 } else
                     downloadLinks.add(index, link);
-                getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK));
+                getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK, link));
                 if (fp != null && fp != this) fp.remove(link);
             }
         }
@@ -273,54 +271,24 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public boolean contains(DownloadLink link) {
-        synchronized (this.publicLinks) {
-            return this.publicLinks.contains(link);
+        synchronized (downloadLinks) {
+            return downloadLinks.contains(link);
         }
     }
 
     public DownloadLink get(int index) {
-        synchronized (this.publicLinks) {
-            return this.publicLinks.get(index);
-        }
-    }
-
-    public Vector<DownloadLink> getDownloadLinksUnFiltered() {
         synchronized (downloadLinks) {
-            return downloadLinks;
+            return downloadLinks.get(index);
         }
     }
 
     public Vector<DownloadLink> getDownloadLinks() {
-
-      
-        synchronized (downloadLinks) {
-            synchronized (LinkGrabberConstants.getExtensionFilter()) {
-                synchronized (publicLinks) {
-                    publicLinks.clear();
-                    for (DownloadLink dl : downloadLinks) {
-                        boolean add = true;
-                        for (String ext : LinkGrabberConstants.getExtensionFilter()) {
-                            if (dl.getName().endsWith(ext)) {
-                                add = false;
-                                break;
-                            }
-                        }
-                        if (add) publicLinks.add(dl);
-                    }
-                    return publicLinks;
-                }
-            }
-        }
+        return downloadLinks;
     }
 
     public String getPassword() {
         updateData();
         return password;
-    }
-
-    public String getDLPassword() {
-        updateData();
-        return dlpassword;
     }
 
     public String getComment() {
@@ -330,25 +298,21 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public boolean remove(DownloadLink link) {
         synchronized (downloadLinks) {
-            synchronized (this.publicLinks) {
-                boolean ret = this.getDownloadLinks().remove(link);
-                if (ret) downloadLinks.remove(link);
-                if (ret) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK));
-                if (this.publicLinks.size() == 0) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
-                return ret;
-            }
+            boolean ret = this.getDownloadLinks().remove(link);
+            if (ret) downloadLinks.remove(link);
+            if (ret) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK, link));
+            if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
+            return ret;
         }
     }
 
     public DownloadLink remove(int index) {
         synchronized (downloadLinks) {
-            synchronized (this.publicLinks) {
-                DownloadLink link = this.getDownloadLinks().remove(index);
-                if (link != null) downloadLinks.remove(link);
-                if (link != null) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK));
-                if (this.publicLinks.size() == 0) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
-                return link;
-            }
+            DownloadLink link = this.getDownloadLinks().remove(index);
+            if (link != null) downloadLinks.remove(link);
+            if (link != null) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK, link));
+            if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
+            return link;
         }
     }
 
@@ -356,22 +320,17 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         if (comment == null) comment = "";
         this.comment = comment;
         getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
-    }
+    } 
 
-    public void setDLPassword(String pass) {
-        if (pass == null) pass = "";
-        this.dlpassword = pass;
-        getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+    public void clear() {
+        this.setDownloadLinks(new Vector<DownloadLink>());
     }
 
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
         synchronized (downloadLinks) {
-            synchronized (this.publicLinks) {
-                this.publicLinks = new Vector<DownloadLink>(downloadLinks);
-                this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
-                getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
-                if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
-            }
+            this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
+            getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+            if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
         }
     }
 
@@ -440,8 +399,8 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     private void updateHosts() {
         Set<String> hosterList = new HashSet<String>();
-        synchronized (this.publicLinks) {
-            for (DownloadLink dl : this.publicLinks) {
+        synchronized (downloadLinks) {
+            for (DownloadLink dl : downloadLinks) {
                 hosterList.add(dl.getHost());
             }
             hosts = hosterList.toString();

@@ -31,6 +31,7 @@ public class Account extends Property {
 
     private transient boolean tempDisabled = false;
     private transient long tmpDisabledTime = 0;
+    private transient boolean fireChanges = true;
 
     public Account(String user, String pass) {
         this.user = user;
@@ -38,6 +39,10 @@ public class Account extends Property {
         this.setTmpDisabledInterval(10 * 60 * 1000);
         if (this.user != null) this.user = this.user.trim();
         if (this.pass != null) this.pass = this.pass.trim();
+    }
+
+    public void setfireChanges(boolean b) {
+        fireChanges = b;
     }
 
     public String getPass() {
@@ -64,8 +69,8 @@ public class Account extends Property {
     }
 
     public void setEnabled(boolean enabled) {
-        if(this.enabled==enabled)return;
-        System.out.println(this +": "+enabled);
+        if (this.enabled == enabled) return;
+        System.out.println(this + ": " + enabled);
         this.enabled = enabled;
         fireChange();
     }
@@ -82,8 +87,8 @@ public class Account extends Property {
     }
 
     public void setStatus(String status) {
-        if(this.status==status)return;
-        if(this.status!=null &&this.status.equals(status))return;
+        if (this.status == status) return;
+        if (this.status != null && this.status.equals(status)) return;
         this.status = status;
         fireChange();
     }
@@ -106,8 +111,7 @@ public class Account extends Property {
     }
 
     private void fireChange() {
-        AccountManager.getInstance().fireChange(this);
-
+        if (fireChanges) AccountManager.getInstance().fireChange(this);
     }
 
     // @Override

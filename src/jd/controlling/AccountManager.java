@@ -47,7 +47,6 @@ public class AccountManager extends SubConfiguration implements ControlListener 
 
     @SuppressWarnings("unchecked")
     private void importOld() {
-
         for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
             ArrayList<Account> list = (ArrayList<Account>) wrapper.getPluginConfig().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
             if (list != null) {
@@ -56,7 +55,6 @@ public class AccountManager extends SubConfiguration implements ControlListener 
         }
         setProperty(IMPORTEDFLAG, true);
         save();
-
     }
 
     public synchronized static AccountManager getInstance() {

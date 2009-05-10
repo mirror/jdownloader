@@ -95,8 +95,13 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         AccountManager.getInstance().addAccountListener(this);
 
         premium = new JToggleButton();
-        premium.setIcon(JDTheme.II("gui.images.premium_disabled", 16, 16));
-        premium.setSelectedIcon(JDTheme.II("gui.images.premium_enabled", 16, 16));
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
+            premium.setSelected(true);
+            premium.setIcon(JDTheme.II("gui.images.premium_enabled", 16, 16));
+        } else {
+            premium.setSelected(false);
+            premium.setIcon(JDTheme.II("gui.images.premium_disabled", 16, 16));
+        }
         premium.setToolTipText(JDLocale.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
 
         premium.addChangeListener(new ChangeListener() {
@@ -106,11 +111,10 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                 if (JDUtilities.getConfiguration().isChanges()) {
                     if (premium.isSelected()) {
                         premium.setIcon(JDTheme.II("gui.images.premium_enabled", 16, 16));
-
                     } else {
                         premium.setIcon(JDTheme.II("gui.images.premium_disabled", 16, 16));
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, false);
-
+                        // JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,
+                        // false);
                     }
 
                     for (int i = 0; i < BARCOUNT; i++) {
@@ -118,15 +122,12 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                             bars[i].setEnabled(premium.isSelected());
                         }
                     }
-
                     JDUtilities.getConfiguration().save();
                 }
 
             }
 
         });
-
-        premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
         premium.setFocusPainted(false);
         premium.setContentAreaFilled(false);
         premium.setBorderPainted(false);
@@ -224,8 +225,6 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                                 if (a.getProperty(AccountInfo.PARAM_INSTANCE) != null) {
                                     ai = (AccountInfo) a.getProperty(AccountInfo.PARAM_INSTANCE);
 
-                                 
-                              
                                     if ((System.currentTimeMillis() - ai.getCreateTime()) >= ACCOUNT_UPDATE_DELAY) {
 
                                         ai = null;
@@ -236,11 +235,11 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
                                     helpPlugin.getBrowser().setConnectTimeout(5000);
 
                                     ai = helpPlugin.getAccountInformation(a);
-                                 
+
                                     helpPlugin.getBrowser().setConnectTimeout(to);
                                 }
-                                if(ai==null)continue;
-                                if (ai.isValid()&&!ai.isExpired()) {
+                                if (ai == null) continue;
+                                if (ai.isValid() && !ai.isExpired()) {
                                     if (!map.containsKey(wrapper.getHost())) {
                                         mapSize.put(wrapper.getHost(), 0l);
                                         map.put(wrapper.getHost(), new ArrayList<AccountInfo>());
@@ -374,10 +373,9 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
 
     public void onUpdate() {
 
-     
-                if (!updating) updatePremium();
-                redraw();
-       
+        if (!updating) updatePremium();
+        redraw();
+
     }
 
 }

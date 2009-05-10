@@ -70,8 +70,7 @@ public class GoogleGroups extends PluginForHost {
                         if (strings[0].contains(na) || downloadLink.getName().equals(strings[1])) {
 
                             downloadLink.setAvailable(true);
-                            downloadLink.setFinalFileName(strings[1]);
-                            downloadLink.setDupecheckAllowed(true);
+                            downloadLink.setFinalFileName(strings[1]);                            
                             downloadLink.setDownloadSize(Regex.getSize(strings[2]));
                             break;
                         }

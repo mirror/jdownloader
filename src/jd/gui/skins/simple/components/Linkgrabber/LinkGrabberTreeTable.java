@@ -13,6 +13,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -122,7 +123,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
                 if (getPathForRow(getSelectedRow()) == null) return;
                 Object obj = getPathForRow(getSelectedRow()).getLastPathComponent();
                 if (obj == null) {
-                    linkgrabber.hideFilePackageInfo();
+                     linkgrabber.hideFilePackageInfo();
                 }
                 LinkGrabberFilePackage pkg = null;
                 if (obj instanceof LinkGrabberFilePackage) {
@@ -130,7 +131,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
                 } else {
                     pkg = LinkGrabberController.getInstance().getFPwithLink((DownloadLink) obj);
                 }
-                linkgrabber.showFilePackageInfo(pkg);
+                 linkgrabber.showFilePackageInfo(pkg);
             }
         });
         prioDescs = new String[] { JDLocale.L("gui.treetable.tooltip.priority0", "No Priority"), JDLocale.L("gui.treetable.tooltip.priority1", "High Priority"), JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority") };
@@ -291,8 +292,6 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
             int column = getRealcolumnAtPoint(e.getX());
             if (path != null && path.getLastPathComponent() instanceof LinkGrabberFilePackage) {
                 if (column == 1 && e.getButton() == MouseEvent.BUTTON1) {
-                    System.out.println(e.getClickCount());
-
                     LinkGrabberFilePackage fp = (LinkGrabberFilePackage) path.getLastPathComponent();
                     if (fp.getBooleanProperty(PROPERTY_EXPANDED, false)) {
                         collapsePath(path);
@@ -378,10 +377,13 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         JMenuItem tmp;
         JMenu men = new JMenu(JDLocale.L("gui.table.contextmenu.filetype", "Filter"));
         ArrayList<String> extensions = linkgrabber.getExtensions();
+        HashSet<String> fl = LinkGrabberController.getInstance().getExtensionFilter();
         men.setIcon(JDTheme.II("gui.images.filter", 16, 16));
-        for (String e : extensions) {
-            men.add(tmp = new JCheckBoxMenuItem(new LinkGrabberTreeTableAction(linkgrabber, null, "*." + e, LinkGrabberTreeTableAction.EXT_FILTER, new Property("extension", e))));
-            tmp.setSelected(!LinkGrabberConstants.getExtensionFilter().contains(e));
+        synchronized (fl) {
+            for (String e : extensions) {
+                men.add(tmp = new JCheckBoxMenuItem(new LinkGrabberTreeTableAction(linkgrabber, null, "*." + e, LinkGrabberTreeTableAction.EXT_FILTER, new Property("extension", e))));
+                tmp.setSelected(!fl.contains(e));
+            }
         }
         return men;
     }

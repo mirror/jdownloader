@@ -205,8 +205,7 @@ public class Uploadedto extends PluginForHost {
             String fileName = lines[0].trim();
 
             long fileSize = Long.parseLong(lines[1].trim());
-            downloadLink.setFinalFileName(fileName);
-            downloadLink.setDupecheckAllowed(true);
+            downloadLink.setFinalFileName(fileName);            
             downloadLink.setDownloadSize(fileSize);
             downloadLink.setSha1Hash(lines[2].trim());
         } catch (Exception e) {

@@ -306,8 +306,7 @@ public class Megauploadcom extends PluginForHost {
                     DownloadLink downloadLink = urls[d];
                     if (name != null) {
                         downloadLink.setFinalFileName(name);
-                        downloadLink.setDownloadSize(Long.parseLong(queryQ.get("s")));
-                        downloadLink.setDupecheckAllowed(true);
+                        downloadLink.setDownloadSize(Long.parseLong(queryQ.get("s")));                        
                         downloadLink.setAvailable(true);
                     } else {
                         downloadLink.setAvailable(false);

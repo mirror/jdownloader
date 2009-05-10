@@ -326,6 +326,10 @@ public class DownloadController implements FilePackageListener, DownloadControll
         }
     }
 
+    public int size() {
+        return packages.size();
+    }
+
     /**
      * Liefert alle DownloadLinks zurück
      * 
@@ -340,7 +344,6 @@ public class DownloadController implements FilePackageListener, DownloadControll
         }
         return ret;
     }
-
 
     public DownloadLink getFirstDownloadLinkwithURL(String url) {
         if (url == null) return null;
@@ -368,12 +371,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                             return nextDownloadLink;
                         }
                     }
-                    if ((nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || nextDownloadLink.getLinkStatus().isPluginActive()) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
-                        if (nextDownloadLink.getFinalFileName() != null) {
-                            /* Dateiname muss fertig geholt sein */
-                            return nextDownloadLink;
-                        }
-                    }
+                    if ((nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || nextDownloadLink.getLinkStatus().isPluginActive()) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) return nextDownloadLink;
                 }
             }
         }

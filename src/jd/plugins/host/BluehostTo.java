@@ -147,8 +147,7 @@ public class BluehostTo extends PluginForHost {
                 String[] dat = lines[i].split("\\, ");
                 try {
                     urls[i].setMD5Hash(dat[5].trim());
-                    urls[i].setFinalFileName(dat[0]);
-                    urls[i].setDupecheckAllowed(true);
+                    urls[i].setFinalFileName(dat[0]);                    
                     urls[i].setDownloadSize(Long.parseLong(dat[2]));
                     urls[i].setAvailable(true);
                 } catch (Exception e) {
@@ -177,8 +176,7 @@ public class BluehostTo extends PluginForHost {
         String[] dat = page.split("\\, ");
         try {
             downloadLink.setMD5Hash(dat[5].trim());
-            downloadLink.setFinalFileName(dat[0]);
-            downloadLink.setDupecheckAllowed(true);
+            downloadLink.setFinalFileName(dat[0]);            
             downloadLink.setDownloadSize(Long.parseLong(dat[2]));
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

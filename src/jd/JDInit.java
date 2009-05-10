@@ -247,7 +247,7 @@ public class JDInit {
                     // home.getAbsolutePath(), 0));
                     // System.exit(0);
                     // } catch (Exception e) {
-                    //jd.controlling.JDLogger.getLogger().log(java.util.logging.
+                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.
                     // Level.SEVERE,"Exception occured",e);
                     // // System.exit(0);
                     // }
@@ -551,7 +551,7 @@ public class JDInit {
         new HostPluginWrapper("SpeedyShare.com", "SpeedyShareCom", "http://[\\w\\.]*?speedyshare\\.com/[0-9]+.*");
         new HostPluginWrapper("FileShaker.com", "FileshakerCom", "http://[\\w\\.]*?fileshaker\\.com/.+");
         new HostPluginWrapper("ADrive.com", "AdriveCom", "http://[\\w\\.].*?adrive\\.com/public/[0-9a-zA-Z]+.*");
-        new HostPluginWrapper("HotFile.com", "HotFileCom", "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/");
+        new HostPluginWrapper("HotFile.com", "HotFileCom", "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Przeklej.pl", "PrzeklejPl", "http://[\\w\\.]*?przeklej\\.pl/(d/\\w+/|\\d+).+");
         new HostPluginWrapper("Wrzuta.pl", "WrzutaPl", "http://[\\w\\.]*?wrzuta\\.pl/(audio|film|obraz)/\\w+.+");
         new HostPluginWrapper("FileFactory.pl", "FileFactoryPl", "http://[\\w\\.]*?filefactory\\.pl/showfile-\\d+.+");

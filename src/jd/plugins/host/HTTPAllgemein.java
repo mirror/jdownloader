@@ -111,8 +111,7 @@ public class HTTPAllgemein extends PluginForHost {
             }
             downloadLink.setFinalFileName(Plugin.getFileNameFormHeader(urlConnection));
             downloadLink.setBrowserUrl(downloadLink.getDownloadURL());
-            downloadLink.setDownloadSize(urlConnection.getLongContentLength());
-            downloadLink.setDupecheckAllowed(true);
+            downloadLink.setDownloadSize(urlConnection.getLongContentLength());            
             this.contentType = urlConnection.getContentType();
             urlConnection.disconnect();
             return true;

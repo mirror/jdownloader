@@ -6,7 +6,6 @@ import java.awt.event.ActionListener;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
 import jd.config.Configuration;
@@ -30,15 +29,11 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
 
     private JDTextField txtPassword;
 
-    private JDTextField dlPassword;
-
     private JCheckBox chbExtract;
 
     private JCheckBox chbUseSubdirectory;
 
-    private JTabbedPane tabbedPane;
-
-    private JPanel simplePanel, extendedPanel;
+    private JPanel simplePanel;
 
     private LinkGrabberFilePackage fp = null;
 
@@ -70,7 +65,6 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
         if (!txtName.isFocusOwner()) txtName.setText(fp.getName());
         if (!txtComment.isFocusOwner()) txtComment.setText(fp.getComment());
         if (!txtPassword.isFocusOwner()) txtPassword.setText(fp.getPassword());
-        dlPassword.setText(fp.getDLPassword());
         if (!brwSaveTo.isFocusOwner()) brwSaveTo.setText(fp.getDownloadDirectory());
         if (!chbExtract.isFocusOwner()) chbExtract.setSelected(fp.isExtractAfterDownload());
         if (!chbUseSubdirectory.isFocusOwner()) chbUseSubdirectory.setSelected(fp.useSubDir());
@@ -83,10 +77,7 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
     }
 
     private void buildGui() {
-        tabbedPane = new JTabbedPane();
-
         simplePanel = new JPanel();
-        extendedPanel = new JPanel();
 
         txtName = new JDTextField();
         txtName.setAutoSelect(true);
@@ -113,34 +104,23 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
         chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
         chbUseSubdirectory.addActionListener(this);
 
-        dlPassword = new JDTextField();
-        dlPassword.setEditable(false);
-
-        simplePanel.setLayout(new MigLayout("", "[]10px[grow]", "[][]"));
+        simplePanel.setLayout(new MigLayout("", "[]10px[]15px[]", "[][]"));
 
         simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
         simplePanel.add(txtName, "growx, wrap");
         simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
-        simplePanel.add(brwSaveTo, "growx");
+        simplePanel.add(brwSaveTo, "growx,wrap");
+        simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
 
-        tabbedPane.add(JDLocale.L("gui.linkgrabber.packagetab.toggleview1", "Simple"), simplePanel);
+        simplePanel.add(txtPassword, "growx");
+        simplePanel.add(chbExtract, "wrap");
 
-        extendedPanel.setLayout(new MigLayout("", "[]10px[grow][right]", "[][]"));
+        /* bitte noch die Checkbox für Subdirectory auch einbauen */
+        /* und evtl schöner aussehen lassen */
+        simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
+        simplePanel.add(txtComment, "growx");
 
-        extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
-        extendedPanel.add(txtPassword, "growx");
-        extendedPanel.add(chbExtract, "wrap");
-        extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
-        extendedPanel.add(txtComment, "grow");
-        extendedPanel.add(chbUseSubdirectory, "wrap");
-        extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.dlpassword", "Download Passwort")));
-
-        extendedPanel.add(dlPassword, "growx");
-
-        tabbedPane.add(JDLocale.L("gui.linkgrabber.packagetab.toggleview2", "Extended"), extendedPanel);
-
-        this.setLayout(new MigLayout("", "[grow]", "[]"));
-        this.add(tabbedPane, "grow");
+        this.add(simplePanel, "grow");
     }
 
     public void actionPerformed(ActionEvent e) {

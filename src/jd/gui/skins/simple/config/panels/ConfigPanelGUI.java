@@ -33,12 +33,12 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.JDLogger;
+import jd.controlling.LinkGrabberController;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberConstants;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.nutils.OSDetector;
@@ -149,12 +149,12 @@ if(JDTheme.getThemeIDs().size()<=1){
 
         lg.setGroup(new ConfigGroup(JDLocale.L("gui.config.gui.linggrabber", "General Linkgrabber Settings"), JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32)));
 
-        lg.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig(LinkGrabberConstants.CONFIG), LinkGrabberConstants.PARAM_ONLINECHECK, JDLocale.L("gui.config.linkgrabber.onlincheck", "Check linkinfo and onlinestatus")));
+        lg.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig(LinkGrabberController.CONFIG), LinkGrabberController.PARAM_ONLINECHECK, JDLocale.L("gui.config.linkgrabber.onlincheck", "Check linkinfo and onlinestatus")));
         ce.setDefaultValue(true);
 
         lg.setGroup(new ConfigGroup(JDLocale.L("gui.config.gui.linggrabber.ignorelist", "Linkfilter"), JDTheme.II("gui.images.filter", 32, 32)));
 
-        lg.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, SubConfiguration.getConfig(LinkGrabberConstants.CONFIG), LinkGrabberConstants.IGNORE_LIST, JDLocale.L("gui.config.linkgrabber.iognorelist", "The linkfilter is used to filter links based on regular expressions.")));
+        lg.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, SubConfiguration.getConfig(LinkGrabberController.CONFIG), LinkGrabberController.IGNORE_LIST, JDLocale.L("gui.config.linkgrabber.iognorelist", "The linkfilter is used to filter links based on regular expressions.")));
         ce.setDefaultValue("#Ignorefiletype 'olo':\r\n\r\n.+?\\.olo\r\n\r\n#Ignore hoster 'examplehost.com':\r\n\r\n.*?examplehost\\.com.*?");
 
         // Browser Tab

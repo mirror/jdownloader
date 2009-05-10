@@ -9,6 +9,11 @@ public class LinkGrabberFilePackageEvent extends JDEvent {
         // TODO Auto-generated constructor stub
     }
 
+    public LinkGrabberFilePackageEvent(Object source, int ID, Object param) {
+        super(source, ID, param);
+        // TODO Auto-generated constructor stub
+    }
+
     /* ein wichtiger Wert wurde geändert */
     public static final int UPDATE_EVENT = 1;
 

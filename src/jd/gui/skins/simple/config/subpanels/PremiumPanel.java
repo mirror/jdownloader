@@ -45,7 +45,6 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import jd.config.ConfigEntry;
@@ -254,11 +253,13 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             if (account == null) return null;
             if (txtUsername.getText().length() == 0 && pass.length() == 0) return null;
             if (!account.getUser().equals(txtUsername.getText()) || !account.getPass().equals(pass)) {
+                account.setfireChanges(false);
                 account.setUser(txtUsername.getText());
                 account.setPass(pass);
                 account.getProperties().clear();
             }
             account.setEnabled(chkEnable.isSelected());
+            account.setfireChanges(true);
             return account;
         }
 
@@ -318,7 +319,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
             this.account = new Account(txtUsername.getText(), new String(txtPassword.getPassword()));
 
-//            account.setEnabled(false);
+            // account.setEnabled(false);
 
             info = new JXCollapsiblePane();
             info.setAnimated(SimpleGuiConstants.isAnimated());
@@ -354,10 +355,10 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             add(info, "skip,spanx,growx,newline");
         }
 
-        //@Override
+        // @Override
         public void setEnabled(final boolean flag) {
             if (flag == txtPassword.isEnabled()) return;
-            new GuiRunnable<Object> (){
+            new GuiRunnable<Object>() {
 
                 @Override
                 public Object runSave() {
@@ -375,12 +376,9 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                     lblUsername.setEnabled(flag);
                     return null;
                 }
-                
+
             }.waitForEDT();
-        
-                 
-                
-          
+
         }
 
         private JTextField getTextField(String text) {
@@ -483,7 +481,6 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                 list.remove(panelID);
                 ce.setChanges(true);
                 setAccounts(list);
-
             }
         }
 
@@ -510,7 +507,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
     }
 
     private class ChartRefresh extends Thread {
-        //@Override
+        // @Override
         public void run() {
             Long collectTraffic = new Long(0);
             freeTrafficChart.clear();
@@ -546,7 +543,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             super();
         }
 
-        //@Override
+        // @Override
         public void cut() {
             StringSelection stringSelection = new StringSelection(String.valueOf(this.getSelectedText()));
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -562,7 +559,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             this.setSelectionEnd(position);
         }
 
-        //@Override
+        // @Override
         public void copy() {
             StringSelection stringSelection = new StringSelection(String.valueOf(this.getSelectedText()));
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -583,7 +580,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             premiumActivated = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
             new GuiRunnable<Object>() {
 
-                //@Override
+                // @Override
                 public Object runSave() {
                     for (AccountPanel ap : accs) {
                         if (premiumActivated) {

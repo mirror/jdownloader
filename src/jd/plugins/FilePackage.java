@@ -711,9 +711,11 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             switch (event.getID()) {
             case DownloadLinkEvent.DISABLED:
                 links_Disabled++;
+                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
                 break;
             case DownloadLinkEvent.ENABLED:
                 links_Disabled--;
+                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
                 break;
             }
         }
@@ -727,7 +729,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 Set<String> hosterList = new HashSet<String>();
                 synchronized (downloadLinks) {
                     for (DownloadLink dl : downloadLinks) {
-                       if(dl.getHost()!=null) hosterList.add(dl.getHost());
+                        if (dl.getHost() != null) hosterList.add(dl.getHost());
                     }
                 }
                 ListHoster = hosterList.toString();

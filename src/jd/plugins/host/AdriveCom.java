@@ -56,8 +56,7 @@ public class AdriveCom extends PluginForHost {
             }
         }
         downloadLink.setFinalFileName(AdriveCom.getFileNameFormHeader(con));
-        downloadLink.setDownloadSize(con.getLongContentLength());
-        downloadLink.setDupecheckAllowed(true);
+        downloadLink.setDownloadSize(con.getLongContentLength());        
         con.disconnect();
         return true;
     }

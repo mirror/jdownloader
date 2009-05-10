@@ -35,15 +35,18 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     private JLabel linkgrabber;
 
     private JLabel downloadlinks;
+    private JLabel filteredlinks;
     private JLabel packages;
     private JLabel totalsize;
     private Timer fadeTimer;
     private Vector<LinkGrabberFilePackage> fps;
+    private LinkGrabberController lgi;
 
     public LinkGrabberTaskPane(String string, ImageIcon ii) {
         super(string, ii, "linkgrabber");
-        fps = LinkGrabberController.getInstance().getPackages();
-        LinkGrabberController.getInstance().getBroadcaster().addListener(this);
+        lgi = LinkGrabberController.getInstance();
+        fps = lgi.getPackages();
+        lgi.getBroadcaster().addListener(this);
         linkgrabberButtonsEnabled = false;
         initGUI();
         fadeTimer = new Timer(2000, this);
@@ -58,10 +61,12 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
 
         packages = (new JLabel(JDLocale.LF("gui.taskpanes.download.linkgrabber.packages", "%s Package(s)", 0)));
         downloadlinks = (new JLabel(JDLocale.LF("gui.taskpanes.download.linkgrabber.downloadLinks", "%s Link(s)", 0)));
+        filteredlinks = (new JLabel(JDLocale.LF("gui.taskpanes.download.linkgrabber.filteredLinks", "%s filtered Link(s)", 0)));
         totalsize = (new JLabel(JDLocale.LF("gui.taskpanes.download.linkgrabber.size", "Total size: %s", 0)));
         add(linkgrabber, D1_LABEL_ICON);
         add(packages, D2_LABEL);
         add(downloadlinks, D2_LABEL);
+        add(filteredlinks, D2_LABEL);
         add(totalsize, D2_LABEL);
     }
 
@@ -76,6 +81,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
             }
         }
         downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", links));
+        filteredlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.filteredLinks", "%s filtered Links", lgi.getFILTERPACKAGE().size()));
         totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
     }
 
@@ -133,31 +139,32 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
 
     public void setPanelID(int i) {
         SimpleGUI.CURRENTGUI.getContentPane().display(getPanel(i));
-        switch (i) {
-        case 0:
-            lg_add_all.setEnabled(false);
-            lg_add_selected.setEnabled(false);
-            lg_clear.setEnabled(false);
-            panel_add_links.setEnabled(false);
-
-            linkgrabber.setEnabled(false);
-            packages.setEnabled(false);
-            downloadlinks.setEnabled(false);
-            totalsize.setEnabled(false);
-            break;
-        case 1:
-            linkgrabber.setEnabled(true);
-            packages.setEnabled(true);
-            downloadlinks.setEnabled(true);
-            totalsize.setEnabled(true);
-            panel_add_links.setEnabled(true);
-            if (linkgrabberButtonsEnabled) {
-                lg_add_all.setEnabled(true);
-                lg_add_selected.setEnabled(true);
-                lg_clear.setEnabled(true);
-            }
-            break;
-        }
+        return;
+//        switch (i) {
+//        case 0:
+//            lg_add_all.setEnabled(false);
+//            lg_add_selected.setEnabled(false);
+//            lg_clear.setEnabled(false);
+//            panel_add_links.setEnabled(false);
+//
+//            linkgrabber.setEnabled(false);
+//            packages.setEnabled(false);
+//            downloadlinks.setEnabled(false);
+//            totalsize.setEnabled(false);
+//            break;
+//        case 1:
+//            linkgrabber.setEnabled(true);
+//            packages.setEnabled(true);
+//            downloadlinks.setEnabled(true);
+//            totalsize.setEnabled(true);
+//            panel_add_links.setEnabled(true);
+//            if (linkgrabberButtonsEnabled) {
+//                lg_add_all.setEnabled(true);
+//                lg_add_selected.setEnabled(true);
+//                lg_clear.setEnabled(true);
+//            }
+//            break;
+//        }
 
     }
 

@@ -154,8 +154,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private transient String tempUrlDownload;
 
-    private boolean dupecheckallowed;
-
     // Von hier soll de Download stattfinden
     private String urlDownload;
 
@@ -191,7 +189,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
         this.plugin = plugin;
-        this.dupecheckallowed = false;
         priority = 0;
         setName(name);
         sourcePluginPasswords = new Vector<String>();
@@ -230,14 +227,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         for (int i = 0; i < sourcePluginPasswords.size(); i++) {
             addSourcePluginPassword(sourcePluginPasswords.get(i));
         }
-    }
-
-    public boolean isDupeCheckallowed() {
-        return dupecheckallowed;
-    }
-
-    public void setDupecheckAllowed(boolean b) {
-        dupecheckallowed = b;
     }
 
     public int getPriority() {
@@ -643,7 +632,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         if (available == null) available = false;
-        if (available == false) setDupecheckAllowed(false);
         return available;
     }
 
@@ -706,9 +694,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 logger.severe(JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
             }
         }
-        if (!isDupeCheckallowed()) {
-            finalFileName = null;
-        }
+        finalFileName = null;
         getPlugin().resetHosterWaitTime();
     }
 

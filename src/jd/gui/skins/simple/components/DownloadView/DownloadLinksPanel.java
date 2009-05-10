@@ -413,7 +413,10 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
             LinkCheck.getLinkChecker().getBroadcaster().addListener(this);
             break;
         case TreeTableAction.SORT_ALL:
-            sort(col);
+            if (DownloadController.getInstance().size() == 1) {
+                DownloadController.getInstance().getPackages().get(0).sort(col);
+            } else
+                sort(col);
             break;
         case TreeTableAction.SORT:
             for (int i = 0; i < selected_packages.size(); i++) {
