@@ -56,6 +56,8 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
 
     private ImageIcon icon_fp_closed_error;
 
+    private ImageIcon imgPriorityS;
+
     public LinkGrabberTreeTableRenderer(LinkGrabberTreeTable linkgrabberTreeTable) {
 
         table = linkgrabberTreeTable;
@@ -78,6 +80,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
         imgFinished = JDTheme.II("gui.images.ok", 16, 16);
         imgFailed = JDTheme.II("gui.images.bad", 16, 16);
         imgFileFailed = JDTheme.II("gui.images.offlinefile", 16, 16);
+        imgPriorityS = JDTheme.II("gui.images.priority-1", 16, 16);
         imgPriority1 = JDTheme.II("gui.images.priority1", 16, 16);
         imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
         imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
@@ -147,17 +150,17 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
                         case 0:
                         default:
                             break;
+                        case -1:
+                            ((JRendererLabel) co).setIcon(imgPriorityS);
+                            break;
                         case 1:
                             ((JRendererLabel) co).setIcon(imgPriority1);
-
                             break;
                         case 2:
                             ((JRendererLabel) co).setIcon(imgPriority2);
-
                             break;
                         case 3:
                             ((JRendererLabel) co).setIcon(imgPriority3);
-
                             break;
                         }
 
@@ -224,7 +227,6 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
 
     private void clearSB() {
         sb.delete(0, sb.capacity() - 1);
-
     }
 
 }

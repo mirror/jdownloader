@@ -115,6 +115,10 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
     private ImageIcon icon_fp_closed_error;
 
+    private ImageIcon imgPriorityS;
+
+    private String strTTPriorityS;
+
     private static Color COL_PROGRESS_ERROR = new Color(0xCC3300);
 
     TreeTableRenderer(DownloadTreeTable downloadTreeTable) {
@@ -136,6 +140,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         imgFailed = JDTheme.II("gui.images.bad", 16, 16);
         imgExtract = JDTheme.II("gui.images.update_manager", 16, 16);
         imgStopMark = JDTheme.II("gui.images.stopmark", 16, 16);
+        imgPriorityS = JDTheme.II("gui.images.priority-1", 16, 16);
         imgPriority1 = JDTheme.II("gui.images.priority1", 16, 16);
         imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
         imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
@@ -149,6 +154,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         strPluginError = JDLocale.L("gui.treetable.error.plugin", "Plugin error");
         strSecondsAbrv = JDLocale.L("gui.treetable.seconds", "sec");
         strWaitIO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input");
+        strTTPriorityS = JDLocale.L("gui.treetable.tooltip.priority-1", "Low Priority");
         strTTPriority1 = JDLocale.L("gui.treetable.tooltip.priority1", "High Priority");
         strTTPriority2 = JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority");
         strTTPriority3 = JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority");
@@ -207,7 +213,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             clearSB();
-            //((JComponent) co).setToolTipText(null);
+            // ((JComponent) co).setToolTipText(null);
             if (dLink.getLinkStatus().isFailed()) {
                 ((JRendererLabel) co).setIcon(this.imgFileFailed);
             } else {
@@ -215,7 +221,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             }
 
             ((JRendererLabel) co).setText(dLink.getName());
-            ((JRendererLabel) co).setToolTipText(dLink.getName()+" - "+dLink.getFileInfomationString()); 
+            ((JRendererLabel) co).setToolTipText(dLink.getName() + " - " + dLink.getFileInfomationString());
             ((JRendererLabel) co).setBorder(leftGap);
 
             return co;
@@ -223,26 +229,25 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
-          
             clearSB();
             ((JRendererLabel) co).setBorder(null);
             if (dLink.getPlugin() == null) {
                 ((JComponent) co).setToolTipText(null);
                 ((JRendererLabel) co).setText("plugin missing");
             } else {
-                if(dLink.getPlugin().useIcon()){
+                if (dLink.getPlugin().useIcon()) {
                     sb.append(dLink.getPlugin().getHost());
                     sb.append(dLink.getPlugin().getSessionInfo());
                     ((JRendererLabel) co).setText(dLink.getPlugin().getSessionInfo());
                     ((JRendererLabel) co).setIcon(dLink.getPlugin().getHosterIcon());
                     ((JComponent) co).setToolTipText(sb.toString());
-                }else{
+                } else {
                     sb.append(dLink.getPlugin().getHost());
                     sb.append(dLink.getPlugin().getSessionInfo());
                     ((JRendererLabel) co).setText(sb.toString());
-                    ((JComponent) co).setToolTipText(sb.toString()); 
+                    ((JComponent) co).setToolTipText(sb.toString());
                 }
-             
+
             }
             // ((JRendererLabel)
             // co).setIcon(JDImage.getScaledImageIcon(dLink.getPlugin
@@ -389,6 +394,10 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 switch (dLink.getPriority()) {
                 case 0:
                 default:
+                    break;
+                case -1:
+                    ((JRendererLabel) co).setIcon(imgPriorityS);
+                    ((JRendererLabel) co).setToolTipText(strTTPriorityS);
                     break;
                 case 1:
                     ((JRendererLabel) co).setIcon(imgPriority1);

@@ -109,8 +109,8 @@ gui.images.taskpanes.download=default/go-down
 gui.images.go_bottom=default/go-bottom
 gui.images.go_top=default/go-top
 gui.images.offlinefile=default/document-offline
+gui.images.priority-1=default/prio_-1
 gui.images.priority0=default/prio_0
-
 gui.images.priority1=default/prio_1
 gui.images.priority2=default/prio_2
 gui.images.priority3=default/prio_3

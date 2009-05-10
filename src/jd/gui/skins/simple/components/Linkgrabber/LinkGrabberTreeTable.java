@@ -115,8 +115,8 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
 
         addExistsHighlighter();
         setTransferHandler(new LinkGrabberTreeTableTransferHandler(this));
-        
-        prioDescs = new String[] { JDLocale.L("gui.treetable.tooltip.priority0", "No Priority"), JDLocale.L("gui.treetable.tooltip.priority1", "High Priority"), JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority") };
+
+        prioDescs = new String[] { JDLocale.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDLocale.L("gui.treetable.tooltip.priority0", "No Priority"), JDLocale.L("gui.treetable.tooltip.priority1", "High Priority"), JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority") };
     }
 
     public TableCellRenderer getCellRenderer(int row, int col) {
@@ -383,11 +383,11 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         if (links.size() == 1) prio = links.get(0).getPriority();
         prioPopup.setIcon(JDTheme.II("gui.images.priority0", 16, 16));
         HashMap<String, Object> prop = null;
-        for (int i = 3; i >= 0; i--) {
+        for (int i = 3; i >= 1; i--) {
             prop = new HashMap<String, Object>();
             prop.put("links", links);
             prop.put("prio", new Integer(i));
-            prioPopup.add(tmp = new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.priority" + i, 16, 16), prioDescs[i], LinkGrabberTreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
+            prioPopup.add(tmp = new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.priority" + i, 16, 16), prioDescs[i + 1], LinkGrabberTreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
 
             if (prio != null && i == prio) {
                 tmp.setEnabled(false);

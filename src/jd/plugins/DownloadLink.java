@@ -234,7 +234,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void setPriority(int pr) {
-        if (pr >= 0 && pr < 4) {
+        if (pr >= -1 && pr < 4) {
             this.priority = pr;
         } else
             this.priority = 0;
