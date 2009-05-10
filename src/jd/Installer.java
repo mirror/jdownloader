@@ -65,14 +65,15 @@ public class Installer {
 
         configContainer = new ConfigContainer(this, "Download");
         configContainer.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")));
-        if (!OSDetector.isMac()) {
-            ce.setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
+        if (OSDetector.isMac()) {
+            ce.setDefaultValue(new File(System.getProperty("user.home") + "/Downloads"));
+
         } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Downloads").exists()) {
             ce.setDefaultValue(new File(System.getProperty("user.home") + "/Downloads"));
         } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Download").exists()) {
             ce.setDefaultValue(new File(System.getProperty("user.home") + "/Download"));
         } else {
-            ce.setDefaultValue(new File(System.getProperty("user.home") + "/Downloads"));
+            ce.setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
         }
         showConfigDialog(null, configContainer, true);
         if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) == null) {

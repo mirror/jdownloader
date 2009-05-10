@@ -66,12 +66,15 @@ public class Zip {
 
     private void addFileToZip(String path, String srcFile, ZipOutputStream zip) throws Exception {
         if (srcFile.endsWith("Thumbs.db")) { return; }
-        if (Regex.matches(srcFile, excludeFilter)) {
-            System.out.println("Filtered: " + srcFile);
-            return;
+        if (excludeFilter != null) {
+            if (Regex.matches(srcFile, excludeFilter)) {
+
+                System.out.println("Filtered: " + srcFile);
+                return;
+            }
         }
         File folder = new File(srcFile);
-        if (excludeFiles.contains(folder)) { return; }
+        if (excludeFiles != null && excludeFiles.contains(folder)) { return; }
         if (folder.isDirectory()) {
             addFolderToZip(path, srcFile, zip);
         } else {
@@ -82,6 +85,7 @@ public class Zip {
             while ((len = in.read(buf)) > 0) {
                 zip.write(buf, 0, len);
             }
+            in.close();
         }
     }
 
@@ -89,9 +93,11 @@ public class Zip {
         File folder = new File(srcFolder);
         if (excludeFiles.contains(folder)) { return; }
         for (String fileName : folder.list()) {
-            if (Regex.matches(fileName, excludeFilter)) {
-                System.out.println("Filtered: " + fileName);
-                continue;
+            if (excludeFilter != null) {
+                if (Regex.matches(fileName, excludeFilter)) {
+                    System.out.println("Filtered: " + fileName);
+                    continue;
+                }
             }
             if (path.equals("")) {
                 addFileToZip(folder.getName(), srcFolder + "/" + fileName, zip);

@@ -42,29 +42,35 @@ public class JDProgressBar extends JProgressBar {
     }
 
     public void setMaximum(int value) {
-        realMax = value;
-        super.setMaximum(value);
+        setMaximum((long) value);
     }
 
     public void setMaximum(long value) {
         realMax = value;
         while ((value / faktor) >= Integer.MAX_VALUE) {
-            increaseFaktor();
+            faktor *= 2;
         }
-        super.setMaximum((int) (value / faktor));
+
+        update();
+
+    }
+
+    private void update() {
+        super.setMaximum((int) (realMax / faktor));
+        super.setValue((int) (realCur / faktor));        
     }
 
     public void setValue(int value) {
-        realCur = value;
-        super.setValue(value);
+
+        setValue((long) value);
     }
 
     public void setValue(long value) {
         realCur = value;
         while ((value / faktor) >= Integer.MAX_VALUE) {
-            increaseFaktor();
+            faktor *= 2;
         }
-        super.setValue((int) (value / faktor));
+        update();
     }
 
     public long getRealValue() {
@@ -73,12 +79,6 @@ public class JDProgressBar extends JProgressBar {
 
     public long getRealMax() {
         return realMax;
-    }
-
-    private void increaseFaktor() {
-        faktor += 2;
-        this.setValue(getValue() / 2);
-        this.setMaximum(getMaximum() / 2);
     }
 
     public void setIcon(ImageIcon hosterIcon) {

@@ -9,6 +9,7 @@ import javax.swing.KeyStroke;
 import jd.controlling.JDLogger;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 
 public abstract class StartAction extends AbstractAction {
 
@@ -25,6 +26,7 @@ public abstract class StartAction extends AbstractAction {
 
     protected void setIcon(String key) {
         putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, 24, 24));
+        
     }
 
     private void setAccelerator(String acceleratorString) {

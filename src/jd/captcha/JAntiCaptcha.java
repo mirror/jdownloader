@@ -192,7 +192,7 @@ public class JAntiCaptcha {
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, methodName);
         File[] entries = captchaDir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
                 if (pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
 
@@ -1008,7 +1008,8 @@ public class JAntiCaptcha {
                 }
 
                 lc = new LetterComperator(letter, tmp);
-                lc.setScanVariance(0, 0);
+                // commented out only experimental
+                // lc.setScanVariance(0, 0);
                 lc.setOwner(this);
 
                 if (preValueFilterMethod != null) {
@@ -1437,9 +1438,12 @@ public class JAntiCaptcha {
 
             letter.setDecodedValue(let);
 
-            // BasicWindow.showImage(letter.getImage(1),element.getName());
+//             BasicWindow.showImage(letter.getImage(1),element.getName());
             letter.clean();
-
+            
+            
+letter.removeSmallObjects(0.3,0.5,10);
+//BasicWindow.showImage(letter.getImage(1),element.getName());
             letterDB.add(letter);
 
             // letter.resizetoHeight(25);
@@ -1786,7 +1790,7 @@ public class JAntiCaptcha {
             }
 
             // String methodsPath = UTILITIES.getFullPath(new String[] {
-            // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
+            //JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
             // "jd", "captcha", "methods" });
             // String hoster = "rscat.com";
             // JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
@@ -2150,4 +2154,34 @@ public class JAntiCaptcha {
         return ret;
     }
 
+    public void cleanLibrary(double d) {
+        LinkedList<Letter> newDB = new LinkedList<Letter>();
+        main:for (Letter let : letterDB) {
+          
+            for (Letter n : newDB) {
+
+                LetterComperator lc = new LetterComperator(let, n);
+
+                lc.setOwner(this);
+                lc.run();
+         
+                n.getElementPixel();
+                if (lc.getValityPercent() <= d) {
+//                    BasicWindow.showImage(let.getImage(), " OK ");
+//                    BasicWindow.showImage(n.getImage(), " FILTERED " + lc.getValityPercent());
+                    if (n.getElementPixel() > let.getElementPixel()) {
+                        newDB.remove(let);
+                        break;
+                    } else {
+                        continue main;
+                    }
+                }
+            }
+
+            newDB.add(let);
+
+        }
+        letterDB = newDB;
+        this.saveMTHFile();
+    }
 }

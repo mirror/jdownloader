@@ -124,6 +124,9 @@ public class WebUpdater implements Serializable {
                 log("UPDATE AV. " + file.getLocalPath());
                 continue;
             }
+            if(new File(file.getLocalFile(),".noupdate").exists()){
+                log("User excluded. " + file.getLocalPath());
+            }
             it.remove();
         }
 

@@ -99,7 +99,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
                 public void stateChanged(ChangeEvent e) {
 
                     ((ConfigEntriesPanel) tabbedPane.getSelectedComponent()).init();
-                    tabbedPane.removeChangeListener(this);
+                   // tabbedPane.removeChangeListener(this);
 
                 }
 
