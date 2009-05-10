@@ -31,6 +31,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -131,6 +133,8 @@ public class JDUtilities {
     private static String LATEST_IP = null;
 
     private static String REVISION;
+    
+    private static String[] jdArgs = new String[1];
 
     public static String getSimString(String a, String b) {
         StringBuilder ret = new StringBuilder();
@@ -799,12 +803,41 @@ public class JDUtilities {
         }
 
     }
+    
+    public static void setJDargs(String[] args) {
+    	jdArgs = args;
+    }
 
     public static void restartJD() {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
-        JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", }, getResourceFile(".").getAbsolutePath(), 0));
-        System.exit(0);
+        
+        RuntimeMXBean RuntimemxBean = ManagementFactory.getRuntimeMXBean();
+        List<String> lst = RuntimemxBean.getInputArguments();
+        ArrayList<String> jargs = new ArrayList<String>();
 
+        for(String h : lst) {
+        	if(h.contains("Xmx")) {
+        		if(Runtime.getRuntime().maxMemory() < 533000000) {
+        	        jargs.add("-Xmx512m");
+        	        continue;
+        		}
+        	}
+        	jargs.add(h);
+        }
+        jargs.add("-jar");
+        jargs.add("-JDownloader.jar");
+        
+        String[] javaArgs = new String[jargs.size()];
+        for(int i=0; i<jargs.size(); i++) {
+        	javaArgs[i] = jargs.get(i);
+        }
+        
+        String[] finalArgs = new String[jdArgs.length + javaArgs.length];
+        System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
+        System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);
+
+        JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
+        System.exit(0);
     }
 
     public static URL getResourceURL(String resource) {
@@ -833,17 +866,6 @@ public class JDUtilities {
             }
         }
         return null;
-    }
-
-    public static void restartJD(String[] jdArgs) {
-        if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
-        String[] javaArgs = new String[] { "-Xmx512m", "-jar", "JDownloader.jar" };
-        String[] finalArgs = new String[jdArgs.length + javaArgs.length];
-        System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
-        System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);
-
-        JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
-        System.exit(0);
     }
 
     /**

@@ -175,6 +175,7 @@ public class Main {
         }
         UserIO.setInstance(SimpleUserIO.getInstance());
         preInitChecks();
+        JDUtilities.setJDargs(args);
 
         for (int i = 0; i < args.length; i++) {
 
@@ -186,7 +187,7 @@ public class Main {
             } else if (args[i].equals("--new-instance") || args[i].equals("-n")) {
 
                 if (!JDInitFlags.ENOUGH_MEMORY) {
-                    JDUtilities.restartJD(args);
+                    JDUtilities.restartJD();
                 }
 
                 LOGGER.finer(args[i] + " parameter");
@@ -315,7 +316,7 @@ public class Main {
 
     private static void start(String args[]) {
         if (!JDInitFlags.STOP && !JDInitFlags.ENOUGH_MEMORY) {
-            JDUtilities.restartJD(args);
+            JDUtilities.restartJD();
             return;
         }
         final String[] processArgs = args;
@@ -337,7 +338,6 @@ public class Main {
     private static void preInitChecks() {
         heapCheck();
         javaCheck();
-
     }
 
     private static void heapCheck() {
@@ -346,7 +346,6 @@ public class Main {
             JDInitFlags.SHOW_SPLASH = false;
             LOGGER.warning("Heapcheck: Not enough heap. use: java -jar -Xmx512m JDownloader.jar");
         }
-
     }
 
     /**
@@ -367,7 +366,6 @@ public class Main {
                 }
             }
         }
-
     }
 
     /**
@@ -384,7 +382,6 @@ public class Main {
             System.setProperty("apple.laf.useScreenMenuBar", "true");
             new MacOSController();
         }
-
     }
 
     private static void increaseSplashStatus() {
@@ -405,9 +402,7 @@ public class Main {
                 if (br.getRequest().getHttpConnection().isOK()) {
                     BETA = false;
                 }
-            } catch (IOException e1) {
-
-            }
+            } catch (IOException e1) {}
         }
         LOGGER.info("init Configuration");
         Main.increaseSplashStatus();
@@ -488,9 +483,7 @@ public class Main {
 
         try {
             splashScreen.finish();
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+        } catch (Exception e) {}
         if (!Main.isBeta()) init.checkUpdate();
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));

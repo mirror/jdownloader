@@ -28,7 +28,7 @@ public class RestartAction extends StartAction {
             SimpleGuiUtils.saveLastLocation(SimpleGUI.CURRENTGUI, null);
             SimpleGuiUtils.saveLastDimension(SimpleGUI.CURRENTGUI, null);
             SimpleGuiConstants.GUI_CONFIG.save();
-            JDUtilities.getController().restart();
+            JDUtilities.restartJD();
         }
     }
 

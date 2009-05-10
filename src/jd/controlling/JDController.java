@@ -32,7 +32,6 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UIInterface;
 import jd.http.Browser;
-import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -381,19 +380,6 @@ public class JDController implements ControlListener {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
         Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
         JDUtilities.getDatabaseConnector().shutdownDatabase();
-    }
-
-    /**
-     * Startet das Programm neu
-     */
-    public void restart() {
-        prepareShutdown();
-        if (!OSDetector.isMac()) {
-            logger.info(JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
-        } else {
-            logger.info(JDUtilities.runCommand("open", new String[] { "-n", "jDownloader.app" }, JDUtilities.getResourceFile(".").getParentFile().getParentFile().getParentFile().getParentFile().getAbsolutePath(), 0));
-        }
-        System.exit(0);
     }
 
     /**
