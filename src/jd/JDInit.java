@@ -577,7 +577,7 @@ public class JDInit {
         new HostPluginWrapper("Savefile.ro", "SavefileRo", "http://[\\w\\.]*?savefile\\.ro/[A-Za-z0-9]+/?");
         new HostPluginWrapper("Pixelhit.com", "PixelhitCom", "http://[\\w\\.]*?pixelhit\\.com/[A-Za-z0-9]+/?");
         new HostPluginWrapper("Bagruj.cz", "BagrujCz", "http://[\\w\\.]*?bagruj\\.cz/.*");
-        new HostPluginWrapper("Ziddu.com", "ZidduCom", "http://[\\w\\.]*?ziddu\\.com/((download/[0-9]+/.+)|(download\\.php\\?uid=[A-Za-z0-9%]+))");
+        new HostPluginWrapper("Ziddu.com", "ZidduCom", "http://[\\w\\.]*?ziddu\\.com/((download/[0-9]+/.+)|(download\\.php\\?uid=[A-Za-z0-9%]+)|downloadfile/\\d+/)");
         // new HostPluginWrapper("FilesDump.com", "FilesDumpCom",
         // "http://.*?filesdump\\.com/file/[a-f0-9]+/.*?");
         new HostPluginWrapper("UpMusic.in", "UpMusicIn", "http://[\\w\\.]*?upmusic\\.in/[a-z0-9]+.*?");

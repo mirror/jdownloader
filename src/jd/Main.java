@@ -505,12 +505,14 @@ public class Main {
         if (!Main.isBeta()) new PackageManager().interact(this);
 
     }
-/**
- * Lädt ein Dynamicplugin.
- * @throws IOException
- */
-    private void loadDynamics() throws IOException {
 
+    /**
+     * Lädt ein Dynamicplugin.
+     * 
+     * @throws IOException
+     */
+    private void loadDynamics() throws IOException {
+        if (WebUpdater.PLUGIN_LIST == null) return;
         URLClassLoader classLoader = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
 
         ArrayList<FileUpdate> filelist = new ArrayList<FileUpdate>();
@@ -524,17 +526,13 @@ public class Main {
             }
         }
 
-        for (FileUpdate entry : filelist) {       
-
+        for (FileUpdate entry : filelist) {
             if (!entry.equals()) {
                 if (!new WebUpdater().updateUpdatefile(entry)) {
                     JDLogger.getLogger().warning("Could not update " + entry);
                     return;
                 }
-                ;
-
             }
-
         }
 
         for (String clazz : classes) {
@@ -550,10 +548,8 @@ public class Main {
                 DynamicPluginInterface dplg = (DynamicPluginInterface) con.newInstance(new Object[] {});
                 dplg.execute();
             } catch (Exception e) {
-             
                 JDLogger.exception(Level.FINER, e);
             }
-
         }
     }
 }

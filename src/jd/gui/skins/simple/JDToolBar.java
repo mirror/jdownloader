@@ -141,17 +141,14 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
         add(clipboard = new JToggleButton(JDTheme.II("gui.images.clipboard_disabled", 24, 24)), BUTTON_CONSTRAINTS);
         clipboard.setToolTipText(JDLocale.L("gui.menu.action.clipboard.desc", null));
-
         clipboard.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
 
                 if (clipboard.isSelected()) {
                     clipboard.setIcon(JDTheme.II("gui.images.clipboard_enabled", 24, 24));
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true);
                 } else {
                     clipboard.setIcon(JDTheme.II("gui.images.clipboard_disabled", 24, 24));
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
                 }
                 if (JDUtilities.getConfiguration().isChanges()) {
                     JDUtilities.getConfiguration().save();

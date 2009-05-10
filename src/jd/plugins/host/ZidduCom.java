@@ -37,91 +37,91 @@ public class ZidduCom extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.setDebug(true);
         Form form = br.getFormbyProperty("name", "dfrm");
         br.submitForm(form);
-        if (br.containsHTML("File\\snot\\s+found"))
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("File\\snot\\s+found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         form = br.getFormbyProperty("name", "securefrm");
-        if (form == null)
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         URLConnectionAdapter con = br.openGetConnection("http://www.ziddu.com/CaptchaSecurityImages.php?width=40&height=38&characters=2");
         File file = this.getLocalCaptchaFile(this);
         Browser.download(file, con);
         String code = getCaptchaCode(file, downloadLink);
-        form.put("securitycode", code);        
-//            br.submitForm(form);
-//            String test2 = br.toString();
-//            URLConnectionAdapter con2 = br.getHttpConnection();
-//            if (con2.getContentType().contains("html")) {
-//                String error = br.getRegex("class=\"error\">(.*?)</span>").getMatch(0);
-//                error=error;
-//                if (error != "") {
-//                    logger.warning(error);
-//                    if (error.equalsIgnoreCase("Please Enter Correct Verification Code.")) {
-//                        throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
-//                    } else {
-//                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
-//                    }
-//                }
-//            }
+        form.put("securitycode", code);
+        // br.submitForm(form);
+        // String test2 = br.toString();
+        // URLConnectionAdapter con2 = br.getHttpConnection();
+        // if (con2.getContentType().contains("html")) {
+        // String error =
+        // br.getRegex("class=\"error\">(.*?)</span>").getMatch(0);
+        // error=error;
+        // if (error != "") {
+        // logger.warning(error);
+        // if
+        // (error.equalsIgnoreCase("Please Enter Correct Verification Code.")) {
+        // throw new PluginException(LinkStatus.ERROR_CAPTCHA,
+        // JDLocale.L("downloadlink.status.error.captcha_wrong",
+        // "Captcha wrong"));
+        // } else {
+        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
+        // error, 10000);
+        // }
+        // }
+        // }
         dl = br.openDownload(downloadLink, form, true, 1);
-        // Folgendes nicht optimal da bei .isContentDisposition == false immer angenommen wird
+        // Folgendes nicht optimal da bei .isContentDisposition == false immer
+        // angenommen wird
         // dass das Captcha falsch war.
-        if (!dl.getConnection().isContentDisposition())
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
+        if (!dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
         dl.setResume(true);
         dl.startDownload();
     }
 
-
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         // Tested up to 15
         return 15;
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.ziddu.com/termsandconditions.php";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         String Url = downloadLink.getDownloadURL();
-        if (!downloadLink.getDownloadURL().startsWith("http://www."))
-             Url = downloadLink.getDownloadURL().replaceFirst("http://", "http://www.");
-        // Ohne replaceFirst würde die filenotfound Abfrage nicht funktionieren
+        br.setFollowRedirects(true);
         br.getPage(Url);
-        if (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("errortracking") || br.getRedirectLocation().contains("notfound")))
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("errortracking") || br.getRedirectLocation().contains("notfound"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("textblue14\">(.*?)</span>").getMatch(0));
         String filesize = br.getRegex("File\\sSize\\s:.*normal12black\">(.*?)\\s+</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
+        br.setFollowRedirects(false);
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
     }
 

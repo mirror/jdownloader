@@ -109,6 +109,7 @@ public class LinkAdder extends JTabbedPanel {
                     while (true) {
                         try {
                             String newText = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
+                            ClipboardHandler.getClipboard().setOldData(newText);
                             if (newText != null && !newText.equalsIgnoreCase(old)) {
                                 String[] links = HTMLParser.getHttpLinks(newText, null);
                                 if (links.length > 0) {
@@ -118,7 +119,6 @@ public class LinkAdder extends JTabbedPanel {
                             }
                         } catch (Exception e1) {
                         }
-
                         try {
                             Thread.sleep(500);
                         } catch (InterruptedException e) {

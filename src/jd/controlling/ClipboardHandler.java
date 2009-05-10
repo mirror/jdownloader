@@ -145,6 +145,12 @@ public class ClipboardHandler extends Thread implements ControlListener {
 
     public void setTempDisableD(boolean v) {
         this.tempdisabled = v;
+        if (waitFlag) {
+            waitFlag = false;
+            synchronized (this) {
+                notify();
+            }
+        }
     }
 
     /**
@@ -154,7 +160,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
      */
     public boolean setEnabled(boolean enabled2) {
         if (enabled == enabled2) return false;
-        
+
         if (enabled2) {
             JDLogger.getLogger().info("ClipBoard Observation enabled");
         } else {

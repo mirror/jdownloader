@@ -275,7 +275,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public void removePackage(LinkGrabberFilePackage fp) {
         if (fp == null) return;
         synchronized (packages) {
-            fp.getBroadcaster().removeListener(this);
+            if (fp != this.FP_FILTERED && fp != this.FP_OFFLINE && fp != this.FP_UNCHECKED && fp != this.FP_UNSORTED) fp.getBroadcaster().removeListener(this);
             packages.remove(fp);
             broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REMOVE_FILPACKAGE, fp));
         }
@@ -477,8 +477,8 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     }
 
     public static boolean isFiltered(DownloadLink element) {
+        if (filter == null) return false;
         synchronized (filter) {
-            if (filter == null) return false;
             for (String f : filter) {
                 String t = element.getDownloadURL().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://");
                 if (t.matches(f) || element.getName().matches(f)) {
@@ -491,8 +491,8 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     }
 
     public static boolean isFiltered(CryptedLink element) {
+        if (filter == null) return false;
         synchronized (filter) {
-            if (filter == null) return false;
             for (String f : filter) {
                 String t = element.getCryptedUrl().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://");
                 if (t.matches(f)) {
