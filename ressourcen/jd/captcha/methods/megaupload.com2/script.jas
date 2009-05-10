@@ -22,9 +22,9 @@ param.minCleftSize=4;
 param.overlayNoiseSize=4;
 param.turnDB=true;
 
-param.scanAngleLeft=-0;
-param.scanAngleRight=0;
-param.scanAngleSteps=1;
+param.scanAngleLeft=-9;
+param.scanAngleRight=9;
+param.scanAngleSteps=3;
 param.errorAWeight=1;
 param.errorBWeight=4;
 param.coverageFaktorAWeight=1;
@@ -65,7 +65,7 @@ param.backgroundsamplecleancontrast=0.15;
 
 param.useSpecialGetLetters=MegaUpload.getLetters;
 param.useLetterFilter=MegaUpload.letterFilter;
-
+param.comparatorExtension=MegaUpload.evaluate;
 
 
 ##################Prepare letter
