@@ -42,7 +42,6 @@ public class AccountManager extends SubConfiguration implements ControlListener 
         if (this.inited) return;
         inited = true;
         if (!hasProperty(IMPORTEDFLAG)) importOld();
-
     }
 
     @SuppressWarnings("unchecked")
@@ -114,19 +113,16 @@ public class AccountManager extends SubConfiguration implements ControlListener 
 
     public void addAccountListener(AccountListener listener) {
         this.broadcaster.addListener(listener);
-
     }
 
     public void removeAccountListener(AccountListener listener) {
         this.broadcaster.removeListener(listener);
-
     }
 
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED && event.getSource() == this) {
             broadcaster.fireEvent(new AccountsUpdateEvent(this, AccountsUpdateEvent.CHANGED));
         }
-
     }
 
     // @Override
