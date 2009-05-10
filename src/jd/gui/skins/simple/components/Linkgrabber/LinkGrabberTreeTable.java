@@ -28,8 +28,6 @@ import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.table.TableCellRenderer;
@@ -44,6 +42,7 @@ import jd.gui.skins.simple.components.DownloadView.DownloadLinkRowHighlighter;
 import jd.gui.skins.simple.components.DownloadView.DownloadTreeTable;
 import jd.gui.skins.simple.components.DownloadView.JColumnControlButton;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -116,24 +115,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
 
         addExistsHighlighter();
         setTransferHandler(new LinkGrabberTreeTableTransferHandler(this));
-        getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-
-            public void valueChanged(ListSelectionEvent e) {
-                if (getSelectedRow() < 0) return;
-                if (getPathForRow(getSelectedRow()) == null) return;
-                Object obj = getPathForRow(getSelectedRow()).getLastPathComponent();
-                if (obj == null) {
-                     linkgrabber.hideFilePackageInfo();
-                }
-                LinkGrabberFilePackage pkg = null;
-                if (obj instanceof LinkGrabberFilePackage) {
-                    pkg = (LinkGrabberFilePackage) obj;
-                } else {
-                    pkg = LinkGrabberController.getInstance().getFPwithLink((DownloadLink) obj);
-                }
-                 linkgrabber.showFilePackageInfo(pkg);
-            }
-        });
+        
         prioDescs = new String[] { JDLocale.L("gui.treetable.tooltip.priority0", "No Priority"), JDLocale.L("gui.treetable.tooltip.priority1", "High Priority"), JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority") };
     }
 
@@ -285,19 +267,25 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
 
     public void mouseReleased(MouseEvent e) {
         /* nicht auf headerclicks reagieren */
-        if (e.getClickCount() == 1) {
-            if (e.getSource() != this) return;
-            TreePath path = getPathForLocation(e.getX(), e.getY());
-            if (path == null) return;
-            int column = getRealcolumnAtPoint(e.getX());
-            if (path != null && path.getLastPathComponent() instanceof LinkGrabberFilePackage) {
-                if (column == 1 && e.getButton() == MouseEvent.BUTTON1) {
-                    LinkGrabberFilePackage fp = (LinkGrabberFilePackage) path.getLastPathComponent();
+        if (e.getSource() != this) return;
+        TreePath path = getPathForLocation(e.getX(), e.getY());
+        if (path == null) return;
+        int column = getRealcolumnAtPoint(e.getX());
+        if (path != null) {
+            if (column == 1 && e.getButton() == MouseEvent.BUTTON1 && e.getX() < 20 && e.getClickCount() == 1) {
+                if (path.getLastPathComponent() instanceof LinkGrabberFilePackage) {
+                    FilePackage fp = (FilePackage) path.getLastPathComponent();
                     if (fp.getBooleanProperty(PROPERTY_EXPANDED, false)) {
                         collapsePath(path);
                     } else {
                         expandPath(path);
                     }
+                }
+            } else if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 2) {
+                if (path.getLastPathComponent() instanceof LinkGrabberFilePackage) {
+                    linkgrabber.showFilePackageInfo((LinkGrabberFilePackage) path.getLastPathComponent());
+                } else {
+                    linkgrabber.showFilePackageInfo(LinkGrabberController.getInstance().getFPwithLink((DownloadLink) path.getLastPathComponent()));
                 }
             }
         }

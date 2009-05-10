@@ -26,6 +26,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
+import jd.gui.skins.simple.components.Linkgrabber.LinkCheck;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -61,6 +62,7 @@ public class Reconnecter {
      */
     public static boolean doReconnect() {
         JDController controller = JDUtilities.getController();
+        if (LinkCheck.getLinkChecker().isRunning()) return false;
         if (Reconnecter.waitForRunningRequests() > 0 && LAST_RECONNECT_SUCCESS) return true;
         boolean ipChangeSuccess = false;
         IS_RECONNECTING = true;
@@ -207,12 +209,12 @@ public class Reconnecter {
             try {
                 Thread.sleep(300);
             } catch (InterruptedException e) {
-                ret=false;
+                ret = false;
                 break;
             }
         }
         timer.interrupt();
-        
+
         if (!ret) {
             progress.setColor(Color.RED);
             progress.setStatusText(JDLocale.LF("gui.reconnect.progress.status.failed", "Reconnect failed"));

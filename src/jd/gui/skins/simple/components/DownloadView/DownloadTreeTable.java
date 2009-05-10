@@ -44,8 +44,6 @@ import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.table.TableCellRenderer;
@@ -95,6 +93,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     private DownloadLinksPanel panel;
 
+    private String[] prioDescs;
+
     public DownloadTreeTable(DownloadTreeTableModel treeModel, final DownloadLinksPanel panel) {
         super(treeModel);
         cellRenderer = new TreeTableRenderer(this);
@@ -109,7 +109,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
         // this.setExpandsSelectedPaths(true);
-
+        prioDescs = new String[] { JDLocale.L("gui.treetable.tooltip.priority0", "No Priority"), JDLocale.L("gui.treetable.tooltip.priority1", "High Priority"), JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority") };
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setColumnControlVisible(true);
@@ -154,25 +154,6 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         // }
         // });
         addHighlighter(new PainterHighlighter(HighlightPredicate.IS_FOLDER, getFolderPainter(this)));
-
-        getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-
-            public void valueChanged(ListSelectionEvent e) {
-                if (getSelectedRow() < 0) return;
-                if (getPathForRow(getSelectedRow()) == null) return;
-                Object obj = getPathForRow(getSelectedRow()).getLastPathComponent();
-                if (obj == null) {
-                    panel.hideFilePackageInfo();
-                }
-                FilePackage pkg = null;
-                if (obj instanceof FilePackage) {
-                    pkg = (FilePackage) obj;
-                } else {
-                    pkg = ((DownloadLink) obj).getFilePackage();
-                }
-                panel.showFilePackageInfo(pkg);
-            }
-        });
 
         // Highlighter extendPrefWidth = new AbstractHighlighter() {
         // //@Override
@@ -525,32 +506,20 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         JMenuItem tmp;
         JMenu prioPopup = new JMenu(JDLocale.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
         Integer prio = null;
-
-        if (links.size() >= 1) {
-            prio = links.get(0).getPriority();
-
-        }
-        String[] names = new String[] { JDLocale.L("gui.treetable.priority0", "No Priority"), JDLocale.L("gui.treetable.priority1", "High Priority"), JDLocale.L("gui.treetable.priority2", "Higher Priority"),
-
-        JDLocale.L("gui.treetable.priority3", "Highest Priority"),
-
-        };
+        if (links.size() == 1) prio = links.get(0).getPriority();
+        prioPopup.setIcon(JDTheme.II("gui.images.priority0", 16, 16));
         HashMap<String, Object> prop = null;
         for (int i = 3; i >= 0; i--) {
             prop = new HashMap<String, Object>();
             prop.put("links", links);
             prop.put("prio", new Integer(i));
-
-            prioPopup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.priority" + i, 16, 16), names[i], TreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
+            prioPopup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.priority" + i, 16, 16), prioDescs[i], TreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
 
             if (prio != null && i == prio) {
                 tmp.setEnabled(false);
-                prioPopup.setIcon(JDTheme.II("gui.images.priority" + i, 16, 16));
-            } else {
+                tmp.setIcon(JDTheme.II("gui.images.priority" + i, 16, 16));
+            } else
                 tmp.setEnabled(true);
-
-            }
-
         }
         return prioPopup;
     }
@@ -586,15 +555,21 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         TreePath path = getPathForLocation(e.getX(), e.getY());
         if (path == null) return;
         int column = getRealcolumnAtPoint(e.getX());
-        if (path != null && path.getLastPathComponent() instanceof FilePackage) {
-            if (column == 1 && e.getButton() == MouseEvent.BUTTON1 && e.getX() < 20) {
-                if (e.getClickCount() == 1) {
+        if (path != null) {
+            if (column == 1 && e.getButton() == MouseEvent.BUTTON1 && e.getX() < 20 && e.getClickCount() == 1) {
+                if (path.getLastPathComponent() instanceof FilePackage) {
                     FilePackage fp = (FilePackage) path.getLastPathComponent();
                     if (fp.getBooleanProperty(PROPERTY_EXPANDED, false)) {
                         collapsePath(path);
                     } else {
                         expandPath(path);
                     }
+                }
+            } else if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 2) {
+                if (path.getLastPathComponent() instanceof FilePackage) {
+                    panel.showFilePackageInfo((FilePackage) path.getLastPathComponent());
+                } else {
+                    panel.showFilePackageInfo(((DownloadLink) path.getLastPathComponent()).getFilePackage());
                 }
             }
         }

@@ -113,10 +113,12 @@ public class AccountManager extends SubConfiguration implements ControlListener 
 
     public void addAccountListener(AccountListener listener) {
         this.broadcaster.addListener(listener);
+
     }
 
     public void removeAccountListener(AccountListener listener) {
         this.broadcaster.removeListener(listener);
+
     }
 
     public void controlEvent(ControlEvent event) {
