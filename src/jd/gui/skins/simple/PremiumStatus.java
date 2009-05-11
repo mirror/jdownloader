@@ -164,6 +164,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
 
         for (int i = 0; i < BARCOUNT; i++) {
             TinyProgressBar pg = new TinyProgressBar();
+            pg.setOpaque(false);
             bars[i] = pg;
             bars[i].addMouseListener(new MouseAdapter() {
 
@@ -194,7 +195,7 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         for (int i = 0; i < BARCOUNT; i++) {
             bars[i].setEnabled(premium.isSelected());
         }
-
+this.setOpaque(false);
         config = SubConfiguration.getConfig("PREMIUMSTATUS");
         this.map = (TreeMap<String, ArrayList<AccountInfo>>) config.getProperty(MAP_PROP, new TreeMap<String, ArrayList<AccountInfo>>());
         this.mapSize = (TreeMap<String, Long>) config.getProperty(MAPSIZE_PROP, new TreeMap<String, Long>());

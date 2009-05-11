@@ -19,6 +19,8 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdesktop.swingx.JXStatusBar;
+
 public class JDStatusBar extends JPanel implements ChangeListener, ControlListener {
 
     private static final long serialVersionUID = 3676496738341246846L;
@@ -44,7 +46,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
     }
 
     private void initGUI() {
-        setLayout(new MigLayout("ins 0 0 0 0,", "[fill,grow,left][shrink,right][shrink,right][shrink,right][shrink,right][shrink,right]", "[23px!]"));
+        setLayout(new MigLayout("ins 0 0 0 0,debug", "[fill,grow,left][shrink,right][shrink,right][shrink,right][shrink,right][shrink,right]", "[23px!]"));
 
         JDUtilities.getController().addControlListener(this);
 
@@ -68,12 +70,23 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         spMaxChunks.addChangeListener(this);
 
         add(new PremiumStatus(), "gaptop 1");
-        add(lblMaxChunks);
-        add(spMaxChunks, "width 70!,height 20!");
-        add(lblMaxDls);
-        add(spMaxDls, "width 70!,height 20!");
-        add(lblMaxSpeed);
-        add(spMaxSpeed, "width 70!,height 20!");
+        JPanel p = new JPanel(new MigLayout("ins 0"));
+        p.setOpaque(false);
+        p.add(lblMaxChunks);
+        p.add(spMaxChunks, "width 70!");
+        add(p);
+        p = new JPanel(new MigLayout("ins 0"));
+        p.add(lblMaxDls);
+        p.add(spMaxDls, "width 70!");
+        p.setOpaque(false);
+        add(p);
+
+        p = new JPanel(new MigLayout("ins 0"));
+        p.add(lblMaxSpeed);
+        p.add(spMaxSpeed, "width 70!");
+        p.setOpaque(false);
+        add(p);
+
     }
 
     private void colorizeSpinnerSpeed() {

@@ -21,6 +21,8 @@ public class TinyProgressBar extends JPanel {
 
         this.add(lbl = new JLabel());
         this.add(prg = new JDProgressBar(), "width 10!");
+        lbl.setOpaque(false);
+        prg.setOpaque(false);
         prg.setOrientation(SwingConstants.VERTICAL);
         //this.setBorder(prg.getBorder());
         prg.setBorder(null);

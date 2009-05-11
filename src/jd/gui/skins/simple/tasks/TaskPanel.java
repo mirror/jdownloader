@@ -1,5 +1,6 @@
 package jd.gui.skins.simple.tasks;
 
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -51,12 +52,12 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
         this.listenerList = new EventListenerList();
         this.setPanelID(pid);
         this.setAnimated(SimpleGuiConstants.isAnimated());
-        JDController.getInstance().addControlListener(new ConfigPropertyListener( SimpleGuiConstants.ANIMATION_ENABLED) {     
+        JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
 
-            //@Override
+            // @Override
             public void onPropertyChanged(Property source, String propertyName) {
                 setAnimated(SimpleGuiConstants.isAnimated());
-                
+
             }
 
         });
@@ -64,6 +65,7 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
         this.setLayout(new MigLayout("ins 5 5 5 15, wrap 1", "[fill,grow]", "[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]"));
         setDeligateCollapsed(SubConfiguration.getConfig("gui").getBooleanProperty(getPanelID() + "_collapsed", false));
         this.panels = new ArrayList<SingletonPanel>();
+       
     }
 
     public void setCollapsed(boolean collapsed) {
@@ -72,12 +74,12 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     }
 
     public void setDeligateCollapsed(boolean collapsed) {
-      
-//       if(collapsed){
-//           System.out.println(collapsed+" - "+this);
-//       }else{
-//           System.out.println(collapsed+" - "+this);
-//       }
+
+        // if(collapsed){
+        // System.out.println(collapsed+" - "+this);
+        // }else{
+        // System.out.println(collapsed+" - "+this);
+        // }
         super.setCollapsed(collapsed);
     }
 

@@ -74,7 +74,10 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     public boolean isRunning() {
         return gatherer_running;
     }
-
+    public boolean needsViewport() {
+     
+        return false;
+    }
     private LinkGrabberPanel() {
         super(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
         internalTreeTable = new LinkGrabberTreeTable(new LinkGrabberTreeTableModel(this), this);

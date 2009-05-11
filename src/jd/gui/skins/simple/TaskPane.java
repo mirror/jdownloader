@@ -1,15 +1,16 @@
 package jd.gui.skins.simple;
 
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
+import javax.swing.JPanel;
+
 import jd.gui.skins.simple.tasks.TaskPanel;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXTaskPaneContainer;
-
-public class TaskPane extends JXTaskPaneContainer implements ActionListener {
+public class TaskPane extends JPanel implements ActionListener {
 
     private static final long serialVersionUID = 2484591650508276173L;
     private ArrayList<TaskPanel> panels;
@@ -17,7 +18,8 @@ public class TaskPane extends JXTaskPaneContainer implements ActionListener {
 
     public TaskPane() {
         panels = new ArrayList<TaskPanel>();
-        this.setBackgroundPainter(null);
+//        this.setBackgroundPainter(null);
+        this.setPreferredSize(new Dimension(200, 10));
         this.setLayout(new MigLayout("ins 2, wrap 1", "[fill,grow]", "[]2[]2[]2[]2[]2[]2[]2[]2[fill,grow]"));
     }
 

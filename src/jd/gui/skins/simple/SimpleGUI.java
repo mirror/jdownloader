@@ -47,6 +47,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JRootPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.JViewport;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
@@ -172,8 +173,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private boolean noTitlePane = false;
 
- 
-
     private JDSeparator sep;
 
     private SingletonPanel logPanel;
@@ -193,6 +192,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     private boolean mainMenuRollOverStatus = false;
 
     private SwingWorker<Object, Object> cursorworker;
+
+    private JViewport taskPaneView;
 
     /**
      * Das Hauptfenster wird erstellt. Singleton. Use SimpleGUI.createGUI
@@ -286,9 +287,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         pack();
 
         setExtendedState(SimpleGuiConstants.GUI_CONFIG.getIntegerProperty("MAXIMIZED_STATE_OF_" + this.getName(), JFrame.NORMAL));
-       
+
         this.hideSideBar(SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_SIDEBAR_COLLAPSED, false));
-     
+
         setVisible(true);
 
         ClipboardHandler.getClipboard().setTempDisableD(false);
@@ -316,54 +317,55 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     }
 
-    /**
-     * Workaround the substance bug, that the resizecursor does not get resetted
-     * if the movement is fast.
-     */
-    public void setCursor(Cursor c) {
-        // System.out.println("set cursor " + c);
-        if (this.getCursor() == c) return;
-        if (isSubstance()) {
-            switch (c.getType()) {
-            case Cursor.E_RESIZE_CURSOR:
-            case Cursor.N_RESIZE_CURSOR:
-            case Cursor.S_RESIZE_CURSOR:
-            case Cursor.W_RESIZE_CURSOR:
-            case Cursor.NW_RESIZE_CURSOR:
-            case Cursor.NE_RESIZE_CURSOR:
-            case Cursor.SE_RESIZE_CURSOR:
-            case Cursor.SW_RESIZE_CURSOR:
-                final Cursor cc = c;
-                if (cursorworker != null) {
-                    cursorworker.cancel(true);
-                    cursorworker = null;
-                }
-                this.cursorworker = new SwingWorker<Object, Object>() {
-
-                    @Override
-                    protected Object doInBackground() throws Exception {
-                        Thread.sleep(2000);
-
-                        return null;
-                    }
-
-                    public void done() {
-                        if (cursorworker == this) {
-                            if (getCursor() == cc) {
-                                System.out.println("Reset cursor");
-                                setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                            }
-                            cursorworker = null;
-                        }
-                    }
-
-                };
-                cursorworker.execute();
-            }
-        }
-        super.setCursor(c);
-
-    }
+    // /**
+    // * Workaround the substance bug, that the resizecursor does not get
+    // resetted
+    // * if the movement is fast.
+    // */
+    // public void setCursor(Cursor c) {
+    // // System.out.println("set cursor " + c);
+    // if (this.getCursor() == c) return;
+    // if (isSubstance()) {
+    // switch (c.getType()) {
+    // case Cursor.E_RESIZE_CURSOR:
+    // case Cursor.N_RESIZE_CURSOR:
+    // case Cursor.S_RESIZE_CURSOR:
+    // case Cursor.W_RESIZE_CURSOR:
+    // case Cursor.NW_RESIZE_CURSOR:
+    // case Cursor.NE_RESIZE_CURSOR:
+    // case Cursor.SE_RESIZE_CURSOR:
+    // case Cursor.SW_RESIZE_CURSOR:
+    // final Cursor cc = c;
+    // if (cursorworker != null) {
+    // cursorworker.cancel(true);
+    // cursorworker = null;
+    // }
+    // this.cursorworker = new SwingWorker<Object, Object>() {
+    //
+    // @Override
+    // protected Object doInBackground() throws Exception {
+    // Thread.sleep(2000);
+    //
+    // return null;
+    // }
+    //
+    // public void done() {
+    // if (cursorworker == this) {
+    // if (getCursor() == cc) {
+    // System.out.println("Reset cursor");
+    // setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+    // }
+    // cursorworker = null;
+    // }
+    // }
+    //
+    // };
+    // cursorworker.execute();
+    // }
+    // }
+    // super.setCursor(c);
+    //
+    // }
 
     @SuppressWarnings("unchecked")
     private void initWaitPane() {
@@ -708,32 +710,37 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         taskPane.switcher(dlTskPane);
 
-        JPanel panel = new JPanel(new MigLayout("ins 0,wrap 3", "[fill]0[shrink]0[fill,grow 100]", "[]0[grow,fill]0[]0[]0[]0[]"));
+        JPanel panel = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]0[]0[]0[]"));
 
         setContentPane(panel);
-        panel.add(this.toolBar, "spanx");
-
+        this.setToolBar(toolBar);
+        // panel.add(this.toolBar, "spanx");
+        JPanel center = new JPanel(new MigLayout("ins 0,wrap 3", "[fill]0[shrink]0[fill,grow 100]", "[grow,fill]0[]"));
+        
+        taskPaneView = new JViewport();
+        taskPaneView.setView(taskPane);
       
-
-        panel.add(taskPane, "hidemode 2,spany 2");
+        center.add(taskPaneView, "hidemode 2,spany 2,aligny top");
         sep = new JDSeparator();
 
-        
-        panel.add(sep, "gapright 2,spany 2");
+        center.add(sep, "gapright 2,spany 2,growy, pushy");
 
-        panel.add(contentPanel);
+        center.add(contentPanel, "");
         // sp.setBorder(null);
-/*
+        /*
 
  */
-        panel.add(JDCollapser.getInstance(), "hidemode 3,gaptop 15,cell 2 2,growx,pushx,growy,pushy");
+        center.add(JDCollapser.getInstance(), "hidemode 3,gaptop 15,growx,pushx,growy,pushy");
+
+      
+        panel.add(center);
         // panel.add(generalPurposeTasks, "cell 0 2");
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
-        panel.add(progressBar, "spanx,hidemode 3,cell 0 3");
 
+        panel.add(progressBar, "spanx,hidemode 3");
         // panel.add(new PremiumStatus(), "spanx, cell 0 4");
-        panel.add(this.statusBar, "spanx, cell 0 5");
-
+        panel.add(this.statusBar, "spanx, dock south");
+        // this.setStatusBar(statusBar);
     }
 
     private void addAddonTask() {
@@ -911,8 +918,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         taskPane.add(dlTskPane);
     }
 
-
-
     public void controlEvent(final ControlEvent event) {
         // Moved the whole content of this method into a Runnable run by
         // invokeLater(). Ensures that everything inside is executed on the EDT.
@@ -1000,15 +1005,15 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public void displayMiniWarning(final String shortWarn, final String toolTip, final int showtime) {
-       new Thread(){
-           public void run(){
-               ProgressController pc = new ProgressController(shortWarn, 10);
-               pc.setColor(Color.RED);
-               pc.setStatus(10);
-               pc.finalize(showtime);
-           }
-       }.start();
-        
+        new Thread() {
+            public void run() {
+                ProgressController pc = new ProgressController(shortWarn, 10);
+                pc.setColor(Color.RED);
+                pc.setStatus(10);
+                pc.finalize(showtime);
+            }
+        }.start();
+
         // if (shortWarn == null) {
         // SwingUtilities.invokeLater(new Runnable() {
         // public void run() {
@@ -1322,7 +1327,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 }
                 if (container.getGroup() != null) {
                     JDCollapser.getInstance().setTitle(container.getGroup().getName());
-//                    JDCollapser.getInstance().setIcon(container.getGroup().getIcon());
+                    // JDCollapser.getInstance().setIcon(container.getGroup().
+                    // getIcon());
                 } else {
                     JDCollapser.getInstance().setTitle(JDLocale.L("gui.panels.collapsibleconfig", "Settings"));
                     JDCollapser.getInstance().setIcon(JDTheme.II("gui.images.config.addons", 24, 24));
@@ -1485,16 +1491,15 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public void hideSideBar(boolean b) {
-       if (this.getTaskPane() == null || getTaskPane().isVisible() == !b) return;
+        if (this.taskPaneView == null || taskPaneView.isVisible() == !b) return;
         if (b) {
-           if(this.sep!=null)this.sep.setMinimized(b);
-            getTaskPane().setVisible(!b);
+            if (this.sep != null) this.sep.setMinimized(b);
+            taskPaneView.setVisible(!b);
             this.contentPanel.display(linkListPane);
 
         } else {
-            if(this.sep!=null) this.sep.setMinimized(b);
-            getTaskPane().setVisible(!b);
-          
+            if (this.sep != null) this.sep.setMinimized(b);
+            taskPaneView.setVisible(!b);
 
         }
 

@@ -20,5 +20,15 @@ public abstract class JTabbedPanel extends JPanel {
     abstract public void onDisplay();
 
     abstract public void onHide();
+/**
+ * Can be overwritten, if a JTabbedPanel resized without a viewport. for example: table panels
+ * @return
+ */
+    public boolean needsViewport() {
+       
+        return true;
+    }
+
+
 
 }

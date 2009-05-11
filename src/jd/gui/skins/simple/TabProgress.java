@@ -41,14 +41,12 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXTaskPane;
-
 /**
  * Diese Klasse zeigt alle Fortschritte von momenten aktiven Plugins an.
  * 
  * @author JD-Team
  */
-public class TabProgress extends JXTaskPane implements ActionListener, ControlListener, MouseListener {
+public class TabProgress extends JPanel implements ActionListener, ControlListener, MouseListener {
 
     /**
      * serialVersionUID
@@ -75,9 +73,8 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         this.addMouseListener(this);
         this.setVisible(false);
         lines = new ProgressEntry[MAX_BARS];
-        this.setCollapsed(SubConfiguration.getConfig("gui").getBooleanProperty(TabProgress.COLLAPSED, false));
         this.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
-        this.setTitle(JDLocale.LF("gui.progresspane.title", "%s modules running", 0));
+//        this.setTitle(JDLocale.LF("gui.progresspane.title", "%s modules running", 0));
         initGUI();
     }
 
@@ -153,7 +150,7 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
         } else {
             this.setVisible(true);
         }
-        this.setTitle(JDLocale.LF("gui.progresspane.title", "%s modules running", "" + controllers.size()));
+//        this.setTitle(JDLocale.LF("gui.progresspane.title", "%s modules running", "" + controllers.size()));
         this.revalidate();
         this.repaint();
     }
@@ -257,9 +254,9 @@ public class TabProgress extends JXTaskPane implements ActionListener, ControlLi
     }
 
     public void mouseReleased(MouseEvent e) {
-        System.out.println("Task is :" + this.isCollapsed());
-        SubConfiguration.getConfig("gui").setProperty(TabProgress.COLLAPSED, this.isCollapsed());
-        SubConfiguration.getConfig("gui").save();
+//        System.out.println("Task is :" + this.isCollapsed());
+//        SubConfiguration.getConfig("gui").setProperty(TabProgress.COLLAPSED, this.isCollapsed());
+//        SubConfiguration.getConfig("gui").save();
     }
 
 }

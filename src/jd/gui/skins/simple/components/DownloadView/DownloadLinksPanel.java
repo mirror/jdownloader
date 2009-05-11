@@ -104,7 +104,10 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         Update_Async.setRepeats(false);
         Update_Async.restart();
     }
-
+    public boolean needsViewport() {
+        // TODO Auto-generated method stub
+        return false;
+    }
     public void showFilePackageInfo(FilePackage fp) {
         filePackageInfo.setPackage(fp);
         JDCollapser.getInstance().setContentPanel(filePackageInfo);

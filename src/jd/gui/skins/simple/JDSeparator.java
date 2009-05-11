@@ -27,7 +27,7 @@ public class JDSeparator extends JXCollapsiblePane implements  MouseListener {
     public JDSeparator() {
         setLayout(new MigLayout("ins 0,wrap 1"));
         addMouseListener(this);
-
+      
         // SimpleGUI.CURRENTGUI.getLeftcolPane().addMouseListener(this);
         left = JDTheme.II("gui.images.minimize.left", 5, 10);
         right = JDTheme.II("gui.images.minimize.right", 5, 10);
@@ -35,7 +35,7 @@ public class JDSeparator extends JXCollapsiblePane implements  MouseListener {
         minimize.setToolTipText(JDLocale.L("gui.sidebar.splitbuttons.hide.tooltip", "Hide the Sidebar"));
    
         minimize.setOpaque(false);
-
+        minimize.addMouseListener(this);
         // setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setMinimized(false);
     }
