@@ -127,7 +127,9 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             // setDropMode(DropMode.ON_OR_INSERT_ROWS); /*muss noch geschaut
             // werden wie man das genau macht*/
             setDropMode(DropMode.USE_SELECTION);
+//            setDropMode(DropMode.ON_OR_INSERT_ROWS);
         }
+       
         setDragEnabled(true);
         setTransferHandler(new TreeTableTransferHandler(this));
 
@@ -278,12 +280,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 });
 
                 tableColumn.setVisible(config.getBooleanProperty("VISABLE_COL_" + i, true));
-                if (i == DownloadTreeTableModel.COL_STATUS_ICON) {
-                    tableColumn.setMinWidth(20);
-                    tableColumn.setMaxWidth(20);
-                } else {
-                    tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + i, tableColumn.getWidth()));
-                }
+              
+             
                 if (tableColumn != null) {
                     getColumnModel().addColumn(tableColumn);
                 }

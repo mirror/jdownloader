@@ -63,12 +63,12 @@ public class PackageManager extends Interaction implements Serializable {
                 }
                 pa.setInstalled(false);
 
-                for (OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
-                    if (JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(), false) != JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(), true)) {
-                        JDUtilities.getConfiguration().setProperty(plg.getConfigParamKey(), true);
-                        plg.getPlugin().initAddon();
-                    }
-                }
+//                for (OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
+//                    if (JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(), false) != JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(), true)) {
+//                        JDUtilities.getConfiguration().setProperty(plg.getConfigParamKey(), true);
+//                        plg.getPlugin().initAddon();
+//                    }
+//                }
 
             }
         }

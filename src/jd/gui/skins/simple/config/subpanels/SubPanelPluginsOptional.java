@@ -53,7 +53,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
         private static final long serialVersionUID = 1155282457354673850L;
 
-        //@Override
+        // @Override
         public Class<?> getColumnClass(int columnIndex) {
             return getValueAt(0, columnIndex).getClass();
         }
@@ -62,7 +62,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             return 5;
         }
 
-        //@Override
+        // @Override
         public String getColumnName(int column) {
             switch (column) {
             case 0:
@@ -88,23 +88,23 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             case 0:
                 return pluginsOptional.get(rowIndex).isEnabled();
             case 1:
-                return pluginsOptional.get(rowIndex).getPlugin().getHost();
+                return pluginsOptional.get(rowIndex).getHost();
             case 2:
                 return pluginsOptional.get(rowIndex).getVersion();
             case 3:
                 return pluginsOptional.get(rowIndex).getCoder();
             case 4:
-                return pluginsOptional.get(rowIndex).getPlugin().getRequirements();
+                return ((OptionalPluginWrapper) pluginsOptional.get(rowIndex)).getJavaVersion();
             }
             return null;
         }
 
-        //@Override
+        // @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
             return columnIndex == 0;
         }
 
-        //@Override
+        // @Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 0) {
                 OptionalPluginWrapper plgWrapper = pluginsOptional.get(row);
@@ -115,8 +115,9 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
                     if ((plgWrapper.getFlag() & OptionalPluginWrapper.FLAG_ALWAYS_ENABLED) > 0) {
                         JDUtilities.getGUI().showMessageDialog(JDLocale.LF("gui.config.plugin.optional.forcedActive", "The addon %s cannot be disabled.", plgWrapper.getClassName()));
                     } else {
-                        configuration.setProperty(plgWrapper.getConfigParamKey(), false);
                         plgWrapper.getPlugin().onExit();
+                        configuration.setProperty(plgWrapper.getConfigParamKey(), false);
+
                     }
                 }
                 configuration.save();
@@ -157,9 +158,14 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         SimpleGUI.displayConfig(pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig(), 0);
     }
 
-    //@Override
+    public boolean needsViewport() {
+
+        return false;
+    }
+
+    // @Override
     public void initPanel() {
-        panel.setLayout(new MigLayout("ins 10,wrap 2", "[fill,grow 10]10[fill,grow]", "[fill,grow,null:150000:null][]"));
+        panel.setLayout(new MigLayout("ins 10,wrap 1", "[fill,grow]", "[fill,grow][]"));
 
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
@@ -167,7 +173,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
+                btnEdit.setEnabled((table.getSelectedRow() >= 0) && (pluginsOptional.get(table.getSelectedRow()).getPlugin() != null && pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0));
             }
         });
 
@@ -177,10 +183,10 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             switch (c) {
             case 0:
                 column.setMaxWidth(80);
-                column.setPreferredWidth(50);
+                // column.setPreferredWidth(50);
                 break;
             case 1:
-                column.setPreferredWidth(300);
+                // column.setPreferredWidth(300);
                 break;
             }
         }
@@ -193,15 +199,14 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
         bpanel.add(btnEdit);
-        bpanel.add(new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help", "Hilfe"), JDLocale.L("gui.config.plugin.optional.link_help", "  http://jdownloader.org/page.php?id=122")));
-
-        panel.add(scrollpane, "spanx");
-        panel.add(bpanel, "spanx");
+      
+        panel.add(scrollpane);
+        panel.add(bpanel, "dock south");
         add(panel);
 
     }
 
-    //@Override
+    // @Override
     public void load() {
     }
 
@@ -223,7 +228,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     public void mouseReleased(MouseEvent e) {
     }
 
-    //@Override
+    // @Override
     public void save() {
     }
 }

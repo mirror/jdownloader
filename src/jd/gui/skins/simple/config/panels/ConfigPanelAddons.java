@@ -56,7 +56,10 @@ public class ConfigPanelAddons extends ConfigPanel {
         initPanel();
         load();
     }
-
+  public boolean needsViewport() {
+        
+        return false;
+    }
     public void initPanel() {
         this.setLayout(new MigLayout("ins 0", "[fill,grow]"));
         panel.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));

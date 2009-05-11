@@ -35,12 +35,12 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
     public static final int COL_HIDDEN = 0;
     public static final int COL_PART = 1;
 
-    public static final int COL_PROGRESS = 5;
-    public static final int COL_STATUS_ICON = 4;
+    public static final int COL_PROGRESS = 4;
+
     public static final int COL_STATUS = 3;
 
     /** table column names */
-    static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.treetable.header_1.tree", "F"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"), JDLocale.L("gui.treetable.header_4.statusicon", "Status Icon"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
+    static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.treetable.header_1.tree", "F"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
 
     public DownloadTreeTableModel() {
         super("root");
@@ -102,8 +102,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
         case COL_HOSTER:
             return String.class;
-        case COL_STATUS_ICON:
-            return String.class;
+  
         case COL_STATUS:
             return String.class;
         case COL_PROGRESS:

@@ -73,10 +73,10 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
     }
 
     private void initIcons() {
-        icon_fp_open = JDTheme.II("gui.images.package_opened", 16, 16);
-        icon_fp_open_error = JDTheme.II("gui.images.package_open_error", 16, 16);
-        icon_fp_closed = JDTheme.II("gui.images.package_closed", 16, 16);
-        icon_fp_closed_error = JDTheme.II("gui.images.package_closed_error", 16, 16);
+        icon_fp_open = JDTheme.II("gui.images.package_opened_tree", 16, 16);
+        icon_fp_open_error = JDTheme.II("gui.images.package_open_error_tree", 16, 16);
+        icon_fp_closed = JDTheme.II("gui.images.package_closed_tree", 16, 16);
+        icon_fp_closed_error = JDTheme.II("gui.images.package_closed_error_tree", 16, 16);
         imgFinished = JDTheme.II("gui.images.ok", 16, 16);
         imgFailed = JDTheme.II("gui.images.bad", 16, 16);
         imgFileFailed = JDTheme.II("gui.images.offlinefile", 16, 16);

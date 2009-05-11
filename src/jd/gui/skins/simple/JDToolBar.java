@@ -56,9 +56,28 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     private boolean noTitlePainter;
 
-    private JToggleButton reconnectButton;
+    private JButton reconnectButton;
 
     private JToggleButton update;
+
+    public static final int ENTRY_PAUSE = 1 << 0;
+
+    public static final int ENTRY_RECONNECT = 1 << 1;
+
+    public static final int ENTRY_STOP = 1 << 2;
+
+    public static final int ENTRY_START = 1 << 3;
+
+    public static final int ENTRY_CLIPBOARD = 1 << 4;
+
+    public static final int ENTRY_UPDATE = 1 << 5;
+
+    public static final int ENTRY_MAN_RECONNECT = 1 << 6;
+    public static final int ENTRY_CONTROL = ENTRY_PAUSE | ENTRY_START | ENTRY_STOP;
+    public static final int ENTRY_CONFIG = ENTRY_CLIPBOARD | ENTRY_RECONNECT;
+    public static final int ENTRY_INTERACTION = ENTRY_UPDATE | ENTRY_MAN_RECONNECT;
+
+    public static final int ENTRY_ALL = ENTRY_CONTROL | ENTRY_CONFIG | ENTRY_INTERACTION;
 
     public JDToolBar(boolean noTitlePane, Image mainMenuIcon) {
         super(JToolBar.HORIZONTAL);
@@ -88,8 +107,49 @@ public class JDToolBar extends JToolBar implements ControlListener {
         this.addMouseListener(ml);
     }
 
+    public void setEnabled(int flag, boolean b, String tt) {
+
+        if ((flag & JDToolBar.ENTRY_CLIPBOARD) > 0) {
+            this.clipboard.setEnabled(b);
+            clipboard.setToolTipText(tt);
+        }
+        if ((flag & JDToolBar.ENTRY_MAN_RECONNECT) > 0) {
+            this.reconnectButton.setEnabled(b);
+            reconnectButton.setToolTipText(tt);
+        }
+        if ((flag & JDToolBar.ENTRY_PAUSE) > 0) {
+            this.pauseButton.setEnabled(b);
+            pauseButton.setToolTipText(tt);
+        }
+        if ((flag & JDToolBar.ENTRY_RECONNECT) > 0) {
+            this.reconnect.setEnabled(b);
+            reconnect.setToolTipText(tt);
+        }
+        if ((flag & JDToolBar.ENTRY_START) > 0) {
+            this.playButton.setEnabled(b);
+            playButton.setToolTipText(tt);
+        }
+        if ((flag & JDToolBar.ENTRY_STOP) > 0) {
+            this.stopButton.setEnabled(b);
+            stopButton.setToolTipText(tt);
+        }
+        if ((flag & JDToolBar.ENTRY_UPDATE) > 0) {
+
+            if (Main.isBeta()) {
+                update.setEnabled(false);
+                update.setToolTipText("This is a BETA version. Updates for betaversions are only available at jdownloader.org");
+
+            } else {
+                this.update.setEnabled(b);
+                update.setToolTipText(tt);
+
+            }
+        }
+
+    }
+
     private void initInteractions() {
-        add(reconnectButton = new JToggleButton(JDTheme.II("gui.images.reconnect", 24, 24)), BUTTON_CONSTRAINTS);
+        add(reconnectButton = new JButton(JDTheme.II("gui.images.reconnect", 24, 24)), BUTTON_CONSTRAINTS);
 
         updateManReconnectButton();
 

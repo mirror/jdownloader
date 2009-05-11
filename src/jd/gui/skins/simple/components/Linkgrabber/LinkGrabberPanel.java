@@ -25,6 +25,7 @@ import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
 import jd.gui.skins.simple.JDCollapser;
+import jd.gui.skins.simple.JDToolBar;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
@@ -134,6 +135,8 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         LGINSTANCE.getBroadcaster().removeListener(this);
         Update_Async.stop();
         visible = false;
+        SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_ALL, true, JDLocale.L("gui.linkgrabber.toolbar.disabled","Switch to downloadtask to enable buttons"));
+        
     }
 
     public synchronized void addLinks(DownloadLink[] linkList) {
@@ -238,6 +241,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     // @Override
     public void onDisplay() {
+        SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_CONTROL|JDToolBar.ENTRY_INTERACTION, false, JDLocale.L("gui.linkgrabber.toolbar.disabled","Switch to downloadtask to enable buttons"));
         fireTableChanged(1, null);
         LGINSTANCE.getBroadcaster().addListener(this);
         visible = true;

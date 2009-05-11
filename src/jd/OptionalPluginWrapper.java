@@ -33,24 +33,32 @@ public class OptionalPluginWrapper extends PluginWrapper {
 
     private double version;
     private int flag;
+    private String id;
+    private String name;
 
-    public OptionalPluginWrapper(String string, double d) {
+    public OptionalPluginWrapper(String string, double d, String id, String name) {
         super(string, "jd.plugins.optional." + string, null, 0);
-
+        this.id = id;
         this.version = d;
-
-        if (loadPlugin() != null) {
-            // aktiviert neue addons automatisch.
-            if (JDUtilities.getConfiguration().getBooleanProperty(getConfigParamKey(), false) != JDUtilities.getConfiguration().getBooleanProperty(getConfigParamKey(), true)) {
-                JDUtilities.getConfiguration().setProperty(getConfigParamKey(), true);
-            }
-
-            OPTIONAL_WRAPPER.add(this);
+        this.name = name;
+        if (this.isEnabled()) {
+            this.getPlugin();
         }
+
+        OPTIONAL_WRAPPER.add(this);
+
+    }
+
+    public double getJavaVersion() {
+        return version;
+    }
+
+    public String getHost() {
+        return name;
     }
 
     public OptionalPluginWrapper(String string, double d, int flag) {
-        this(string, d);
+        this(string, d, null, null);
         this.flag = flag;
     }
 
@@ -62,12 +70,14 @@ public class OptionalPluginWrapper extends PluginWrapper {
         this.flag = flag;
     }
 
-    //@Override
+    // @Override
     public PluginOptional getPlugin() {
+        if (!isEnabled()) return null;
+        if (loadedPlugin == null) loadPlugin();
         return (PluginOptional) loadedPlugin;
     }
 
-    public PluginOptional loadPlugin() {
+    private PluginOptional loadPlugin() {
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         Double version = JDUtilities.getJavaVersion();
 
@@ -100,28 +110,33 @@ public class OptionalPluginWrapper extends PluginWrapper {
                     return (PluginOptional) loadedPlugin;
                 }
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 logger.severe("Addon " + this.getClassName() + " is outdated and incompatible. Please update(Packagemanager) :" + e.getLocalizedMessage());
             }
 
         } catch (Throwable e) {
             logger.info("Plugin Exception!");
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return null;
 
     }
 
     public String getConfigParamKey() {
-        return "OPTIONAL_PLUGIN_" + loadedPlugin.getHost();
+        return "OPTIONAL_PLUGIN2_" + id;
     }
 
-    //@Override
+    // @Override
     public int compareTo(PluginWrapper plg) {
-        return getPlugin().getHost().toLowerCase().compareTo(plg.getPlugin().getHost().toLowerCase());
+        return getHost().toLowerCase().compareTo(getHost().toLowerCase());
     }
 
     public boolean isEnabled() {
+        // enable plugins by default
+        if(!JDUtilities.getConfiguration().hasProperty(getConfigParamKey())){
+           JDUtilities.getConfiguration().setProperty(getConfigParamKey(), true);
+        }
+
         return JDUtilities.getConfiguration().getBooleanProperty(this.getConfigParamKey(), false) || (this.flag & FLAG_ALWAYS_ENABLED) > 0;
     }
 }

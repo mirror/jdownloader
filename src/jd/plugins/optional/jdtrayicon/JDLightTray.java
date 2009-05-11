@@ -41,6 +41,7 @@ import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
@@ -82,48 +83,57 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         initConfig();
     }
 
-    //@Override
+    // @Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
 
-    //@Override
+    // @Override
     public String getHost() {
-        return JDLocale.L("plugins.optional.JDLightTray.name", "JDLightTrayIcon");
+        return JDLocale.L("plugins.optional.trayicon.name", "Tray Icon(minimizer)");
     }
 
-    //@Override
+    // @Override
     public String getRequirements() {
         return "JRE 1.6+";
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public boolean initAddon() {
-        if (JDUtilities.getJavaVersion() < 1.6) {
-            logger.severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + JDUtilities.getJavaVersion());
-            return false;
-        }
-        if (!SystemTray.isSupported()) {
-            logger.severe("Error initializing SystemTray: Tray isn't supported jet");
-            return false;
-        }
-        try {
-            JDUtilities.getController().addControlListener(this);
-            if (SimpleGUI.CURRENTGUI != null && SimpleGUI.CURRENTGUI != null) {
-                guiFrame = SimpleGUI.CURRENTGUI;
-                guiFrame.addWindowListener(this);
+        return new GuiRunnable<Boolean>() {
+
+            @Override
+            public Boolean runSave() {
+                if (JDUtilities.getJavaVersion() < 1.6) {
+                    logger.severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + JDUtilities.getJavaVersion());
+                    return false;
+                }
+                if (!SystemTray.isSupported()) {
+                    logger.severe("Error initializing SystemTray: Tray isn't supported jet");
+                    return false;
+                }
+                try {
+                    JDUtilities.getController().addControlListener(JDLightTray.this);
+                    if (SimpleGUI.CURRENTGUI != null && SimpleGUI.CURRENTGUI != null) {
+                        guiFrame = SimpleGUI.CURRENTGUI;
+                        guiFrame.addWindowListener(JDLightTray.this);
+                    }
+                    logger.info("Systemtray OK");
+                    initGUI();
+                } catch (Exception e) {
+                    return false;
+                }
+                return true;
+
             }
-            logger.info("Systemtray OK");
-            initGUI();
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
+
+        }.getReturnValue();
+
     }
 
     public void initConfig() {
@@ -135,7 +145,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_TOOLTIP, JDLocale.L("plugins.optional.JDLightTray.tooltip", "Show Tooltip")).setDefaultValue(true));
     }
 
-    //@Override
+    // @Override
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             logger.info("JDLightTrayIcon Init complete");
@@ -155,8 +165,11 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
         trayIcon = new TrayIcon(img);
         trayIcon.addActionListener(this);
-        trayIcon.addMouseListener(this);
-        trayIcon.addMouseMotionListener(this);
+
+        TrayMouseAdapter ma = new TrayMouseAdapter(this, trayIcon);
+        trayIcon.addMouseListener(ma);
+        trayIcon.addMouseMotionListener(ma);
+
         tit = new TrayIconTooltip();
 
         try {
@@ -170,12 +183,16 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void mouseEntered(MouseEvent e) {
+
     }
 
     public void mouseExited(MouseEvent e) {
+
+        tit.hide();
     }
 
     public void mousePressed(MouseEvent e) {
+
         tit.hide();
         if (e.getSource() instanceof TrayIcon) {
             if (!OSDetector.isMac()) {
@@ -192,6 +209,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                         trayIconPopup.setVisible(true);
                     }
                 }
+            } else if (e.getSource() instanceof JWindow) {
+
             } else {
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isLeftMouseButton(e)) {
@@ -218,15 +237,14 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void mouseDragged(MouseEvent e) {
+
     }
 
     public void mouseMoved(MouseEvent e) {
-        if (subConfig.getBooleanProperty(PROPERTY_TOOLTIP, false)) return;
-        if (trayIconPopup != null && trayIconPopup.isVisible()) return;
-        tit.show(e);
+
     }
 
-    //@Override
+    // @Override
     public void onExit() {
         if (trayIcon != null) SystemTray.getSystemTray().remove(trayIcon);
         JDUtilities.getController().removeControlListener(this);
@@ -311,5 +329,19 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void windowOpened(WindowEvent arg0) {
+    }
+
+    /**
+     * gets called if mouse stays over the tray. Edit delay in TrayMouseAdapter
+     * 
+     * @param me
+     */
+    public void mouseStay(MouseEvent e) {
+
+        if (!subConfig.getBooleanProperty(PROPERTY_TOOLTIP, true)) return;
+        if (trayIconPopup != null && trayIconPopup.isVisible()) return;
+
+        tit.show(e, ((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft(), this.trayIcon);
+
     }
 }

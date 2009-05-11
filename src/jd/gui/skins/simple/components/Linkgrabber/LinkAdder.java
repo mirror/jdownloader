@@ -87,7 +87,9 @@ public class LinkAdder extends JTabbedPanel {
         });
 
     }
-
+public boolean needsViewport(){
+    return false;
+}
     // @Override
     public void onDisplay() {
         ClipboardHandler.getClipboard().setTempDisableD(true);

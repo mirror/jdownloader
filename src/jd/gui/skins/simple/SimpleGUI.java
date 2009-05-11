@@ -367,6 +367,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     //
     // }
 
+    public JDToolBar getToolBar() {
+        return toolBar;
+    }
+
     @SuppressWarnings("unchecked")
     private void initWaitPane() {
         JXPanel glass = new JXPanel(new MigLayout("ins 80,wrap 1", "[fill,grow]", "[fill,grow][]"));

@@ -274,7 +274,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         if (path != null) {
             if (column == 1 && e.getButton() == MouseEvent.BUTTON1 && e.getX() < 20 && e.getClickCount() == 1) {
                 if (path.getLastPathComponent() instanceof LinkGrabberFilePackage) {
-                    FilePackage fp = (FilePackage) path.getLastPathComponent();
+                    LinkGrabberFilePackage fp = (LinkGrabberFilePackage) path.getLastPathComponent();
                     if (fp.getBooleanProperty(PROPERTY_EXPANDED, false)) {
                         collapsePath(path);
                     } else {

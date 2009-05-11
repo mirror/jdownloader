@@ -122,10 +122,14 @@ public class ShragleCom extends PluginForHost {
         }
         dl.startDownload();
     }
+    public boolean useIcon(){
+        return true;
+    }
 
     // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
+      
         correctUrl(downloadLink);
         String id = new Regex(downloadLink.getDownloadURL(), "shragle.com/files/(.*?)/").getMatch(0);
         String[] data = Regex.getLines(br.getPage("http://www.shragle.com/api.php?key=" + apikey + "&action=getStatus&fileID=" + id));

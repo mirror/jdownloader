@@ -20,8 +20,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.TrayIcon;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
@@ -51,68 +51,50 @@ public class TrayIconTooltip {
     private JLabel lblETA;
     private JLabel lblProgress;
 
-    private int counter = 0;
+    // private int counter = 0;
     private boolean inside = false;
+    private Point estimatedTopLeft;
+    private TrayIcon trayIcon;
 
     public TrayIconTooltip() {
-        SwingUtilities.invokeLater(new Runnable() {
 
-            public void run() {
-                toolPanel = new JPanel();
-                toolPanel.setLayout(new MigLayout("wrap 2", "[fill, grow][fill, grow]"));
-                toolPanel.setVisible(true);
-                toolPanel.setOpaque(true);
-                toolPanel.setBackground(new Color(0xb9cee9));
-                toolPanel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, toolPanel.getBackground().darker()));
+        toolPanel = new JPanel();
+        toolPanel.setLayout(new MigLayout("wrap 2", "[fill, grow][fill, grow]"));
+        toolPanel.setVisible(true);
+        toolPanel.setOpaque(true);
+        toolPanel.setBackground(new Color(0xb9cee9));
+        toolPanel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, toolPanel.getBackground().darker()));
 
-                toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:")), "spanx 2");
-                toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.dl.running", "Running:")), "gapleft 10");
-                toolPanel.add(lblDlRunning = new JLabel(""));
-                toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.dl.finished", "Finished:")), "gapleft 10");
-                toolPanel.add(lblDlFinished = new JLabel(""));
-                toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.dl.total", "Total:")), "gapleft 10");
-                toolPanel.add(lblDlTotal = new JLabel(""));
-                toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.speed", "Speed:")));
-                toolPanel.add(lblSpeed = new JLabel(""));
-                toolPanel.add(lblProgress = new JLabel(""), "newline, spanx 2");
-                toolPanel.add(prgTotal = new JDProgressBar(), "spanx 2");
-                toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.eta", "ETA:")));
-                toolPanel.add(lblETA = new JLabel(""));
-                toolPanel.addMouseListener(new MouseListener() {
+        toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:")), "spanx 2");
+        toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.dl.running", "Running:")), "gapleft 10");
+        toolPanel.add(lblDlRunning = new JLabel(""));
+        toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.dl.finished", "Finished:")), "gapleft 10");
+        toolPanel.add(lblDlFinished = new JLabel(""));
+        toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.dl.total", "Total:")), "gapleft 10");
+        toolPanel.add(lblDlTotal = new JLabel(""));
+        toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.speed", "Speed:")));
+        toolPanel.add(lblSpeed = new JLabel(""));
+        toolPanel.add(lblProgress = new JLabel(""), "newline, spanx 2");
+        toolPanel.add(prgTotal = new JDProgressBar(), "spanx 2");
+        toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.eta", "ETA:")));
+        toolPanel.add(lblETA = new JLabel(""));
 
-                    public void mouseClicked(MouseEvent arg0) {
-                    }
+        toolParent = new JWindow();
+        toolParent.setAlwaysOnTop(true);
+        toolParent.add(toolPanel);
+        toolParent.pack();
+        toolParent.setVisible(false);
 
-                    public void mouseEntered(MouseEvent arg0) {
-                        inside = true;
-                    }
-
-                    public void mouseExited(MouseEvent arg0) {
-                        inside = false;
-                    }
-
-                    public void mousePressed(MouseEvent arg0) {
-                    }
-
-                    public void mouseReleased(MouseEvent arg0) {
-                    }
-                });
-
-                toolParent = new JWindow();
-                toolParent.setAlwaysOnTop(true);
-                toolParent.add(toolPanel);
-                toolParent.pack();
-                toolParent.setVisible(false);
-            }
-        });
     }
 
-    public void show(MouseEvent e) {
-        if (counter > 0) {
-            counter = 2;
-            return;
-        }
-        counter = 2;
+    public void show(MouseEvent e, Point point, TrayIcon trayIcon) {
+        // if (counter > 0) {
+        // counter = 2;
+        // return;
+        // }
+        // counter = 2;
+        this.trayIcon = trayIcon;
+        this.estimatedTopLeft = point;
         if (trayInfo != null) trayInfo.interrupt();
         trayInfo = new TrayInfo(e.getPoint());
         trayInfo.start();
@@ -128,8 +110,8 @@ public class TrayIconTooltip {
             }
 
         }.start();
-        counter = 0;
-        inside = false;
+        // counter = 0;
+        // inside = false;
     }
 
     private void calcLocation(final JWindow window, final Point p) {
@@ -138,17 +120,17 @@ public class TrayIconTooltip {
                 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
                 int limitX = (int) screenSize.getWidth() / 2;
                 int limitY = (int) screenSize.getHeight() / 2;
-
-                if (p.x <= limitX) {
-                    if (p.y <= limitY)
-                        window.setLocation(p.x, p.y);
+                Point pp = estimatedTopLeft;
+                if (pp.x <= limitX) {
+                    if (pp.y <= limitY)
+                        window.setLocation(pp.x, pp.y + trayIcon.getSize().height);
                     else
-                        window.setLocation(p.x, p.y - window.getHeight());
+                        window.setLocation(pp.x, pp.y - window.getHeight());
                 } else {
-                    if (p.y <= limitY)
-                        window.setLocation(p.x - window.getWidth(), p.y);
+                    if (pp.y <= limitY)
+                        window.setLocation(pp.x - window.getWidth(), pp.y + trayIcon.getSize().height);
                     else
-                        window.setLocation(p.x - window.getWidth(), p.y - window.getHeight());
+                        window.setLocation(pp.x - window.getWidth(), pp.y - window.getHeight());
                 }
             }
         });
@@ -163,11 +145,6 @@ public class TrayIconTooltip {
 
         // @Override
         public void run() {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                interrupt();
-            }
 
             toolParent.pack();
             calcLocation(toolParent, p);
@@ -176,7 +153,7 @@ public class TrayIconTooltip {
 
             final DownloadController dlc = JDUtilities.getDownloadController();
 
-            while ((inside || counter > 0) && toolParent.isVisible()) {
+            while (toolParent.isVisible()) {
                 SwingUtilities.invokeLater(new Runnable() {
 
                     public void run() {
@@ -209,8 +186,6 @@ public class TrayIconTooltip {
                     }
                 });
 
-                if (!inside) counter--;
-
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
@@ -221,4 +196,5 @@ public class TrayIconTooltip {
             hide();
         }
     }
+
 }

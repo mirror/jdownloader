@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.utils.JDLocale;
 
 public abstract class PluginOptional extends Plugin implements ControlListener {
 
@@ -45,12 +46,14 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
         }
 
     }
-
+    public String getHost() {
+        return this.getWrapper().getHost();
+    }
     public String getIconKey() {
         return "gui.images.config.home";
     }
 
-    public abstract String getRequirements();
+
 
     //@Override
     public Pattern getSupportedLinks() {
