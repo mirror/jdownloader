@@ -19,12 +19,13 @@ public class TaskPane extends JPanel implements ActionListener {
     public TaskPane() {
         panels = new ArrayList<TaskPanel>();
 //        this.setBackgroundPainter(null);
-        this.setPreferredSize(new Dimension(200, 10));
-        this.setLayout(new MigLayout("ins 2, wrap 1", "[fill,grow]", "[]2[]2[]2[]2[]2[]2[]2[]2[fill,grow]"));
+        this.setPreferredSize(new Dimension(180, 10));
+        this.setLayout(new MigLayout("ins 5, wrap 1", "[fill,grow]", "[]2[]2[]2[]2[]2[]2[]2[]2[fill,grow]"));
     }
 
     public void add(TaskPanel panel) {
         super.add(panel);
+        panel.setMaximumSize(new Dimension(193, Integer.MAX_VALUE));
         if (!panels.contains(panel)) {
             panel.addActionListener(this);
             panels.add(panel);
@@ -34,6 +35,7 @@ public class TaskPane extends JPanel implements ActionListener {
 
     public void add(int index, TaskPanel panel) {
         super.add(panel, index);
+        panel.setMaximumSize(new Dimension(193, Integer.MAX_VALUE));
         if (!panels.contains(panel)) {
             panel.addActionListener(this);
             switcher(null);

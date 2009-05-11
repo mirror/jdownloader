@@ -716,14 +716,14 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         this.setToolBar(toolBar);
         // panel.add(this.toolBar, "spanx");
         JPanel center = new JPanel(new MigLayout("ins 0,wrap 3", "[fill]0[shrink]0[fill,grow 100]", "[grow,fill]0[]"));
-        
+
         taskPaneView = new JViewport();
         taskPaneView.setView(taskPane);
       
-        center.add(taskPaneView, "hidemode 2,spany 2,aligny top");
+        center.add(taskPaneView, "width 200!,hidemode 2,spany 2,aligny top");
         sep = new JDSeparator();
 
-        center.add(sep, "gapright 2,spany 2,growy, pushy");
+        center.add(sep, "width 6!,gapright 2,spany 2,growy, pushy");
 
         center.add(contentPanel, "");
         // sp.setBorder(null);
@@ -732,7 +732,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
  */
         center.add(JDCollapser.getInstance(), "hidemode 3,gaptop 15,growx,pushx,growy,pushy");
 
-      
         panel.add(center);
         // panel.add(generalPurposeTasks, "cell 0 2");
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
