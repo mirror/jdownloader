@@ -60,18 +60,19 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
 
     public void update() {
         if (fp == null) return;
-        notifyUpdate = false; /*
-                               * wichtig: die set funktionen lösen eine action
-                               * aus , welche ansonsten wiederum ein updatevent
-                               * aufrufen würden
-                               */
+        /*
+         * wichtig: die set funktionen lösen eine action aus , welche ansonsten
+         * wiederum ein updatevent aufrufen würden
+         */
+        notifyUpdate = false;
         if (!txtName.isFocusOwner()) txtName.setText(fp.getName());
         if (!txtComment.isFocusOwner()) txtComment.setText(fp.getComment());
         if (!txtPassword.isFocusOwner()) txtPassword.setText(fp.getPassword());
         dlPassword.setText(fp.getDLPassword());
         if (!brwSaveTo.isFocusOwner()) brwSaveTo.setText(fp.getDownloadDirectory());
         if (!chbExtract.isFocusOwner()) chbExtract.setSelected(fp.isExtractAfterDownload());
-        revalidate();/* neuzeichnen */
+        /* neuzeichnen */
+        revalidate();
         notifyUpdate = true;
     }
 
@@ -108,22 +109,22 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         dlPassword = new JDTextField();
         dlPassword.setEditable(false);
 
-        simplePanel.setLayout(new MigLayout("", "[]10px[grow]", "[][]"));
+        simplePanel.setLayout(new MigLayout("wrap 2", "[]10[grow, fill]", "[]5[]"));
 
         simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
-        simplePanel.add(txtName, "growx, wrap");
+        simplePanel.add(txtName);
         simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
-        simplePanel.add(brwSaveTo, "growx");
+        simplePanel.add(brwSaveTo);
 
         tabbedPane.add(JDLocale.L("gui.linkgrabber.packagetab.toggleview1", "Simple"), simplePanel);
 
-        extendedPanel.setLayout(new MigLayout("", "[]10px[grow][right]", "[][]"));
+        extendedPanel.setLayout(new MigLayout("wrap 2", "[]10px[grow, fill]", "[]5[]5[]"));
 
         extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
-        extendedPanel.add(txtPassword, "growx");
-        extendedPanel.add(chbExtract, "wrap");
+        extendedPanel.add(txtPassword, "split 2, gapright 10, growx");
+        extendedPanel.add(chbExtract);
         extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
-        extendedPanel.add(txtComment, "grow,wrap");
+        extendedPanel.add(txtComment);
         extendedPanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.dlpassword", "Download Passwort")));
 
         extendedPanel.add(dlPassword, "growx");
@@ -137,7 +138,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (fp == null || !notifyUpdate) return;
         if (e.getSource() == txtName) {
-            fp.setName(txtName.getText());            
+            fp.setName(txtName.getText());
         } else if (e.getSource() == brwSaveTo) {
             fp.setDownloadDirectory(brwSaveTo.getText());
         } else if (e.getSource() == txtComment) {

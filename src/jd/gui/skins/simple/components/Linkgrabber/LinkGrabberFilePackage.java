@@ -40,7 +40,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     private String password = "";
     private long size = -1;
 
-    private long lastSizeCalc = 0;    
+    private long lastSizeCalc = 0;
     private boolean lastSort = false;
     private int lastfail = 0;
     private long lastFailCount = 0;
@@ -194,10 +194,10 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                 pwList.add(element);
             }
 
-            Vector<String> dlpwList = new Vector<String>();
+            // Vector<String> dlpwList = new Vector<String>();
 
             for (DownloadLink element : downloadLinks) {
-                pws = JDUtilities.passwordStringToArray(element.getSourcePluginPassword());                
+                pws = JDUtilities.passwordStringToArray(element.getSourcePluginPassword());
                 for (String element2 : pws) {
                     if (pwList.indexOf(element2) < 0) {
                         pwList.add(element2);
@@ -216,7 +216,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                 cmt = cmt.substring(1);
             }
             this.comment = cmt;
-            this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));            
+            this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
         }
     }
 
@@ -320,7 +320,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         if (comment == null) comment = "";
         this.comment = comment;
         getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
-    } 
+    }
 
     public void clear() {
         this.setDownloadLinks(new Vector<DownloadLink>());

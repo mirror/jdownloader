@@ -5,7 +5,6 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
 import jd.config.Configuration;
@@ -33,8 +32,6 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
 
     private JCheckBox chbUseSubdirectory;
 
-    private JPanel simplePanel;
-
     private LinkGrabberFilePackage fp = null;
 
     private boolean notifyUpdate = true;
@@ -57,18 +54,19 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
 
     public void update() {
         if (fp == null) return;
-        notifyUpdate = false; /*
-                               * wichtig: die set funktionen lösen eine action
-                               * aus , welche ansonsten wiederum ein updatevent
-                               * aufrufen würden
-                               */
+        /*
+         * wichtig: die set funktionen lösen eine action aus , welche ansonsten
+         * wiederum ein updatevent aufrufen würden
+         */
+        notifyUpdate = false;
         if (!txtName.isFocusOwner()) txtName.setText(fp.getName());
         if (!txtComment.isFocusOwner()) txtComment.setText(fp.getComment());
         if (!txtPassword.isFocusOwner()) txtPassword.setText(fp.getPassword());
         if (!brwSaveTo.isFocusOwner()) brwSaveTo.setText(fp.getDownloadDirectory());
         if (!chbExtract.isFocusOwner()) chbExtract.setSelected(fp.isExtractAfterDownload());
         if (!chbUseSubdirectory.isFocusOwner()) chbUseSubdirectory.setSelected(fp.useSubDir());
-        revalidate();/* neuzeichnen */
+        /* neuzeichnen */
+        revalidate();
         notifyUpdate = true;
     }
 
@@ -77,7 +75,6 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
     }
 
     private void buildGui() {
-        simplePanel = new JPanel();
 
         txtName = new JDTextField();
         txtName.setAutoSelect(true);
@@ -104,23 +101,21 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
         chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
         chbUseSubdirectory.addActionListener(this);
 
-        simplePanel.setLayout(new MigLayout("", "[]10px[]15px[]", "[][]"));
+        this.setLayout(new MigLayout("ins 10, wrap 2", "[]10[grow,fill]", "[]5[]5[]5[]"));
 
-        simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
-        simplePanel.add(txtName, "growx, wrap");
-        simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
-        simplePanel.add(brwSaveTo, "growx,wrap");
-        simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
+        this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
+        this.add(txtName);
+        this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
+        this.add(brwSaveTo);
+        this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
+        this.add(txtPassword, "split 2, gapright 10, growx");
+        this.add(chbExtract);
 
-        simplePanel.add(txtPassword, "growx");
-        simplePanel.add(chbExtract, "wrap");
-
-        /* bitte noch die Checkbox für Subdirectory auch einbauen */
-        /* und evtl schöner aussehen lassen */
-        simplePanel.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
-        simplePanel.add(txtComment, "growx");
-
-        this.add(simplePanel, "grow");
+        /*
+         * bitte noch die Checkbox für Subdirectory auch einbauen TODO: wo soll sie hin?
+         */
+        this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
+        this.add(txtComment);
     }
 
     public void actionPerformed(ActionEvent e) {

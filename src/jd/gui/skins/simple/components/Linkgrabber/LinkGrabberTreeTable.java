@@ -42,7 +42,6 @@ import jd.gui.skins.simple.components.DownloadView.DownloadLinkRowHighlighter;
 import jd.gui.skins.simple.components.DownloadView.DownloadTreeTable;
 import jd.gui.skins.simple.components.DownloadView.JColumnControlButton;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;

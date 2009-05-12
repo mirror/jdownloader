@@ -113,7 +113,6 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingworker.SwingWorker;
 import org.jdesktop.swingx.JXFrame;
 import org.jdesktop.swingx.JXLabel;
 import org.jdesktop.swingx.JXLoginDialog;
@@ -191,7 +190,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private boolean mainMenuRollOverStatus = false;
 
-    private SwingWorker<Object, Object> cursorworker;
+    // private SwingWorker<Object, Object> cursorworker;
 
     private JViewport taskPaneView;
 
@@ -506,7 +505,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -745,7 +744,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         panel.add(this.statusBar, "spanx, dock south");
         // this.setStatusBar(statusBar);
 
-       
     }
 
     private void addAddonTask() {
@@ -1077,7 +1075,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);
