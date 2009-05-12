@@ -143,11 +143,11 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     }
 
     public Object getVersion() {
-        return getPlugin() != null ? getPlugin().getVersion() : JDLocale.L("plugin.system.notloaded", "idle");
+        return loadedPlugin != null ? loadedPlugin.getVersion() : JDLocale.L("plugin.system.notloaded", "idle");
     }
 
     public Object getCoder() {
-        return getPlugin() != null ? getPlugin().getCoder() : JDLocale.L("plugin.system.notloaded", "idle");
+        return loadedPlugin != null ? loadedPlugin.getCoder() : JDLocale.L("plugin.system.notloaded", "idle");
     }
 
     public boolean usePlugin() {
