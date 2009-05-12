@@ -129,7 +129,7 @@ public class AccountController extends SubConfiguration implements ActionListene
                             b = true;
                         }
                     }
-                    if (b) this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_ADDED, host, account));                    
+                    if (b) this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_ADDED, host, account));
                 }
             } else {
                 ArrayList<Account> haccounts = new ArrayList<Account>();
@@ -184,10 +184,10 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     public void onAccountControllerEvent(AccountControllerEvent event) {
         switch (event.getID()) {
-        case AccountControllerEvent.ACCOUNT_ADDED:            
+        case AccountControllerEvent.ACCOUNT_ADDED:
             saveAsync();
             break;
-        case AccountControllerEvent.ACCOUNT_REMOVED:            
+        case AccountControllerEvent.ACCOUNT_REMOVED:
             saveAsync();
             break;
         default:
@@ -210,14 +210,14 @@ public class AccountController extends SubConfiguration implements ActionListene
         }
     }
 
-    public boolean vetoAccountGetEvent(String host, Account account) {        
+    public boolean vetoAccountGetEvent(String host, Account account) {
         return false;
     }
 
     public Account getValidAccount(PluginForHost pluginForHost) {
         if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return null;
         synchronized (hosteraccounts) {
-            ArrayList<Account> accounts = getAllAccounts(pluginForHost);
+            ArrayList<Account> accounts = new ArrayList<Account>(getAllAccounts(pluginForHost));
             Account ret = null;
             synchronized (accounts) {
                 for (int i = 0; i < accounts.size(); i++) {

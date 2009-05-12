@@ -7,7 +7,6 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.TreeMap;
-import java.util.logging.Logger;
 
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -27,7 +26,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
-import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -49,8 +47,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
 
     private long trafficTotal = 0l;
 
-    private JLabel lbl;
-    private Logger logger;
+    private JLabel lbl;    
     private SubConfiguration config;
     private String MAP_PROP = "MAP2";
     private String MAPSIZE_PROP = "MAPSIZE2";
@@ -63,8 +60,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     @SuppressWarnings("unchecked")
     public PremiumStatus() {
         super();
-        bars = new TinyProgressBar[BARCOUNT];
-        logger = JDLogger.getLogger();
+        bars = new TinyProgressBar[BARCOUNT];        
         lbl = new JLabel(JDLocale.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
 
         this.setLayout(new MigLayout("ins 0", "[]", "[]"));
