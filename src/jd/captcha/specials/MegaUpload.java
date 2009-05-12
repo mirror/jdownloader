@@ -174,12 +174,12 @@ public class MegaUpload {
 
     }
 
-    private static void setValue(Captcha captcha, int x, int y, int value) {
-        if (y < 0 || x < 0) return;
-        if (y >= captcha.getHeight() || x >= captcha.getWidth()) return;
-        captcha.setPixelValue(x, y, value);
-
-    }
+    // private static void setValue(Captcha captcha, int x, int y, int value) {
+    // if (y < 0 || x < 0) return;
+    // if (y >= captcha.getHeight() || x >= captcha.getWidth()) return;
+    // captcha.setPixelValue(x, y, value);
+    //
+    // }
 
     public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {
         return org;
@@ -261,7 +261,7 @@ public class MegaUpload {
             }
 
             // String methodsPath = UTILITIES.getFullPath(new String[] {
-            //JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
+            // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
             // "jd", "captcha", "methods" });
             //    
             // String hoster = "megaupload.com";
@@ -363,7 +363,7 @@ public class MegaUpload {
 
         // UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.
         // loadImage(new
-        //File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()
+        // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()
         // +"/jd/captcha/methods"+
         // "/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")),
         // null, "rapidshare.com"));

@@ -38,6 +38,10 @@ public class JDFileReg {
         return sb.toString();
     }
 
+    public static void unregisterFileExts() {
+        JDUtilities.runCommand("cmd", new String[] { "/c", "regedit", "/S", JDUtilities.getResourceFile("tools/windows/uninstall.reg").getAbsolutePath() }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
+    }
+
     public static void registerFileExts() {
         if (!OSDetector.isWindows()) return;
         if (!SubConfiguration.getConfig("CNL2").getBooleanProperty("INSTALLED", false)) {

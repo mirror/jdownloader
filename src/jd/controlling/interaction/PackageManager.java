@@ -26,7 +26,6 @@ import java.util.logging.Level;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.Main;
-import jd.OptionalPluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.http.Browser;
@@ -63,12 +62,18 @@ public class PackageManager extends Interaction implements Serializable {
                 }
                 pa.setInstalled(false);
 
-//                for (OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
-//                    if (JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(), false) != JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(), true)) {
-//                        JDUtilities.getConfiguration().setProperty(plg.getConfigParamKey(), true);
-//                        plg.getPlugin().initAddon();
-//                    }
-//                }
+                // for (OptionalPluginWrapper plg :
+                // OptionalPluginWrapper.getOptionalWrapper()) {
+                // if
+                // (JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(),
+                // false) !=
+                // JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(),
+                // true)) {
+                // JDUtilities.getConfiguration().setProperty(plg.getConfigParamKey(),
+                // true);
+                // plg.getPlugin().initAddon();
+                // }
+                // }
 
             }
         }
@@ -78,9 +83,9 @@ public class PackageManager extends Interaction implements Serializable {
 
     }
 
-    //@Override
+    // @Override
     public boolean doInteraction(Object arg) {
-        if(Main.isBeta())return false;
+        if (Main.isBeta()) return false;
         checkNewInstalled();
 
         SubConfiguration config = WebUpdater.getConfig("JDU");
@@ -151,7 +156,7 @@ public class PackageManager extends Interaction implements Serializable {
 
     }
 
-    //@Override
+    // @Override
     public String getInteractionName() {
         return JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
     }
@@ -230,7 +235,7 @@ public class PackageManager extends Interaction implements Serializable {
 
     }
 
-    //@Override
+    // @Override
     public void initConfig() {
     }
 
@@ -265,7 +270,7 @@ public class PackageManager extends Interaction implements Serializable {
                 WebUpdater.getConfig("JDU").save();
 
                 new Thread() {
-                    //@Override
+                    // @Override
                     public void run() {
                         try {
                             Thread.sleep(1000);
@@ -310,7 +315,7 @@ public class PackageManager extends Interaction implements Serializable {
 
     }
 
-    //@Override
+    // @Override
     public String toString() {
         return JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
     }

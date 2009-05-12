@@ -52,7 +52,7 @@ public class TrayIconTooltip {
     private JLabel lblProgress;
 
     // private int counter = 0;
-    private boolean inside = false;
+//    private boolean inside = false;
     private Point estimatedTopLeft;
     private TrayIcon trayIcon;
 

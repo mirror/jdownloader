@@ -84,11 +84,11 @@ public abstract class ConfigPanel extends JTabbedPanel {
                 case ConfigContainer.TYPE_PREMIUMPANEL:
                     this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
                     panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
-                   
-                    JScrollPane sp;
+
+                    // JScrollPane sp;
                     panel.add(c, "spanx,growy,pushy");
-//                        panel.add(sp=new JScrollPane(c), "spanx,growy,pushy");
-//                    sp.setBorder(null);
+                    // panel.add(sp=new JScrollPane(c), "spanx,growy,pushy");
+                    // sp.setBorder(null);
                     break;
                 default:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright 20" : "gapright 20");
@@ -116,27 +116,24 @@ public abstract class ConfigPanel extends JTabbedPanel {
             }
 
             for (JComponent c : entry.getInput()) {
-                
+
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_TEXTAREA:
                     panel.add(new JScrollPane(c), "spanx,gapleft 35,gapright 20");
-                 
+
                     break;
                 case ConfigContainer.TYPE_PREMIUMPANEL:
-                
+
                     this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
                     panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
                     JScrollPane sp;
-                        panel.add(sp=new JScrollPane(c), "spanx");
-                        sp.setBorder(null);
+                    panel.add(sp = new JScrollPane(c), "spanx");
+                    sp.setBorder(null);
                     break;
                 default:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright 20,gapleft 35" : "gapright 20");
                     break;
                 }
-                
-                
-         
 
             }
         }
@@ -169,7 +166,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
     public abstract void save();
 
-    //@Override
+    // @Override
     public void onDisplay() {
         System.out.println("Display " + this);
         loadConfigEntries();

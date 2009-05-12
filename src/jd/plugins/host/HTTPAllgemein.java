@@ -16,8 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
@@ -37,12 +35,12 @@ public class HTTPAllgemein extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "";
     }
 
-    //@Override
+    // @Override
     public String getFileInformationString(DownloadLink parameter) {
         return "(" + contentType + ")" + parameter.getName();
     }
@@ -70,7 +68,7 @@ public class HTTPAllgemein extends PluginForHost {
         return null;
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException {
         this.setBrowserExclusive();
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://"));
@@ -80,7 +78,7 @@ public class HTTPAllgemein extends PluginForHost {
             basicauth = (String) downloadLink.getProperty("pass", null);
             if (basicauth != null) basicauth = "Basic " + Encoding.Base64Encode(basicauth);
         }
-        if (basicauth != null) {            
+        if (basicauth != null) {
             br.getHeaders().put("Authorization", basicauth);
         }
         br.setFollowRedirects(true);
@@ -111,7 +109,7 @@ public class HTTPAllgemein extends PluginForHost {
             }
             downloadLink.setFinalFileName(Plugin.getFileNameFormHeader(urlConnection));
             downloadLink.setBrowserUrl(downloadLink.getDownloadURL());
-            downloadLink.setDownloadSize(urlConnection.getLongContentLength());            
+            downloadLink.setDownloadSize(urlConnection.getLongContentLength());
             this.contentType = urlConnection.getContentType();
             urlConnection.disconnect();
             return true;
@@ -122,12 +120,12 @@ public class HTTPAllgemein extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
@@ -159,23 +157,23 @@ public class HTTPAllgemein extends PluginForHost {
 
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         link.setProperty("nochunkload", false);
         link.setProperty("nochunk", false);
         link.setProperty("basicauth", null);
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 

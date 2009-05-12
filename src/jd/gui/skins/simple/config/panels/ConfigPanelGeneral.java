@@ -33,7 +33,6 @@ import jd.nutils.OSDetector;
 import jd.utils.JDFileReg;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 
 public class ConfigPanelGeneral extends ConfigPanel {
 
@@ -48,50 +47,51 @@ public class ConfigPanelGeneral extends ConfigPanel {
         load();
     }
 
-    //@Override
+    // @Override
     public void initPanel() {
         ConfigEntry conditionEntry;
 
-ConfigGroup logging = new ConfigGroup(JDLocale.L("gui.config.general.logging", "Logging"),JDTheme.II("gui.images.terminal",32,32));
+        ConfigGroup logging = new ConfigGroup(JDLocale.L("gui.config.general.logging", "Logging"), JDTheme.II("gui.images.terminal", 32, 32));
 
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] { Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.OFF }, JDLocale.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.WARNING).setGroup(logging)));
-//        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.LOGGER_FILELOG, JDLocale.L("gui.config.general.filelogger", "Erstelle Logdatei im ./logs/ Ordner")).setDefaultValue(false).setGroup(logging)));
+        // addGUIConfigEntry(new GUIConfigEntry(new
+        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration,
+        // Configuration.LOGGER_FILELOG,
+        // JDLocale.L("gui.config.general.filelogger",
+        // "Erstelle Logdatei im ./logs/ Ordner")).setDefaultValue(false).setGroup(logging)));
 
-        ConfigGroup update = new ConfigGroup(JDLocale.L("gui.config.general.update", "Update"),JDTheme.II("gui.splash.update",32,32));
+        ConfigGroup update = new ConfigGroup(JDLocale.L("gui.config.general.update", "Update"), JDTheme.II("gui.splash.update", 32, 32));
 
         addGUIConfigEntry(new GUIConfigEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_DISABLE, JDLocale.L("gui.config.general.webupdate.disable", "Update nur manuell durchführen")).setDefaultValue(false).setGroup(update).setEnabled(!Main.isBeta())));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDLocale.L("gui.config.general.webupdate.auto", "automatisch, ohne Nachfrage ausführen")).setDefaultValue(false).setEnabledCondidtion(conditionEntry, "==", false).setGroup(update)));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, JDLocale.L("gui.config.general.changelog.auto", "Open Changelog after update")).setDefaultValue(true).setGroup(update)));
-        ConfigGroup cnl = new ConfigGroup(JDLocale.L("gui.config.general.cnl", "Click'n'Load"),JDTheme.II("gui.clicknload",32,32));
-        ConfigEntry ce;
-        addGUIConfigEntry(new GUIConfigEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+        ConfigGroup cnl = new ConfigGroup(JDLocale.L("gui.config.general.cnl", "Click'n'Load"), JDTheme.II("gui.clicknload", 32, 32));
+
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 SubConfiguration.getConfig("CNL2").setProperty("INSTALLED", false);
-                
                 JDFileReg.registerFileExts();
             }
 
         }, JDLocale.L("gui.config.general.cnl.install", "Install")).setDefaultValue(false).setGroup(cnl).setEnabled(OSDetector.isWindows())));
-        addGUIConfigEntry(new GUIConfigEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                JDUtilities.runCommand("cmd", new String[] { "/c", "regedit", "/S",  JDUtilities.getResourceFile("tools/windows/uninstall.reg").getAbsolutePath()}, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
-                
-               
+                JDFileReg.unregisterFileExts();
             }
 
         }, JDLocale.L("gui.config.general.cnl.uninstall", "uninstall")).setDefaultValue(false).setGroup(cnl).setEnabled(OSDetector.isWindows())));
-        
+
         this.add(panel, BorderLayout.NORTH);
     }
 
-    //@Override
+    // @Override
     public void load() {
         loadConfigEntries();
     }
 
-    //@Override
+    // @Override
     public void save() {
         saveConfigEntries();
         logger.setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));

@@ -219,9 +219,6 @@ public abstract class PluginForDecrypt extends Plugin {
      *            (Special captcha? needs explaination? then use this parameter)
      * @return
      * @throws DecrypterException
-     * @throws PluginException
-     * @throws InterruptedException
-     * @throws DecrypterException
      */
     public String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws DecrypterException {
         link.getProgressController().setStatusText(JDLocale.LF("gui.linkgrabber.waitinguserio", "Waiting for user input: %s", method));

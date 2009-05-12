@@ -56,7 +56,7 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
 
     private static final int MAX_BARS = 6;
 
-    private static final String COLLAPSED = "COLLAPSED";
+    // private static final String COLLAPSED = "COLLAPSED";
 
     /**
      * Hier werden alle Fortschritte der Plugins gespeichert

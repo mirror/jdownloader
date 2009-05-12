@@ -25,6 +25,9 @@ import jd.utils.JDUtilities;
 
 public class OptionalPluginWrapper extends PluginWrapper {
     private static final ArrayList<OptionalPluginWrapper> OPTIONAL_WRAPPER = new ArrayList<OptionalPluginWrapper>();
+    /**
+     * TODO: Still required?
+     */
     public static final int FLAG_ALWAYS_ENABLED = 1 << 0;
 
     public static ArrayList<OptionalPluginWrapper> getOptionalWrapper() {
@@ -133,8 +136,8 @@ public class OptionalPluginWrapper extends PluginWrapper {
 
     public boolean isEnabled() {
         // enable plugins by default
-        if(!JDUtilities.getConfiguration().hasProperty(getConfigParamKey())){
-           JDUtilities.getConfiguration().setProperty(getConfigParamKey(), true);
+        if (!JDUtilities.getConfiguration().hasProperty(getConfigParamKey())) {
+            JDUtilities.getConfiguration().setProperty(getConfigParamKey(), true);
         }
 
         return JDUtilities.getConfiguration().getBooleanProperty(this.getConfigParamKey(), false) || (this.flag & FLAG_ALWAYS_ENABLED) > 0;

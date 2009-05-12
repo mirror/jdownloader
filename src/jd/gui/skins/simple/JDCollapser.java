@@ -5,7 +5,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
-import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -31,17 +30,18 @@ public class JDCollapser extends JPanel implements MouseListener {
 
     private JDCollapser() {
         super(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[]5[fill,grow]"));
-      //  this.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
+        // this.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0,
+        // getBackground().darker()));
         add(title = new JLabel(""), "split 3,gapleft 10,gapbottom 5,gaptop 5");
         title.setIcon(JDTheme.II("gui.images.sort", 24, 24));
         title.setIconTextGap(15);
         add(new JSeparator(), "growx,pushx,gapright 10");
         JButton bt;
-        add(bt = new JButton(JDTheme.II("gui.images.bad", 16, 16)),"gapright 10");
-        //bt.setContentAreaFilled(false);
-        //bt.setBorder(null);
-        //bt.setOpaque(false);
-        //bt.setBorderPainted(false);
+        add(bt = new JButton(JDTheme.II("gui.images.bad", 16, 16)), "gapright 10");
+        // bt.setContentAreaFilled(false);
+        // bt.setBorder(null);
+        // bt.setOpaque(false);
+        // bt.setBorderPainted(false);
         bt.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -49,7 +49,7 @@ public class JDCollapser extends JPanel implements MouseListener {
             }
 
         });
-        content= new JPanel();
+        content = new JPanel();
         add(content);
         this.setVisible(true);
         // this.setCollapsed(true);
@@ -78,7 +78,7 @@ public class JDCollapser extends JPanel implements MouseListener {
     public void setCollapsed(boolean b) {
         this.setVisible(!b);
 
-       if(b) setContentPanel(null);
+        if (b) setContentPanel(null);
     }
 
     public void setContentPanel(JTabbedPanel panel2) {

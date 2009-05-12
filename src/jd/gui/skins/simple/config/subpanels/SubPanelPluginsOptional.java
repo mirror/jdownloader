@@ -37,7 +37,6 @@ import javax.swing.table.TableColumn;
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -94,7 +93,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             case 3:
                 return pluginsOptional.get(rowIndex).getCoder();
             case 4:
-                return ((OptionalPluginWrapper) pluginsOptional.get(rowIndex)).getJavaVersion();
+                return pluginsOptional.get(rowIndex).getJavaVersion();
             }
             return null;
         }
@@ -159,7 +158,6 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     }
 
     public boolean needsViewport() {
-
         return false;
     }
 
@@ -199,7 +197,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
         bpanel.add(btnEdit);
-      
+
         panel.add(scrollpane);
         panel.add(bpanel, "dock south");
         add(panel);

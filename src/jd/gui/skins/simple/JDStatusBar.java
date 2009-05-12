@@ -1,7 +1,5 @@
 package jd.gui.skins.simple;
 
-import java.awt.Color;
-
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -47,9 +45,9 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
     }
 
     private void initGUI() {
-        
+
         this.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
-        
+
         setLayout(new MigLayout("ins 0 0 0 0", "[fill,grow,left][shrink,right][shrink,right][shrink,right][shrink,right][shrink,right]", "[23px!]"));
 
         JDUtilities.getController().addControlListener(this);

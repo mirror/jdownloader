@@ -14,7 +14,7 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
     private JDLightTray deligate;
     private boolean mouseover;
     private Thread mouseLocationObserver;
-    private TrayIcon trayIcon;
+    // private TrayIcon trayIcon;
     private Point min;
     private Point max;
     private Dimension size;
@@ -24,8 +24,9 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
 
     public TrayMouseAdapter(JDLightTray lightTray, TrayIcon trayIcon) {
         deligate = lightTray;
-        this.trayIcon = trayIcon;
+        // this.trayIcon = trayIcon;
         dummy = new Component() {
+            private static final long serialVersionUID = 1L;
         };
         size = trayIcon.getSize();
     }

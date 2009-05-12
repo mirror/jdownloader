@@ -1,6 +1,5 @@
 package jd.gui.skins.simple.tasks;
 
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -65,7 +64,7 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
         this.setLayout(new MigLayout("ins 5 5 5 15, wrap 1", "[fill,grow]", "[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]"));
         setDeligateCollapsed(SubConfiguration.getConfig("gui").getBooleanProperty(getPanelID() + "_collapsed", false));
         this.panels = new ArrayList<SingletonPanel>();
-       
+
     }
 
     public void setCollapsed(boolean collapsed) {
