@@ -61,14 +61,12 @@ public class ConfigPanelCaptcha extends ConfigPanel {
                 return String.class;
             case 3:
                 return String.class;
-            case 4:
-                return Boolean.class;
             }
             return String.class;
         }
 
         public int getColumnCount() {
-            return 5;
+            return 4;
         }
 
         public String getColumnName(int column) {
@@ -81,8 +79,6 @@ public class ConfigPanelCaptcha extends ConfigPanel {
                 return JDLocale.L("gui.config.jac.column.service", "Services");
             case 3:
                 return JDLocale.L("gui.config.jac.column.author", "Author");
-            case 4:
-                return JDLocale.L("gui.config.jac.column.extern", "Extern");
             }
             return super.getColumnName(column);
         }
@@ -101,20 +97,27 @@ public class ConfigPanelCaptcha extends ConfigPanel {
             case 0:
                 return configuration.getBooleanProperty(jacKeyForMethod(methods[rowIndex].name), true);
             case 1:
-                return methods[rowIndex].name + " : " + (configuration.getBooleanProperty(jacKeyForMethod(methods[rowIndex].name), true) ? JDLocale.L("gui.config.jac.status.auto", "Automatische Erkennung") : JDLocale.L("gui.config.jac.status.noauto", "Manuelle Eingabe"));
+                return methods[rowIndex].name;
             case 2:
-                return methods[rowIndex].services;
+                StringBuilder sb = new StringBuilder();
+                for (String service : methods[rowIndex].services2) {
+                    if (sb.length() > 0) sb.append(new char[] { ',', ' ' });
+                    sb.append(service);
+                }
+                return sb.toString();
+                // return methods[rowIndex].services;
             case 3:
-                return methods[rowIndex].author;
-            case 4:
-                return methods[rowIndex].isExtern;
+                if (methods[rowIndex].isExtern) {
+                    return JDLocale.LF("gui.config.jac.extern", "Externe Methode [%s]", methods[rowIndex].author);
+                } else {
+                    return methods[rowIndex].author;
+                }
             }
             return null;
         }
 
         public void setValueAt(Object value, int row, int col) {
             if (col == 0) {
-                System.out.println(value + " == " + row + " x " + col);
                 configuration.setProperty(jacKeyForMethod(methods[row].name), value);
             }
         }
@@ -162,16 +165,13 @@ public class ConfigPanelCaptcha extends ConfigPanel {
                 column.setPreferredWidth(60);
                 break;
             case 1:
-                column.setPreferredWidth(600);
+                column.setPreferredWidth(150);
                 break;
             case 2:
-                column.setPreferredWidth(200);
+                column.setPreferredWidth(600);
                 break;
             case 3:
                 column.setPreferredWidth(150);
-                break;
-            case 4:
-                column.setPreferredWidth(60);
                 break;
             }
         }
@@ -231,6 +231,12 @@ public class ConfigPanelCaptcha extends ConfigPanel {
 
             if (childNode.getNodeName().equals("method")) {
                 jacinfo.services = JDUtilities.getAttribute(childNode, "name");
+                String services = JDUtilities.getAttribute(childNode, "services");
+                if (services != null) {
+                    jacinfo.services2 = services.split(";");
+                } else {
+                    jacinfo.services2 = new String[] { jacinfo.services };
+                }
                 jacinfo.author = JDUtilities.getAttribute(childNode, "author");
                 String extern = JDUtilities.getAttribute(childNode, "type");
                 if (extern != null && extern.equalsIgnoreCase("extern")) jacinfo.isExtern = true;
@@ -249,6 +255,11 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         private final String name;
 
         private String services;
+
+        /**
+         * TODO: "Logik" implementieren!
+         */
+        private String[] services2;
 
         private String author;
 
