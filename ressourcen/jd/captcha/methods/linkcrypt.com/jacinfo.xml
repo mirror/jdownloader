@@ -1,4 +1,4 @@
 <jDownloader>
-  <method name="linkcrypt.com" author="ManiacMansion" />
+  <method name="linkcrypt.com" author="ManiacMansion" services="linkcrypt.com;xink.it;crypting.cc;sealed.in"/>
   <format type="gif" letterNum="3"/>
 </jDownloader>
