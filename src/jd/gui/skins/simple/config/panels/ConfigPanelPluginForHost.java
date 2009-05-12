@@ -107,7 +107,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 return pluginsForHost.get(rowIndex).getHost();
             case 2:
                 return pluginsForHost.get(rowIndex).getVersion();
-
             case 3:
                 return pluginsForHost.get(rowIndex).isAGBChecked();
             case 4:
@@ -298,8 +297,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             }
         }
 
-        JScrollPane scrollpane = new JScrollPane(table);
-
         btnEdit = new JButton(JDLocale.L("gui.btn_settings", "Einstellungen"));
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
@@ -308,13 +305,13 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         btnLoad.setEnabled(false);
         btnLoad.addActionListener(this);
 
-        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
+        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         bpanel.add(btnEdit);
         bpanel.add(btnLoad);
-        this.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow][fill]"));
 
-        this.add(scrollpane, "spanx,height :900:,gapleft 10, gapright 10");
-        this.add(bpanel, "spanx,gapleft 10, gapright 10");
+        this.setLayout(new MigLayout("ins 10, wrap 1", "[grow, fill]", "[grow, fill]0[]"));
+        this.add(new JScrollPane(table), "span");
+        this.add(bpanel, "dock west, dock south, gapbottom 10");
     }
 
     // @Override

@@ -17,7 +17,6 @@
 package jd.gui.skins.simple.config.panels;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDragEvent;
@@ -62,7 +61,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 
         private static final long serialVersionUID = 1155282457354673850L;
 
-        //@Override
+        // @Override
         public Class<?> getColumnClass(int columnIndex) {
             return String.class;
         }
@@ -71,7 +70,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
             return 3;
         }
 
-        //@Override
+        // @Override
         public String getColumnName(int column) {
             switch (column) {
             case 0:
@@ -216,9 +215,8 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         pop.setVisible(true);
     }
 
-    //@Override
+    // @Override
     public void initPanel() {
-    
 
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
@@ -248,36 +246,32 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
             }
         }
 
-        JScrollPane scrollpane = new JScrollPane(table);
-        scrollpane.setPreferredSize(new Dimension(400, 200));
+        btnAdd = new JButton(JDLocale.L("gui.config.eventmanager.btn_add", "+"));
+        btnAdd.addActionListener(this);
 
-        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
-        bpanel.add(btnAdd = new JButton(JDLocale.L("gui.config.eventmanager.btn_add", "+")));
-        bpanel.add(btnRemove = new JButton(JDLocale.L("gui.config.eventmanager.btn_remove", "-")));
-        bpanel.add(btnEdit = new JButton(JDLocale.L("gui.btn_settings", "Einstellungen")));
+        btnRemove = new JButton(JDLocale.L("gui.config.eventmanager.btn_remove", "-"));
+        btnRemove.addActionListener(this);
 
+        btnEdit = new JButton(JDLocale.L("gui.btn_settings", "Einstellungen"));
+        btnEdit.addActionListener(this);
         btnEdit.setEnabled(false);
 
-        btnAdd.addActionListener(this);
-        btnRemove.addActionListener(this);
-        btnEdit.addActionListener(this);
+        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        bpanel.add(btnAdd);
+        bpanel.add(btnRemove);
+        bpanel.add(btnEdit);
 
-        
-        this.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow][fill]"));
-
-        this.add(scrollpane, "spanx,height :900:,gapleft 10, gapright 10");
-        this.add(bpanel, "spanx,gapleft 10, gapright 10");
-        
-    
+        this.setLayout(new MigLayout("ins 10, wrap 1", "[grow, fill]", "[grow, fill]0[]"));
+        this.add(new JScrollPane(table), "span");
+        this.add(bpanel, "dock west, dock south, gapbottom 10");
     }
 
-    //@Override
+    // @Override
     public void load() {
     }
 
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() > 1 && interactions.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
-
             editEntry();
             changes = true;
         }
@@ -300,14 +294,14 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         this.changes = false;
     }
 
-    //@Override
+    // @Override
     public void save() {
         subConfig.setProperty(Configuration.PARAM_INTERACTIONS, interactions);
         subConfig.save();
     }
 
     public PropertyType hasChanges() {
-        PropertyType ret=PropertyType.NONE;
+        PropertyType ret = PropertyType.NONE;
         if (changes) ret = PropertyType.NORMAL;
         return ret.getMax(super.hasChanges());
     }
