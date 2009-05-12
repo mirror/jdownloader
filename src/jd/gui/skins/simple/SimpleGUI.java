@@ -745,8 +745,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         panel.add(this.statusBar, "spanx, dock south");
         // this.setStatusBar(statusBar);
 
-        ProgressController pg = new ProgressController("teste", 100);
-        pg.setStatus(40);
+       
     }
 
     private void addAddonTask() {

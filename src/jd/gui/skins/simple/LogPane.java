@@ -22,6 +22,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -148,7 +149,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
             }
             logField.append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
             if (url != null) {
-                logField.append(JDLocale.L("gui.logupload.message","Please send this loglink to your supporter")+"\r\n");
+                logField.append(JDLocale.L("gui.logupload.message", "Please send this loglink to your supporter") + "\r\n");
                 this.logField.append(url);
             } else {
                 this.logField.append(JDLocale.L("gui.logDialog.warning.uploadFailed", "Upload failed"));
@@ -161,7 +162,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
 
     }
 
-    //@Override
+    // @Override
     public String toString() {
         String content = logField.getSelectedText();
         if (content == null || content.length() == 0) {
@@ -170,25 +171,34 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
         return content;
     }
 
-    //@Override
+    // @Override
     public void onDisplay() {
         /*
          * enable autoscrolling by setting the caret to the last position
          */
-        SimpleGUI.CURRENTGUI.setWaiting(true);
-        JDUtilities.getController().addControlListener(this);
-        ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
-        StringBuilder sb = new StringBuilder();
-        for (LogRecord lr : buff) {
-            if (lr.getLevel().intValue() >= JDLogger.getLogger().getLevel().intValue()) sb.append(JDLogHandler.getHandler().getFormatter().format(lr));
-            // sb.append("\r\n");
+        /**
+         * TODO: not synchronized properbly in  loop.
+         */
+        try {
+            SimpleGUI.CURRENTGUI.setWaiting(true);
+            JDUtilities.getController().addControlListener(this);
+            ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
+            StringBuilder sb = new StringBuilder();
+            LogRecord lr;
+            for (Iterator<LogRecord> it = buff.iterator(); it.hasNext();) {
+                lr = it.next();
+                if (lr.getLevel().intValue() >= JDLogger.getLogger().getLevel().intValue()) sb.append(JDLogHandler.getHandler().getFormatter().format(lr));
+                // sb.append("\r\n");
+            }
+            logField.setText(sb.toString());
+            SimpleGUI.CURRENTGUI.setWaiting(false);
+            logField.setCaretPosition(logField.getText().length());
+        } catch (Exception e) {
+
         }
-        logField.setText(sb.toString());
-        SimpleGUI.CURRENTGUI.setWaiting(false);
-        logField.setCaretPosition(logField.getText().length());
     }
 
-    //@Override
+    // @Override
     public void onHide() {
         JDUtilities.getController().removeControlListener(this);
     }
