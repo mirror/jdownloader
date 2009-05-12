@@ -226,7 +226,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
     }
 
     private void clearSB() {
-        sb.delete(0, sb.capacity() - 1);
+        sb.delete(0, sb.capacity());
     }
 
 }
