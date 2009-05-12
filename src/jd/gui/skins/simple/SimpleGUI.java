@@ -723,7 +723,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         taskPaneView = new JViewport();
         taskPaneView.setView(taskPane);
-      
+
         center.add(taskPaneView, "width 200!,hidemode 2,spany 2,aligny top");
         sep = new JDSeparator();
 
@@ -744,6 +744,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // panel.add(new PremiumStatus(), "spanx, cell 0 4");
         panel.add(this.statusBar, "spanx, dock south");
         // this.setStatusBar(statusBar);
+
+        ProgressController pg = new ProgressController("teste", 100);
+        pg.setStatus(40);
     }
 
     private void addAddonTask() {

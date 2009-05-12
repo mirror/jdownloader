@@ -27,12 +27,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JSeparator;
 
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -64,6 +65,8 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
 
     private ProgressEntry[] lines;
 
+    private JLabel title;
+
     /**
      * Die Tabelle für die Pluginaktivitäten
      */
@@ -74,11 +77,22 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
         this.setVisible(false);
         lines = new ProgressEntry[MAX_BARS];
         this.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
-//        this.setTitle(JDLocale.LF("gui.progresspane.title", "%s modules running", 0));
+
         initGUI();
+        this.setTitle(JDLocale.LF("gui.progresspane.title", "%s module(s) running", 0));
+    }
+
+    private void setTitle(String lf) {
+        title.setText(lf);
     }
 
     private void initGUI() {
+        this.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
+        add(title = new JLabel(""), "split 3,gapleft 10,gapbottom 5,gaptop 5");
+        title.setIcon(JDTheme.II("gui.images.sort", 24, 24));
+        title.setIconTextGap(15);
+        add(new JSeparator(), "growx,pushx,gapright 10");
+        add(new JLabel(JDTheme.II("gui.images.config.tip", 16, 16)));
         for (int i = 0; i < MAX_BARS; i++) {
             lines[i] = new ProgressEntry();
         }
@@ -150,7 +164,7 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
         } else {
             this.setVisible(true);
         }
-//        this.setTitle(JDLocale.LF("gui.progresspane.title", "%s modules running", "" + controllers.size()));
+        this.setTitle(JDLocale.LF("gui.progresspane.title", "%s module(s) running", "" + controllers.size()));
         this.revalidate();
         this.repaint();
     }
@@ -193,7 +207,7 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
         }
 
         public ProgressEntry() {
-            this.setLayout(new MigLayout("ins 0", "[18!]0![grow,fill]5![20!]", "16!"));
+            this.setLayout(new MigLayout("ins 0", "20![18!]11![grow,fill]5![20!]", "16!"));
             this.add(label = new JLabel());
             this.add(bar = new JProgressBar());
             this.add(cancel = new JButton(JDTheme.II("gui.images.cancel", 16, 16)), "width 16!,height 16!");
@@ -216,7 +230,8 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
             this.controller = controller;
             if (cancel != null) cancel.setEnabled(controller.isInterruptable());
             if (cancel != null) cancel.setToolTipText(controller.isInterruptable() ? JDLocale.L("gui.progressbars.cancel.tooltip.enabled", "Interrupt this module") : JDLocale.L("gui.progressbars.cancel.tooltip.disabled", "Not possible to interrupt this module"));
-            label.setIcon(controller.getIcon());
+            label.setIcon(controller.getIcon() == null ? JDTheme.II("gui.images.running", 16, 16) : controller.getIcon());
+            label.setToolTipText(JDLocale.L("gui.tooltip.progressicon", "This module is active"));
             bar.setMaximum(10000);
             bar.setValue(controller.getPercent());
             bar.setStringPainted(true);
@@ -254,9 +269,10 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
     }
 
     public void mouseReleased(MouseEvent e) {
-//        System.out.println("Task is :" + this.isCollapsed());
-//        SubConfiguration.getConfig("gui").setProperty(TabProgress.COLLAPSED, this.isCollapsed());
-//        SubConfiguration.getConfig("gui").save();
+        // System.out.println("Task is :" + this.isCollapsed());
+        // SubConfiguration.getConfig("gui").setProperty(TabProgress.COLLAPSED,
+        // this.isCollapsed());
+        // SubConfiguration.getConfig("gui").save();
     }
 
 }

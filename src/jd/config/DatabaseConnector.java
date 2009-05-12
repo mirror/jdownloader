@@ -242,7 +242,7 @@ public class DatabaseConnector implements Serializable {
      */
     public void saveConfiguration(String name, Object data) {
         dbdata.put(name, data);
-        System.out.println("save " + name);
+      
         try {
             ResultSet rs = con.createStatement().executeQuery("SELECT COUNT(name) FROM config WHERE name = '" + name + "'");
             rs.next();

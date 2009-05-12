@@ -47,6 +47,13 @@ public class JDSeparator extends JToggleButton implements ActionListener  {
     public void setMinimized(boolean b) {
      
       setSelected(b);
+      
+      if(b){
+          this.setToolTipText(JDLocale.L("gui.tooltips.jdseparator","Open sidebar"));
+      }else{
+          this.setToolTipText(JDLocale.L("gui.tooltips.jdseparator","Close sidebar")); 
+          
+      }
     }
 
  
