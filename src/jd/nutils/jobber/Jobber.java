@@ -25,7 +25,6 @@ public class Jobber {
     private LinkedList<JDRunnable> jobList;
     private Worker[] workerList;
     private ArrayList<WorkerListener> listener;
-    private Integer currentlyRunningWorker;
     private boolean killWorkerAfterQueueFinished = true;
     private boolean running = false;
     private Integer jobsAdded = 0;
@@ -62,7 +61,6 @@ public class Jobber {
      */
     public Jobber(int i) {
         this.paralellWorkerNum = i;
-        this.currentlyRunningWorker = 0;
         this.jobList = new LinkedList<JDRunnable>();
         this.listener = new ArrayList<WorkerListener>();
     }
@@ -84,31 +82,10 @@ public class Jobber {
 
     private void createWorker() {
         this.workerList = new Worker[paralellWorkerNum];
-        currentlyRunningWorker = 0;
         for (int i = 0; i < paralellWorkerNum; i++) {
-            increaseWorkingWorkers();
             workerList[i] = new Worker(i);
         }
         if (debug) System.out.println("created " + paralellWorkerNum + " worker");
-    }
-
-    private synchronized int increaseWorkingWorkers() {
-        currentlyRunningWorker++;
-        return currentlyRunningWorker;
-    }
-
-    private synchronized int decreaseWorkingWorkers() {
-        currentlyRunningWorker--;
-        if (currentlyRunningWorker <= 0) {
-            synchronized (listener) {
-                for (WorkerListener wl : listener)
-                    wl.onJobListFinished(this);
-            }
-            if (killWorkerAfterQueueFinished) {
-                stop();
-            }
-        }
-        return currentlyRunningWorker;
     }
 
     /**
@@ -127,19 +104,18 @@ public class Jobber {
                 }
             }
         }
-        while (true) {
-            if (this.currentlyRunningWorker == 0) break;
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-            }
-        }
     }
 
     private JDRunnable getNextJDRunnable() {
         if (!this.isAlive()) return null;
         synchronized (jobList) {
-            if (jobList.size() == 0) return null;
+            if (jobList.size() == 0) {
+                synchronized (listener) {
+                    for (WorkerListener wl : listener)
+                        wl.onJobListFinished(this);
+                }
+                return null;
+            }
             return jobList.removeFirst();
         }
     }
@@ -256,12 +232,10 @@ public class Jobber {
                 JDRunnable ra = getNextJDRunnable();
 
                 if (ra == null) {
-
+                    if (killWorkerAfterQueueFinished) return;
                     if (debug) System.out.println(this + ": Work is done..I'll sleep now.");
-                    decreaseWorkingWorkers();
                     waitFlag = true;
                     synchronized (this) {
-
                         while (waitFlag) {
                             try {
                                 wait();
@@ -281,7 +255,7 @@ public class Jobber {
                 try {
                     ra.go();
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     fireJobException(ra, e);
                 }
                 synchronized (jobsFinished) {

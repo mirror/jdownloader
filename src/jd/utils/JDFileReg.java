@@ -19,6 +19,7 @@ package jd.utils;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
+import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 
 public class JDFileReg {
@@ -38,7 +39,7 @@ public class JDFileReg {
     }
 
     public static void registerFileExts() {
-
+        if (!OSDetector.isWindows()) return;
         if (!SubConfiguration.getConfig("CNL2").getBooleanProperty("INSTALLED", false)) {
             StringBuilder sb = new StringBuilder();
             sb.append(createRegisterWinFileExt("jd"));

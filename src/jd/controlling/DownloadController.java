@@ -129,7 +129,6 @@ public class DownloadController implements FilePackageListener, DownloadControll
      */
     public void saveDownloadLinksSync() {
         synchronized (packages) {
-
             JDUtilities.getDatabaseConnector().saveLinks(packages);
         }
     }

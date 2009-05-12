@@ -51,6 +51,7 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
@@ -100,13 +101,13 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
     private JButton add;
 
-    private ArrayList<Account> list;
-
     private Timer chartrefresh;
 
     private ChartRefresh chartThread = null;
 
     private Object Lock = new Object();
+
+    private ArrayList<Account> list = new ArrayList<Account>();
 
     // private Logger logger = JDLogger.getLogger();
 
@@ -137,16 +138,27 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
         }
     }
 
+    public void saveAccounts() {
+        synchronized (Lock) {
+            synchronized (list) {
+                ArrayList<Account> accounts = new ArrayList<Account>(list);
+                for (Account acc : accounts) {
+                    AccountController.getInstance().addAccount(host, acc);
+                }
+                list.clear();
+            }
+        }
+    }
+
     /**
      * List ist immer eine ArrayList<Account> mit Daten aus der config
      * 
      * @param list
      */
-    @SuppressWarnings("unchecked")
-    public void setAccounts(Object list) {
+    public void loadAccounts() {
         synchronized (Lock) {
-            ArrayList<Account> accounts = (ArrayList<Account>) list;
-            this.list = accounts;
+            ArrayList<Account> accounts = new ArrayList<Account>(AccountController.getInstance().getAllAccounts(host));
+            accounts.addAll(list);
             createPanel(accounts.size());
             for (int i = 0; i < accs.size(); i++) {
                 if (i >= accounts.size()) break;
@@ -187,8 +199,10 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
         add.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
-                list.add(new Account("", new String("")));
-                setAccounts(list);
+                synchronized (list) {
+                    list.add(new Account("", new String("")));
+                }
+                loadAccounts();
             }
 
         });
@@ -253,13 +267,11 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             if (account == null) return null;
             if (txtUsername.getText().length() == 0 && pass.length() == 0) return null;
             if (!account.getUser().equals(txtUsername.getText()) || !account.getPass().equals(pass)) {
-                account.setfireChanges(false);
                 account.setUser(txtUsername.getText());
                 account.setPass(pass);
                 account.getProperties().clear();
             }
             account.setEnabled(chkEnable.isSelected());
-            account.setfireChanges(true);
             return account;
         }
 
@@ -478,9 +490,10 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                 }
 
             } else if (e.getSource() == btnDelete) {
-                list.remove(panelID);
+                AccountController.getInstance().removeAccount(host, account);
+                list.remove(account);
                 ce.setChanges(true);
-                setAccounts(list);
+                loadAccounts();
             }
         }
 

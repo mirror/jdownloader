@@ -69,7 +69,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
      */
 
     private JComponent[] input;
-    
+
     private JComponent decoration;
 
     private Logger logger = jd.controlling.JDLogger.getLogger();
@@ -102,7 +102,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
             } catch (MalformedURLException e) {
                 input[0] = new JLabel(configEntry.getPropertyName());
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
             input[0].setEnabled(configEntry.isEnabled());
 
@@ -183,15 +183,14 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_COMBOBOX_INDEX:
             decoration = new JLabel(configEntry.getLabel());
             input[0] = new JComboBox(configEntry.getList());
-            if(configEntry.getList().length>0){
-                if(configEntry.getList()[0] instanceof JDLabelContainer){
-                    ((JComboBox)input[0]).setRenderer(new JDLabelListRenderer());
-                    ((JComboBox)input[0]).setMaximumRowCount(3);
+            if (configEntry.getList().length > 0) {
+                if (configEntry.getList()[0] instanceof JDLabelContainer) {
+                    ((JComboBox) input[0]).setRenderer(new JDLabelListRenderer());
+                    ((JComboBox) input[0]).setMaximumRowCount(3);
 
                 }
             }
-                
-                
+
             ((JComboBox) input[0]).addActionListener(this);
             for (int i = 0; i < configEntry.getList().length; i++) {
 
@@ -202,7 +201,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
                 }
             }
             input[0].setEnabled(configEntry.isEnabled());
-//            org.jvnet.substance.skin.BusinessBlueSteelSkin
+            // org.jvnet.substance.skin.BusinessBlueSteelSkin
             break;
         case ConfigContainer.TYPE_RADIOFIELD:
 
@@ -236,7 +235,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             input = new JComponent[1];
             input[0] = new PremiumPanel(this);
             input[0].setEnabled(configEntry.isEnabled());
-break;
+            break;
         case ConfigContainer.TYPE_LABEL:
             input = new JComponent[0];
             decoration = new JLabel(configEntry.getLabel());
@@ -248,10 +247,8 @@ break;
             break;
 
         }
-//        this.firePropertyChange(getConfigEntry().getPropertyName(), null, getText());
-    }
-
-    private void firePropertyChange(String propertyName, Object object, Object text) {
+        // this.firePropertyChange(getConfigEntry().getPropertyName(), null,
+        // getText());
     }
 
     private void addPropertyChangeListener(ConfigEntry cfg) {
@@ -291,7 +288,8 @@ break;
         case ConfigContainer.TYPE_CHECKBOX:
             return ((JCheckBox) input[0]).isSelected();
         case ConfigContainer.TYPE_PREMIUMPANEL:
-            return ((PremiumPanel) input[0]).getAccounts();
+            ((PremiumPanel) input[0]).saveAccounts();
+            return null;
         case ConfigContainer.TYPE_BUTTON:
             return null;
         case ConfigContainer.TYPE_COMBOBOX:
@@ -345,7 +343,7 @@ break;
     }
 
     public JComponent getDecoration() {
-      
+
         return decoration;
     }
 
@@ -388,7 +386,7 @@ break;
             ((JDTextArea) input[0]).setText(text == null ? "" : text.toString());
             break;
         case ConfigContainer.TYPE_PREMIUMPANEL:
-            ((PremiumPanel) input[0]).setAccounts(text);
+            ((PremiumPanel) input[0]).loadAccounts();
             break;
         case ConfigContainer.TYPE_CHECKBOX:
             if (text == null) {
@@ -428,7 +426,7 @@ break;
                 ((JSpinner) input[0]).setModel(new SpinnerNumberModel(value, configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
 
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
             break;
         case ConfigContainer.TYPE_RADIOFIELD:

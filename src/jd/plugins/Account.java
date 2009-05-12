@@ -17,7 +17,6 @@
 package jd.plugins;
 
 import jd.config.Property;
-import jd.controlling.AccountManager;
 
 public class Account extends Property {
 
@@ -31,7 +30,6 @@ public class Account extends Property {
 
     private transient boolean tempDisabled = false;
     private transient long tmpDisabledTime = 0;
-    private transient boolean fireChanges = true;
 
     public Account(String user, String pass) {
         this.user = user;
@@ -39,10 +37,6 @@ public class Account extends Property {
         this.setTmpDisabledInterval(10 * 60 * 1000);
         if (this.user != null) this.user = this.user.trim();
         if (this.pass != null) this.pass = this.pass.trim();
-    }
-
-    public void setfireChanges(boolean b) {
-        fireChanges = b;
     }
 
     public String getPass() {
@@ -72,46 +66,35 @@ public class Account extends Property {
         if (this.enabled == enabled) return;
         System.out.println(this + ": " + enabled);
         this.enabled = enabled;
-        fireChange();
     }
 
     public void setPass(String pass) {
         if (this.pass == pass) return;
         if (pass != null) pass = pass.trim();
         if (this.pass != null && this.pass.equals(pass)) return;
-
         this.pass = pass;
-
         setProperty(AccountInfo.PARAM_INSTANCE, null);
-        fireChange();
     }
 
     public void setStatus(String status) {
         if (this.status == status) return;
+        if (status != null) status = status.trim();
         if (this.status != null && this.status.equals(status)) return;
         this.status = status;
-        fireChange();
     }
 
     public void setTempDisabled(boolean tempDisabled) {
+        if (this.tempDisabled == tempDisabled) return;
         this.tmpDisabledTime = System.currentTimeMillis();
         this.tempDisabled = tempDisabled;
-        fireChange();
     }
 
     public void setUser(String user) {
-
         if (this.user == user) return;
         if (user != null) user = user.trim();
         if (this.user != null && this.user.equals(user)) return;
         this.user = user;
         setProperty(AccountInfo.PARAM_INSTANCE, null);
-        fireChange();
-
-    }
-
-    private void fireChange() {
-        if (fireChanges) AccountManager.getInstance().fireChange(this);
     }
 
     // @Override
@@ -131,5 +114,22 @@ public class Account extends Property {
 
     public void setTmpDisabledInterval(int tmpDisabledInterval) {
         this.tmpDisabledInterval = tmpDisabledInterval;
+    }
+
+    public boolean equals(Account account2) {
+        if (this.user == null) {
+            if (account2.user != null) return false;
+        } else {
+            if (account2.user == null) return false;
+            if (!this.user.trim().equalsIgnoreCase(account2.user.trim())) return false;
+        }
+
+        if (this.pass == null) {
+            if (account2.pass != null) return false;
+        } else {
+            if (account2.pass == null) return false;
+            if (!this.pass.trim().equalsIgnoreCase(account2.pass.trim())) return false;
+        }
+        return true;
     }
 }

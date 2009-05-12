@@ -1,5 +1,7 @@
 package jd.gui.skins.simple;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -14,6 +16,7 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
+import javax.swing.Timer;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -21,12 +24,10 @@ import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
-import jd.controlling.AccountListener;
-import jd.controlling.AccountManager;
-import jd.controlling.JDController;
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
 import jd.controlling.JDLogger;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -36,7 +37,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class PremiumStatus extends JPanel implements ControlListener, AccountListener {
+public class PremiumStatus extends JPanel implements AccountControllerListener, ActionListener {
 
     private static final long serialVersionUID = 7290466989514173719L;
     private static final long UNLIMITED = 10l * 1024l * 1024l * 1024l;
@@ -54,10 +55,10 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
     private String MAP_PROP = "MAP2";
     private String MAPSIZE_PROP = "MAPSIZE2";
 
-    // private boolean redrawinprogress = false;
+    private boolean redrawinprogress = false;
     private JToggleButton premium;
-    private Thread updater;
     private boolean updating = false;
+    private Timer updateIntervalTimer;
 
     @SuppressWarnings("unchecked")
     public PremiumStatus() {
@@ -65,35 +66,8 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         bars = new TinyProgressBar[BARCOUNT];
         logger = JDLogger.getLogger();
         lbl = new JLabel(JDLocale.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
-        Thread updateTimer = new Thread("PremiumStatusUpdateTimer") {
-            public void run() {
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-
-                    e.printStackTrace();
-                    return;
-                }
-                updatePremium();
-                redraw();
-                while (true) {
-                    try {
-                        Thread.sleep(ACCOUNT_UPDATE_DELAY);
-                    } catch (InterruptedException e) {
-
-                        e.printStackTrace();
-                        return;
-                    }
-                    updatePremium();
-                }
-            }
-        };
 
         this.setLayout(new MigLayout("ins 0", "[]", "[]"));
-
-        JDController.getInstance().addControlListener(this);
-        AccountManager.getInstance().addAccountListener(this);
-
         premium = new JToggleButton();
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
             premium.setSelected(true);
@@ -195,19 +169,39 @@ public class PremiumStatus extends JPanel implements ControlListener, AccountLis
         for (int i = 0; i < BARCOUNT; i++) {
             bars[i].setEnabled(premium.isSelected());
         }
-this.setOpaque(false);
+        this.setOpaque(false);
         config = SubConfiguration.getConfig("PREMIUMSTATUS");
         this.map = (TreeMap<String, ArrayList<AccountInfo>>) config.getProperty(MAP_PROP, new TreeMap<String, ArrayList<AccountInfo>>());
         this.mapSize = (TreeMap<String, Long>) config.getProperty(MAPSIZE_PROP, new TreeMap<String, Long>());
+        updateIntervalTimer = new Timer(5000, this);
+        updateIntervalTimer.setInitialDelay(5000);
+        updateIntervalTimer.setRepeats(false);
+        updateIntervalTimer.stop();
 
+        Thread updateTimer = new Thread("PremiumStatusUpdateTimer") {
+            public void run() {
+                requestUpdate();
+                while (true) {
+                    try {
+                        Thread.sleep(ACCOUNT_UPDATE_DELAY);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        return;
+                    }
+                    requestUpdate();
+                }
+            }
+        };
         updateTimer.start();
+
+        AccountController.getInstance().addListener(this);
     }
 
     private void showDetails(PluginForHost plugin) {
         SimpleGUI.displayConfig(plugin.getConfig(), 1);
     }
 
-    private void updatePremium() {
+    private synchronized void updatePremium() {
         updating = true;
 
         long trafficTotal = 0;
@@ -218,7 +212,8 @@ this.setOpaque(false);
             if (wrapper.isLoaded() && wrapper.usePlugin()) {
                 final PluginForHost helpPlugin = wrapper.getPlugin();
                 if (helpPlugin.getPremiumAccounts().size() > 0) {
-                    for (Account a : helpPlugin.getPremiumAccounts()) {
+                    ArrayList<Account> alist = new ArrayList<Account>(helpPlugin.getPremiumAccounts());
+                    for (Account a : alist) {
                         if (a.isEnabled()) {
                             try {
                                 AccountInfo ai = null;
@@ -282,9 +277,9 @@ this.setOpaque(false);
         config.save();
     }
 
-    private void redraw() {
-        // if (redrawinprogress) return;
-        // redrawinprogress = true;
+    private synchronized void redraw() {
+        if (redrawinprogress) return;
+        redrawinprogress = true;
         System.out.println("REQUEST DRAW");
         new GuiRunnable<Object>() {
             // @Override
@@ -333,10 +328,11 @@ this.setOpaque(false);
                         if (i >= BARCOUNT) break;
                     }
                     invalidate();
-                    // redrawinprogress = false;
+                    redrawinprogress = false;
                     return null;
                 } catch (Exception e) {
                     e.printStackTrace();
+                    redrawinprogress = false;
                     return null;
                 }
             }
@@ -368,15 +364,37 @@ this.setOpaque(false);
         return trafficTotal;
     }
 
-    public void controlEvent(ControlEvent event) {
-        // onUpdate();
+    public void onAccountControllerEvent(AccountControllerEvent event) {
+        switch (event.getID()) {
+        case AccountControllerEvent.ACCOUNT_ADDED:
+        case AccountControllerEvent.ACCOUNT_REMOVED:
+            requestUpdate();
+            break;
+        case AccountControllerEvent.ACCOUNT_UPDATE:
+            System.out.println("Account Update event");
+            requestUpdate();
+            break;
+        }
     }
 
-    public void onUpdate() {
+    public void requestUpdate() {
+        updateIntervalTimer.restart();
+    }
 
+    private void doUpdate() {
         if (!updating) updatePremium();
         redraw();
+    }
 
+    public boolean vetoAccountGetEvent(String host, Account account) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == this.updateIntervalTimer) {
+            doUpdate();
+        }
     }
 
 }

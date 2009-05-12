@@ -377,6 +377,7 @@ public class JDController implements ControlListener {
     public void prepareShutdown() {
         stopDownloads();
         JDUtilities.getDownloadController().saveDownloadLinksSync();
+        AccountController.getInstance().saveSync();
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
         Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
         JDUtilities.getDatabaseConnector().shutdownDatabase();
@@ -407,15 +408,15 @@ public class JDController implements ControlListener {
     public void fireControlEventDirect(ControlEvent controlEvent) {
         if (controlEvent == null) return;
         synchronized (controlListener) {
-            if (controlListener.size() > 0) {
-                for (ControlListener cl : controlListener) {
-                    cl.controlEvent(controlEvent);
-                }
-            }
             synchronized (removeList) {
                 controlListener.removeAll(removeList);
                 removeList.clear();
             }
+            if (controlListener.size() > 0) {
+                for (ControlListener cl : controlListener) {
+                    cl.controlEvent(controlEvent);
+                }
+            }            
         }
     }
 

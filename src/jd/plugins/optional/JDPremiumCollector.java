@@ -19,8 +19,6 @@ package jd.plugins.optional;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-
 import jd.HostPluginWrapper;
 import jd.Main;
 import jd.PluginWrapper;
@@ -28,7 +26,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
-import jd.controlling.AccountManager;
+import jd.controlling.AccountController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
@@ -106,25 +104,25 @@ public class JDPremiumCollector extends PluginOptional {
         t.start();
     }
 
-    //@Override
+    // @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
             fetchAccounts();
         }
     }
 
-    //@Override
+    // @Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    //@Override
+    // @Override
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
         return true;
     }
 
-    //@Override
+    // @Override
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             fetchAccounts();
@@ -143,12 +141,12 @@ public class JDPremiumCollector extends PluginOptional {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_ACCOUNTS2, JDLocale.L("plugins.optional.premiumcollector.onlyValid2", "Remove invalid and expired accounts")).setDefaultValue(true));
     }
 
-    //@Override
+    // @Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
     }
 
-    //@Override
+    // @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
 
@@ -157,17 +155,17 @@ public class JDPremiumCollector extends PluginOptional {
         return menu;
     }
 
-    //@Override
+    // @Override
     public String getIconKey() {
         return "gui.images.taskpanes.premium";
     }
 
-    //@Override
+    // @Override
     public String getHost() {
         return JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector");
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -187,9 +185,8 @@ public class JDPremiumCollector extends PluginOptional {
             this.pc = pc;
         }
 
-        //@Override
+        // @Override
         public void run() {
-            ArrayList<Account> accounts = new ArrayList<Account>();
             for (String[] acc : accs) {
                 if (acc[3].equalsIgnoreCase(plg.getHost())) {
                     Account account = new Account(acc[1], acc[2]);
@@ -198,7 +195,7 @@ public class JDPremiumCollector extends PluginOptional {
                         try {
                             AccountInfo accInfo = plg.getPlugin().getAccountInformation(account);
                             if (accInfo != null && accInfo.isValid() && !accInfo.isExpired() && accInfo.getTrafficLeft() != 0) {
-                                accounts.add(account);
+                                AccountController.getInstance().addAccount(plg.getPlugin(), account);
                             } else {
                                 logger.finer(plg.getHost() + " : account " + account.getUser() + " is not valid; not added to list");
                             }
@@ -206,56 +203,23 @@ public class JDPremiumCollector extends PluginOptional {
                             JDLogger.exception(e1);
                         }
                     } else {
-                        accounts.add(account);
+                        AccountController.getInstance().addAccount(plg.getPlugin(), account);
                     }
                 }
             }
 
-            if (accounts.size() == 0) {
-                pc.increase(1);
-                return;
-            }
-            Collections.shuffle(accounts);
-            ArrayList<Account> oldaccounts = plg.getPlugin().getPremiumAccounts();
-            for (Account newacc : accounts) {
-                boolean found = false;
-                for (Account oldacc : oldaccounts) {
-                    if (newacc.getUser().trim().equalsIgnoreCase(oldacc.getUser().trim())) {
-                        oldacc.setPass(newacc.getPass().trim());
-                        oldacc.setProperty("PREMCOLLECTOR", true);
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    oldaccounts.add(newacc);
-                }
-            }
-            if (subConfig.getBooleanProperty(PROPERTY_ACCOUNTS, true)) {
-                accounts = new ArrayList<Account>();
-                for (Account acc : oldaccounts) {
+            ArrayList<Account> accounts = new ArrayList<Account>(plg.getPlugin().getPremiumAccounts());
+            for (Account acc : accounts) {
+                if (subConfig.getBooleanProperty(PROPERTY_ACCOUNTS2, true)) {
                     try {
                         AccountInfo accInfo = plg.getPlugin().getAccountInformation(acc);
-                        if (accInfo != null && accInfo.isValid() && !accInfo.isExpired() && accInfo.getTrafficLeft() != 0) {
-                            accounts.add(acc);
-                        } else {
-                            if (subConfig.getBooleanProperty(PROPERTY_ACCOUNTS2, true)) {
-                                logger.finer(plg.getHost() + " : account " + acc.getUser() + " is not valid; removed from list");
-                            } else {
-                                acc.setEnabled(false);
-                                accounts.add(acc);
-                            }
+                        if (accInfo == null || !accInfo.isValid() || accInfo.isExpired() || accInfo.getTrafficLeft() == 0) {
+                            AccountController.getInstance().removeAccount(plg.getPlugin(), acc);
                         }
                     } catch (Exception e1) {
-
+                        AccountController.getInstance().removeAccount(plg.getPlugin(), acc);
                     }
                 }
-
-                AccountManager.getInstance().setAccountsForHost(plg.getPlugin(), accounts);
-                logger.finer(plg.getHost() + " : " + accounts.size() + " accounts inserted");
-            } else {
-                AccountManager.getInstance().setAccountsForHost(plg.getPlugin(), oldaccounts);
-                logger.finer(plg.getHost() + " : " + oldaccounts.size() + " accounts inserted");
             }
             pc.increase(1);
         }

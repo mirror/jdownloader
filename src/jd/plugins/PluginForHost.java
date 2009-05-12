@@ -42,7 +42,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
-import jd.controlling.AccountManager;
+import jd.controlling.AccountController;
 import jd.controlling.CaptchaController;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
@@ -183,9 +183,7 @@ public abstract class PluginForHost extends Plugin {
         } else if (e.getID() >= 100) {
             int accountID = e.getID() - 100;
             Account account = accounts.get(accountID);
-
             account.setEnabled(!account.isEnabled());
-            getPluginConfig().save();
         }
 
     }
@@ -203,7 +201,6 @@ public abstract class PluginForHost extends Plugin {
             AccountInfo ai = (AccountInfo) account.getProperty(AccountInfo.PARAM_INSTANCE);
             if ((System.currentTimeMillis() - ai.getCreateTime()) < 5 * 60 * 1000) return ai;
         }
-        System.out.println("Get Accountonfo " + account);
         try {
             AccountInfo ret = fetchAccountInfo(account);
 
@@ -316,7 +313,7 @@ public abstract class PluginForHost extends Plugin {
         ConfigContainer premiumConfig = new ConfigContainer(this, JDLocale.L("plugins.hoster.premiumtab", "Premium Einstellungen"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, premiumConfig));
 
-        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PREMIUMPANEL, AccountManager.getInstance(), this.getHost(), 0));
+        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PREMIUMPANEL, AccountController.getInstance(), this.getHost(), 0));
         cfg.setActionListener(this);
         cfg.setDefaultValue(new ArrayList<Account>());
 
@@ -479,29 +476,8 @@ public abstract class PluginForHost extends Plugin {
         if (HOSTER_WAIT_UNTIL_TIMES.containsKey(this.getClass())) {
             t = HOSTER_WAIT_UNTIL_TIMES.get(this.getClass());
         }
-
-        if (!enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
-
-            if (t > 0) {
-                this.resetHosterWaitTime();
-                DownloadController.getInstance().fireGlobalUpdate();
-            }
-            try {
-                handleFree(downloadLink);
-                if (dl != null && dl.getConnection() != null) {
-                    try {
-                        dl.getConnection().disconnect();
-                    } catch (Exception e) {
-                    }
-                }
-            } catch (PluginException e) {
-                e.printStackTrace();
-                e.fillLinkStatus(downloadLink.getLinkStatus());
-            }
-            return;
-        }
-        Account account = AccountManager.getInstance().getValidAccount(this);
-
+        Account account = null;
+        if (enablePremium) account = AccountController.getInstance().getValidAccount(this);
         if (account != null) {
             long before = downloadLink.getDownloadCurrent();
             try {
@@ -547,7 +523,6 @@ public abstract class PluginForHost extends Plugin {
                 account.setStatus(JDLocale.L("plugins.hoster.premium.status_ok", "Account is ok"));
                 getPluginConfig().save();
             }
-
         } else {
             if (t > 0) {
                 this.resetHosterWaitTime();
@@ -564,9 +539,7 @@ public abstract class PluginForHost extends Plugin {
             } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
             }
-
         }
-
         return;
     }
 
@@ -710,7 +683,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public ArrayList<Account> getPremiumAccounts() {
-        return AccountManager.getAccounts(this);
+        return AccountController.getInstance().getAllAccounts(this);
     }
 
     /**

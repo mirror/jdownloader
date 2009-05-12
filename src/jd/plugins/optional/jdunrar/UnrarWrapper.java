@@ -139,7 +139,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
     public UnrarWrapper(DownloadLink link) {
         this.link = link;
-        logger=JDLogger.getLogger();
+        logger = JDLogger.getLogger();
         config = SubConfiguration.getConfig(JDLocale.L("plugins.optional.jdunrar.name", "JD-Unrar"));
         speed = config.getIntegerProperty("SPEED", 10000000);
         if (link == null) { throw new IllegalArgumentException("link==null"); }
@@ -245,6 +245,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     break;
                 case EXIT_CODE_WRITE_ERROR:
                     JDLogger.getLogger().warning("Write to disk error");
+                    this.exception = new UnrarException("Write to disk error");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 case EXIT_CODE_LOCKED_ARCHIVE:
@@ -306,7 +307,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 } else {
                     new File(this.file.getParentFile(), file).delete();
                     new File(this.file.getParentFile(), file).deleteOnExit();
-                   logger.warning("Deleted archive after extraction: " + new File(this.file.getParentFile(), file));
+                    logger.warning("Deleted archive after extraction: " + new File(this.file.getParentFile(), file));
                 }
             }
         }
@@ -444,7 +445,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         // CharBuffer cbuf = decoder.decode(bbuf);
         // str = cbuf.toString();
         // } catch (CharacterCodingException e) {
-        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         //
@@ -555,7 +556,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     sigger.append(s);
                 }
                 String sig = sigger.toString();
-               logger.finest(exec.getInputStreamBuffer() + " : " + sig);
+                logger.finest(exec.getInputStreamBuffer() + " : " + sig);
                 if (sig.trim().length() < 8) continue;
                 Signature signature = FileSignatures.getSignature(sig);
 
@@ -668,7 +669,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             exec.start();
             exec.waitTimeout();
             String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-           logger.finest(res);
+            logger.finest(res);
             String match;
             if ((match = new Regex(res, Pattern.compile("Bad archive (.{5,})")).getMatch(0)) != null) {
                 statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
@@ -694,7 +695,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 throw new UnrarException(message);
             }
             if (res.indexOf(" (password incorrect") != -1 || res.contains("the file header is corrupt")) {
-               logger.finest("Password incorrect: " + file.getName() + " pw: " + pass);
+                logger.finest("Password incorrect: " + file.getName() + " pw: " + pass);
                 continue;
             } else {
                 if (res.indexOf("Cannot find volume") != -1) {

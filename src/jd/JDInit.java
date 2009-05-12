@@ -25,6 +25,7 @@ import javax.swing.JOptionPane;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
@@ -132,6 +133,7 @@ public class JDInit {
 
     public void initControllers() {
         DownloadController.getInstance();
+        AccountController.getInstance();
         // LinkGrabberController.getInstance();
     }
 
