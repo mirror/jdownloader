@@ -110,12 +110,9 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
         this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
         this.add(txtPassword, "split 2, gapright 10, growx");
         this.add(chbExtract);
-
-        /*
-         * bitte noch die Checkbox für Subdirectory auch einbauen TODO: wo soll sie hin?
-         */
         this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
-        this.add(txtComment);
+        this.add(txtComment, "split 2, gapright 10, growx");
+        this.add(chbUseSubdirectory);
     }
 
     public void actionPerformed(ActionEvent e) {

@@ -18,10 +18,10 @@ import org.jdesktop.swingx.renderer.PainterAware;
  * already set.
  * 
  * @author coalado
- * 
  */
 public class StatusLabel extends JPanel implements PainterAware {
 
+    private static final long serialVersionUID = -378709535509849986L;
     private static final int ICONCOUNT = 3;
     public JRendererLabel left;
     public JRendererLabel[] rights = new JRendererLabel[3];
@@ -47,7 +47,6 @@ public class StatusLabel extends JPanel implements PainterAware {
         for (int i = 0; i < ICONCOUNT; i++) {
             rights[i].setEnabled(b);
         }
-
     }
 
     /**
@@ -65,13 +64,11 @@ public class StatusLabel extends JPanel implements PainterAware {
     }
 
     public Painter getPainter() {
-        // TODO Auto-generated method stub
         return painter;
     }
 
     public void setPainter(Painter painter) {
         this.painter = painter;
-
     }
 
     private void paintPainter(Graphics g) {
