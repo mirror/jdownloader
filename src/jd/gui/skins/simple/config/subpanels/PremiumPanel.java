@@ -586,8 +586,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
     public void controlEvent(ControlEvent event) {
         if (!this.isDisplayable()) {
-            JDController.getInstance().removeControlListener(this);
-            System.out.println("remove from listener list");
+            JDController.getInstance().removeControlListener(this);            
         }
         if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED && event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
             premiumActivated = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);

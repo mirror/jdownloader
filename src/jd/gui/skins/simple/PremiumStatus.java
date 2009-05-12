@@ -205,7 +205,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         updating = true;
 
         long trafficTotal = 0;
-        logger.finer("Update Premiuminfo");
         TreeMap<String, ArrayList<AccountInfo>> map = new TreeMap<String, ArrayList<AccountInfo>>();
         TreeMap<String, Long> mapSize = new TreeMap<String, Long>();
         for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
@@ -267,7 +266,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         setMap(map);
         setMapSize(mapSize);
         save();
-        System.out.println("Update Premium finished");
         updating = false;
     }
 
@@ -280,11 +278,9 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private synchronized void redraw() {
         if (redrawinprogress) return;
         redrawinprogress = true;
-        System.out.println("REQUEST DRAW");
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
-                System.out.println("DRAW");
                 try {
                     lbl.setVisible(false);
                     for (int i = 0; i < BARCOUNT; i++) {
@@ -336,7 +332,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                     return null;
                 }
             }
-
         }.start();
     }
 
@@ -368,11 +363,10 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         switch (event.getID()) {
         case AccountControllerEvent.ACCOUNT_ADDED:
         case AccountControllerEvent.ACCOUNT_REMOVED:
+        case AccountControllerEvent.ACCOUNT_UPDATE:
             requestUpdate();
             break;
-        case AccountControllerEvent.ACCOUNT_UPDATE:
-            System.out.println("Account Update event");
-            requestUpdate();
+        default:
             break;
         }
     }

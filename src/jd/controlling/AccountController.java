@@ -129,8 +129,7 @@ public class AccountController extends SubConfiguration implements ActionListene
                             b = true;
                         }
                     }
-                    if (b) this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_ADDED, host, account));
-                    if (!b) System.out.println("Account already in list, do not add again!");
+                    if (b) this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_ADDED, host, account));                    
                 }
             } else {
                 ArrayList<Account> haccounts = new ArrayList<Account>();
@@ -185,12 +184,10 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     public void onAccountControllerEvent(AccountControllerEvent event) {
         switch (event.getID()) {
-        case AccountControllerEvent.ACCOUNT_ADDED:
-            System.out.println("new account added: " + event.getHost());
+        case AccountControllerEvent.ACCOUNT_ADDED:            
             saveAsync();
             break;
-        case AccountControllerEvent.ACCOUNT_REMOVED:
-            System.out.println("account removed: " + event.getHost());
+        case AccountControllerEvent.ACCOUNT_REMOVED:            
             saveAsync();
             break;
         default:
@@ -213,9 +210,7 @@ public class AccountController extends SubConfiguration implements ActionListene
         }
     }
 
-    public boolean vetoAccountGetEvent(String host, Account account) {
-        System.out.println("veto? " + host + " " + account);
-        // TODO Auto-generated method stub
+    public boolean vetoAccountGetEvent(String host, Account account) {        
         return false;
     }
 
