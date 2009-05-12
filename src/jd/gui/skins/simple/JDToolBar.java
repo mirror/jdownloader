@@ -61,18 +61,13 @@ public class JDToolBar extends JToolBar implements ControlListener {
     private JToggleButton update;
 
     public static final int ENTRY_PAUSE = 1 << 0;
-
     public static final int ENTRY_RECONNECT = 1 << 1;
-
     public static final int ENTRY_STOP = 1 << 2;
-
     public static final int ENTRY_START = 1 << 3;
-
     public static final int ENTRY_CLIPBOARD = 1 << 4;
-
     public static final int ENTRY_UPDATE = 1 << 5;
-
     public static final int ENTRY_MAN_RECONNECT = 1 << 6;
+
     public static final int ENTRY_CONTROL = ENTRY_PAUSE | ENTRY_START | ENTRY_STOP;
     public static final int ENTRY_CONFIG = ENTRY_CLIPBOARD | ENTRY_RECONNECT;
     public static final int ENTRY_INTERACTION = ENTRY_UPDATE | ENTRY_MAN_RECONNECT;
@@ -82,12 +77,15 @@ public class JDToolBar extends JToolBar implements ControlListener {
     public JDToolBar(boolean noTitlePane, Image mainMenuIcon) {
         super(JToolBar.HORIZONTAL);
 
-        setRollover(true);
-        JDUtilities.getController().addControlListener(this);
-        this.setFloatable(false);
-        this.setLayout(new MigLayout("ins 0,gap 0", "[][][][][][][][][][][][][][grow,fill]"));
-
         noTitlePainter = noTitlePane;
+        logo = mainMenuIcon;
+
+        JDUtilities.getController().addControlListener(this);
+
+        setRollover(true);
+        setFloatable(false);
+        setLayout(new MigLayout("ins 0,gap 0", "[][][][][][][][][][][][][][grow,fill]"));
+
         if (noTitlePainter) {
             add(new JSeparator(JSeparator.VERTICAL), "gapleft 32,height 0,gapright 5");
         } else {
@@ -98,51 +96,47 @@ public class JDToolBar extends JToolBar implements ControlListener {
         initQuickConfig();
         add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 10,gapright 10");
         initInteractions();
-
         addSpeedMeter();
+
         setPause(false);
-        logo = mainMenuIcon;
-        MouseAreaListener ml;
-        this.addMouseMotionListener(ml = new MouseAreaListener(LEFTGAP, 0, IMGSIZE + LEFTGAP, IMGSIZE));
-        this.addMouseListener(ml);
+
+        MouseAreaListener ml = new MouseAreaListener(LEFTGAP, 0, IMGSIZE + LEFTGAP, IMGSIZE);
+        addMouseMotionListener(ml);
+        addMouseListener(ml);
     }
 
     public void setEnabled(int flag, boolean b, String tt) {
-
         if ((flag & JDToolBar.ENTRY_CLIPBOARD) > 0) {
-            this.clipboard.setEnabled(b);
+            clipboard.setEnabled(b);
             clipboard.setToolTipText(tt);
         }
         if ((flag & JDToolBar.ENTRY_MAN_RECONNECT) > 0) {
-            this.reconnectButton.setEnabled(b);
+            reconnectButton.setEnabled(b);
             reconnectButton.setToolTipText(tt);
         }
         if ((flag & JDToolBar.ENTRY_PAUSE) > 0) {
-            this.pauseButton.setEnabled(b);
+            pauseButton.setEnabled(b);
             pauseButton.setToolTipText(tt);
         }
         if ((flag & JDToolBar.ENTRY_RECONNECT) > 0) {
-            this.reconnect.setEnabled(b);
+            reconnect.setEnabled(b);
             reconnect.setToolTipText(tt);
         }
         if ((flag & JDToolBar.ENTRY_START) > 0) {
-            this.playButton.setEnabled(b);
+            playButton.setEnabled(b);
             playButton.setToolTipText(tt);
         }
         if ((flag & JDToolBar.ENTRY_STOP) > 0) {
-            this.stopButton.setEnabled(b);
+            stopButton.setEnabled(b);
             stopButton.setToolTipText(tt);
         }
         if ((flag & JDToolBar.ENTRY_UPDATE) > 0) {
-
             if (Main.isBeta()) {
                 update.setEnabled(false);
                 update.setToolTipText("This is a BETA version. Updates for betaversions are only available at jdownloader.org");
-
             } else {
-                this.update.setEnabled(b);
+                update.setEnabled(b);
                 update.setToolTipText(tt);
-
             }
         }
 

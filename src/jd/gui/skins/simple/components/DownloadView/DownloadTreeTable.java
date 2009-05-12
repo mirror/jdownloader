@@ -81,7 +81,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     public static final String PROPERTY_EXPANDED = "expanded";
 
-    public static final String PROPERTY_SELECTED = "selected";
+    // public static final String PROPERTY_SELECTED = "selected";
 
     private static final long serialVersionUID = 1L;
 
@@ -109,7 +109,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
         // this.setExpandsSelectedPaths(true);
-        prioDescs = new String[] {JDLocale.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDLocale.L("gui.treetable.tooltip.priority0", "No Priority"), JDLocale.L("gui.treetable.tooltip.priority1", "High Priority"), JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority") };
+        prioDescs = new String[] { JDLocale.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDLocale.L("gui.treetable.tooltip.priority0", "No Priority"), JDLocale.L("gui.treetable.tooltip.priority1", "High Priority"), JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority") };
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setColumnControlVisible(true);
@@ -127,9 +127,9 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             // setDropMode(DropMode.ON_OR_INSERT_ROWS); /*muss noch geschaut
             // werden wie man das genau macht*/
             setDropMode(DropMode.USE_SELECTION);
-//            setDropMode(DropMode.ON_OR_INSERT_ROWS);
+            // setDropMode(DropMode.ON_OR_INSERT_ROWS);
         }
-       
+
         setDragEnabled(true);
         setTransferHandler(new TreeTableTransferHandler(this));
 
@@ -280,8 +280,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 });
 
                 tableColumn.setVisible(config.getBooleanProperty("VISABLE_COL_" + i, true));
-              
-             
+
                 if (tableColumn != null) {
                     getColumnModel().addColumn(tableColumn);
                 }
@@ -511,7 +510,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             prop = new HashMap<String, Object>();
             prop.put("links", links);
             prop.put("prio", new Integer(i));
-            prioPopup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.priority" + i, 16, 16), prioDescs[i+1], TreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
+            prioPopup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.priority" + i, 16, 16), prioDescs[i + 1], TreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
 
             if (prio != null && i == prio) {
                 tmp.setEnabled(false);

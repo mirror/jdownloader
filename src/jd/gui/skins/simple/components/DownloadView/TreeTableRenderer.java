@@ -86,11 +86,15 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
     private ImageIcon imgStopMark;
 
+    private ImageIcon imgPriorityS;
+
     private ImageIcon imgPriority1;
 
     private ImageIcon imgPriority2;
 
     private ImageIcon imgPriority3;
+
+    private String strTTPriorityS;
 
     private String strTTPriority1;
 
@@ -106,8 +110,6 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
     private String strTTFailed;
 
-    // private String lblDisabled;
-
     private String lblTTDisabled;
 
     private ImageIcon imgFileFailed;
@@ -116,17 +118,13 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
     private ImageIcon icon_fp_closed_error;
 
-    private ImageIcon imgPriorityS;
-
-    private String strTTPriorityS;
-
     private StatusLabel statuspanel;
 
     private int counter;
 
     private static Color COL_PROGRESS_ERROR = new Color(0xCC3300);
 
-    TreeTableRenderer(DownloadTreeTable downloadTreeTable) {
+    public TreeTableRenderer(DownloadTreeTable downloadTreeTable) {
         initIcons();
         initLocale();
         table = downloadTreeTable;
@@ -135,7 +133,6 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         progress.setStringPainted(true);
         progress.setOpaque(true);
         statuspanel = new StatusLabel(new MigLayout("ins 0,debug", "[]0[fill,grow,align right]"));
-
     }
 
     private void initIcons() {
@@ -165,13 +162,11 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         strTTPriority1 = JDLocale.L("gui.treetable.tooltip.priority1", "High Priority");
         strTTPriority2 = JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority");
         strTTPriority3 = JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority");
-
         strTTFailed = JDLocale.L("gui.treetable.tooltip.failed", "Download failed. See logs for details. Rightclick->reset to retry");
         strTTFinished = JDLocale.L("gui.treetable.tooltip.finished", "Download has finished successfully");
         strTTStopMark = JDLocale.L("gui.treetable.tooltip.stopmark", "Stopmark is set. After this Link/Package, no further downloads will start");
         strTTExtract = JDLocale.L("gui.treetable.tooltip.extract", "A post-download module(extracter,...) is running");
         lblTTDisabled = JDLocale.L("gui.treetable.tooltip.disabled", "This download(s) are disabled. Rightclick ->enable/reset to reactivate them.");
-
     }
 
     // @Override
@@ -380,7 +375,6 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
             this.statuspanel.setBackground(co.getBackground());
             statuspanel.setPainter(((JRendererLabel) co).getPainter());
-       
 
             if (dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
 
@@ -568,7 +562,6 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             } else {
                 statuspanel.left.setText("");
             }
-          
 
             counter = 0;
             clearSB();

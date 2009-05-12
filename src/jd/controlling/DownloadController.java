@@ -13,7 +13,6 @@ import javax.swing.Timer;
 import jd.Main;
 import jd.config.Configuration;
 import jd.event.JDBroadcaster;
-import jd.gui.skins.simple.components.DownloadView.DownloadTreeTable;
 import jd.nutils.io.JDIO;
 import jd.plugins.BackupLink;
 import jd.plugins.DownloadLink;
@@ -110,7 +109,8 @@ public class DownloadController implements FilePackageListener, DownloadControll
             filePackage.getBroadcaster().addListener(this);
             filePackage.update_linksDisabled();
             for (DownloadLink downloadLink : filePackage.getDownloadLinks()) {
-                downloadLink.setProperty(DownloadTreeTable.PROPERTY_SELECTED, false);
+                // downloadLink.setProperty(DownloadTreeTable.PROPERTY_SELECTED,
+                // false);
                 downloadLink.getBroadcaster().addListener(filePackage);
             }
         }
