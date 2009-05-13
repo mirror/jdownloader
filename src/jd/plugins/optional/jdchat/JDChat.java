@@ -56,7 +56,6 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.SimpleGuiUtils;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.tasks.TaskPanel;
 import jd.nutils.OSDetector;
@@ -72,12 +71,11 @@ import org.schwering.irc.lib.IRCConnection;
 import org.schwering.irc.lib.IRCUser;
 
 public class JDChat extends PluginOptional implements ControlListener {
-    protected static final long AWAY_TIMEOUT = 15 * 60 * 1000;
-    private static String CHANNEL = "#jDownloader";;
-    private static final Pattern CMD_ACTION = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);;
-    private static final Pattern CMD_CONNECT = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);;
+    private static final long AWAY_TIMEOUT = 15 * 60 * 1000;
+    private static String CHANNEL = "#jDownloader";
+    private static final Pattern CMD_ACTION = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CMD_CONNECT = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_DISCONNECT = Pattern.compile("(disconnect|trennen)", Pattern.CASE_INSENSITIVE);
-
     private static final Pattern CMD_MODE = Pattern.compile("(mode|modus)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_JOIN = Pattern.compile("join", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_NICK = Pattern.compile("(nick|name)", Pattern.CASE_INSENSITIVE);
@@ -87,20 +85,19 @@ public class JDChat extends PluginOptional implements ControlListener {
     private static final Pattern CMD_TRANSLATE = Pattern.compile("(translate)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_VERSION = Pattern.compile("(version|jdversion)", Pattern.CASE_INSENSITIVE);
 
-    protected static final ArrayList<String> COMMANDS = new ArrayList<String>();
-    private static final String HOST = "PARAM_" + "HOST";
+    private static final ArrayList<String> COMMANDS = new ArrayList<String>();
 
-    private static final String NICK = "PARAM_" + "NICK";
+    private static final String PARAM_HOST = "PARAM_HOST";
+    private static final String PARAM_NICK = "PARAM_NICK";
     private static final String PARAM_DESLANGUAGE = "PARAM_DESLANGUAGE";
     private static final String PARAM_DOAUTOTRANSLAT = "PARAM_DOAUTOTRANSLAT";
-
     private static final String PARAM_DOAUTOTRANSLATSELF = "PARAM_DOAUTOTRANSLATSELF";
-
     private static final String PARAM_NATIVELANGUAGE = "PARAM_NATIVELANGUAGE";
-    private static final String PERFORM = "PARAM_" + "PERFORM";
-    private static final String PORT = "PARAM_" + "PORT";
+    private static final String PARAM_PERFORM = "PARAM_PERFORM";
+    private static final String PARAM_PORT = "PARAM_PORT";
+
     public static final String STYLE = JDIO.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/styles.css"));
-    static final String STYLE_ACTION = "action";
+    public static final String STYLE_ACTION = "action";
     public static final String STYLE_ERROR = "error";
     public static final String STYLE_HIGHLIGHT = "highlight";
     public static final String STYLE_NOTICE = "notice";
@@ -109,7 +106,6 @@ public class JDChat extends PluginOptional implements ControlListener {
     public static final String STYLE_SYSTEM_MESSAGE = "system";
     private static final int TEXT_BUFFER = 1024 * 600;
     public static final String USERLIST_STYLE = JDIO.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
-    private static final String DEBUG = "";
 
     public static int getAddonInterfaceVersion() {
         return 3;
@@ -148,10 +144,10 @@ public class JDChat extends PluginOptional implements ControlListener {
         COMMANDS.add("/topic ");
         COMMANDS.add("/op ");
         COMMANDS.add("/deop ");
-        COMMANDS.add("/query");
+        COMMANDS.add("/query ");
         COMMANDS.add("/nick ");
         COMMANDS.add("/mode ");
-        COMMANDS.add("/join");
+        COMMANDS.add("/join ");
 
         COMMANDS.add("/translate ");
         initConfigEntries();
@@ -619,7 +615,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     }
 
-    //@Override
+    // @Override
     public void actionPerformed(ActionEvent e) {
 
         if (!((MenuItem) e.getSource()).isSelected()) {
@@ -685,7 +681,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                 if (changed) {
 
                     if (!SimpleGUI.CURRENTGUI.isActive() && conn != null && msg2.contains(conn.getNick())) {
-//                        JDSounds.PT("sound.gui.selectPackage");
+                        // JDSounds.PT("sound.gui.selectPackage");
                         SimpleGUI.CURRENTGUI.toFront();
                     }
 
@@ -725,7 +721,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         updateNamesPanel();
     }
 
-    //@Override
+    // @Override
     public void controlEvent(ControlEvent e) {
 
         if (e.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
@@ -753,7 +749,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
     }
 
-    //@Override
+    // @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
@@ -793,20 +789,20 @@ public class JDChat extends PluginOptional implements ControlListener {
         return nickCount;
     }
 
-    String getNickname() {
+    public String getNickname() {
 
         String loc = System.getProperty("user.country");
         if (loc == null) {
             loc = JDLocale.getLocale().substring(0, 3);
         }
         String def = "JD-[" + loc + "]_" + ("" + System.currentTimeMillis()).substring(6);
-        nick = subConfig.getStringProperty(NICK);
+        nick = subConfig.getStringProperty(PARAM_NICK);
         if (nick == null || nick.equalsIgnoreCase("")) {
             nick = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.optional.jdchat.enternick", "Your wished nickname?"));
             if ((nick != null) && (!nick.equalsIgnoreCase(""))) {
                 nick += "[" + loc + "]";
             }
-            subConfig.setProperty(NICK, nick.trim());
+            subConfig.setProperty(PARAM_NICK, nick.trim());
             subConfig.save();
         }
         if (nick == null) {
@@ -819,31 +815,30 @@ public class JDChat extends PluginOptional implements ControlListener {
         return nick;
     }
 
-    //@Override
+    // @Override
     public String getHost() {
         return JDLocale.L("plugins.optional.jdchat.name", "JD Chat");
     }
 
-    //@Override
+    // @Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
     public User getUser(String name) {
         for (User next : NAMES) {
-            if (next.isUser(name)) { return next; }
+            if (next.isUser(name)) return next;
 
         }
         return null;
-
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public boolean initAddon() {
         NAMES = new ArrayList<User>();
         sb = new StringBuilder();
@@ -853,9 +848,9 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     private void initConfigEntries() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, NICK, JDLocale.L("plugins.optional.jdchat.user", "Nickname")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_NICK, JDLocale.L("plugins.optional.jdchat.user", "Nickname")));
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PERFORM, JDLocale.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_PERFORM, JDLocale.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
 
         ConfigContainer lngse = new ConfigContainer(this, JDLocale.L("plugins.optional.jdchat.locale", "Language settings"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lngse));
@@ -915,17 +910,17 @@ public class JDChat extends PluginOptional implements ControlListener {
 
             private static final long serialVersionUID = 2138710083573682339L;
 
-            //@Override
+            // @Override
             public void onDisplay() {
             }
 
-            //@Override
+            // @Override
             public void onHide() {
             }
 
         };
 
-        frame.setLayout(new MigLayout(DEBUG + "ins 0", "[grow,fill]", "[grow,fill]"));
+        frame.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
         top = new JLabel();
         textArea = new JTextPane();
         HyperlinkListener hyp = new HyperlinkListener() {
@@ -1037,7 +1032,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
 
         });
-        lang = new JComboBox(new String[] { "english", "german", "spanish" });
+        lang = new JComboBox(new String[] { "english", "german", "spanish", "turkish" });
         lang.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -1077,7 +1072,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         textField.addMouseMotionListener(ml);
         right.addMouseMotionListener(ml);
         frame.setSize(new Dimension(800, 600));
-        SimpleGuiUtils.restoreWindow(null, frame);
         frame.setVisible(true);
         startAwayObserver();
     }
@@ -1086,8 +1080,8 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         NAMES.clear();
         for (int i = 0; i < 20; i++) {
-            String host = subConfig.getStringProperty(HOST, "irc.freenode.net");
-            int port = subConfig.getIntegerProperty(PORT, 6667);
+            String host = subConfig.getStringProperty(PARAM_HOST, "irc.freenode.net");
+            int port = subConfig.getIntegerProperty(PARAM_PORT, 6667);
             String pass = null;
             String nick = getNickname();
             String user = "jdChatuser";
@@ -1125,16 +1119,19 @@ public class JDChat extends PluginOptional implements ControlListener {
         String lng = "english";
         if (id.contains("spanish")) {
             lng = "spanish";
+        } else if (id.contains("turkish")) {
+            lng = "turkish";
         }
         lng = this.getPluginConfig().getStringProperty("CHANNEL_LNG", lng);
         String newChannel = null;
         if (lng.equals("spanish")) {
             newChannel = "#jdownloader[es]";
+        } else if (lng.equals("turkish")) {
+            newChannel = "#jdownloader[tr]";
         } else {
             newChannel = "#jdownloader";
         }
         if (newChannel.equalsIgnoreCase(CHANNEL) && this.isLoggedIn()) {
-
             if (conn != null) addToText(null, STYLE_NOTICE, "You are in channel: " + newChannel);
             return;
         }
@@ -1156,7 +1153,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     }
 
-    //@Override
+    // @Override
     public void onExit() {
         NAMES.clear();
         this.setLoggedIn(false);
@@ -1189,7 +1186,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public void perform() {
-        String[] perform = Regex.getLines(subConfig.getStringProperty(PERFORM));
+        String[] perform = Regex.getLines(subConfig.getStringProperty(PARAM_PERFORM));
         if (perform == null) { return; }
         for (String cmd : perform) {
             if (cmd.trim().length() > 0) {
@@ -1290,7 +1287,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
             } else if (Regex.matches(cmd, CMD_VERSION)) {
 
-                String msg = " is using " + JDUtilities.getJDTitle() + " with Java " + JDUtilities.getJavaVersion() + " on a " +OSDetector.getOSString() + " system";
+                String msg = " is using " + JDUtilities.getJDTitle() + " with Java " + JDUtilities.getJavaVersion() + " on a " + OSDetector.getOSString() + " system";
                 conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + prepareToSend(msg) + new String(new byte[] { 1 }));
                 addToText(null, STYLE_ACTION, conn.getNick() + " " + Utils.prepareMsg(msg));
             } else if (Regex.matches(cmd, CMD_MODE)) {
@@ -1324,7 +1321,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             } else if (Regex.matches(cmd, CMD_NICK)) {
                 conn.doNick(rest.trim());
                 lastCommand = "/nick ";
-                subConfig.setProperty(NICK, rest.trim());
+                subConfig.setProperty(PARAM_NICK, rest.trim());
                 subConfig.save();
 
             } else if (Regex.matches(cmd, CMD_CONNECT)) {
@@ -1350,7 +1347,6 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     public void setEnabled(boolean b) {
         if (b) {
-
             initGUI();
             tp = new JDChatTaskPane(JDLocale.L("plugins.optional.jdChat.gui.title", "JD Chat"), JDTheme.II("gui.images.config.tip", 24, 24));
             SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
@@ -1366,9 +1362,8 @@ public class JDChat extends PluginOptional implements ControlListener {
             SimpleGUI.CURRENTGUI.getTaskPane().switcher(tp);
             JDUtilities.getController().addControlListener(this);
             new Thread() {
-                //@Override
+                // @Override
                 public void run() {
-
                     initIRC();
                 }
             }.start();
@@ -1380,17 +1375,13 @@ public class JDChat extends PluginOptional implements ControlListener {
                 }
 
                 this.onExit();
-                // frame.setVisible(false);
-                // TODO
-                // frame.dispose();
             }
 
         }
     }
 
-    //@Override
+    // @Override
     public String getIconKey() {
-
         return "gui.images.chat";
     }
 
@@ -1399,11 +1390,10 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public void setNick(String nickname) {
-        if (nickname == null) { return; }
+        if (nickname == null) return;
         addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, "Rename to " + nickname);
 
         conn.doNick(nickname);
-
     }
 
     private void setNickAway(boolean b) {
@@ -1414,7 +1404,6 @@ public class JDChat extends PluginOptional implements ControlListener {
             setNick(conn.getNick().substring(0, Math.min(conn.getNick().length(), 11)) + "|away");
         } else {
             setNick(orgNick);
-
         }
 
     }
@@ -1428,7 +1417,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 top.setText(msg);
-
             }
         });
 
@@ -1436,7 +1424,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     private void startAwayObserver() {
         Thread th = new Thread() {
-            //@Override
+            // @Override
             public void run() {
                 while (true) {
                     if (System.currentTimeMillis() - lastAction > AWAY_TIMEOUT) {
@@ -1475,7 +1463,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 if (right != null) right.setText(USERLIST_STYLE + sb);
-                // frame.pack();
             }
         });
 
@@ -1487,7 +1474,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         public JDChatTaskPane(String string, ImageIcon ii) {
             super(string, ii, "jdchataddon");
-            this.setLayout(new MigLayout(DEBUG + "ins 0, wrap 1", "[grow,fill]"));
+            this.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]"));
 
             initGUI();
         }
