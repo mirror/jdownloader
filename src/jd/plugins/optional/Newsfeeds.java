@@ -18,6 +18,7 @@ package jd.plugins.optional;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
@@ -310,6 +311,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         } else if (e.getSource().equals(btnDeleteFeed)) {
 
             int i = feedList.getSelectedIndex();
+            if (i < 0) return;
             feeds.remove(i);
 
             if (i < feeds.size()) {
@@ -336,6 +338,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         } else if (e.getSource().equals(btnDeleteAbo)) {
 
             int i = aboList.getSelectedIndex();
+            if (i < 0) return;
             abos.remove(i);
 
             if (i < abos.size()) {
@@ -464,9 +467,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             Regex regex = new Regex(Pattern.compile("(.*?);(.*?);(.*?)\n").matcher(content));
 
             abos.clear();
-
             for (String match[] : regex.getMatches()) {
-
                 abos.add(new String[] { match[0], match[1], match[2] });
             }
             saveAbos();
@@ -487,9 +488,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             Regex regex = new Regex(Pattern.compile("(.*?);(.*?)\n").matcher(content));
 
             feeds.clear();
-
             for (String match[] : regex.getMatches()) {
-
                 feeds.add(new String[] { match[0], match[1] });
             }
             saveFeeds();
@@ -506,19 +505,15 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         }
     }
 
-    // List setters
     public void onExit() {
     }
 
     private void saveAbos() {
-
         subConfig.setProperty(PROPERTY_ABOS, abos);
         subConfig.save();
     }
 
-    // Load/Save
     private void saveFeeds() {
-
         subConfig.setProperty(PROPERTY_FEEDS, feeds);
         subConfig.save();
     }
@@ -619,15 +614,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     }
 
     private void showGetLatestSubscribedDownloadsGui() {
-
-        frame = new JFrame();
-        frame.setTitle(JDLocale.L("plugins.optional.newsfeeds.getLatestSubscribedDownloads", "Get latest subscribed Downloads"));
-        frame.setIconImage(JDImage.getImage(JDTheme.V("gui.images.jd_logo")));
-        frame.setPreferredSize(new Dimension(300, 200));
-        frame.setName("ADDON_NEWSFEED_3");
-        frame.addWindowListener(new LocationListener());
-        frame.setLayout(new BorderLayout(5, 5));
-
         subscribedList = new JList();
         subscribedList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
@@ -636,17 +622,14 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
         statusLabelGetSubscribed = new JLabel(JDLocale.L("plugins.optional.newsfeeds.pleaseCreateSubscription", "Please create Download Subscriptions."));
 
-        JPanel main = new JPanel(new BorderLayout(5, 5));
         JPanel buttons = new JPanel(new BorderLayout(5, 5));
-        main.setBorder(new EmptyBorder(10, 10, 10, 10));
-
-        JScrollPane scrollPane = new JScrollPane(subscribedList);
-
-        main.add(scrollPane, BorderLayout.CENTER);
-        main.add(buttons, BorderLayout.PAGE_END);
-
         buttons.add(btnDownload2, BorderLayout.LINE_END);
         buttons.add(statusLabelGetSubscribed, BorderLayout.LINE_START);
+
+        JPanel main = new JPanel(new BorderLayout(5, 5));
+        main.setBorder(new EmptyBorder(10, 10, 10, 10));
+        main.add(new JScrollPane(subscribedList), BorderLayout.CENTER);
+        main.add(buttons, BorderLayout.PAGE_END);
 
         setSubscribedList();
 
@@ -657,6 +640,13 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
         subscribedList.setSelectedIndices(indices);
 
+        frame = new JFrame();
+        frame.setTitle(JDLocale.L("plugins.optional.newsfeeds.getLatestSubscribedDownloads", "Get latest subscribed Downloads"));
+        frame.setIconImage(JDImage.getImage(JDTheme.V("gui.images.jd_logo")));
+        frame.setPreferredSize(new Dimension(300, 200));
+        frame.setName("ADDON_NEWSFEED_3");
+        frame.addWindowListener(new LocationListener());
+        frame.setLayout(new BorderLayout(5, 5));
         frame.add(main);
         frame.setResizable(true);
         frame.pack();
@@ -665,6 +655,27 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     }
 
     private void showManageDownloadSubscriptionsGui() {
+        aboList = new JList();
+        aboList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        btnDeleteAbo = new JButton("  -  ");
+        btnDeleteAbo.addActionListener(this);
+
+        btnAddAbo = new JButton(" + ");
+        btnAddAbo.addActionListener(this);
+
+        JPanel buttons1 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+        buttons1.add(btnAddAbo);
+        buttons1.add(btnDeleteAbo);
+
+        JPanel main = new JPanel(new BorderLayout(5, 5));
+        main.setBorder(new EmptyBorder(10, 10, 10, 10));
+        main.add(new JScrollPane(aboList), BorderLayout.CENTER);
+        main.add(buttons1, BorderLayout.PAGE_END);
+
+        loadAbos();
+        setAboList();
+        if (abos.size() > 0) aboList.setSelectedIndex(0);
 
         frame = new JFrame();
         frame.setTitle(JDLocale.L("plugins.optional.newsfeeds.manageDownloadSubscriptions", "Manage Download Subscriptions"));
@@ -673,36 +684,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         frame.setName("ADDON_NEWSFEED_2");
         frame.addWindowListener(new LocationListener());
         frame.setLayout(new BorderLayout(5, 5));
-
-        aboList = new JList();
-        aboList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-        btnDeleteAbo = new JButton("  -  ");
-        btnDeleteAbo.addActionListener(this);
-        btnAddAbo = new JButton(" + ");
-        btnAddAbo.addActionListener(this);
-
-        JPanel main = new JPanel(new BorderLayout(5, 5));
-        JPanel buttons1 = new JPanel(new BorderLayout(5, 5));
-        JPanel buttons2 = new JPanel(new BorderLayout(5, 5));
-        main.setBorder(new EmptyBorder(10, 10, 10, 10));
-
-        JScrollPane scrollPane = new JScrollPane(aboList);
-
-        main.add(scrollPane, BorderLayout.CENTER);
-        main.add(buttons1, BorderLayout.PAGE_END);
-
-        buttons1.add(buttons2, BorderLayout.CENTER);
-        buttons1.add(btnAddAbo, BorderLayout.LINE_END);
-
-        buttons2.add(btnDeleteAbo, BorderLayout.LINE_END);
-
-        loadAbos();
-        setAboList();
-        if (abos.size() > 0) {
-            aboList.setSelectedIndex(0);
-        }
-
         frame.add(main);
         frame.setResizable(true);
         frame.pack();
@@ -711,15 +692,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     }
 
     private void showManageFeedsGui() {
-
-        frame = new JFrame();
-        frame.setTitle(JDLocale.L("plugins.optional.newsfeeds.manageFeeds", "Manage Feeds"));
-        frame.setIconImage(JDImage.getImage(JDTheme.V("gui.images.jd_logo")));
-        frame.setPreferredSize(new Dimension(700, 500));
-        frame.setName("ADDON_NEWSFEED_1");
-        frame.addWindowListener(new LocationListener());
-        frame.setLayout(new BorderLayout(5, 5));
-
         list = new JList();
         list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
@@ -734,58 +706,47 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         btnDeleteFeed = new JButton("  -  ");
         btnDeleteFeed.addActionListener(this);
 
-        JPanel main = new JPanel();
-        JPanel left = new JPanel();
-        JPanel leftTop = new JPanel();
-        JPanel leftBottom1 = new JPanel();
-        JPanel leftBottom2 = new JPanel();
-        JPanel right = new JPanel();
-        JPanel rightTop = new JPanel();
-        JPanel rightBottom = new JPanel();
-        main.setBorder(new EmptyBorder(10, 10, 10, 10));
-        main.setLayout(new BorderLayout(5, 5));
-        left.setLayout(new BorderLayout(5, 5));
-        leftTop.setLayout(new BorderLayout(5, 5));
-        leftBottom1.setLayout(new BorderLayout(5, 5));
-        leftBottom2.setLayout(new BorderLayout(5, 5));
-        right.setLayout(new BorderLayout(5, 5));
-        rightTop.setLayout(new BorderLayout(5, 5));
-        rightBottom.setLayout(new BorderLayout(5, 5));
-
-        JScrollPane scrollPane = new JScrollPane(list);
-        JScrollPane feedScrollPane = new JScrollPane(feedList);
-
-        JLabel filterLabel = new JLabel("Filter:");
         statusLabelManageFeeds = new JLabel(JDLocale.L("plugins.optional.newsfeeds.pleaseAddFeed", "Please add Feeds."));
 
         filterText = new JTextField();
         filterText.addActionListener(this);
 
-        frame.add(main);
+        JPanel leftBottom1 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+        leftBottom1.add(btnAddFeed);
+        leftBottom1.add(btnDeleteFeed);
 
-        main.add(left, BorderLayout.LINE_START);
-        main.add(right, BorderLayout.CENTER);
-
-        left.add(leftTop, BorderLayout.PAGE_START);
-        left.add(feedScrollPane, BorderLayout.CENTER);
+        JPanel left = new JPanel(new BorderLayout(5, 5));
+        left.add(new JScrollPane(feedList), BorderLayout.CENTER);
         left.add(leftBottom1, BorderLayout.PAGE_END);
 
-        leftBottom1.add(btnAddFeed, BorderLayout.LINE_END);
-        leftBottom1.add(leftBottom2, BorderLayout.CENTER);
-        leftBottom2.add(btnDeleteFeed, BorderLayout.LINE_END);
-
-        right.add(rightTop, BorderLayout.PAGE_START);
-        right.add(scrollPane, BorderLayout.CENTER);
-        right.add(rightBottom, BorderLayout.PAGE_END);
-
-        rightTop.add(filterLabel, BorderLayout.LINE_START);
+        JPanel rightTop = new JPanel(new BorderLayout(5, 5));
+        rightTop.add(new JLabel("Filter:"), BorderLayout.LINE_START);
         rightTop.add(filterText, BorderLayout.CENTER);
 
+        JPanel rightBottom = new JPanel(new BorderLayout(5, 5));
         rightBottom.add(btnDownload, BorderLayout.LINE_END);
         rightBottom.add(statusLabelManageFeeds, BorderLayout.LINE_START);
 
+        JPanel right = new JPanel(new BorderLayout(5, 5));
+        right.add(rightTop, BorderLayout.PAGE_START);
+        right.add(new JScrollPane(list), BorderLayout.CENTER);
+        right.add(rightBottom, BorderLayout.PAGE_END);
+
+        JPanel main = new JPanel(new BorderLayout(5, 5));
+        main.setBorder(new EmptyBorder(10, 10, 10, 10));
+        main.add(left, BorderLayout.LINE_START);
+        main.add(right, BorderLayout.CENTER);
+
         loadFeeds();
 
+        frame = new JFrame();
+        frame.setTitle(JDLocale.L("plugins.optional.newsfeeds.manageFeeds", "Manage Feeds"));
+        frame.setIconImage(JDImage.getImage(JDTheme.V("gui.images.jd_logo")));
+        frame.setPreferredSize(new Dimension(700, 500));
+        frame.setName("ADDON_NEWSFEED_1");
+        frame.addWindowListener(new LocationListener());
+        frame.setLayout(new BorderLayout(5, 5));
+        frame.add(main);
         frame.setResizable(true);
         frame.pack();
         SimpleGuiUtils.restoreWindow(null, frame);
