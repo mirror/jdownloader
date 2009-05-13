@@ -58,35 +58,7 @@ public class UTILITIES {
     }
 
     public static String getMethodDir() {
-        return UTILITIES.getFullPath(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), JDUtilities.getJACMethodsDirectory());
-    }
-
-    /**
-     * Gibt die File zurück der im array entries übergeben wurde. der passende
-     * FS wird eingesetzt
-     * 
-     * @param entries
-     * @return Pfad als File
-     */
-    public static File getFullFile(String... entries) {
-        return new File(UTILITIES.getFullPath(entries));
-    }
-
-    /**
-     * Gibt den Pfad zurück der im array entries übergeben wurde. der passende
-     * FS wird eingesetzt
-     * 
-     * @param entries
-     * @return Pfad als String
-     */
-    public static String getFullPath(String... entries) {
-        StringBuilder ret = new StringBuilder();
-        for (int i = 0; i < entries.length - 1; i++) {
-            ret.append(entries[i]);
-            ret.append("/");
-        }
-        ret.append(entries[entries.length - 1]);
-        return ret.toString();
+        return JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory();
     }
 
     /**

@@ -137,7 +137,7 @@ public class JAntiCaptcha {
         Image img;
         String methodsPath = file.getParentFile().getAbsolutePath();
         String methodName = file.getName();
-        File captchaDir = UTILITIES.getFullFile(new String[] { file.getAbsolutePath(), "captchas" });
+        File captchaDir = new File(file.getAbsolutePath() + "/captchas");
         if (JAntiCaptcha.isLoggerActive()) {
             logger.info("Test Method: " + methodName + " at " + methodsPath);
         }
