@@ -46,7 +46,7 @@ public class Charts4You extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        if (br.containsHTML("Es existiert kein Eintrag")) return decryptedLinks;
+        if (br.containsHTML("Es existiert kein Eintrag") || br.containsHTML("We will be back soon")) return decryptedLinks;
         File file = this.getLocalCaptchaFile();
         String name = br.getRegex("Details zum Download von (.*?) \\- Charts4you").getMatch(0);
         String pass = br.getRegex(Pattern.compile("Passwort.*?</td>.*?<input type=\"text\" value=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);

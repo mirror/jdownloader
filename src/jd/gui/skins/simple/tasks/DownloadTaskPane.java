@@ -41,7 +41,10 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
         fadeTimer.start();
     }
 
-    private void update() {/* TODO: soll man über events aktuallisiert werden */
+    /**
+     * TODO: soll mal über events aktuallisiert werden
+     */
+    private void update() {
         DownloadController dlc = JDUtilities.getDownloadController();
         packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", dlc.getPackages().size()));
         downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", dlc.getAllDownloadLinks().size()));
@@ -57,10 +60,10 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
         totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
         progress.setMaximum(tot);
         progress.setValue(loaded);
+        progress.setToolTipText(Math.round((loaded * 10000.0) / tot) / 100.0 + "%");
         long speedm = JDUtilities.getController().getSpeedMeter();
         if (speedm > 1024) {
             speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(speedm) + "/s"));
-
             long etanum = (tot - loaded) / speedm;
             eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", Formatter.formatSeconds(etanum)));
         } else {
@@ -71,21 +74,19 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
 
     private void initGUI() {
 
-        downloadlist = (new JLabel(JDLocale.L("gui.taskpanes.download.downloadlist", "Downloadlist")));
+        downloadlist = new JLabel(JDLocale.L("gui.taskpanes.download.downloadlist", "Downloadlist"));
         downloadlist.setIcon(JDTheme.II("gui.splash.dllist", 16, 16));
-        packages = (new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Package(s)", 0)));
-        downloadlinks = (new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Link(s)", 0)));
-        totalsize = (new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", 0)));
-        progresslabel = (new JLabel(JDLocale.L("gui.taskpanes.download.progress", "Total progress")));
+        packages = new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Package(s)", 0));
+        downloadlinks = new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Link(s)", 0));
+        totalsize = new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", 0));
+        progresslabel = new JLabel(JDLocale.L("gui.taskpanes.download.progress", "Total progress"));
         progresslabel.setIcon(JDTheme.II("gui.images.progress", 16, 16));
-        progress = (new JDProgressBar());
+        progress = new JDProgressBar();
         progress.setStringPainted(false);
-        speed = (new JLabel(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", 0)));
-
-        eta = (new JLabel(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", 0)));
+        speed = new JLabel(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", 0));
+        eta = new JLabel(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", 0));
 
         add(downloadlist, D1_LABEL_ICON);
-
         add(packages, D2_LABEL);
         add(downloadlinks, D2_LABEL);
         add(totalsize, D2_LABEL);
