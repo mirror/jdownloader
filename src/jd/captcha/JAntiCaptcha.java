@@ -63,7 +63,6 @@ import jd.captcha.utils.UTILITIES;
 import jd.controlling.JDLogger;
 import jd.nutils.Executer;
 import jd.nutils.JDHash;
-import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -114,53 +113,6 @@ public class JAntiCaptcha {
         return ret;
     }
 
-    /**
-     * @param path
-     * @return Gibt die Pfade zu allen Methoden zurück
-     */
-    public static File[] getMethods(String path) {
-        File dir = JDUtilities.getResourceFile(path);
-
-        if (dir == null || !dir.exists()) {
-            if (JAntiCaptcha.isLoggerActive()) {
-                logger.severe("Resource dir nicht gefunden: " + path);
-            }
-        }
-
-        File[] entries = dir.listFiles(new FileFilter() {
-            public boolean accept(File pathname) {
-                File method = new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml");
-                return (pathname.isDirectory() && method.exists() && isAvailableExternMethod(method));
-            }
-        });
-        return entries;
-    }
-
-    /**
-     * Gibt zurück ob die entsprechende Methode verfügbar ist.
-     * 
-     * @param methodsPath
-     * 
-     * @param methodName
-     * @return true/false
-     */
-    public static boolean hasMethod(String methodsPath, String methodName) {
-        File method = JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/jacinfo.xml");
-        return (method.exists() && isAvailableExternMethod(method));
-    }
-
-    private static boolean isAvailableExternMethod(File jacinfo) {
-        String content = JDIO.getLocalFile(jacinfo);
-        if (content.contains("extern")) {
-            if (OSDetector.isLinux() && !content.contains("linux")) {
-                return false;
-            } else if (OSDetector.isMac() && !content.contains("mac")) {
-                return false;
-            } else if (OSDetector.isWindows() && !content.contains("windows")) { return false; }
-        }
-        return true;
-    }
-
     public static boolean isLoggerActive() {
         return JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL;
         // return
@@ -192,7 +144,7 @@ public class JAntiCaptcha {
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, methodName);
         File[] entries = captchaDir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
                 if (pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
 
@@ -834,7 +786,7 @@ public class JAntiCaptcha {
     private void getJACInfo() {
 
         Document doc;
-        File f = JDUtilities.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + "jacinfo.xml");
+        File f = getResourceFile("jacinfo.xml");
         if (!f.exists()) {
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.severe("" + "jacinfo.xml" + " is missing2");
@@ -1370,13 +1322,13 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Gibt ein FileOebject zu einem resourcstring zurück
+     * Gibt ein FileObject zu einem resourcestring zurück
      * 
      * @param arg
      * @return File zu arg
      */
     public File getResourceFile(String arg) {
-        return JDUtilities.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + arg);
+        return JDUtilities.getResourceFile(JDUtilities.getJACMethodsDirectory() + methodDirName + "/" + arg);
     }
 
     /**
@@ -1395,11 +1347,10 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Importiert pNG einzelbilder aus einem ordner und erstellt daraus eine
+     * Importiert PNG einzelbilder aus einem ordner und erstellt daraus eine
      * neue db
      */
     public void importDB(File path) {
-
         String pattern = JOptionPane.showInputDialog("PATTERN", "(\\w).*");
         if (JOptionPane.showConfirmDialog(null, "Delete old db?") == JOptionPane.OK_OPTION) letterDB = new LinkedList<Letter>();
         getResourceFile("letters.mth").delete();
@@ -1438,12 +1389,11 @@ public class JAntiCaptcha {
 
             letter.setDecodedValue(let);
 
-//             BasicWindow.showImage(letter.getImage(1),element.getName());
+            // BasicWindow.showImage(letter.getImage(1),element.getName());
             letter.clean();
-            
-            
-letter.removeSmallObjects(0.3,0.5,10);
-//BasicWindow.showImage(letter.getImage(1),element.getName());
+
+            letter.removeSmallObjects(0.3, 0.5, 10);
+            // BasicWindow.showImage(letter.getImage(1),element.getName());
             letterDB.add(letter);
 
             // letter.resizetoHeight(25);
@@ -1483,10 +1433,12 @@ letter.removeSmallObjects(0.3,0.5,10);
      * MTH File wird geladen und verarbeitet
      */
     private void loadMTHFile() {
-        File f = JDUtilities.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + "letters.mth");
-        String str = "<jDownloader></jDownloader>";
+        File f = getResourceFile("letters.mth");
+        String str = null;
         if (f.exists()) {
             str = JDIO.getLocalFile(f);
+        } else {
+            str = "<jDownloader></jDownloader>";
         }
         Document mth = JDUtilities.parseXmlString(str, false);
         logger.info("Get file: " + f);
@@ -1790,7 +1742,7 @@ letter.removeSmallObjects(0.3,0.5,10);
             }
 
             // String methodsPath = UTILITIES.getFullPath(new String[] {
-            //JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
+            // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
             // "jd", "captcha", "methods" });
             // String hoster = "rscat.com";
             // JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
@@ -2156,19 +2108,20 @@ letter.removeSmallObjects(0.3,0.5,10);
 
     public void cleanLibrary(double d) {
         LinkedList<Letter> newDB = new LinkedList<Letter>();
-        main:for (Letter let : letterDB) {
-          
+        main: for (Letter let : letterDB) {
+
             for (Letter n : newDB) {
 
                 LetterComperator lc = new LetterComperator(let, n);
 
                 lc.setOwner(this);
                 lc.run();
-         
+
                 n.getElementPixel();
                 if (lc.getValityPercent() <= d) {
-//                    BasicWindow.showImage(let.getImage(), " OK ");
-//                    BasicWindow.showImage(n.getImage(), " FILTERED " + lc.getValityPercent());
+                    // BasicWindow.showImage(let.getImage(), " OK ");
+                    // BasicWindow.showImage(n.getImage(), " FILTERED " +
+                    // lc.getValityPercent());
                     if (n.getElementPixel() > let.getElementPixel()) {
                         newDB.remove(let);
                         break;

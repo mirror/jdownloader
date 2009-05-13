@@ -1011,8 +1011,8 @@ public class JACScript {
             logger.fine("parsing Script.jas");
         }
 
-        File f;
-        String script = JDIO.getLocalFile(f = JDUtilities.getResourceFile("jd/captcha/methods/" + method + "/" + scriptFile));
+        File f = JDUtilities.getResourceFile(JDUtilities.getJACMethodsDirectory() + method + "/" + scriptFile);
+        String script = JDIO.getLocalFile(f);
 
         logger.info("JAC GET: " + f);
         if (script == null || script.length() == 0) {

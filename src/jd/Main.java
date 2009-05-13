@@ -46,6 +46,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import jd.captcha.JACController;
+import jd.captcha.JACMethod;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.SubConfiguration;
@@ -92,7 +93,7 @@ public class Main {
 
     public static String getCaptcha(String path, String host) {
 
-        boolean hasMethod = JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host);
+        boolean hasMethod = JACMethod.hasMethod(host);
 
         if (hasMethod) {
 
@@ -402,7 +403,8 @@ public class Main {
                 if (br.getRequest().getHttpConnection().isOK()) {
                     BETA = false;
                 }
-            } catch (IOException e1) {}
+            } catch (IOException e1) {
+            }
         }
         LOGGER.info("init Configuration");
         Main.increaseSplashStatus();
@@ -483,7 +485,8 @@ public class Main {
 
         try {
             splashScreen.finish();
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
         if (!Main.isBeta()) init.checkUpdate();
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));

@@ -17,7 +17,7 @@
 package jd.gui.skins.simple.config.panels;
 
 import java.awt.Dimension;
-import java.io.File;
+import java.util.Vector;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -25,7 +25,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
-import jd.captcha.JAntiCaptcha;
+import jd.captcha.JACMethod;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -35,15 +35,9 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
-import jd.nutils.io.JDIO;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 public class ConfigPanelCaptcha extends ConfigPanel {
 
@@ -74,9 +68,9 @@ public class ConfigPanelCaptcha extends ConfigPanel {
             case 0:
                 return JDLocale.L("gui.config.jac.column.use", "Verwenden");
             case 1:
-                return JDLocale.L("gui.config.jac.column.method", "Methode");
+                return JDLocale.L("gui.config.jac.column.plugin", "Pluginname");
             case 2:
-                return JDLocale.L("gui.config.jac.column.service", "Services");
+                return JDLocale.L("gui.config.jac.column.service", "Service");
             case 3:
                 return JDLocale.L("gui.config.jac.column.author", "Author");
             }
@@ -84,7 +78,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         }
 
         public int getRowCount() {
-            return methods.length;
+            return methods.size();
         }
 
         public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -95,30 +89,20 @@ public class ConfigPanelCaptcha extends ConfigPanel {
 
             switch (columnIndex) {
             case 0:
-                return configuration.getBooleanProperty(jacKeyForMethod(methods[rowIndex].name), true);
+                return configuration.getBooleanProperty(jacKeyForMethod(rowIndex), true);
             case 1:
-                return methods[rowIndex].name;
+                return methods.get(rowIndex).getServiceName();
             case 2:
-                StringBuilder sb = new StringBuilder();
-                for (String service : methods[rowIndex].services2) {
-                    if (sb.length() > 0) sb.append(new char[] { ',', ' ' });
-                    sb.append(service);
-                }
-                return sb.toString();
-                // return methods[rowIndex].services;
+                return methods.get(rowIndex).getFileName();
             case 3:
-                if (methods[rowIndex].isExtern) {
-                    return JDLocale.LF("gui.config.jac.extern", "Externe Methode [%s]", methods[rowIndex].author);
-                } else {
-                    return methods[rowIndex].author;
-                }
+                return methods.get(rowIndex).getAuthor();
             }
             return null;
         }
 
         public void setValueAt(Object value, int row, int col) {
             if (col == 0) {
-                configuration.setProperty(jacKeyForMethod(methods[row].name), value);
+                configuration.setProperty(jacKeyForMethod(row), value);
             }
         }
     }
@@ -131,7 +115,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
 
     private ConfigContainer container;
 
-    private JACInfo[] methods;
+    private Vector<JACMethod> methods;
 
     private JTable table;
 
@@ -140,7 +124,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
     public ConfigPanelCaptcha(Configuration configuration) {
         super();
         this.configuration = configuration;
-        methods = createJACInfos();
+        methods = JACMethod.getMethods();
         initPanel();
         load();
     }
@@ -209,66 +193,8 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         ce2.setEnabledCondidtion(ce1, "==", false);
     }
 
-    public JACInfo[] createJACInfos() {
-        File[] methods = JAntiCaptcha.getMethods("jd/captcha/methods/");
-        JACInfo[] infos = new JACInfo[methods.length];
-        for (int i = 0; i < infos.length; ++i) {
-            infos[i] = parseJACInfoXml(methods[i]);
-        }
-        return infos;
-    }
-
-    private JACInfo parseJACInfoXml(File dir) {
-        JACInfo jacinfo = new JACInfo(dir.getName());
-        File xml = new File(dir.getAbsolutePath() + "/jacinfo.xml");
-        if (!xml.exists()) return null;
-        Document doc = JDUtilities.parseXmlString(JDIO.getLocalFile(xml), false);
-        if (doc == null) return null;
-
-        NodeList nl = doc.getFirstChild().getChildNodes();
-        for (int i = 0; i < nl.getLength(); i++) {
-            Node childNode = nl.item(i);
-
-            if (childNode.getNodeName().equals("method")) {
-                jacinfo.services = JDUtilities.getAttribute(childNode, "name");
-                String services = JDUtilities.getAttribute(childNode, "services");
-                if (services != null) {
-                    jacinfo.services2 = services.split(";");
-                } else {
-                    jacinfo.services2 = new String[] { jacinfo.services };
-                }
-                jacinfo.author = JDUtilities.getAttribute(childNode, "author");
-                String extern = JDUtilities.getAttribute(childNode, "type");
-                if (extern != null && extern.equalsIgnoreCase("extern")) jacinfo.isExtern = true;
-            }
-        }
-
-        return jacinfo;
-    }
-
-    private String jacKeyForMethod(String method) {
-        return Configuration.PARAM_JAC_METHODS + "_" + method;
-    }
-
-    private class JACInfo {
-
-        private final String name;
-
-        private String services;
-
-        /**
-         * TODO: "Logik" implementieren!
-         */
-        private String[] services2;
-
-        private String author;
-
-        private boolean isExtern;
-
-        private JACInfo(String name) {
-            this.name = name;
-        }
-
+    private String jacKeyForMethod(int index) {
+        return Configuration.PARAM_JAC_METHODS + "_" + methods.get(index).getFileName();
     }
 
 }
