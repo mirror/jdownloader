@@ -37,7 +37,7 @@ public class QsaveInfo extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -58,13 +58,13 @@ public class QsaveInfo extends PluginForHost {
             // TODO: AntiCaptcha Method would allow simultanous connections
             String captchaurl = br.getRegex(Pattern.compile("below:</b></td></tr>\\s+<tr><td>\\s+<img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             URLConnectionAdapter con = br.openGetConnection(captchaurl);
-            File file = this.getLocalCaptchaFile(this);
+            File file = this.getLocalCaptchaFile();
             Browser.download(file, con);
-            String code = getCaptchaCode("fileload.us", file, downloadLink);
+            String code = getCaptchaCode(file, downloadLink);
             form.put("code", code);
             form.setAction(downloadLink.getDownloadURL());
             // No Ticket Time
-            //this.sleep(15000, downloadLink);
+            // this.sleep(15000, downloadLink);
             br.submitForm(form);
             URLConnectionAdapter con2 = br.getHttpConnection();
             String dllink = br.getRedirectLocation();
@@ -85,7 +85,7 @@ public class QsaveInfo extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     // TODO: AntiCaptcha Method would allow simultanous connections
     // if user is quick; he can enter captchas one-by-one and then server allow
     // him simulatanous downloads
@@ -94,12 +94,12 @@ public class QsaveInfo extends PluginForHost {
         return 10;
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.qsave.info/tos.html";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.qsave.info/", "lang", "english");
@@ -113,20 +113,20 @@ public class QsaveInfo extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
     }
 

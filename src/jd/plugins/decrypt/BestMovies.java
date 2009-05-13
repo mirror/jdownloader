@@ -44,7 +44,7 @@ public class BestMovies extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -60,10 +60,10 @@ public class BestMovies extends PluginForDecrypt {
 
             if (br.getRegex(patternCaptcha_Needed).matches()) {
                 /* Captcha vorhanden */
-                File captchaFile = this.getLocalCaptchaFile(this);
+                File captchaFile = this.getLocalCaptchaFile();
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://" + host + "/clockcaptcha.php"));
 
-                String captchaCode = getCaptchaCode(captchaFile, this, param);
+                String captchaCode = getCaptchaCode(captchaFile, param);
 
                 String time[] = new Regex(captchaCode, "(\\d+)[\\.\\:\\-\\,](\\d+)").getRow(0);
 
@@ -91,7 +91,7 @@ public class BestMovies extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

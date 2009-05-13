@@ -24,12 +24,12 @@ public class FourFreeLoadNet extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://4freeload.net/rules.php";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://4freeload.net", "yab_mylang", "de");
@@ -43,25 +43,25 @@ public class FourFreeLoadNet extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         // url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
 
-        File captchaFile = this.getLocalCaptchaFile(this);
+        File captchaFile = this.getLocalCaptchaFile();
         try {
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://4freeload.net/captcha.php"));
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         /* CaptchaCode holen */
-        captchaCode = getCaptchaCode("egoshare.com", captchaFile, downloadLink);
+        captchaCode = getCaptchaCode(captchaFile, downloadLink);
         Form form = br.getFormbyProperty("name", "myform");
         if (form == null) form = br.getForm(1);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -107,20 +107,20 @@ public class FourFreeLoadNet extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

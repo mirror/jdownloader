@@ -140,7 +140,7 @@ public class Odsiebiecom extends PluginForHost {
                 }
                 if (adr == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 URLConnectionAdapter con = brc.openGetConnection(adr);
-                File file = this.getLocalCaptchaFile(this);
+                File file = this.getLocalCaptchaFile();
                 Browser.download(file, con);
                 String code = getCaptchaCode(file, downloadLink);
                 capform.getInputFieldByName("captcha").setValue(code);

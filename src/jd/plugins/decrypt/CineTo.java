@@ -37,17 +37,17 @@ public class CineTo extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String parameter = param.toString();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         synchronized (lock) {
             br.getPage(parameter);
             if (parameter.matches(patternLink_Protected)) {
-                File file = this.getLocalCaptchaFile(this);
+                File file = this.getLocalCaptchaFile();
                 URLConnectionAdapter con = br.openGetConnection("http://cine.to/securimage_show.php");
                 Browser.download(file, con);
-                String code = getCaptchaCode(file, this, param);
+                String code = getCaptchaCode(file, param);
                 br.postPage(param.toString(), "captcha=" + code + "&submit=Senden");
                 if (br.containsHTML("Code ist falsch")) throw new DecrypterException(DecrypterException.CAPTCHA);
                 String[] links = br.getRegex("window\\.open\\('(.*?)'").getColumn(0);
@@ -68,7 +68,7 @@ public class CineTo extends PluginForDecrypt {
         }
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

@@ -30,7 +30,6 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -78,10 +77,10 @@ public class RsLayerCom extends PluginForDecrypt {
                     String captchaFileName = br.getRegex(strCaptchaPattern).getMatch(0);
                     if (captchaFileName == null) { return null; }
                     String captchaUrl = "http://rs-layer.com/" + captchaFileName;
-                    File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
+                    File captchaFile = getLocalCaptchaFile(".png");
                     Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
 
-                    String captchaCode = getCaptchaCode(captchaFile, this, param);
+                    String captchaCode = getCaptchaCode(captchaFile, param);
                     captchaForm.put("captcha_input", captchaCode);
                     br.submitForm(captchaForm);
 

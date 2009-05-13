@@ -34,12 +34,12 @@ public class FilesTo extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.files.to/content/aup";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             br.getPage(downloadLink.getDownloadURL());
@@ -55,12 +55,12 @@ public class FilesTo extends PluginForHost {
         return false;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
 
         if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -68,7 +68,7 @@ public class FilesTo extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         String captchaAddress = br.getRegex("<img src=\"(http://www\\.files\\.to/captcha_[\\d]+\\.jpg\\?)").getMatch(0);
 
-        File captchaFile = this.getLocalCaptchaFile(this);
+        File captchaFile = this.getLocalCaptchaFile();
         Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
         String code = getCaptchaCode(captchaFile, downloadLink);
 
@@ -81,20 +81,20 @@ public class FilesTo extends PluginForHost {
         br.openDownload(downloadLink, url, true, 1).startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
     }
 

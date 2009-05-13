@@ -45,7 +45,7 @@ public class ProtectBoxIn extends PluginForDecrypt {
 
         br.getPage(parameter);
 
-        File file = this.getLocalCaptchaFile(this);
+        File file = this.getLocalCaptchaFile();
 
         Form form = br.getForm(1);
         Browser.download(file, br.cloneBrowser().openGetConnection("http://www.protectbox.in/captcha/imagecreate.php"));

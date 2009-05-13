@@ -108,7 +108,7 @@ public class FileFactory extends PluginForHost {
             int ii = 5;
             while (ii-- >= 0)
                 try {
-                    captchaFile = this.getLocalCaptchaFile(this);
+                    captchaFile = this.getLocalCaptchaFile();
                     Browser.download(captchaFile, Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(patternForCaptcha).getMatch(0)));
                     break;
                 } catch (IOException e) {

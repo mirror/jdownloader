@@ -18,12 +18,12 @@ public class IFileIt extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://ifile.it/tos";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -37,12 +37,12 @@ public class IFileIt extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
@@ -51,15 +51,14 @@ public class IFileIt extends PluginForHost {
         if (previousLink == null) {
             String it = br.getRegex("file_key\" value=\"(.*?)\"").getMatch(0);
             Browser br2 = br.cloneBrowser();
-            br2.getPage("http://ifile.it/download:dl_request?it="+it+",type=na,esn=1");
-            if (br2.containsHTML("show_captcha"))
-            {   
-                URLConnectionAdapter con = br.openGetConnection("http://ifile.it/download:captcha?"+Math.random());
-                File file = this.getLocalCaptchaFile(this);
+            br2.getPage("http://ifile.it/download:dl_request?it=" + it + ",type=na,esn=1");
+            if (br2.containsHTML("show_captcha")) {
+                URLConnectionAdapter con = br.openGetConnection("http://ifile.it/download:captcha?" + Math.random());
+                File file = this.getLocalCaptchaFile();
                 Browser.download(file, con);
-                String code = getCaptchaCode(file,downloadLink);
-                br2= br.cloneBrowser();
-                br2.getPage("http://ifile.it/download:dl_request?it="+it+",type=simple,esn=1,0d149="+code+",0d149x=0");
+                String code = getCaptchaCode(file, downloadLink);
+                br2 = br.cloneBrowser();
+                br2.getPage("http://ifile.it/download:dl_request?it=" + it + ",type=simple,esn=1,0d149=" + code + ",0d149x=0");
                 if (br2.containsHTML("retry")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             br.getPage("http://ifile.it/dl");
@@ -67,9 +66,8 @@ public class IFileIt extends PluginForHost {
             if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             dlLink = dlLink.replaceAll(" ", "%20");
             downloadLink.setProperty("directLink", dlLink);
-            
-        }
-        else {
+
+        } else {
             dlLink = previousLink;
         }
         br.setDebug(true);
@@ -87,20 +85,20 @@ public class IFileIt extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         link.setProperty("directLink", null);
     }

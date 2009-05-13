@@ -76,7 +76,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
@@ -281,7 +280,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
                         continue;
                     }
-                    captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
+                    captchaFile = getLocalCaptchaFile(".png");
                     try {
                         br3.downloadConnection(captchaFile, con);
 
@@ -299,7 +298,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     logger.info("captchafile: " + captchaFile);
                     active++;
                     try {
-                        capTxt = getCaptchaCode(captchaFile, this, downloadLink);
+                        capTxt = getCaptchaCode(captchaFile, downloadLink);
                     } catch (Exception e) {
                         active--;
                         logger.log(Level.SEVERE, "Exception occured", e);
@@ -453,7 +452,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         JDUtilities.appendInfoToFilename(captchaFile, capTxt, false);
                     }
                     String captchaAdress = "http://serienjunkies.org" + matcher.group(2);
-                    captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
+                    captchaFile = getLocalCaptchaFile(".png");
                     try {
                         Browser.download(captchaFile, captchaAdress);
 
@@ -840,11 +839,11 @@ public class Serienjunkies extends PluginForDecrypt {
                                 outer: for (String bb : sp2) {
                                     String[] links2 = HTMLParser.getHttpLinks(bb, parameter);
                                     for (String element4 : links2) {
-                                        if (canHandle(element4) && getHostname(element4).equals(wh) ) {
-                                                DownloadLink dl = createdl(element4, new String[] { size, element3[0], element3[1], title });
-                                                dl.setFilePackage(fp);
-                                                decryptedLinks.add(dl);
-                                                break outer;
+                                        if (canHandle(element4) && getHostname(element4).equals(wh)) {
+                                            DownloadLink dl = createdl(element4, new String[] { size, element3[0], element3[1], title });
+                                            dl.setFilePackage(fp);
+                                            decryptedLinks.add(dl);
+                                            break outer;
                                         }
                                     }
                                 }

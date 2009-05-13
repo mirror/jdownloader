@@ -34,7 +34,7 @@ public class UUCannaTo extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -44,9 +44,9 @@ public class UUCannaTo extends PluginForDecrypt {
         for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
             Form captchaForm = br.getFormbyProperty("name", "download_form");
             String captchaUrl = br.getRegex("<img\\s+src=\"(captcha/captcha\\.php\\?id=[\\d]+)\"").getMatch(0);
-            File captchaFile = this.getLocalCaptchaFile(this);
+            File captchaFile = this.getLocalCaptchaFile();
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
-            String captchaCode = getCaptchaCode(captchaFile, this, param);
+            String captchaCode = getCaptchaCode(captchaFile, param);
             captchaForm.put("sicherheitscode", captchaCode);
             br.submitForm(captchaForm);
 
@@ -67,7 +67,7 @@ public class UUCannaTo extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

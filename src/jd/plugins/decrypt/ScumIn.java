@@ -32,16 +32,16 @@ public class ScumIn extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         br.getPage(parameter);
 
-        File captchaFile = this.getLocalCaptchaFile(this);
+        File captchaFile = this.getLocalCaptchaFile();
         Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://scum.in/share/includes/captcha.php?t="));
-        String captchaCode = getCaptchaCode(captchaFile, this, param);
+        String captchaCode = getCaptchaCode(captchaFile, param);
 
         br.postPage("http://scum.in/plugins/home/links.callback.php", "id=" + parameter.substring(parameter.lastIndexOf("=") + 1) + "&captcha=" + captchaCode);
 
@@ -57,7 +57,7 @@ public class ScumIn extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

@@ -43,7 +43,7 @@ public class Stealth extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception, DecrypterException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -92,27 +92,27 @@ public class Stealth extends PluginForDecrypt {
                     }
                     logger.finest("Captcha Protected");
                     String captchaAdress = "http://stealth.to/captcha_img.php?PHPSESSID=" + sessid;
-                    File file = this.getLocalCaptchaFile(this);
+                    File file = this.getLocalCaptchaFile();
                     Form form = br.getForm(0);
                     Browser.download(file, br.cloneBrowser().openGetConnection(captchaAdress));
-                    String code = getCaptchaCode(file, this, param);
+                    String code = getCaptchaCode(file, param);
                     form.put("txtCode", code);
                     br.submitForm(form);
                 } else if (br.containsHTML("libs/captcha.php")) {
                     /* Neue Captcha Seite */
                     valid = false;
                     logger.finest("Captcha Protected");
-                    File file = this.getLocalCaptchaFile(this);
+                    File file = this.getLocalCaptchaFile();
                     Form form = br.getForm(0);
                     Browser.download(file, br.cloneBrowser().openGetConnection("http://stealth.to/libs/captcha.php"));
-                    String code = getCaptchaCode(file, this, param);
+                    String code = getCaptchaCode(file, param);
                     form.put("code", code);
                     br.submitForm(form);
                 } else if (br.containsHTML("libs/crosshair.php")) {
                     /* Neue Crosshair Seite */
                     valid = false;
                     logger.finest("Captcha Protected");
-                    File file = this.getLocalCaptchaFile(this);
+                    File file = this.getLocalCaptchaFile();
                     Form form = br.getForm(0);
                     Browser.download(file, br.cloneBrowser().openGetConnection("http://stealth.to/libs/crosshair.php"));
                     ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, "Captcha", JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"), 20, null);
@@ -150,7 +150,7 @@ public class Stealth extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

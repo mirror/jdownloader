@@ -45,7 +45,7 @@ public class ProtectorTO extends PluginForDecrypt {
     }
 
     @SuppressWarnings("unchecked")
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -64,12 +64,12 @@ public class ProtectorTO extends PluginForDecrypt {
          * String link = "dlc://protector.to/container/" + currentDate + "/" +
          * folderID + "_1.dlc"; decryptedLinks.add(createDownloadlink(link));
          */
-        synchronized (lock) {            
+        synchronized (lock) {
             if (param.getStringProperty("referer", null) != null) {
                 br.getHeaders().put("Referer", param.getStringProperty("referer", null));
             }
             if (param.getProperty("protector_cookies", null) != null) {
-                br.getCookies().putAll((HashMap<String,LinkedHashMap<String, Cookie>>) param.getProperty("protector_cookies", null));
+                br.getCookies().putAll((HashMap<String, LinkedHashMap<String, Cookie>>) param.getProperty("protector_cookies", null));
             }
             br.getPage(parameter + "?jd=1");
             if (br.getRedirectLocation() != null) {
@@ -99,12 +99,12 @@ public class ProtectorTO extends PluginForDecrypt {
             }
             String img = null;
             while ((img = br.getRegex("<img id=[\"']cryptogram[\"'] src=[\"']([^\"']*)[\"']").getMatch(0)) != null) {
-                File file = this.getLocalCaptchaFile(this);
+                File file = this.getLocalCaptchaFile();
                 URLConnectionAdapter con = br.cloneBrowser().openGetConnection(img);
                 con.connect();
                 Browser.download(file, br.cloneBrowser().openGetConnection(con.getRequest().getLocation()));
                 Form form = br.getForm(0);
-                String captchaCode = getCaptchaCode(file, this, param);
+                String captchaCode = getCaptchaCode(file, param);
                 if (captchaCode == null) return null;
                 form.put("code", captchaCode);
                 br.submitForm(form);
@@ -139,7 +139,7 @@ public class ProtectorTO extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

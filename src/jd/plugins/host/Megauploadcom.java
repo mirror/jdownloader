@@ -82,7 +82,7 @@ public class Megauploadcom extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
@@ -118,7 +118,7 @@ public class Megauploadcom extends PluginForHost {
         return Request.parseQuery(link.getDownloadURL()).get("d").toUpperCase();
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         getFileInformation(link);
         br.setDebug(true);
@@ -208,7 +208,7 @@ public class Megauploadcom extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://megaupload.com/terms/";
     }
@@ -232,7 +232,7 @@ public class Megauploadcom extends PluginForHost {
         if (user == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    //@Override
+    // @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null) return false;
 
@@ -306,7 +306,7 @@ public class Megauploadcom extends PluginForHost {
                     DownloadLink downloadLink = urls[d];
                     if (name != null) {
                         downloadLink.setFinalFileName(name);
-                        downloadLink.setDownloadSize(Long.parseLong(queryQ.get("s")));                        
+                        downloadLink.setDownloadSize(Long.parseLong(queryQ.get("s")));
                         downloadLink.setAvailable(true);
                     } else {
                         downloadLink.setAvailable(false);
@@ -320,14 +320,14 @@ public class Megauploadcom extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         downloadLink.setAvailable(this.checkLinks(new DownloadLink[] { downloadLink }));
         if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return downloadLink.isAvailable();
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -384,7 +384,7 @@ public class Megauploadcom extends PluginForHost {
             }
             if (form != null && form.containsHTML("captchacode")) {
                 String captcha = form.getRegex("Enter this.*?src=\"(.*?gencap.*?)\"").getMatch(0);
-                File file = this.getLocalCaptchaFile(this);
+                File file = this.getLocalCaptchaFile();
                 Browser c = br.cloneBrowser();
 
                 c.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
@@ -395,7 +395,7 @@ public class Megauploadcom extends PluginForHost {
 
                 if (code == null) {
 
-                    code = getCaptchaCode("megaupload2.com",file, link);
+                    code = getCaptchaCode("megaupload.com2", file, link);
 
                 }
                 if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 1) {
@@ -512,7 +512,7 @@ public class Megauploadcom extends PluginForHost {
         br.getHeaders().setDominant(false);
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         user = null;
         br.setCookie("http://megaupload.com", "l", "en");
@@ -520,25 +520,25 @@ public class Megauploadcom extends PluginForHost {
         handleFree0(parameter, null);
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
     }
 

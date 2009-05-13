@@ -41,12 +41,12 @@ public class ShareNownet extends PluginForHost {
         // fertig
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://share-now.net/agb.php";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -64,12 +64,12 @@ public class ShareNownet extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         Form form = br.getForm(1);
@@ -77,7 +77,7 @@ public class ShareNownet extends PluginForHost {
         /* gibts nen captcha? */
         if (br.containsHTML("Sicherheitscode eingeben")) {
             /* Captcha File holen */
-            File captchaFile = getLocalCaptchaFile(this);
+            File captchaFile = getLocalCaptchaFile();
             br.getDownload(captchaFile, "http://share-now.net/captcha.php?id=" + form.getInputFieldByName("download").getValue());
             /* CaptchaCode holen */
             String captchaCode = getCaptchaCode(captchaFile, downloadLink);
@@ -115,7 +115,7 @@ public class ShareNownet extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -141,20 +141,20 @@ public class ShareNownet extends PluginForHost {
         return ai;
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
     }
 

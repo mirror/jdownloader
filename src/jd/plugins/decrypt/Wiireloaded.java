@@ -26,7 +26,6 @@ import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 public class Wiireloaded extends PluginForDecrypt {
@@ -35,7 +34,7 @@ public class Wiireloaded extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         int submitvalue = getPluginConfig().getIntegerProperty("WIIReloaded_SubmitValue", 5);
         String parameter = param.toString();
@@ -60,13 +59,13 @@ public class Wiireloaded extends PluginForDecrypt {
                 return null;
             }
             String adr = "http://wii-reloaded.ath.cx/protect/captcha/captcha.php";
-            File captchaFile = Plugin.getLocalCaptchaFile(this, ".jpg");
+            File captchaFile = getLocalCaptchaFile();
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(adr));
             progress.addToMax(1);
             if (!captchaFile.exists() || captchaFile.length() == 0) {
                 return null;
             } else {
-                String capTxt = getCaptchaCode(captchaFile, this, param);
+                String capTxt = getCaptchaCode(captchaFile, param);
                 Form post = br.getForm(0);
                 post.put("sicherheitscode", capTxt);
                 try {
@@ -85,12 +84,12 @@ public class Wiireloaded extends PluginForDecrypt {
                 brc.getPage("http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element);
                 if (brc.containsHTML("captcha/numeric.php")) {
                     String adr = "http://wii-reloaded.ath.cx/protect/captcha/numeric.php";
-                    File captchaFile = Plugin.getLocalCaptchaFile(this, ".jpg");
+                    File captchaFile = getLocalCaptchaFile();
                     Browser.download(captchaFile, brc.cloneBrowser().openGetConnection(adr));
                     if (!captchaFile.exists() || captchaFile.length() == 0) {
                         return null;
                     } else {
-                        String capTxt = getCaptchaCode("wii-numeric", captchaFile,  param);
+                        String capTxt = getCaptchaCode("wii-numeric", captchaFile, param);
                         Form post = brc.getForm(0);
                         post.put("insertvalue", capTxt);
                         brc.submitForm(post);
@@ -138,7 +137,7 @@ public class Wiireloaded extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

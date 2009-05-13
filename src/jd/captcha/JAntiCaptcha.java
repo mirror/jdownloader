@@ -301,15 +301,10 @@ public class JAntiCaptcha {
 
     private Image sourceImage;
 
-    /**
-     * @param methodsPath
-     *            debug
-     */
-
     public JAntiCaptcha(String methodsPath, String methodName) {
-        methodsPath = UTILITIES.getFullPath(new String[] { methodsPath, methodName, "" });
+        methodsPath = JDUtilities.getJACMethodsDirectory() + methodName;
         logger.info(methodsPath);
-        methodDirName = methodName;
+        methodDirName = JACMethod.forServiceName(methodName);
 
         getJACInfo();
 

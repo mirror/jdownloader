@@ -48,7 +48,7 @@ public class LinkCryptWs extends PluginForDecrypt {
      * @see jd.plugins.PluginForDecrypt#decryptIt(jd.plugins.CryptedLink,
      * jd.controlling.ProgressController)
      */
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -63,7 +63,7 @@ public class LinkCryptWs extends PluginForDecrypt {
         for (int i = 0; i < 5; ++i) {
             if (br.containsHTML("Bitte klicke auf den offenen Kreis!")) {
                 valid = false;
-                File file = this.getLocalCaptchaFile(this);
+                File file = this.getLocalCaptchaFile();
                 Form form = br.getForm(0);
                 Browser.download(file, br.cloneBrowser().openGetConnection("http://linkcrypt.ws/captx.php"));
                 ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, "Captcha", JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"), 20, null);
@@ -98,7 +98,7 @@ public class LinkCryptWs extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

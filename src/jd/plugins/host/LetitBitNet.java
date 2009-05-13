@@ -41,12 +41,12 @@ public class LetitBitNet extends PluginForHost {
         enablePremium("http://letitbit.net/");
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://letitbit.net/page/terms.php";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -65,12 +65,12 @@ public class LetitBitNet extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         Form form = br.getForm(3);
@@ -82,7 +82,7 @@ public class LetitBitNet extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         Form dl1 = br.getFormbyProperty("id", "dvifree");
@@ -105,7 +105,7 @@ public class LetitBitNet extends PluginForHost {
         }
         Form down = br.getFormbyProperty("id", "dvifree");
         URLConnectionAdapter con = br.openGetConnection(captchaurl);
-        File file = this.getLocalCaptchaFile(this);
+        File file = this.getLocalCaptchaFile();
         Browser.download(file, con);
         down.setMethod(Form.MethodType.POST);
         down.put("frameset", "Download+file");
@@ -119,7 +119,7 @@ public class LetitBitNet extends PluginForHost {
         br.submitForm(down);
         // if we cannot bypass, ask user for entering captcha code
         if (!br.containsHTML("<frame")) {
-            String code = getCaptchaCode("letitbit.net", file, downloadLink);
+            String code = getCaptchaCode(file, downloadLink);
             down.put("cap", code);
             down.put("uid2", id2);
             down.setAction("http://letitbit.net/download3.php");
@@ -139,20 +139,20 @@ public class LetitBitNet extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
     }
 }

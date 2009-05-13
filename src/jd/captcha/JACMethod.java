@@ -22,6 +22,18 @@ public class JACMethod implements Comparable<JACMethod> {
 
     private static Vector<JACMethod> methods = null;
 
+    public static String forServiceName(String service) {
+        logger.info("Requesting filename for the service " + service);
+        for (JACMethod method : getMethods()) {
+            if (service.equalsIgnoreCase(method.getServiceName())) {
+                logger.info("Found JAC method for the service " + service + " in directory " + method.getFileName());
+                return method.getFileName();
+            }
+        }
+        logger.info("There is no JAC method for the service " + service);
+        return service;
+    }
+
     public static Vector<JACMethod> getMethods() {
         if (methods != null) return methods;
         Vector<JACMethod> methods = new Vector<JACMethod>();
@@ -89,7 +101,8 @@ public class JACMethod implements Comparable<JACMethod> {
         return methods;
     }
 
-    public static boolean hasMethod(String methodName) {
+    public static boolean hasMethod(String service) {
+        String methodName = forServiceName(service);
         File method = JDUtilities.getResourceFile(JDUtilities.getJACMethodsDirectory() + "/" + methodName + "/jacinfo.xml");
         return (method.exists() && isAvailableExternMethod(method));
     }

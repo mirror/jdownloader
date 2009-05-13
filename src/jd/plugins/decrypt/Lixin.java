@@ -40,12 +40,12 @@ public class Lixin extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         synchronized (lock) {
-            boolean lix_continue = true;            
+            boolean lix_continue = true;
             Form form;
             /* zuerst mal den evtl captcha abarbeiten */
             br.setCookiesExclusive(false);
@@ -57,9 +57,9 @@ public class Lixin extends PluginForDecrypt {
                     if (capturl != null) {
                         lix_continue = false;
                         String captchaAddress = "http://" + getHost() + "/" + capturl;
-                        File captchaFile = this.getLocalCaptchaFile(this);
+                        File captchaFile = this.getLocalCaptchaFile();
                         Browser.download(captchaFile, captchaAddress);
-                        String captchaCode = getCaptchaCode(captchaFile, this, param);
+                        String captchaCode = getCaptchaCode(captchaFile, param);
                         captchaCode = captchaCode.toUpperCase();
                         form.put("capt", captchaCode);
                         br.submitForm(form);
@@ -100,7 +100,7 @@ public class Lixin extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

@@ -262,7 +262,7 @@ public class Secured extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -275,9 +275,9 @@ public class Secured extends PluginForDecrypt {
             while (br.getRegex(PAT_CAPTCHA).matches()) {
 
                 String captchaAdress = "http://secured.in/" + br.getRegex(PAT_CAPTCHA).getMatch(0);
-                File captchaFile = getLocalCaptchaFile(this);
+                File captchaFile = getLocalCaptchaFile();
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAdress));
-                String captchaCode = getCaptchaCode(captchaFile, this, param);
+                String captchaCode = getCaptchaCode(captchaFile, param);
 
                 Form captchaForm = br.getForm(0);
                 captchaForm.put("captcha_key", captchaCode.toUpperCase());
@@ -306,12 +306,12 @@ public class Secured extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getCoder() {
         return "olimex, JD-Team";
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

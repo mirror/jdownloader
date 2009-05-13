@@ -195,12 +195,12 @@ public abstract class PluginForDecrypt extends Plugin {
         return tmpLinks;
     }
 
-    protected String getCaptchaCode(File captchaFile, Plugin plg, CryptedLink param) throws DecrypterException {
-        return this.getCaptchaCode(plg.getHost(), captchaFile, 0, param, null, null);
+    protected String getCaptchaCode(String methodname, File captchaFile, CryptedLink param) throws DecrypterException {
+        return this.getCaptchaCode(methodname, captchaFile, 0, param, null, null);
     }
 
-    public String getCaptchaCode(String methodname, File captchaFile, CryptedLink param) throws DecrypterException {
-        return this.getCaptchaCode(methodname, captchaFile, 0, param, null, null);
+    protected String getCaptchaCode(File captchaFile, CryptedLink param) throws DecrypterException {
+        return this.getCaptchaCode(this.getHost(), captchaFile, 0, param, null, null);
     }
 
     /**
@@ -220,7 +220,7 @@ public abstract class PluginForDecrypt extends Plugin {
      * @return
      * @throws DecrypterException
      */
-    public String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws DecrypterException {
+    protected String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws DecrypterException {
         link.getProgressController().setStatusText(JDLocale.LF("gui.linkgrabber.waitinguserio", "Waiting for user input: %s", method));
         String cc = new CaptchaController(method, file, defaultValue, explain).getCode(flag);
         link.getProgressController().setStatusText(null);

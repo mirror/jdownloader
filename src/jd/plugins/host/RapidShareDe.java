@@ -32,7 +32,6 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
@@ -44,7 +43,7 @@ public class RapidShareDe extends PluginForHost {
         this.enablePremium("http://rapidshare.de/en/premium.html");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -84,7 +83,7 @@ public class RapidShareDe extends PluginForHost {
         String ticketCode = Encoding.htmlDecode(new Regex(br, "unescape\\(\\'(.*?)\\'\\)").getMatch(0));
 
         form = Form.getForms(ticketCode)[0];
-        File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
+        File captchaFile = getLocalCaptchaFile(".png");
         String captchaAdress = new Regex(ticketCode, "<img src=\"(.*?)\">").getMatch(0);
         logger.info("CaptchaAdress:" + captchaAdress);
         br.getDownload(captchaFile, captchaAdress);
@@ -113,7 +112,7 @@ public class RapidShareDe extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String user = account.getUser();
         String pass = account.getPass();
@@ -164,12 +163,12 @@ public class RapidShareDe extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://rapidshare.de/de/faq.html";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             br.setCookiesExclusive(true);
@@ -192,26 +191,26 @@ public class RapidShareDe extends PluginForHost {
 
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
 
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

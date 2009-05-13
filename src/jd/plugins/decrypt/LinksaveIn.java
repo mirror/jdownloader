@@ -52,10 +52,10 @@ public class LinksaveIn extends PluginForDecrypt {
                 form.put("besucherpasswort", pw);
             }
             String url = "captcha/cap.php?hsh=" + form.getRegex("\\/captcha\\/cap\\.php\\?hsh=([^\"]+)").getMatch(0);
-            File captchaFile = this.getLocalCaptchaFile(this);
+            File captchaFile = this.getLocalCaptchaFile();
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(url));
             Linksave.prepareCaptcha(captchaFile);
-            String captchaCode = getCaptchaCode(captchaFile, this, param);
+            String captchaCode = getCaptchaCode(captchaFile, param);
             form.put("code", captchaCode);
             br.submitForm(form);
             if (br.containsHTML("Captcha-code ist falsch") || br.containsHTML("Besucherpasswort ist falsch")) {

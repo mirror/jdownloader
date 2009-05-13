@@ -43,7 +43,7 @@ public class RomNewsOrg extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        File file = this.getLocalCaptchaFile(this);
+        File file = this.getLocalCaptchaFile();
         String whattoclick = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
         whattoclick = whattoclick.replaceAll("(</span>|\">|<span class=\")", " ");
         String cap = br.getRegex("\"image\" src=\"(.*?image.*?)\"").getMatch(0);

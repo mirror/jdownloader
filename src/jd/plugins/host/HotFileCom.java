@@ -17,6 +17,7 @@ package jd.plugins.host;
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;

@@ -43,7 +43,7 @@ public class Moosharenet extends PluginForHost {
         enablePremium("http://mooshare.net/?section=becomemember");
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://mooshare.net/?section=faq";
     }
@@ -59,7 +59,7 @@ public class Moosharenet extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -90,7 +90,7 @@ public class Moosharenet extends PluginForHost {
         return ai;
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         login(account);
@@ -114,7 +114,7 @@ public class Moosharenet extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -137,12 +137,12 @@ public class Moosharenet extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
@@ -153,7 +153,7 @@ public class Moosharenet extends PluginForHost {
             sleep(Integer.parseInt(wait) * 100l, downloadLink);
         } else
             sleep(15000, downloadLink);
-        File captchaFile = this.getLocalCaptchaFile(this);
+        File captchaFile = this.getLocalCaptchaFile();
         try {
             String captchaurl = br.getRegex("<img src=\"(http://mooshare.net/html/images/captcha.php.*?)\" alt=\"captcha\"").getMatch(0);
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaurl));
@@ -180,21 +180,21 @@ public class Moosharenet extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 5;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
 
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
     }
 

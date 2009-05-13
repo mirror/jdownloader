@@ -47,7 +47,7 @@ public class FilerNet extends PluginForHost {
         this.enablePremium("https://filer.net/premium");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         int maxCaptchaTries = 5;
@@ -59,7 +59,7 @@ public class FilerNet extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         int tries = 0;
         while (tries < maxCaptchaTries) {
-            File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
+            File captchaFile = getLocalCaptchaFile(".png");
             Browser.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
             code = getCaptchaCode(captchaFile, downloadLink);
             page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
@@ -111,7 +111,7 @@ public class FilerNet extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
@@ -134,7 +134,7 @@ public class FilerNet extends PluginForHost {
         return ai;
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         setBrowserExclusive();
         login(account);
@@ -152,12 +152,12 @@ public class FilerNet extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.filer.net/faq";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         if (downloadLink.getDownloadURL().contains("filer.net/dl/")) {
             downloadLink.setDownloadSize(0);
@@ -193,7 +193,7 @@ public class FilerNet extends PluginForHost {
             try {
                 Browser br = new Browser();
                 br.getPage(downloadLink.getDownloadURL());
-                captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
+                captchaFile = getLocalCaptchaFile(".png");
                 Browser.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
                 code = getCaptchaCode(captchaFile, downloadLink);
                 page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
@@ -222,30 +222,30 @@ public class FilerNet extends PluginForHost {
         return false;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
     }
 }

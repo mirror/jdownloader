@@ -135,7 +135,7 @@ public class Netloadin extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             return;
         }
-        File file = this.getLocalCaptchaFile(this);
+        File file = this.getLocalCaptchaFile();
         Browser c = br.cloneBrowser();
         Browser.download(file, c.openGetConnection(captchaURL));
         captchaPost.put("captcha_check", getCaptchaCode(file, downloadLink));
@@ -252,7 +252,7 @@ public class Netloadin extends PluginForHost {
 
     private void login(Account account) throws IOException, PluginException {
         setBrowserExclusive();
-    
+
         br.getPage("http://netload.in/index.php");
         br.postPage("http://netload.in/index.php", "txtuser=" + Encoding.urlEncode(account.getUser()) + "&txtpass=" + Encoding.urlEncode(account.getPass()) + "&txtcheck=login&txtlogin=");
         String cookie = br.getCookie("http://netload.in/", "cookie_user");
@@ -286,7 +286,7 @@ public class Netloadin extends PluginForHost {
         }
         try {
             isExpired(account);
-     
+
         } catch (PluginException e) {
             ai.setExpired(true);
             return ai;
@@ -306,9 +306,11 @@ public class Netloadin extends PluginForHost {
     public int getTimegapBetweenConnections() {
         return 800;
     }
-    public boolean useIcon(){
+
+    public boolean useIcon() {
         return true;
     }
+
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
 
@@ -415,7 +417,7 @@ public class Netloadin extends PluginForHost {
                 entries = br.getRegex(";(.*?);(.*?);(.*?)").getRow(0);
                 if (entries == null || entries.length < 3) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 downloadLink.setDownloadSize((int) Regex.getSize(entries[1] + " bytes"));
-                downloadLink.setFinalFileName(entries[0]);                
+                downloadLink.setFinalFileName(entries[0]);
                 fileStatusText = JDLocale.L("plugins.hoster.netloadin.errors.mightbeoffline", "Might be offline");
                 downloadLink.getLinkStatus().setStatusText(fileStatusText);
                 return true;
@@ -423,7 +425,7 @@ public class Netloadin extends PluginForHost {
 
             if (entries == null || entries.length < 3) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-            downloadLink.setFinalFileName(entries[1]);            
+            downloadLink.setFinalFileName(entries[1]);
             fileStatusText = entries[2];
             downloadLink.setDownloadSize((int) Regex.getSize(entries[2] + " bytes"));
 

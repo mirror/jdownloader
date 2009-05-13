@@ -37,7 +37,7 @@ public class BagrujCz extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -57,9 +57,9 @@ public class BagrujCz extends PluginForHost {
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             String captchaurl = br.getRegex(Pattern.compile("kód:</b></td></tr>\\s+<tr><td><img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             URLConnectionAdapter con = br.openGetConnection(captchaurl);
-            File file = this.getLocalCaptchaFile(this);
+            File file = this.getLocalCaptchaFile();
             Browser.download(file, con);
-            String code = getCaptchaCode("fileload.us", file, downloadLink);
+            String code = getCaptchaCode(file, downloadLink);
             form.put("code", code);
             form.setAction(downloadLink.getDownloadURL());
             // Password field
@@ -82,25 +82,24 @@ public class BagrujCz extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
                     }
                 }
-                if (br.containsHTML("Odkaz ke stažení vygenerován"))
-                    dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
+                if (br.containsHTML("Odkaz ke stažení vygenerován")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
             }
             dl = br.openDownload(downloadLink, dllink);
             dl.startDownload();
         }
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://bagruj.cz/tos.html";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://bagruj.cz/", "lang", "english");
@@ -114,20 +113,20 @@ public class BagrujCz extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
     }
 

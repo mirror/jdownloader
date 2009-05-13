@@ -43,7 +43,7 @@ public class LinkProtectIn extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -68,12 +68,12 @@ public class LinkProtectIn extends PluginForDecrypt {
 
                 String captchaAddress = "http://linkprotect.in/" + matcher.group(1);
 
-                File captchaFile = this.getLocalCaptchaFile(this);
+                File captchaFile = this.getLocalCaptchaFile();
                 Browser br2 = new Browser();
                 Browser.download(captchaFile, br2.openGetConnection(captchaAddress));
 
                 br.setCookie(br.getURL(), "PHPSESSID", br2.getCookie(br2.getURL(), "PHPSESSID"));
-                String captchaCode = getCaptchaCode(captchaFile, this, param);
+                String captchaCode = getCaptchaCode(captchaFile, param);
                 captchaCode = captchaCode.toUpperCase();
                 form.put("code", captchaCode);
 
@@ -135,7 +135,7 @@ public class LinkProtectIn extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

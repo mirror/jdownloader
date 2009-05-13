@@ -35,12 +35,12 @@ public class FileBaseTo extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://filebase.to/tos/";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         // br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -55,21 +55,21 @@ public class FileBaseTo extends PluginForHost {
 
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         String formact = downloadLink.getDownloadURL();
         if (br.containsHTML("/captcha/CaptchaImage")) {
-            File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
+            File captchaFile = getLocalCaptchaFile(".png");
             String CaptchaFileURL = br.getRegex("src=\"(/captcha/CaptchaImage\\.php.*?)\"").getMatch(0);
             String filecid = br.getRegex("cid\"\\s+value=\"(.*?)\"").getMatch(0);
             Browser.download(captchaFile, br.openGetConnection("http://filebase.to" + CaptchaFileURL));
-            String capTxt = getCaptchaCode("uploaded.to", captchaFile, downloadLink);
+            String capTxt = getCaptchaCode(captchaFile, downloadLink);
             br.postPage(formact, "uid=" + capTxt + "&cid=" + Encoding.urlEncode(filecid) + "&submit=+++Best%E4tigung+++&session_code=");
             // if captcha error
             if (br.containsHTML("Code wurde falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -79,20 +79,20 @@ public class FileBaseTo extends PluginForHost {
         br.openDownload(downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName())).startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

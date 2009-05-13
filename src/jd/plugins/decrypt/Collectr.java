@@ -47,7 +47,7 @@ public class Collectr extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = param.toString();
@@ -74,10 +74,10 @@ public class Collectr extends PluginForDecrypt {
             fp.setName(new Regex(page, PATTERN_FOLDERNAME).getMatch(0));
             if (saptcha != null) {
                 // Captcha on
-                File file = this.getLocalCaptchaFile(this);
+                File file = this.getLocalCaptchaFile();
                 Browser c = br.cloneBrowser();
                 Browser.download(file, c.openGetConnection("http://collectr.net/img/saptcha" + saptcha + ".gif"));
-                String captchaCode = getCaptchaCode(file, this, param);
+                String captchaCode = getCaptchaCode(file, param);
                 HashMap<String, String> post = new HashMap<String, String>();
                 post.put("saptcha", captchaCode);
                 post.put("id", saptcha);
@@ -97,7 +97,7 @@ public class Collectr extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

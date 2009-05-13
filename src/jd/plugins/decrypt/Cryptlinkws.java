@@ -39,7 +39,7 @@ public class Cryptlinkws extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -88,11 +88,11 @@ public class Cryptlinkws extends PluginForDecrypt {
                     if (forms[0].hasInputFieldByName("captchainput")) {
                         /* Eingabefeld für Captcha vorhanden */
 
-                        File captchaFile = getLocalCaptchaFile(this);
+                        File captchaFile = getLocalCaptchaFile();
                         String captchaCode;
                         br.cloneBrowser().getDownload(captchaFile, "http://www.cryptlink.ws/captcha.php");
                         /* CaptchaCode holen */
-                        captchaCode = getCaptchaCode(captchaFile, this, param);
+                        captchaCode = getCaptchaCode(captchaFile, param);
                         forms[0].put("captchainput", captchaCode);
 
                     }
@@ -126,7 +126,7 @@ public class Cryptlinkws extends PluginForDecrypt {
         return link;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

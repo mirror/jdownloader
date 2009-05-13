@@ -65,7 +65,6 @@ public abstract class PluginForHost extends Plugin {
 
     public PluginForHost(PluginWrapper wrapper) {
         super(wrapper);
-
     }
 
     /**
@@ -78,7 +77,7 @@ public abstract class PluginForHost extends Plugin {
      * @throws InterruptedException
      */
     public String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
-        File captchaFile = this.getLocalCaptchaFile(this);
+        File captchaFile = this.getLocalCaptchaFile();
         try {
             Browser.download(captchaFile, br.openGetConnection(captchaAddress));
         } catch (Exception e) {
@@ -90,16 +89,15 @@ public abstract class PluginForHost extends Plugin {
 
     }
 
-    public String getCaptchaCode(String methodname, File captchaFile, DownloadLink downloadLink) throws PluginException, InterruptedException {
+    protected String getCaptchaCode(String methodname, File captchaFile, DownloadLink downloadLink) throws PluginException, InterruptedException {
         return getCaptchaCode(methodname, captchaFile, 0, downloadLink, null, null);
     }
 
-    public String getCaptchaCode(File captchaFile, DownloadLink downloadLink) throws PluginException, InterruptedException {
-        // TODO Auto-generated method stub
+    protected String getCaptchaCode(File captchaFile, DownloadLink downloadLink) throws PluginException, InterruptedException {
         return getCaptchaCode(this.getHost(), captchaFile, 0, downloadLink, null, null);
     }
 
-    public String getCaptchaCode(String method, File file, int flag, DownloadLink link, String defaultValue, String explain) throws PluginException, InterruptedException {
+    protected String getCaptchaCode(String method, File file, int flag, DownloadLink link, String defaultValue, String explain) throws PluginException, InterruptedException {
         try {
             link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
             link.requestGuiUpdate();

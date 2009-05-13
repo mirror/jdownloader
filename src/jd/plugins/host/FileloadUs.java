@@ -37,7 +37,7 @@ public class FileloadUs extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -63,7 +63,7 @@ public class FileloadUs extends PluginForHost {
             // TODO: AntiCaptcha Method would allow simultanous connections
             String captchaurl = br.getRegex(Pattern.compile("below:</b></td></tr>\\s+<tr><td><img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             URLConnectionAdapter con = br.openGetConnection(captchaurl);
-            File file = this.getLocalCaptchaFile(this);
+            File file = this.getLocalCaptchaFile();
             Browser.download(file, con);
             String code = getCaptchaCode(file, downloadLink);
             form.put("code", code);
@@ -90,7 +90,7 @@ public class FileloadUs extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     // TODO: AntiCaptcha Method would allow simultanous connections
     // if user is quick; he can enter captchas one-by-one and then server allow
     // him simulatanous downloads
@@ -99,12 +99,12 @@ public class FileloadUs extends PluginForHost {
         return 10;
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://fileload.us/tos.html";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.fileload.us/", "lang", "english");
@@ -118,20 +118,20 @@ public class FileloadUs extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
     }
 

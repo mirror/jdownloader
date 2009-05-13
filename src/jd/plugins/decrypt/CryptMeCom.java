@@ -20,9 +20,6 @@ import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.skins.simple.SimpleGUI;
@@ -38,6 +35,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 
 public class CryptMeCom extends PluginForDecrypt {
 
@@ -62,18 +62,18 @@ public class CryptMeCom extends PluginForDecrypt {
                 cont = false;
                 Form form = br.getForm(0);
                 String captchaAddress = "http://crypt-me.com/rechen-captcha.php";
-                File captchaFile = this.getLocalCaptchaFile(this);
+                File captchaFile = this.getLocalCaptchaFile();
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
-                String captchaCode = getCaptchaCode(captchaFile, this, param);
+                String captchaCode = getCaptchaCode(captchaFile, param);
                 form.put("sicherheitscode", captchaCode);
                 br.submitForm(form);
             } else if (br.containsHTML("Bitte geben sie Captcha ein")) {
                 cont = false;
                 Form form = br.getForm(0);
                 String captchaAddress = br.getRegex("<img src=\"(http://crypt-me\\.com/captchanew/show\\.php.*?)\"").getMatch(0);
-                File captchaFile = this.getLocalCaptchaFile(this);
+                File captchaFile = this.getLocalCaptchaFile();
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
-                String captchaCode = getCaptchaCode(captchaFile, this, param);
+                String captchaCode = getCaptchaCode(captchaFile, param);
                 form.put("code", captchaCode);
                 br.submitForm(form);
             } else {
@@ -101,7 +101,7 @@ public class CryptMeCom extends PluginForDecrypt {
             for (int retry = 0; retry < 5; retry++) {
                 brc = br.cloneBrowser();
                 brc.getPage(url);
-                File file = this.getLocalCaptchaFile(this);
+                File file = this.getLocalCaptchaFile();
                 Form form = new Form();
                 form.setAction(url);
                 Browser.download(file, brc.cloneBrowser().openGetConnection("http://crypt-me.com/kreiscaptcha.php"));

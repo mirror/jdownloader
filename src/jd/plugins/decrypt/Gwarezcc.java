@@ -133,9 +133,9 @@ public class Gwarezcc extends PluginForDecrypt {
                             String challenge = rcBr.getRegex("challenge : '(.*?)',").getMatch(0);
                             String server = rcBr.getRegex("server : '(.*?)',").getMatch(0);
                             String captchaAddress = server + "image?c=" + challenge;
-                            File captchaFile = this.getLocalCaptchaFile(this);
+                            File captchaFile = this.getLocalCaptchaFile();
                             Browser.download(captchaFile, rcBr.openGetConnection(captchaAddress));
-                            String code = getCaptchaCode(captchaFile, this, param);
+                            String code = getCaptchaCode(captchaFile, param);
                             if (code == null) continue;
                             form.put("recaptcha_challenge_field", challenge);
                             form.put("recaptcha_response_field", code);
@@ -143,9 +143,9 @@ public class Gwarezcc extends PluginForDecrypt {
                         } else {
                             Form cap = br.getForm(0);
                             URLConnectionAdapter con = br.cloneBrowser().openGetConnection("captcha/captcha.php");
-                            File captchaFile = this.getLocalCaptchaFile(this);
+                            File captchaFile = this.getLocalCaptchaFile();
                             Browser.download(captchaFile, con);
-                            String code = getCaptchaCode(captchaFile, this, param);
+                            String code = getCaptchaCode(captchaFile, param);
                             cap.put("sicherheitscode", code);
                             br.submitForm(cap);
                         }

@@ -60,7 +60,7 @@ public class LinkbaseBiz extends PluginForDecrypt {
             return this.downloadlink;
         }
 
-        //@Override
+        // @Override
         public void run() {
             if (this.gotjob == true) {
                 logger.finest("LinkbaseBiz_Linkgrabber: id=" + new Integer(this.Worker_ID) + " started!");
@@ -104,7 +104,7 @@ public class LinkbaseBiz extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -126,13 +126,13 @@ public class LinkbaseBiz extends PluginForDecrypt {
                 String captchaurl = br.getRegex("<img src='(.*?captcha.*?)'").getMatch(0);
                 if (captchaurl != null) {
                     Form form = br.getForm(0);
-                    File captchaFile = this.getLocalCaptchaFile(this);
+                    File captchaFile = this.getLocalCaptchaFile();
                     try {
                         Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://linkbase.biz/" + captchaurl));
                     } catch (Exception e) {
                         throw new DecrypterException(DecrypterException.CAPTCHA);
                     }
-                    String captchaCode = getCaptchaCode(captchaFile, this, param);
+                    String captchaCode = getCaptchaCode(captchaFile, param);
                     form.put("captcha", captchaCode);
                     br.submitForm(form);
                     if (br.containsHTML("Das war leider Falsch")) {
@@ -188,7 +188,7 @@ public class LinkbaseBiz extends PluginForDecrypt {
         return sb.toString();
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

@@ -35,12 +35,12 @@ public class BitRoadNet extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://bitroad.net/tmpl/terms.php";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -54,13 +54,12 @@ public class BitRoadNet extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String previousLink = downloadLink.getStringProperty("directLink", null);
         String url = null;
@@ -72,19 +71,19 @@ public class BitRoadNet extends PluginForHost {
             dl1 = null;
             dl1 = br.getForm(0);
             if (dl1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            String id = dl1.getVarsMap().get("uid"); 
-            String captchaurl = "http://bitroad.net/cap/"+ id;
+            String id = dl1.getVarsMap().get("uid");
+            String captchaurl = "http://bitroad.net/cap/" + id;
             Browser br2 = br.cloneBrowser();
             br2.getPage(captchaurl);
             String code = br2.toString().replaceAll("\\W", "");
             dl1.setAction("http://bitroad.net/download3.php");
-            if (code.length()>7 || code.length()<3) { 
+            if (code.length() > 7 || code.length() < 3) {
                 logger.warning("Cannot use psp's captcha method, trying normal OCR...");
-                captchaurl = captchaurl + ".jpg"; 
+                captchaurl = captchaurl + ".jpg";
                 URLConnectionAdapter con = br.openGetConnection(captchaurl);
-                File file = this.getLocalCaptchaFile(this);
+                File file = this.getLocalCaptchaFile();
                 Browser.download(file, con);
-                code = getCaptchaCode("this", file, downloadLink);
+                code = getCaptchaCode(file, downloadLink);
             }
             dl1.put("cap", code);
             br.submitForm(dl1);
@@ -92,8 +91,7 @@ public class BitRoadNet extends PluginForHost {
             url = br.getRegex("<div id=\"links\"[^>]*><a href='(.*?)'").getMatch(0);
             this.sleep(2000, downloadLink);
             downloadLink.setProperty("directLink", url);
-        }
-        else {
+        } else {
             url = previousLink;
         }
         dl = br.openDownload(downloadLink, url, true, 1);
@@ -109,20 +107,20 @@ public class BitRoadNet extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         link.setProperty("directLink", null);
     }

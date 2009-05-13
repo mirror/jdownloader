@@ -25,12 +25,12 @@ public class NetGullCom extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.netgull.com/rules.php";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -43,28 +43,29 @@ public class NetGullCom extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
 
-        File captchaFile = this.getLocalCaptchaFile(this);
+        File captchaFile = this.getLocalCaptchaFile();
         try {
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://www.netgull.com/captcha.php"));
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         /* CaptchaCode holen */
-        captchaCode = getCaptchaCode("egoshare.com", captchaFile, downloadLink);
+        captchaCode = getCaptchaCode(captchaFile, downloadLink);
         Form form = br.getFormbyProperty("name", "myform");
         if (form == null) form = br.getForm(1);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);;
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        ;
         form.setMethod(MethodType.POST);
         if (form.containsHTML("name=downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -106,20 +107,20 @@ public class NetGullCom extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

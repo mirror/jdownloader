@@ -35,7 +35,7 @@ public class XinkIt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -49,9 +49,9 @@ public class XinkIt extends PluginForDecrypt {
 
                 String captchaAdress = "http://xink.it/captcha-" + br.getRegex("src=\"captcha-(.*?)\"").getMatch(0);
 
-                File captchaFile = getLocalCaptchaFile(this);
+                File captchaFile = getLocalCaptchaFile();
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAdress));
-                String captchaCode = getCaptchaCode("linkcrypt.com", captchaFile, param);
+                String captchaCode = getCaptchaCode(captchaFile, param);
 
                 Form captchaForm = br.getForm(0);
                 captchaForm.put("captcha", captchaCode);
@@ -75,7 +75,7 @@ public class XinkIt extends PluginForDecrypt {
 
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

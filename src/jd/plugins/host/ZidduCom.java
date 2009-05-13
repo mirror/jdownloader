@@ -48,7 +48,7 @@ public class ZidduCom extends PluginForHost {
         form = br.getFormbyProperty("name", "securefrm");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         URLConnectionAdapter con = br.openGetConnection("http://www.ziddu.com/CaptchaSecurityImages.php?width=40&height=38&characters=2");
-        File file = this.getLocalCaptchaFile(this);
+        File file = this.getLocalCaptchaFile();
         Browser.download(file, con);
         String code = getCaptchaCode(file, downloadLink);
         form.put("securitycode", code);

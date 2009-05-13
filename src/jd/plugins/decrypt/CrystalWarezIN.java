@@ -40,16 +40,16 @@ public class CrystalWarezIN extends PluginForDecrypt {
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String parameter = param.toString();
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();        
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         synchronized (lock) {
             br.getPage(parameter);
             if (parameter.matches(patternLink_Protected)) {
                 String code = null;
                 while (code == null) {
-                    File file = this.getLocalCaptchaFile(this);
+                    File file = this.getLocalCaptchaFile();
                     URLConnectionAdapter con = br.cloneBrowser().openGetConnection("http://crystal-warez.in/securimage_show.php");
                     Browser.download(file, con);
-                    code = getCaptchaCode(file, this, param);
+                    code = getCaptchaCode(file, param);
                     Form form = br.getForm(2);
                     form.put("captcha", code);
                     br.submitForm(form);

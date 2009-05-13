@@ -42,7 +42,7 @@ public class UrlShieldnet extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -104,11 +104,11 @@ public class UrlShieldnet extends PluginForDecrypt {
                     String captchaurl = br.getRegex(Pattern.compile("src=\"(/getkey\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                     form = br.getForm(0);
                     /* Captcha zu verarbeiten */
-                    captchaFile = getLocalCaptchaFile(this);
+                    captchaFile = getLocalCaptchaFile();
 
                     br.cloneBrowser().getDownload(captchaFile, "http://www.urlshield.net" + captchaurl);
                     /* CaptchaCode holen */
-                    captchaCode = getCaptchaCode(captchaFile, this, param);
+                    captchaCode = getCaptchaCode(captchaFile, param);
                     form.put("userkey", captchaCode);
 
                     br.submitForm(form);
@@ -119,7 +119,7 @@ public class UrlShieldnet extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

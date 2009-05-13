@@ -33,12 +33,12 @@ public class UploadBoxCom extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://uploadbox.com/en/terms/";
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         String id = new Regex(parameter.getDownloadURL(), "files/([0-9a-zA-Z]+)").getMatch(0);
@@ -53,7 +53,7 @@ public class UploadBoxCom extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink link) throws Exception {
         getFileInformation(link);
         Form form = br.getForm(1);
@@ -65,7 +65,7 @@ public class UploadBoxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, ((Integer.parseInt(strWaittimeArray[0]) * 3600) + (Integer.parseInt(strWaittimeArray[1]) * 60) + Integer.parseInt(strWaittimeArray[2])) * 1000l);
         }
         form = br.getForm(1);
-        File file = this.getLocalCaptchaFile(this);
+        File file = this.getLocalCaptchaFile();
         String captchaUrl = form.getRegex("captcha.*?src=\"(.*?)\"").getMatch(0);
         if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         URLConnectionAdapter con = br.cloneBrowser().openGetConnection(captchaUrl);
@@ -81,21 +81,21 @@ public class UploadBoxCom extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
     }
 
