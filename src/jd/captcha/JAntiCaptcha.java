@@ -302,9 +302,9 @@ public class JAntiCaptcha {
     private Image sourceImage;
 
     public JAntiCaptcha(String methodsPath, String methodName) {
-        methodsPath = JDUtilities.getJACMethodsDirectory() + methodName;
-        logger.info(methodsPath);
         methodDirName = JACMethod.forServiceName(methodName);
+        methodsPath = JDUtilities.getJACMethodsDirectory() + methodDirName;
+        logger.info(methodsPath);
 
         getJACInfo();
 

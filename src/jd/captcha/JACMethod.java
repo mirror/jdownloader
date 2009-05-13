@@ -23,7 +23,6 @@ public class JACMethod implements Comparable<JACMethod> {
     private static Vector<JACMethod> methods = null;
 
     public static String forServiceName(String service) {
-        logger.info("Requesting filename for the service " + service);
         for (JACMethod method : getMethods()) {
             if (service.equalsIgnoreCase(method.getServiceName())) {
                 logger.info("Found JAC method for the service " + service + " in directory " + method.getFileName());
