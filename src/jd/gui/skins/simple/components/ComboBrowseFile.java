@@ -174,6 +174,14 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         this.add(btnBrowse, "wrap");
     }
 
+    public JButton getButton() {
+        return btnBrowse;
+    }
+
+    public JComboBox getInput() {
+        return cmboInput;
+    }
+
     /**
      * @param approveButtonText
      *            the approveButtonText to set

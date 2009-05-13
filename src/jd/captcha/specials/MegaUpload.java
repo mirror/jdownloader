@@ -31,6 +31,7 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.UTILITIES;
 import jd.controlling.JDLogger;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.Colors;
@@ -76,15 +77,16 @@ public class MegaUpload {
                 }
             }
 
+            first=first.getSimplified(captcha.owner.getJas().getDouble("simplifyFaktor"));
             LetterComperator r = captcha.owner.getLetter(first);
             if (r == null) return null;
             /*
              * param.scanAngleLeft=0; param.scanAngleRight=0;
              * param.scanAngleSteps=2;
              */
-            captcha.owner.getJas().set("scanAngleLeft", -10);
-            captcha.owner.getJas().set("scanAngleRight", 10);
-            captcha.owner.getJas().set("scanAngleSteps", 1);
+//            captcha.owner.getJas().set("scanAngleLeft", -10);
+//            captcha.owner.getJas().set("scanAngleRight", 10);
+//            captcha.owner.getJas().set("scanAngleSteps", 1);
             // captcha.owner.setShowDebugGui(true);
             // LetterComperator.CREATEINTERSECTIONLETTER = true;
             // LetterComperator.MATCH_TABLE =new
@@ -98,7 +100,10 @@ public class MegaUpload {
             // int[] offset = new
             // int[]{r.getIntersectionStartX(),r.getIntersectionStartY()};
             int[] offset = r.getPosition();
+
             if (offset == null) return null;
+            offset[0]*=captcha.owner.getJas().getDouble("simplifyFaktor");
+            offset[1]*=captcha.owner.getJas().getDouble("simplifyFaktor");
             for (int x = offset[0]; x < offset[0] + b.getWidth(); x++) {
 
                 for (int y = offset[1]; y < offset[1] + b.getHeight(); y++) {
@@ -187,7 +192,7 @@ public class MegaUpload {
 
     public static void saveBoders(File file) throws IOException {
 
-        String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
+        String methodsPath = JDUtilities.getResourceFile("jd/captcha/methods").getAbsolutePath();
         String hoster = "megaupload.com2";
 
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
@@ -326,10 +331,10 @@ public class MegaUpload {
     }
 
     private static void go() throws IOException {
-        String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
+        String methodsPath =JDUtilities.getResourceFile("jd/captcha/methods").getAbsolutePath();
         String hoster = "megaupload.com2";
 
-        JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
+        final JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
 
         // jac.setShowDebugGui(true);
         // LetterComperator.CREATEINTERSECTIONLETTER = true;
@@ -339,16 +344,21 @@ public class MegaUpload {
         // "+JAntiCaptcha.hasMethod(methodsPath, hoster));
 
         //
-        // Megaupload2.writeDB();
-        // jac.importDB(JDUtilities.getResourceFile("caps/mu/explain/letters"));
-        // // jac.importDB();
-        // // MegaUpload.main(null);
-        // //
-        // //jac.displayLibrary();
-        // System.out.println("LETTERDB: "+jac.letterDB.size());
-        // jac.cleanLibrary(10.0);
-        // System.out.println("LETTERDB after filter: "+jac.letterDB.size());
-        // jac.displayLibrary();
+////        // Megaupload2.writeDB();
+//         new GuiRunnable(){
+//
+//            @Override
+//            public Object runSave() {
+//                jac.importDB(JDUtilities.getResourceFile("caps/mu/explain/letters"));
+//                return null;
+//            }
+//             
+//         }.waitForEDT();
+//     
+//         System.out.println("LETTERDB: "+jac.letterDB.size());
+////         jac.cleanLibrary(10.0);
+//         System.out.println("LETTERDB after filter: "+jac.letterDB.size());
+//         jac.displayLibrary();
 
         // jac.getJas().set("preScanFilter", 0);
         // jac.trainCaptcha(new

@@ -144,7 +144,7 @@ public class JAntiCaptcha {
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, methodName);
         File[] entries = captchaDir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
                 if (pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
 
@@ -1388,7 +1388,11 @@ public class JAntiCaptcha {
             letter.clean();
 
             letter.removeSmallObjects(0.3, 0.5, 10);
+            letter = letter.getSimplified(getJas().getDouble("simplifyFaktor"));
+            letter.setDecodedValue(let);
+            if (letter == null) continue;
             // BasicWindow.showImage(letter.getImage(1),element.getName());
+
             letterDB.add(letter);
 
             // letter.resizetoHeight(25);
@@ -1737,7 +1741,7 @@ public class JAntiCaptcha {
             }
 
             // String methodsPath = UTILITIES.getFullPath(new String[] {
-            // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
+            //JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
             // "jd", "captcha", "methods" });
             // String hoster = "rscat.com";
             // JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
@@ -1783,8 +1787,13 @@ public class JAntiCaptcha {
 
         Collections.sort(letterDB, new Comparator<Letter>() {
             public int compare(Letter a, Letter b) {
-                return a.getDecodedValue().compareToIgnoreCase(b.getDecodedValue()) * -1;
+                try {
+                    return a.getDecodedValue().compareToIgnoreCase(b.getDecodedValue()) * -1;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return 0;
 
+                }
             }
 
         });
