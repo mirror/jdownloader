@@ -1,5 +1,4 @@
 <jDownloader>
-  <method name="JAntiCaptcha_MEgaupload" author="Coalado" />
+  <method name="megaupload.com" author="Coalado" services="megaupload.com;megarotic.com"/>
   <format type="gif" letterNum="4"/>
-
 </jDownloader>

@@ -395,7 +395,7 @@ public class Megauploadcom extends PluginForHost {
 
                 if (code == null) {
 
-                    code = getCaptchaCode("megaupload.com2", file, link);
+                    code = getCaptchaCode(file, link);
 
                 }
                 if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 1) {

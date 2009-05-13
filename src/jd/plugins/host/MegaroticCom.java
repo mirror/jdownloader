@@ -254,7 +254,7 @@ public class MegaroticCom extends PluginForHost {
 
         Browser.download(file, con);
 
-        String code = getCaptchaCode("megaupload.com2", file, downloadLink);
+        String code = getCaptchaCode(file, downloadLink);
 
         br.postPage(captchaPost, HTMLParser.joinMap(fields, "=", "&") + "&imagestring=" + code);
         if (br.containsHTML(SIMPLEPATTERN_CAPTCHA_URl)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);

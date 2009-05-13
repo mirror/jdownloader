@@ -89,7 +89,7 @@ public abstract class PluginForHost extends Plugin {
 
     }
 
-    protected String getCaptchaCode(String methodname, File captchaFile, DownloadLink downloadLink) throws PluginException, InterruptedException {
+    protected String getCasptchaCode(String methodname, File captchaFile, DownloadLink downloadLink) throws PluginException, InterruptedException {
         return getCaptchaCode(methodname, captchaFile, 0, downloadLink, null, null);
     }
 
