@@ -90,7 +90,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     // @Override
     public String getHost() {
-        return JDLocale.L("plugins.optional.trayicon.name", "Tray Icon(minimizer)");
+        return JDLocale.L("plugins.optional.trayicon.name", "Tray Icon (Minimizer)");
     }
 
     // @Override
