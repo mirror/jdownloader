@@ -2041,7 +2041,7 @@ public class JAntiCaptcha {
         if (code.indexOf("-") < 0) {
             String[] oldName = captchafile.getName().split("\\.");
             String ext = oldName[oldName.length - 1];
-            String newName = captchafile.getParentFile().getAbsolutePath() + UTILITIES.FS + "captcha_" + getMethodDirName() + "_code" + code + "." + ext;
+            String newName = captchafile.getParentFile().getAbsolutePath() + "/captcha_" + getMethodDirName() + "_code" + code + "." + ext;
             captchafile.renameTo(new File(newName));
         }
         int ret = 0;

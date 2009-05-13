@@ -40,7 +40,6 @@ import jd.utils.JDUtilities;
 public class JACController {
     private static BrowseFile chooser;
     private static JComboBox methods;
-    private final static String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
 
     public static void showDialog(final boolean isTrain) {
         JFrame frame = new JFrame();
@@ -54,7 +53,7 @@ public class JACController {
         frame.setAlwaysOnTop(true);
         frame.setLocation(20, 20);
         JPanel panel = new JPanel(new GridBagLayout());
-        File[] meths = new File(methodsPath).listFiles(new FileFilter() {
+        File[] meths = new File(UTILITIES.getMethodDir()).listFiles(new FileFilter() {
 
             public boolean accept(File pathname) {
                 if (pathname.isDirectory()) { return true; }
@@ -111,7 +110,7 @@ public class JACController {
 
     public JACController(File path, String methode) {
         this.path = path;
-        jac = new JAntiCaptcha(methodsPath, methode);
+        jac = new JAntiCaptcha(UTILITIES.getMethodDir(), methode);
     }
 
     public void showCaptcha() {

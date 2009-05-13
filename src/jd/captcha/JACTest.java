@@ -40,14 +40,12 @@ public class JACTest {
     }
 
     private void go() {
-        String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
         String hoster = "megaupload.com2";
 
-        JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
+        JAntiCaptcha jac = new JAntiCaptcha(UTILITIES.getMethodDir(), hoster);
 
-
-// jac.setShowDebugGui(true);
-//    LetterComperator.CREATEINTERSECTIONLETTER = true;
+        // jac.setShowDebugGui(true);
+        // LetterComperator.CREATEINTERSECTIONLETTER = true;
         //
         // jac.exportDB();
         // UTILITIES.getLogger().info("has method:
@@ -55,15 +53,15 @@ public class JACTest {
 
         //
         // Megaupload2.writeDB();
-//      jac.importDB(JDUtilities.getResourceFile("caps/mu/explain/letters"));
-////         jac.importDB();
-//        // MegaUpload.main(null);
-//        //
-//        //jac.displayLibrary();
-//         System.out.println("LETTERDB: "+jac.letterDB.size());
-//        jac.cleanLibrary(10.0);
-//       System.out.println("LETTERDB after filter: "+jac.letterDB.size());
-//        jac.displayLibrary();
+        // jac.importDB(JDUtilities.getResourceFile("caps/mu/explain/letters"));
+        // // jac.importDB();
+        // // MegaUpload.main(null);
+        // //
+        // //jac.displayLibrary();
+        // System.out.println("LETTERDB: "+jac.letterDB.size());
+        // jac.cleanLibrary(10.0);
+        // System.out.println("LETTERDB after filter: "+jac.letterDB.size());
+        // jac.displayLibrary();
 
         // jac.getJas().set("preScanFilter", 0);
         // jac.trainCaptcha(new
@@ -72,7 +70,7 @@ public class JACTest {
         // "securedin1730080724541.jpg"),4);
         File[] list = JDUtilities.getResourceFile("/captchas/" + hoster).listFiles();
         int id = (int) (Math.random() * (list.length - 1));
-//id=21;
+        // id=21;
         System.out.println("ID: " + id);
         File f = list[id];
 
@@ -83,7 +81,7 @@ public class JACTest {
         }
         // UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.
         // loadImage(new
-        //File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()
+        // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()
         // +"/jd/captcha/methods"+
         // "/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")),
         // null, "rapidshare.com"));

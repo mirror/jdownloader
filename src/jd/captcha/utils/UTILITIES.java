@@ -28,6 +28,7 @@ import javax.swing.JFrame;
 
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.GuiRunnable;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse beinhaltet mehrere Hilfsfunktionen
@@ -35,11 +36,6 @@ import jd.gui.skins.simple.GuiRunnable;
  * @author JD-Team
  */
 public class UTILITIES {
-
-    /**
-     * File Seperator
-     */
-    public static String FS = System.getProperty("file.separator");
 
     private static Logger logger = JDLogger.getLogger();
 
@@ -61,6 +57,10 @@ public class UTILITIES {
         return null;
     }
 
+    public static String getMethodDir() {
+        return UTILITIES.getFullPath(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), JDUtilities.getJACMethodsDirectory());
+    }
+
     /**
      * Gibt die File zurück der im array entries übergeben wurde. der passende
      * FS wird eingesetzt
@@ -68,7 +68,7 @@ public class UTILITIES {
      * @param entries
      * @return Pfad als File
      */
-    public static File getFullFile(String[] entries) {
+    public static File getFullFile(String... entries) {
         return new File(UTILITIES.getFullPath(entries));
     }
 
@@ -79,11 +79,11 @@ public class UTILITIES {
      * @param entries
      * @return Pfad als String
      */
-    public static String getFullPath(String[] entries) {
+    public static String getFullPath(String... entries) {
         StringBuilder ret = new StringBuilder();
         for (int i = 0; i < entries.length - 1; i++) {
             ret.append(entries[i]);
-            ret.append(FS);
+            ret.append("/");
         }
         ret.append(entries[entries.length - 1]);
         return ret.toString();
