@@ -46,6 +46,7 @@ gui.images.remove_failed=default/remove-failed
 gui.images.remove_disabled=default/list-remove_disabled
 gui.images.next = default/media-playback-start
 gui.images.save = default/document-save
+gui.images.close = default/close
 gui.images.stop = default/media-playback-stop
 gui.images.terminal = default/utilities-terminal
 gui.images.update_manager = default/software-update-available
