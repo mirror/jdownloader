@@ -139,9 +139,9 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             input[0] = new JDTextArea();
             input[0].setBorder(BorderFactory.createLineBorder(input[0].getBackground().darker()));
             input[0].setEnabled(configEntry.isEnabled());
-            Dimension dim = input[0].getPreferredSize();
-            dim.height = 20;
-            input[0].setPreferredSize(dim);
+//            Dimension dim = input[0].getPreferredSize();
+//            dim.height = 20;
+        //  input[0].setPreferredSize(new Dimension(-1,20));
             doc = (PlainDocument) ((JDTextArea) input[0]).getDocument();
             doc.addDocumentListener(this);
 

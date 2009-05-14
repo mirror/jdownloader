@@ -85,7 +85,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
             for (JComponent c : entry.getInput()) {
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_TEXTAREA:
-                    panel.add(c, "spanx,gapright 20");
+                   panel.add(c, "spanx,gapright 20");
 //                    panel.add(new JScrollPane(c), "spanx,gapright 20,growy,pushy");
 //                    viewport = false;
                     break;

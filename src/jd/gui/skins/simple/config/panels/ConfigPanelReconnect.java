@@ -17,7 +17,7 @@
 package jd.gui.skins.simple.config.panels;
 
 import java.awt.Color;
-import java.awt.Dimension;
+import java.awt.ComponentOrientation;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -182,10 +182,9 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         panel.add(Factory.createHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.methods", "Reconnect Methods"), JDTheme.II("gui.images.reconnect_selection", 32, 32))), "spanx");
         tabbed = new JTabbedPane();
         panel.add(tabbed, "spanx,pushy,growy");
-        // tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-        // tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+//        tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+//        tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbed.setTabPlacement(SwingConstants.TOP);
-        tabbed.setPreferredSize(new Dimension(100, 300));
         tabbed.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
@@ -238,9 +237,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         JScrollPane sp;
         //
         add(sp = new JScrollPane(panel));
-//        sp.setHorizontalScrollBar(null);
-//        sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-
+     
         // setReconnectType();
 
     }

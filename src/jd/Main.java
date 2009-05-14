@@ -44,6 +44,7 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JScrollBar;
 
 import jd.captcha.JACController;
 import jd.captcha.JACMethod;
@@ -495,7 +496,7 @@ public class Main {
         } catch (InterruptedException e) {
             LOGGER.log(Level.SEVERE, "Exception occured", e);
         }
- 
+
         if (!Main.isBeta()) new PackageManager().interact(this);
 
     }
