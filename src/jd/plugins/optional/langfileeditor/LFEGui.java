@@ -125,8 +125,12 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     public LFEGui() {
         subConfig = SubConfiguration.getConfig("ADDONS_LANGFILEEDITOR");
         showGui();
+        
     }
-
+public boolean needsViewport(){
+    return false;
+    
+}
     private void showGui() {
         colorizeDone = subConfig.getBooleanProperty(PROPERTY_COLORIZE_DONE, false);
         colorizeMissing = subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, true);

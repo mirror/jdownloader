@@ -533,4 +533,12 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
             break;
         }
     }
+    public void showDownloadLinkInfo(DownloadLink downloadLink) {
+        filePackageInfo.setDownloadLink(downloadLink);
+        JDCollapser.getInstance().setContentPanel(filePackageInfo);
+        JDCollapser.getInstance().setTitle(JDLocale.L("gui.linkgrabber.infopanel.link.title", "Link information"));
+        JDCollapser.getInstance().setVisible(true);
+        JDCollapser.getInstance().setCollapsed(false);
+        
+    }
 }

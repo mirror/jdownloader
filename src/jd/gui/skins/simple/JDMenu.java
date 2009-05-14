@@ -34,6 +34,7 @@ public class JDMenu extends JMenu {
             return m2;
         case MenuItem.CONTAINER:
             JMenu m3 = new JMenu(mi.getTitle());
+            m3.setIcon(mi.getIcon());
             JMenuItem c;
             if (mi.getSize() > 0) for (int i = 0; i < mi.getSize(); i++) {
                 c = getJMenuItem(mi.get(i));

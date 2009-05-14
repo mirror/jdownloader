@@ -11,10 +11,11 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
+import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
-public class JDCollapser extends JPanel implements MouseListener {
+public class JDCollapser extends JPanel {
 
     private static final long serialVersionUID = 6864885344815243560L;
     private static JDCollapser INSTANCE = null;
@@ -37,11 +38,12 @@ public class JDCollapser extends JPanel implements MouseListener {
         title.setIconTextGap(15);
         add(new JSeparator(), "growx,pushx,gapright 10");
         JButton bt;
-        add(bt = new JButton(JDTheme.II("gui.images.bad", 16, 16)), "gapright 10");
-        // bt.setContentAreaFilled(false);
-        // bt.setBorder(null);
-        // bt.setOpaque(false);
-        // bt.setBorderPainted(false);
+        add(bt = new JButton(JDTheme.II("gui.images.close", 16, 16)), "gapright 10");
+        bt.setContentAreaFilled(false);
+        bt.setBorder(null);
+        bt.setOpaque(false);
+        bt.setBorderPainted(false);
+        bt.setToolTipText(JDLocale.L("gui.tooltips.infocollapser", "Click to close and save"));
         bt.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -52,28 +54,11 @@ public class JDCollapser extends JPanel implements MouseListener {
         content = new JPanel();
         add(content);
         this.setVisible(true);
-        // this.setCollapsed(true);
-        this.addMouseListener(this);
+    
 
     }
 
-    public void mouseClicked(MouseEvent e) {
-    }
 
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mousePressed(MouseEvent e) {
-    }
-
-    public void mouseReleased(MouseEvent e) {
-
-        this.setCollapsed(true);
-
-    }
 
     public void setCollapsed(boolean b) {
         this.setVisible(!b);

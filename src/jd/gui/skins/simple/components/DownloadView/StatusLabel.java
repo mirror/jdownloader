@@ -22,7 +22,7 @@ import org.jdesktop.swingx.renderer.PainterAware;
 public class StatusLabel extends JPanel implements PainterAware {
 
     private static final long serialVersionUID = -378709535509849986L;
-    private static final int ICONCOUNT = 3;
+    public static final int ICONCOUNT = 3;
     public JRendererLabel left;
     public JRendererLabel[] rights = new JRendererLabel[3];
     public JLabel righter;

@@ -566,7 +566,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 if (path.getLastPathComponent() instanceof FilePackage) {
                     panel.showFilePackageInfo((FilePackage) path.getLastPathComponent());
                 } else {
-                    panel.showFilePackageInfo(((DownloadLink) path.getLastPathComponent()).getFilePackage());
+                    panel.showDownloadLinkInfo(((DownloadLink) path.getLastPathComponent()));
                 }
             }
         }

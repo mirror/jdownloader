@@ -414,14 +414,14 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
                 counter++;
             }
-            if (dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
+            if (counter<=StatusLabel.ICONCOUNT&&dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
                 statuspanel.rights[counter].setIcon(imgExtract);
                 if (counter > 0) sb.append(" | ");
                 sb.append(strTTExtract);
 
                 counter++;
             }
-
+if(counter<=StatusLabel.ICONCOUNT){
             switch (dLink.getPriority()) {
             case 0:
             default:
@@ -455,6 +455,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 counter++;
                 break;
             }
+}
             statuspanel.setToolTipText(sb.toString());
             statuspanel.clearIcons(counter);
             statuspanel.setBorder(null);

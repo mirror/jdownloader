@@ -19,6 +19,8 @@ package jd.config;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
+import javax.swing.ImageIcon;
+
 import jd.plugins.Plugin;
 
 public class MenuItem extends Property {
@@ -39,6 +41,7 @@ public class MenuItem extends Property {
     private boolean selected;
     private String title;
     String accelerator = null;
+    private ImageIcon icon;
 
     public MenuItem(int id) {
         this(id, null, -1);
@@ -144,6 +147,16 @@ public class MenuItem extends Property {
     public MenuItem setTitle(String title) {
         this.title = title;
         return this;
+    }
+
+    public MenuItem setIcon(ImageIcon ii) {
+        this.icon=ii;
+        return this;
+        
+    }
+
+    public ImageIcon getIcon() {
+        return icon;
     }
 
 }

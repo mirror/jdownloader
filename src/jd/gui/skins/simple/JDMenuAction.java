@@ -38,7 +38,8 @@ public class JDMenuAction extends AbstractAction {
         if (JDUtilities.getJavaVersion() >= 1.6) {
             putValue(SELECTED_KEY, mi.isSelected());
         }
-
+        putValue(AbstractAction.SMALL_ICON, mi.getIcon());
+        putValue(AbstractAction.LARGE_ICON_KEY, mi.getIcon());
         putValue(NAME, mi.getTitle());
 
     }
@@ -55,7 +56,7 @@ public class JDMenuAction extends AbstractAction {
         return menuItem.getActionID();
     }
 
-    //@Override
+    // @Override
     public boolean isEnabled() {
         return menuItem.isEnabled();
     }

@@ -704,7 +704,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         addDownloadTask();
         addLinkgrabberTask();
         addConfigTask();
-        addAddonTask();
+//        addAddonTask();
         addLogTask();
 
         progressBar = new TabProgress();

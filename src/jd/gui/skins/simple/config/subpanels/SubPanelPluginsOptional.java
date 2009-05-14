@@ -120,7 +120,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
                     }
                 }
                 configuration.save();
-                SimpleGUI.CURRENTGUI.getAddonPanel().initGUI();
+//                SimpleGUI.CURRENTGUI.getAddonPanel().initGUI();
             }
         }
 
