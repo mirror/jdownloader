@@ -146,7 +146,7 @@ public class JACMethod implements Comparable<JACMethod> {
     }
 
     public int compareTo(JACMethod o) {
-        return (servicename + " " + filename).toLowerCase().compareTo((o.getServiceName() + " " + o.getFileName()).toLowerCase());
+        return (servicename + " " + filename).compareToIgnoreCase(o.getServiceName() + " " + o.getFileName());
     }
 
 }

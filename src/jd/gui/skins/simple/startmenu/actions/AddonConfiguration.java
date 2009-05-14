@@ -8,6 +8,8 @@ import jd.gui.skins.simple.tasks.ConfigTaskPane;
 
 public class AddonConfiguration extends StartAction {
 
+    private static final long serialVersionUID = 5296731283280444433L;
+
     public AddonConfiguration() {
         super("action.addonconfig", "gui.images.taskpanes.addons");
     }

@@ -2,8 +2,6 @@ package jd.gui.skins.simple;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -31,8 +29,7 @@ public class JDCollapser extends JPanel {
 
     private JDCollapser() {
         super(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[]5[fill,grow]"));
-        // this.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0,
-        // getBackground().darker()));
+
         add(title = new JLabel(""), "split 3,gapleft 5,gapbottom 0,gaptop 0");
         title.setIcon(JDTheme.II("gui.images.sort", 24, 24));
         title.setIconTextGap(15);
@@ -54,11 +51,8 @@ public class JDCollapser extends JPanel {
         content = new JPanel();
         add(content);
         this.setVisible(true);
-    
 
     }
-
-
 
     public void setCollapsed(boolean b) {
         this.setVisible(!b);
@@ -71,7 +65,6 @@ public class JDCollapser extends JPanel {
 
         if (this.panel != null) {
             this.panel.onHide();
-
         }
         content.removeAll();
         this.panel = panel2;
@@ -81,11 +74,7 @@ public class JDCollapser extends JPanel {
 
         panel.onDisplay();
 
-        // JScrollPane sp;
-
         content.add(panel);
-
-        // getContentPane().add(panel);
         setCollapsed(false);
         revalidate();
         content.revalidate();

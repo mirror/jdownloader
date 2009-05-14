@@ -18,6 +18,8 @@ import javax.swing.border.LineBorder;
 import net.miginfocom.swing.MigLayout;
 
 public class MultiProgressBar extends JPanel {
+
+    private static final long serialVersionUID = -7489358722203326526L;
     private ArrayList<ProgressEntry> entries;
     private long maximum;
     private long value;
@@ -39,7 +41,6 @@ public class MultiProgressBar extends JPanel {
         f.add(pm);
         f.pack();
         f.setVisible(true);
-
     }
 
     public Dimension getPreferredSize() {

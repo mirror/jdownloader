@@ -70,7 +70,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
             case 1:
                 return JDLocale.L("gui.config.jac.column.plugin", "Pluginname");
             case 2:
-                return JDLocale.L("gui.config.jac.column.method", "Verwendete Methode");
+                return JDLocale.L("gui.config.jac.column.usedmethod", "Verwendete Methode");
             case 3:
                 return JDLocale.L("gui.config.jac.column.author", "Author");
             }

@@ -32,7 +32,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -126,14 +125,14 @@ public class JDUtilities {
     private static File JD_HOME = null;
 
     /**
-     * nur 1 UserIO Dialog gleichzeitig (z.b.PW,Captcha)
+     * nur 1 UserIO Dialog gleichzeitig (z.b. PW, Captcha)
      */
     public static Integer userio_lock = new Integer(0);
 
     private static String LATEST_IP = null;
 
     private static String REVISION;
-    
+
     private static String[] jdArgs = new String[1];
 
     public static String getSimString(String a, String b) {
@@ -319,8 +318,7 @@ public class JDUtilities {
     }
 
     /**
-     * verschlüsselt string mit der übergebenen encryption
-     * (Containerpluginname
+     * verschlüsselt string mit der übergebenen encryption (Containerpluginname
      * 
      * @param string
      * @param encryption
@@ -432,8 +430,8 @@ public class JDUtilities {
     }
 
     /**
-     * Gibt das aktuelle Working Directory zurück. Beim FileBrowser etc wird
-     * das gebraucht.
+     * Gibt das aktuelle Working Directory zurück. Beim FileBrowser etc wird das
+     * gebraucht.
      * 
      * @return
      */
@@ -803,35 +801,30 @@ public class JDUtilities {
         }
 
     }
-    
+
     public static void setJDargs(String[] args) {
-    	jdArgs = args;
+        jdArgs = args;
     }
 
     public static void restartJD() {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
-        
-        RuntimeMXBean RuntimemxBean = ManagementFactory.getRuntimeMXBean();
-        List<String> lst = RuntimemxBean.getInputArguments();
+
+        List<String> lst = ManagementFactory.getRuntimeMXBean().getInputArguments();
         ArrayList<String> jargs = new ArrayList<String>();
 
-        for(String h : lst) {
-        	if(h.contains("Xmx")) {
-        		if(Runtime.getRuntime().maxMemory() < 533000000) {
-        	        jargs.add("-Xmx512m");
-        	        continue;
-        		}
-        	}
-        	jargs.add(h);
+        for (String h : lst) {
+            if (h.contains("Xmx")) {
+                if (Runtime.getRuntime().maxMemory() < 533000000) {
+                    jargs.add("-Xmx512m");
+                    continue;
+                }
+            }
+            jargs.add(h);
         }
         jargs.add("-jar");
         jargs.add("-JDownloader.jar");
-        
-        String[] javaArgs = new String[jargs.size()];
-        for(int i=0; i<jargs.size(); i++) {
-        	javaArgs[i] = jargs.get(i);
-        }
-        
+
+        String[] javaArgs = jargs.toArray(new String[jargs.size()]);
         String[] finalArgs = new String[jdArgs.length + javaArgs.length];
         System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
         System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);
@@ -995,7 +988,7 @@ public class JDUtilities {
                 if (e.getMessage().equals("Database broken!")) {
                     logger.severe("Database broken! Creating fresh Database");
 
-                    if (!new File(configpath + "database.script").delete()||!new File(configpath + "database.properties").delete()) {
+                    if (!new File(configpath + "database.script").delete() || !new File(configpath + "database.properties").delete()) {
                         logger.severe("Could not delete broken Database");
                         JOptionPane.showMessageDialog(null, "Could not delete broken database. Please remove the JD_HOME/config directory and restart JD");
 
@@ -1007,7 +1000,7 @@ public class JDUtilities {
                 } catch (Exception e1) {
                     JDLogger.exception(e1);
                     JOptionPane.showMessageDialog(null, "Could not create database. Please remove the JD_HOME/config directory and restart JD");
-                   
+
                     System.exit(1);
                 }
             }

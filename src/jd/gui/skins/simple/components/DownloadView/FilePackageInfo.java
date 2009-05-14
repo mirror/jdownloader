@@ -1,6 +1,5 @@
 package jd.gui.skins.simple.components.DownloadView;
 
-import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -39,8 +38,6 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
     private JCheckBox chbExtract;
 
     private JTabbedPane tabbedPane;
-
-    private JPanel simplePanel, extendedPanel;
 
     private FilePackage fp = null;
 
@@ -117,7 +114,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         this.add(tabbedPane, "grow");
     }
 
-    private Component createFilePackageInfo() {
+    private JPanel createFilePackageInfo() {
         txtName = new JDTextField();
         txtName.setAutoSelect(true);
         txtName.addActionListener(this);
@@ -138,7 +135,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         chbExtract.setSelected(true);
         chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
         chbExtract.addActionListener(this);
-   
+
         chbUseSubdirectory = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.useSubdirectory", "Use Subdirectory"));
         chbUseSubdirectory.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
         chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
@@ -162,7 +159,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         return panel;
     }
 
-    private Component createLinkInfo() {
+    private JPanel createLinkInfo() {
         txtpathlabel = new JLabel();
         progressBarDownloadLink = new MultiProgressBar();
         panel = new JPanel();
