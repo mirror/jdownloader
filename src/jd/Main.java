@@ -440,10 +440,10 @@ public class Main {
         new WebUpdate().doWebupdate(false);
         try {
             loadDynamics();
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
+        } catch (IOException e1) {            
             JDLogger.exception(Level.FINEST, e1);
         }
+        WebUpdate.DynamicPluginsFinished();
         LOGGER.info("init plugins");
         Main.increaseSplashStatus();
         init.initPlugins();

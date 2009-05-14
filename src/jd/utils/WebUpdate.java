@@ -48,7 +48,12 @@ import jd.update.WebUpdater;
 public class WebUpdate implements ControlListener {
     private static Logger logger = JDLogger.getLogger();
     private static boolean JDInitialized = false;
+    private static boolean DynamicPluginsFinished = false;
     private static boolean ListenerAdded = false;
+
+    public static void DynamicPluginsFinished() {
+        DynamicPluginsFinished = true;
+    }
 
     public static void updateUpdater() throws IOException {
         Browser br = new Browser();
@@ -144,7 +149,7 @@ public class WebUpdate implements ControlListener {
                 if (files != null) {
                     JDUtilities.getController().setWaitingUpdates(files);
                 }
-                if ((!guiCall && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false))||Main.isBeta()) {
+                if ((!guiCall && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) || Main.isBeta()) {
                     logger.severe("Webupdater disabled");
                     progress.finalize();
                     return;
@@ -197,6 +202,16 @@ public class WebUpdate implements ControlListener {
                 Thread.sleep(1000);
                 i++;
                 logger.severe("Waiting on JD-Init-Complete since " + i + " secs!");
+            } catch (InterruptedException e) {
+            }
+        }
+
+        while (DynamicPluginsFinished == false) {
+            int i = 0;
+            try {
+                Thread.sleep(1000);
+                i++;
+                logger.severe("Waiting on DynamicPlugins since " + i + " secs!");
             } catch (InterruptedException e) {
             }
         }
