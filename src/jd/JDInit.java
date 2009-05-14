@@ -306,7 +306,6 @@ public class JDInit {
         new DecryptPluginWrapper("protectbox.in", "ProtectBoxIn", "http://[\\w\\.]*?protectbox\\.in/.*");
         new DecryptPluginWrapper("animea.net", "AnimeANet", PluginPattern.DECRYPTER_ANIMEANET_PLUGIN);
         new DecryptPluginWrapper("anime-loads.org", "AnimeLoadsorg", "http://[\\w\\.]*?anime-loads\\.org/crypt.php\\?cryptid=[a-zA-Z0-9]+|http://[\\w\\.]*?anime-loads\\.org/page.php\\?id=[0-9]+");
-        new DecryptPluginWrapper("baberepublic.com", "LinkBucks", "http://[\\w\\.]*?baberepublic\\.com/link/[0-9a-zA-Z]+(/\\d+)?");
         new DecryptPluginWrapper("bat5.com", "URLCash", "http://.+bat5\\.com");
         new DecryptPluginWrapper("counterstrike.de", "CounterstrikeDe", "http://[\\w\\.]*?4players\\.de/\\S*/download/[0-9]+/([01]/)?index\\.html?");
         new DecryptPluginWrapper("googlegroups.com", "GoogleGroups", "http://groups.google.com/group/[^/]+/files/?");
@@ -346,7 +345,10 @@ public class JDInit {
         new DecryptPluginWrapper("knoffl.com", "KnofflCom", "http://[\\w\\.]*?knoffl\\.com/(u/[a-zA-Z0-9-]+|[a-zA-Z0-9-]+)");
         new DecryptPluginWrapper("LinkBank.eu", "LinkBankeu", "http://[\\w\\.]*?linkbank\\.eu/show\\.php\\?show=\\d+");
         new DecryptPluginWrapper("linkbase.biz", "LinkbaseBiz", "http://[\\w\\.]*?linkbase\\.biz/\\?v=[a-zA-Z0-9]+");
-        new DecryptPluginWrapper("linkbucks.com", "LinkBucks", "http://[\\w\\.]*?linkbucks\\.com/link/[0-9a-zA-Z]+(/\\d+)?");
+        new DecryptPluginWrapper("linkbucks.com", "LinkBucks", "http://[\\w\\.]*?linkbucks\\.com(/link/[0-9a-zA-Z]+(/\\d+)?)?");
+        new DecryptPluginWrapper("qvvo.com", "LinkBucks", "http://[\\w\\.]*?qvvo\\.com(/link/[0-9a-zA-Z]+(/\\d+)?)?");
+        new DecryptPluginWrapper("baberepublic.com", "LinkBucks", "http://[\\w\\.]*?baberepublic\\.com(/link/[0-9a-zA-Z]+(/\\d+)?)?");
+        new DecryptPluginWrapper("blahetc.com", "LinkBucks", "http://[\\w\\.]*?blahetc\\.com(/link/[0-9a-zA-Z]+(/\\d+)?)?");
         new DecryptPluginWrapper("linkcrypt.ws", "LinkCryptWs", "http://[\\w\\.]*?linkcrypt\\.ws/dir/[a-zA-Z0-9]+");
         new DecryptPluginWrapper("linkprotect.in", "LinkProtectIn", "http://[\\w\\.]*?linkprotect\\.in/index.php\\?site=folder&id=[a-zA-Z0-9]{1,50}");
         new DecryptPluginWrapper("linkcrypt.com", "LinkcryptCom", "http://[\\w\\.]*?linkcrypt\\.com\\/[a-zA-Z]-[a-zA-z0-9]+");
@@ -372,7 +374,6 @@ public class JDInit {
         new DecryptPluginWrapper("Paylesssofts.net", "PaylesssoftsNet", "http://[\\w\\.]*?paylesssofts\\.net\\/((rs/\\?id\\=)|(\\?))[a-zA-Z0-9]+");
         /* Protect.Tehparadox.com: old links still work */
         new DecryptPluginWrapper("Protect.Tehparadox.com", "ProtectTehparadoxcom", "http://[\\w\\.]*?protect\\.tehparadox\\.com\\/[a-zA-Z0-9]+\\!");
-        new DecryptPluginWrapper("qvvo.com", "LinkBucks", "http://[\\w\\.]*?qvvo\\.com/link/[0-9a-zA-Z]+(/\\d+)?");
         new DecryptPluginWrapper("raidrush.org", "RaidrushOrg", "http://[\\w\\.]*?raidrush\\.org/ext/\\?fid\\=[a-zA-Z0-9]+");
         new DecryptPluginWrapper("rapidfolder.com", "RapidFolderCom", "http://[\\w\\.]*?rapidfolder\\.com/\\?\\w+");
         new DecryptPluginWrapper("rapidlayer.in", "Rapidlayerin", "http://[\\w\\.]*?rapidlayer\\.in/go/[a-zA-Z0-9]+");

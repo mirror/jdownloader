@@ -37,9 +37,15 @@ public class LinkBucks extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        String link = br.getRegex(Pattern.compile("initLink.*?\\(.*'(.*?)'\\)</script>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String link = br.getRegex(Pattern.compile("</a>\\s+<a\\shref=\"(.*?)\"\\sclass=\"lb_link\\sright", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (link == null) {
-            link = br.getRegex(Pattern.compile("var LinkURL = '(.*?)';", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            link = br.getRegex(Pattern.compile("AdBriteInit(\"(.*?)\")", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        }
+        if (link == null) {
+            link = br.getRegex(Pattern.compile("linkDestUrl\\s+=\\s+'(.*?)';", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        }
+        if (link == null) {
+            link = br.getRegex(Pattern.compile("var\\s+LinkURL\\s+=\\s+'(.*?)';", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         }
         if (link == null) return null;
         decryptedLinks.add(createDownloadlink(link));
