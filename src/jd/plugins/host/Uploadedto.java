@@ -46,9 +46,11 @@ public class Uploadedto extends PluginForHost {
         // "Premium connections # (>1 causes higher traffic)"), 1,
         // 20).setDefaultValue(1).setStep(1));
     }
-    public boolean useIcon(){
+
+    public boolean useIcon() {
         return true;
     }
+
     /**
      * Korrigiert den Downloadlink in ein einheitliches Format
      * 
@@ -70,7 +72,11 @@ public class Uploadedto extends PluginForHost {
 
     }
 
-    //@Override
+    public void correctDownloadLink(DownloadLink link) {
+        correctURL(link);
+    }
+
+    // @Override
     public int getTimegapBetweenConnections() {
         return 800;
     }
@@ -95,7 +101,7 @@ public class Uploadedto extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -125,7 +131,7 @@ public class Uploadedto extends PluginForHost {
         return ai;
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(downloadLink);
@@ -186,16 +192,14 @@ public class Uploadedto extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    //@Override
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        correctURL(downloadLink);
-
         br.setFollowRedirects(true);
         String id = new Regex(downloadLink.getDownloadURL(), "uploaded.to/file/(.*?)/").getMatch(0);
 
@@ -205,7 +209,7 @@ public class Uploadedto extends PluginForHost {
             String fileName = lines[0].trim();
 
             long fileSize = Long.parseLong(lines[1].trim());
-            downloadLink.setFinalFileName(fileName);            
+            downloadLink.setFinalFileName(fileName);
             downloadLink.setDownloadSize(fileSize);
             downloadLink.setSha1Hash(lines[2].trim());
         } catch (Exception e) {
@@ -217,7 +221,7 @@ public class Uploadedto extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -246,7 +250,7 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(downloadLink);
@@ -302,20 +306,20 @@ public class Uploadedto extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

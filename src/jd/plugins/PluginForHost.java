@@ -183,7 +183,6 @@ public abstract class PluginForHost extends Plugin {
             Account account = accounts.get(accountID);
             account.setEnabled(!account.isEnabled());
         }
-
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
@@ -348,6 +347,11 @@ public abstract class PluginForHost extends Plugin {
                     // Plugininstanz
                     PluginForHost plg = (PluginForHost) wrapper.getNewPluginInstance();
                     DownloadLink link = new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
+                    try {
+                        correctDownloadLink(link);
+                    } catch (Exception e) {
+                        logger.log(Level.SEVERE, "Exception occured", e);
+                    }
                     links.add(link);
                     if (fp != null) {
                         link.setFilePackage(fp);
@@ -361,6 +365,10 @@ public abstract class PluginForHost extends Plugin {
             }
         }
         return links;
+    }
+
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        /* überschreiben falls die downloadurl erst rekonstruiert werden muss */
     }
 
     /**
@@ -408,13 +416,8 @@ public abstract class PluginForHost extends Plugin {
 
     public boolean ignoreHosterWaittime(DownloadLink link) {
         if (!this.enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return false;
-        ArrayList<Account> accounts = getPremiumAccounts();
-        synchronized (accounts) {
-            for (int i = 0; i < accounts.size(); i++) {
-                if (!accounts.get(i).isTempDisabled() && accounts.get(i).isEnabled()) { return true; }
-            }
-        }
-        return false;
+        if (AccountController.getInstance().getValidAccount(this) == null) return false;
+        return true;
     }
 
     public int getMaxSimultanDownloadNum(DownloadLink link) {
@@ -568,11 +571,7 @@ public abstract class PluginForHost extends Plugin {
      */
     public final void resetPlugin() {
         reset();
-        ArrayList<Account> accounts = getPremiumAccounts();
-
-        for (Account account : accounts) {
-            account.setTempDisabled(false);
-        }
+        AccountController.getInstance().resetAllAccounts(this);
     }
 
     public void resetPluginGlobals() {

@@ -73,13 +73,16 @@ public class Netloadin extends PluginForHost {
         this.enablePremium("http://netload.in/index.php?refer_id=134847&id=39");
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload("http://netload.in/datei" + Netloadin.getID(link.getDownloadURL()) + ".htm");
+    }
+
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
+        getFileInformation(downloadLink);
         br.setDebug(true);
-
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
+
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
@@ -313,7 +316,6 @@ public class Netloadin extends PluginForHost {
 
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-
         getFileInformation(downloadLink);
         login(account);
         isExpired(account);
@@ -323,7 +325,6 @@ public class Netloadin extends PluginForHost {
             resume = false;
             chunks = 1;
         }
-        downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
         br.setFollowRedirects(false);
         br.setDebug(true);
         br.openGetConnection(downloadLink.getDownloadURL());
@@ -395,7 +396,10 @@ public class Netloadin extends PluginForHost {
 
     // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException {
-
+        correctDownloadLink(downloadLink);/*
+                                           * FIXME: kann nach 2-3 weiteren
+                                           * publics entfernt werden
+                                           */
         try {
             this.setBrowserExclusive();
             br.setConnectTimeout(15000);

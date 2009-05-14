@@ -96,7 +96,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     public static final int EXIT_CODE_SUCCESS = 0;
 
     private static final boolean DEBUG = true;
-    private static Boolean unrarvalidated;
     private ArrayList<UnrarListener> listener = new ArrayList<UnrarListener>();
     private DownloadLink link;
     private String unrarCommand;
@@ -596,9 +595,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
      * @param path
      * @return
      */
-    public static boolean isUnrarCommandValid(String path, boolean reset) {
-        if (reset) unrarvalidated = null;
-        if (unrarvalidated != null) return unrarvalidated;
+    public static boolean isUnrarCommandValid(String path) {
         try {
             Executer exec = new Executer(path);
             exec.setWaitTimeout(5);
@@ -607,26 +604,20 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             String ret = exec.getErrorStream() + " " + exec.getOutputStream();
 
             if (new Regex(ret, "RAR.*?Alexander").matches()) {
-                unrarvalidated = true;
                 return true;
             } else if (new Regex(ret, "RAR.*?3\\.").matches()) {
-                unrarvalidated = true;
                 return true;
             } else {
                 System.err.println("Wrong unrar: " + Regex.getLines(exec.getErrorStream())[0]);
-                unrarvalidated = false;
                 return false;
             }
         } catch (Exception e) {
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-            unrarvalidated = false;
             return false;
         }
-
     }
 
     private boolean open() throws UnrarException {
-        if (!isUnrarCommandValid(unrarCommand, false)) throw new UnrarException("No valid Unrar Binary!");
         String pass = null;
         int i = 0;
         fireEvent(JDUnrarConstants.WRAPPER_START_OPEN_ARCHIVE);
@@ -668,6 +659,10 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             exec.setDebug(true);
             exec.start();
             exec.waitTimeout();
+            if (exec.getException() != null && exec.getException().getMessage().contains("Cannot run")) {
+                fireEvent(JDUnrarConstants.INVALID_BINARY);
+                return false;
+            }
             String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
             logger.finest(res);
             String match;

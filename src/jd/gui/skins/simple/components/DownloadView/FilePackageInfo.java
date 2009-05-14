@@ -43,6 +43,8 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
 
     private boolean notifyUpdate = true;
 
+    private boolean hidden = false;
+
     private JCheckBox chbUseSubdirectory;
 
     private JPanel panel;
@@ -195,10 +197,11 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
     // @Override
     public void onDisplay() {
         update();
+        hidden = false;
+        if (updater != null && updater.isAlive()) return;
         updater = new Thread() {
             public void run() {
-
-                while (true) {
+                while (true && !hidden) {
                     progressBarFilePackage.setMaximums(null);
                     progressBarDownloadLink.setMaximums(null);
                     if (fp != null) {
@@ -247,11 +250,11 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
             }
         };
         updater.start();
-
     }
 
     // @Override
     public void onHide() {
+        hidden = true;
         if (updater != null) {
             updater.interrupt();
             updater = null;

@@ -207,14 +207,13 @@ public class DepositFiles extends PluginForHost {
         return "http://depositfiles.com/en/agreem.html";
     }
 
-    private void correctUrl(DownloadLink downloadLink) {
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("\\.com(/.*?)?/files", ".com/de/files"));
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com(/.*?)?/files", ".com/de/files"));
     }
 
     //@Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        setBrowserExclusive();
-        correctUrl(downloadLink);
+        setBrowserExclusive();        
         String link = downloadLink.getDownloadURL();
 
         setLangtoGer();

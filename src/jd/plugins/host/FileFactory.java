@@ -238,8 +238,6 @@ public class FileFactory extends PluginForHost {
         String user = account.getUser();
         String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
 
         if (user == null || pass == null) {
             linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
@@ -289,10 +287,13 @@ public class FileFactory extends PluginForHost {
         return "http://www.filefactory.com/info/terms.php";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll(".com//", ".com/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
+    }
+
     // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws Exception, PluginException {
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
         br.setFollowRedirects(true);
         for (int i = 0; i < 4; i++) {
             try {

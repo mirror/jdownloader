@@ -256,9 +256,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public int compareTo(DownloadLink o) {
-        String t1 = this.getDownloadURL().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://");
-        String t2 = o.getDownloadURL().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://");
-        return t1.compareTo(t2);
+        return this.getDownloadURL().compareTo(o.getDownloadURL());
     }
 
     /**

@@ -72,7 +72,6 @@ import jd.http.JDProxy;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.parser.Regex;
-import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -728,14 +727,7 @@ public class JDUtilities {
         return null;
     }
 
-    public static ArrayList<Account> getAccountsForHost(String host) {
-        PluginForHost plugin = JDUtilities.getPluginForHost(host);
-        if (plugin != null) {
-            return plugin.getPremiumAccounts();
-        } else {
-            return null;
-        }
-    }
+
 
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück. Die liste

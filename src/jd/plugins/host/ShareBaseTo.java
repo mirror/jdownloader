@@ -17,6 +17,7 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -39,16 +40,19 @@ public class ShareBaseTo extends PluginForHost {
         this.enablePremium("http://sharebase.to/premium/");
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://sharebase.to/terms/";
     }
 
-    //@Override
+    public void correctDownloadLink(DownloadLink link) throws MalformedURLException {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("sharebase\\.de", "sharebase\\.to"));
+    }
+
+    // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         /* damit neue links mit .de als .to in die liste kommen */
         setBrowserExclusive();
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("sharebase\\.de", "sharebase\\.to"));
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Der Download existiert nicht")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String downloadName = br.getRegex("<title>(.*) @ ShareBase\\.to</title><meta").getMatch(0);
@@ -72,7 +76,7 @@ public class ShareBaseTo extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -88,12 +92,12 @@ public class ShareBaseTo extends PluginForHost {
         return ai;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         login(account);
@@ -101,7 +105,7 @@ public class ShareBaseTo extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("werden derzeit Wartungsarbeiten vorgenommen")) {
             logger.severe("ShareBaseTo Error: Maintenance");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.maintenance","Maintenance works in progress"), 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.maintenance", "Maintenance works in progress"), 30 * 60 * 1000l);
         }
 
         if (!br.containsHTML("favorite")) {
@@ -112,12 +116,12 @@ public class ShareBaseTo extends PluginForHost {
         dl = br.openDownload(downloadLink, br.getForm(1));
         if (dl.getConnection() == null) {
             logger.severe("ServerError");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.servicenotavailable","Service not available"), 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.servicenotavailable", "Service not available"), 10 * 60 * 1000l);
         }
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         /* für links welche noch mit .de in der liste stehen */
@@ -134,10 +138,10 @@ public class ShareBaseTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);
         } else if (br.containsHTML("werden derzeit Wartungsarbeiten vorgenommen")) {
             logger.severe("ShareBaseTo Error: Maintenance");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.maintenance","Maintenance works in progress"), 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.maintenance", "Maintenance works in progress"), 30 * 60 * 1000l);
         } else if (br.containsHTML("Sorry, es laden derzeit")) {
             logger.severe("ShareBaseTo Error: Too many Users");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.toomanyusers","Too many users"), 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.toomanyusers", "Too many users"), 5 * 60 * 1000l);
         }
         String[] wait = br.getRegex("Du musst noch <strong>(\\d*?)min (\\d*?)sec</strong> warten").getRow(0);
         if (wait != null) {
@@ -148,28 +152,28 @@ public class ShareBaseTo extends PluginForHost {
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), false, -2);
         if (dl.getConnection() == null) {
             logger.severe("ServerError");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.servicenotavailable","Service not available"), 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.servicenotavailable", "Service not available"), 10 * 60 * 1000l);
         }
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 2;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

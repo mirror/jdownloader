@@ -75,7 +75,6 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
     }
 
     private void buildGui() {
-
         txtName = new JDTextField();
         txtName.setAutoSelect(true);
         txtName.addActionListener(this);
@@ -104,16 +103,16 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
         this.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
 
         this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
-        this.add(txtName,"span 2");
+        this.add(txtName, "span 2");
         this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
-        this.add(brwSaveTo.getInput(),"gapright 10, growx");
-        this.add(brwSaveTo.getButton(),"pushx,growx");
+        this.add(brwSaveTo.getInput(), "gapright 10, growx");
+        this.add(brwSaveTo.getButton(), "pushx,growx");
         this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
         this.add(txtPassword, " gapright 10, growx");
-        this.add(chbExtract,"alignx right");
+        this.add(chbExtract, "alignx right");
         this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
         this.add(txtComment, "gapright 10, growx");
-        this.add(chbUseSubdirectory,"alignx right");
+        this.add(chbUseSubdirectory, "alignx right");
     }
 
     public void actionPerformed(ActionEvent e) {

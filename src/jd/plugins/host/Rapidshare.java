@@ -64,8 +64,6 @@ import org.mozilla.javascript.Scriptable;
 
 public class Rapidshare extends PluginForHost {
 
-    private static long LAST_FILE_CHECK = 0;
-
     private static final Pattern PATTERM_MATCHER_ALREADY_LOADING = Pattern.compile("(Warten Sie bitte, bis der Download abgeschlossen ist)", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern PATTERN_FIND_DOWNLOAD_POST_URL = Pattern.compile("<form name=\"dl[f]?\" action=\"(.*?)\" method=\"post\"");
@@ -106,13 +104,12 @@ public class Rapidshare extends PluginForHost {
 
     private static Integer loginlock = 0;
 
+    private static long rsapiwait = 0;
+
     private static HashMap<String, String> serverMap = new HashMap<String, String>();
 
-    public void correctURL(DownloadLink downloadLink) throws IOException {
-        // cache for the correct link status.
-        // if (downloadLink.getBooleanProperty("linkcorrected", false)) return;
-        downloadLink.setUrlDownload(getCorrectedURL(downloadLink.getDownloadURL()));
-        // downloadLink.setProperty("linkcorrected", true);
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(getCorrectedURL(link.getDownloadURL()));
     }
 
     /**
@@ -201,8 +198,15 @@ public class Rapidshare extends PluginForHost {
     // @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
-        logger.finest("OnlineCheck: " + urls.length + " links");
         try {
+            if (rsapiwait > System.currentTimeMillis()) {
+                for (DownloadLink u : urls) {
+                    u.setAvailable(true);
+                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.apiflood", "unchecked (API Flood)"));
+                }
+                return true;
+            }
+            logger.finest("OnlineCheck: " + urls.length + " links");
             StringBuilder idlist = new StringBuilder();
             StringBuilder namelist = new StringBuilder();
             Vector<DownloadLink> links = new Vector<DownloadLink>();
@@ -215,7 +219,6 @@ public class Rapidshare extends PluginForHost {
                     idlist = new StringBuilder();
                     namelist = new StringBuilder();
                 }
-                correctURL(u);
                 idlist.append("," + getID(u.getDownloadURL()));
                 namelist.append("," + getName(u.getDownloadURL()));
                 links.add(u);
@@ -243,7 +246,6 @@ public class Rapidshare extends PluginForHost {
             StringBuilder namelist = new StringBuilder();
 
             for (DownloadLink u : urls) {
-                correctURL(u);
                 idlist.append("," + getID(u.getDownloadURL()));
                 namelist.append("," + getName(u.getDownloadURL()));
             }
@@ -291,7 +293,10 @@ public class Rapidshare extends PluginForHost {
             }
             return true;
         } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);            
+            if (br.containsHTML("access flood")) {
+                logger.warning("RS API flooded! will not check again the next 5 minutes!");
+                rsapiwait = System.currentTimeMillis() + 5 * 60 * 1000l;
+            }
             return false;
         }
 
@@ -313,7 +318,6 @@ public class Rapidshare extends PluginForHost {
             }
             LinkStatus linkStatus = downloadLink.getLinkStatus();
             // if (ddl)this.doPremium(downloadLink);
-            correctURL(downloadLink);
 
             // if (getRemainingWaittime() > 0) { return
             // handleDownloadLimit(downloadLink); }
@@ -530,7 +534,6 @@ public class Rapidshare extends PluginForHost {
             String error = null;
 
             long startTime = System.currentTimeMillis();
-            correctURL(downloadLink);
             br = login(account, true);
 
             br.setFollowRedirects(false);
@@ -849,17 +852,7 @@ public class Rapidshare extends PluginForHost {
 
     // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-        if (System.currentTimeMillis() - LAST_FILE_CHECK < 250) {
-            try {
-                Thread.sleep(System.currentTimeMillis() - LAST_FILE_CHECK);
-            } catch (InterruptedException e) {
-            }
-        }
-        correctURL(downloadLink);
-
-        LAST_FILE_CHECK = System.currentTimeMillis();
         return checkLinks(new DownloadLink[] { downloadLink });
-
     }
 
     private String getServerName(String id) {
@@ -905,6 +898,7 @@ public class Rapidshare extends PluginForHost {
 
     // @Override
     public void reset() {
+        rsapiwait = 0;
     }
 
     /**
@@ -989,9 +983,11 @@ public class Rapidshare extends PluginForHost {
             return br;
         }
     }
-    public boolean useIcon(){
+
+    public boolean useIcon() {
         return true;
     }
+
     // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
 

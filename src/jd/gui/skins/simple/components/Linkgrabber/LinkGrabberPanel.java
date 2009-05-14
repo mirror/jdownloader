@@ -75,10 +75,12 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     public boolean isRunning() {
         return gatherer_running;
     }
+
     public boolean needsViewport() {
-     
+
         return false;
     }
+
     private LinkGrabberPanel() {
         super(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
         internalTreeTable = new LinkGrabberTreeTable(new LinkGrabberTreeTableModel(this), this);
@@ -135,17 +137,21 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         LGINSTANCE.getBroadcaster().removeListener(this);
         Update_Async.stop();
         visible = false;
-        SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_ALL, true, JDLocale.L("gui.linkgrabber.toolbar.disabled","Switch to downloadtask to enable buttons"));
-        
+        SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_ALL, true, JDLocale.L("gui.linkgrabber.toolbar.disabled", "Switch to downloadtask to enable buttons"));
+
     }
 
-    public synchronized void addLinks(DownloadLink[] linkList) {
-        for (DownloadLink element : linkList) {
-            if (LGINSTANCE.isDupe(element)) continue;
-            addToWaitingList(element);
-        }
-        Update_Async.restart();
-        gathertimer.restart();
+    public synchronized void addLinks(final DownloadLink[] linkList) {
+        new Thread() {
+            public void run() {
+                for (DownloadLink element : linkList) {
+                    if (LGINSTANCE.isDupe(element)) continue;
+                    addToWaitingList(element);
+                }
+                Update_Async.restart();
+                gathertimer.restart();
+            }
+        }.start();
     }
 
     public synchronized void addToWaitingList(DownloadLink element) {
@@ -241,7 +247,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     // @Override
     public void onDisplay() {
-        SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_CONTROL|JDToolBar.ENTRY_INTERACTION, false, JDLocale.L("gui.linkgrabber.toolbar.disabled","Switch to downloadtask to enable buttons"));
+        SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_CONTROL | JDToolBar.ENTRY_INTERACTION, false, JDLocale.L("gui.linkgrabber.toolbar.disabled", "Switch to downloadtask to enable buttons"));
         fireTableChanged(1, null);
         LGINSTANCE.getBroadcaster().addListener(this);
         visible = true;

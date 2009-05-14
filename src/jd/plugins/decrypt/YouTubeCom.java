@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
@@ -34,7 +35,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 public class YouTubeCom extends PluginForDecrypt {
 
@@ -97,7 +97,7 @@ public class YouTubeCom extends PluginForDecrypt {
                 addVideosCurrentPage(decryptedLinks);
             }
         } else {
-            ArrayList<Account> accounts = JDUtilities.getAccountsForHost("youtube.com");
+            ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
             if (accounts != null && accounts.size() != 0) login(accounts.get(0));
 
             try {

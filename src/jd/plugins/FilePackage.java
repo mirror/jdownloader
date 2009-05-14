@@ -486,22 +486,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         }
     }
 
-    public DownloadLink getLinkAfter(DownloadLink link) {
-        synchronized (downloadLinks) {
-            int index = indexOf(link);
-            if (index == -1 || index + 1 > downloadLinks.size() - 1) return null;
-            return get(index + 1);
-        }
-    }
-
-    public DownloadLink getLinkBefore(DownloadLink link) {
-        synchronized (downloadLinks) {
-            int index = indexOf(link);
-            if (index == -1 || index - 1 < 0) return null;
-            return get(index - 1);
-        }
-    }
-
     public DownloadLink lastElement() {
         synchronized (downloadLinks) {
             return downloadLinks.lastElement();

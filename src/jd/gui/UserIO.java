@@ -57,7 +57,6 @@ public abstract class UserIO {
 
     public static void setInstance(UserIO instance2) {
         INSTANCE = instance2;
-
     }
 
     public int requestConfirmDialog(int flag, String title, String message, ImageIcon icon, String okOption, String cancelOption) {

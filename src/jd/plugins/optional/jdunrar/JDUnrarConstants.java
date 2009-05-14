@@ -40,6 +40,7 @@ public class JDUnrarConstants {
     public static final int WRAPPER_FINISHED_SUCCESSFULL = 15;
     public static final int WRAPPER_EXTRACTION_FAILED_CRC = 16;
     public static final int WRAPPER_CRACK_PASSWORD = 17;
+    public static final int INVALID_BINARY = 99;
     public static final String CONFIG_KEY_UNRARPATH = "UNRARPATH";
     public static final String CONFIG_KEY_USE_SUBPATH = "USE_SUBPATH";
     public static final String CONFIG_KEY_SUBPATH = "SUBPATH";
@@ -53,5 +54,6 @@ public class JDUnrarConstants {
     public static final int WRAPPER_PASSWORT_CRACKING = 18;
     public static final String DOWNLOADLINK_KEY_EXTRACTTOPATH = "EXTRAXT_TO_PATH";
     public static final String DOWNLOADLINK_KEY_EXTRACTEDPATH = "EXTRACTEDPATH";
+    public static final String UNRAR_HASH = "UNRAR_HASH";
 
 }

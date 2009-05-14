@@ -42,7 +42,7 @@ public class Property implements Serializable {
     private HashMap<String, Integer> propertiesHashes;
 
     private long saveCount = 0;
-protected transient boolean  changes=false;
+    protected transient boolean changes=false;
     /**
      * 
      */

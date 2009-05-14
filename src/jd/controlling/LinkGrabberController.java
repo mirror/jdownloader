@@ -121,7 +121,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     public String[] getLinkFilterPattern() {
         String filter = SubConfiguration.getConfig(CONFIG).getStringProperty(IGNORE_LIST, null);
-        if (filter == null) return null;
+        if (filter == null || filter.length() == 0) return null;
         String[] lines = Regex.getLines(filter);
         ArrayList<String> ret = new ArrayList<String>();
         for (String line : lines) {
@@ -477,11 +477,10 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     }
 
     public static boolean isFiltered(DownloadLink element) {
-        if (filter == null) return false;
+        if (filter == null || filter.length == 0) return false;
         synchronized (filter) {
             for (String f : filter) {
-                String t = element.getDownloadURL().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://");
-                if (t.matches(f) || element.getName().matches(f)) {
+                if (element.getDownloadURL().matches(f) || element.getName().matches(f)) {
                     JDLogger.getLogger().finer("Filtered link: " + element.getName() + " due to filter entry " + f);
                     return true;
                 }
@@ -491,7 +490,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     }
 
     public static boolean isFiltered(CryptedLink element) {
-        if (filter == null) return false;
+        if (filter == null || filter.length == 0) return false;
         synchronized (filter) {
             for (String f : filter) {
                 String t = element.getCryptedUrl().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://");

@@ -42,9 +42,6 @@ import jd.utils.JDLocale;
 /*TODO: Support für andere Linkcards(bestimmte Anzahl Downloads,unlimited usw) einbauen*/
 
 public class MegasharesCom extends PluginForHost {
-    static private final String AGB_LINK = "http://d01.megashares.com/tos.php";
-
-    private static String PLUGIN_PASS = null;
 
     public MegasharesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -85,15 +82,23 @@ public class MegasharesCom extends PluginForHost {
         return ai;
     }
 
-    public void loadpage(DownloadLink downloadLink) throws IOException {
+    public void loadpage(String url) throws IOException {
         boolean tmp = br.isFollowingRedirects();
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(url);
         if (br.getRedirectLocation() != null) {
-            downloadLink.setUrlDownload(br.getRedirectLocation());
-            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(br.getRedirectLocation());
         }
         br.setFollowRedirects(tmp);
+    }
+
+    public void correctDownloadLink(DownloadLink link) throws IOException {
+        Browser brt = new Browser();
+        brt.setFollowRedirects(false);
+        brt.getPage(link.getDownloadURL());
+        if (brt.getRedirectLocation() != null) {
+            link.setUrlDownload(brt.getRedirectLocation());
+        }
     }
 
     // @Override
@@ -101,7 +106,7 @@ public class MegasharesCom extends PluginForHost {
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         login(account);
         // Password protection
-        loadpage(downloadLink);
+        loadpage(downloadLink.getDownloadURL());
         if (!checkPassword(downloadLink)) { return; }
         if (br.containsHTML("All download slots for this link are currently filled")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
         String dlLink = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click").getMatch(0);
@@ -118,12 +123,7 @@ public class MegasharesCom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        loadpage(downloadLink);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        // Cookies holen
-        if (br.containsHTML("continue using Free service")) {
-            loadpage(downloadLink);
-        }
         // Password protection
         if (!checkPassword(downloadLink)) { return; }
 
@@ -133,11 +133,10 @@ public class MegasharesCom extends PluginForHost {
             linkStatus.setValue(60 * 1000l);
             return;
         }
-        if (br.containsHTML("All download slots for this link are currently filled")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
+        if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         // Reconnet/wartezeit check
         String[] dat = br.getRegex("Your download passport will renew.*?in (\\d+):<strong>(\\d+)</strong>:<strong>(\\d+)</strong>").getRow(0);
         if (dat != null) {
-
             long wait = Long.parseLong(dat[1]) * 60000l + Long.parseLong(dat[2]) * 1000l;
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             linkStatus.setValue(wait);
@@ -156,7 +155,6 @@ public class MegasharesCom extends PluginForHost {
             String code = getCaptchaCode(file, downloadLink);
             String geturl = downloadLink.getDownloadURL() + "&rs=check_passport_renewal&rsargs[]=" + code + "&rsargs[]=" + input.get("random_num") + "&rsargs[]=" + input.get("passport_num") + "&rsargs[]=replace_sec_pprenewal&rsrnd=" + (new Date().getTime());
             br.getPage(geturl);
-            loadpage(downloadLink);
 
             if (br.containsHTML("You already have the maximum")) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
@@ -172,7 +170,6 @@ public class MegasharesCom extends PluginForHost {
             return;
         }
         // Dateigröße holen
-        dat = br.getRegex("<dt>Filename:&nbsp;<strong>(.*?)</strong>&nbsp;&nbsp;&nbsp;(.*?)</dt>").getRow(0);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, url, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
@@ -186,13 +183,7 @@ public class MegasharesCom extends PluginForHost {
 
         if (br.containsHTML("This link requires a password")) {
             Form form = br.getFormBySubmitvalue("Validate+Password");
-            String pass = link.getStringProperty("password");
-            if (pass != null) {
-                form.put("passText", pass);
-                br.submitForm(form);
-                if (!br.containsHTML("This link requires a password")) { return true; }
-            }
-            pass = PLUGIN_PASS;
+            String pass = link.getStringProperty("pass");
             if (pass != null) {
                 form.put("passText", pass);
                 br.submitForm(form);
@@ -205,13 +196,12 @@ public class MegasharesCom extends PluginForHost {
                     form.put("passText", pass);
                     br.submitForm(form);
                     if (!br.containsHTML("This link requires a password")) {
-                        PLUGIN_PASS = pass;
-                        link.setProperty("password", pass);
+                        link.setProperty("pass", pass);
                         return true;
                     }
                 }
             }
-
+            link.setProperty("pass", null);
             link.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
             link.getLinkStatus().setErrorMessage("Link password wrong");
             return false;
@@ -221,16 +211,15 @@ public class MegasharesCom extends PluginForHost {
 
     // @Override
     public String getAGBLink() {
-        return AGB_LINK;
+        return "http://d01.megashares.com/tos.php";
     }
 
     // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         setBrowserExclusive();
-        loadpage(downloadLink);
-
+        loadpage(downloadLink.getDecrypterPassword());
         if (br.containsHTML("continue using Free service")) {
-            loadpage(downloadLink);
+            loadpage(downloadLink.getDecrypterPassword());
         }
         if (br.containsHTML("You already have the maximum")) {
             downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.alreadyloading", "Cannot check, because aready loading file"));
@@ -277,8 +266,7 @@ public class MegasharesCom extends PluginForHost {
 
     // @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
+        link.setProperty("pass", null);
     }
 
 }

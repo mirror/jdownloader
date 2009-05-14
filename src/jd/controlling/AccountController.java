@@ -11,6 +11,7 @@ import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.event.JDBroadcaster;
+import jd.event.JDEvent;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -42,6 +43,35 @@ class AccountControllerBroadcaster extends JDBroadcaster<AccountControllerListen
 
 }
 
+class AccountProviderEvent extends JDEvent {
+    public AccountProviderEvent(Object source, int ID) {
+        super(source, ID);
+    }
+}
+
+class AccountProviderBroadcaster extends JDBroadcaster<AccountProvider, AccountProviderEvent> {
+    @Override
+    protected void fireEvent(AccountProvider listener, AccountProviderEvent event) {
+    }
+
+    public ArrayList<Account> collectAccountsFor(PluginForHost pluginForHost) {
+        ArrayList<Account> ret = new ArrayList<Account>();
+        if (pluginForHost == null) return ret;
+        String host = pluginForHost.getHost();
+        synchronized (callList) {
+            synchronized (removeList) {
+                callList.removeAll(removeList);
+                removeList.clear();
+            }
+            for (int i = callList.size() - 1; i >= 0; i--) {
+                ArrayList<Account> ret2 = callList.get(i).provideAccountsFor(host);
+                if (ret2 != null) ret.addAll(ret2);
+            }
+        }
+        return ret;
+    }
+}
+
 public class AccountController extends SubConfiguration implements ActionListener, AccountControllerListener {
 
     /**
@@ -55,21 +85,19 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     private AccountControllerBroadcaster broadcaster = new AccountControllerBroadcaster();
 
+    private AccountProviderBroadcaster provider = new AccountProviderBroadcaster();
+
     private Timer asyncSaveIntervalTimer;
 
     private AccountController() {
         super("AccountController");
         hosteraccounts = loadAccounts();
         importOldAccounts();
+        importOldAccounts2();
         asyncSaveIntervalTimer = new Timer(2000, this);
         asyncSaveIntervalTimer.setInitialDelay(2000);
         asyncSaveIntervalTimer.setRepeats(false);
-        this.getBroadcaster().addListener(this);
-    }
-
-    private synchronized JDBroadcaster<AccountControllerListener, AccountControllerEvent> getBroadcaster() {
-        if (broadcaster == null) broadcaster = new AccountControllerBroadcaster();
-        return broadcaster;
+        broadcaster.addListener(this);
     }
 
     public synchronized static AccountController getInstance() {
@@ -78,11 +106,19 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     public void addListener(AccountControllerListener l) {
-        getBroadcaster().addListener(l);
+        broadcaster.addListener(l);
     }
 
     public void removeListener(AccountControllerListener l) {
-        getBroadcaster().removeListener(l);
+        broadcaster.removeListener(l);
+    }
+
+    public void addAccountProvider(AccountProvider l) {
+        provider.addListener(l);
+    }
+
+    public void removeAccountProvider(AccountProvider l) {
+        provider.removeListener(l);
     }
 
     @SuppressWarnings("unchecked")
@@ -103,12 +139,49 @@ public class AccountController extends SubConfiguration implements ActionListene
         saveSync();
     }
 
+    @SuppressWarnings("unchecked")
+    private void importOldAccounts2() {
+        if (getBooleanProperty("oldimported2", false)) return;
+        SubConfiguration sub = SubConfiguration.getConfig("AccountManager");
+        for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
+            ArrayList<Account> list = (ArrayList<Account>) sub.getProperty(wrapper.getHost(), new ArrayList<Account>());
+            for (Account acc : list) {
+                addAccount(wrapper.getHost(), acc);
+            }
+        }
+        setProperty("oldimported2", true);
+        saveSync();
+    }
+
     public void addAccount(PluginForHost pluginForHost, Account account) {
         String host = pluginForHost.getHost();
         addAccount(host, account);
     }
 
+    public void resetAllAccounts(PluginForHost pluginForHost) {
+        ArrayList<Account> accounts = new ArrayList<Account>();
+        accounts.addAll(provider.collectAccountsFor(pluginForHost));
+        accounts.addAll(getAllAccounts(pluginForHost));
+        for (Account account : accounts) {
+            account.setTempDisabled(false);
+        }
+    }
+
+    public ArrayList<Account> getAllAccounts(String host) {
+        if (host == null) return new ArrayList<Account>();
+        synchronized (hosteraccounts) {
+            if (hosteraccounts.containsKey(host)) {
+                return hosteraccounts.get(host);
+            } else {
+                ArrayList<Account> haccounts = new ArrayList<Account>();
+                hosteraccounts.put(host, haccounts);
+                return haccounts;
+            }
+        }
+    }
+
     private void addAccount(String host, Account account) {
+        if (host == null) return;
         if (account == null) return;
         synchronized (hosteraccounts) {
             if (hosteraccounts.containsKey(host)) {
@@ -141,6 +214,8 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     public boolean removeAccount(PluginForHost pluginForHost, Account account) {
+        if (pluginForHost == null) return false;
+        if (account == null) return false;
         String host = pluginForHost.getHost();
         synchronized (hosteraccounts) {
             if (!hosteraccounts.containsKey(host)) return false;
@@ -164,16 +239,8 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     public ArrayList<Account> getAllAccounts(PluginForHost pluginForHost) {
-        String host = pluginForHost.getHost();
-        synchronized (hosteraccounts) {
-            if (hosteraccounts.containsKey(host)) {
-                return hosteraccounts.get(host);
-            } else {
-                ArrayList<Account> haccounts = new ArrayList<Account>();
-                hosteraccounts.put(host, haccounts);
-                return haccounts;
-            }
-        }
+        if (pluginForHost == null) return new ArrayList<Account>();
+        return this.getAllAccounts(pluginForHost.getHost());
     }
 
     public void actionPerformed(ActionEvent arg0) {
@@ -217,19 +284,18 @@ public class AccountController extends SubConfiguration implements ActionListene
     public Account getValidAccount(PluginForHost pluginForHost) {
         if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return null;
         synchronized (hosteraccounts) {
-            ArrayList<Account> accounts = new ArrayList<Account>(getAllAccounts(pluginForHost));
+            ArrayList<Account> accounts = new ArrayList<Account>();
+            accounts.addAll(provider.collectAccountsFor(pluginForHost));
+            accounts.addAll(getAllAccounts(pluginForHost));
             Account ret = null;
             synchronized (accounts) {
                 for (int i = 0; i < accounts.size(); i++) {
                     Account next = accounts.get(i);
                     if (!next.isTempDisabled() && next.isEnabled()) {
-                        ret = next;
+                        if (!this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_GET, pluginForHost.getHost(), next))) ret = next;
                         break;
                     }
                 }
-            }
-            if (ret != null) {
-                if (this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_GET, pluginForHost.getHost(), ret))) ret = null;
             }
             return ret;
         }

@@ -37,10 +37,8 @@ public class BluehostTo extends PluginForHost {
         this.enablePremium("http://bluehost.to/premium.php");
     }
 
-    private void correctUrl(DownloadLink downloadLink) {
-        String url = downloadLink.getDownloadURL();
-        url = url.replaceFirst("\\?dl=", "dl=");
-        downloadLink.setUrlDownload(url);
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("\\?dl=", "dl="));
     }
 
     private void login(Account account) throws Exception {
@@ -147,7 +145,7 @@ public class BluehostTo extends PluginForHost {
                 String[] dat = lines[i].split("\\, ");
                 try {
                     urls[i].setMD5Hash(dat[5].trim());
-                    urls[i].setFinalFileName(dat[0]);                    
+                    urls[i].setFinalFileName(dat[0]);
                     urls[i].setDownloadSize(Long.parseLong(dat[2]));
                     urls[i].setAvailable(true);
                 } catch (Exception e) {
@@ -162,12 +160,13 @@ public class BluehostTo extends PluginForHost {
 
         return true;
     }
-    public boolean useIcon(){
+
+    public boolean useIcon() {
         return true;
     }
+
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        correctUrl(downloadLink);
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {        
         // dateiname, dateihash, dateisize, dateidownloads, zeit bis HH
         this.setBrowserExclusive();
         br.setCookie("http://bluehost.to", "bluehost_lang", "DE");
@@ -176,7 +175,7 @@ public class BluehostTo extends PluginForHost {
         String[] dat = page.split("\\, ");
         try {
             downloadLink.setMD5Hash(dat[5].trim());
-            downloadLink.setFinalFileName(dat[0]);            
+            downloadLink.setFinalFileName(dat[0]);
             downloadLink.setDownloadSize(Long.parseLong(dat[2]));
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

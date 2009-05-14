@@ -132,17 +132,16 @@ public class MegaroticCom extends PluginForHost {
                 simultanpremium++;
             }
         }
-        String link = parameter.getDownloadURL().replaceAll("/de", "");
-        String id = Request.parseQuery(link).get("d");
         br.setFollowRedirects(false);
-        String dlUrl = "http://megarotic.com/?d=" + id;
-        br.getPage(dlUrl);
+        br.getPage(parameter.getDownloadURL());
+        String dlUrl = null;
         handlePw(parameter);
         if (br.getRedirectLocation() == null) {
             dlUrl = br.getRegex("getElementById\\(\"downloadhtml\"\\)\\.innerHTML.*?href=\"(.*?)\" style").getMatch(0);
             if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         br.setFollowRedirects(true);
+        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dlUrl = dlUrl.replaceFirst("megarotic\\.com/", "megarotic\\.com:" + usePort() + "/");
         dl = br.openDownload(parameter, dlUrl, true, 0);
         dl.startDownload();
@@ -166,18 +165,20 @@ public class MegaroticCom extends PluginForHost {
         }
     }
 
+    public void correctDownloadLink(DownloadLink link) throws MalformedURLException {        
+        String link2 = link.getDownloadURL().replaceAll("/de", "");
+        String id = Request.parseQuery(link2).get("d");
+        link.setUrlDownload("http://megarotic.com/?d=" + id);
+    }
+
     // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("sexuploader.com", "megarotic.com"));
-        String link = downloadLink.getDownloadURL().replaceAll("/de", "");
-        String id = Request.parseQuery(link).get("d");
         br.setCookie(downloadLink.getDownloadURL(), "l", "de");
         br.setCookie(downloadLink.getDownloadURL(), "v", "1");
         br.setCookie(downloadLink.getDownloadURL(), "ve_view", "1");
         br.setFollowRedirects(true);
-        String dlUrl = "http://megarotic.com/?d=" + id;
-        br.getPage(dlUrl);
+        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">Dieser Link ist leider nicht")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
         if (br.containsHTML(ERROR_FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -229,18 +230,15 @@ public class MegaroticCom extends PluginForHost {
     public void handleFree0(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
         DownloadLink downloadLink = parameter;
-        String link = downloadLink.getDownloadURL().replaceAll("/de", "");
-        String id = Request.parseQuery(link).get("d");
         br.setCookie(downloadLink.getDownloadURL(), "l", "de");
         br.setCookie(downloadLink.getDownloadURL(), "v", "1");
         br.setCookie(downloadLink.getDownloadURL(), "ve_view", "1");
         br.setFollowRedirects(true);
-        String dlUrl = "http://megarotic.com/?d=" + id;
-        br.getPage(dlUrl);
+        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
         if (br.containsHTML(ERROR_FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        captchaURL = "http://" + new URL(link).getHost() + "/capgen.php" + br.getRegex(SIMPLEPATTERN_CAPTCHA_URl).getMatch(0);
+        captchaURL = "http://" + new URL(downloadLink.getDownloadURL()).getHost() + "/capgen.php" + br.getRegex(SIMPLEPATTERN_CAPTCHA_URl).getMatch(0);
         fields = HTMLParser.getInputHiddenFields(br + "", "checkverificationform", "passwordhtml");
         captchaPost = br.getRegex(SIMPLEPATTERN_CAPTCHA_POST_URL).getMatch(0);
 
