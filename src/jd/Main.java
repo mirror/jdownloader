@@ -83,7 +83,7 @@ public class Main {
 
     private static boolean BETA = true;
     private static Logger LOGGER;
-    private static SplashScreen splashScreen;
+    public static SplashScreen SPLASH;
     private static String instanceID = Main.class.getName();
     private static boolean instanceStarted = false;
 
@@ -265,7 +265,7 @@ public class Main {
             instanceStarted = false;
         }
         if (instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
-            splashScreen = null;
+            SPLASH = null;
             JDTheme.setTheme("default");
             if (JDInitFlags.SHOW_SPLASH) {
                 if (SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPLASH, true)) {
@@ -275,14 +275,14 @@ public class Main {
                         // @Override
                         public Object runSave() {
                             try {
-                                splashScreen = new SplashScreen(JDTheme.I("gui.splash"));
-                                splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.languages", 32, 32)));
-                                splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.settings", 32, 32)));
-                                splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.controller", 32, 32)));
-                                splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.update", 32, 32)));
-                                splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.plugins", 32, 32)));
-                                splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.screen", 32, 32)));
-                                splashScreen.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.dllist", 32, 32)));
+                                SPLASH = new SplashScreen(JDTheme.I("gui.splash"));
+                                SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.languages", 32, 32)));
+                                SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.settings", 32, 32)));
+                                SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.controller", 32, 32)));
+                                SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.update", 32, 32)));
+                                SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.plugins", 32, 32)));
+                                SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.screen", 32, 32)));
+                                SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.dllist", 32, 32)));
                             } catch (Exception e) {
                                 LOGGER.log(Level.SEVERE, "Exception occured", e);
                             }
@@ -386,13 +386,13 @@ public class Main {
     }
 
     private static void increaseSplashStatus() {
-        if (splashScreen == null) return;
-        splashScreen.setNextImage();
+        if (SPLASH == null) return;
+        SPLASH.setNextImage();
     }
 
     @SuppressWarnings("unchecked")
     private void go() {
-        final JDInit init = new JDInit(splashScreen);
+        final JDInit init = new JDInit(SPLASH);
 
         init.init();
         if (isBeta()) {
@@ -483,10 +483,7 @@ public class Main {
         LOGGER.info("Revision: " + JDUtilities.getJDTitle());
         LOGGER.finer("Runtype: " + JDUtilities.getRunType());
 
-        try {
-            splashScreen.finish();
-        } catch (Exception e) {
-        }
+       
         if (!Main.isBeta()) init.checkUpdate();
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));

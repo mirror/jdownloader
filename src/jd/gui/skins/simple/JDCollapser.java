@@ -33,10 +33,10 @@ public class JDCollapser extends JPanel {
         super(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[]5[fill,grow]"));
         // this.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0,
         // getBackground().darker()));
-        add(title = new JLabel(""), "split 3,gapleft 10,gapbottom 5,gaptop 5");
+        add(title = new JLabel(""), "split 3,gapleft 5,gapbottom 0,gaptop 0");
         title.setIcon(JDTheme.II("gui.images.sort", 24, 24));
         title.setIconTextGap(15);
-        add(new JSeparator(), "growx,pushx,gapright 10");
+        add(new JSeparator(), "growx,pushx,gapright 5");
         JButton bt;
         add(bt = new JButton(JDTheme.II("gui.images.close", 16, 16)), "gapright 10");
         bt.setContentAreaFilled(false);

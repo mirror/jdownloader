@@ -51,6 +51,7 @@ import javax.swing.JViewport;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
+import jd.Main;
 import jd.config.ConfigContainer;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
@@ -373,17 +374,17 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     @SuppressWarnings("unchecked")
     private void initWaitPane() {
         JXPanel glass = new JXPanel(new MigLayout("ins 80,wrap 1", "[fill,grow]", "[fill,grow][]"));
-        JXLabel lbl = new JXLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_128_128"), 300, 300));
-        glass.add(lbl, "alignx center, aligny center");
-        JProgressBar prg = new JProgressBar();
-        glass.add(prg, "alignx center, aligny center,shrink");
-        prg.setStringPainted(false);
-        prg.setIndeterminate(true);
+//        JXLabel lbl = new JXLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_128_128"), 300, 300));
+//        glass.add(lbl, "alignx center, aligny center");
+//        JProgressBar prg = new JProgressBar();
+//        glass.add(prg, "alignx center, aligny center,shrink");
+//        prg.setStringPainted(false);
+//        prg.setIndeterminate(true);
         glass.setOpaque(false);
         glass.setAlpha(0.5f);
-        AbstractPainter fgPainter = (AbstractPainter) lbl.getForegroundPainter();
-        StackBlurFilter filter = new StackBlurFilter();
-        fgPainter.setFilters(filter);
+//        AbstractPainter fgPainter = (AbstractPainter) lbl.getForegroundPainter();
+//        StackBlurFilter filter = new StackBlurFilter();
+//        fgPainter.setFilters(filter);
         glass.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         this.setWaitPane(glass);
     }
@@ -930,15 +931,16 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 case ControlEvent.CONTROL_INIT_COMPLETE:
                     setTitle(JDUtilities.getJDTitle());
                     SimpleGUI.this.setWaiting(false);
+                 
                     SimpleGUI.this.setEnabled(true);
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException e) {
-                    }
+                  
                     if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
                         JDUtilities.getController().startDownloads();
                     }
-
+                    try {
+                        Main.SPLASH.finish();
+                    } catch (Exception e) {
+                    }
                     break;
                 case ControlEvent.CONTROL_PLUGIN_ACTIVE:
                     logger.info("Module started: " + event.getSource());

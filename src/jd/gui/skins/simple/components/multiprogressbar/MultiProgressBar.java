@@ -6,13 +6,11 @@ import java.awt.Dimension;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.LineBorder;
@@ -22,11 +20,12 @@ import net.miginfocom.swing.MigLayout;
 public class MultiProgressBar extends JPanel {
     private ArrayList<ProgressEntry> entries;
     private long maximum;
+    private long value;
 
     public MultiProgressBar() {
         entries = new ArrayList<ProgressEntry>();
         this.setBackground(getBackground().darker());
-        LineBorder  b=  new LineBorder(getBackground().darker(),1,true);
+        LineBorder b = new LineBorder(getBackground().brighter(), 1, true);
         this.setBorder(b);
     }
 
@@ -44,7 +43,7 @@ public class MultiProgressBar extends JPanel {
     }
 
     public Dimension getPreferredSize() {
-        return new Dimension(600, 10);
+        return new Dimension(600, 30);
     }
 
     private int scale(long point, double faktor) {
@@ -58,7 +57,7 @@ public class MultiProgressBar extends JPanel {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         int width = this.getWidth();
-        int height = this.getHeight();
+        int height = (int) (this.getHeight() * 0.8);
         Color col1 = new Color(0x7CD622);
         Color col2 = new Color(0x339933);
         double faktor = getFaktor();
@@ -68,17 +67,26 @@ public class MultiProgressBar extends JPanel {
         ProgressEntry e;
         for (int i = 0; i < entries.size(); i++) {
             e = entries.get(i);
-         
-            
+
             Rectangle rec = new Rectangle(scale(e.getPosition(), faktor), 0, scale(e.getValue(), faktor), height);
 
             ((Graphics2D) g).setPaint(new GradientPaint(width / 2, 0, col1, width / 2, height, col2.darker()));
             g2.fill(rec);
             ((Graphics2D) g).setPaint(Color.black);
-            g2.drawLine(scale(e.getPosition(), faktor), 0, scale(e.getPosition(), faktor), getHeight());
-           
+            g2.drawLine(scale(e.getPosition(), faktor), 0, scale(e.getPosition(), faktor), height);
 
         }
+
+        col1 = col1.brighter();
+        col2 = col2.brighter();
+        ((Graphics2D) g).setPaint(getBackground().darker().darker());
+        g2.setStroke(new BasicStroke(2));
+        g2.drawLine(0, height, width, height);
+        Rectangle rec = new Rectangle(0, height + 2, scale(value, faktor), getHeight() - height);
+        ((Graphics2D) g).setPaint(new GradientPaint(width / 2, 0, col1, width / 2, height, col2.darker()));
+        g2.fill(rec);
+        g2.dispose();
+
     }
 
     public void setValues(long... values) {
@@ -91,12 +99,13 @@ public class MultiProgressBar extends JPanel {
 
             }
         }
+        update();
         this.repaint();
     }
 
     public void setMaximums(long... max) {
-        if(max==null){
-            entries= new ArrayList<ProgressEntry>();
+        if (max == null) {
+            entries = new ArrayList<ProgressEntry>();
             return;
         }
         synchronized (entries) {
@@ -114,14 +123,17 @@ public class MultiProgressBar extends JPanel {
 
     private void update() {
         long max = 0;
+        long totalvalue = 0;
         synchronized (entries) {
             ProgressEntry e;
             for (int i = 0; i < entries.size(); i++) {
                 e = entries.get(i);
                 e.setPosition(max);
                 max += e.getMaximum();
+                totalvalue += e.getValue();
             }
             this.maximum = max;
+            this.value = totalvalue;
         }
 
     }

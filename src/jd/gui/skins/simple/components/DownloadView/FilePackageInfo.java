@@ -121,23 +121,24 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         txtName = new JDTextField();
         txtName.setAutoSelect(true);
         txtName.addActionListener(this);
-
+        txtName.setBackground(null);
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
         brwSaveTo.setEditable(true);
         brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
         brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
         brwSaveTo.addActionListener(this);
-
+        brwSaveTo.getInput().setBackground(null);
         txtPassword = new JDTextField();
         txtPassword.addActionListener(this);
         txtComment = new JDTextField();
         txtComment.addActionListener(this);
-
+        txtComment.setBackground(null);
+        txtPassword.setBackground(null);
         chbExtract = new JCheckBox(JDLocale.L("gui.fileinfopanel.packagetab.chb.extractAfterdownload", "Extract"));
         chbExtract.setSelected(true);
         chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
         chbExtract.addActionListener(this);
-
+   
         chbUseSubdirectory = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.useSubdirectory", "Use Subdirectory"));
         chbUseSubdirectory.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
         chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
@@ -167,7 +168,8 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         panel = new JPanel();
         panel.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
         panel.add(hosterlabel = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "split 2");
-        panel.add(typeicon = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "split 2");
+        panel.add(typeicon = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "");
+        typeicon.setText(JDLocale.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
         panel.add(progressBarDownloadLink, "spanx,growx,pushx");
         panel.add(eta = new JLabel(JDLocale.LF("gui.fileinfopanel.linktab.eta", "ETA: %s mm:ss", "0")));
         panel.add(speed = new JLabel(JDLocale.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", "0 kb")), "skip,alignx right");
