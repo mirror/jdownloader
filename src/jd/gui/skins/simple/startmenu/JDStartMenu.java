@@ -13,11 +13,10 @@ public class JDStartMenu {
         popup.add(new AddLinksMenu());
         popup.add(new CleanupMenu());
 
-
-//        popup.add(new SaveMenu());
-       popup.add(new JSeparator());
+        // popup.add(new SaveMenu());
+        popup.add(new JSeparator());
         popup.add(new AddonsMenu());
-//        popup.add(new PremiumMenu());
+        // popup.add(new PremiumMenu());
 
         // popup.add(new SaveMenu());
         // popup.add(new JSeparator());

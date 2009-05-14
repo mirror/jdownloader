@@ -5,7 +5,6 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 import javax.swing.JMenuItem;
-import javax.swing.JSeparator;
 
 import jd.OptionalPluginWrapper;
 import jd.config.MenuItem;
@@ -20,16 +19,17 @@ import jd.utils.JDUtilities;
 public class AddonsMenu extends JStartMenu {
 
     private static final long serialVersionUID = 1019851981865519325L;
+
     static public AddonsMenu INSTANCE;
 
     public AddonsMenu() {
-        super("gui.menu.addons", "gui.images.config.addons", "gui.menu.addons.desc");
+        super("gui.menu.addons", "gui.images.config.addons");
 
         updateMenu();
         INSTANCE = this;
     }
 
-    public void updateMenu() {
+    private void updateMenu() {
         // Component temp = (menAddons.getComponentCount() != 0) ?
         // menAddons.getComponent(0) :
         // SimpleGUI.createMenuItem(this.actionOptionalConfig);
@@ -60,7 +60,6 @@ public class AddonsMenu extends JStartMenu {
                     mi.setActionListener(new ActionListener() {
 
                         public void actionPerformed(ActionEvent e) {
-                            ((MenuItem) e.getSource()).getProperty("PLUGIN");
                             SimpleGUI.displayConfig(((Plugin) ((MenuItem) e.getSource()).getProperty("PLUGIN")).getConfig(), 0);
                         }
 
@@ -76,33 +75,6 @@ public class AddonsMenu extends JStartMenu {
                     mi.setIcon(m.getIcon());
                     if (mi != null) {
                         itemsWithSubmenu.add(mi);
-
-                        // ((JMenu) mi).removeMenuListener(((JMenu)
-                        // mi).getMenuListeners()[0]);
-                        // ((JMenu) mi).addMenuListener(new MenuListener() {
-                        // public void menuCanceled(MenuEvent e) {
-                        // }
-                        //
-                        // public void menuDeselected(MenuEvent e) {
-                        // }
-                        //
-                        // public void menuSelected(MenuEvent e) {
-                        // JMenu m = (JMenu) e.getSource();
-                        //
-                        // m.removeAll();
-                        // for (MenuItem menuItem :
-                        // plg.getPlugin().createMenuitems()) {
-                        // JMenuItem c = JDMenu.getJMenuItem(menuItem);
-                        //
-                        // if (c == null) {
-                        // m.addSeparator();
-                        // } else {
-                        // m.add(c);
-                        // }
-                        // }
-                        // }
-                        //
-                        // });
                     } else {
                         addSeparator();
                     }
@@ -112,7 +84,6 @@ public class AddonsMenu extends JStartMenu {
                         c.setDisabledIcon(null);
                         c.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                         c.setSelectedIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
-                        // c.setSelectedIcon(null);
                         c.setDisabledSelectedIcon(null);
                         if (mi.getID() == MenuItem.TOGGLE) {
                             itemsToggle.add(c);
@@ -133,31 +104,27 @@ public class AddonsMenu extends JStartMenu {
         boolean t = itemsToggle.size() > 0;
         boolean pre = false;
         for (JMenuItem jmi : itemsWithSubmenu) {
-            if (!pre) add(new JSeparator());
+            if (!pre) addSeparator();
             add(jmi);
             pre = true;
         }
 
-        if (pre && (c || p || t)) add(new JSeparator());
+        if (pre && (c || p || t)) addSeparator();
         pre = false;
         for (JMenuItem jmi : itemsConfig) {
             add(jmi);
             pre = true;
         }
-        if (pre && (p || t)) add(new JSeparator());
+        if (pre && (p || t)) addSeparator();
         pre = false;
         for (JMenuItem jmi : itemsPress) {
             add(jmi);
             pre = true;
         }
         pre = false;
-        if (pre && t) add(new JSeparator());
+        if (pre && t) addSeparator();
         for (JMenuItem jmi : itemsToggle) {
             add(jmi);
         }
-
-        // if (menAddons.getItem(menAddons.getItemCount() - 1) == null) {
-        // menAddons.remove(menAddons.getItemCount() - 1);
-        // }
     }
 }

@@ -16,21 +16,14 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.logging.Logger;
-
 import net.miginfocom.swing.MigLayout;
 
-public class AddonPane extends JTabbedPanel implements ActionListener {
+public class AddonPane extends JTabbedPanel {
 
     private static final long serialVersionUID = 1511081032101600835L;
 
-    public AddonPane(Logger logger) {
+    public AddonPane() {
         this.setLayout(new MigLayout("ins 3", "[fill,grow]", "[fill,grow]"));
-    }
-
-    public void actionPerformed(ActionEvent e) {
     }
 
     //@Override
