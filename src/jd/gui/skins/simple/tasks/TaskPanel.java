@@ -42,6 +42,8 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     protected static final String D1_LABEL = "spanx,alignx left,gaptop 7,gapleft 7";
     protected static final String D2_PROGRESSBAR = "height 10!,gaptop 7,gapleft 27, width null:110:180";
     protected static final String D1_COMPONENT = "spanx,alignx left,gaptop 2,gapleft 7";
+
+    protected static final String D2_CHECKBOX = "spanx,alignx left,gaptop 2,gapleft 23";;
     public boolean pressed;
 
     public TaskPanel(String string, ImageIcon ii, String pid) {

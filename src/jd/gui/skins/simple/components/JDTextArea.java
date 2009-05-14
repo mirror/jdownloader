@@ -44,6 +44,8 @@ public class JDTextArea extends JTextArea implements FocusListener {
 
     public JDTextArea() {
         this(null);
+        
+        setLineWrap(true);
     }
 
     public void setAutoSelect(boolean b) {

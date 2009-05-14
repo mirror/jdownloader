@@ -43,7 +43,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.JProgressBar;
 import javax.swing.JRootPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
@@ -114,14 +113,12 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdesktop.swingworker.SwingWorker;
 import org.jdesktop.swingx.JXFrame;
-import org.jdesktop.swingx.JXLabel;
 import org.jdesktop.swingx.JXLoginDialog;
 import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTitledSeparator;
 import org.jdesktop.swingx.JXLoginPane.Status;
-import org.jdesktop.swingx.image.StackBlurFilter;
-import org.jdesktop.swingx.painter.AbstractPainter;
 import org.jvnet.lafwidget.LafWidget;
 import org.jvnet.lafwidget.utils.LafConstants.AnimationKind;
 
@@ -191,9 +188,11 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private boolean mainMenuRollOverStatus = false;
 
-    // private SwingWorker<Object, Object> cursorworker;
+  
 
     private JViewport taskPaneView;
+
+    private SwingWorker<Object, Object> cursorworker;
 
     /**
      * Das Hauptfenster wird erstellt. Singleton. Use SimpleGUI.createGUI
@@ -317,55 +316,55 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     }
 
-    // /**
-    // * Workaround the substance bug, that the resizecursor does not get
-    // resetted
-    // * if the movement is fast.
-    // */
-    // public void setCursor(Cursor c) {
-    // // System.out.println("set cursor " + c);
-    // if (this.getCursor() == c) return;
-    // if (isSubstance()) {
-    // switch (c.getType()) {
-    // case Cursor.E_RESIZE_CURSOR:
-    // case Cursor.N_RESIZE_CURSOR:
-    // case Cursor.S_RESIZE_CURSOR:
-    // case Cursor.W_RESIZE_CURSOR:
-    // case Cursor.NW_RESIZE_CURSOR:
-    // case Cursor.NE_RESIZE_CURSOR:
-    // case Cursor.SE_RESIZE_CURSOR:
-    // case Cursor.SW_RESIZE_CURSOR:
-    // final Cursor cc = c;
-    // if (cursorworker != null) {
-    // cursorworker.cancel(true);
-    // cursorworker = null;
-    // }
-    // this.cursorworker = new SwingWorker<Object, Object>() {
-    //
-    // @Override
-    // protected Object doInBackground() throws Exception {
-    // Thread.sleep(2000);
-    //
-    // return null;
-    // }
-    //
-    // public void done() {
-    // if (cursorworker == this) {
-    // if (getCursor() == cc) {
-    // System.out.println("Reset cursor");
-    // setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-    // }
-    // cursorworker = null;
-    // }
-    // }
-    //
-    // };
-    // cursorworker.execute();
-    // }
-    // }
-    // super.setCursor(c);
-    //
-    // }
+     /**
+     * Workaround the substance bug, that the resizecursor does not get
+     resetted
+     * if the movement is fast.
+     */
+     public void setCursor(Cursor c) {
+     // System.out.println("set cursor " + c);
+     if (this.getCursor() == c) return;
+     if (isSubstance()) {
+     switch (c.getType()) {
+     case Cursor.E_RESIZE_CURSOR:
+     case Cursor.N_RESIZE_CURSOR:
+     case Cursor.S_RESIZE_CURSOR:
+     case Cursor.W_RESIZE_CURSOR:
+     case Cursor.NW_RESIZE_CURSOR:
+     case Cursor.NE_RESIZE_CURSOR:
+     case Cursor.SE_RESIZE_CURSOR:
+     case Cursor.SW_RESIZE_CURSOR:
+     final Cursor cc = c;
+     if (cursorworker != null) {
+     cursorworker.cancel(true);
+     cursorworker = null;
+     }
+     this.cursorworker = new SwingWorker<Object, Object>() {
+    
+     @Override
+     protected Object doInBackground() throws Exception {
+     Thread.sleep(2000);
+    
+     return null;
+     }
+    
+     public void done() {
+     if (cursorworker == this) {
+     if (getCursor() == cc) {
+     System.out.println("Reset cursor");
+     setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+     }
+     cursorworker = null;
+     }
+     }
+    
+     };
+     cursorworker.execute();
+     }
+     }
+     super.setCursor(c);
+    
+     }
 
     public JDToolBar getToolBar() {
         return toolBar;

@@ -136,6 +136,10 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         load();
     }
 
+    public boolean needsViewport() {
+        return false;
+    }
+
     public void actionPerformed(ActionEvent e) {
 
         if (e.getSource() == btnAdd) {

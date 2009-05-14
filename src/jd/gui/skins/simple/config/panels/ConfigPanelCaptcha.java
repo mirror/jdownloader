@@ -128,7 +128,9 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         initPanel();
         load();
     }
-
+    public boolean needsViewport(){
+        return false;
+    }
     public void initPanel() {
         setupContainer();
         panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]", "[][][fill,grow]"));

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
@@ -49,11 +50,37 @@ public class ConfigEntriesPanel extends ConfigPanel {
         this(container, false);
     }
 
+    public boolean needsViewport() {
+        return false;
+    }
+
+
+
     public ConfigEntriesPanel(ConfigContainer container, boolean idle) {
         super();
         this.container = container;
         if (!idle) {
             init();
+        } else {
+            /**
+             * Falls configcontainer textfelder haben, die ja üblicherweise
+             * scrollbars haben, brauchen wir keinen viewport
+             */
+            if (container.getContainerNum() == 0) {
+
+                Vector<ConfigEntry> entries = container.getEntries();
+                for (ConfigEntry cfgEntry : entries) {
+                    switch (cfgEntry.getType()) {
+
+                    case ConfigContainer.TYPE_TEXTAREA:
+                        viewport = false;
+                        break;
+                    }
+
+                }
+
+            }
+
         }
     }
 
@@ -66,14 +93,20 @@ public class ConfigEntriesPanel extends ConfigPanel {
 
     private void addTabbedPanel(String title, ConfigEntriesPanel configPanelPlugin) {
         subPanels.add(configPanelPlugin);
-        tabbedPane.add(title, configPanelPlugin);
+   
+            JScrollPane sp;
+            tabbedPane.add(title, sp=new JScrollPane(configPanelPlugin));
+           sp.setBorder(null);
+       
+        
+
     }
 
     public Vector<ConfigEntriesPanel> getSubPanels() {
         return subPanels;
     }
 
-    //@Override
+    // @Override
     public void initPanel() {
         if (inited) return;
         this.inited = true;
@@ -97,9 +130,13 @@ public class ConfigEntriesPanel extends ConfigPanel {
             tabbedPane.addChangeListener(new ChangeListener() {
 
                 public void stateChanged(ChangeEvent e) {
+                    if (tabbedPane.getSelectedComponent() instanceof JScrollPane) {
+                        ((ConfigEntriesPanel) ((JScrollPane) tabbedPane.getSelectedComponent()).getViewport().getView()).init();
+                    } else {
+                        ((ConfigEntriesPanel) tabbedPane.getSelectedComponent()).init();
+                    }
 
-                    ((ConfigEntriesPanel) tabbedPane.getSelectedComponent()).init();
-                   // tabbedPane.removeChangeListener(this);
+                    // tabbedPane.removeChangeListener(this);
 
                 }
 
@@ -130,7 +167,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
 
     }
 
-    //@Override
+    // @Override
     public void load() {
         loadConfigEntries();
     }
@@ -147,11 +184,11 @@ public class ConfigEntriesPanel extends ConfigPanel {
 
     }
 
-    //@Override
+    // @Override
     public void save() {
         if (subPanels != null) {
             for (int i = 0; i < subPanels.size(); i++) {
-            
+
                 subPanels.get(i).save();
             }
         }

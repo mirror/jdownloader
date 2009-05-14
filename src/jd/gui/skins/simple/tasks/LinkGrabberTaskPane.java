@@ -7,6 +7,8 @@ import java.util.Vector;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
 import javax.swing.Timer;
@@ -15,6 +17,7 @@ import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberTreeTableAction;
 import jd.nutils.Formatter;
@@ -41,6 +44,8 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     private Timer fadeTimer;
     private Vector<LinkGrabberFilePackage> fps;
     private LinkGrabberController lgi;
+    private JComboBox topOrBottom;
+    private JCheckBox startAFteradding;
 
     public LinkGrabberTaskPane(String string, ImageIcon ii) {
         super(string, ii, "linkgrabber");
@@ -106,6 +111,49 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
 
         add(new JSeparator());
         initListStatGUI();
+        add(new JSeparator());
+        initQuickConfig();
+    }
+
+    private void initQuickConfig() {
+        JLabel config = (new JLabel(JDLocale.L("gui.taskpanes.download.linkgrabber.config", "Settings")));
+        config.setIcon(JDTheme.II("gui.images.taskpanes.configuration", 16, 16));
+
+        topOrBottom = new JComboBox(new String[] { JDLocale.L("gui.taskpanes.download.linkgrabber.config.insertat.top", "Insert at TOP"), JDLocale.L("gui.taskpanes.download.linkgrabber.config.insertat.bottom", "Insert at BOTTOM") });
+        topOrBottom.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                if (topOrBottom.getSelectedIndex() == 0) {
+                    SimpleGuiConstants.GUI_CONFIG.setProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, SimpleGuiConstants.TOP);
+                } else {
+                    SimpleGuiConstants.GUI_CONFIG.setProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, SimpleGuiConstants.BOTTOM);
+                }
+                SimpleGuiConstants.GUI_CONFIG.save();
+            }
+
+        });
+
+        if (SimpleGuiConstants.GUI_CONFIG.getIntegerProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, SimpleGuiConstants.BOTTOM) == SimpleGuiConstants.BOTTOM) {
+            topOrBottom.setSelectedIndex(1);
+        }
+        startAFteradding = new JCheckBox(JDLocale.L("gui.taskpanes.download.linkgrabber.config.startofter", "Start after adding"));
+        startAFteradding.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                SimpleGuiConstants.GUI_CONFIG.setProperty(SimpleGuiConstants.PARAM_START_AFTER_ADDING_LINKS, startAFteradding.isSelected());
+                SimpleGuiConstants.GUI_CONFIG.save();
+            }
+
+        });
+        if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
+            startAFteradding.setSelected(true);
+        }
+        add(config, D1_LABEL_ICON);
+        
+       
+        add(startAFteradding, TaskPanel.D2_CHECKBOX);
+        add(topOrBottom, TaskPanel.D2_LABEL);
+
     }
 
     public void actionPerformed(ActionEvent e) {

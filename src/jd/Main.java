@@ -495,6 +495,7 @@ public class Main {
         } catch (InterruptedException e) {
             LOGGER.log(Level.SEVERE, "Exception occured", e);
         }
+ 
         if (!Main.isBeta()) new PackageManager().interact(this);
 
     }

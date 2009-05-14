@@ -17,14 +17,16 @@
 package jd.gui.skins.simple.config.panels;
 
 import java.awt.Color;
-import java.awt.ComponentOrientation;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -107,7 +109,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
                     while (true) {
                         new GuiRunnable<Object>() {
 
-                            //@Override
+                            // @Override
                             public Object runSave() {
                                 time.setText(Formatter.formatSeconds((System.currentTimeMillis() - timel) / 1000));
                                 time.setEnabled(true);
@@ -128,7 +130,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
             JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, 0);
             progress.setStatus(30);
             new Thread() {
-                //@Override
+                // @Override
                 public void run() {
                     boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
@@ -166,7 +168,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         }
     }
 
-    //@Override
+    // @Override
     public void initPanel() {
         /* 0=LiveHeader, 1=Extern, 2=Batch,3=CLR */
 
@@ -178,11 +180,12 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDLocale.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20).setGroup(group)));
 
         panel.add(Factory.createHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.methods", "Reconnect Methods"), JDTheme.II("gui.images.reconnect_selection", 32, 32))), "spanx");
-
-        panel.add(tabbed = new JTabbedPane(), "spanx,pushy,growy");
-        tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-        tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        tabbed = new JTabbedPane();
+        panel.add(tabbed, "spanx,pushy,growy");
+        // tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+        // tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbed.setTabPlacement(SwingConstants.TOP);
+        tabbed.setPreferredSize(new Dimension(100, 300));
         tabbed.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
@@ -195,7 +198,8 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         addExtern();
         addBatch();
         addCLR();
-        tabbed.setSelectedIndex(configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER));
+        // tabbed.setSelectedIndex(configuration.getIntegerProperty(
+        // ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER));
         panel.add(Factory.createHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.test", "Showcase"), JDTheme.II("gui.images.config.network_local", 32, 32))), "spanx,gaptop 15");
         JPanel p = new JPanel(new MigLayout(" ins 0,wrap 7", "[]5[fill]5[align right]20[align right]20[align right]20[align right]20[align right]", "[][]"));
         panel.add(p, "spanx,gapright 20");
@@ -231,10 +235,18 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
             }
         }.start();
 
+        JScrollPane sp;
         //
-        add(panel);
+        add(sp = new JScrollPane(panel));
+//        sp.setHorizontalScrollBar(null);
+//        sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
         // setReconnectType();
+
+    }
+
+    public boolean needsViewport() {
+        return false;
     }
 
     private void addCLR() {
@@ -265,7 +277,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     }
 
-    //@Override
+    // @Override
     public void load() {
         loadConfigEntries();
     }
@@ -275,7 +287,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         return PropertyType.getMax(ret, super.hasChanges(), ((ConfigPanel) tabbed.getSelectedComponent()).hasChanges());
     }
 
-    //@Override
+    // @Override
     public void save() {
 
         saveConfigEntries();

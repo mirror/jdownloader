@@ -61,7 +61,9 @@ public class ConfigPanelDownload extends ConfigPanel {
         cep.save();
         config.save();
     }
-
+    public boolean needsViewport() {
+        return false;
+    }
     public PropertyType hasChanges() {
 
         return PropertyType.getMax(super.hasChanges(), cep.hasChanges());

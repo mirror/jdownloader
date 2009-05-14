@@ -273,7 +273,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 column.setMinWidth(30);
                 break;
             case 1:
-                column.setPreferredWidth(250);
+                column.setPreferredWidth(150);
                 break;
             case 2:
                 column.setPreferredWidth(60);

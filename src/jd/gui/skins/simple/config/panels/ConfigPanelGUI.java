@@ -65,7 +65,9 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         load();
     }
-
+public boolean needsViewport(){
+    return false;
+}
     // @Override
     public void initPanel() {
         ConfigContainer container = new ConfigContainer(this);
@@ -83,16 +85,16 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         /* LOOK */
         ConfigGroup lookGroup = new ConfigGroup(JDLocale.L("gui.config.gui.view", "Look"), JDTheme.II("gui.images.config.gui", 32, 32));
-if(JDTheme.getThemeIDs().size()<=1){
-    JDTheme.getThemeIDs().get(0);
-    subConfig.setProperty(SimpleGuiConstants.PARAM_THEME, JDTheme.getThemeIDs().get(0));
-    subConfig.save();
-}else{    
+        if (JDTheme.getThemeIDs().size() <= 1) {
+            JDTheme.getThemeIDs().get(0);
+            subConfig.setProperty(SimpleGuiConstants.PARAM_THEME, JDTheme.getThemeIDs().get(0));
+            subConfig.save();
+        } else {
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")).setGroup(lookGroup));
-        ce.setDefaultValue("default");
-        ce.setPropertyType(PropertyType.NEEDS_RESTART);
-}
+            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")).setGroup(lookGroup));
+            ce.setDefaultValue("default");
+            ce.setPropertyType(PropertyType.NEEDS_RESTART);
+        }
         if (JDLookAndFeelManager.getSupportedLookAndFeels().length > 1) {
             look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDLookAndFeelManager.PARAM_PLAF, JDLookAndFeelManager.getSupportedLookAndFeels(), JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroup(lookGroup));
             ce.setDefaultValue(JDLookAndFeelManager.getPlaf());
@@ -109,8 +111,7 @@ if(JDTheme.getThemeIDs().size()<=1){
         ConfigGroup perf = new ConfigGroup(JDLocale.L("gui.config.gui.performance", "Performance"), JDTheme.II("gui.images.performance", 32, 32));
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.ANIMATION_ENABLED, JDLocale.L("gui.config.gui.animationenabled", "Enable extended effects.")).setGroup(perf));
         ce.setDefaultValue(true);
-   
-        
+
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.DECORATION_ENABLED, JDLocale.L("gui.config.gui.decoration", "Enable Windowdecoration")).setGroup(perf));
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
@@ -140,10 +141,13 @@ if(JDTheme.getThemeIDs().size()<=1){
 
         ext.setGroup(null);
 
-//        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, "FILE_REGISTER", JDLocale.L("gui.config.gui.reg_protocols", "Link ccf/dlc/rsdf to JDownloader")));
-//        ce.setDefaultValue(true);
-//        ce.setPropertyType(PropertyType.NEEDS_RESTART);
-//        if (!OSDetector.isWindows()) ce.setEnabled(false);
+        // ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // subConfig, "FILE_REGISTER",
+        // JDLocale.L("gui.config.gui.reg_protocols",
+        // "Link ccf/dlc/rsdf to JDownloader")));
+        // ce.setDefaultValue(true);
+        // ce.setPropertyType(PropertyType.NEEDS_RESTART);
+        // if (!OSDetector.isWindows()) ce.setEnabled(false);
         ConfigContainer lg = new ConfigContainer(this, JDLocale.L("gui.config.gui.linggrabber", "Linkgrabber"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lg));
 

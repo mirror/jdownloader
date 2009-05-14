@@ -47,6 +47,8 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
     private ConfigGroup currentGroup;
 
+    protected boolean viewport = true;
+
     public ConfigPanel() {
 
         panel = new JPanel();
@@ -54,6 +56,10 @@ public abstract class ConfigPanel extends JTabbedPanel {
         panel.setLayout(new MigLayout("ins 0 10 10 10,wrap 2", "[fill,grow 10]10[fill,grow]"));
         // this.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1,
         // this.getBackground().darker()));
+    }
+
+    public boolean needsViewport() {
+        return viewport;
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry, JPanel panel) {
@@ -79,7 +85,9 @@ public abstract class ConfigPanel extends JTabbedPanel {
             for (JComponent c : entry.getInput()) {
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_TEXTAREA:
-                    panel.add(new JScrollPane(c), "spanx,gapright 20,growy,pushy");
+                    panel.add(c, "spanx,gapright 20");
+//                    panel.add(new JScrollPane(c), "spanx,gapright 20,growy,pushy");
+//                    viewport = false;
                     break;
                 case ConfigContainer.TYPE_PREMIUMPANEL:
                     this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
@@ -119,8 +127,9 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_TEXTAREA:
-                    panel.add(new JScrollPane(c), "spanx,gapleft 35,gapright 20");
-
+//                    viewport = false;
+                   // panel.add(new JScrollPane(c), "spanx,gapleft 35,gapright 20");
+                    panel.add(c, "spanx,gapleft 35,gapright 20");
                     break;
                 case ConfigContainer.TYPE_PREMIUMPANEL:
 
