@@ -34,7 +34,7 @@ import jd.utils.JDUtilities;
 @SuppressWarnings("unchecked")
 public class JDFolderWatch extends PluginOptional {
     public class check extends Thread {
-        //@Override
+        // @Override
         public void run() {
             threadend = true;
             while (threadend) {
@@ -71,7 +71,7 @@ public class JDFolderWatch extends PluginOptional {
         cfg.setDefaultValue("5");
     }
 
-    //@Override
+    // @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getActionCommand().equals("Check")) {
             checkFolder();
@@ -129,7 +129,7 @@ public class JDFolderWatch extends PluginOptional {
         }
     }
 
-    //@Override
+    // @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         menu.add(new MenuItem(JDLocale.L("plugins.optional.folderwatch.menu.startstop", "Start/Stop"), 0).setActionListener(this));
@@ -138,17 +138,17 @@ public class JDFolderWatch extends PluginOptional {
         return menu;
     }
 
-    //@Override
+    // @Override
     public String getHost() {
         return JDLocale.L("plugins.optional.folderwatch.name", "JDFolderWatch");
     }
 
-    //@Override
+    // @Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
@@ -157,7 +157,7 @@ public class JDFolderWatch extends PluginOptional {
         return subConfig.getIntegerProperty("WAITTIME", 5) * 60000;
     }
 
-    //@Override
+    // @Override
     public boolean initAddon() {
         if (JDUtilities.getJavaVersion() >= 1.5) {
             logger.info("FolderWatch OK");
@@ -168,6 +168,7 @@ public class JDFolderWatch extends PluginOptional {
             }
 
             i = new check();
+            i.setName("FolderWatch");
             i.start();
             return true;
 
@@ -176,7 +177,7 @@ public class JDFolderWatch extends PluginOptional {
         }
     }
 
-    //@Override
+    // @Override
     public void onExit() {
     }
 }

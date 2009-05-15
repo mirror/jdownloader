@@ -35,6 +35,7 @@ import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -188,13 +189,14 @@ public class JDPremiumCollector extends PluginOptional {
 
         // @Override
         public void run() {
+            PluginForHost plgi = (PluginForHost) plg.getNewPluginInstance();
             for (String[] acc : accs) {
                 if (acc[3].equalsIgnoreCase(plg.getHost())) {
                     Account account = new Account(acc[1], acc[2]);
                     account.setProperty("PREMCOLLECTOR", true);
                     if (subConfig.getBooleanProperty(PROPERTY_ACCOUNTS, true)) {
                         try {
-                            AccountInfo accInfo = plg.getPlugin().getAccountInformation(account);
+                            AccountInfo accInfo = plgi.getAccountInformation(account);
                             if (accInfo != null && accInfo.isValid() && !accInfo.isExpired() && accInfo.getTrafficLeft() != 0) {
                                 AccountController.getInstance().addAccount(plg.getPlugin(), account);
                             } else {
@@ -213,7 +215,7 @@ public class JDPremiumCollector extends PluginOptional {
             for (Account acc : accounts) {
                 if (subConfig.getBooleanProperty(PROPERTY_ACCOUNTS2, true)) {
                     try {
-                        AccountInfo accInfo = plg.getPlugin().getAccountInformation(acc);
+                        AccountInfo accInfo = plgi.getAccountInformation(acc);
                         if (accInfo == null || !accInfo.isValid() || accInfo.isExpired() || accInfo.getTrafficLeft() == 0) {
                             AccountController.getInstance().removeAccount(plg.getPlugin(), acc);
                         }

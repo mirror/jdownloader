@@ -205,7 +205,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         TreeMap<String, Long> mapSize = new TreeMap<String, Long>();
         for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
             if (wrapper.isLoaded() && wrapper.usePlugin()) {
-                final PluginForHost helpPlugin = wrapper.getPlugin();
+                final PluginForHost helpPlugin = (PluginForHost) wrapper.getNewPluginInstance();
                 if (helpPlugin.getPremiumAccounts().size() > 0) {
                     ArrayList<Account> alist = new ArrayList<Account>(helpPlugin.getPremiumAccounts());
                     for (Account a : alist) {

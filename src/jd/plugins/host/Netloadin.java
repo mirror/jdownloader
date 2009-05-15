@@ -434,8 +434,7 @@ public class Netloadin extends PluginForHost {
             downloadLink.setDownloadSize((int) Regex.getSize(entries[2] + " bytes"));
 
             downloadLink.setMD5Hash(entries[4].trim());
-            if (entries[3].equalsIgnoreCase("online")) {
-                if (fileStatusText != null) downloadLink.getLinkStatus().setStatusText(fileStatusText);
+            if (entries[3].equalsIgnoreCase("online")) {                
                 return true;
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

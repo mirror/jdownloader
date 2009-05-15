@@ -250,6 +250,8 @@ public class DistributeData extends Thread {
             data = data.replaceAll("http://", "httpviajd://");
             data = data.replaceAll("https://", "httpsviajd://");
             ret.addAll(findLinks(true));
+            data = data.replaceAll("httpviajd://", "http://");
+            data = data.replaceAll("httpsviajd://", "https://");
         }
         return ret;
     }

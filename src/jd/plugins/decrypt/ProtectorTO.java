@@ -31,6 +31,7 @@ import jd.parser.JavaScript;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
@@ -98,18 +99,42 @@ public class ProtectorTO extends PluginForDecrypt {
                 }
             }
             String img = null;
+            int retry = 1;
             while ((img = br.getRegex("<img id=[\"']cryptogram[\"'] src=[\"']([^\"']*)[\"']").getMatch(0)) != null) {
+                if (retry > 5) throw new DecrypterException(DecrypterException.CAPTCHA);
                 File file = this.getLocalCaptchaFile();
-                URLConnectionAdapter con = br.cloneBrowser().openGetConnection(img);
-                con.connect();
-                Browser.download(file, br.cloneBrowser().openGetConnection(con.getRequest().getLocation()));
+                Browser.download(file, img);
                 Form form = br.getForm(0);
                 String captchaCode = getCaptchaCode(file, param);
                 if (captchaCode == null) return null;
                 form.put("code", captchaCode);
                 br.submitForm(form);
                 img = null;
+                retry++;
             }
+            retry = 1;
+            while ((img = br.getRegex("src=\"(http://api.recaptcha.*?)\"").getMatch(0)) != null) {
+                if (retry > 5) throw new DecrypterException(DecrypterException.CAPTCHA);
+                String k = br.getRegex("src=\"http://api.recaptcha.net/challenge\\?k=(.*?)\"").getMatch(0);
+                /* recaptcha */
+                br.setDebug(true);
+                Browser rcBr = br.cloneBrowser();
+                Form form = br.getForm(0);
+                rcBr.getHeaders().put("Referer", param.getCryptedUrl());
+                rcBr.getPage("http://api.recaptcha.net/challenge?k=" + k);
+                String challenge = rcBr.getRegex("challenge : '(.*?)',").getMatch(0);
+                String server = rcBr.getRegex("server : '(.*?)',").getMatch(0);
+                String captchaAddress = server + "image?c=" + challenge;
+                File captchaFile = this.getLocalCaptchaFile();
+                Browser.download(captchaFile, rcBr.openGetConnection(captchaAddress));
+                String code = getCaptchaCode(captchaFile, param);
+                if (code == null) continue;
+                form.put("recaptcha_challenge_field", challenge);
+                form.put("recaptcha_response_field", code);
+                br.submitForm(form);
+                retry++;
+            }
+
             String containerlink = br.getRegex("<a href=\"(http://protector.to/container/[^\"]*)").getMatch(0);
             if (containerlink != null) {
                 try {

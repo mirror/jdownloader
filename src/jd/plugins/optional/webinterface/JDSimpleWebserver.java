@@ -310,15 +310,16 @@ public class JDSimpleWebserver extends Thread {
         }
     }
 
-    //@Override
+    // @Override
     public void run() {
+        this.setName("Webinterface");
         while (Server_Running) {
             try {
                 Socket Client_Socket = Server_Socket.accept();
                 Thread client_thread = new Thread(new JDRequestHandler(Client_Socket));
                 client_thread.start();
             } catch (IOException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 logger.severe("WebInterface: Client-Connection failed");
             }
         }
