@@ -18,7 +18,9 @@ package jd.gui.skins.simple;
 
 import java.awt.AWTEvent;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.EventQueue;
+import java.awt.Image;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
@@ -35,12 +37,23 @@ import javax.swing.MenuSelectionManager;
 import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 
+import jd.gui.skins.simple.components.JLinkButton;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 
 public class JDEventQueue extends EventQueue {
+    private Cursor cursor;
+    private Thread curserupdater;
+
     public JDEventQueue() {
         super();
+
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+
+        Image image = JDTheme.I("gui.cursor.help");
+
+        cursor = toolkit.createCustomCursor(image, new Point(0, 0), "help");
+
     }
 
     abstract class MenuAbstractAction extends AbstractAction {
@@ -59,17 +72,93 @@ public class JDEventQueue extends EventQueue {
 
         }
 
-        //@Override
+        // @Override
         public boolean isEnabled() {
             return c.isEditable() && c.isEnabled() && c.getSelectedText() != null;
         }
     }
 
-    //@Override
+    // @Override
     protected void dispatchEvent(AWTEvent ev) {
+
         super.dispatchEvent(ev);
         if (!(ev instanceof MouseEvent)) { return; }
         MouseEvent e = (MouseEvent) ev;
+
+        if (e.getID() == 501 && e.isControlDown() && e.isShiftDown()) {
+            Point point = e.getPoint();
+            Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
+            while (source != null) {
+                point.x -= source.getLocation().x;
+                point.y -= source.getLocation().y;
+                Component sdource = source.getComponentAt(point);
+                if (source == sdource || sdource == null) {
+                    if (source.getName() != null) {
+                        final String search = source.getName();
+
+                        new Thread() {
+                            public void run() {
+                                try {
+                                    JLinkButton.openURL("http://jdownloader.org/quickhelp/" + search);
+                                    return;
+                                } catch (Exception e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }
+
+                            }
+                        }.start();
+                        return;
+                    }
+                    break;
+                }
+                source = sdource;
+
+            }
+        } else if (e.getID() == 503 && e.isControlDown() && e.isShiftDown()) {
+
+            Point point = e.getPoint();
+            Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
+            while (source != null) {
+                point.x -= source.getLocation().x;
+                point.y -= source.getLocation().y;
+                Component sdource = source.getComponentAt(point);
+                if (source == sdource || sdource == null) {
+                    if (source.getName() != null) {
+                        
+                        if (curserupdater != null) {
+                            try {
+                                curserupdater.interrupt();
+                            } catch (Exception e2) {
+
+                            }
+                        }
+                        curserupdater = new Thread() {
+                            public void run() {
+                                try {
+                                    long start = System.currentTimeMillis();
+                                    while((System.currentTimeMillis()-start)<750){
+                                        SimpleGUI.CURRENTGUI.setCursor(cursor);
+                                        Thread.sleep(50);
+                                    }
+                               
+                                 
+
+                                    SimpleGUI.CURRENTGUI.setCursor(Cursor.getDefaultCursor());
+                                } catch (Exception e) {
+
+                                }
+
+                            }
+                        };
+                        curserupdater.start();
+                    }
+                    break;
+                }
+                source = sdource;
+
+            }
+        }
         if (!e.isPopupTrigger()) { return; }
         if (e.getComponent() == null) return;
         Component c = SwingUtilities.getDeepestComponentAt(e.getComponent(), e.getX(), e.getY());
@@ -94,7 +183,7 @@ public class JDEventQueue extends EventQueue {
                 c.copy();
             }
 
-            //@Override
+            // @Override
             public boolean isEnabled() {
                 return c.isEnabled() && c.getSelectedText() != null;
             }
@@ -107,7 +196,7 @@ public class JDEventQueue extends EventQueue {
                 c.paste();
             }
 
-            //@Override
+            // @Override
             public boolean isEnabled() {
                 if (c.isEditable() && c.isEnabled()) {
                     Transferable contents = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(this);
@@ -134,7 +223,7 @@ public class JDEventQueue extends EventQueue {
                 c.selectAll();
             }
 
-            //@Override
+            // @Override
             public boolean isEnabled() {
                 return c.isEnabled() && c.getText().length() > 0;
             }

@@ -211,11 +211,12 @@ public class JDToolBar extends JToolBar implements ControlListener {
             }
 
         });
+        clipboard.setName(JDLocale.L("quickhelp.toolbar.clipboard","Toolbar clipboard observer"));
         clipboard.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
 
         /* reconect */
         add(reconnect = new JToggleButton(JDTheme.II("gui.images.reconnect_disabled", 24, 24)), BUTTON_CONSTRAINTS);
-
+        reconnect.setName(JDLocale.L("quickhelp.toolbar.reconnect","Reconnect Toolbar"));
         reconnect.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {

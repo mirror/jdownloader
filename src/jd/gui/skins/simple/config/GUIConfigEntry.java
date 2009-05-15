@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple.config;
 
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
@@ -54,6 +53,7 @@ import jd.gui.skins.simple.components.JDTextArea;
 import jd.gui.skins.simple.components.JDTextField;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.subpanels.PremiumPanel;
+import jd.utils.JDLocale;
 
 /**
  * Diese Klasse fasst ein label / input Paar zusammen und macht das lesen und
@@ -113,6 +113,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_PASSWORDFIELD:
 
             decoration = new JLabel(configEntry.getLabel());
+
             input[0] = new JPasswordField();
 
             PlainDocument doc = (PlainDocument) ((JPasswordField) input[0]).getDocument();
@@ -126,6 +127,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_TEXTFIELD:
 
             decoration = new JLabel(configEntry.getLabel());
+            // decoration.setName(((JLabel)decoration).getText());
             input[0] = new JDTextField();
 
             doc = (PlainDocument) ((JDTextField) input[0]).getDocument();
@@ -136,12 +138,13 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             break;
         case ConfigContainer.TYPE_TEXTAREA:
             decoration = new JLabel(configEntry.getLabel());
+
             input[0] = new JDTextArea();
             input[0].setBorder(BorderFactory.createLineBorder(input[0].getBackground().darker()));
             input[0].setEnabled(configEntry.isEnabled());
-//            Dimension dim = input[0].getPreferredSize();
-//            dim.height = 20;
-        //  input[0].setPreferredSize(new Dimension(-1,20));
+            // Dimension dim = input[0].getPreferredSize();
+            // dim.height = 20;
+            // input[0].setPreferredSize(new Dimension(-1,20));
             doc = (PlainDocument) ((JDTextArea) input[0]).getDocument();
             doc.addDocumentListener(this);
 
@@ -153,6 +156,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             ((JCheckBox) input[0]).addChangeListener(this);
 
             decoration = new JLabel(configEntry.getLabel());
+
             break;
         case ConfigContainer.TYPE_BROWSEFILE:
             if (configEntry.getLabel().trim().length() > 0) decoration = new JLabel(configEntry.getLabel());
@@ -173,6 +177,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             break;
         case ConfigContainer.TYPE_SPINNER:
             decoration = new JLabel(configEntry.getLabel());
+            // decoration.setName(((JLabel)decoration).getText());
             input[0] = new JSpinner(new SpinnerNumberModel(configEntry.getStart(), configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
             input[0].setEnabled(configEntry.isEnabled());
             ((JSpinner) input[0]).addChangeListener(this);
@@ -180,6 +185,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             break;
         case ConfigContainer.TYPE_BUTTON:
             input[0] = new JButton(configEntry.getLabel());
+            // input[0].setName(configEntry.getLabel());
             ((JButton) input[0]).addActionListener(this);
             ((JButton) input[0]).addActionListener(configEntry.getActionListener());
             input[0].setEnabled(configEntry.isEnabled());
@@ -188,6 +194,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_COMBOBOX:
         case ConfigContainer.TYPE_COMBOBOX_INDEX:
             decoration = new JLabel(configEntry.getLabel());
+            // decoration.setName(configEntry.getLabel());
             input[0] = new JComboBox(configEntry.getList());
             if (configEntry.getList().length > 0) {
                 if (configEntry.getList()[0] instanceof JDLabelContainer) {
@@ -252,6 +259,20 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
             break;
 
+        }
+
+        if (configEntry.getHelptags() != null) {
+            String tooltip = JDLocale.LF("gui.tooltips.quickhelp", "Quickhelp available: %s (ctrl+shift+CLICK)", configEntry.getHelptags());
+            if (decoration != null) {
+                decoration.setName(configEntry.getHelptags());
+                decoration.setToolTipText(tooltip);
+            }
+            for (JComponent c : input) {
+                if (c != null){
+                    c.setToolTipText(tooltip);
+                    c.setName(configEntry.getHelptags());
+                }
+            }
         }
         // this.firePropertyChange(getConfigEntry().getPropertyName(), null,
         // getText());

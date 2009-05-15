@@ -62,6 +62,16 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
     private Object defaultValue;
     private boolean enabled = true;
     private int end;
+    private String helptags=null;
+    public String getHelptags() {
+        if(helptags==null)return label;
+        return helptags;
+    }
+
+    public void setHelptags(String helptags) {
+        this.helptags = helptags;
+    }
+
     private PropertyChangeListener guiListener;
     // private String instantHelp;
 
@@ -176,6 +186,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         this.propertyName = propertyName;
         this.propertyInstance = propertyInstance;
         this.label = label;
+        
         enabled = true;
     }
 

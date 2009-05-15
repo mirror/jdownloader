@@ -25,7 +25,7 @@ public class SimpleGuiConstants {
     public static final String PARAM_SIDEBAR_COLLAPSED = "PARAM_SIDEBAR_COLLAPSED";
     public static final String ANIMATION_ENABLED = "ANIMATION_ENABLED";
     public static final String DECORATION_ENABLED = "DECORATION_ENABLED";
-    public static final String PARAM_INSERT_NEW_LINKS_AT = "PARAM_INSERT_NEW_LINKS_AT";
+    public static final String PARAM_INSERT_NEW_LINKS_AT = "PARAM_INSERT_NEW_LINKS_AT2";
     public static final int TOP = 1<<0;
     public static final int BOTTOM = 1<<1;
     public static final String PARAM_START_AFTER_ADDING_LINKS = "PARAM_START_AFTER_ADDING_LINKS";

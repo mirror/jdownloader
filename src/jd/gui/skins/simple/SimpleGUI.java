@@ -18,6 +18,7 @@ package jd.gui.skins.simple;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.EventQueue;
@@ -188,8 +189,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private boolean mainMenuRollOverStatus = false;
 
-  
-
     private JViewport taskPaneView;
 
     private SwingWorker<Object, Object> cursorworker;
@@ -316,55 +315,54 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     }
 
-     /**
-     * Workaround the substance bug, that the resizecursor does not get
-     resetted
+    /**
+     * Workaround the substance bug, that the resizecursor does not get resetted
      * if the movement is fast.
      */
-     public void setCursor(Cursor c) {
-     // System.out.println("set cursor " + c);
-     if (this.getCursor() == c) return;
-     if (isSubstance()) {
-     switch (c.getType()) {
-     case Cursor.E_RESIZE_CURSOR:
-     case Cursor.N_RESIZE_CURSOR:
-     case Cursor.S_RESIZE_CURSOR:
-     case Cursor.W_RESIZE_CURSOR:
-     case Cursor.NW_RESIZE_CURSOR:
-     case Cursor.NE_RESIZE_CURSOR:
-     case Cursor.SE_RESIZE_CURSOR:
-     case Cursor.SW_RESIZE_CURSOR:
-     final Cursor cc = c;
-     if (cursorworker != null) {
-     cursorworker.cancel(true);
-     cursorworker = null;
-     }
-     this.cursorworker = new SwingWorker<Object, Object>() {
-    
-     @Override
-     protected Object doInBackground() throws Exception {
-     Thread.sleep(2000);
-    
-     return null;
-     }
-    
-     public void done() {
-     if (cursorworker == this) {
-     if (getCursor() == cc) {
-     System.out.println("Reset cursor");
-     setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-     }
-     cursorworker = null;
-     }
-     }
-    
-     };
-     cursorworker.execute();
-     }
-     }
-     super.setCursor(c);
-    
-     }
+    public void setCursor(Cursor c) {
+        // System.out.println("set cursor " + c);
+        if (this.getCursor() == c) return;
+        if (isSubstance()) {
+            switch (c.getType()) {
+            case Cursor.E_RESIZE_CURSOR:
+            case Cursor.N_RESIZE_CURSOR:
+            case Cursor.S_RESIZE_CURSOR:
+            case Cursor.W_RESIZE_CURSOR:
+            case Cursor.NW_RESIZE_CURSOR:
+            case Cursor.NE_RESIZE_CURSOR:
+            case Cursor.SE_RESIZE_CURSOR:
+            case Cursor.SW_RESIZE_CURSOR:
+                final Cursor cc = c;
+                if (cursorworker != null) {
+                    cursorworker.cancel(true);
+                    cursorworker = null;
+                }
+                this.cursorworker = new SwingWorker<Object, Object>() {
+
+                    @Override
+                    protected Object doInBackground() throws Exception {
+                        Thread.sleep(2000);
+
+                        return null;
+                    }
+
+                    public void done() {
+                        if (cursorworker == this) {
+                            if (getCursor() == cc) {
+                                System.out.println("Reset cursor");
+                                setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                            }
+                            cursorworker = null;
+                        }
+                    }
+
+                };
+                cursorworker.execute();
+            }
+        }
+        super.setCursor(c);
+
+    }
 
     public JDToolBar getToolBar() {
         return toolBar;
@@ -373,17 +371,20 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     @SuppressWarnings("unchecked")
     private void initWaitPane() {
         JXPanel glass = new JXPanel(new MigLayout("ins 80,wrap 1", "[fill,grow]", "[fill,grow][]"));
-//        JXLabel lbl = new JXLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_128_128"), 300, 300));
-//        glass.add(lbl, "alignx center, aligny center");
-//        JProgressBar prg = new JProgressBar();
-//        glass.add(prg, "alignx center, aligny center,shrink");
-//        prg.setStringPainted(false);
-//        prg.setIndeterminate(true);
+        // JXLabel lbl = new
+        // JXLabel(JDImage.getScaledImageIcon(JDImage.getImage(
+        // "logo/jd_logo_128_128"), 300, 300));
+        // glass.add(lbl, "alignx center, aligny center");
+        // JProgressBar prg = new JProgressBar();
+        // glass.add(prg, "alignx center, aligny center,shrink");
+        // prg.setStringPainted(false);
+        // prg.setIndeterminate(true);
         glass.setOpaque(false);
         glass.setAlpha(0.5f);
-//        AbstractPainter fgPainter = (AbstractPainter) lbl.getForegroundPainter();
-//        StackBlurFilter filter = new StackBlurFilter();
-//        fgPainter.setFilters(filter);
+        // AbstractPainter fgPainter = (AbstractPainter)
+        // lbl.getForegroundPainter();
+        // StackBlurFilter filter = new StackBlurFilter();
+        // fgPainter.setFilters(filter);
         glass.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         this.setWaitPane(glass);
     }
@@ -505,7 +506,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -704,7 +705,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         addDownloadTask();
         addLinkgrabberTask();
         addConfigTask();
-//        addAddonTask();
+         addAddonTask();
         addLogTask();
 
         progressBar = new TabProgress();
@@ -761,7 +762,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     private void addLogTask() {
 
         LogTaskPane logTask = new LogTaskPane(JDLocale.L("gui.taskpanes.log", "Log"), JDTheme.II("gui.images.terminal", 24, 24));
-
+        logTask.setName(JDLocale.L("quickhelp.lopgtaskpane", "Log Taskpane"));
         logPanel = new SingletonPanel(LogPane.class, new Object[] { logger });
         logTask.addPanel(logPanel);
         logTask.addActionListener(new ActionListener() {
@@ -849,6 +850,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     private void addLinkgrabberTask() {
         linkGrabber = LinkGrabberPanel.getLinkGrabber();
         lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 24, 24));
+        lgTaskPane.setName(JDLocale.L("quickhelp.linkgrabbertaskpane", "Linkgrabber Taskpane"));
+        
         lgTaskPane.addPanel(new SingletonPanel(LinkAdder.class));
         LinkGrabberController.getInstance().getBroadcaster().addListener(new LinkGrabberControllerListener() {
             public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
@@ -892,6 +895,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     private void addDownloadTask() {
 
         dlTskPane = new DownloadTaskPane(JDLocale.L("gui.taskpanes.download", "Download"), JDTheme.II("gui.images.taskpanes.download", 24, 24));
+        dlTskPane.setName(JDLocale.L("quickhelp.downloadtaskpane", "Download Taskpane"));
         // dlTskPane.add(toolBar);
         // // toolBar.setFocusable(false);
         // // toolBar.setBorderPainted(true);
@@ -930,9 +934,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 case ControlEvent.CONTROL_INIT_COMPLETE:
                     setTitle(JDUtilities.getJDTitle());
                     SimpleGUI.this.setWaiting(false);
-                 
+
                     SimpleGUI.this.setEnabled(true);
-                  
+
                     if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
                         JDUtilities.getController().startDownloads();
                     }
@@ -1076,7 +1080,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);
@@ -1478,6 +1482,12 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     public SubConfiguration getGuiConfig() {
         return SimpleGuiConstants.GUI_CONFIG;
+    }
+
+    public Container getRealContentPane() {
+        
+        return super.getContentPane();
+
     }
 
     public ContentPanel getContentPane() {

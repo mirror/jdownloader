@@ -44,7 +44,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     private Timer fadeTimer;
     private Vector<LinkGrabberFilePackage> fps;
     private LinkGrabberController lgi;
-    private JComboBox topOrBottom;
+    private JCheckBox topOrBottom;
     private JCheckBox startAFteradding;
 
     public LinkGrabberTaskPane(String string, ImageIcon ii) {
@@ -119,23 +119,22 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         JLabel config = (new JLabel(JDLocale.L("gui.taskpanes.download.linkgrabber.config", "Settings")));
         config.setIcon(JDTheme.II("gui.images.taskpanes.configuration", 16, 16));
 
-        topOrBottom = new JComboBox(new String[] { JDLocale.L("gui.taskpanes.download.linkgrabber.config.insertat.top", "Insert at TOP"), JDLocale.L("gui.taskpanes.download.linkgrabber.config.insertat.bottom", "Insert at BOTTOM") });
+        topOrBottom = new JCheckBox(JDLocale.L("gui.taskpanes.download.linkgrabber.config.addattop", "Add at top"));
+
         topOrBottom.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                if (topOrBottom.getSelectedIndex() == 0) {
-                    SimpleGuiConstants.GUI_CONFIG.setProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, SimpleGuiConstants.TOP);
-                } else {
-                    SimpleGuiConstants.GUI_CONFIG.setProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, SimpleGuiConstants.BOTTOM);
-                }
+                SimpleGuiConstants.GUI_CONFIG.setProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, topOrBottom.isSelected());
                 SimpleGuiConstants.GUI_CONFIG.save();
             }
 
         });
-
-        if (SimpleGuiConstants.GUI_CONFIG.getIntegerProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, SimpleGuiConstants.BOTTOM) == SimpleGuiConstants.BOTTOM) {
-            topOrBottom.setSelectedIndex(1);
+        if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
+            topOrBottom.setSelected(true);
         }
+        
+        
+       
         startAFteradding = new JCheckBox(JDLocale.L("gui.taskpanes.download.linkgrabber.config.startofter", "Start after adding"));
         startAFteradding.addActionListener(new ActionListener() {
 
@@ -150,9 +149,11 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         }
         add(config, D1_LABEL_ICON);
         
-       
+        startAFteradding.setToolTipText(JDLocale.L("gui.tooltips.linkgrabber.startlinksafteradd","Is selected, download starts after adding new links"));
         add(startAFteradding, TaskPanel.D2_CHECKBOX);
-        add(topOrBottom, TaskPanel.D2_LABEL);
+        startAFteradding.setToolTipText(JDLocale.L("gui.tooltips.linkgrabber.topOrBottom","if selected, new links will be added at top of your downloadlist"));
+        
+        add(topOrBottom, TaskPanel.D2_CHECKBOX);
 
     }
 
