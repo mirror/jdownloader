@@ -368,7 +368,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         return toolBar;
     }
 
-    @SuppressWarnings("unchecked")
+    
     private void initWaitPane() {
         JXPanel glass = new JXPanel(new MigLayout("ins 80,wrap 1", "[fill,grow]", "[fill,grow][]"));
         // JXLabel lbl = new

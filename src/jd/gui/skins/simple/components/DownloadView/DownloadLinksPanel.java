@@ -42,6 +42,7 @@ import jd.controlling.DownloadControllerEvent;
 import jd.controlling.DownloadControllerListener;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDCollapser;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
@@ -306,18 +307,25 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     DownloadWatchDog.getInstance().toggleStopMark(obj);
                     return;
                 case TreeTableAction.EDIT_DIR: {
-                    JDFileChooser fc = new JDFileChooser();
-                    fc.setApproveButtonText(JDLocale.L("gui.btn_ok", "OK"));
-                    fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-                    fc.setCurrentDirectory(selected_packages.get(0).getDownloadDirectory() != null ? new File(selected_packages.get(0).getDownloadDirectory()) : JDUtilities.getResourceFile("downloads"));
-                    if (fc.showOpenDialog(INTSANCE) == JDFileChooser.APPROVE_OPTION) {
-                        File ret = fc.getSelectedFile();
-                        if (ret != null) {
-                            for (int i = 0; i < selected_packages.size(); i++) {
-                                selected_packages.elementAt(i).setDownloadDirectory(ret.getAbsolutePath());
+                    final Vector<FilePackage> selected_packages2 = new Vector<FilePackage>(selected_packages);
+                    new GuiRunnable<Object>() {
+                        // @Override
+                        public Object runSave() {
+                            JDFileChooser fc = new JDFileChooser();
+                            fc.setApproveButtonText(JDLocale.L("gui.btn_ok", "OK"));
+                            fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
+                            fc.setCurrentDirectory(selected_packages2.get(0).getDownloadDirectory() != null ? new File(selected_packages2.get(0).getDownloadDirectory()) : JDUtilities.getResourceFile("downloads"));
+                            if (fc.showOpenDialog(INTSANCE) == JDFileChooser.APPROVE_OPTION) {
+                                File ret = fc.getSelectedFile();
+                                if (ret != null) {
+                                    for (int i = 0; i < selected_packages2.size(); i++) {
+                                        selected_packages2.elementAt(i).setDownloadDirectory(ret.getAbsolutePath());
+                                    }
+                                }
                             }
+                            return null;
                         }
-                    }
+                    }.waitForEDT();
                     return;
                 }
                 case TreeTableAction.EDIT_NAME: {
@@ -351,13 +359,18 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     return;
                 }
                 case TreeTableAction.DOWNLOAD_DLC: {
-                    JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
-                    fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
-                    fc.showSaveDialog(SimpleGUI.CURRENTGUI);
-                    File ret = fc.getSelectedFile();
+                    GuiRunnable<File> temp = new GuiRunnable<File>() {
+                        // @Override
+                        public File runSave() {
+                            JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
+                            fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
+                            fc.showSaveDialog(SimpleGUI.CURRENTGUI);
+                            return fc.getSelectedFile();
+                        }
+                    };
+                    File ret = temp.getReturnValue();
                     if (ret == null) return;
                     if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("dlc")) {
-
                         ret = new File(ret.getAbsolutePath() + ".dlc");
                     }
                     JDUtilities.getController().saveDLC(ret, selected_links);
