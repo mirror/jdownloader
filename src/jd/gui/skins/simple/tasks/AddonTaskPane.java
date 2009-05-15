@@ -44,7 +44,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
         this.buttonMap = new HashMap<JButton, OptionalPluginWrapper>();
         this.entries = new ArrayList<CollapseButton>();
         for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
-            if (!wrapper.isEnabled()) continue;
+            if (!wrapper.isEnabled()||wrapper.getPlugin()==null) continue;
             ArrayList<MenuItem> menuItems = wrapper.getPlugin().createMenuitems();
             if (menuItems != null && JDUtilities.getConfiguration().getBooleanProperty(wrapper.getConfigParamKey(), false)) {
                 if (menuItems.size() > 1 || wrapper.getPlugin().getConfig().getEntries().size() > 0) {

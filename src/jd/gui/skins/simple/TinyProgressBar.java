@@ -5,6 +5,7 @@ import java.awt.Cursor;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JToolTip;
 import javax.swing.SwingConstants;
 
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
@@ -24,17 +25,20 @@ public class TinyProgressBar extends JPanel {
         lbl.setOpaque(false);
         prg.setOpaque(false);
         prg.setOrientation(SwingConstants.VERTICAL);
-        //this.setBorder(prg.getBorder());
+        // this.setBorder(prg.getBorder());
         prg.setBorder(null);
         this.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-     
 
     }
-public void setEnabled(boolean b){
-    super.setEnabled(b);
-    lbl.setEnabled(b);
-    prg.setEnabled(b);
-}
+
+    public void setEnabled(boolean b) {
+        super.setEnabled(b);
+        lbl.setEnabled(b);
+        prg.setEnabled(b);
+    }
+
+
+
     public void setIcon(ImageIcon hosterIcon) {
         lbl.setIcon(hosterIcon);
     }

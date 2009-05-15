@@ -44,6 +44,7 @@ import jd.utils.JDTheme;
 public class JDEventQueue extends EventQueue {
     private Cursor cursor;
     private Thread curserupdater;
+    private int lastPoint = 0;
 
     public JDEventQueue() {
         super();
@@ -81,25 +82,31 @@ public class JDEventQueue extends EventQueue {
     // @Override
     protected void dispatchEvent(AWTEvent ev) {
 
-        super.dispatchEvent(ev);
-        if (!(ev instanceof MouseEvent)) { return; }
-        MouseEvent e = (MouseEvent) ev;
+        if (ev instanceof MouseEvent) {
+            MouseEvent e = (MouseEvent) ev;
 
-        if (e.getID() == 501 && e.isControlDown() && e.isShiftDown()) {
-            Point point = e.getPoint();
-            Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
-            while (source != null) {
-                point.x -= source.getLocation().x;
-                point.y -= source.getLocation().y;
-                Component sdource = source.getComponentAt(point);
-                if (source == sdource || sdource == null) {
-                    if (source.getName() != null) {
-                        final String search = source.getName();
-
+            if ((e.getID() == MouseEvent.MOUSE_RELEASED || e.getID() == MouseEvent.MOUSE_CLICKED) && lastPoint > 0) {
+                System.out.println("ignore");
+                lastPoint--;
+                return;
+            } else if (e.getID() == MouseEvent.MOUSE_PRESSED && e.isControlDown() && e.isShiftDown()) {
+                System.out.println("helppress");
+                this.lastPoint = 2;
+                Point point = e.getPoint();
+                Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
+                point.x -= (source.getLocationOnScreen().x-SimpleGUI.CURRENTGUI.getLocationOnScreen().x);
+                point.y -= (source.getLocationOnScreen().y-SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
+                final StringBuilder sb = new StringBuilder();
+                while (source != null) {
+                    Component source2 = source.getComponentAt(point);
+                    
+                    if (source2==source||source2 == null) {
+if(sb.length() > 0){
                         new Thread() {
                             public void run() {
                                 try {
-                                    JLinkButton.openURL("http://jdownloader.org/quickhelp/" + search);
+                                    String url = "http://jdownloader.org/quickhelp/" + sb;
+                                    JLinkButton.openURL(url);
                                     return;
                                 } catch (Exception e) {
                                     // TODO Auto-generated catch block
@@ -109,23 +116,43 @@ public class JDEventQueue extends EventQueue {
                             }
                         }.start();
                         return;
+}else{
+    break;
+}
                     }
-                    break;
+                    if (source2 != null) {
+                        point.x -= source2.getLocation().x;
+                        point.y -= source2.getLocation().y;
+
+                        if (source2.getName() != null) {
+                            if (sb.length() > 0) sb.append(".");
+                            sb.append(source2.getName().replace(" ", "-"));
+                        }
+                    }
+                        source=source2;
+                    
+                    
+                  
                 }
-                source = sdource;
 
-            }
-        } else if (e.getID() == 503 && e.isControlDown() && e.isShiftDown()) {
+            } else if (e.getID() == MouseEvent.MOUSE_MOVED && e.isControlDown() && e.isShiftDown()) {
 
-            Point point = e.getPoint();
-            Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
-            while (source != null) {
-                point.x -= source.getLocation().x;
-                point.y -= source.getLocation().y;
-                Component sdource = source.getComponentAt(point);
-                if (source == sdource || sdource == null) {
+                Point point = e.getPoint();
+                Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
+                
+                point.x -= (source.getLocationOnScreen().x-SimpleGUI.CURRENTGUI.getLocationOnScreen().x);
+                point.y -= (source.getLocationOnScreen().y-SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
+                while (source != null) {
+
+                    Component source2 = source.getComponentAt(point);
+
+                    if (source == null || source2 == source) break;
+                    source = source2;
+                    point.x -= source.getLocation().x;
+                    point.y -= source.getLocation().y;
+                    // if (source == sdource || sdource == null) {
                     if (source.getName() != null) {
-                        
+
                         if (curserupdater != null) {
                             try {
                                 curserupdater.interrupt();
@@ -133,18 +160,17 @@ public class JDEventQueue extends EventQueue {
 
                             }
                         }
+                        final Component found=source;
                         curserupdater = new Thread() {
                             public void run() {
                                 try {
                                     long start = System.currentTimeMillis();
-                                    while((System.currentTimeMillis()-start)<750){
-                                        SimpleGUI.CURRENTGUI.setCursor(cursor);
+                                    while ((System.currentTimeMillis() - start) < 750) {
+                                        found.setCursor(cursor);
                                         Thread.sleep(50);
                                     }
-                               
-                                 
 
-                                    SimpleGUI.CURRENTGUI.setCursor(Cursor.getDefaultCursor());
+                                    found.setCursor(Cursor.getDefaultCursor());
                                 } catch (Exception e) {
 
                                 }
@@ -152,13 +178,18 @@ public class JDEventQueue extends EventQueue {
                             }
                         };
                         curserupdater.start();
+                        break;
                     }
-                    break;
-                }
-                source = sdource;
 
+                }
             }
+
         }
+
+        super.dispatchEvent(ev);
+        if (!(ev instanceof MouseEvent)) { return; }
+
+        MouseEvent e = (MouseEvent) ev;
         if (!e.isPopupTrigger()) { return; }
         if (e.getComponent() == null) return;
         Component c = SwingUtilities.getDeepestComponentAt(e.getComponent(), e.getX(), e.getY());

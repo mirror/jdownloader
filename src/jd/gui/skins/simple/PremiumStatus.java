@@ -15,7 +15,9 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
+import javax.swing.JToolTip;
 import javax.swing.Timer;
+import javax.swing.ToolTipManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -63,7 +65,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         super();
         bars = new TinyProgressBar[BARCOUNT];
         lbl = new JLabel(JDLocale.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
-
+        setName(JDLocale.L("quickhelp.premiumstatusbar", "Premium statusbar"));
         this.setLayout(new MigLayout("ins 0", "[]", "[]"));
         premium = new JToggleButton();
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
@@ -74,7 +76,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             premium.setIcon(JDTheme.II("gui.images.premium_disabled", 16, 16));
         }
         premium.setToolTipText(JDLocale.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
-
+       
         premium.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
@@ -84,7 +86,8 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                         premium.setIcon(JDTheme.II("gui.images.premium_enabled", 16, 16));
                     } else {
                         premium.setIcon(JDTheme.II("gui.images.premium_disabled", 16, 16));
-                        // JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,
+                        // JDUtilities.getConfiguration().setProperty(
+                        // Configuration.PARAM_USE_GLOBAL_PREMIUM,
                         // false);
                     }
 
@@ -135,6 +138,8 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
 
         for (int i = 0; i < BARCOUNT; i++) {
             TinyProgressBar pg = new TinyProgressBar();
+         
+            
             pg.setOpaque(false);
             bars[i] = pg;
             bars[i].addMouseListener(new MouseAdapter() {
@@ -196,6 +201,12 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
 
     private void showDetails(PluginForHost plugin) {
         SimpleGUI.displayConfig(plugin.getConfig(), 1);
+    }
+
+    public JToolTip createToolTip() {
+        JToolTip toolTip = super.createToolTip();
+        toolTip.setTipText("TEST...");
+        return toolTip;
     }
 
     private synchronized void updatePremium() {

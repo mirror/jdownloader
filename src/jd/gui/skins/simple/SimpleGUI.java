@@ -48,6 +48,7 @@ import javax.swing.JRootPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JViewport;
+import javax.swing.PopupFactory;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
@@ -312,7 +313,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 }
             }
         }.start();
-
+      
     }
 
     /**
@@ -368,7 +369,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         return toolBar;
     }
 
-    
     private void initWaitPane() {
         JXPanel glass = new JXPanel(new MigLayout("ins 80,wrap 1", "[fill,grow]", "[fill,grow][]"));
         // JXLabel lbl = new
@@ -705,7 +705,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         addDownloadTask();
         addLinkgrabberTask();
         addConfigTask();
-         addAddonTask();
+        addAddonTask();
         addLogTask();
 
         progressBar = new TabProgress();
@@ -851,7 +851,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         linkGrabber = LinkGrabberPanel.getLinkGrabber();
         lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 24, 24));
         lgTaskPane.setName(JDLocale.L("quickhelp.linkgrabbertaskpane", "Linkgrabber Taskpane"));
-        
+
         lgTaskPane.addPanel(new SingletonPanel(LinkAdder.class));
         LinkGrabberController.getInstance().getBroadcaster().addListener(new LinkGrabberControllerListener() {
             public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
@@ -1485,7 +1485,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public Container getRealContentPane() {
-        
+
         return super.getContentPane();
 
     }
