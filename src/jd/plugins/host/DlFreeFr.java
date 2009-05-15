@@ -68,7 +68,7 @@ public class DlFreeFr extends PluginForHost {
 
     //@Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 20;
     }
 
     //@Override

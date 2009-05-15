@@ -457,7 +457,8 @@ public class JDInit {
         new DecryptPluginWrapper("quicklink.me", "QuickLinkMe", "http://[\\w\\.]*?quicklink\\.me/\\?l=[a-zA-Z0-9]+");
         new DecryptPluginWrapper("short.redirect.am", "ShortRedirectAm", "http://short\\.redirect\\.am/\\?[a-zA-Z0-9]+");
         new DecryptPluginWrapper("h-url.in", "HurlIn", "http://[\\w\\.]*?h-url\\.in/[a-zA-Z0-9]+");
-
+        new DecryptPluginWrapper("raubkopierer.ws", "RaubkopiererWs", "http://[\\w\\.]*?raubkopierer\\.(ws|cc)/\\w+/\\d+/[\\-a-zA-Z0-9]+\\.html");
+        
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
 
