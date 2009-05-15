@@ -192,8 +192,12 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         }
     }
 
-    public void setPanelID(int i) {
-        SimpleGUI.CURRENTGUI.getContentPane().display(getPanel(i));
+    public void setPanelID(final int i) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                SimpleGUI.CURRENTGUI.getContentPane().display(getPanel(i));
+            }
+        });
         return;
         // switch (i) {
         // case 0:
