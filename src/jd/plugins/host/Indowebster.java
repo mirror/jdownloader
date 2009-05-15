@@ -1,3 +1,5 @@
+package jd.plugins.host;
+
 //    jDownloader - Downloadmanager
 //    Copyright (C) 2009  JD-Team support@jdownloader.org
 //
@@ -14,61 +16,64 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.host;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-public class MyuploadDK extends PluginForHost {
+public class Indowebster extends PluginForHost {
 
-    public MyuploadDK(PluginWrapper wrapper) {
+    public Indowebster(PluginWrapper wrapper) {
         super(wrapper);
+        // TODO Auto-generated constructor stub
     }
 
+    @Override
     public String getAGBLink() {
-        return "http://www.myupload.dk/rules/";
+        return "http://www.indowebster.com/policy-tos.php";
     }
 
-    public boolean getFileInformation(DownloadLink parameter) throws Exception {
+    @Override
+    public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
-        br.setCookie("http://www.myupload.dk", "lang", "en");
-        br.getPage(parameter.getDownloadURL());
-        String filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setName(filename);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(Pattern.compile("&quot;<!--INFOLINKS_ON-->(.*?)<!--INFOLINKS_OFF-->&quot;", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String filesize = br.getRegex("Size :</b> (.*?)<").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setFinalFileName(filename.trim());
+        downloadLink.setDownloadSize(Regex.getSize(filesize));
         return true;
     }
 
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         getFileInformation(link);
-        String url = br.getRegex("to download <a href='(/download/.*?)'>.*?</a><br />").getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        br.setFollowRedirects(true);
+        String dl_url = br.getRegex("<div id=\"buttonz\" align=\"center\"> <a href=\"(.*?)\"").getMatch(0);
+        if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setDebug(true);
-        dl = br.openDownload(link, url);
+        br.setFollowRedirects(true);        
+        dl = br.openDownload(link, dl_url, true, 1);
         dl.startDownload();
     }
 
+    @Override
     public void reset() {
         // TODO Auto-generated method stub
-
     }
 
+    @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-
     }
 
+    @Override
     public String getVersion() {
         return getVersion("$Revision$");
-
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
     }
 
 }
