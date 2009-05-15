@@ -499,6 +499,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         for (int i = 0; i < all.size(); ++i) {
             confirmPackage(all.get(i), null);
         }
+        if (all.size() == 0) return;
         LGINSTANCE.getBroadcaster().fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.ADDED));
         if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
             JDController.getInstance().startDownloads();
