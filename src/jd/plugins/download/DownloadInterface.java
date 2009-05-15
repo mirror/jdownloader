@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -329,9 +330,12 @@ abstract public class DownloadInterface {
                             miniblock = source.read(miniBuffer);
                             miniBuffer.flip();
                             buffer.put(miniBuffer);
+                        } catch (SocketException e2) {
+                            if (!isExternalyAborted()) throw e2;
+                            miniblock = -1;
+                            break;
                         } catch (ClosedByInterruptException e) {
-                            if (isExternalyAborted()) {
-                            } else {
+                            if (!isExternalyAborted()) {
                                 logger.severe("Timeout detected");
                                 error(LinkStatus.ERROR_TIMEOUT_REACHED, null);
                             }
