@@ -57,22 +57,20 @@ public class HTTPAllgemein extends PluginForHost {
         return "Basic " + Encoding.Base64Encode(username + ":" + password);
     }
 
-    private String removeBasicAuthfromURL(DownloadLink link) {
+    private void BasicAuthfromURL(DownloadLink link) {
         String url = link.getDownloadURL();
         String basicauth = new Regex(url, "http.*?/([^/]{1}.*?)@").getMatch(0);
         if (basicauth != null && basicauth.contains(":")) {
             url = new Regex(url, "http.*?@(.+)").getMatch(0);
             if (url != null) link.setUrlDownload("http://" + url);
-            return "Basic " + Encoding.Base64Encode(basicauth);
+            link.setProperty("basicauth", basicauth);
         }
-        return null;
     }
 
     // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException {
-        this.setBrowserExclusive();        
-        String basicauth = removeBasicAuthfromURL(downloadLink);
-        if (basicauth == null) basicauth = (String) downloadLink.getProperty("basicauth", null);
+        this.setBrowserExclusive();
+        String basicauth = (String) downloadLink.getProperty("basicauth", null);
         if (basicauth == null) {
             basicauth = (String) downloadLink.getProperty("pass", null);
             if (basicauth != null) basicauth = "Basic " + Encoding.Base64Encode(basicauth);
@@ -123,10 +121,10 @@ public class HTTPAllgemein extends PluginForHost {
     public String getVersion() {
         return getVersion("$Revision$");
     }
-    
-    
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://"));
+        BasicAuthfromURL(link);
     }
 
     // @Override

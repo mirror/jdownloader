@@ -125,7 +125,7 @@ public abstract class PluginsC extends Plugin {
                 next.setName(srcLink.getName());
 
                 if (next.getDownloadSize() < 10) {
-                    next.setDownloadSize((int) srcLink.getDownloadSize());
+                    next.setDownloadSize(srcLink.getDownloadSize());
                 }
 
                 next.getSourcePluginPasswords().addAll(srcLink.getSourcePluginPasswords());
@@ -275,7 +275,6 @@ public abstract class PluginsC extends Plugin {
                 ren = null;
             }
             for (DownloadLink l : failed) {
-
                 l.setContainerIndex(l.getContainerIndex() / 2);
             }
         }

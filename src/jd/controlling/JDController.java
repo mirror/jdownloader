@@ -204,7 +204,7 @@ public class JDController implements ControlListener {
         eventSender = getEventSender();
         INSTANCE = this;
         JDUtilities.setController(this);
-       
+
     }
 
     /**
@@ -376,8 +376,8 @@ public class JDController implements ControlListener {
 
     public void prepareShutdown() {
         stopDownloads();
-        JDUtilities.getDownloadController().saveDownloadLinksSync();
-        AccountController.getInstance().saveSync();
+        JDUtilities.getDownloadController().saveDownloadLinksSyncnonThread();
+        AccountController.getInstance().saveSyncnonThread();
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
         Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
         JDUtilities.getDatabaseConnector().shutdownDatabase();
@@ -416,7 +416,7 @@ public class JDController implements ControlListener {
                 for (ControlListener cl : controlListener) {
                     cl.controlEvent(controlEvent);
                 }
-            }            
+            }
         }
     }
 

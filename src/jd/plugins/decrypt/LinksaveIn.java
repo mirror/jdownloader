@@ -42,7 +42,7 @@ public class LinksaveIn extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setCookie("http://linksave.in/", "Linksave_Language", "german");
         br.getPage(param.getCryptedUrl());
-        br.forceDebug(true);
+        if (br.containsHTML("Ordner nicht gefunden")) return new ArrayList<DownloadLink>();
 
         Form form = br.getFormbyProperty("name", "form");
         for (int retry = 0; retry < 5; retry++) {

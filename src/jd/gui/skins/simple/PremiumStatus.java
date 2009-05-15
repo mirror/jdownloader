@@ -47,7 +47,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
 
     private long trafficTotal = 0l;
 
-    private JLabel lbl;    
+    private JLabel lbl;
     private SubConfiguration config;
     private String MAP_PROP = "MAP2";
     private String MAPSIZE_PROP = "MAPSIZE2";
@@ -56,11 +56,12 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private JToggleButton premium;
     private boolean updating = false;
     private Timer updateIntervalTimer;
+    private boolean updateinprogress = false;
 
     @SuppressWarnings("unchecked")
     public PremiumStatus() {
         super();
-        bars = new TinyProgressBar[BARCOUNT];        
+        bars = new TinyProgressBar[BARCOUNT];
         lbl = new JLabel(JDLocale.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
 
         this.setLayout(new MigLayout("ins 0", "[]", "[]"));
@@ -199,7 +200,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
 
     private synchronized void updatePremium() {
         updating = true;
-
         long trafficTotal = 0;
         TreeMap<String, ArrayList<AccountInfo>> map = new TreeMap<String, ArrayList<AccountInfo>>();
         TreeMap<String, Long> mapSize = new TreeMap<String, Long>();
@@ -372,8 +372,16 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     }
 
     private void doUpdate() {
-        if (!updating) updatePremium();
-        redraw();
+        if (updateinprogress) return;
+        new Thread() {
+            public void run() {
+                this.setName("PremiumStatus: update");
+                updateinprogress = true;
+                if (!updating) updatePremium();
+                redraw();
+                updateinprogress = false;
+            }
+        }.start();
     }
 
     public boolean vetoAccountGetEvent(String host, Account account) {

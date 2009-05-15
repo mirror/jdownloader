@@ -77,7 +77,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
     private DownloadWatchDog() {
         dlc = DownloadController.getInstance();
-        dlc.getBroadcaster().addListener(this);
+        dlc.addListener(this);
     }
 
     void start() {

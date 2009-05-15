@@ -268,6 +268,7 @@ public class Rapidshare extends PluginForHost {
                 case 1:
                     // u.getLinkStatus().setStatusText("alles prima");
                     u.setAvailable(true);
+                    u.getLinkStatus().setStatusText("");
                     break;
                 case 2:
                     u.setAvailable(true);

@@ -8,6 +8,7 @@ import javax.swing.JLabel;
 import javax.swing.Timer;
 
 import jd.controlling.DownloadController;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
@@ -31,6 +32,7 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
     private JLabel downloadlist;
     private JLabel progresslabel;
     private Timer fadeTimer;
+    protected boolean updateinprogress = false;
 
     public DownloadTaskPane(String string, ImageIcon ii) {
         super(string, ii, "downloadtask");
@@ -45,31 +47,46 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
      * TODO: soll mal über events aktuallisiert werden
      */
     private void update() {
-        DownloadController dlc = JDUtilities.getDownloadController();
-        packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", dlc.getPackages().size()));
-        downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", dlc.getAllDownloadLinks().size()));
-        long tot = 0;
-        long loaded = 0;
-        for (DownloadLink l : dlc.getAllDownloadLinks()) {
-            if (!l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS) && l.isEnabled()) {
-                tot += l.getDownloadSize();
-                loaded += l.getDownloadCurrent();
-            }
-        }
+        if (updateinprogress) return;
+        new Thread() {
+            public void run() {
+                updateinprogress = true;
+                this.setName("DownloadLinks: infoupdate");
+                DownloadController dlc = JDUtilities.getDownloadController();
+                packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", dlc.getPackages().size()));
+                downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", dlc.getAllDownloadLinks().size()));
+                long tot = 0;
+                long loaded = 0;
+                for (DownloadLink l : dlc.getAllDownloadLinks()) {
+                    if (!l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS) && l.isEnabled()) {
+                        tot += l.getDownloadSize();
+                        loaded += l.getDownloadCurrent();
+                    }
+                }
 
-        totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
-        progress.setMaximum(tot);
-        progress.setValue(loaded);
-        progress.setToolTipText(Math.round((loaded * 10000.0) / tot) / 100.0 + "%");
-        long speedm = JDUtilities.getController().getSpeedMeter();
-        if (speedm > 1024) {
-            speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(speedm) + "/s"));
-            long etanum = (tot - loaded) / speedm;
-            eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", Formatter.formatSeconds(etanum)));
-        } else {
-            eta.setText("");
-            speed.setText("");
-        }
+                totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
+                final long tot2 = tot;
+                new GuiRunnable<Object>() {
+                    // @Override
+                    public Object runSave() {
+                        progress.setMaximum(tot2);
+                        return null;
+                    }
+                }.waitForEDT();
+                progress.setValue(loaded);
+                progress.setToolTipText(Math.round((loaded * 10000.0) / tot) / 100.0 + "%");
+                long speedm = JDUtilities.getController().getSpeedMeter();
+                if (speedm > 1024) {
+                    speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(speedm) + "/s"));
+                    long etanum = (tot - loaded) / speedm;
+                    eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", Formatter.formatSeconds(etanum)));
+                } else {
+                    eta.setText("");
+                    speed.setText("");
+                }
+                updateinprogress = false;
+            }
+        }.start();
     }
 
     private void initGUI() {

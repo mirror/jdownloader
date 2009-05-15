@@ -90,24 +90,30 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     private FilePackageInfo filePackageInfo;
 
+    private boolean tablerefreshinprogress = false;
+
+    private static DownloadLinksPanel INTSANCE;
+
     public DownloadLinksPanel() {
         super(new BorderLayout());
         internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
-
+        INTSANCE = this;
         filePackageInfo = new FilePackageInfo();
         this.add(scrollPane);
-        JDUtilities.getDownloadController().getBroadcaster().addListener(this);
+        JDUtilities.getDownloadController().addListener(this);
         Update_Async = new Timer(UPDATE_TIMING, this);
         last_async_update = 0;
         Update_Async.setInitialDelay(UPDATE_TIMING);
         Update_Async.setRepeats(false);
         Update_Async.restart();
     }
+
     public boolean needsViewport() {
         // TODO Auto-generated method stub
         return false;
     }
+
     public void showFilePackageInfo(FilePackage fp) {
         filePackageInfo.setPackage(fp);
         JDCollapser.getInstance().setContentPanel(filePackageInfo);
@@ -120,10 +126,19 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         JDCollapser.getInstance().setCollapsed(true);
     }
 
-    public synchronized void fireTableChanged(int id, Object param) {
-        synchronized (JDUtilities.getController().getPackages()) {
-            internalTreeTable.fireTableChanged(id, param);
-        }
+    public void fireTableChanged(int id, ArrayList<DownloadLink> links) {
+        if (tablerefreshinprogress) return;
+        final ArrayList<DownloadLink> links2 = new ArrayList<DownloadLink>(links);
+        final int id2 = id;
+        new Thread() {
+            public void run() {
+                tablerefreshinprogress = true;
+                synchronized (JDUtilities.getController().getPackages()) {
+                    internalTreeTable.fireTableChanged(id2, links2);
+                }
+                tablerefreshinprogress = false;
+            }
+        }.start();
     }
 
     // @Override
@@ -132,7 +147,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
         fireTableTask();
         Update_Async.restart();
-        JDUtilities.getDownloadController().getBroadcaster().addListener(this);
+        JDUtilities.getDownloadController().addListener(this);
         internalTreeTable.removeKeyListener(internalTreeTable);
         internalTreeTable.addKeyListener(internalTreeTable);
     }
@@ -140,7 +155,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     // @Override
     public void onHide() {
         visible = false;
-        JDUtilities.getDownloadController().getBroadcaster().removeListener(this);
+        JDUtilities.getDownloadController().removeListener(this);
         Update_Async.stop();
         internalTreeTable.removeKeyListener(internalTreeTable);
     }
@@ -224,252 +239,258 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     }
 
     @SuppressWarnings("unchecked")
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == this.Update_Async) {
-            fireTableTask();
-            return;
-        }
-        Vector<FilePackage> selected_packages = new Vector<FilePackage>();
-        Vector<DownloadLink> selected_links = new Vector<DownloadLink>();
-        HashMap<String, Object> prop = new HashMap<String, Object>();
-        Object obj = null;
-        FilePackage fp = null;
-        DownloadLink link = null;
-        File folder = null;
-        int col = 0;
-        if (e.getSource() instanceof JMenuItem) {
-            switch (e.getID()) {
-            case TreeTableAction.EDIT_NAME:
-            case TreeTableAction.EDIT_DIR:
-                selected_packages = (Vector<FilePackage>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("packages");
-                break;
-            case TreeTableAction.SORT:
-                col = (Integer) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("col");
-                selected_packages = new Vector<FilePackage>(this.internalTreeTable.getSelectedFilePackages());
-                break;
-            case TreeTableAction.DOWNLOAD_PRIO:
-            case TreeTableAction.DE_ACTIVATE:
-                prop = (HashMap<String, Object>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("infos");
-                selected_links = (Vector<DownloadLink>) prop.get("links");
-                break;
-            case TreeTableAction.DELETE:
-            case TreeTableAction.SET_PW:
-            case TreeTableAction.NEW_PACKAGE:
-            case TreeTableAction.CHECK:
-            case TreeTableAction.DOWNLOAD_COPY_URL:
-            case TreeTableAction.DOWNLOAD_COPY_PASSWORD:
-            case TreeTableAction.DOWNLOAD_RESET:
-            case TreeTableAction.DOWNLOAD_DLC:
-            case TreeTableAction.DOWNLOAD_RESUME:
-                selected_links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("links");
-                break;
-            case TreeTableAction.DOWNLOAD_DIR:
-                folder = (File) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("folder");
-                break;
-            case TreeTableAction.DOWNLOAD_BROWSE_LINK:
-                link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
-                break;
-            case TreeTableAction.STOP_MARK:
-                obj = ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("item");
-                break;
-            }
-        } else if (e.getSource() instanceof TreeTableAction) {
-            switch (e.getID()) {
-            case TreeTableAction.SORT_ALL:
-                col = (Integer) ((TreeTableAction) e.getSource()).getProperty().getProperty("col");
-                break;
-            case TreeTableAction.DELETE:
-                selected_links = (Vector<DownloadLink>) ((TreeTableAction) e.getSource()).getProperty().getProperty("links");
-                break;
-            }
-        }
-        switch (e.getID()) {
-        case TreeTableAction.STOP_MARK:
-            DownloadWatchDog.getInstance().toggleStopMark(obj);
-            return;
-        case TreeTableAction.EDIT_DIR: {
-            JDFileChooser fc = new JDFileChooser();
-            fc.setApproveButtonText(JDLocale.L("gui.btn_ok", "OK"));
-            fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-            fc.setCurrentDirectory(selected_packages.get(0).getDownloadDirectory() != null ? new File(selected_packages.get(0).getDownloadDirectory()) : JDUtilities.getResourceFile("downloads"));
-            if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) {
-                File ret = fc.getSelectedFile();
-                if (ret != null) {
-                    for (int i = 0; i < selected_packages.size(); i++) {
-                        selected_packages.elementAt(i).setDownloadDirectory(ret.getAbsolutePath());
+    public void actionPerformed(final ActionEvent e) {
+        new Thread() {
+            public void run() {
+                this.setName("DownloadLinks: actionPerformed");
+                if (e.getSource() == INTSANCE.Update_Async) {
+                    fireTableTask();
+                    return;
+                }
+                Vector<FilePackage> selected_packages = new Vector<FilePackage>();
+                Vector<DownloadLink> selected_links = new Vector<DownloadLink>();
+                HashMap<String, Object> prop = new HashMap<String, Object>();
+                Object obj = null;
+                FilePackage fp = null;
+                DownloadLink link = null;
+                File folder = null;
+                int col = 0;
+                if (e.getSource() instanceof JMenuItem) {
+                    switch (e.getID()) {
+                    case TreeTableAction.EDIT_NAME:
+                    case TreeTableAction.EDIT_DIR:
+                        selected_packages = (Vector<FilePackage>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("packages");
+                        break;
+                    case TreeTableAction.SORT:
+                        col = (Integer) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("col");
+                        selected_packages = new Vector<FilePackage>(INTSANCE.internalTreeTable.getSelectedFilePackages());
+                        break;
+                    case TreeTableAction.DOWNLOAD_PRIO:
+                    case TreeTableAction.DE_ACTIVATE:
+                        prop = (HashMap<String, Object>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("infos");
+                        selected_links = (Vector<DownloadLink>) prop.get("links");
+                        break;
+                    case TreeTableAction.DELETE:
+                    case TreeTableAction.SET_PW:
+                    case TreeTableAction.NEW_PACKAGE:
+                    case TreeTableAction.CHECK:
+                    case TreeTableAction.DOWNLOAD_COPY_URL:
+                    case TreeTableAction.DOWNLOAD_COPY_PASSWORD:
+                    case TreeTableAction.DOWNLOAD_RESET:
+                    case TreeTableAction.DOWNLOAD_DLC:
+                    case TreeTableAction.DOWNLOAD_RESUME:
+                        selected_links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("links");
+                        break;
+                    case TreeTableAction.DOWNLOAD_DIR:
+                        folder = (File) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("folder");
+                        break;
+                    case TreeTableAction.DOWNLOAD_BROWSE_LINK:
+                        link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
+                        break;
+                    case TreeTableAction.STOP_MARK:
+                        obj = ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("item");
+                        break;
+                    }
+                } else if (e.getSource() instanceof TreeTableAction) {
+                    switch (e.getID()) {
+                    case TreeTableAction.SORT_ALL:
+                        col = (Integer) ((TreeTableAction) e.getSource()).getProperty().getProperty("col");
+                        break;
+                    case TreeTableAction.DELETE:
+                        selected_links = (Vector<DownloadLink>) ((TreeTableAction) e.getSource()).getProperty().getProperty("links");
+                        break;
                     }
                 }
-            }
-            return;
-        }
-        case TreeTableAction.EDIT_NAME: {
-            String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.editpackagename.message", "Neuer Paketname"), selected_packages.get(0).getName());
-            if (name != null) {
-                for (int i = 0; i < selected_packages.size(); i++) {
-                    selected_packages.elementAt(i).setName(name);
+                switch (e.getID()) {
+                case TreeTableAction.STOP_MARK:
+                    DownloadWatchDog.getInstance().toggleStopMark(obj);
+                    return;
+                case TreeTableAction.EDIT_DIR: {
+                    JDFileChooser fc = new JDFileChooser();
+                    fc.setApproveButtonText(JDLocale.L("gui.btn_ok", "OK"));
+                    fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
+                    fc.setCurrentDirectory(selected_packages.get(0).getDownloadDirectory() != null ? new File(selected_packages.get(0).getDownloadDirectory()) : JDUtilities.getResourceFile("downloads"));
+                    if (fc.showOpenDialog(INTSANCE) == JDFileChooser.APPROVE_OPTION) {
+                        File ret = fc.getSelectedFile();
+                        if (ret != null) {
+                            for (int i = 0; i < selected_packages.size(); i++) {
+                                selected_packages.elementAt(i).setDownloadDirectory(ret.getAbsolutePath());
+                            }
+                        }
+                    }
+                    return;
                 }
-            }
-            return;
-        }
-        case TreeTableAction.DOWNLOAD_RESUME: {
-            for (int i = 0; i < selected_links.size(); i++) {
-                selected_links.elementAt(i).getLinkStatus().setStatus(LinkStatus.TODO);
-                selected_links.elementAt(i).getLinkStatus().setStatusText(JDLocale.L("gui.linklist.status.doresume", "Warte auf Fortsetzung"));
-            }
-            return;
-        }
-        case TreeTableAction.DOWNLOAD_BROWSE_LINK: {
-            if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
-                try {
-                    JLinkButton.openURL(link.getBrowserUrl());
-                } catch (Exception e1) {
-                    JDLogger.exception(e1);
+                case TreeTableAction.EDIT_NAME: {
+                    String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.editpackagename.message", "Neuer Paketname"), selected_packages.get(0).getName());
+                    if (name != null) {
+                        for (int i = 0; i < selected_packages.size(); i++) {
+                            selected_packages.elementAt(i).setName(name);
+                        }
+                    }
+                    return;
                 }
-            }
-            return;
-        }
-        case TreeTableAction.DOWNLOAD_DIR: {
-            JDUtilities.openExplorer(folder);
-            return;
-        }
-        case TreeTableAction.DOWNLOAD_DLC: {
-            JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
-            fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
-            fc.showSaveDialog(SimpleGUI.CURRENTGUI);
-            File ret = fc.getSelectedFile();
-            if (ret == null) return;
-            if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("dlc")) {
+                case TreeTableAction.DOWNLOAD_RESUME: {
+                    for (int i = 0; i < selected_links.size(); i++) {
+                        selected_links.elementAt(i).getLinkStatus().setStatus(LinkStatus.TODO);
+                        selected_links.elementAt(i).getLinkStatus().setStatusText(JDLocale.L("gui.linklist.status.doresume", "Warte auf Fortsetzung"));
+                    }
+                    return;
+                }
+                case TreeTableAction.DOWNLOAD_BROWSE_LINK: {
+                    if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
+                        try {
+                            JLinkButton.openURL(link.getBrowserUrl());
+                        } catch (Exception e1) {
+                            JDLogger.exception(e1);
+                        }
+                    }
+                    return;
+                }
+                case TreeTableAction.DOWNLOAD_DIR: {
+                    JDUtilities.openExplorer(folder);
+                    return;
+                }
+                case TreeTableAction.DOWNLOAD_DLC: {
+                    JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
+                    fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
+                    fc.showSaveDialog(SimpleGUI.CURRENTGUI);
+                    File ret = fc.getSelectedFile();
+                    if (ret == null) return;
+                    if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("dlc")) {
 
-                ret = new File(ret.getAbsolutePath() + ".dlc");
-            }
-            JDUtilities.getController().saveDLC(ret, selected_links);
-            return;
-        }
-        case TreeTableAction.DOWNLOAD_RESET: {
-            final Vector<DownloadLink> links = selected_links;
-            new Thread() {
-                public void run() {
+                        ret = new File(ret.getAbsolutePath() + ".dlc");
+                    }
+                    JDUtilities.getController().saveDLC(ret, selected_links);
+                    return;
+                }
+                case TreeTableAction.DOWNLOAD_RESET: {
+                    final Vector<DownloadLink> links = selected_links;
+                    new Thread() {
+                        public void run() {
 
+                            boolean b = true;
+                            if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+                                b = false;
+                                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDLocale.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")")) {
+                                    b = true;
+                                }
+                            }
+                            if (b) {
+                                for (int i = 0; i < links.size(); i++) {
+                                    links.elementAt(i).reset();
+                                }
+                            }
+                        }
+                    }.start();
+                    return;
+                }
+                case TreeTableAction.DOWNLOAD_COPY_PASSWORD: {
+                    Set<String> List = new HashSet<String>();
+                    StringBuilder build = new StringBuilder();
+                    for (int i = 0; i < selected_links.size(); i++) {
+                        String pw = selected_links.get(i).getFilePackage().getPassword();
+                        if (!List.contains(pw)) {
+                            List.add(pw);
+                            build.append(pw + "\n");
+                        }
+                        if (selected_links.get(i).getStringProperty("pass", null) != null) {
+                            pw = selected_links.get(i).getStringProperty("pass", null);
+                            if (!List.contains(pw)) {
+                                List.add(pw);
+                                build.append(pw + "\n");
+                            }
+                        }
+                    }
+                    String builded = build.toString();
+                    ClipboardHandler.getClipboard().setOldData(builded);
+                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(builded), null);
+                    return;
+                }
+                case TreeTableAction.DOWNLOAD_COPY_URL: {
+                    Set<String> List = new HashSet<String>();
+                    StringBuilder build = new StringBuilder();
+                    for (int i = 0; i < selected_links.size(); i++) {
+                        String url = selected_links.elementAt(i).getBrowserUrl();
+                        if (!List.contains(url)) {
+                            List.add(url);
+                            build.append(url + "\n");
+                        }
+                    }
+                    String builded = build.toString();
+                    ClipboardHandler.getClipboard().setOldData(builded);
+                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(builded), null);
+                    return;
+                }
+                case TreeTableAction.DOWNLOAD_PRIO: {
+                    int prio = (Integer) prop.get("prio");
+                    for (int i = 0; i < selected_links.size(); i++) {
+                        selected_links.elementAt(i).setPriority(prio);
+                    }
+                    DownloadController.getInstance().fireDownloadLinkUpdate(selected_links);
+                    return;
+                }
+                case TreeTableAction.CHECK:
+                    LinkCheck.getLinkChecker().checkLinks(selected_links);
+                    LinkCheck.getLinkChecker().getBroadcaster().addListener(INTSANCE);
+                    break;
+                case TreeTableAction.SORT_ALL:
+                    if (DownloadController.getInstance().size() == 1) {
+                        DownloadController.getInstance().getPackages().get(0).sort(col);
+                    } else
+                        sort(col);
+                    break;
+                case TreeTableAction.SORT:
+                    for (int i = 0; i < selected_packages.size(); i++) {
+                        selected_packages.get(i).sort(col);
+                    }
+                    break;
+                case TreeTableAction.DE_ACTIVATE: {
+                    boolean b = (Boolean) prop.get("boolean");
+                    for (int i = 0; i < selected_links.size(); i++) {
+                        selected_links.get(i).setEnabled(b);
+                    }
+                    JDUtilities.getDownloadController().fireStructureUpdate();
+                    return;
+                }
+                case TreeTableAction.NEW_PACKAGE: {
+                    fp = selected_links.get(0).getFilePackage();
+                    String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
+                    if (name != null) {
+                        FilePackage nfp = FilePackage.getInstance();
+                        nfp.setName(name);
+                        for (int i = 0; i < selected_links.size(); i++) {
+                            selected_links.elementAt(i).setFilePackage(nfp);
+                        }
+                        JDUtilities.getDownloadController().addPackage(nfp);
+                    }
+                    return;
+                }
+                case TreeTableAction.SET_PW: {
+                    String pw = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.setpw.message", "Set download password"), null);
+                    for (int i = 0; i < selected_links.size(); i++) {
+                        selected_links.elementAt(i).setProperty("pass", pw);
+                    }
+                    return;
+                }
+                case TreeTableAction.DELETE: {
                     boolean b = true;
                     if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
                         b = false;
-                        if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDLocale.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")")) {
+                        if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDLocale.LF("gui.downloadlist.delete.size_packagev2", "%s links", selected_links.size()) + ")")) {
                             b = true;
                         }
                     }
                     if (b) {
-                        for (int i = 0; i < links.size(); i++) {
-                            links.elementAt(i).reset();
+                        for (int i = 0; i < selected_links.size(); i++) {
+                            selected_links.elementAt(i).getFilePackage().remove(selected_links.elementAt(i));
                         }
                     }
+                    return;
                 }
-            }.start();
-            return;
-        }
-        case TreeTableAction.DOWNLOAD_COPY_PASSWORD: {
-            Set<String> List = new HashSet<String>();
-            StringBuilder build = new StringBuilder();
-            for (int i = 0; i < selected_links.size(); i++) {
-                String pw = selected_links.get(i).getFilePackage().getPassword();
-                if (!List.contains(pw)) {
-                    List.add(pw);
-                    build.append(pw + "\n");
-                }
-                if (selected_links.get(i).getStringProperty("pass", null) != null) {
-                    pw = selected_links.get(i).getStringProperty("pass", null);
-                    if (!List.contains(pw)) {
-                        List.add(pw);
-                        build.append(pw + "\n");
-                    }
                 }
             }
-            String builded = build.toString();
-            ClipboardHandler.getClipboard().setOldData(builded);
-            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(builded), null);
-            return;
-        }
-        case TreeTableAction.DOWNLOAD_COPY_URL: {
-            Set<String> List = new HashSet<String>();
-            StringBuilder build = new StringBuilder();
-            for (int i = 0; i < selected_links.size(); i++) {
-                String url = selected_links.elementAt(i).getBrowserUrl();
-                if (!List.contains(url)) {
-                    List.add(url);
-                    build.append(url + "\n");
-                }
-            }
-            String builded = build.toString();
-            ClipboardHandler.getClipboard().setOldData(builded);
-            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(builded), null);
-            return;
-        }
-        case TreeTableAction.DOWNLOAD_PRIO: {
-            int prio = (Integer) prop.get("prio");
-            for (int i = 0; i < selected_links.size(); i++) {
-                selected_links.elementAt(i).setPriority(prio);
-            }
-            DownloadController.getInstance().fireDownloadLinkUpdate(selected_links);
-            return;
-        }
-        case TreeTableAction.CHECK:
-            LinkCheck.getLinkChecker().checkLinks(selected_links);
-            LinkCheck.getLinkChecker().getBroadcaster().addListener(this);
-            break;
-        case TreeTableAction.SORT_ALL:
-            if (DownloadController.getInstance().size() == 1) {
-                DownloadController.getInstance().getPackages().get(0).sort(col);
-            } else
-                sort(col);
-            break;
-        case TreeTableAction.SORT:
-            for (int i = 0; i < selected_packages.size(); i++) {
-                selected_packages.get(i).sort(col);
-            }
-            break;
-        case TreeTableAction.DE_ACTIVATE: {
-            boolean b = (Boolean) prop.get("boolean");
-            for (int i = 0; i < selected_links.size(); i++) {
-                selected_links.get(i).setEnabled(b);
-            }
-            JDUtilities.getDownloadController().getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
-            return;
-        }
-        case TreeTableAction.NEW_PACKAGE: {
-            fp = selected_links.get(0).getFilePackage();
-            String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
-            if (name != null) {
-                FilePackage nfp = FilePackage.getInstance();
-                nfp.setName(name);
-                for (int i = 0; i < selected_links.size(); i++) {
-                    selected_links.elementAt(i).setFilePackage(nfp);
-                }
-                JDUtilities.getDownloadController().addPackage(nfp);
-            }
-            return;
-        }
-        case TreeTableAction.SET_PW: {
-            String pw = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.setpw.message", "Set download password"), null);
-            for (int i = 0; i < selected_links.size(); i++) {
-                selected_links.elementAt(i).setProperty("pass", pw);
-            }
-            return;
-        }
-        case TreeTableAction.DELETE: {
-            boolean b = true;
-            if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                b = false;
-                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDLocale.LF("gui.downloadlist.delete.size_packagev2", "%s links", selected_links.size()) + ")")) {
-                    b = true;
-                }
-            }
-            if (b) {
-                for (int i = 0; i < selected_links.size(); i++) {
-                    selected_links.elementAt(i).getFilePackage().remove(selected_links.elementAt(i));
-                }
-            }
-            return;
-        }
-        }
+        }.start();
+
     }
 
     private void sort(final int col) {
@@ -533,12 +554,13 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
             break;
         }
     }
+
     public void showDownloadLinkInfo(DownloadLink downloadLink) {
         filePackageInfo.setDownloadLink(downloadLink);
         JDCollapser.getInstance().setContentPanel(filePackageInfo);
         JDCollapser.getInstance().setTitle(JDLocale.L("gui.linkgrabber.infopanel.link.title", "Link information"));
         JDCollapser.getInstance().setVisible(true);
         JDCollapser.getInstance().setCollapsed(false);
-        
+
     }
 }

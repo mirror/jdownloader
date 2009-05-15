@@ -45,6 +45,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     private LinkGrabberController lgi;
     private JCheckBox topOrBottom;
     private JCheckBox startAFteradding;
+    protected boolean updateinprogress = false;
 
     public LinkGrabberTaskPane(String string, ImageIcon ii) {
         super(string, ii, "linkgrabber");
@@ -75,18 +76,26 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     }
 
     private void update() {/* TODO: soll man über events aktuallisiert werden */
-        packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", fps.size()));
-        long tot = 0;
-        long links = 0;
-        synchronized (fps) {
-            for (LinkGrabberFilePackage fp : fps) {
-                tot += fp.getDownloadSize(false);
-                links += fp.getDownloadLinks().size();
+        if (updateinprogress) return;
+        new Thread() {
+            public void run() {
+                updateinprogress = true;
+                this.setName("LinkGrabber: infoupdate");
+                packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", fps.size()));
+                long tot = 0;
+                long links = 0;
+                synchronized (fps) {
+                    for (LinkGrabberFilePackage fp : fps) {
+                        tot += fp.getDownloadSize(false);
+                        links += fp.getDownloadLinks().size();
+                    }
+                }
+                downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", links));
+                filteredlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.filteredLinks", "%s filtered Link(s)", lgi.getFILTERPACKAGE().size()));
+                totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
+                updateinprogress = false;
             }
-        }
-        downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", links));
-        filteredlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.filteredLinks", "%s filtered Link(s)", lgi.getFILTERPACKAGE().size()));
-        totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
+        }.start();
     }
 
     private void initGUI() {
@@ -131,9 +140,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
             topOrBottom.setSelected(true);
         }
-        
-        
-       
+
         startAFteradding = new JCheckBox(JDLocale.L("gui.taskpanes.download.linkgrabber.config.startofter", "Start after adding"));
         startAFteradding.addActionListener(new ActionListener() {
 
@@ -147,11 +154,11 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
             startAFteradding.setSelected(true);
         }
         add(config, D1_LABEL_ICON);
-        
-        startAFteradding.setToolTipText(JDLocale.L("gui.tooltips.linkgrabber.startlinksafteradd","Is selected, download starts after adding new links"));
+
+        startAFteradding.setToolTipText(JDLocale.L("gui.tooltips.linkgrabber.startlinksafteradd", "Is selected, download starts after adding new links"));
         add(startAFteradding, TaskPanel.D2_CHECKBOX);
-        startAFteradding.setToolTipText(JDLocale.L("gui.tooltips.linkgrabber.topOrBottom","if selected, new links will be added at top of your downloadlist"));
-        
+        startAFteradding.setToolTipText(JDLocale.L("gui.tooltips.linkgrabber.topOrBottom", "if selected, new links will be added at top of your downloadlist"));
+
         add(topOrBottom, TaskPanel.D2_CHECKBOX);
 
     }

@@ -9,6 +9,7 @@ import java.util.Vector;
 
 import javax.swing.Timer;
 
+import jd.controlling.DownloadController;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
@@ -21,7 +22,7 @@ import jd.utils.JDLocale;
 
 class LinkCheckBroadcaster extends JDBroadcaster<LinkCheckListener, LinkCheckEvent> {
 
-    //@Override
+    // @Override
     protected void fireEvent(LinkCheckListener listener, LinkCheckEvent event) {
         listener.onLinkCheckEvent(event);
     }
@@ -90,6 +91,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                 pc.increase(hosterList.size());
             }
         }
+        DownloadController.getInstance().fireDownloadLinkUpdate(hosterList);
     }
 
     private void startLinkCheck() {
@@ -98,7 +100,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             public void run() {
                 setName("OnlineCheck");
                 getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.START));
-                pc = new ProgressController(JDLocale.L("gui.linkgrabber.pc.onlinecheck","Checking online availability..."));
+                pc = new ProgressController(JDLocale.L("gui.linkgrabber.pc.onlinecheck", "Checking online availability..."));
                 pc.getBroadcaster().addListener(LinkCheck.getLinkChecker());
                 pc.setRange(0);
                 while (LinksToCheck.size() != 0) {
@@ -183,7 +185,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
         }
     }
 
-    public void abortLinkCheck() {        
+    public void abortLinkCheck() {
         check_running = false;
         checkTimer.stop();
         if (checkThread != null && checkThread.isAlive()) {

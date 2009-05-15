@@ -89,6 +89,8 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     private Timer asyncSaveIntervalTimer;
 
+    private boolean saveinprogress = false;
+
     private AccountController() {
         super("AccountController");
         hosteraccounts = loadAccounts();
@@ -271,7 +273,21 @@ public class AccountController extends SubConfiguration implements ActionListene
         asyncSaveIntervalTimer.restart();
     }
 
-    public synchronized void saveSync() {
+    public void saveSync() {
+        if (saveinprogress == true) return;
+        new Thread() {
+            public void run() {
+                this.setName("AccountController: Saving");
+                saveinprogress = true;
+                synchronized (hosteraccounts) {
+                    save();
+                }
+                saveinprogress = false;
+            }
+        }.start();
+    }
+
+    public void saveSyncnonThread() {
         synchronized (hosteraccounts) {
             save();
         }

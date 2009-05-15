@@ -217,9 +217,9 @@ public class MegasharesCom extends PluginForHost {
     // @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         setBrowserExclusive();
-        loadpage(downloadLink.getDecrypterPassword());
+        loadpage(downloadLink.getDownloadURL());
         if (br.containsHTML("continue using Free service")) {
-            loadpage(downloadLink.getDecrypterPassword());
+            loadpage(downloadLink.getDownloadURL());
         }
         if (br.containsHTML("You already have the maximum")) {
             downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.alreadyloading", "Cannot check, because aready loading file"));

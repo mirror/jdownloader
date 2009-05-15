@@ -295,12 +295,10 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         return cols;
     }
 
-    @SuppressWarnings("unchecked")
-    public synchronized void fireTableChanged(int id, Object param) {
+    public synchronized void fireTableChanged(int id, ArrayList<DownloadLink> links) {
         TreeModelSupport supporter = getDownladTreeTableModel().getModelSupporter();
         switch (id) {
         case DownloadLinksPanel.REFRESH_SPECIFIED_LINKS:
-            ArrayList<DownloadLink> links = ((ArrayList<DownloadLink>) param);
             HashMap<Object, TreePath> map = this.getPathMap();
             for (DownloadLink dl : links) {
                 TreePath path = map.remove(dl.getFilePackage());

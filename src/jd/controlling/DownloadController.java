@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -27,12 +28,42 @@ import jd.utils.JDUtilities;
 
 class DownloadControllerBroadcaster extends JDBroadcaster<DownloadControllerListener, DownloadControllerEvent> {
 
-    // @Override
     protected void fireEvent(DownloadControllerListener listener, DownloadControllerEvent event) {
         listener.onDownloadControllerEvent(event);
+    }
+}
 
+class Optimizer {
+
+    private HashMap<String, Vector<DownloadLink>> url_links = new HashMap<String, Vector<DownloadLink>>();
+
+    private static Optimizer INSTANCE = null;
+
+    private DownloadController INSTANCE2 = null;
+
+    public synchronized static Optimizer getINSTANCE(DownloadController INSTANCE2) {
+        if (INSTANCE == null) INSTANCE = new Optimizer(INSTANCE2);
+        return INSTANCE;
     }
 
+    private Optimizer(DownloadController INSTANCE2) {
+        this.INSTANCE2 = INSTANCE2;
+        init();        
+    }
+
+    private void init() {
+        Vector<DownloadLink> links = INSTANCE2.getAllDownloadLinks();
+        for (DownloadLink link : links) {
+            String url = link.getDownloadURL();
+            if (url != null) {
+                if (!url_links.containsKey(url)) {
+                    url_links.put(url, new Vector<DownloadLink>());
+                }
+                Vector<DownloadLink> tmp = url_links.get(url);
+                if (!tmp.contains(link)) tmp.add(link);
+            }
+        }
+    }
 }
 
 public class DownloadController implements FilePackageListener, DownloadControllerListener, ActionListener {
@@ -40,9 +71,12 @@ public class DownloadController implements FilePackageListener, DownloadControll
     private static DownloadController INSTANCE = null;
 
     private Vector<FilePackage> packages = new Vector<FilePackage>();
+
     private Logger logger = null;
 
     private JDController controller;
+
+    private Optimizer optimizer;
 
     private transient DownloadControllerBroadcaster broadcaster = new DownloadControllerBroadcaster();
 
@@ -50,6 +84,8 @@ public class DownloadController implements FilePackageListener, DownloadControll
                                            * Async-Save, Linkliste wird
                                            * verzögert gespeichert
                                            */
+
+    private boolean saveinprogress;
 
     public synchronized static DownloadController getInstance() {
         /* darf erst nachdem der JDController init wurde, aufgerufen werden */
@@ -59,11 +95,6 @@ public class DownloadController implements FilePackageListener, DownloadControll
         return INSTANCE;
     }
 
-    public synchronized JDBroadcaster<DownloadControllerListener, DownloadControllerEvent> getBroadcaster() {
-        if (broadcaster == null) broadcaster = new DownloadControllerBroadcaster();
-        return broadcaster;
-    }
-
     private DownloadController() {
         logger = jd.controlling.JDLogger.getLogger();
         controller = JDUtilities.getController();
@@ -71,10 +102,16 @@ public class DownloadController implements FilePackageListener, DownloadControll
         asyncSaveIntervalTimer = new Timer(2000, this);
         asyncSaveIntervalTimer.setInitialDelay(2000);
         asyncSaveIntervalTimer.setRepeats(false);
-        broadcaster.addListener(this);/*
-                                       * erst nachdem die packages geinit
-                                       * wurden!
-                                       */
+        optimizer = Optimizer.getINSTANCE(this);
+        broadcaster.addListener(this);
+    }
+
+    public void addListener(DownloadControllerListener l) {
+        broadcaster.addListener(l);
+    }
+
+    public void removeListener(DownloadControllerListener l) {
+        broadcaster.removeListener(l);
     }
 
     /**
@@ -128,9 +165,23 @@ public class DownloadController implements FilePackageListener, DownloadControll
      *            Die Datei, in die die Links gespeichert werden sollen
      */
     public void saveDownloadLinksSync() {
+        if (saveinprogress) return;
+        new Thread() {
+            public void run() {
+                this.setName("DownloadController: Saving");
+                saveinprogress = true;
+                synchronized (packages) {
+                    JDUtilities.getDatabaseConnector().saveLinks(packages);
+                }
+                saveinprogress = false;
+            }
+        }.start();
+    }
+    
+    public void saveDownloadLinksSyncnonThread(){
         synchronized (packages) {
             JDUtilities.getDatabaseConnector().saveLinks(packages);
-        }
+        }        
     }
 
     public void backupDownloadLinks() {
@@ -385,15 +436,15 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     public void fireStructureUpdate() {
         /* speichern der downloadliste + aktuallisierung der gui */
-        this.getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
+        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
     }
 
     public void fireGlobalUpdate() {
-        this.getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_ALL));
+        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_ALL));
     }
 
     public void fireDownloadLinkUpdate(Object param) {
-        this.getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_SPECIFIC, param));
+        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_SPECIFIC, param));
     }
 
     public void onDownloadControllerEvent(DownloadControllerEvent event) {
@@ -412,11 +463,11 @@ public class DownloadController implements FilePackageListener, DownloadControll
     public void onFilePackageEvent(FilePackageEvent event) {
         switch (event.getID()) {
         case FilePackageEvent.DOWNLOADLINK_ADDED:
-            this.getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_DOWNLOADLINK, event.getParameter()));
+            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_DOWNLOADLINK, event.getParameter()));
             this.fireStructureUpdate();
             break;
         case FilePackageEvent.DOWNLOADLINK_REMOVED:
-            this.getBroadcaster().fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REMOVE_DOWNLOADLINK, event.getParameter()));
+            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REMOVE_DOWNLOADLINK, event.getParameter()));
             break;
         case FilePackageEvent.FILEPACKAGE_UPDATE:
             this.fireStructureUpdate();

@@ -152,8 +152,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private String finalFileName;
 
-    private transient String tempUrlDownload;
-
     // Von hier soll de Download stattfinden
     private String urlDownload;
 
@@ -330,14 +328,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public String getDownloadURL() {
 
         if (linkType == LINKTYPE_CONTAINER) {
-            if (tempUrlDownload != null) { return tempUrlDownload; }
-            String ret;
+            if (urlDownload != null) { return urlDownload; }
             if (pluginForContainer != null) {
-                ret = pluginForContainer.extractDownloadURL(this);
-                if (ret == null) {
+                urlDownload = pluginForContainer.extractDownloadURL(this);
+                if (urlDownload == null) {
                     logger.severe(this + " is a containerlink. Container could not be extracted. Is your JD Version up2date?");
                 }
-                return ret;
+                return urlDownload;
             } else {
                 logger.severe(this + " is a containerlink, but no plugin could be found");
                 return null;
@@ -871,10 +868,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             logger.severe("You are not allowd to Change the Linktype of " + this);
             return;
         }
-        if (linktypeContainer == LINKTYPE_CONTAINER && urlDownload != null) {
-            logger.severe("This link already has a value for urlDownload");
-            urlDownload = null;
-        }
         linkType = linktypeContainer;
     }
 
@@ -956,11 +949,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public void setUrlDownload(String urlDownload) {
         if (urlDownload != null) {
             urlDownload = urlDownload.trim();
-        }
-        if (linkType == LINKTYPE_CONTAINER) {
-            tempUrlDownload = urlDownload;
-            this.urlDownload = null;
-            return;
         }
         if (urlDownload != null) {
             this.urlDownload = urlDownload;
