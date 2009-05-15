@@ -80,7 +80,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         dlc.addListener(this);
     }
 
-    void start() {
+    public void start() {
         stopMark = nostopMark;
         startWatchDogThread();
     }

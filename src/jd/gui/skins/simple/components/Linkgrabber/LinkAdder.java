@@ -39,8 +39,8 @@ public class LinkAdder extends JTabbedPanel {
         add(new JScrollPane(text = new JTextArea()), "pushx,growx");
 
         reset();
-text.setLineWrap(true);
-text.setWrapStyleWord(false);
+        text.setLineWrap(true);
+        text.setWrapStyleWord(false);
         text.getDocument().addDocumentListener(new DocumentListener() {
 
             public void changedUpdate(DocumentEvent e) {
@@ -82,15 +82,16 @@ text.setWrapStyleWord(false);
             public void actionPerformed(ActionEvent e) {
                 JDUtilities.getController().distributeLinks(text.getText());
                 reset();
-
             }
 
         });
 
     }
-public boolean needsViewport(){
-    return false;
-}
+
+    public boolean needsViewport() {
+        return false;
+    }
+
     // @Override
     public void onDisplay() {
         ClipboardHandler.getClipboard().setTempDisableD(true);

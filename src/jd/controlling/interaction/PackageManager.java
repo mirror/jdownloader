@@ -149,7 +149,7 @@ public class PackageManager extends Interaction implements Serializable {
             dat.setUpdating(false);
         }
         // Updatelink wurde vermutlich aus der Liste entfernt
-        if (!dat.isDownloaded() && dat.isUpdating() && !(JDUtilities.getDownloadController().getFirstDownloadLinkwithURL(dat.getStringProperty("url")) != null) || JDUtilities.getDownloadController().getFirstDownloadLinkwithURL(dat.getStringProperty("light-url")) != null) {
+        if (!dat.isDownloaded() && dat.isUpdating() && !(JDUtilities.getDownloadController().hasDownloadLinkwithURL(dat.getStringProperty("url"))) || JDUtilities.getDownloadController().hasDownloadLinkwithURL(dat.getStringProperty("light-url"))) {
             logger.info("PM: validate restet2");
             dat.setUpdating(false);
         }

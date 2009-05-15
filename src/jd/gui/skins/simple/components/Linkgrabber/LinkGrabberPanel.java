@@ -18,6 +18,7 @@ import javax.swing.Timer;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.JDController;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
@@ -148,8 +149,11 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         LGINSTANCE.getBroadcaster().removeListener(this);
         Update_Async.stop();
         visible = false;
-        SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_ALL, true, JDLocale.L("gui.linkgrabber.toolbar.disabled", "Switch to downloadtask to enable buttons"));
-
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_ALL, true, JDLocale.L("gui.linkgrabber.toolbar.disabled", "Switch to downloadtask to enable buttons"));
+            }
+        });
     }
 
     public synchronized void addLinks(final DownloadLink[] linkList) {
@@ -258,7 +262,11 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     // @Override
     public void onDisplay() {
-        SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_CONTROL | JDToolBar.ENTRY_INTERACTION, false, JDLocale.L("gui.linkgrabber.toolbar.disabled", "Switch to downloadtask to enable buttons"));
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_CONTROL | JDToolBar.ENTRY_INTERACTION, false, JDLocale.L("gui.linkgrabber.toolbar.disabled", "Switch to downloadtask to enable buttons"));
+            }
+        });
         fireTableChanged();
         LGINSTANCE.getBroadcaster().addListener(this);
         visible = true;
@@ -492,6 +500,9 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             confirmPackage(all.get(i), null);
         }
         LGINSTANCE.getBroadcaster().fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.ADDED));
+        if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
+            JDController.getInstance().startDownloads();
+        }
     }
 
     private void addToDownloadDirs(String downloadDirectory, String packageName) {
@@ -556,11 +567,18 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             fp.addAll(linkListHost);
             fpv2.setDownloadLinks(linkList);
         }
-        if (!fpv2.isIgnored()) JDUtilities.getDownloadController().addPackage(fp);
+        if (!fpv2.isIgnored()) {
+            if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
+                JDUtilities.getDownloadController().addPackageAt(fp, 0);
+            } else {
+                JDUtilities.getDownloadController().addPackage(fp);
+            }
+
+        }
     }
 
     public void checkAlreadyinList(DownloadLink link) {
-        if (JDUtilities.getDownloadController().getFirstDownloadLinkwithURL(link.getDownloadURL()) != null) {
+        if (JDUtilities.getDownloadController().hasDownloadLinkwithURL(link.getDownloadURL())) {
             link.getLinkStatus().setErrorMessage(JDLocale.L("gui.linkgrabber.alreadyindl", "Already on Download List"));
             link.getLinkStatus().addStatus(LinkStatus.ERROR_ALREADYEXISTS);
         }

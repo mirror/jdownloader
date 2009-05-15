@@ -35,7 +35,9 @@ class DownloadControllerBroadcaster extends JDBroadcaster<DownloadControllerList
 
 class Optimizer {
 
-    private HashMap<String, Vector<DownloadLink>> url_links = new HashMap<String, Vector<DownloadLink>>();
+    private HashMap<String, ArrayList<DownloadLink>> url_links = new HashMap<String, ArrayList<DownloadLink>>();
+
+    private Object lock = new Object();
 
     private static Optimizer INSTANCE = null;
 
@@ -57,11 +59,18 @@ class Optimizer {
             String url = link.getDownloadURL();
             if (url != null) {
                 if (!url_links.containsKey(url)) {
-                    url_links.put(url, new Vector<DownloadLink>());
+                    url_links.put(url, new ArrayList<DownloadLink>());
                 }
-                Vector<DownloadLink> tmp = url_links.get(url);
+                ArrayList<DownloadLink> tmp = url_links.get(url);
                 if (!tmp.contains(link)) tmp.add(link);
             }
+        }
+    }
+
+    public ArrayList<DownloadLink> getLinkswithURL(String url) {
+        if (url == null || url.length() == 0) return null;
+        synchronized (lock) {
+            return url_links.get(url.trim());
         }
     }
 }
@@ -177,11 +186,11 @@ public class DownloadController implements FilePackageListener, DownloadControll
             }
         }.start();
     }
-    
-    public void saveDownloadLinksSyncnonThread(){
+
+    public void saveDownloadLinksSyncnonThread() {
         synchronized (packages) {
             JDUtilities.getDatabaseConnector().saveLinks(packages);
-        }        
+        }
     }
 
     public void backupDownloadLinks() {
@@ -395,16 +404,9 @@ public class DownloadController implements FilePackageListener, DownloadControll
         return ret;
     }
 
-    public DownloadLink getFirstDownloadLinkwithURL(String url) {
-        if (url == null) return null;
-        url = url.trim();
-        synchronized (packages) {
-            for (DownloadLink dl : getAllDownloadLinks()) {
-                if (dl.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) continue;
-                if (dl.getDownloadURL() != null && dl.getDownloadURL().equalsIgnoreCase(url)) { return dl; }
-            }
-        }
-        return null;
+    public boolean hasDownloadLinkwithURL(String url) {
+        if (optimizer.getLinkswithURL(url) != null) { return true; }
+        return false;
     }
 
     public DownloadLink getFirstLinkThatBlocks(DownloadLink link) {

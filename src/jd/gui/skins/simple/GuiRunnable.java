@@ -54,7 +54,7 @@ public abstract class GuiRunnable<T> implements Runnable {
                 try {
                     lock.wait();
                 } catch (InterruptedException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
         }
