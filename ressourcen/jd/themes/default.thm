@@ -132,6 +132,9 @@ gui.images.enabled=default/enabled
 gui.images.disabled=default/disabled
 gui.images.filter=default/filter
 gui.images.addselected=default/edit-find
+
+# Cursor. ATTENTION. CURSOR are GIFS!!
+gui.cursor.help=default/cursor/help
 #colors
 gui.color.statusbar.maxspeedhighlight=ff0c03
 gui.color.htmlTooltip_background=94baff
