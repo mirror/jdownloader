@@ -17,6 +17,7 @@
 package jd.gui.skins.simple.components.DownloadView;
 
 import java.awt.EventQueue;
+import java.awt.Graphics;
 
 import javax.swing.JProgressBar;
 
@@ -51,17 +52,10 @@ public class JDProgressBar extends JProgressBar {
 
     }
 
-    private void doupdate() {
+ 
+    private void update() {
         super.setMaximum((int) (realMax / faktor));
         super.setValue((int) (realCur / faktor));
-    }
-
-    private void update() {
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                doupdate();
-            }
-        });
     }
 
     public void setValue(int value) {
@@ -74,6 +68,16 @@ public class JDProgressBar extends JProgressBar {
             faktor *= 2;
         }
         update();
+    }
+
+    public void paint(Graphics g) {
+        System.out.println("Paint "+getValue()+"/"+getMaximum());
+        if(getValue()==2221){
+            System.out.println("Paint "+getValue()+"/"+getMaximum());  
+            
+        }
+super.paint(g);
+
     }
 
     public long getRealValue() {

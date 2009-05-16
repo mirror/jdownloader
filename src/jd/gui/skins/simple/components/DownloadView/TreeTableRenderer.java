@@ -190,12 +190,18 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             co = getDownloadLinkCell(table, value, isSelected, hasFocus, row, column);
             if (!((DownloadLink) value).isEnabled()) {
                 co.setEnabled(false);
-                progress.setString("");
+                if(co instanceof JDProgressBar){
+                    ((JDProgressBar)co).setString("");
+                }
+             
 
                 ((JComponent) co).setToolTipText(lblTTDisabled);
 
             } else {
-
+                if(co instanceof JDProgressBar){
+                   
+                    System.out.println(((JDProgressBar)co).getValue()+"<");
+                }
                 co.setEnabled(true);
             }
             return co;
@@ -348,6 +354,10 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 progress.setMaximum(10000);
                 progress.setToolTipText(null);
                 progress.setValue(dLink.getPercent());
+                System.out.println(dLink+" : "+progress.getValue()+"<"+dLink.getPercent());
+                if(progress.getValue()==1716){
+                    System.out.println(dLink+" : "+progress.getValue()+"<1716");
+                }
                 return progress;
             }
             progress.setMaximum(10000);

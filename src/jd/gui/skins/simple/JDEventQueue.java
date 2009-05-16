@@ -94,31 +94,31 @@ public class JDEventQueue extends EventQueue {
                 this.lastPoint = 2;
                 Point point = e.getPoint();
                 Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
-                point.x -= (source.getLocationOnScreen().x-SimpleGUI.CURRENTGUI.getLocationOnScreen().x);
-                point.y -= (source.getLocationOnScreen().y-SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
+                point.x -= (source.getLocationOnScreen().x - SimpleGUI.CURRENTGUI.getLocationOnScreen().x);
+                point.y -= (source.getLocationOnScreen().y - SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
                 final StringBuilder sb = new StringBuilder();
                 while (source != null) {
                     Component source2 = source.getComponentAt(point);
-                    
-                    if (source2==source||source2 == null) {
-if(sb.length() > 0){
-                        new Thread() {
-                            public void run() {
-                                try {
-                                    String url = "http://jdownloader.org/quickhelp/" + sb;
-                                    JLinkButton.openURL(url);
-                                    return;
-                                } catch (Exception e) {
-                                    // TODO Auto-generated catch block
-                                    e.printStackTrace();
-                                }
 
-                            }
-                        }.start();
-                        return;
-}else{
-    break;
-}
+                    if (source2 == source || source2 == null) {
+                        if (sb.length() > 0) {
+                            new Thread() {
+                                public void run() {
+                                    try {
+                                        String url = "http://jdownloader.org/quickhelp/" + sb;
+                                        JLinkButton.openURL(url);
+                                        return;
+                                    } catch (Exception e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }
+
+                                }
+                            }.start();
+                            return;
+                        } else {
+                            break;
+                        }
                     }
                     if (source2 != null) {
                         point.x -= source2.getLocation().x;
@@ -129,19 +129,17 @@ if(sb.length() > 0){
                             sb.append(source2.getName().replace(" ", "-"));
                         }
                     }
-                        source=source2;
-                    
-                    
-                  
+                    source = source2;
+
                 }
 
             } else if (e.getID() == MouseEvent.MOUSE_MOVED && e.isControlDown() && e.isShiftDown()) {
 
                 Point point = e.getPoint();
                 Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
-                
-                point.x -= (source.getLocationOnScreen().x-SimpleGUI.CURRENTGUI.getLocationOnScreen().x);
-                point.y -= (source.getLocationOnScreen().y-SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
+
+                point.x -= (source.getLocationOnScreen().x - SimpleGUI.CURRENTGUI.getLocationOnScreen().x);
+                point.y -= (source.getLocationOnScreen().y - SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
                 while (source != null) {
 
                     Component source2 = source.getComponentAt(point);
@@ -160,7 +158,7 @@ if(sb.length() > 0){
 
                             }
                         }
-                        final Component found=source;
+                        final Component found = source;
                         curserupdater = new Thread() {
                             public void run() {
                                 try {

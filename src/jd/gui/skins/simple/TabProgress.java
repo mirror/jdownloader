@@ -18,7 +18,6 @@ package jd.gui.skins.simple;
 
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -127,11 +126,16 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
                 }
             } finally {
                 sortControllers();
-                EventQueue.invokeLater(new Runnable() {
-                    public void run() {
+                new GuiRunnable() {
+
+                    @Override
+                    public Object runSave() {
                         update();
+                        return null;
                     }
-                });
+
+                }.start();
+
             }
 
         }
