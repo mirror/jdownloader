@@ -23,6 +23,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class ZShareNet extends PluginForHost {
 
@@ -36,7 +37,7 @@ public class ZShareNet extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         try {
             br.setCookiesExclusive(true);
             br.setFollowRedirects(true);
@@ -48,11 +49,11 @@ public class ZShareNet extends PluginForHost {
             downloadLink.setName(fileInfo[0]);
             downloadLink.setDownloadSize(Regex.getSize(fileInfo[1].replaceAll(",", "")));
             // Datei ist noch verfuegbar
-            return true;
+            return AvailableStatus.TRUE;
         } catch (Exception e) {
         }
         downloadLink.setAvailable(false);
-        return false;
+        return AvailableStatus.FALSE;
     }
 
     //@Override

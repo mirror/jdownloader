@@ -8,6 +8,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class SendSpacePl extends PluginForHost {
 
@@ -21,7 +22,7 @@ public class SendSpacePl extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("Nazwa pliku:<br /><a href=\".*?\" class=\".*?\" style=\"font-size: 14px;\">(.*?)<").getMatch(0);
@@ -29,7 +30,7 @@ public class SendSpacePl extends PluginForHost {
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -40,7 +41,7 @@ public class SendSpacePl extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         String dlLink = br.getRegex("<div class=\"downloadFileAds\".*?<a href=\"(.*?)\"><img src=\"http://www.sendspace.pl/templates/img/button/download_file.gif\" alt=\"pobierz plik!\"").getMatch(0);
         if (dlLink == null) { throw new PluginException(LinkStatus.ERROR_FATAL); }
         br.setFollowRedirects(true);

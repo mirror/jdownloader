@@ -24,6 +24,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class Indowebster extends PluginForHost {
 
@@ -38,7 +39,7 @@ public class Indowebster extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -47,12 +48,12 @@ public class Indowebster extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-        getFileInformation(link);
+        requestFileInformation(link);
         String dl_url = br.getRegex("<div id=\"buttonz\" align=\"center\"> <a href=\"(.*?)\"").getMatch(0);
         if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setDebug(true);

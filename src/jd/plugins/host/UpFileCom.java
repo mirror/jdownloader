@@ -25,6 +25,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class UpFileCom extends PluginForHost {
 
@@ -39,7 +40,7 @@ public class UpFileCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://up-file.com", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
@@ -49,7 +50,7 @@ public class UpFileCom extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -59,7 +60,7 @@ public class UpFileCom extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         if (br.containsHTML("Wait for your turn")) {
             String waittime = br.getRegex("your\\sturn&nbsp;&nbsp;<span\\sid=\"errt\"[^>]*>(.*?)</span>").getMatch(0);

@@ -191,7 +191,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 synchronized (fp.getDownloadLinks()) {
                     Vector<DownloadLink> links = new Vector<DownloadLink>(fp.getDownloadLinks());
                     for (DownloadLink dl : links) {
-                        if (dl.isAvailabilityChecked() && !dl.isAvailable() && links.size() == 1) {
+                        if (dl.isAvailabilityStatusChecked() && !dl.isAvailable() && links.size() == 1) {
                             this.AddorMoveDownloadLink(FP_OFFLINE, dl);
                         }
                     }

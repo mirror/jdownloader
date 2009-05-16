@@ -30,6 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class PixelhitCom extends PluginForHost {
 
@@ -39,7 +40,7 @@ public class PixelhitCom extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.setDebug(true);
         if (br.containsHTML("You have reached")) {
@@ -100,7 +101,7 @@ public class PixelhitCom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.pixelhit.com/", "lang", "english");
         br.getPage(downloadLink.getDownloadURL());
@@ -110,7 +111,7 @@ public class PixelhitCom extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override

@@ -587,7 +587,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                     case 2:
                         return aa.getHost().compareToIgnoreCase(bb.getHost());
                     case 3:
-                        if (aa.isAvailabilityChecked() && bb.isAvailabilityChecked()) {
+                        if (aa.isAvailabilityStatusChecked() && bb.isAvailabilityStatusChecked()) {
                             return (aa.isAvailable() && !bb.isAvailable()) ? 1 : -1;
                         } else
                             return -1;

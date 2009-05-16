@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class MaxUploadEu extends PluginForHost {
 
@@ -42,7 +43,7 @@ public class MaxUploadEu extends PluginForHost {
     public String fileno;
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         fileno = new Regex(downloadLink.getDownloadURL(),"maxupload.eu/../(\\d+)").getMatch(0);
         if (fileno == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -52,7 +53,7 @@ public class MaxUploadEu extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -63,7 +64,7 @@ public class MaxUploadEu extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String getlink;
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         getlink = br.getRegex("a rel=\"nofollow\" href=\"(.*?)\"").getMatch(0);
         if (getlink == null) getlink = "http://www.maxupload.eu/download.php?id=" + fileno;

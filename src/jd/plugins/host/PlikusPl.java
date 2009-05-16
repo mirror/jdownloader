@@ -9,6 +9,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class PlikusPl extends PluginForHost {
 
@@ -23,7 +24,7 @@ public class PlikusPl extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         String filesize = br.getRegex("<p><b>Rozmiar pliku:</b>(.*?)</p>").getMatch(0);
@@ -31,7 +32,7 @@ public class PlikusPl extends PluginForHost {
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -41,7 +42,7 @@ public class PlikusPl extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         Form form = br.getForm(0);
         br.setFollowRedirects(false);
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);

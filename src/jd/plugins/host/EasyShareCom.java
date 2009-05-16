@@ -18,6 +18,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class EasyShareCom extends PluginForHost {
 
@@ -83,7 +84,7 @@ public class EasyShareCom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.easy-share.com", "language", "en");
         br.getPage(downloadLink.getDownloadURL());
@@ -94,7 +95,7 @@ public class EasyShareCom extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -105,7 +106,7 @@ public class EasyShareCom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         String wait = br.getRegex("id=\"freeButton\" value=\" Seconds to wait:(.*?)\"").getMatch(0);
         int waittime = 0;
         if (wait != null) waittime = Integer.parseInt(wait.trim());
@@ -142,7 +143,7 @@ public class EasyShareCom extends PluginForHost {
 
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         login(account);
         isExpired(account);
         br.setFollowRedirects(true);

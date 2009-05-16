@@ -25,6 +25,7 @@ import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 
 public class FileUploadnet extends PluginForHost {
@@ -46,7 +47,7 @@ public class FileUploadnet extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.setFollowRedirects(false);
@@ -63,7 +64,7 @@ public class FileUploadnet extends PluginForHost {
                         downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.trim())) * 1024);
                     }
                     downloadLink.setName(filename);
-                    return true;
+                    return AvailableStatus.TRUE;
                 }
             } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
                 /* LinkCheck für DownloadFiles */
@@ -76,14 +77,14 @@ public class FileUploadnet extends PluginForHost {
                         downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.trim())) * 1024);
                     }
                     downloadLink.setName(filename);
-                    return true;
+                    return AvailableStatus.TRUE;
                 }
             }
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         downloadLink.setAvailable(false);
-        return false;
+        return AvailableStatus.FALSE;
     }
 
     //@Override
@@ -97,7 +98,7 @@ public class FileUploadnet extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
+        if (!downloadLink.isAvailable()) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }

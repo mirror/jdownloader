@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class YouPornCom extends PluginForHost {
 
@@ -35,19 +36,19 @@ public class YouPornCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink parameter) throws IOException {
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws IOException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.openGetConnection(parameter.getDownloadURL());
         parameter.setName(Plugin.getFileNameFormHeader(br.getHttpConnection()));
         parameter.setDownloadSize(br.getHttpConnection().getLongContentLength());
         br.getHttpConnection().disconnect();
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
     public void handleFree(DownloadLink link) throws Exception {
-        getFileInformation(link);
+        requestFileInformation(link);
         br.openDownload(link, link.getDownloadURL()).startDownload();
     }
 

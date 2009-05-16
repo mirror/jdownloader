@@ -145,7 +145,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                     h2.put("package_id", Package_ID.toString());
                     h2.put("download_id", Download_ID.toString());
                     h2.put("download_name", dLink.getName());
-                    if (dLink.isAvailabilityChecked() && dLink.isAvailable()) {
+                    if (dLink.isAvailabilityStatusChecked() && dLink.isAvailable()) {
                         h2.put("download_status", "online");
                     } else {
                         h2.put("download_status", "offline");
@@ -222,7 +222,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             if (downloadLink.isAborted()) {
                 addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("linkinformation.download.aborted", "Abgebrochen"));
             }
-            if (downloadLink.isAvailabilityChecked()) {
+            if (downloadLink.isAvailabilityStatusChecked()) {
                 addEntry(JDLocale.L("gui.linkinfo.available", "Verfügbar"), downloadLink.isAvailable() ? JDLocale.L("gui.linkinfo.available.ok", "Datei OK") : JDLocale.L("linkinformation.available.error", "Fehler!"));
             } else {
                 addEntry(JDLocale.L("gui.linkinfo.available", "Verfügbar"), JDLocale.L("gui.linkinfo.available.notchecked", "noch nicht überprüft"));
@@ -342,7 +342,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
                 h2.put("download_hoster", dLink.getHost());
 
-                if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
+                if (dLink.isAvailabilityStatusChecked() && !dLink.isAvailable()) {
                     status[0] = 1;
                     h2.put("download_status", "offline");
                 } else if (dLink.isEnabled()) {

@@ -34,6 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class QshareCom extends PluginForHost {
     public QshareCom(PluginWrapper wrapper) {
@@ -100,7 +101,7 @@ public class QshareCom extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         String error = br.getRegex("<SPAN STYLE=\"font\\-size:13px;color:#BB0000;font\\-weight:bold\">(.*?)</SPAN>").getMatch(0);
@@ -213,7 +214,7 @@ public class QshareCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -221,7 +222,7 @@ public class QshareCom extends PluginForHost {
         if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(dat[0].trim());
         downloadLink.setDownloadSize(Regex.getSize(dat[1].trim()));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override

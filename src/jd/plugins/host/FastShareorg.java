@@ -24,6 +24,7 @@ import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 
 public class FastShareorg extends PluginForHost {
@@ -40,7 +41,7 @@ public class FastShareorg extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         try {
             br.setCookiesExclusive(true);
             br.clearCookies(getHost());
@@ -55,13 +56,13 @@ public class FastShareorg extends PluginForHost {
                 } else if ((filesize = br.getRegex("<i>\\((.*)KB\\)</i>").getMatch(0)) != null) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024);
                 }
-                return true;
+                return AvailableStatus.TRUE;
             }
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         downloadLink.setAvailable(false);
-        return false;
+        return AvailableStatus.FALSE;
     }
 
     //@Override
@@ -77,7 +78,7 @@ public class FastShareorg extends PluginForHost {
         url = downloadLink.getDownloadURL();
 
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
+        if (!downloadLink.isAvailable()) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }

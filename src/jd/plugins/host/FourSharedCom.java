@@ -25,6 +25,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class FourSharedCom extends PluginForHost {
@@ -41,7 +42,7 @@ public class FourSharedCom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         try {
             this.setBrowserExclusive();
             br.setFollowRedirects(true);
@@ -51,7 +52,7 @@ public class FourSharedCom extends PluginForHost {
             if (filename == null || size == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             downloadLink.setName(filename.trim());
             downloadLink.setDownloadSize(Regex.getSize(size.replace(",", "")));
-            return true;
+            return AvailableStatus.TRUE;
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -84,7 +85,7 @@ public class FourSharedCom extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink downloadLink) throws Exception {
-        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String url = br.getRegex("<a href=\"(http://www.4shared.com/get.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\">").getMatch(0);
 
         br.getPage(url);

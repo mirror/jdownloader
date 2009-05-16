@@ -27,6 +27,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class ImageFap extends PluginForHost {
 
@@ -75,7 +76,7 @@ public class ImageFap extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         try {
             br.getPage(downloadLink.getDownloadURL());
             String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
@@ -93,12 +94,12 @@ public class ImageFap extends PluginForHost {
                     downloadLink.setName(picture_name);
                 }
                 downloadLink.setFilePackage(fp);
-                return true;
+                return AvailableStatus.TRUE;
             }
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-        return false;
+        return AvailableStatus.FALSE;
     }
 
     //@Override

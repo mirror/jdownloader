@@ -286,7 +286,7 @@ public class LinkStatus implements Serializable {
             }
         }
 
-        if (downloadLink.isAvailabilityChecked() && !downloadLink.isAvailable()) { return JDLocale.L("gui.download.onlinecheckfailed", "[Not available]"); }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { return JDLocale.L("gui.download.onlinecheckfailed", "[Not available]"); }
         if (this.errorMessage != null) return errorMessage;
         if (statusText != null) { return statusText; }
         return "";

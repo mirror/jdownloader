@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class Zippysharecom extends PluginForHost {
 
@@ -41,7 +42,7 @@ public class Zippysharecom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL().replaceAll("locale=..", "locale=en"));
         if (br.containsHTML("<title>Zippyshare.com - File does not exist</title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -51,7 +52,7 @@ public class Zippysharecom extends PluginForHost {
 
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -61,7 +62,7 @@ public class Zippysharecom extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         String[] linkurls = new Regex(br, Pattern.compile("'(http.*?www.*?zippyshare\\.com.*?)';", Pattern.CASE_INSENSITIVE)).getColumn(0);
         if (linkurls == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         br.setFollowRedirects(true);

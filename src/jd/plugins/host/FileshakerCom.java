@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class FileshakerCom extends PluginForHost {
 
@@ -39,7 +40,7 @@ public class FileshakerCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
         br.setFollowRedirects(true);
@@ -48,7 +49,7 @@ public class FileshakerCom extends PluginForHost {
             String downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<br><br>File: (.*)<br><br>", Pattern.CASE_INSENSITIVE)).getMatch(0));
             if (downloadName == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setName(downloadName.trim());
-            return true;
+            return AvailableStatus.TRUE;
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
@@ -61,7 +62,7 @@ public class FileshakerCom extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         /* Link holen */
         Form form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

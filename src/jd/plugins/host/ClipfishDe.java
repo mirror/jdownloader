@@ -22,6 +22,7 @@ import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDMediaConvert;
 
 public class ClipfishDe extends PluginForHost {
@@ -38,12 +39,14 @@ public class ClipfishDe extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         /*
          * warum sollte ein video das der decrypter sagte es sei online, offline
          * sein ;)
+         * 
+         * coa: hm.. weil er vieleicht so nem anderen zeitpunk eingefügt worden ist als er dann geladen wird?
          */
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -64,7 +67,7 @@ public class ClipfishDe extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
+        if (!downloadLink.isAvailable()) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }

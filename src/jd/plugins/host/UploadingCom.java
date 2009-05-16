@@ -13,6 +13,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class UploadingCom extends PluginForHost {
@@ -69,7 +70,7 @@ public class UploadingCom extends PluginForHost {
 
     //@Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        getFileInformation(link);
+        requestFileInformation(link);
         login(account);
         if (!isPremium()) {
             simultanpremium = 1;
@@ -110,7 +111,7 @@ public class UploadingCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://www.uploading.com/", "_lang", "en");
@@ -121,7 +122,7 @@ public class UploadingCom extends PluginForHost {
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -131,7 +132,7 @@ public class UploadingCom extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         if (br.containsHTML("YOU REACHED YOUR COUNTRY DAY LIMIT")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDLocale.L("plugins.hoster.uploadingcom.errors.countrylimitreached", "You reached your country daily limit"), 60 * 60 * 1000l);
         Form form = br.getFormbyProperty("id", "downloadform");

@@ -28,6 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class Speedy_ShareCom extends PluginForHost {
@@ -44,14 +45,14 @@ public class Speedy_ShareCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         br.getPage(downloadLink.getDownloadURL());
         if (!br.containsHTML("File Not Found")) {
             downloadLink.setName(Encoding.htmlDecode(br.getRegex("File Name:</span>(.*?)</span>").getMatch(0)));
             downloadLink.setDownloadSize(Regex.getSize(br.getRegex("File Size:</span>(.*?)</span>").getMatch(0)));
-            return true;
+            return AvailableStatus.TRUE;
         }
-        return false;
+        return AvailableStatus.FALSE;
     }
 
     //@Override
@@ -64,7 +65,7 @@ public class Speedy_ShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
 
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         /* Link holen */
         HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(br.toString());

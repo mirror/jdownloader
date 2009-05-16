@@ -14,6 +14,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class NetGullCom extends PluginForHost {
 
@@ -31,7 +32,7 @@ public class NetGullCom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -40,7 +41,7 @@ public class NetGullCom extends PluginForHost {
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -52,7 +53,7 @@ public class NetGullCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
 
         File captchaFile = this.getLocalCaptchaFile();
         try {

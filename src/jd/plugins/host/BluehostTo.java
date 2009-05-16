@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class BluehostTo extends PluginForHost {
@@ -70,7 +71,7 @@ public class BluehostTo extends PluginForHost {
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         this.setBrowserExclusive();
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         login(account);
         br.setFollowRedirects(true);
         if (br.getCookie("http://bluehost.to", "bluehost_premium_auth") == null) {
@@ -95,7 +96,7 @@ public class BluehostTo extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         // Zeit bis free download möglich
         String page = br.getPage("http://bluehost.to/fileinfo/urls=" + downloadLink.getDownloadURL());
         String[] dat = page.split("\\, ");
@@ -166,7 +167,7 @@ public class BluehostTo extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {        
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {        
         // dateiname, dateihash, dateisize, dateidownloads, zeit bis HH
         this.setBrowserExclusive();
         br.setCookie("http://bluehost.to", "bluehost_lang", "DE");
@@ -180,7 +181,7 @@ public class BluehostTo extends PluginForHost {
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override

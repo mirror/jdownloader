@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class YourFilesBiz extends PluginForHost {
 
@@ -39,7 +40,7 @@ public class YourFilesBiz extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         setLangToEn();
@@ -49,7 +50,7 @@ public class YourFilesBiz extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     public void setLangToEn() throws IOException {
@@ -63,7 +64,7 @@ public class YourFilesBiz extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         String url = br.getRegex(Pattern.compile("document.location=\"(http.*?getfile\\.php.*?)\"'>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, url);

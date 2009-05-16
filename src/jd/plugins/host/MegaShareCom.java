@@ -23,6 +23,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class MegaShareCom extends PluginForHost {
 
@@ -37,7 +38,7 @@ public class MegaShareCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setDebug(true);
@@ -45,7 +46,7 @@ public class MegaShareCom extends PluginForHost {
         if (br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.postPage(br.getURL(), "FreeDz=FREE");
         if (br.containsHTML("This File has been DELETED")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -55,7 +56,7 @@ public class MegaShareCom extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         Form form = br.getForm(0);
         form.remove("accel");
         form.remove("yesss");

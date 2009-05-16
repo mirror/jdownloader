@@ -29,6 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class AxiFileCom extends PluginForHost {
     /*
@@ -45,7 +46,7 @@ public class AxiFileCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         br.setCookiesExclusive(true);
         br.getPage(downloadLink.getDownloadURL());
         String filesize = null;
@@ -59,7 +60,7 @@ public class AxiFileCom extends PluginForHost {
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -69,7 +70,7 @@ public class AxiFileCom extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         String link = br.getRegex(Pattern.compile("<DIV id=\"pnlLink1\">.*?href=\"(.*?)\".*?</DIV>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         br.getPage("http://www.axifile.com/javascript/donwload.js");

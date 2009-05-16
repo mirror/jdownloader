@@ -31,6 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class ShareBaseTo extends PluginForHost {
@@ -50,7 +51,7 @@ public class ShareBaseTo extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         /* damit neue links mit .de als .to in die liste kommen */
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -60,7 +61,7 @@ public class ShareBaseTo extends PluginForHost {
         if (downloadName == null || downloadSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(downloadName.trim());
         downloadLink.setDownloadSize(Regex.getSize(downloadSize.trim()));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     public void login(Account account) throws IOException, PluginException {
@@ -99,7 +100,7 @@ public class ShareBaseTo extends PluginForHost {
 
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         login(account);
 
         br.getPage(downloadLink.getDownloadURL());
@@ -123,7 +124,7 @@ public class ShareBaseTo extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         /* für links welche noch mit .de in der liste stehen */
         String url = downloadLink.getDownloadURL();
         br.getPage(url);

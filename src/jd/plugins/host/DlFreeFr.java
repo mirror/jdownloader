@@ -11,6 +11,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class DlFreeFr extends PluginForHost {
 
@@ -24,7 +25,7 @@ public class DlFreeFr extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
@@ -32,7 +33,7 @@ public class DlFreeFr extends PluginForHost {
             downloadLink.setFinalFileName(Plugin.getFileNameFormHeader(con));
             downloadLink.setDownloadSize(con.getLongContentLength());
             con.disconnect();
-            return true;
+            return AvailableStatus.TRUE;
         } else {
             br.followConnection();
         }
@@ -41,7 +42,7 @@ public class DlFreeFr extends PluginForHost {
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll("o", "byte").replaceAll("Ko", "Kb").replaceAll("Mo", "Mb").replaceAll("Go", "Gb")));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -52,7 +53,7 @@ public class DlFreeFr extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         String dlLink = br.getRegex("<tr><td colspan=\"2\" style=\"text-align: center; border: 1px solid #ffffff\"><a style=\"text-decoration: underline\" href=\"(.*?free.*?fr.*?)\">").getMatch(0);
         if (dlLink == null) { throw new PluginException(LinkStatus.ERROR_FATAL); }
         br.setFollowRedirects(true);

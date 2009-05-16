@@ -35,6 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class Moosharenet extends PluginForHost {
 
@@ -92,7 +93,7 @@ public class Moosharenet extends PluginForHost {
 
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         login(account);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
@@ -115,7 +116,7 @@ public class Moosharenet extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
@@ -124,7 +125,7 @@ public class Moosharenet extends PluginForHost {
         if (form == null) {
             if (br.containsHTML("Sie haben Ihr Downloadlimit für den Moment erreicht!")) {
                 logger.info("DownloadLimit reached!");
-                return true;
+                return AvailableStatus.TRUE;
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -134,7 +135,7 @@ public class Moosharenet extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -145,7 +146,7 @@ public class Moosharenet extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         if (br.containsHTML("Sie haben Ihr Downloadlimit für den Moment erreicht!")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
         String wait = br.getRegex("var time = (.*?);").getMatch(0);
         if (wait != null) {

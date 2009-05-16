@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class ExtraShareUs extends PluginForHost {
 
@@ -41,7 +42,7 @@ public class ExtraShareUs extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
@@ -49,7 +50,7 @@ public class ExtraShareUs extends PluginForHost {
         long length = Regex.getSize(dat[1].trim());
         downloadLink.setDownloadSize(length);
         downloadLink.setName(dat[0].trim());
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -60,7 +61,7 @@ public class ExtraShareUs extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         String link = br.getRegex(Pattern.compile("document.location=\"(.*)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
         br.openDownload(downloadLink, link, true, 1).startDownload();
     }

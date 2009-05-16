@@ -58,6 +58,10 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
 
     private ImageIcon imgPriorityS;
 
+    private ImageIcon imgUnknown;
+
+    private String strUnCheckable;
+
     public LinkGrabberTreeTableRenderer(LinkGrabberTreeTable linkgrabberTreeTable) {
 
         table = linkgrabberTreeTable;
@@ -67,9 +71,10 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
     }
 
     private void initLocale() {
-        strOnline = "online";
-        strOffline = "offline";
-        strUnchecked = "unchecked";
+        strOnline = JDLocale.L("linkgrabber.onlinestatus.online","online");
+        strOffline = JDLocale.L("linkgrabber.onlinestatus.offline","offline");
+        strUnchecked = JDLocale.L("linkgrabber.onlinestatus.unchecked","not checked");
+        strUnCheckable=JDLocale.L("linkgrabber.onlinestatus.uncheckable","temp. uncheckable");
     }
 
     private void initIcons() {
@@ -84,6 +89,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
         imgPriority1 = JDTheme.II("gui.images.priority1", 16, 16);
         imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
         imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
+        imgUnknown = JDTheme.II("gui.images.help", 16, 16);
     }
 
     // @Override
@@ -105,7 +111,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
         switch (column) {
         case LinkGrabberTreeTableModel.COL_PACK_FILE:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
+            if (dLink.isAvailabilityStatusChecked() && !dLink.isAvailable()) {
                 ((JRendererLabel) co).setIcon(this.imgFileFailed);
             } else {
                 ((JRendererLabel) co).setIcon(dLink.getIcon());
@@ -140,12 +146,13 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
         case LinkGrabberTreeTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             clearSB();
-            if (!dLink.isAvailabilityChecked()) {
+            if (!dLink.isAvailabilityStatusChecked()) {
                 ((JRendererLabel) co).setIcon(null);
                 sb.append(strUnchecked);
             } else {
                 if (dLink.isAvailable()) {
-                    if (dLink.getPriority() > 0) {
+                    sb.append(strOnline);
+                    if (dLink.getPriority() != 0) {
                         switch (dLink.getPriority()) {
                         case 0:
                         default:
@@ -165,10 +172,20 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
                         }
 
                     } else {
-                        ((JRendererLabel) co).setIcon(imgFinished);
+                        switch (dLink.getAvailableStatus()) {
+                        case UNCHECKABLE:
+                            ((JRendererLabel) co).setIcon(this.imgUnknown);
+                            clearSB();
+                            sb.append(strUnCheckable );
+                            break;
+
+                        default:
+                            ((JRendererLabel) co).setIcon(imgFinished);
+                        }
+
                     }
 
-                    sb.append(strOnline);
+                   
                 } else {
                     ((JRendererLabel) co).setIcon(imgFailed);
                     sb.append(strOffline);

@@ -31,6 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class Odsiebiecom extends PluginForHost {
@@ -69,7 +70,7 @@ public class Odsiebiecom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -80,7 +81,7 @@ public class Odsiebiecom extends PluginForHost {
         filename = new Regex(filename, "[\\s*?]*(.*?)</").getMatch(0);
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
         downloadLink.setName(filename);
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -95,7 +96,7 @@ public class Odsiebiecom extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         /* Nochmals das File überprüfen */
         String finalfn = downloadLink.getName();
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         if (account != null) {
             login(account);
             br.getPage(downloadLink.getDownloadURL());

@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class HotFileCom extends PluginForHost {
 
@@ -75,7 +76,7 @@ public class HotFileCom extends PluginForHost {
     }
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         login(account);
         String finalUrl = null;
         br.getPage(downloadLink.getDownloadURL());
@@ -91,7 +92,7 @@ public class HotFileCom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
         String filename = br.getRegex("Downloading(.*?)\\([^\\s]*\\)</h2>").getMatch(0);
@@ -99,12 +100,12 @@ public class HotFileCom extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.trim()));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
     public void handleFree(DownloadLink link) throws Exception {
-        getFileInformation(link);
+        requestFileInformation(link);
         if (br.containsHTML("You are currently downloading")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("JavaScript>starthtimer")) {
             String waittime = br.getRegex("starthtimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);

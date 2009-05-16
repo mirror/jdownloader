@@ -22,6 +22,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class DumpRu extends PluginForHost {
 
@@ -35,7 +36,7 @@ public class DumpRu extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         try {
             setBrowserExclusive();
             br.setFollowRedirects(true);
@@ -43,7 +44,7 @@ public class DumpRu extends PluginForHost {
             // File not found
             if (br.containsHTML("Запрошенный файл не обнаружен")) {
                 logger.warning("File not found");
-                return false;
+                return AvailableStatus.FALSE;
             }
 
             // Filesize
@@ -60,11 +61,11 @@ public class DumpRu extends PluginForHost {
             String name = br.getRegex("name_of_file\">\\s(.*?)</span>").getMatch(0).trim();
             downloadLink.setName(name);
 
-            return true;
+            return AvailableStatus.TRUE;
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-        return false;
+        return AvailableStatus.FALSE;
     }
 
     //@Override
@@ -74,7 +75,7 @@ public class DumpRu extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         br.submitForm(br.getForm(1));
         String link = br.getRegex(Pattern.compile("<a href=\"(http://.*?dump\\.ru/file_download/.*?)\">")).getMatch(0);
         dl = br.openDownload(downloadLink, link);

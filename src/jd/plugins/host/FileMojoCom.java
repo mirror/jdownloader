@@ -22,6 +22,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 
 public class FileMojoCom extends PluginForHost {
@@ -36,7 +37,7 @@ public class FileMojoCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         try {
             br.setCookiesExclusive(true);
             br.clearCookies(getHost());
@@ -49,18 +50,18 @@ public class FileMojoCom extends PluginForHost {
 
             br.getPage(url);
 
-            if (br.containsHTML("Sorry File Not Found")) return false;
+            if (br.containsHTML("Sorry File Not Found")) return AvailableStatus.FALSE;
             String size = br.getRegex("(\\d+\\.\\d+) (MB|KB)").getMatch(-1);
             downloadLink.setDownloadSize(Regex.getSize(size));
 
             String name = br.getRegex("<b>File Name.*?size=\"2\">[\r\n]*(.*?)<br>").getMatch(0);
             downloadLink.setName(name);
 
-            return true;
+            return AvailableStatus.TRUE;
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-        return false;
+        return AvailableStatus.FALSE;
     }
 
     //@Override
@@ -71,7 +72,7 @@ public class FileMojoCom extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         dl = RAFDownload.download(downloadLink, br.createFormRequest(br.getForm(1)));
         dl.startDownload();
     }

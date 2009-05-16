@@ -29,6 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class IfolderRu extends PluginForHost {
@@ -43,7 +44,7 @@ public class IfolderRu extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException, InterruptedException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException, InterruptedException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
 
@@ -54,13 +55,13 @@ public class IfolderRu extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize.replace("Мб", "Mb").replace("кб", "Kb")));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         boolean do_download = false;
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
 
         String watchAd = br.getRegex("http://ints\\.ifolder\\.ru/ints/\\?(.*?)\"").getMatch(0);

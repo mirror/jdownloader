@@ -29,6 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class ZidduCom extends PluginForHost {
@@ -39,7 +40,7 @@ public class ZidduCom extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.setDebug(true);
         Form form = br.getFormbyProperty("name", "dfrm");
@@ -93,7 +94,7 @@ public class ZidduCom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         String Url = downloadLink.getDownloadURL();
         br.setFollowRedirects(true);
@@ -105,7 +106,7 @@ public class ZidduCom extends PluginForHost {
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         br.setFollowRedirects(false);
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override

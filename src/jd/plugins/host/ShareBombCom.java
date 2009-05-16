@@ -27,6 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class ShareBombCom extends PluginForHost {
 
@@ -41,7 +42,7 @@ public class ShareBombCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
         String url = downloadLink.getDownloadURL();
@@ -59,7 +60,7 @@ public class ShareBombCom extends PluginForHost {
                 if (downloadName.length() == 0) downloadName = br.getRegex("<title>sharebomb.com - (.*?)</title>").getMatch(0);
                 downloadLink.setName(downloadName.trim());
                 downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
-                return true;
+                return AvailableStatus.TRUE;
             }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -72,7 +73,7 @@ public class ShareBombCom extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         /* Link holen */
         String url = new Regex(br, Pattern.compile("<a href=\"/?(files/.*)\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (url == null) url = new Regex(br, Pattern.compile("dlLink=unescape\\('(.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);

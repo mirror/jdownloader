@@ -9,6 +9,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class SelfLoadCom extends PluginForHost {
     // Info: Hoster übergibt weder korrekten Dateinamen
@@ -24,7 +25,7 @@ public class SelfLoadCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -32,7 +33,7 @@ public class SelfLoadCom extends PluginForHost {
         String filename = br.getRegex(Pattern.compile("<br>.*?<b>(.*?)</b>&nbsp;", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -43,7 +44,7 @@ public class SelfLoadCom extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         Form form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_FATAL);

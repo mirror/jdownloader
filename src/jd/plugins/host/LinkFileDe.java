@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 /**
@@ -50,7 +51,7 @@ public class LinkFileDe extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
         if (br.containsHTML("Diese Datei ist nicht mehr verf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -60,13 +61,13 @@ public class LinkFileDe extends PluginForHost {
         if (size == null || name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setDownloadSize(Regex.getSize(size));
         downloadLink.setName(name.trim());
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
 
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         String captchaAddress = br.getBaseURL() + "captcha.php";
         File captchaFile = this.getLocalCaptchaFile();
         Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));

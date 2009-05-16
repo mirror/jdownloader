@@ -23,6 +23,7 @@ import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 
 public class Dataupde extends PluginForHost {
@@ -39,7 +40,7 @@ public class Dataupde extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         try {
             downloadurl = downloadLink.getDownloadURL();
             br.getPage(downloadurl);
@@ -49,13 +50,13 @@ public class Dataupde extends PluginForHost {
                 String filesizeString = br.getRegex("<label>Größe: (.*?)<\\/label><br \\/>").getMatch(0);
                 downloadLink.setDownloadSize(Regex.getSize(filesizeString));
                 downloadLink.setName(filename);
-                return true;
+                return AvailableStatus.TRUE;
             }
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         downloadLink.setAvailable(false);
-        return false;
+        return AvailableStatus.FALSE;
     }
 
     //@Override
@@ -69,7 +70,7 @@ public class Dataupde extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
+        if (!downloadLink.isAvailable()) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }

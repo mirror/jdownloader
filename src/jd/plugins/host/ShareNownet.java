@@ -31,6 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class ShareNownet extends PluginForHost {
@@ -47,7 +48,7 @@ public class ShareNownet extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
@@ -61,7 +62,7 @@ public class ShareNownet extends PluginForHost {
         if (linkinfo == null || linkinfo.length < 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setDownloadSize(Regex.getSize(linkinfo[1]));
         downloadLink.setName(linkinfo[0].trim());
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -71,7 +72,7 @@ public class ShareNownet extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         Form form = br.getForm(1);
         br.setDebug(true);
         /* gibts nen captcha? */

@@ -30,6 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class Uploadedto extends PluginForHost {
@@ -134,7 +135,7 @@ public class Uploadedto extends PluginForHost {
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         login(account);
         if (!isPremium()) {
             logger.severe("Entered a Free-account");
@@ -198,7 +199,7 @@ public class Uploadedto extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String id = new Regex(downloadLink.getDownloadURL(), "uploaded.to/file/(.*?)/").getMatch(0);
@@ -218,7 +219,7 @@ public class Uploadedto extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("error_fileremoved")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -253,7 +254,7 @@ public class Uploadedto extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.setCookie("http://uploaded.to/", "lang", "de");
         br.setDebug(true);
         br.setFollowRedirects(true);

@@ -27,6 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class TwoSharedCom extends PluginForHost {
@@ -41,7 +42,7 @@ public class TwoSharedCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         br.setCookiesExclusive(true);
         br.getPage(downloadLink.getDownloadURL());
         Form pwform = br.getForm(0);
@@ -49,14 +50,14 @@ public class TwoSharedCom extends PluginForHost {
             String filename = br.getRegex("<td class=\"header\" align=\"center\">Download (.*?)</td>").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setName(filename.trim());
-            return true;
+            return AvailableStatus.TRUE;
         }
         String filesize = br.getRegex(Pattern.compile("<span class=.*?>File size:</span>(.*?)&nbsp; &nbsp;", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         String filename = br.getRegex("<title>2shared - download(.*?)</title>").getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim().replaceAll(",|\\.", "")));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -67,7 +68,7 @@ public class TwoSharedCom extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         Form pwform = br.getForm(0);
         if (pwform != null) {

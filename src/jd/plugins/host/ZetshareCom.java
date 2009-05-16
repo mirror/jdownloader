@@ -25,6 +25,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class ZetshareCom extends PluginForHost {
 
@@ -38,7 +39,7 @@ public class ZetshareCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
@@ -49,7 +50,7 @@ public class ZetshareCom extends PluginForHost {
             String downloadName = new Regex(url, "\\?file=(.+)").getMatch(0);
             if (downloadName != null) downloadLink.setName(downloadName.trim());
             downloadLink.getLinkStatus().setStatusText("Waiting-Ticket! No FileCheck possible!");
-            return true;
+            return AvailableStatus.TRUE;
         }
 
         String downloadName = new Regex(url, "\\?file=(.+)").getMatch(0);
@@ -57,7 +58,7 @@ public class ZetshareCom extends PluginForHost {
         if (downloadSize == null || downloadName == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(downloadName.trim());
         downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -68,12 +69,12 @@ public class ZetshareCom extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         String waittime = null;
         while ((waittime = ((br.getRegex(Pattern.compile("trying to download again too soon![ ]*Wait (.*?)\\.<BR>"))).getMatch(0))) != null) {
             if (waittime != null) {
                 this.sleep(Regex.getMilliSeconds(waittime), downloadLink);
-                getFileInformation(downloadLink);
+                requestFileInformation(downloadLink);
             }
         }
         /* Link holen */

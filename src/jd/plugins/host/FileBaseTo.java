@@ -28,6 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class FileBaseTo extends PluginForHost {
 
@@ -41,7 +42,7 @@ public class FileBaseTo extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         // br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         String url = downloadLink.getDownloadURL();
@@ -51,7 +52,7 @@ public class FileBaseTo extends PluginForHost {
         if (br.containsHTML("eider\\s+nicht\\s+gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String size = br.getRegex("Dateigr[^:]*:</td>\\s+<td[^>]*>(.*?)</td>").getMatch(0);
         downloadLink.setDownloadSize(Regex.getSize(size));
-        return true;
+        return AvailableStatus.TRUE;
 
     }
 
@@ -62,7 +63,7 @@ public class FileBaseTo extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         String formact = downloadLink.getDownloadURL();
         if (br.containsHTML("/captcha/CaptchaImage")) {
             File captchaFile = getLocalCaptchaFile(".png");

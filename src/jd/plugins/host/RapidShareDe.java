@@ -33,6 +33,7 @@ import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 
@@ -169,25 +170,25 @@ public class RapidShareDe extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         try {
             br.setCookiesExclusive(true);
             br.clearCookies(getHost());
             br.setFollowRedirects(false);
             br.getPage(downloadLink.getDownloadURL());
             Form[] forms = br.getForms();
-            if (forms.length < 2) { return false; }
+            if (forms.length < 2) { return AvailableStatus.FALSE; }
 
             br.submitForm(forms[1]);
 
             String[][] regExp = new Regex(br, "<p>Du hast die Datei <b>(.*?)</b> \\(([\\d]+)").getMatches();
             downloadLink.setDownloadSize(Integer.parseInt(regExp[0][1]) * 1024);
             downloadLink.setName(regExp[0][0]);
-            return true;
+            return AvailableStatus.TRUE;
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-        return false;
+        return AvailableStatus.FALSE;
 
     }
 

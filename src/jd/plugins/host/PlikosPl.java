@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class PlikosPl extends PluginForHost {
 
@@ -40,7 +41,7 @@ public class PlikosPl extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("plik zosta. usuni.ty") || br.containsHTML("nie zosta. odnaleziony")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -49,7 +50,7 @@ public class PlikosPl extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -59,7 +60,7 @@ public class PlikosPl extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         String linkurl = br.getRegex("</script>\\s*</div>\\s*<p style[^>]*><a href=\"(.*?)\">Pobierz plik</a></p").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);

@@ -31,6 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class ShragleCom extends PluginForHost {
 
@@ -103,7 +104,7 @@ public class ShragleCom extends PluginForHost {
 
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         login(account);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
@@ -128,7 +129,7 @@ public class ShragleCom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         String id = new Regex(downloadLink.getDownloadURL(), "shragle.com/files/(.*?)/").getMatch(0);
         String[] data = Regex.getLines(br.getPage("http://www.shragle.com/api.php?key=" + apikey + "&action=getStatus&fileID=" + id));
@@ -142,7 +143,7 @@ public class ShragleCom extends PluginForHost {
         downloadLink.setFinalFileName(name.trim());
         downloadLink.setDownloadSize(Long.parseLong(size));
         downloadLink.setMD5Hash(md5.trim());
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -152,7 +153,7 @@ public class ShragleCom extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         String wait = br.getRegex(Pattern.compile("Bitte warten Sie(.*?)Minuten", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l); }

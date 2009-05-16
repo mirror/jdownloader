@@ -37,6 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 /*TODO: Support für andere Linkcards(bestimmte Anzahl Downloads,unlimited usw) einbauen*/
@@ -103,7 +104,7 @@ public class MegasharesCom extends PluginForHost {
 
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         login(account);
         // Password protection
         loadpage(downloadLink.getDownloadURL());
@@ -122,7 +123,7 @@ public class MegasharesCom extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // Password protection
         if (!checkPassword(downloadLink)) { return; }
@@ -215,7 +216,7 @@ public class MegasharesCom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         setBrowserExclusive();
         loadpage(downloadLink.getDownloadURL());
         if (br.containsHTML("continue using Free service")) {
@@ -223,21 +224,21 @@ public class MegasharesCom extends PluginForHost {
         }
         if (br.containsHTML("You already have the maximum")) {
             downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.alreadyloading", "Cannot check, because aready loading file"));
-            return true;
+            return AvailableStatus.TRUE;
         }
         if (br.containsHTML("All download slots for this link are currently filled")) {
             downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.allslotsfilled", "Cannot check, because all slots filled"));
-            return true;
+            return AvailableStatus.TRUE;
         }
         if (br.containsHTML("This link requires a password")) {
             downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.passwordprotected", "Password protected download"));
-            return true;
+            return AvailableStatus.TRUE;
         }
         String[] dat = br.getRegex("<dt>Filename:.*?<strong>(.*?)</strong>.*?size:(.*?)</dt>").getRow(0);
-        if (dat == null) { return false; }
+        if (dat == null) { return AvailableStatus.FALSE; }
         downloadLink.setName(dat[0].trim());
         downloadLink.setDownloadSize(Regex.getSize(dat[1]));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override

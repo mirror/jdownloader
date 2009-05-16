@@ -27,6 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class UpMusicIn extends PluginForHost {
 
@@ -48,7 +49,7 @@ public class UpMusicIn extends PluginForHost {
             previousLink = previousLinkProperty.toString();
         }
         if (previousLink == null) {
-            getFileInformation(downloadLink);
+            requestFileInformation(downloadLink);
             Form form1;
             form1 = br.getFormbyProperty("name", "F1");
             if (form1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -161,7 +162,7 @@ public class UpMusicIn extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -174,7 +175,7 @@ public class UpMusicIn extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override

@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class FilezzzCom extends PluginForHost {
 
@@ -40,7 +41,7 @@ public class FilezzzCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
@@ -51,7 +52,7 @@ public class FilezzzCom extends PluginForHost {
         if (downloadName == null || downloadSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(downloadName.trim());
         downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -62,7 +63,7 @@ public class FilezzzCom extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         //this.sleep(4000l, downloadLink);
         /* Link holen */
         String linkurl = br.getRegex("<br>\\s+<br>\\s+<a href=\"(.*?)\"").getMatch(0);

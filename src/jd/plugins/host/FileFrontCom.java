@@ -24,6 +24,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class FileFrontCom extends PluginForHost {
 
@@ -38,7 +39,7 @@ public class FileFrontCom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setDebug(true);
         br.setFollowRedirects(true);
@@ -49,7 +50,7 @@ public class FileFrontCom extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -59,7 +60,7 @@ public class FileFrontCom extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         String nextpageurl = br.getRegex("POST\\sDOWNLOAD\\sPAGE.\\s-->\\s+<a href=\"(.*?)\"").getMatch(0);
         if (nextpageurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

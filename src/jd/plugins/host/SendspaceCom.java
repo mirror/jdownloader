@@ -29,6 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 import org.mozilla.javascript.Context;
@@ -92,7 +93,7 @@ public class SendspaceCom extends PluginForHost {
 
     //@Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        getFileInformation(link);
+        requestFileInformation(link);
         login(account);
         br.getPage(link.getDownloadURL());
         String linkurl = br.getRegex("<a id=\"downlink\" class=\"mango\" href=\"(.*?)\"").getMatch(0);
@@ -103,7 +104,7 @@ public class SendspaceCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
@@ -115,7 +116,7 @@ public class SendspaceCom extends PluginForHost {
             if (!(downloadName == null || downloadSize == null)) {
                 downloadLink.setName(downloadName.trim());
                 downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
-                return true;
+                return AvailableStatus.TRUE;
             }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -129,7 +130,7 @@ public class SendspaceCom extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         /* Link holen */
         String script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(.*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         String dec = br.getRegex(Pattern.compile("base64ToText\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);

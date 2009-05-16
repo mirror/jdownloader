@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class UptalCom extends PluginForHost {
 
@@ -40,7 +41,7 @@ public class UptalCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
@@ -50,7 +51,7 @@ public class UptalCom extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -64,7 +65,7 @@ public class UptalCom extends PluginForHost {
         String filename = downloadLink.getName();
         String previousLink = downloadLink.getStringProperty("directLink", null);
         if (previousLink == null) {
-            getFileInformation(downloadLink);
+            requestFileInformation(downloadLink);
             br.setFollowRedirects(true);
             getlink = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
             if (getlink == null) getlink = br.getRegex("name=downloadurl value=\"(.*?)\"").getMatch(0);

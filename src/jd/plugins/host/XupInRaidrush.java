@@ -24,6 +24,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class XupInRaidrush extends PluginForHost {
 
@@ -39,7 +40,7 @@ public class XupInRaidrush extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
 
         br.getPage(downloadLink.getDownloadURL());
         String title = br.getRegex("<title>(.*?)\\|.*?</title>").getMatch(0).trim();
@@ -47,7 +48,7 @@ public class XupInRaidrush extends PluginForHost {
 
         downloadLink.setName(title);
         downloadLink.setDownloadSize(Integer.parseInt(size));
-        return true;
+        return AvailableStatus.TRUE;
 
     }
 
@@ -59,7 +60,7 @@ public class XupInRaidrush extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         Form download = br.getForms()[0];
         br.openDownload(downloadLink, download).startDownload();
 

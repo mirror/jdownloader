@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class SpeedyShareCom extends PluginForHost {
 
@@ -40,7 +41,7 @@ public class SpeedyShareCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
@@ -54,7 +55,7 @@ public class SpeedyShareCom extends PluginForHost {
             if (!(downloadName == null || downloadSize == null)) {
                 downloadLink.setName(downloadName);
                 downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
-                return true;
+                return AvailableStatus.TRUE;
             }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -68,7 +69,7 @@ public class SpeedyShareCom extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         /* Link holen */
         String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("href=\"(http://www.speedyshare.com/data/.*?)\"><img src=", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

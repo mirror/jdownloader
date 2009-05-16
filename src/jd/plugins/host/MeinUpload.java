@@ -32,6 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -47,7 +48,7 @@ public class MeinUpload extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         if (br.getRedirectLocation() != null) {
             String error = br.getRegex("code=(.*)").getMatch(0);
             throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.meinupload.error." + error, error));
@@ -168,7 +169,7 @@ public class MeinUpload extends PluginForHost {
 
     //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         login(account);
         if (!this.isPremium()) {
             simultanpremium = 1;
@@ -201,7 +202,7 @@ public class MeinUpload extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.clearCookies("mein-upload.com");
         br.getPage(downloadLink.getDownloadURL());
@@ -215,7 +216,7 @@ public class MeinUpload extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override

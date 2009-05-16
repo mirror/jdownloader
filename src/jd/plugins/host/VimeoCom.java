@@ -22,6 +22,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class VimeoCom extends PluginForHost {
     static private final String AGB = "http://www.vimeo.com/terms";
@@ -38,7 +39,7 @@ public class VimeoCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
 
         br.getPage(downloadLink.getDownloadURL() + "?hd=1");
@@ -59,7 +60,7 @@ public class VimeoCom extends PluginForHost {
         if (title == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(title);        
 
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     private String getClipData(String tag) {
@@ -74,7 +75,7 @@ public class VimeoCom extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setDebug(true);
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.openDownload(downloadLink, finalURL, true, 0).startDownload();
 
     }

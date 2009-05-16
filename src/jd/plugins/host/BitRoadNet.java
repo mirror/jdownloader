@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class BitRoadNet extends PluginForHost {
 
@@ -41,7 +42,7 @@ public class BitRoadNet extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
@@ -51,7 +52,7 @@ public class BitRoadNet extends PluginForHost {
         if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(size));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -64,7 +65,7 @@ public class BitRoadNet extends PluginForHost {
         String previousLink = downloadLink.getStringProperty("directLink", null);
         String url = null;
         if (previousLink == null) {
-            getFileInformation(downloadLink);
+            requestFileInformation(downloadLink);
             Form dl1 = br.getFormbyProperty("id", "Premium");
             if (dl1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.submitForm(dl1);

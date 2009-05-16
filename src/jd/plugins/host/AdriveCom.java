@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class AdriveCom extends PluginForHost {
@@ -40,7 +41,7 @@ public class AdriveCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(.*?)\">here</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
@@ -58,7 +59,7 @@ public class AdriveCom extends PluginForHost {
         downloadLink.setFinalFileName(AdriveCom.getFileNameFormHeader(con));
         downloadLink.setDownloadSize(con.getLongContentLength());        
         con.disconnect();
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -69,7 +70,7 @@ public class AdriveCom extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         /* Link holen */
         String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(.*?)\">here</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));

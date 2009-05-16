@@ -40,6 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -119,7 +120,7 @@ public class MegaroticCom extends PluginForHost {
 
     // @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        getFileInformation(parameter);
+        requestFileInformation(parameter);
         login(account);
         if (!this.isPremium()) {
             simultanpremium = 1;
@@ -172,7 +173,7 @@ public class MegaroticCom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie(downloadLink.getDownloadURL(), "l", "de");
         br.setCookie(downloadLink.getDownloadURL(), "v", "1");
@@ -193,7 +194,7 @@ public class MegaroticCom extends PluginForHost {
         if (filename == null || filename.length() == 0) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(size));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -307,7 +308,7 @@ public class MegaroticCom extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink parameter) throws Exception {
-        getFileInformation(parameter);
+        requestFileInformation(parameter);
         handleFree0(parameter);
     }
 

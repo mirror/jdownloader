@@ -41,6 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -120,7 +121,7 @@ public class Megauploadcom extends PluginForHost {
 
     // @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        getFileInformation(link);
+        requestFileInformation(link);
         br.setDebug(true);
         login(account);
 
@@ -321,10 +322,10 @@ public class Megauploadcom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         downloadLink.setAvailable(this.checkLinks(new DownloadLink[] { downloadLink }));
         if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return downloadLink.isAvailable();
+        return downloadLink.getAvailableStatus();
     }
 
     // @Override
@@ -516,7 +517,7 @@ public class Megauploadcom extends PluginForHost {
     public void handleFree(DownloadLink parameter) throws Exception {
         user = null;
         br.setCookie("http://megaupload.com", "l", "en");
-        getFileInformation(parameter);
+        requestFileInformation(parameter);
         handleFree0(parameter, null);
     }
 

@@ -27,6 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class RemixShareCom extends PluginForHost {
 
@@ -41,7 +42,7 @@ public class RemixShareCom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://remixshare.com", "lang_en", "english");        
         br.setFollowRedirects(true);
@@ -54,7 +55,7 @@ public class RemixShareCom extends PluginForHost {
         downloadLink.setName(filename.trim());
         filesize = filesize.replaceAll("&nbsp;", " ");
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -64,7 +65,7 @@ public class RemixShareCom extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         Form down = br.getFormbyProperty("name", "downform");
         br.setFollowRedirects(false);
         // this.sleep(12000, downloadLink); // uncomment when they find a better

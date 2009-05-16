@@ -13,6 +13,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
@@ -33,7 +34,7 @@ public class EgoshareCom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex(Pattern.compile("File.name.*?</b>.*?<b>(.*?)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -41,7 +42,7 @@ public class EgoshareCom extends PluginForHost {
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -53,7 +54,7 @@ public class EgoshareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
 
         File captchaFile = this.getLocalCaptchaFile();
         try {

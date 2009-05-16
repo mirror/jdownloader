@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class GigaSizeCom extends PluginForHost {
@@ -90,7 +91,7 @@ public class GigaSizeCom extends PluginForHost {
 
     //@Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        getFileInformation(parameter);
+        requestFileInformation(parameter);
         login(account);
         if (!this.isPremium()) {
             if (simultanpremium + 1 > 2) {
@@ -118,7 +119,7 @@ public class GigaSizeCom extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink parameter) throws Exception {
-        getFileInformation(parameter);
+        requestFileInformation(parameter);
         handleFree0(parameter);
     }
 
@@ -150,18 +151,18 @@ public class GigaSizeCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Download-Slots sind besetzt")) {
             downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.gigasizecom.errors.alreadyloading", "Cannot check, because already loading file"));
-            return true;
+            return AvailableStatus.TRUE;
         }
         String[] dat = br.getRegex("strong>Name</strong>: <b>(.*?)</b></p>.*?<p>Gr.*? <span>(.*?)</span>").getRow(0);
         if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(dat[0]);
         downloadLink.setDownloadSize(Regex.getSize(dat[1]));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override

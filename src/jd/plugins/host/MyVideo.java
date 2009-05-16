@@ -22,6 +22,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDMediaConvert;
 
 public class MyVideo extends PluginForHost {
@@ -37,12 +38,12 @@ public class MyVideo extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         /*
          * warum sollte ein video das der decrypter sagte es sei online, offline
          * sein ;)
          */
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -52,7 +53,7 @@ public class MyVideo extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
+        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FATAL); }
         dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {

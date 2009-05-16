@@ -96,7 +96,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         int newfail = 0;
         synchronized (downloadLinks) {
             for (DownloadLink dl : downloadLinks) {
-                if ((dl.isAvailabilityChecked() && !dl.isAvailable())) {
+                if ((dl.isAvailabilityStatusChecked() && !dl.isAvailable())) {
                     newfail++;
                 }
             }
@@ -166,7 +166,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         Vector<DownloadLink> remove = new Vector<DownloadLink>();
         synchronized (downloadLinks) {
             for (DownloadLink dl : downloadLinks) {
-                if ((dl.isAvailabilityChecked() && !dl.isAvailable())) {
+                if ((dl.isAvailabilityStatusChecked() && !dl.isAvailable())) {
                     remove.add(dl);
                 }
             }
@@ -377,7 +377,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                     case 3:
                         return aa.getHost().compareToIgnoreCase(bb.getHost());
                     case 4:
-                        if (aa.isAvailabilityChecked() && bb.isAvailabilityChecked()) {
+                        if (aa.isAvailabilityStatusChecked() && bb.isAvailabilityStatusChecked()) {
                             return (aa.isAvailable() && !bb.isAvailable()) ? 1 : -1;
                         } else
                             return -1;

@@ -33,6 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 import com.sun.org.apache.xerces.internal.impl.xpath.regex.ParseException;
@@ -59,7 +60,7 @@ public class DepositFiles extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         String link = downloadLink.getDownloadURL();
         br.getPage(link);
         if (br.getRedirectLocation() != null) {
@@ -164,7 +165,7 @@ public class DepositFiles extends PluginForHost {
 
     //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         login(account);
         if (this.isFreeAccount()) {
             simultanpremium = 1;
@@ -212,7 +213,7 @@ public class DepositFiles extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();        
         String link = downloadLink.getDownloadURL();
 
@@ -224,14 +225,14 @@ public class DepositFiles extends PluginForHost {
         if (br.containsHTML(FILE_NOT_FOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("<strong>Achtung! Sie haben ein Limit")) {
             downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.depositfilescom.errors.limitreached", "Download limit reached"));
-            return true;
+            return AvailableStatus.TRUE;
         }
         String fileName = br.getRegex(FILE_INFO_NAME).getMatch(0);
         String fileSizeString = br.getRegex(FILE_INFO_SIZE).getMatch(0);
         if (fileName == null || fileSizeString == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(fileName);
         downloadLink.setDownloadSize(Regex.getSize(fileSizeString));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override

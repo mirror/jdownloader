@@ -26,6 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class XupIn extends PluginForHost {
@@ -42,7 +43,7 @@ public class XupIn extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("<legend>.*?<b>Download:(.*?)</b>").getMatch(0);
@@ -50,7 +51,7 @@ public class XupIn extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         downloadLink.setName(filename.trim());
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -61,7 +62,7 @@ public class XupIn extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setDebug(true);
-        this.getFileInformation(downloadLink);
+        this.requestFileInformation(downloadLink);
 
         Form download = br.getForm(0);
         String passCode = null;

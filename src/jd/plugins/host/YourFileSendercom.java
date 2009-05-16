@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class YourFileSendercom extends PluginForHost {
 
@@ -39,7 +40,7 @@ public class YourFileSendercom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         String downloadurl = downloadLink.getDownloadURL();
         this.setBrowserExclusive();
         br.getPage(downloadurl);
@@ -50,7 +51,7 @@ public class YourFileSendercom extends PluginForHost {
                 downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkInfo[1].replaceAll(",", "").replaceAll("\\.0+", "")) * 1024.0));
             }
             downloadLink.setName(linkInfo[0]);
-            return true;
+            return AvailableStatus.TRUE;
         } else {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -67,7 +68,7 @@ public class YourFileSendercom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
 
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         if (br.containsHTML("<span>You have got max allowed download sessions from the same IP!</span>")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000L);
 
         }

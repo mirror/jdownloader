@@ -31,6 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class LetitBitNet extends PluginForHost {
@@ -47,7 +48,7 @@ public class LetitBitNet extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
@@ -62,7 +63,7 @@ public class LetitBitNet extends PluginForHost {
         if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(size));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -72,7 +73,7 @@ public class LetitBitNet extends PluginForHost {
 
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         Form form = br.getForm(3);
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
@@ -84,7 +85,7 @@ public class LetitBitNet extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         Form dl1 = br.getFormbyProperty("id", "dvifree");
         String captchaurl = null;
         if (dl1 == null) {

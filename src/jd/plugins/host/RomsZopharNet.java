@@ -19,6 +19,7 @@ package jd.plugins.host;
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class RomsZopharNet extends PluginForHost {
 
@@ -32,8 +33,8 @@ public class RomsZopharNet extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        return true;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
+        return AvailableStatus.TRUE;
     }
 
     //@Override

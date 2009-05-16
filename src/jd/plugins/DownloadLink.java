@@ -64,6 +64,7 @@ class DownloadLinkBroadcaster extends JDBroadcaster<DownloadLinkListener, Downlo
 
 public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink> {
 
+    public static enum AvailableStatus{UNCHECKED,FALSE,UNCHECKABLE,TRUE}
     public static final int LINKTYPE_CONTAINER = 1;
 
     public static final int LINKTYPE_JDU = 2;
@@ -79,7 +80,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public static final String STATIC_OUTPUTFILE = "STATIC_OUTPUTFILE";
 
-    private transient Boolean available = null;
+    private transient AvailableStatus availableStatus = AvailableStatus.UNCHECKED;
 
     private long[] chunksProgress = null;
 
@@ -567,37 +568,41 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
-    public boolean isAvailabilityChecked() {
+    public boolean isAvailabilityStatusChecked() {
 
-        return available != null;
+        return availableStatus != AvailableStatus.UNCHECKED;
 
     }
 
     /**
      * Führt einen verfügbarkeitscheck durch. GIbt true zurück wenn der link
-     * online ist
+     * online ist, oder wenn er nicht prüfbar ist
      * 
      * @return true/false
      */
     public boolean isAvailable() {
-        if (available != null) { return available; }
+       return getAvailableStatus()!=AvailableStatus.FALSE;        
+    }
+
+    public AvailableStatus getAvailableStatus() {
+        if (availableStatus != AvailableStatus.UNCHECKED) { return availableStatus; }
         int wait = 0;
 
         for (int retry = 0; retry < 5; retry++) {
             try {
-                available = getPlugin().getFileInformation(this);
+                availableStatus = getPlugin().requestFileInformation(this);
                 try {
                     getPlugin().getBrowser().getHttpConnection().disconnect();
                 } catch (Exception e) {
                 }
                 break;
             } catch (UnknownHostException e) {
-                available = false;
+                availableStatus = AvailableStatus.UNCHECKABLE;
                 break;
             } catch (PluginException e) {
                 e.fillLinkStatus(this.getLinkStatus());
-                // logger.severe("Hoster Plugin Version: " +
-                // getPlugin().getVersion());
+              
+                availableStatus = AvailableStatus.FALSE;
                 break;
             } catch (IOException e) {
                 if (e.getMessage().contains("code: 500")) {
@@ -606,7 +611,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                         JDLogger.getLogger().finer("500 Error Code, retrying in " + wait);
                         Thread.sleep(wait);
                     } catch (InterruptedException e1) {
-                        available = false;
+                        availableStatus = AvailableStatus.UNCHECKABLE;
                         break;
                     }
                     continue;
@@ -622,12 +627,16 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 // getPlugin().getVersion());
                 // JDLogger.getLogger().log(java.util.logging.Level
                 // .SEVERE,"Exception occured",e);
-                available = false;
+                availableStatus = AvailableStatus.UNCHECKABLE;
                 break;
             }
         }
-        if (available == null) available = false;
-        return available;
+        if (availableStatus == null) availableStatus = AvailableStatus.UNCHECKABLE;
+        return availableStatus;
+    }
+
+    public void setAvailableStatus(AvailableStatus availableStatus) {
+        this.availableStatus = availableStatus;
     }
 
     /**
@@ -676,7 +685,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         downloadLinkController = null;
         downloadCurrent = 0;
         linkStatus.reset();
-        this.available = null;
+        this.availableStatus = null;
         this.setEnabled(true);
         linkStatus = new LinkStatus(this);
         if (new File(this.getFileOutput()).exists()) {
@@ -713,7 +722,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void setAvailable(boolean available) {
-        this.available = available;
+        this.availableStatus = available?AvailableStatus.TRUE:AvailableStatus.FALSE;
     }
 
     /**

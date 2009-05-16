@@ -32,6 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class BadongoCom extends PluginForHost {
 
@@ -46,7 +47,7 @@ public class BadongoCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         br.setCookiesExclusive(true);
         br.setCookie("http://www.badongo.com", "badongoL", "de");
         br.getPage(downloadLink.getDownloadURL().replaceAll("\\.viajd", ".com"));
@@ -70,7 +71,7 @@ public class BadongoCom extends PluginForHost {
                 downloadLink.setDownloadSize(100 * 1024 * 1024);
             }
         }
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -80,7 +81,7 @@ public class BadongoCom extends PluginForHost {
 
     //@Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        getFileInformation(parameter);
+        requestFileInformation(parameter);
         login(account);
         isPremium();
         String link = null;
@@ -110,7 +111,7 @@ public class BadongoCom extends PluginForHost {
         /* Nochmals das File überprüfen */
         String link = null;
         String realURL = downloadLink.getDownloadURL().replaceAll("\\.viajd", ".com");
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         if (downloadLink.getStringProperty("type", "single").equalsIgnoreCase("split")) {
             String downloadLinks[] = br.getRegex("doDownload\\(\\'(.*?)\\'\\)").getColumn(0);
             link = downloadLinks[downloadLink.getIntegerProperty("part", 1) - 1];

@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class SwoopshareCom extends PluginForHost {
 
@@ -42,7 +43,7 @@ public class SwoopshareCom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
 
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -57,7 +58,7 @@ public class SwoopshareCom extends PluginForHost {
         String name = br.getRegex("<title>cshare.de - Download (.*)</title>").getMatch(0);
         downloadLink.setName(name);
 
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override

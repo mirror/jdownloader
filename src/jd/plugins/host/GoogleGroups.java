@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class GoogleGroups extends PluginForHost {
 
@@ -87,9 +88,9 @@ public class GoogleGroups extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         checkLinks(new DownloadLink[] { downloadLink });
-        return downloadLink.isAvailable();
+        return downloadLink.getAvailableStatus();
     }
 
     //@Override
@@ -99,7 +100,7 @@ public class GoogleGroups extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // .googlegroups.com/web/
         String na = downloadLink.getDownloadURL().replaceFirst("\\?gda=.*", "");
         na = na.replaceFirst("googlegroups.com/web/.*", "googlegroups.com/web/") + URLEncoder.encode(na.replaceFirst("http://.*?\\.googlegroups.com/web/", ""), "UTF-8");

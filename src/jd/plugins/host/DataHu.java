@@ -29,6 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class DataHu extends PluginForHost {
 
@@ -43,7 +44,7 @@ public class DataHu extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         System.out.println(br.getPage(downloadLink.getDownloadURL()));
@@ -51,7 +52,7 @@ public class DataHu extends PluginForHost {
         long length = Regex.getSize(dat[1].trim());
         downloadLink.setDownloadSize(length);
         downloadLink.setName(dat[0].trim());
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -105,7 +106,7 @@ public class DataHu extends PluginForHost {
 
     //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
         String link = br.getRegex("window.location.href='(.*?)';").getMatch(0);
@@ -118,7 +119,7 @@ public class DataHu extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
 
         if (br.containsHTML("A let.*?shez v.*?rnod kell:")) {
             long wait = (Long.parseLong(br.getRegex(Pattern.compile("<div id=\"counter\" class=\"countdown\">([0-9]+)</div>")).getMatch(0)) * 1000);

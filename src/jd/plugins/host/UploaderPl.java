@@ -29,6 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class UploaderPl extends PluginForHost {
@@ -42,7 +43,7 @@ public class UploaderPl extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
@@ -120,7 +121,7 @@ public class UploaderPl extends PluginForHost {
 
     //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         login(account);
         if (!this.isPremium()) {
             simultanpremium = 10;
@@ -148,7 +149,7 @@ public class UploaderPl extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage("http://uploader.pl/en");
         br.getPage(downloadLink.getDownloadURL());
@@ -158,7 +159,7 @@ public class UploaderPl extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override

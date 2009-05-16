@@ -25,6 +25,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class Przeslijnet extends PluginForHost {
 
@@ -38,19 +39,19 @@ public class Przeslijnet extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         try {
             br.getPage(downloadLink.getDownloadURL());
             if (!br.containsHTML("Invalid download link")) {
                 downloadLink.setName(Encoding.htmlDecode(br.getRegex("<font color=#000000>(.*?)</font>").getMatch(0)));
                 downloadLink.setDownloadSize(Regex.getSize(br.getRegex("File Size:</td><td bgcolor=\\#EEF4FB background=\"img\\/button03.gif\"><font color=#000080>(.*?)</td>").getMatch(0)));
-                return true;
+                return AvailableStatus.TRUE;
             }
         } catch (IOException e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         downloadLink.setAvailable(false);
-        return false;
+        return AvailableStatus.FALSE;
     }
 
     //@Override
@@ -62,7 +63,7 @@ public class Przeslijnet extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         /* Zwangswarten, 15seks */
         sleep(15000, downloadLink);

@@ -27,6 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDMediaConvert;
 
@@ -43,7 +44,7 @@ public class Youtube extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         downloadLink.setFinalFileName(downloadLink.getStringProperty("finalname", "video.tmp"));
         // br.setFollowRedirects(true);
         // URLConnectionAdapter tmp =
@@ -53,7 +54,7 @@ public class Youtube extends PluginForHost {
         // return true;
         // }
         // tmp.disconnect();
-        return true; /*
+        return AvailableStatus.TRUE; /*
                       * warum sollte ein video das der decrypter sagte es sei
                       * online, offline sein ;)
                       */
@@ -69,7 +70,7 @@ public class Youtube extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-        if (!getFileInformation(downloadLink)) {
+        if (!downloadLink.isAvailable()) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.hoster.youtube.errors.serverunavailable", "Server unavailable"));
             return;
@@ -94,7 +95,7 @@ public class Youtube extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         login(account);
-        if (!getFileInformation(downloadLink)) {
+        if (!downloadLink.isAvailable()) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.hoster.youtube.errors.serverunavailable", "Server unavailable"));
             return;

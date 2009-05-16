@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class LeteckaPostaCz extends PluginForHost {
 
@@ -40,7 +41,7 @@ public class LeteckaPostaCz extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Soubor neexistuje")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -49,7 +50,7 @@ public class LeteckaPostaCz extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -59,7 +60,7 @@ public class LeteckaPostaCz extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         String linkurl = br.getRegex("\\s+<h1><a href='(.*?)'").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         linkurl = "http://leteckaposta.cz" + linkurl;

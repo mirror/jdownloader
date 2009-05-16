@@ -24,6 +24,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 
 public class UploadStube extends PluginForHost {
@@ -38,7 +39,7 @@ public class UploadStube extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
 
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -47,7 +48,7 @@ public class UploadStube extends PluginForHost {
         downloadLink.setName(new Regex(page, "<b>Dateiname: </b>(.*?) <br>").getMatch(0).trim());
         downloadLink.setDownloadSize(Regex.getSize(new Regex(page, "<b>Dateigr..e:</b> (.*?)<br>").getMatch(0).trim()));
 
-        return true;
+        return AvailableStatus.TRUE;
 
     }
 
@@ -61,7 +62,7 @@ public class UploadStube extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        if (!getFileInformation(downloadLink)) {
+        if (!downloadLink.isAvailable()) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }

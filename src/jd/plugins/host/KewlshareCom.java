@@ -9,6 +9,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class KewlshareCom extends PluginForHost {
 
@@ -22,7 +23,7 @@ public class KewlshareCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("<tr><td>File Name : <strong>(.*?)\\|\\|").getMatch(0);
@@ -30,7 +31,7 @@ public class KewlshareCom extends PluginForHost {
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -40,7 +41,7 @@ public class KewlshareCom extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         Form form = br.getForm(1);
         br.submitForm(form);
         if (br.containsHTML("Your Current Download Limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);

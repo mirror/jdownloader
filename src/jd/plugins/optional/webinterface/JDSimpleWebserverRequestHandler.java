@@ -179,7 +179,7 @@ public class JDSimpleWebserverRequestHandler {
                                 }
                                 for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
                                     link = it.next();
-                                    if (link.isAvailabilityChecked() == true && link.isAvailable() == false) {
+                                    if (link.isAvailabilityStatusChecked() == true && link.isAvailable() == false) {
                                         link.getFilePackage().remove(link);
                                     }
                                 }

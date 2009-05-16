@@ -25,6 +25,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class HTTPAllgemein extends PluginForHost {
@@ -68,7 +69,7 @@ public class HTTPAllgemein extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         this.setBrowserExclusive();
         String basicauth = (String) downloadLink.getProperty("basicauth", null);
         if (basicauth == null) {
@@ -109,7 +110,7 @@ public class HTTPAllgemein extends PluginForHost {
             downloadLink.setDownloadSize(urlConnection.getLongContentLength());
             this.contentType = urlConnection.getContentType();
             urlConnection.disconnect();
-            return true;
+            return AvailableStatus.TRUE;
         } catch (Exception e) {
             if (urlConnection != null && urlConnection.isConnected() == true) urlConnection.disconnect();
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
@@ -130,7 +131,7 @@ public class HTTPAllgemein extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         boolean resume = true;
         int chunks = 0;

@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class Vipfilecom extends PluginForHost {
@@ -44,7 +45,7 @@ public class Vipfilecom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         String downloadURL = downloadLink.getDownloadURL();
         this.setBrowserExclusive();
         br.getPage(downloadURL);
@@ -57,9 +58,9 @@ public class Vipfilecom extends PluginForHost {
         String link = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (link == null) {
             downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
-            return true;
+            return AvailableStatus.TRUE;
         }
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -69,7 +70,7 @@ public class Vipfilecom extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         /* DownloadLink holen, 2x der Location folgen */
         String link = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (link == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
@@ -88,7 +89,7 @@ public class Vipfilecom extends PluginForHost {
 
     //@Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         Form form = br.getForm(1);
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);

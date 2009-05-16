@@ -26,6 +26,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 
 public class ArchivTo extends PluginForHost {
@@ -42,7 +43,7 @@ public class ArchivTo extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         try {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
@@ -53,11 +54,11 @@ public class ArchivTo extends PluginForHost {
             downloadLink.setMD5Hash(new Regex(page, "<td width=\"23%\">MD5 Code</td>\\s*<td width=\"77%\">: ([0-9a-z]*?)</td>").getMatch(0));
             downloadLink.setDownloadSize(Long.parseLong(new Regex(page, "<td width=.*?>Dateigröße</td>\\s*<td width=.*?>: (\\d+?) Bytes \\(.*\\)</td>").getMatch(0)));
 
-            return true;
+            return AvailableStatus.TRUE;
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-        return false;
+        return AvailableStatus.FALSE;
     }
 
     //@Override
@@ -72,7 +73,7 @@ public class ArchivTo extends PluginForHost {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
 
-        if (!getFileInformation(downloadLink)) {
+        if (!downloadLink.isAvailable()) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }

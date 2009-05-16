@@ -51,6 +51,7 @@ import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
 import jd.parser.Regex;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -379,7 +380,7 @@ public abstract class PluginForHost extends Plugin {
      * @return true/false je nach dem ob die Datei noch online ist (verfügbar)
      * @throws IOException
      */
-    public abstract boolean getFileInformation(DownloadLink parameter) throws Exception;
+    public abstract AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception;
 
     /**
      * Gibt einen String mit den Dateiinformationen zurück. Die Defaultfunktion

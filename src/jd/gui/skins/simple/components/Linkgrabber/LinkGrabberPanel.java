@@ -544,7 +544,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             fp.addAll(linkList);
             for (DownloadLink link : linkList) {
                 boolean avail = true;
-                if (link.isAvailabilityChecked()) avail = link.isAvailable();
+                if (link.isAvailabilityStatusChecked()) avail = link.isAvailable();
                 link.getLinkStatus().reset();
                 if (!avail) link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 link.setFilePackage(fp);
@@ -556,7 +556,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 if (linkList.elementAt(i).getHost().compareTo(host) == 0) {
                     DownloadLink link = linkList.remove(i);
                     boolean avail = true;
-                    if (link.isAvailabilityChecked()) avail = link.isAvailable();
+                    if (link.isAvailabilityStatusChecked()) avail = link.isAvailable();
                     link.getLinkStatus().reset();
                     if (!avail) link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     linkListHost.add(link);

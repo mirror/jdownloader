@@ -24,6 +24,7 @@ import jd.http.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class RomHustlerNet extends PluginForHost {
 
@@ -39,18 +40,18 @@ public class RomHustlerNet extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         try {
             this.setBrowserExclusive();
             br.getPage(downloadLink.getDownloadURL());
             downloadUrl = decodeurl(br.getRegex(Pattern.compile("link_enc=new Array\\((.*?)\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
-            if (downloadUrl == null) return false;
+            if (downloadUrl == null) return AvailableStatus.FALSE;
             String name = Encoding.htmlDecode(downloadUrl.replaceAll("^.*/", ""));
             downloadLink.setName(name);
-            return true;
+            return AvailableStatus.TRUE;
         } catch (Exception e) {
         }
-        return false;
+        return AvailableStatus.FALSE;
     }
 
     //@Override
@@ -62,7 +63,7 @@ public class RomHustlerNet extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        if (!getFileInformation(downloadLink)) {
+        if (!downloadLink.isAvailable()) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }

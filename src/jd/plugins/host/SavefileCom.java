@@ -27,6 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class SavefileCom extends PluginForHost {
 
@@ -41,7 +42,7 @@ public class SavefileCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
@@ -53,7 +54,7 @@ public class SavefileCom extends PluginForHost {
             if (!(downloadName == null || downloadSize == null)) {
                 downloadLink.setName(downloadName);
                 downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
-                return true;
+                return AvailableStatus.TRUE;
             }
         }
 
@@ -68,7 +69,7 @@ public class SavefileCom extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         /* Link holen */
         br.setFollowRedirects(true);
         String fileID = br.getRegex("savefile.com/files/(.*?)\"").getMatch(0);

@@ -35,6 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class FileFactory extends PluginForHost {
@@ -293,13 +294,13 @@ public class FileFactory extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws Exception, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception, PluginException {
         br.setFollowRedirects(true);
         for (int i = 0; i < 4; i++) {
             try {
                 Thread.sleep(200);
             } catch (Exception e) {
-                return false;
+                return AvailableStatus.FALSE;
             }
             try {
                 br.getPage(downloadLink.getDownloadURL());
@@ -310,10 +311,10 @@ public class FileFactory extends PluginForHost {
         }
         if (br.containsHTML(NOT_AVAILABLE) && !br.containsHTML("there are currently no free download slots")) {
             br.setFollowRedirects(false);
-            return false;
+            return AvailableStatus.FALSE;
         } else if (br.containsHTML(SERVER_DOWN)) {
             br.setFollowRedirects(false);
-            return false;
+            return AvailableStatus.FALSE;
         } else {
             if (br.containsHTML("there are currently no free download slots")) {
                 downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("plugins.hoster.filefactorycom.errors.nofreeslots", "No slots free available"));
@@ -330,7 +331,7 @@ public class FileFactory extends PluginForHost {
 
         }
         br.setFollowRedirects(false);
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override

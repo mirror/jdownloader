@@ -26,6 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 import org.mozilla.javascript.Context;
@@ -45,7 +46,7 @@ public class MediafireCom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
         for (int i = 0; i < 3; i++) {
@@ -56,7 +57,7 @@ public class MediafireCom extends PluginForHost {
                     if (!downloadLink.getStringProperty("origin", "").equalsIgnoreCase("decrypter")) {
                         downloadLink.setName(Plugin.extractFileNameFromURL(br.getRedirectLocation()));
                     }
-                    return true;
+                    return AvailableStatus.TRUE;
                 }
                 break;
             } catch (IOException e) {
@@ -65,7 +66,7 @@ public class MediafireCom extends PluginForHost {
                     Thread.sleep(200);
                     continue;
                 } else
-                    return false;
+                    return AvailableStatus.FALSE;
             }
 
         }
@@ -75,7 +76,7 @@ public class MediafireCom extends PluginForHost {
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setFinalFileName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -88,7 +89,7 @@ public class MediafireCom extends PluginForHost {
         String url = null;
         br.setDebug(true);
         for (int i = 0; i < 3; i++) {
-            getFileInformation(downloadLink);
+            requestFileInformation(downloadLink);
             if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
                 url = br.getRedirectLocation();
             } else {

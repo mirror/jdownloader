@@ -53,6 +53,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -852,8 +853,9 @@ public class Rapidshare extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-        return checkLinks(new DownloadLink[] { downloadLink });
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
+      checkLinks(new DownloadLink[] { downloadLink });
+      return downloadLink.getAvailableStatus();
     }
 
     private String getServerName(String id) {

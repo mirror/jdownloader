@@ -12,6 +12,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 public class JamendoCom extends PluginForHost {
@@ -29,7 +30,7 @@ public class JamendoCom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         String TrackDownloadID = new Regex(parameter.getDownloadURL(), "/download/track/(\\d+)").getMatch(0);
         if (TrackDownloadID != null) {
@@ -39,7 +40,7 @@ public class JamendoCom extends PluginForHost {
             if (Track == null || Artist == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             parameter.setName(Track);
             parameter.setProperty("linktyp", "downloadTrack");
-            return true;
+            return AvailableStatus.TRUE;
         }
         String TrackID = new Regex(parameter.getDownloadURL(), "/track/(\\d+)").getMatch(0);
         if (TrackID != null) {
@@ -52,7 +53,7 @@ public class JamendoCom extends PluginForHost {
                 parameter.setProperty("linktyp", "downloadTrack");
             } else
                 parameter.setProperty("linktyp", "webtrack");
-            return true;
+            return AvailableStatus.TRUE;
         }
         String AlbumDownloadID = new Regex(parameter.getDownloadURL(), "/download/album/(\\d+)").getMatch(0);
         if (AlbumDownloadID != null) {
@@ -62,14 +63,14 @@ public class JamendoCom extends PluginForHost {
             if (Album == null || Artist == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             parameter.setName(Album);
             parameter.setProperty("linktyp", "downloadalbum");
-            return true;
+            return AvailableStatus.TRUE;
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     //@Override
     public void handleFree(DownloadLink link) throws Exception {
-        getFileInformation(link);
+        requestFileInformation(link);
         String dlurl = null;
         br.setDebug(true);
         if (link.getStringProperty("linktyp", "webtrack").equalsIgnoreCase("webtrack")) {

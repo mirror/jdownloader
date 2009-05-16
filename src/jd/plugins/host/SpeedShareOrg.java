@@ -9,6 +9,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
@@ -27,7 +28,7 @@ public class SpeedShareOrg extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex(Pattern.compile("<title>SpeedShare - Download (.*)</title>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -35,7 +36,7 @@ public class SpeedShareOrg extends PluginForHost {
         downloadLink.setName(filename.trim());
         String filesize = br.getRegex(Pattern.compile("\\((.*?)\\) angefordert\\.</b></div></td></td>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -47,7 +48,7 @@ public class SpeedShareOrg extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
 
         /* Downloadlimit erreicht */
         if (br.containsHTML("<span>Entschuldigung")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }

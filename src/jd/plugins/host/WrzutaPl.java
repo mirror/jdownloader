@@ -27,6 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class WrzutaPl extends PluginForHost {
 
@@ -44,7 +45,7 @@ public class WrzutaPl extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Nie odnaleziono pliku.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -58,7 +59,7 @@ public class WrzutaPl extends PluginForHost {
             downloadLink.setName(filename.trim());
         } else
             downloadLink.setName(filename.trim());
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -68,7 +69,7 @@ public class WrzutaPl extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         boolean addext = true;
         String fileid = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/" + filetype + "/([^/]*)").getMatch(0);
         if (fileid == null || filetype == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

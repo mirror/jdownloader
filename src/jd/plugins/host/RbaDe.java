@@ -27,6 +27,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class RbaDe extends PluginForHost {
 
@@ -85,7 +86,7 @@ public class RbaDe extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink link) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws PluginException, IOException {
         Browser br = new Browser();
         br.clearCookies(getHost());
 
@@ -103,7 +104,7 @@ public class RbaDe extends PluginForHost {
                 herausforderer = rapperNamen[0][0].replaceAll(REGEX_ALLOWED_FILENAME_CHARS, "");
                 gegner = rapperNamen[1][0].replaceAll(REGEX_ALLOWED_FILENAME_CHARS, "");
             } catch (ArrayIndexOutOfBoundsException e) {
-                return false;
+                return AvailableStatus.FALSE;
             }
             String fileName = getFileName(herausforderer, gegner, rundenId, battleId);
             link.setName(fileName);
@@ -122,7 +123,7 @@ public class RbaDe extends PluginForHost {
                     logger.severe(e.toString());
                 }
             }
-            return true;
+            return AvailableStatus.TRUE;
 
         } catch (NumberFormatException e) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, ERR_IDS_NOT_FOUND);

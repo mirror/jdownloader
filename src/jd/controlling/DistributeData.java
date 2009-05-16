@@ -307,7 +307,7 @@ public class DistributeData extends Thread {
                         dLinks.get(c).setName(decrypted.getName());
                         dLinks.get(c).setFinalFileName(decrypted.getFinalFileName());
                         dLinks.get(c).setBrowserUrl(decrypted.getBrowserUrl());
-                        if (decrypted.isAvailabilityChecked()) dLinks.get(c).setAvailable(decrypted.isAvailable());
+                        if (decrypted.isAvailabilityStatusChecked()) dLinks.get(c).setAvailable(decrypted.isAvailable());
                         dLinks.get(c).setProperties(decrypted.getProperties());
                         dLinks.get(c).getLinkStatus().setStatusText(decrypted.getLinkStatus().getStatusString());
                         dLinks.get(c).setDownloadSize(decrypted.getDownloadSize());

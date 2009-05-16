@@ -35,6 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 
@@ -158,11 +159,11 @@ public class FilerNet extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         if (downloadLink.getDownloadURL().contains("filer.net/dl/")) {
             downloadLink.setDownloadSize(0);
             downloadLink.setFinalFileName("Please logout in your Webbrowser and copy the free user links or copy the folder link.");
-            return true;
+            return AvailableStatus.TRUE;
 
             /*
              * This method removes free-traffic from the Premium Account the url
@@ -197,14 +198,14 @@ public class FilerNet extends PluginForHost {
                 Browser.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
                 code = getCaptchaCode(captchaFile, downloadLink);
                 page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
-                if (Regex.matches(page, PATTERN_MATCHER_ERROR)) { return false; }
+                if (Regex.matches(page, PATTERN_MATCHER_ERROR)) { return AvailableStatus.FALSE; }
                 if (downloadLink.getDownloadSize() == 0) {
                     bytes = (int) Regex.getSize(new Regex(page, "<tr class=\"even\">.*?<th>Dateigröße</th>.*?<td>(.*?)</td>").getMatch(0));
                     downloadLink.setDownloadSize(bytes);
                 }
                 br.setFollowRedirects(false);
                 Form[] forms = br.getForms();
-                if (forms.length < 2) { return true; }
+                if (forms.length < 2) { return AvailableStatus.TRUE; }
                 if (downloadLink.getFinalFileName() != null) {
                     String filename = downloadLink.getFinalFileName();
                     downloadLink.setFinalFileName(null);
@@ -213,13 +214,13 @@ public class FilerNet extends PluginForHost {
                     br.submitForm(forms[1]);
                     downloadLink.setName(Plugin.getFileNameFormURL(new URL(br.getRedirectLocation())));
                 }
-                return true;
+                return AvailableStatus.TRUE;
             } catch (Exception e) {
                 logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
             tries++;
         }
-        return false;
+        return AvailableStatus.FALSE;
     }
 
     // @Override

@@ -31,6 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class FileHostMecom extends PluginForHost {
 
@@ -87,7 +88,7 @@ public class FileHostMecom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
@@ -95,7 +96,7 @@ public class FileHostMecom extends PluginForHost {
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
         downloadLink.setName(filename.trim());
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -105,7 +106,7 @@ public class FileHostMecom extends PluginForHost {
 
     //@Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        getFileInformation(parameter);
+        requestFileInformation(parameter);
         login(account);
         if (!this.isPremium()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
         br.setFollowRedirects(false);
@@ -161,7 +162,7 @@ public class FileHostMecom extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         Form form = br.getForm(0);
         form.remove("method_premium");

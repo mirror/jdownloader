@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class UploadBoxCom extends PluginForHost {
 
@@ -44,7 +45,7 @@ public class UploadBoxCom extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("class=\"not_found\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -53,12 +54,12 @@ public class UploadBoxCom extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize));
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
     public void handleFree(DownloadLink link) throws Exception {
-        getFileInformation(link);
+        requestFileInformation(link);
         Form form = br.getForm(1);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.submitForm(form);

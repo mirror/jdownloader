@@ -27,6 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class FilesTo extends PluginForHost {
 
@@ -40,19 +41,19 @@ public class FilesTo extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         try {
             br.getPage(downloadLink.getDownloadURL());
             if (!br.containsHTML("Die angeforderte Datei konnte nicht gefunden werden")) {
                 downloadLink.setName(Encoding.htmlDecode(br.getRegex("<p>Name: <span id=\"downloadname\">(.*?)</span></p>").getMatch(0)));
                 downloadLink.setDownloadSize(Regex.getSize(br.getRegex("<p>Gr&ouml;&szlig;e: (.*? (KB|MB|B))</p>").getMatch(0)));
-                return true;
+                return AvailableStatus.TRUE;
             }
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         downloadLink.setAvailable(false);
-        return false;
+        return AvailableStatus.FALSE;
     }
 
     // @Override
@@ -63,7 +64,7 @@ public class FilesTo extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
 
-        if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         br.getPage(downloadLink.getDownloadURL());
         String captchaAddress = br.getRegex("<img src=\"(http://www\\.files\\.to/captcha_[\\d]+\\.jpg\\?)").getMatch(0);

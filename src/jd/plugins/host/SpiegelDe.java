@@ -26,6 +26,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDMediaConvert;
 
@@ -45,22 +46,22 @@ public class SpiegelDe extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         URLConnectionAdapter urlConnection;
         try {
             urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
         } catch (IOException e) {
             logger.severe(e.getMessage());
             downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return false;
+            return AvailableStatus.FALSE;
         }
         if (!urlConnection.isOK()) {
             urlConnection.disconnect();
-            return false;
+            return AvailableStatus.FALSE;
         }
         downloadLink.setDownloadSize(urlConnection.getLongContentLength());
         urlConnection.disconnect();
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     //@Override
@@ -76,7 +77,7 @@ public class SpiegelDe extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
+        if (!downloadLink.isAvailable()) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }

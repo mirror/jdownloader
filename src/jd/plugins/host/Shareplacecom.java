@@ -25,6 +25,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class Shareplacecom extends PluginForHost {
 
@@ -40,7 +41,7 @@ public class Shareplacecom extends PluginForHost {
     }
 
     //@Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         String url = downloadLink.getDownloadURL();
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -55,9 +56,9 @@ public class Shareplacecom extends PluginForHost {
             } else if ((filesize = br.getRegex("File size: </b>(.*)byte<b>").getMatch(0)) != null) {
                 downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)));
             }
-            return true;
+            return AvailableStatus.TRUE;
         } else
-            return false;
+            return AvailableStatus.FALSE;
 
     }
 
@@ -72,7 +73,7 @@ public class Shareplacecom extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
+        if (!downloadLink.isAvailable()) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }

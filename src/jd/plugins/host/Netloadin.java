@@ -35,6 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 
@@ -79,7 +80,7 @@ public class Netloadin extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         br.setDebug(true);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -316,7 +317,7 @@ public class Netloadin extends PluginForHost {
 
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         login(account);
         isExpired(account);
         boolean resume = true;
@@ -395,7 +396,7 @@ public class Netloadin extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         correctDownloadLink(downloadLink);/*
                                            * FIXME: kann nach 2-3 weiteren
                                            * publics entfernt werden
@@ -405,6 +406,7 @@ public class Netloadin extends PluginForHost {
             br.setConnectTimeout(15000);
 
             String id = Netloadin.getID(downloadLink.getDownloadURL());
+
             String page = br.getPage("http://netload.in/share/fileinfos2.php?bz=1&file_id=" + id);
             for (int i = 0; i < 3 && page == null; i++) {
 
@@ -424,7 +426,7 @@ public class Netloadin extends PluginForHost {
                 downloadLink.setFinalFileName(entries[0]);
                 fileStatusText = JDLocale.L("plugins.hoster.netloadin.errors.mightbeoffline", "Might be offline");
                 downloadLink.getLinkStatus().setStatusText(fileStatusText);
-                return true;
+                return AvailableStatus.TRUE;
             }
 
             if (entries == null || entries.length < 3) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -434,12 +436,14 @@ public class Netloadin extends PluginForHost {
             downloadLink.setDownloadSize((int) Regex.getSize(entries[2] + " bytes"));
 
             downloadLink.setMD5Hash(entries[4].trim());
-            if (entries[3].equalsIgnoreCase("online")) {                
-                return true;
-            }
+            if (entries[3].equalsIgnoreCase("online")) { return AvailableStatus.TRUE; }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } catch (PluginException e2) {
             throw e2;
+        } catch (IOException e) {
+            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            return AvailableStatus.UNCHECKABLE;
+
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }

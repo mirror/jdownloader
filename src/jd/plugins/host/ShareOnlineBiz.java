@@ -32,6 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 
 import org.mozilla.javascript.Context;
@@ -100,7 +101,7 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     // @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.share-online.biz", "king_mylang", "en");
         br.setAcceptLanguage("en, en-gb;q=0.8");
@@ -111,13 +112,13 @@ public class ShareOnlineBiz extends PluginForHost {
             if (strings == null || strings.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setDownloadSize(Regex.getSize(strings[0].trim()));
             downloadLink.setName(strings[1].trim());
-            return true;
+            return AvailableStatus.TRUE;
         }
         String infos[] = br.getRegex("(.*?);(.*?);(.*?);(.+)").getRow(0);
         if (infos == null || !infos[1].equalsIgnoreCase("OK")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setDownloadSize(Long.parseLong(infos[3].trim()));
         downloadLink.setName(infos[2].trim());
-        return true;
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -129,7 +130,7 @@ public class ShareOnlineBiz extends PluginForHost {
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         DownloadLink downloadLink = parameter;
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        getFileInformation(parameter);
+        requestFileInformation(parameter);
         login(account);
         if (!this.isPremium()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
         String id = new Regex(downloadLink.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
@@ -166,7 +167,7 @@ public class ShareOnlineBiz extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        getFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         String id = new Regex(downloadLink.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
         br.getPage("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
         if (br.containsHTML("Probleme mit einem Fileserver")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
