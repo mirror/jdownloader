@@ -70,15 +70,7 @@ public class JDProgressBar extends JProgressBar {
         update();
     }
 
-    public void paint(Graphics g) {
-        System.out.println("Paint "+getValue()+"/"+getMaximum());
-        if(getValue()==2221){
-            System.out.println("Paint "+getValue()+"/"+getMaximum());  
-            
-        }
-super.paint(g);
 
-    }
 
     public long getRealValue() {
         return realCur;
