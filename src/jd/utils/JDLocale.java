@@ -24,7 +24,6 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Vector;
 
-import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 
 import jd.config.SubConfiguration;
@@ -125,8 +124,7 @@ public class JDLocale {
      */
     public static String LF(String key, String def, Object... args) {
         if (args == null || args.length == 0) {
-            JOptionPane.showMessageDialog(null, "Keine Parameter übergeben: " + key);
-            new Exception().printStackTrace();
+            JDLogger.getLogger().severe("FIXME: " + key);
         }
         try {
             return String.format(JDLocale.L(key, def), args);
