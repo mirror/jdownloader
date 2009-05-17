@@ -124,6 +124,8 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
     private static Color COL_PROGRESS_ERROR = new Color(0xCC3300);
 
+    private static Color COL_PROGRESS_NORMAL = null;
+
     public TreeTableRenderer(DownloadTreeTable downloadTreeTable) {
         initIcons();
         initLocale();
@@ -132,6 +134,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
         progress = new JDProgressBar();
         progress.setStringPainted(true);
         progress.setOpaque(true);
+        COL_PROGRESS_NORMAL = progress.getForeground();
         statuspanel = new StatusLabel(new MigLayout("ins 0,debug", "[]0[fill,grow,align right]"));
     }
 
@@ -287,7 +290,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 progress.setMaximum(dLink.getPluginProgress().getTotal());
                 progress.setValue(dLink.getPluginProgress().getCurrent());
                 progress.setToolTipText(null);
-                progress.setForeground(null);
+                progress.setForeground(COL_PROGRESS_NORMAL);
                 return progress;
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
@@ -351,7 +354,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 progress.setMaximum(10000);
                 progress.setToolTipText(null);
                 progress.setValue(dLink.getPercent());
-                progress.setForeground(null);
+                progress.setForeground(COL_PROGRESS_NORMAL);
                 return progress;
             }
             progress.setMaximum(10000);
@@ -371,7 +374,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 progress.setString("");
             }
             progress.setToolTipText(null);
-            progress.setForeground(null);
+            progress.setForeground(COL_PROGRESS_NORMAL);
             return progress;
 
         case DownloadTreeTableModel.COL_STATUS:
@@ -528,7 +531,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 progress.setString(sb.toString());
             }
             progress.setToolTipText(null);
-            progress.setForeground(null);
+            progress.setForeground(COL_PROGRESS_NORMAL);
             return progress;
 
         case DownloadTreeTableModel.COL_STATUS:
