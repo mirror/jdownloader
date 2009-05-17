@@ -88,7 +88,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
             setCurrentPath(getPath());
         }
         for (ActionListener l : listenerList) {
-            l.actionPerformed(e);
+            l.actionPerformed(new ActionEvent(this, e.getID(), e.getActionCommand()));
         }
     }
 
@@ -151,8 +151,8 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         fc.setFileSelectionMode(fileSelectionMode);
         if (fileFilter != null) fc.setFileFilter(fileFilter);
         fc.setCurrentDirectory(getDirectoryFromTxtInput());
-        fc.showOpenDialog(this);
-        return fc.getSelectedFile();
+        if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
+        return null;
     }
 
     public String getText() {

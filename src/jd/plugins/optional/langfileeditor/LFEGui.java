@@ -1,10 +1,8 @@
 package jd.plugins.optional.langfileeditor;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -24,10 +22,8 @@ import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 
-import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JColorChooser;
-import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -35,12 +31,10 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
-import javax.swing.border.EmptyBorder;
 import javax.swing.table.AbstractTableModel;
 
 import jd.config.ConfigContainer;
@@ -62,6 +56,7 @@ import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.ColorHighlighter;
@@ -83,8 +78,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private static final String PROPERTY_MISSING_COLOR = "PROPERTY_MISSING_COLOR";
     private static final String PROPERTY_OLD_COLOR = "PROPERTY_OLD_COLOR";
 
-    private static final String PROPERTY_SOURCE = "PROPERTY_SOURCE";
-
     private static final String PROPERTY_SVN_REPOSITORY = "PROPERTY_SVN_REPOSITORY";
     private static final String PROPERTY_SVN_ACCESS_ANONYMOUS = "PROPERTY_SVN_CHECKOUT_ANONYMOUS";
     private static final String PROPERTY_SVN_ACCESS_USER = "PROPERTY_SVN_CHECKOUT_USER";
@@ -95,9 +88,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private JXTable table;
     private MyTableModel tableModel;
     private File sourceFile, languageFile;
-    private JPanel topFile, topFolder;
-    private JComboBox cmboSelectSource;
-    private ComboBrowseFile cmboSource[], cmboFile;
+    private ComboBrowseFile cmboSource, cmboFile;
     private PieChartAPI keyChart;
     private ChartAPIEntity entDone, entMissing, entOld;
     private JMenu mnuFile, mnuSVN, mnuKey, mnuEntries;
@@ -125,12 +116,8 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     public LFEGui() {
         subConfig = SubConfiguration.getConfig("ADDONS_LANGFILEEDITOR");
         showGui();
-        
     }
-public boolean needsViewport(){
-    return false;
-    
-}
+
     private void showGui() {
         colorizeDone = subConfig.getBooleanProperty(PROPERTY_COLORIZE_DONE, false);
         colorizeMissing = subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, true);
@@ -159,59 +146,33 @@ public boolean needsViewport(){
         if (colorizeMissing) table.addHighlighter(missingHighlighter);
         if (colorizeOld) table.addHighlighter(oldHighlighter);
 
-        cmboSource = new ComboBrowseFile[2];
-
-        cmboSource[0] = new ComboBrowseFile("LANGFILEEDITOR_SOURCEFOLDER");
-        cmboSource[0].setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-        cmboSource[0].addActionListener(this);
-
-        cmboSource[1] = new ComboBrowseFile("LANGFILEEDITOR_SOURCEFILE");
-        cmboSource[1].setFileSelectionMode(JDFileChooser.FILES_ONLY);
-        cmboSource[1].setFileFilter(fileFilter);
-        cmboSource[1].addActionListener(this);
+        cmboSource = new ComboBrowseFile("LANGFILEEDITOR_SOURCE");
+        cmboSource.setFileSelectionMode(JDFileChooser.FILES_AND_DIRECTORIES);
+        cmboSource.setFileFilter(fileFilter);
+        cmboSource.addActionListener(this);
 
         cmboFile = new ComboBrowseFile("LANGFILEEDITOR_FILE");
         cmboFile.setFileSelectionMode(JDFileChooser.FILES_ONLY);
         cmboFile.setFileFilter(fileFilter);
         cmboFile.addActionListener(this);
 
-        cmboSelectSource = new JComboBox(new String[] { JDLocale.L("plugins.optional.langfileeditor.sourceFolder", "Source Folder:"), JDLocale.L("plugins.optional.langfileeditor.sourceFile", "Source File:") });
-        cmboSelectSource.setSelectedIndex(subConfig.getIntegerProperty(PROPERTY_SOURCE, 1));
-        cmboSelectSource.addActionListener(this);
-
-        topFolder = new JPanel(new BorderLayout(5, 5));
-        topFolder.add(cmboSelectSource, BorderLayout.LINE_START);
-        topFolder.add(cmboSource[cmboSelectSource.getSelectedIndex()]);
-
-        topFile = new JPanel(new BorderLayout(5, 5));
-        topFile.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.languageFile", "Language File:")), BorderLayout.LINE_START);
-        topFile.add(cmboFile);
-
         keyChart = new PieChartAPI(JDLocale.L("plugins.optional.langfileeditor.keychart", "KeyChart"), 250, 60);
         keyChart.addEntity(entDone = new ChartAPIEntity(JDLocale.L("plugins.optional.langfileeditor.keychart.done", "Done"), 0, colorDone));
         keyChart.addEntity(entMissing = new ChartAPIEntity(JDLocale.L("plugins.optional.langfileeditor.keychart.missing", "Missing"), 0, colorMissing));
         keyChart.addEntity(entOld = new ChartAPIEntity(JDLocale.L("plugins.optional.langfileeditor.keychart.old", "Old"), 0, colorOld));
 
-        JPanel topLeft = new JPanel(new BorderLayout(5, 5));
-        topLeft.add(topFolder, BorderLayout.PAGE_START);
-        topLeft.add(topFile, BorderLayout.PAGE_END);
-
-        JPanel top = new JPanel(new BorderLayout(5, 5));
-        top.add(topLeft, BorderLayout.CENTER);
-        top.add(keyChart, BorderLayout.LINE_END);
-
-        JPanel main = new JPanel(new BorderLayout(5, 5));
-        main.setBorder(new EmptyBorder(5, 5, 5, 5));
-        main.add(top, BorderLayout.PAGE_START);
-        main.add(new JScrollPane(table));
-
-        this.setLayout(new BorderLayout());
-        this.add(buildMenu(), BorderLayout.PAGE_START);
-        this.add(main, BorderLayout.CENTER);
+        this.setLayout(new MigLayout("wrap 3", "[][grow, fill][]", "[][][][grow, fill]"));
+        this.add(buildMenu(), "span 3, growx, spanx");
+        this.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.source", "Source:")));
+        this.add(cmboSource, "growx");
+        this.add(keyChart, "spany 2, w 250!, h 60!");
+        this.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.languageFile", "Language File:")));
+        this.add(cmboFile, "growx");
+        this.add(new JScrollPane(table), "span 3, grow, span");
 
         if (subConfig.getBooleanProperty(PROPERTY_SVN_UPDATE_ON_START, false)) updateSVN();
 
-        sourceFile = cmboSource[cmboSelectSource.getSelectedIndex()].getCurrentPath();
+        sourceFile = cmboSource.getCurrentPath();
         if (sourceFile != null) getSourceEntries();
         languageFile = cmboFile.getCurrentPath();
         if (languageFile == null) cmboFile.setCurrentPath(JDLocale.getLanguageFile());
@@ -222,7 +183,6 @@ public boolean needsViewport(){
         int numMissing = 0, numOld = 0;
 
         for (KeyInfo entry : data) {
-
             if (entry.isOld()) {
                 numOld++;
             } else if (entry.isMissing()) {
@@ -361,43 +321,15 @@ public boolean needsViewport(){
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == cmboSelectSource) {
+        if (e.getSource() == cmboSource) {
 
-            int index = cmboSelectSource.getSelectedIndex();
-            if (index == subConfig.getIntegerProperty(PROPERTY_SOURCE, 1)) return;
-
-            if (changed) {
-                int res = JOptionPane.showConfirmDialog(this, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
-                if (res == JOptionPane.CANCEL_OPTION) {
-                    cmboSelectSource.setSelectedIndex(subConfig.getIntegerProperty(PROPERTY_SOURCE, 1));
-                    return;
-                } else if (res == JOptionPane.YES_OPTION) {
-                    saveLanguageFile(languageFile);
-                } else {
-                    changed = false;
-                }
-            }
-
-            if (index != subConfig.getIntegerProperty(PROPERTY_SOURCE, 1)) {
-                subConfig.setProperty(PROPERTY_SOURCE, index);
-                subConfig.save();
-
-                topFolder.remove(cmboSource[1 - index]);
-                topFolder.add(cmboSource[index]);
-
-                sourceFile = cmboSource[index].getCurrentPath();
-                initLocaleDataComplete();
-            }
-
-        } else if (e.getSource() == cmboSource[0] || e.getSource() == cmboSource[1]) {
-
-            File sourceFile = cmboSource[cmboSelectSource.getSelectedIndex()].getCurrentPath();
+            File sourceFile = cmboSource.getCurrentPath();
             if (sourceFile == this.sourceFile) return;
 
             if (changed) {
                 int res = JOptionPane.showConfirmDialog(this, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
                 if (res == JOptionPane.CANCEL_OPTION) {
-                    cmboSource[cmboSelectSource.getSelectedIndex()].setCurrentPath(this.sourceFile);
+                    cmboSource.setCurrentPath(this.sourceFile);
                     return;
                 } else if (res == JOptionPane.YES_OPTION) {
                     saveLanguageFile(languageFile);
@@ -676,8 +608,7 @@ public boolean needsViewport(){
             svn.export(new File(workingCopy));
             if (sourceFile == null || !sourceFile.getAbsolutePath().equalsIgnoreCase(workingCopy)) {
                 if (JOptionPane.showConfirmDialog(this, JDLocale.L("plugins.optional.langfileeditor.svn.change.message", "Change the current source to the checked out SVN Repository?"), JDLocale.L("plugins.optional.langfileeditor.svn.change.title", "Change now?"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
-                    cmboSource[0].setText(workingCopy);
-                    cmboSelectSource.setSelectedIndex(0);
+                    cmboSource.setText(workingCopy);
                 }
             } else if (sourceFile.getAbsolutePath().equalsIgnoreCase(workingCopy) && !changed) {
                 initLocaleDataComplete();
@@ -852,7 +783,7 @@ public boolean needsViewport(){
     }
 
     private void getSourceEntries() {
-        if (cmboSelectSource.getSelectedIndex() == 0) {
+        if (sourceFile.isDirectory()) {
             getSourceEntriesFromFolder();
         } else {
             getSourceEntriesFromFile();
@@ -1006,7 +937,7 @@ public boolean needsViewport(){
             return this.getKey().compareToIgnoreCase(o.getKey());
         }
 
-        //@Override
+        // @Override
         public String toString() {
             return this.getKey() + " = " + this.getLanguage();
         }
@@ -1045,7 +976,7 @@ public boolean needsViewport(){
             return data.size();
         }
 
-        //@Override
+        // @Override
         public String getColumnName(int col) {
             return columnNames[col];
         }
@@ -1062,17 +993,17 @@ public boolean needsViewport(){
             return "";
         }
 
-        //@Override
+        // @Override
         public Class<?> getColumnClass(int c) {
             return String.class;
         }
 
-        //@Override
+        // @Override
         public boolean isCellEditable(int row, int col) {
             return true;
         }
 
-        //@Override
+        // @Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 2) {
                 data.get(row).setLanguage((String) value);
@@ -1084,7 +1015,7 @@ public boolean needsViewport(){
 
     }
 
-    private class DupeDialog extends JDialog implements ActionListener {
+    private class DupeDialog extends JDialog {
 
         private static final long serialVersionUID = 1L;
 
@@ -1092,7 +1023,6 @@ public boolean needsViewport(){
             super(owner);
 
             setModal(true);
-            setLayout(new BorderLayout());
             setTitle(JDLocale.L("plugins.optional.langfileeditor.duplicatedEntries", "Duplicated Entries") + " [" + dupes.size() + "]");
 
             MyDupeTableModel internalTableModel = new MyDupeTableModel(dupes);
@@ -1105,25 +1035,13 @@ public boolean needsViewport(){
             table.addHighlighter(HighlighterFactory.createAlternateStriping());
             table.addHighlighter(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, null, Color.BLUE));
 
-            JButton btnClose = new JButton(JDLocale.L("plugins.optional.langfileeditor.close", "Close"));
-            btnClose.addActionListener(this);
-            getRootPane().setDefaultButton(btnClose);
-
-            JPanel buttons = new JPanel(new FlowLayout());
-            buttons.add(btnClose);
-
-            add(new JScrollPane(table), BorderLayout.CENTER);
-            add(buttons, BorderLayout.PAGE_END);
+            add(new JScrollPane(table));
 
             setMinimumSize(new Dimension(900, 600));
             setPreferredSize(new Dimension(900, 600));
             pack();
             setLocation(Screen.getCenterOfComponent(owner, this));
             setVisible(true);
-        }
-
-        public void actionPerformed(ActionEvent e) {
-            dispose();
         }
 
         private class MyDupeTableModel extends AbstractTableModel {
@@ -1150,7 +1068,7 @@ public boolean needsViewport(){
                 return tableData.size();
             }
 
-            //@Override
+            // @Override
             public String getColumnName(int col) {
                 return columnNames[col];
             }
@@ -1173,13 +1091,13 @@ public boolean needsViewport(){
                 return "";
             }
 
-            //@Override
+            // @Override
             public Class<?> getColumnClass(int col) {
                 if (col == 0) return Integer.class;
                 return String.class;
             }
 
-            //@Override
+            // @Override
             public boolean isCellEditable(int row, int col) {
                 return (col == 1);
             }
@@ -1187,15 +1105,19 @@ public boolean needsViewport(){
         }
     }
 
-    //@Override
+    // @Override
     public void onDisplay() {
     }
 
-    //@Override
+    // @Override
     public void onHide() {
         if (changed && JOptionPane.showConfirmDialog(this, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             saveLanguageFile(languageFile);
         }
+    }
+
+    public boolean needsViewport() {
+        return false;
     }
 
 }
