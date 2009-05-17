@@ -12,22 +12,22 @@ param.trainOnlyUnknown=true;
 
 
 #####################Scanparameter
-param.borderVarianceX=30;
-param.borderVarianceY=15;
-param.scanVarianceX=5;
-param.scanVarianceY=5;
+param.borderVarianceX=10;
+param.borderVarianceY=10;
+param.scanVarianceX=10;
+param.scanVarianceY=10;
 param.intersectionDimensionWeight=5;
-param.alignAngleSteps=2;
-param.minCleftSize=4;
+
+param.minCleftSize=3;
 param.overlayNoiseSize=3;
 param.turnDB=true;
 
-param.scanAngleLeft=0;
-param.scanAngleRight=0;
-param.scanAngleSteps=0;
-param.errorAWeight=2;
+param.scanAngleLeft=-9;
+param.scanAngleRight=9;
+param.scanAngleSteps=3;
+param.errorAWeight=3;
 param.errorBWeight=4;
-param.coverageFaktorAWeight=1;
+param.coverageFaktorAWeight=2;
 param.coverageFaktorBWeight=3;
 param.cleftFaktor=2.0;
 param.scanstepx=1;
@@ -35,11 +35,11 @@ param.scanstepy=1;
 
 
 ############Parameter die einen Scan frühzeitig abbrechen können, bzw mögliche TReffer frühzeitig ausfiltern
-param.LetterSearchLimitPerfectPercent=30;
+param.LetterSearchLimitPerfectPercent=15;
 param.quickScanReliabilityLimit=3.0;
-param.quickScanValityLimit=30.0;
+param.quickScanValityLimit=15.0;
 
-param.preScanFilter=55;
+param.preScanFilter=80;
 param.preScanFaktor=3;
 ##################Prepare captcha
 
@@ -53,7 +53,7 @@ param.splitPixelObjectsOverlap=5;
 param.objectColorContrast = 0.1; 
 param.objectDetectionContrast = 0.90;
 param.useObjectDetection = true;
-param.minimumObjectArea = 15;
+param.minimumObjectArea = 180;
 param.splitGapsOverlap=6;
 ############Parameter die die Bildbearbeitung beeinflussen
 param.relativecontrast=0.90;
@@ -63,13 +63,13 @@ param.backgroundsamplecleancontrast=0.15;
 
 #captcha.prepare.normalize();
 
-param.useSpecialGetLetters=MegaUpload.getLetters;
-param.useLetterFilter=MegaUpload.letterFilter;
-param.comparatorExtension=MegaUpload.evaluate;
+#param.useSpecialGetLetters=MegaUpload.getLetters;
+#param.useLetterFilter=MegaUpload.letterFilter;
+#param.comparatorExtension=MegaUpload.evaluate;
 
 
 ##################Prepare letter
 
-#letter.prepare.removeSmallObjects(0.3,0.5,30);
-#letter.prepare.toBlackAndWhite();
-#letter.prepare.clean();
+letter.prepare.removeSmallObjects(0.3,0.5,30);
+letter.prepare.toBlackAndWhite();
+letter.prepare.clean();
