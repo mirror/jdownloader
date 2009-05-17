@@ -190,15 +190,14 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             co = getDownloadLinkCell(table, value, isSelected, hasFocus, row, column);
             if (!((DownloadLink) value).isEnabled()) {
                 co.setEnabled(false);
-                if(co instanceof JDProgressBar){
-                    ((JDProgressBar)co).setString("");
+                if (co instanceof JDProgressBar) {
+                    ((JDProgressBar) co).setString("");
                 }
-             
 
                 ((JComponent) co).setToolTipText(lblTTDisabled);
 
             } else {
-               
+
                 co.setEnabled(true);
             }
             return co;
@@ -288,6 +287,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 progress.setMaximum(dLink.getPluginProgress().getTotal());
                 progress.setValue(dLink.getPluginProgress().getCurrent());
                 progress.setToolTipText(null);
+                progress.setForeground(null);
                 return progress;
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
@@ -351,7 +351,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 progress.setMaximum(10000);
                 progress.setToolTipText(null);
                 progress.setValue(dLink.getPercent());
-             
+                progress.setForeground(null);
                 return progress;
             }
             progress.setMaximum(10000);
@@ -371,6 +371,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 progress.setString("");
             }
             progress.setToolTipText(null);
+            progress.setForeground(null);
             return progress;
 
         case DownloadTreeTableModel.COL_STATUS:
@@ -418,48 +419,48 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
                 counter++;
             }
-            if (counter<=StatusLabel.ICONCOUNT&&dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
+            if (counter <= StatusLabel.ICONCOUNT && dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
                 statuspanel.rights[counter].setIcon(imgExtract);
                 if (counter > 0) sb.append(" | ");
                 sb.append(strTTExtract);
 
                 counter++;
             }
-if(counter<=StatusLabel.ICONCOUNT){
-            switch (dLink.getPriority()) {
-            case 0:
-            default:
-                break;
-            case -1:
-                statuspanel.rights[counter].setIcon(imgPriorityS);
-                if (counter > 0) sb.append(" | ");
-                sb.append(strTTPriorityS);
+            if (counter <= StatusLabel.ICONCOUNT) {
+                switch (dLink.getPriority()) {
+                case 0:
+                default:
+                    break;
+                case -1:
+                    statuspanel.rights[counter].setIcon(imgPriorityS);
+                    if (counter > 0) sb.append(" | ");
+                    sb.append(strTTPriorityS);
 
-                counter++;
-                break;
-            case 1:
-                statuspanel.rights[counter].setIcon(imgPriority1);
-                if (counter > 0) sb.append(" | ");
-                sb.append(strTTPriority1);
+                    counter++;
+                    break;
+                case 1:
+                    statuspanel.rights[counter].setIcon(imgPriority1);
+                    if (counter > 0) sb.append(" | ");
+                    sb.append(strTTPriority1);
 
-                counter++;
-                break;
-            case 2:
-                statuspanel.rights[counter].setIcon(imgPriority2);
-                if (counter > 0) sb.append(" | ");
-                sb.append(strTTPriority2);
+                    counter++;
+                    break;
+                case 2:
+                    statuspanel.rights[counter].setIcon(imgPriority2);
+                    if (counter > 0) sb.append(" | ");
+                    sb.append(strTTPriority2);
 
-                counter++;
-                break;
-            case 3:
-                statuspanel.rights[counter].setIcon(imgPriority3);
-                if (counter > 0) sb.append(" | ");
-                sb.append(strTTPriority3);
+                    counter++;
+                    break;
+                case 3:
+                    statuspanel.rights[counter].setIcon(imgPriority3);
+                    if (counter > 0) sb.append(" | ");
+                    sb.append(strTTPriority3);
 
-                counter++;
-                break;
+                    counter++;
+                    break;
+                }
             }
-}
             statuspanel.setToolTipText(sb.toString());
             statuspanel.clearIcons(counter);
             statuspanel.setBorder(null);
@@ -467,26 +468,6 @@ if(counter<=StatusLabel.ICONCOUNT){
             // statuspanel.right.setIcon(imgPriority3);
             // statuspanel.righter.setIcon(this.imgFinished);
             return statuspanel;
-
-            // if(isSelected||hasFocus){
-            // co = co;
-            // Component cc = co;
-            // boolean o = co.isOpaque();
-            // o=o;
-            // }
-            //
-            // boolean o = l.isOpaque();
-            // l.setBackground(co.getBackground());
-            // l.setText("III");
-            // return l;
-
-            // }
-
-            // return co;
-            // statuspanel.left.setText("JJ");
-            // statuspanel.right.setIcon(imgPriority3);
-            // return statuspanel;
-
         }
         co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         ((JRendererLabel) co).setBorder(null);
@@ -547,6 +528,7 @@ if(counter<=StatusLabel.ICONCOUNT){
                 progress.setString(sb.toString());
             }
             progress.setToolTipText(null);
+            progress.setForeground(null);
             return progress;
 
         case DownloadTreeTableModel.COL_STATUS:
