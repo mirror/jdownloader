@@ -54,7 +54,6 @@ import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
 import jd.parser.Regex;
 import jd.utils.JDLocale;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -276,11 +275,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         mnuColorizeOld.setSelected(colorizeOld);
         mnuColorizeDone.setSelected(colorizeDone);
 
-        int n = 12;
-        mnuColorizeMissing.setIcon(JDTheme.II((mnuColorizeMissing.isSelected()) ? "gui.images.selected" : "gui.images.unselected", n, n));
-        mnuColorizeOld.setIcon(JDTheme.II((mnuColorizeOld.isSelected()) ? "gui.images.selected" : "gui.images.unselected", n, n));
-        mnuColorizeDone.setIcon(JDTheme.II((mnuColorizeDone.isSelected()) ? "gui.images.selected" : "gui.images.unselected", n, n));
-
         mnuColorizeMissing.addActionListener(this);
         mnuPickMissingColor.addActionListener(this);
         mnuColorizeOld.addActionListener(this);
@@ -469,7 +463,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             colorizeMissing = mnuColorizeMissing.isSelected();
             subConfig.setProperty(PROPERTY_COLORIZE_MISSING, colorizeMissing);
             subConfig.save();
-            mnuColorizeMissing.setIcon(JDTheme.II((mnuColorizeMissing.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
             if (colorizeMissing) {
                 table.addHighlighter(missingHighlighter);
             } else {
@@ -482,7 +475,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             colorizeOld = mnuColorizeOld.isSelected();
             subConfig.setProperty(PROPERTY_COLORIZE_OLD, colorizeOld);
             subConfig.save();
-            mnuColorizeOld.setIcon(JDTheme.II((mnuColorizeOld.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
             if (colorizeOld) {
                 table.addHighlighter(oldHighlighter);
             } else {
@@ -495,7 +487,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             colorizeDone = mnuColorizeDone.isSelected();
             subConfig.setProperty(PROPERTY_COLORIZE_DONE, colorizeDone);
             subConfig.save();
-            mnuColorizeDone.setIcon(JDTheme.II((mnuColorizeDone.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
             if (colorizeDone) {
                 table.addHighlighter(doneHighlighter);
             } else {
