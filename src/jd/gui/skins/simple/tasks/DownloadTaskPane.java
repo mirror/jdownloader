@@ -66,15 +66,17 @@ public class DownloadTaskPane extends TaskPanel implements ActionListener {
 
                 totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
                 final long tot2 = tot;
+                final long loaded2 = loaded;
                 new GuiRunnable<Object>() {
                     // @Override
                     public Object runSave() {
                         progress.setMaximum(tot2);
+                        progress.setValue(loaded2);
+                        progress.setToolTipText(Math.round((loaded2 * 10000.0) / tot2) / 100.0 + "%");
                         return null;
                     }
                 }.waitForEDT();
-                progress.setValue(loaded);
-                progress.setToolTipText(Math.round((loaded * 10000.0) / tot) / 100.0 + "%");
+                
                 long speedm = JDUtilities.getController().getSpeedMeter();
                 if (speedm > 1024) {
                     speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(speedm) + "/s"));
