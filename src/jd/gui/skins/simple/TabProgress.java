@@ -126,7 +126,7 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
                 }
             } finally {
                 sortControllers();
-                new GuiRunnable() {
+                new GuiRunnable<Object>() {
 
                     @Override
                     public Object runSave() {

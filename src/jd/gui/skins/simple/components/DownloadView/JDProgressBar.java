@@ -16,9 +16,6 @@
 
 package jd.gui.skins.simple.components.DownloadView;
 
-import java.awt.EventQueue;
-import java.awt.Graphics;
-
 import javax.swing.JProgressBar;
 
 /**

@@ -48,7 +48,6 @@ import javax.swing.JRootPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JViewport;
-import javax.swing.PopupFactory;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
@@ -176,7 +175,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private SingletonPanel logPanel;
 
-    private SingletonPanel addonPanel;
+//    private SingletonPanel addonPanel;
 
     private ConfigTaskPane cfgTskPane;
 
@@ -731,9 +730,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         center.add(contentPanel, "");
         // sp.setBorder(null);
-        /*
-
- */
         center.add(JDCollapser.getInstance(), "hidemode 3,gaptop 15,growx,pushx,growy,pushy");
 
         panel.add(center);
@@ -750,8 +746,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     private void addAddonTask() {
         addonTaskPanel = new AddonTaskPane(JDLocale.L("gui.taskpanes.addons", "Addons"), JDTheme.II("gui.images.taskpanes.addons", 24, 24));
 
-        addonPanel = new SingletonPanel(AddonPane.class);
-        addonTaskPanel.addPanel(addonPanel);
+//        addonPanel = new SingletonPanel(AddonPane.class);
+//        addonTaskPanel.addPanel(addonPanel);
         taskPane.add(addonTaskPanel);
     }
 

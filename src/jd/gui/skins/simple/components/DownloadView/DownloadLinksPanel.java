@@ -364,8 +364,8 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                         public File runSave() {
                             JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
                             fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
-                            fc.showSaveDialog(SimpleGUI.CURRENTGUI);
-                            return fc.getSelectedFile();
+                            if (fc.showSaveDialog(SimpleGUI.CURRENTGUI) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
+                            return null;
                         }
                     };
                     File ret = temp.getReturnValue();

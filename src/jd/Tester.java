@@ -3,21 +3,14 @@ package jd;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.Rectangle;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JViewport;
-import javax.swing.PopupFactory;
-import javax.swing.Scrollable;
 import javax.swing.ViewportLayout;
-import javax.swing.plaf.UIResource;
-
-import jd.gui.skins.simple.SimpleGUI;
 
 import net.miginfocom.swing.MigLayout;
 

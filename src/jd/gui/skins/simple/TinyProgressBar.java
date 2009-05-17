@@ -5,7 +5,6 @@ import java.awt.Cursor;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JToolTip;
 import javax.swing.SwingConstants;
 
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
