@@ -23,11 +23,8 @@ import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -179,17 +176,17 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         /* 0=LiveHeader, 1=Extern, 2=Batch,3=CLR */
         maintabbed = new JTabbedPane();
 
-//        panel.setLayout(new MigLayout("ins 0,wrap 1,debug", "[fill,grow]", "[fill,grow]"));
+        // panel.setLayout(new MigLayout("ins 0,wrap 1,debug", "[fill,grow]",
+        // "[fill,grow]"));
 
-  
-         method = new JPanel(new MigLayout("ins 0 0 0 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
-     
+        method = new JPanel(new MigLayout("ins 0 0 0 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
+
         tabbed = new JTabbedPane();
         method.add(tabbed, "spanx,pushy,growy");
         // tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         // tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbed.setTabPlacement(SwingConstants.TOP);
-  
+
         addLiveheader();
         addExtern();
         addBatch();
@@ -231,18 +228,15 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
             }
         }.start();
 
-     
-        maintabbed.addTab(JDLocale.L("gui.config.reconnect.methodtab","Reconnect method"),JDTheme.II("gui.images.config.network_local", 16, 16), method);
-        maintabbed.addTab(JDLocale.L("gui.config.reconnect.methodtab","Advanced Settings"),JDTheme.II("gui.images.reconnect_settings", 16, 16), cep = new ConfigEntriesPanel(container));
+        maintabbed.addTab(JDLocale.L("gui.config.reconnect.methodtab", "Reconnect method"), JDTheme.II("gui.images.config.network_local", 16, 16), method);
+        maintabbed.addTab(JDLocale.L("gui.config.reconnect.settingstab", "Advanced Settings"), JDTheme.II("gui.images.reconnect_settings", 16, 16), cep = new ConfigEntriesPanel(container));
         setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
-//        panel.add();
+        // panel.add();
         add(maintabbed);
 
     }
 
     private void setupContainer() {
-        ConfigEntry ce1;
-        ConfigEntry ce2;
 
         container = new ConfigContainer(this);
 

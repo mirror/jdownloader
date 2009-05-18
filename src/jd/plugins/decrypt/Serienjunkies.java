@@ -1125,7 +1125,7 @@ public class Serienjunkies extends PluginForDecrypt {
                             }
 
                         });
-                        add(btnOK);
+                        add(btnOK, "align center");
                         pack();
                         setLocation(Screen.getCenterOfComponent(null, this));
                         setVisible(true);

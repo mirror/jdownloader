@@ -316,7 +316,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
                             }
 
                         });
-                        add(btnOK);
+                        add(btnOK, "align center");
                         pack();
                         setLocation(Screen.getCenterOfComponent(null, this));
                         setResizable(false);

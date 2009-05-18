@@ -16,9 +16,6 @@
 
 package jd.plugins.host;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -35,8 +32,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTMLEntities;
@@ -49,7 +44,6 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -449,7 +443,7 @@ public class Rapidshare extends PluginForHost {
 
             // Download
             dl = new RAFDownload(this, downloadLink, request);
-            long startTime = System.currentTimeMillis();
+//            long startTime = System.currentTimeMillis();
             URLConnectionAdapter con = dl.connect();
             if (!con.isContentDisposition() && con.getHeaderField("Cache-Control") != null) {
                 con.disconnect();
@@ -535,7 +529,7 @@ public class Rapidshare extends PluginForHost {
             Request request = null;
             String error = null;
 
-            long startTime = System.currentTimeMillis();
+//            long startTime = System.currentTimeMillis();
             br = login(account, true);
 
             br.setFollowRedirects(false);
