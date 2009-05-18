@@ -18,17 +18,13 @@ package jd.plugins.decrypt;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dialog;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -81,6 +77,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class Serienjunkies extends PluginForDecrypt {
 
@@ -1071,22 +1068,22 @@ public class Serienjunkies extends PluginForDecrypt {
             // @Override
             public Object runSave() {
 
-                new Dialog(SimpleGUI.CURRENTGUI) {
+                new JDialog(SimpleGUI.CURRENTGUI) {
 
                     private static final long serialVersionUID = -5144850223169000644L;
 
                     void init() {
-                        setLayout(new BorderLayout());
+                        setLayout(new MigLayout("wrap 1"));
                         setModal(true);
                         setTitle(JDLocale.L("plugins.SerienJunkies.CatDialog.title", "SerienJunkies ::CAT::"));
                         setAlwaysOnTop(true);
-                        JPanel panel = new JPanel(new GridBagLayout());
-                        final class meth {
+
+                        final class Meth {
                             public String name;
 
                             public int var;
 
-                            public meth(String name, int var) {
+                            public Meth(String name, int var) {
                                 this.name = name;
                                 this.var = var;
                             }
@@ -1096,58 +1093,39 @@ public class Serienjunkies extends PluginForDecrypt {
                                 return name;
                             }
                         }
-                        meth[] meths = new meth[3];
-                        meths[0] = new meth("Kategorie nicht hinzufügen", sCatNoThing);
-                        meths[1] = new meth("Alle Serien in dieser Kategorie hinzufügen", sCatGrabb);
-                        meths[2] = new meth("Den neusten Download dieser Kategorie hinzufügen", sCatNewestDownload);
+                        Meth[] meths = new Meth[3];
+                        meths[0] = new Meth("Kategorie nicht hinzufügen", sCatNoThing);
+                        meths[1] = new Meth("Alle Serien in dieser Kategorie hinzufügen", sCatGrabb);
+                        meths[2] = new Meth("Den neusten Download dieser Kategorie hinzufügen", sCatNewestDownload);
                         final JComboBox methods = new JComboBox(meths);
 
-                        addWindowListener(new WindowListener() {
-
-                            public void windowActivated(WindowEvent e) {
-                            }
-
-                            public void windowClosed(WindowEvent e) {
-                            }
+                        addWindowListener(new WindowAdapter() {
 
                             public void windowClosing(WindowEvent e) {
-                                useScat = new int[] { ((meth) methods.getSelectedItem()).var, 0 };
+                                useScat = new int[] { ((Meth) methods.getSelectedItem()).var, 0 };
                                 dispose();
                             }
 
-                            public void windowDeactivated(WindowEvent e) {
-                            }
-
-                            public void windowDeiconified(WindowEvent e) {
-                            }
-
-                            public void windowIconified(WindowEvent e) {
-                            }
-
-                            public void windowOpened(WindowEvent e) {
-                            }
                         });
 
                         final JComboBox settings = new JComboBox(mirrorManagement);
                         final JCheckBox checkScat = new JCheckBox("Einstellungen für diese Sitzung beibehalten?", true);
-                        Insets insets = new Insets(0, 0, 0, 0);
-                        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("plugins.SerienJunkies.CatDialog.action", "Wählen sie eine Aktion aus:")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-                        JDUtilities.addToGridBag(panel, methods, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-                        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("plugins.SerienJunkies.CatDialog.mirror", "Wählen sie eine Mirrorverwalung:")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-                        JDUtilities.addToGridBag(panel, settings, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-                        JDUtilities.addToGridBag(panel, checkScat, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                        add(new JLabel(JDLocale.L("plugins.SerienJunkies.CatDialog.action", "Wählen sie eine Aktion aus:")));
+                        add(methods);
+                        add(new JLabel(JDLocale.L("plugins.SerienJunkies.CatDialog.mirror", "Wählen sie eine Mirrorverwalung:")));
+                        add(settings);
+                        add(checkScat);
                         JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
                         btnOK.addActionListener(new ActionListener() {
 
                             public void actionPerformed(ActionEvent e) {
-                                useScat = new int[] { ((meth) methods.getSelectedItem()).var, checkScat.isSelected() ? saveScat : 0 };
+                                useScat = new int[] { ((Meth) methods.getSelectedItem()).var, checkScat.isSelected() ? saveScat : 0 };
                                 mirror = (String) settings.getSelectedItem();
                                 dispose();
                             }
 
                         });
-                        JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-                        add(panel, BorderLayout.CENTER);
+                        add(btnOK);
                         pack();
                         setLocation(Screen.getCenterOfComponent(null, this));
                         setVisible(true);
@@ -1361,10 +1339,7 @@ class SerienjunkiesSJTable extends JDialog {
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout());
         JButton del = new JButton(JDLocale.L("gui.component.textarea.context.delete", "Löschen"));
-        addWindowListener(new WindowListener() {
-
-            public void windowActivated(WindowEvent e) {
-            }
+        addWindowListener(new WindowAdapter() {
 
             public void windowClosed(WindowEvent e) {
                 dispose();
@@ -1374,17 +1349,6 @@ class SerienjunkiesSJTable extends JDialog {
                 dls = new ArrayList<DownloadLink>();
             }
 
-            public void windowDeactivated(WindowEvent e) {
-            }
-
-            public void windowDeiconified(WindowEvent e) {
-            }
-
-            public void windowIconified(WindowEvent e) {
-            }
-
-            public void windowOpened(WindowEvent e) {
-            }
         });
         del.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
