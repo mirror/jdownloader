@@ -60,8 +60,11 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.ColorHighlighter;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
+import org.jdesktop.swingx.decorator.Filter;
+import org.jdesktop.swingx.decorator.FilterPipeline;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
+import org.jdesktop.swingx.decorator.PatternFilter;
 import org.tmatesoft.svn.core.SVNException;
 
 public class LFEGui extends JTabbedPanel implements ActionListener, MouseListener {
@@ -70,6 +73,9 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     private final SubConfiguration subConfig;
 
+    private final String PROPERTY_SHOW_DONE = "PROPERTY_SHOW_DONE";
+    private final String PROPERTY_SHOW_MISSING = "PROPERTY_SHOW_MISSING";
+    private final String PROPERTY_SHOW_OLD = "PROPERTY_SHOW_OLD";
     private final String PROPERTY_COLORIZE_DONE = "PROPERTY_COLORIZE_DONE";
     private final String PROPERTY_COLORIZE_MISSING = "PROPERTY_COLORIZE_MISSING";
     private final String PROPERTY_COLORIZE_OLD = "PROPERTY_COLORIZE_OLD";
@@ -95,7 +101,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private JMenuItem mnuSVNSettings, mnuSVNCheckOutNow;
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuPickDoneColor, mnuPickMissingColor, mnuPickOldColor, mnuShowDupes;
-    private JCheckBoxMenuItem mnuColorizeDone, mnuColorizeMissing, mnuColorizeOld;
+    private JCheckBoxMenuItem mnuColorizeDone, mnuColorizeMissing, mnuColorizeOld, mnuShowDone, mnuShowMissing, mnuShowOld;
     private JPopupMenu mnuContextPopup;
     private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextTranslate;
 
@@ -106,14 +112,15 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private HashMap<String, Vector<String>> dupes = new HashMap<String, Vector<String>>();
     private String lngKey = null;
     private boolean changed = false;
-    private final JDFileFilter fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter2", "LanguageFile (*.lng) or Folder with Sourcefiles"), ".lng", true);
+    private final JDFileFilter fileFilter;
 
-    private boolean colorizeDone, colorizeMissing, colorizeOld;
+    private boolean colorizeDone, colorizeMissing, colorizeOld, showDone, showMissing, showOld;
     private Color colorDone, colorMissing, colorOld;
     private ColorHighlighter doneHighlighter, missingHighlighter, oldHighlighter;
 
     public LFEGui() {
         subConfig = SubConfiguration.getConfig("ADDONS_LANGFILEEDITOR");
+        fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter2", "JD Language File (*.lng) or Folder with Sourcefiles"), ".lng", true);
         showGui();
     }
 
@@ -121,6 +128,10 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         colorizeDone = subConfig.getBooleanProperty(PROPERTY_COLORIZE_DONE, false);
         colorizeMissing = subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, true);
         colorizeOld = subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false);
+
+        showDone = subConfig.getBooleanProperty(PROPERTY_SHOW_DONE, false);
+        showMissing = subConfig.getBooleanProperty(PROPERTY_SHOW_MISSING, true);
+        showOld = subConfig.getBooleanProperty(PROPERTY_SHOW_OLD, true);
 
         colorDone = (Color) subConfig.getProperty(PROPERTY_DONE_COLOR, Color.GREEN);
         colorMissing = (Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.RED);
@@ -132,6 +143,8 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         tableModel = new MyTableModel();
         table = new JXTable(tableModel);
+        FilterPipeline pipeline = new FilterPipeline(new Filter[] { new MyPatternFilter() });
+        table.setFilters(pipeline);
         table.getTableHeader().setReorderingAllowed(false);
         table.getColumn(0).setMinWidth(200);
         table.getColumn(0).setPreferredWidth(200);
@@ -260,25 +273,34 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         mnuEntries = new JMenu(JDLocale.L("plugins.optional.langfileeditor.entries", "Entries"));
         mnuEntries.setEnabled(false);
 
+        mnuEntries.add(mnuShowMissing = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.showMissing", "Show Missing Entries")));
         mnuEntries.add(mnuColorizeMissing = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeMissing", "Colorize Missing Entries")));
         mnuEntries.add(mnuPickMissingColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickMissingColor", "Pick Color for Missing Entries")));
         mnuEntries.addSeparator();
+        mnuEntries.add(mnuShowOld = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.showOld", "Show Old Entries")));
         mnuEntries.add(mnuColorizeOld = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeOld", "Colorize Old Entries")));
         mnuEntries.add(mnuPickOldColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickOldColor", "Pick Color for Old Entries")));
         mnuEntries.addSeparator();
+        mnuEntries.add(mnuShowDone = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.showDone", "Show Done Entries")));
         mnuEntries.add(mnuColorizeDone = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeDone", "Colorize Done Entries")));
         mnuEntries.add(mnuPickDoneColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickDoneColor", "Pick Color for Done Entries")));
         mnuEntries.addSeparator();
         mnuEntries.add(mnuShowDupes = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.showDupes", "Show Dupes")));
 
+        mnuShowMissing.setSelected(showMissing);
         mnuColorizeMissing.setSelected(colorizeMissing);
+        mnuShowOld.setSelected(showOld);
         mnuColorizeOld.setSelected(colorizeOld);
+        mnuShowDone.setSelected(showDone);
         mnuColorizeDone.setSelected(colorizeDone);
 
+        mnuShowMissing.addActionListener(this);
         mnuColorizeMissing.addActionListener(this);
         mnuPickMissingColor.addActionListener(this);
+        mnuShowOld.addActionListener(this);
         mnuColorizeOld.addActionListener(this);
         mnuPickOldColor.addActionListener(this);
+        mnuShowDone.addActionListener(this);
         mnuColorizeDone.addActionListener(this);
         mnuPickDoneColor.addActionListener(this);
         mnuShowDupes.addActionListener(this);
@@ -457,6 +479,27 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             for (int row : getSelectedRows()) {
                 tableModel.setValueAt("", row, 2);
             }
+
+        } else if (e.getSource() == mnuShowMissing) {
+
+            showMissing = mnuShowMissing.isSelected();
+            subConfig.setProperty(PROPERTY_SHOW_MISSING, showMissing);
+            subConfig.save();
+            tableModel.fireTableDataChanged();
+
+        } else if (e.getSource() == mnuShowOld) {
+
+            showOld = mnuShowOld.isSelected();
+            subConfig.setProperty(PROPERTY_SHOW_OLD, showOld);
+            subConfig.save();
+            tableModel.fireTableDataChanged();
+
+        } else if (e.getSource() == mnuShowDone) {
+
+            showDone = mnuShowDone.isSelected();
+            subConfig.setProperty(PROPERTY_SHOW_DONE, showDone);
+            subConfig.save();
+            tableModel.fireTableDataChanged();
 
         } else if (e.getSource() == mnuColorizeMissing) {
 
@@ -661,20 +704,10 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         int[] ret = new int[rows.length];
 
         for (int i = 0; i < rows.length; ++i) {
-            ret[i] = getOriginalIndex(rows[i]);
+            ret[i] = table.getRowSorter().convertRowIndexToModel(rows[i]);
         }
 
         return ret;
-    }
-
-    private int getOriginalIndex(int row) {
-        String key = table.getStringAt(row, 0);
-
-        for (int i = 0; i < tableModel.getRowCount(); ++i) {
-            if (tableModel.getValueAt(i, 0).equalsIgnoreCase(key)) return i;
-        }
-
-        return -1;
     }
 
     private boolean isSupportedLanguageKey(String lngKey) {
@@ -860,7 +893,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+        if (e.getButton() == MouseEvent.BUTTON3) {
             int row = table.rowAtPoint(e.getPoint());
             if (!table.isRowSelected(row)) {
                 table.getSelectionModel().setSelectionInterval(row, row);
@@ -951,6 +984,19 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
             return (table.getValueAt(arg1.row, 1).equals(""));
         }
+    }
+
+    private class MyPatternFilter extends PatternFilter {
+
+        @Override
+        public boolean test(int row) {
+            boolean result = true;
+            if (!subConfig.getBooleanProperty(PROPERTY_SHOW_DONE, false)) result = result && !(!getInputString(row, 1).equals("") && !getInputString(row, 2).equals(""));
+            if (!subConfig.getBooleanProperty(PROPERTY_SHOW_MISSING, true)) result = result && !getInputString(row, 2).equals("");
+            if (!subConfig.getBooleanProperty(PROPERTY_SHOW_OLD, true)) result = result && !getInputString(row, 1).equals("");
+            return result;
+        }
+
     }
 
     private class MyTableModel extends AbstractTableModel {

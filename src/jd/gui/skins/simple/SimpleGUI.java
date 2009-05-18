@@ -175,7 +175,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private SingletonPanel logPanel;
 
-//    private SingletonPanel addonPanel;
+    // private SingletonPanel addonPanel;
 
     private ConfigTaskPane cfgTskPane;
 
@@ -312,7 +312,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 }
             }
         }.start();
-      
+
     }
 
     /**
@@ -505,7 +505,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
         // .PARAM_DISABLE_RECONNECT, false);
         // if (checked) {
-        //displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
+        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
         // "Reconnect deaktiviert!"),
         // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
         // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
@@ -746,8 +746,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     private void addAddonTask() {
         addonTaskPanel = new AddonTaskPane(JDLocale.L("gui.taskpanes.addons", "Addons"), JDTheme.II("gui.images.taskpanes.addons", 24, 24));
 
-//        addonPanel = new SingletonPanel(AddonPane.class);
-//        addonTaskPanel.addPanel(addonPanel);
+        // addonPanel = new SingletonPanel(AddonPane.class);
+        // addonTaskPanel.addPanel(addonPanel);
         taskPane.add(addonTaskPanel);
     }
 
@@ -1076,7 +1076,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // Thread.sleep(showtime);
         // } catch (InterruptedException e) {
         //
-        //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
+        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
         // ,"Exception occured",e);
         // }
         // displayMiniWarning(null, null, 0);
@@ -1505,7 +1505,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         if (b) {
             if (this.sep != null) this.sep.setMinimized(b);
             taskPaneView.setVisible(!b);
-            this.contentPanel.display(linkListPane);
+            // this.contentPanel.display(linkListPane);
 
         } else {
             if (this.sep != null) this.sep.setMinimized(b);
