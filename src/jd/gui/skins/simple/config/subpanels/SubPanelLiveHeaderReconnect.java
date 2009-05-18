@@ -301,11 +301,11 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
     //@Override
     public void initPanel() {
 
-        this.setLayout(new MigLayout("ins 0 30 0 0, wrap 2", "[grow 10,fill][grow,fill]", "[]5[]5[]"));
+        this.setLayout(new MigLayout("ins 0 20 0 20, wrap 2", "[grow 20,fill][grow,fill]", "[]5[]5[]"));
         btnSelectRouter = new JButton(JDLocale.L("gui.config.liveHeader.selectRouter", "Routerauswahl"));
         btnSelectRouter.addActionListener(this);
         add(btnSelectRouter, "gaptop 10");
-        add(panel, "spany 3");
+        add(panel, "spany 3,gapbottom 20");
 
         btnFindIP = new JButton(JDLocale.L("gui.config.liveHeader.btnFindIP", "Router IP ermitteln"));
         btnFindIP.addActionListener(this);
@@ -331,8 +331,9 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
         ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDLocale.L("gui.config.httpliveheader.routerIP", "Router's ip")));
         addGUIConfigEntry(ip);
 
-        addGUIConfigEntry(script = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.httpliveheader.script", "Reconnect Script"))), this);
-
+        JScrollPane sp;
+        add(sp=new JScrollPane((script=new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.httpliveheader.script", "Reconnect Script")))).getInput()[0]), "gaptop 10,spanx,gapright 20,pushy, growy");
+//       sp.setBorder(null);
         // routerScript = new GUIConfigEntry();
         // this.entries.add(routerScript);
 

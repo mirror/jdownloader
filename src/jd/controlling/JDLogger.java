@@ -58,4 +58,9 @@ public class JDLogger {
 
     }
 
+    public static void quickLog() {
+        System.out.println("Footstep: " + new Exception().getStackTrace()[1]);
+
+    }
+
 }

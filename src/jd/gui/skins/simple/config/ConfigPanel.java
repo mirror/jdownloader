@@ -42,7 +42,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
     protected Vector<GUIConfigEntry> entries = new Vector<GUIConfigEntry>();
 
     protected Logger logger = jd.controlling.JDLogger.getLogger();
-
+    private boolean tabbed=false;
     protected JPanel panel;
 
     private ConfigGroup currentGroup;
@@ -61,7 +61,10 @@ public abstract class ConfigPanel extends JTabbedPanel {
     public boolean needsViewport() {
         return viewport;
     }
-
+    public void setTabbed(boolean b) {
+        tabbed=b;
+         
+     }
     public void addGUIConfigEntry(GUIConfigEntry entry, JPanel panel) {
 
         // JDUtilities.addToGridBag(panel, entry, GridBagConstraints.RELATIVE,
@@ -75,7 +78,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
             }
             if (entry.getDecoration() != null) {
                 if (entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) {
-                    panel.add(entry.getDecoration(), "spany " + entry.getInput().length + ",spanx");
+                    panel.add(entry.getDecoration(), "spany " + entry.getInput().length + ",spanx, gapright 15");
 
                 } else {
                     panel.add(entry.getDecoration(), "spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
@@ -85,7 +88,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
             for (JComponent c : entry.getInput()) {
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_TEXTAREA:
-                   panel.add(c, "spanx,gapright 20");
+                   panel.add(new JScrollPane(c), "spanx,gapright 20,growy,pushy");
 //                    panel.add(new JScrollPane(c), "spanx,gapright 20,growy,pushy");
 //                    viewport = false;
                     break;

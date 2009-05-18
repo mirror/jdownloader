@@ -45,7 +45,6 @@ import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
-import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.gui.skins.simple.config.subpanels.SubPanelCLRReconnect;
 import jd.gui.skins.simple.config.subpanels.SubPanelLiveHeaderReconnect;
 import jd.nutils.Formatter;
@@ -77,6 +76,14 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
     private JLabel timeLabel;
 
     private JLabel time;
+
+    private JTabbedPane maintabbed;
+
+    private ConfigContainer container;
+
+    private ConfigEntriesPanel cep;
+
+    private JPanel method;
 
     public ConfigPanelReconnect(Configuration configuration) {
         super();
@@ -168,38 +175,30 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     // @Override
     public void initPanel() {
+        setupContainer();
         /* 0=LiveHeader, 1=Extern, 2=Batch,3=CLR */
+        maintabbed = new JTabbedPane();
 
-        // types = new String[] { , , };
-        panel.setLayout(new MigLayout("ins 0 10 10 10,wrap 2", "[fill,grow 10]10[fill,grow]"));
-        ConfigGroup group = new ConfigGroup(JDLocale.L("gui.config.reconnect.shared", "General Reconnect Settings"), JDTheme.II("gui.images.reconnect_settings", 32, 32));
-        this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_IPCHECKWAITTIME, JDLocale.L("reconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), 0, 600).setDefaultValue(5).setGroup(group)));
-        this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDLocale.L("reconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5).setGroup(group)));
-        this.addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDLocale.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20).setGroup(group)));
+//        panel.setLayout(new MigLayout("ins 0,wrap 1,debug", "[fill,grow]", "[fill,grow]"));
 
-        panel.add(Factory.createHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.methods", "Reconnect Methods"), JDTheme.II("gui.images.reconnect_selection", 32, 32))), "spanx");
+  
+         method = new JPanel(new MigLayout("ins 0 0 0 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
+     
         tabbed = new JTabbedPane();
-        panel.add(tabbed, "spanx,pushy,growy");
+        method.add(tabbed, "spanx,pushy,growy");
         // tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         // tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbed.setTabPlacement(SwingConstants.TOP);
-        tabbed.addChangeListener(new ChangeListener() {
-
-            public void stateChanged(ChangeEvent e) {
-
-            }
-
-        });
-
+  
         addLiveheader();
         addExtern();
         addBatch();
         addCLR();
         // tabbed.setSelectedIndex(configuration.getIntegerProperty(
         // ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER));
-        panel.add(Factory.createHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.test", "Showcase"), JDTheme.II("gui.images.config.network_local", 32, 32))), "spanx,gaptop 15");
+        method.add(Factory.createHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.test", "Showcase"), JDTheme.II("gui.images.config.network_local", 32, 32))), "spanx,gaptop 15,gapleft 20,gapright 15");
         JPanel p = new JPanel(new MigLayout(" ins 0,wrap 7", "[]5[fill]5[align right]20[align right]20[align right]20[align right]20[align right]", "[][]"));
-        panel.add(p, "spanx,gapright 20");
+        method.add(p, "spanx,gapright 20,gapleft 54");
         btn = new JButton(JDLocale.L("gui.config.reconnect.showcase.reconnect", "Change IP"));
         btn.addActionListener(this);
         p.add(btn, "spany, aligny top");
@@ -232,7 +231,26 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
             }
         }.start();
 
-        add(new JScrollPane(panel));
+     
+        maintabbed.addTab(JDLocale.L("gui.config.reconnect.methodtab","Reconnect method"),JDTheme.II("gui.images.config.network_local", 16, 16), method);
+        maintabbed.addTab(JDLocale.L("gui.config.reconnect.methodtab","Advanced Settings"),JDTheme.II("gui.images.reconnect_settings", 16, 16), cep = new ConfigEntriesPanel(container));
+        setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
+//        panel.add();
+        add(maintabbed);
+
+    }
+
+    private void setupContainer() {
+        ConfigEntry ce1;
+        ConfigEntry ce2;
+
+        container = new ConfigContainer(this);
+
+        ConfigGroup group = new ConfigGroup(JDLocale.L("gui.config.reconnect.shared", "General Reconnect Settings"), JDTheme.II("gui.images.reconnect_settings", 32, 32));
+        container.setGroup(group);
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_IPCHECKWAITTIME, JDLocale.L("reconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), 0, 600).setDefaultValue(5));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDLocale.L("reconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDLocale.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
 
     }
 
@@ -280,7 +298,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     // @Override
     public void save() {
-
+        cep.save();
         saveConfigEntries();
         configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, tabbed.getSelectedIndex());
         ((ConfigPanel) tabbed.getSelectedComponent()).save();

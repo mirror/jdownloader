@@ -98,6 +98,7 @@ public boolean needsViewport(){
         if (JDLookAndFeelManager.getSupportedLookAndFeels().length > 1) {
             look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDLookAndFeelManager.PARAM_PLAF, JDLookAndFeelManager.getSupportedLookAndFeels(), JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroup(lookGroup));
             ce.setDefaultValue(JDLookAndFeelManager.getPlaf());
+            ce.setPropertyType(PropertyType.NEEDS_RESTART);
         }
 
         /* FEEL */
@@ -111,7 +112,7 @@ public boolean needsViewport(){
         ConfigGroup perf = new ConfigGroup(JDLocale.L("gui.config.gui.performance", "Performance"), JDTheme.II("gui.images.performance", 32, 32));
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.ANIMATION_ENABLED, JDLocale.L("gui.config.gui.animationenabled", "Enable extended effects.")).setGroup(perf));
         ce.setDefaultValue(true);
-
+        ce.setPropertyType(PropertyType.NEEDS_RESTART);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.DECORATION_ENABLED, JDLocale.L("gui.config.gui.decoration", "Enable Windowdecoration")).setGroup(perf));
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
@@ -272,7 +273,7 @@ public boolean needsViewport(){
     public void save() {
         cep.save();
         subConfig.save();
-        updateLAF();
+        //updateLAF();
 
     }
 

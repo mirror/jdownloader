@@ -257,7 +257,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         list.add(JDImage.getImage("logo/logo_18_18"));
         list.add(JDImage.getImage("logo/logo_19_19"));
         list.add(JDImage.getImage("logo/logo_20_20"));
-
+        list.add(JDImage.getImage("logo/jd_logo_64_64"));
         if (JDUtilities.getJavaVersion() >= 1.6) {
             this.setIconImages(list);
         } else {
@@ -313,6 +313,11 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             }
         }.start();
 
+    }
+
+    public void setWaiting(boolean b) {
+        if (b == isWaiting()) return;
+        super.setWaiting(b);
     }
 
     /**

@@ -19,6 +19,7 @@ package jd.gui.skins.simple.config.subpanels;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Cursor;
+import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.ClipboardOwner;
@@ -59,6 +60,7 @@ import jd.event.ControlListener;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.JDTextField;
@@ -138,6 +140,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
         }
     }
 
+
     public void saveAccounts() {
         synchronized (Lock) {
             synchronized (list) {
@@ -154,18 +157,32 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
      * List ist immer eine ArrayList<Account> mit Daten aus der config
      * 
      * @param list
+     * @throws  
      */
     public void loadAccounts() {
-        synchronized (Lock) {
-            ArrayList<Account> accounts = new ArrayList<Account>(AccountController.getInstance().getAllAccounts(host));
-            accounts.addAll(list);
-            createPanel(accounts.size());
-            for (int i = 0; i < accs.size(); i++) {
-                if (i >= accounts.size()) break;
-                if (accounts.get(i) != null) accs.get(i).setAccount(accounts.get(i));
+        try {
+            if (!SimpleGUI.CURRENTGUI.isWaiting()) SimpleGUI.CURRENTGUI.setWaiting(true);
+
+            synchronized (Lock) {
+                ArrayList<Account> accounts = new ArrayList<Account>(AccountController.getInstance().getAllAccounts(host));
+                accounts.addAll(list);
+                createPanel(accounts.size());
+                for (int i = 0; i < accs.size(); i++) {
+                    if (i >= accounts.size()) break;
+                    if (accounts.get(i) != null) accs.get(i).setAccount(accounts.get(i));
+                }
+                createDataset();
+                JDController.getInstance().addControlListener(this);
             }
-            createDataset();
-            JDController.getInstance().addControlListener(this);
+        } finally {
+         try {
+            Thread.sleep(4000);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+            SimpleGUI.CURRENTGUI.getRealContentPane().invalidate();
+      
         }
     }
 
@@ -199,6 +216,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
         add.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
+                SimpleGUI.CURRENTGUI.setWaiting(true);
                 synchronized (list) {
                     list.add(new Account("", new String("")));
                 }
@@ -260,8 +278,10 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             txtPassword.setText(account.getPass());
             txtStatus.setText(account.getStatus());
             setEnabled(sel);
+
         }
 
+     
         public synchronized Account getAccount() {
             String pass = new String(txtPassword.getPassword());
             if (account == null) return null;
@@ -586,7 +606,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
     public void controlEvent(ControlEvent event) {
         if (!this.isDisplayable()) {
-            JDController.getInstance().removeControlListener(this);            
+            JDController.getInstance().removeControlListener(this);
         }
         if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED && event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
             premiumActivated = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);

@@ -163,7 +163,8 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
     // @Override
     public void initPanel() {
-        panel.setLayout(new MigLayout("ins 10,wrap 1", "[fill,grow]", "[fill,grow][]"));
+        setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
+        panel.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow][]"));
 
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);

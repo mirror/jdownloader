@@ -30,6 +30,7 @@ import javax.swing.event.ChangeListener;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
+import jd.nutils.JDImage;
 import net.miginfocom.swing.MigLayout;
 
 public class ConfigEntriesPanel extends ConfigPanel {
@@ -46,6 +47,8 @@ public class ConfigEntriesPanel extends ConfigPanel {
 
     private boolean inited = false;
 
+
+
     public ConfigEntriesPanel(ConfigContainer container) {
         this(container, false);
     }
@@ -53,8 +56,6 @@ public class ConfigEntriesPanel extends ConfigPanel {
     public boolean needsViewport() {
         return false;
     }
-
-
 
     public ConfigEntriesPanel(ConfigContainer container, boolean idle) {
         super();
@@ -93,14 +94,20 @@ public class ConfigEntriesPanel extends ConfigPanel {
 
     private void addTabbedPanel(String title, ConfigEntriesPanel configPanelPlugin) {
         subPanels.add(configPanelPlugin);
-   
-            JScrollPane sp;
-            tabbedPane.add(title, sp=new JScrollPane(configPanelPlugin));
-           sp.setBorder(null);
-       
-        
+        configPanelPlugin.setTabbed(true);
+        JScrollPane sp;
+        if (configPanelPlugin.container != null && configPanelPlugin.container.getEntries().size() > 0 && configPanelPlugin.container.getEntries().get(0).getGroup() != null) {
+            tabbedPane.addTab(title, JDImage.getScaledImageIcon(configPanelPlugin.container.getEntries().get(0).getGroup().getIcon(),16,16), sp = new JScrollPane(configPanelPlugin));
+        } else {
+            tabbedPane.addTab(title, sp = new JScrollPane(configPanelPlugin));
+
+        }
+
+        sp.setBorder(null);
 
     }
+
+ 
 
     public Vector<ConfigEntriesPanel> getSubPanels() {
         return subPanels;

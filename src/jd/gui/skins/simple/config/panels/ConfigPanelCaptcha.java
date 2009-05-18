@@ -20,6 +20,7 @@ import java.awt.Dimension;
 import java.util.Vector;
 
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
@@ -121,6 +122,8 @@ public class ConfigPanelCaptcha extends ConfigPanel {
 
     private InternalTableModel tableModel;
 
+    private JTabbedPane tabbed;
+
     public ConfigPanelCaptcha(Configuration configuration) {
         super();
         this.configuration = configuration;
@@ -128,20 +131,29 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         initPanel();
         load();
     }
-    public boolean needsViewport(){
+
+    public boolean needsViewport() {
         return false;
     }
+
     public void initPanel() {
         setupContainer();
-        panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]", "[][][fill,grow]"));
-        panel.add(cep = new ConfigEntriesPanel(container), "spanx");
+
+        tabbed = new JTabbedPane();
+
+        panel.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
+        panel.add(tabbed);
 
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setEditingRow(0);
-
+        JScrollPane sp;
+        tabbed.addTab(JDLocale.L("gui.config.panels.captcha.methodstab","OCR methods"), sp = new JScrollPane(table));
+        tabbed.setIconAt(0,  JDTheme.II("gui.images.captcha.methods", 16, 16));
+        tabbed.addTab(JDLocale.L("gui.config.panels.captcha.advancedtab","Advanced settings"), cep = new ConfigEntriesPanel(container));
+        tabbed.setIconAt(1,  JDTheme.II("gui.images.config.ocr", 16, 16));
         TableColumn column = null;
         for (int c = 0; c < tableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
@@ -161,10 +173,11 @@ public class ConfigPanelCaptcha extends ConfigPanel {
                 break;
             }
         }
-        JScrollPane sp = new JScrollPane(table);
-        panel.add(Factory.createHeader(new ConfigGroup(JDLocale.L("gui.config.captcha.list", "Captcha Methods"), JDTheme.II("gui.images.captcha.methods", 32, 32))), "spanx,gaptop 15,gapleft 20, gapright 20");
-
-        panel.add(sp, "spanx,gapleft 55, gapright 40");
+       
+//        panel.add(Factory.createHeader(new ConfigGroup(JDLocale.L("gui.config.captcha.list", "Captcha Methods"), JDTheme.II("gui.images.captcha.methods", 32, 32))), "spanx,gaptop 15,gapleft 20, gapright 20");
+//
+//        panel.add(sp, "spanx,gapleft 55, gapright 40");
+        setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
         add(panel);
     }
 

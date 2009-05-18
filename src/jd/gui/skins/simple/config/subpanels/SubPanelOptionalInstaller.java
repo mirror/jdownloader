@@ -140,8 +140,8 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
 
     //@Override
     public void initPanel() {
-
-        panel.setLayout(new MigLayout("ins 10,wrap 2", "[fill,grow 10]10[fill,grow]", "[fill,grow,null:150000:null][]"));
+        setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
+        panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]", "[fill,grow][]"));
         // packageData = new PackageManager().getPackageData();
         Collections.sort(packageData, new Comparator<PackageData>() {
             public int compare(PackageData a, PackageData b) {

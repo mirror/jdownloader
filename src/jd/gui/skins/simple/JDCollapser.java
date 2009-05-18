@@ -1,5 +1,6 @@
 package jd.gui.skins.simple;
 
+import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -53,7 +54,10 @@ public class JDCollapser extends JPanel {
         this.setVisible(true);
 
     }
-
+    public void paint(Graphics g) {
+        super.paint(g);
+        SimpleGUI.CURRENTGUI.setWaiting(false);
+    }
     public void setCollapsed(boolean b) {
         this.setVisible(!b);
 

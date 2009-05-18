@@ -455,39 +455,39 @@ public class Rapidshare extends PluginForHost {
                 con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
-            downloadLink.setProperty("REQUEST_TIME", (System.currentTimeMillis() - startTime));
+//            downloadLink.setProperty("REQUEST_TIME", (System.currentTimeMillis() - startTime));
             dl.startDownload();
 
-            downloadLink.setProperty("DOWNLOAD_TIME", (System.currentTimeMillis() - startTime));
-            int dif = (int) ((System.currentTimeMillis() - startTime) / 1000);
-            if (dif > 0) downloadLink.setProperty("DOWNLOAD_SPEED", (downloadLink.getDownloadSize() / dif) / 1024);
-            if (downloadLink.getStringProperty("USE_SERVER") != null) {
-                new File(downloadLink.getFileOutput()).delete();
-                downloadLink.getLinkStatus().setStatusText(" | SRV: " + downloadLink.getStringProperty("USE_SERVER") + " Speed: " + downloadLink.getProperty("DOWNLOAD_SPEED") + " kb/s");
-
-                ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-                String msg = "";
-                for (DownloadLink dLink : downloadLink.getFilePackage().getDownloadLinks()) {
-                    if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        ret.add(dLink);
-
-                        msg += "Server: " + dLink.getStringProperty("USE_SERVER") + " : Speed: " + dLink.getProperty("DOWNLOAD_SPEED") + " kb/s\r\n";
-                    } else if (dLink.getLinkStatus().isFailed()) {
-                        ret.add(dLink);
-
-                        msg += "Server: " + dLink.getStringProperty("USE_SERVER") + " not available\r\n";
-                    } else {
-                        return;
-                    }
-                }
-                final String passToThread = msg;
-                new Thread() {
-                    // @Override
-                    public void run() {
-                        TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI, "Speedtest result", "Your speedtest results", passToThread);
-                    }
-                }.start();
-            }
+//            downloadLink.setProperty("DOWNLOAD_TIME", (System.currentTimeMillis() - startTime));
+//            int dif = (int) ((System.currentTimeMillis() - startTime) / 1000);
+//            if (dif > 0) downloadLink.setProperty("DOWNLOAD_SPEED", (downloadLink.getDownloadSize() / dif) / 1024);
+//            if (downloadLink.getStringProperty("USE_SERVER") != null) {
+//                new File(downloadLink.getFileOutput()).delete();
+//                downloadLink.getLinkStatus().setStatusText(" | SRV: " + downloadLink.getStringProperty("USE_SERVER") + " Speed: " + downloadLink.getProperty("DOWNLOAD_SPEED") + " kb/s");
+//
+//                ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+//                String msg = "";
+//                for (DownloadLink dLink : downloadLink.getFilePackage().getDownloadLinks()) {
+//                    if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+//                        ret.add(dLink);
+//
+//                        msg += "Server: " + dLink.getStringProperty("USE_SERVER") + " : Speed: " + dLink.getProperty("DOWNLOAD_SPEED") + " kb/s\r\n";
+//                    } else if (dLink.getLinkStatus().isFailed()) {
+//                        ret.add(dLink);
+//
+//                        msg += "Server: " + dLink.getStringProperty("USE_SERVER") + " not available\r\n";
+//                    } else {
+//                        return;
+//                    }
+//                }
+//                final String passToThread = msg;
+//                new Thread() {
+//                    // @Override
+//                    public void run() {
+//                        TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI, "Speedtest result", "Your speedtest results", passToThread);
+//                    }
+//                }.start();
+//            }
         } finally {
             if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 selectedServer = null;
@@ -683,38 +683,38 @@ public class Rapidshare extends PluginForHost {
 
             }
 
-            downloadLink.setProperty("REQUEST_TIME", (System.currentTimeMillis() - startTime));
+//            downloadLink.setProperty("REQUEST_TIME", (System.currentTimeMillis() - startTime));
             dl.startDownload();
-            downloadLink.setProperty("DOWNLOAD_TIME", (System.currentTimeMillis() - startTime));
-            int dif = (int) ((System.currentTimeMillis() - startTime) / 1000);
-            if (dif > 0) downloadLink.setProperty("DOWNLOAD_SPEED", (downloadLink.getDownloadSize() / dif) / 1024);
-            if (downloadLink.getStringProperty("USE_SERVER") != null) {
-                new File(downloadLink.getFileOutput()).delete();
-                downloadLink.getLinkStatus().setStatusText(" | SRV: " + downloadLink.getStringProperty("USE_SERVER") + " Speed: " + downloadLink.getProperty("DOWNLOAD_SPEED") + " kb/s");
-
-                ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-                String msg = "";
-                for (DownloadLink dLink : downloadLink.getFilePackage().getDownloadLinks()) {
-                    if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        ret.add(dLink);
-
-                        msg += "Server: " + dLink.getStringProperty("USE_SERVER") + " : Speed: " + dLink.getProperty("DOWNLOAD_SPEED") + " kb/s\r\n";
-                    } else if (dLink.getLinkStatus().isFailed()) {
-                        ret.add(dLink);
-
-                        msg += "Server: " + dLink.getStringProperty("USE_SERVER") + " not available\r\n";
-                    } else {
-                        return;
-                    }
-                }
-                final String passToThread = msg;
-                new Thread() {
-                    // @Override
-                    public void run() {
-                        TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI, JDLocale.L("plugins.host.rapidshare.speedtestresult.title", "Speedtest result"), JDLocale.L("plugins.host.rapidshare.speedtestresult.message", "Your speedtest results"), passToThread);
-                    }
-                }.start();
-            }
+//            downloadLink.setProperty("DOWNLOAD_TIME", (System.currentTimeMillis() - startTime));
+//            int dif = (int) ((System.currentTimeMillis() - startTime) / 1000);
+//            if (dif > 0) downloadLink.setProperty("DOWNLOAD_SPEED", (downloadLink.getDownloadSize() / dif) / 1024);
+//            if (downloadLink.getStringProperty("USE_SERVER") != null) {
+//                new File(downloadLink.getFileOutput()).delete();
+//                downloadLink.getLinkStatus().setStatusText(" | SRV: " + downloadLink.getStringProperty("USE_SERVER") + " Speed: " + downloadLink.getProperty("DOWNLOAD_SPEED") + " kb/s");
+//
+//                ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+//                String msg = "";
+//                for (DownloadLink dLink : downloadLink.getFilePackage().getDownloadLinks()) {
+//                    if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+//                        ret.add(dLink);
+//
+//                        msg += "Server: " + dLink.getStringProperty("USE_SERVER") + " : Speed: " + dLink.getProperty("DOWNLOAD_SPEED") + " kb/s\r\n";
+//                    } else if (dLink.getLinkStatus().isFailed()) {
+//                        ret.add(dLink);
+//
+//                        msg += "Server: " + dLink.getStringProperty("USE_SERVER") + " not available\r\n";
+//                    } else {
+//                        return;
+//                    }
+//                }
+//                final String passToThread = msg;
+//                new Thread() {
+//                    // @Override
+//                    public void run() {
+//                        TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI, JDLocale.L("plugins.host.rapidshare.speedtestresult.title", "Speedtest result"), JDLocale.L("plugins.host.rapidshare.speedtestresult.message", "Your speedtest results"), passToThread);
+//                    }
+//                }.start();
+//            }
         } finally {
             if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 selectedServer = null;
@@ -779,13 +779,13 @@ public class Rapidshare extends PluginForHost {
         String server1 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
         String server2 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
         String server3 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER3, "TeliaSonera");
-        boolean serverTest = false;
-        if (downloadLink.getProperty("USE_SERVER") != null) {
-            serverTest = true;
-            server1 = server2 = server3 = downloadLink.getStringProperty("USE_SERVER");
-            logger.finer("Speedtest detected. use Server: " + server1);
-
-        }
+//        boolean serverTest = false;
+//        if (downloadLink.getProperty("USE_SERVER") != null) {
+//            serverTest = true;
+//            server1 = server2 = server3 = downloadLink.getStringProperty("USE_SERVER");
+//            logger.finer("Speedtest detected. use Server: " + server1);
+//
+//        }
 
         String serverAbb = serverMap.get(server1);
         String server2Abb = serverMap.get(server2);
@@ -820,12 +820,12 @@ public class Rapidshare extends PluginForHost {
         logger.info("Preselected Server: " + selected.substring(0, 30));
         String selectedID = new Regex(selected, "\\d*\\d+(\\D+?\\d*?)\\.").getMatch(0);
 
-        if (preselected && !serverTest) {
+        if (preselected ) {
             logger.info("RS.com Use preselected : " + selected.substring(0, 30));
             postTarget = selected;
 
             selectedServer = getServerName(selectedID);
-        } else if (!serverTest && telekom && ticketCode.indexOf("td.rapidshare.com") >= 0) {
+        } else if ( telekom && ticketCode.indexOf("td.rapidshare.com") >= 0) {
             logger.info("RS.com Use Telekom Server");
             this.selectedServer = "Telekom";
             postTarget = getURL(serverstrings, "Deutsche Telekom", postTarget);
@@ -843,10 +843,9 @@ public class Rapidshare extends PluginForHost {
             postTarget = getURL(serverstrings, getServerName(server3Abb), postTarget);
         } else if (serverstrings.length > 0) {
             logger.severe("Kein Server gefunden 1");
-            if (serverTest) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, " Server not available");
         } else {
             logger.severe("Kein Server gefunden 2");
-            if (serverTest) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, " Server not available");
+           
         }
 
         return postTarget;
@@ -937,28 +936,28 @@ public class Rapidshare extends PluginForHost {
         ce.setEnabledCondidtion(cond, "==", false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDLocale.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")).setDefaultValue(false));
         ce.setEnabledCondidtion(cond, "==", false);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                String link = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.host.rapidshare.speedtest.link", "Enter a Rapidshare.com Link"), "Please enter a Rapidshare Link");
-                if (link == null) return;
-                if (!canHandle(link)) return;
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName("RS Speedtest");
-                for (Entry<String, String> n : serverMap.entrySet()) {
-                    DownloadLink dlink = new DownloadLink((PluginForHost) getWrapper().getNewPluginInstance(), link.substring(link.lastIndexOf("/") + 1), getHost(), link, true);
-                    dlink.setProperty("USE_SERVER", n.getKey());
-                    dlink.setProperty("ALLOW_DUPE", true);
-                    dlink.setFinalFileName("Speedtest_svr_" + n.getKey() + ".test");
-                    dlink.setFilePackage(fp);
-                    dlink.getLinkStatus().setStatusText("Server: " + n.getKey());
-
-                }
-                JDUtilities.getDownloadController().addPackageAt(fp, 0);
-
-            }
-
-        }, JDLocale.L("plugins.host.rapidshare.speedtest", "SpeedTest")));
+//        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+//
+//            public void actionPerformed(ActionEvent e) {
+//                String link = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.host.rapidshare.speedtest.link", "Enter a Rapidshare.com Link"), "Please enter a Rapidshare Link");
+//                if (link == null) return;
+//                if (!canHandle(link)) return;
+//                FilePackage fp = FilePackage.getInstance();
+//                fp.setName("RS Speedtest");
+//                for (Entry<String, String> n : serverMap.entrySet()) {
+//                    DownloadLink dlink = new DownloadLink((PluginForHost) getWrapper().getNewPluginInstance(), link.substring(link.lastIndexOf("/") + 1), getHost(), link, true);
+//                    dlink.setProperty("USE_SERVER", n.getKey());
+//                    dlink.setProperty("ALLOW_DUPE", true);
+//                    dlink.setFinalFileName("Speedtest_svr_" + n.getKey() + ".test");
+//                    dlink.setFilePackage(fp);
+//                    dlink.getLinkStatus().setStatusText("Server: " + n.getKey());
+//
+//                }
+//                JDUtilities.getDownloadController().addPackageAt(fp, 0);
+//
+//            }
+//
+//        }, JDLocale.L("plugins.host.rapidshare.speedtest", "SpeedTest")));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDLocale.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));

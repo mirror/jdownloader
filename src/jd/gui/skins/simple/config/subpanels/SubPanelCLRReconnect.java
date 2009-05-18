@@ -21,6 +21,7 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -67,11 +68,14 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener 
         btnFindIP.addActionListener(this);
         buttons.add(btnFindIP, "width 160!");
 
-        panel.add(buttons, "spanx,gapleft 10");
+        panel.add(buttons, "spanx,gapleft 0,gaptop 10");
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_USER, JDLocale.L("gui.config.liveHeader.user", "Login User (->%%%user%%%)"))));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, configuration, Configuration.PARAM_HTTPSEND_PASS, JDLocale.L("gui.config.liveHeader.password", "Login Passwort (->%%%pass%%%)"))));
         addGUIConfigEntry(ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDLocale.L("gui.config.liveHeader.routerIP", "RouterIP (->%%%routerip%%%)"))));
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS_CLR, JDLocale.L("gui.config.liveHeader.script", "HTTP Script"))));
+
+
+        JScrollPane sp;
+        panel.add(sp=new JScrollPane((new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS_CLR, JDLocale.L("gui.config.liveHeader.script", "HTTP Script")))).getInput()[0]), "gaptop 10,spanx,gapright 20,pushy, growy");
 
         // routerScript = new GUIConfigEntry();
         // this.entries.add(routerScript);

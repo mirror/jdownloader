@@ -109,6 +109,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
 
             public void mouseClicked(MouseEvent e) {
                 if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+                    SimpleGUI.CURRENTGUI.setWaiting(true);
                     JPopupMenu popup = new JPopupMenu();
                     for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
                         if (!wrapper.isLoaded()) continue;
@@ -128,6 +129,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                     }
 
                     popup.show(premium, e.getPoint().x, e.getPoint().y);
+                    SimpleGUI.CURRENTGUI.setWaiting(false);
                 }
             }
 
