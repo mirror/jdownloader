@@ -458,7 +458,7 @@ public class JDInit {
         new DecryptPluginWrapper("short.redirect.am", "ShortRedirectAm", "http://short\\.redirect\\.am/\\?[a-zA-Z0-9]+");
         new DecryptPluginWrapper("h-url.in", "HurlIn", "http://[\\w\\.]*?h-url\\.in/[a-zA-Z0-9]+");
         new DecryptPluginWrapper("raubkopierer.ws", "RaubkopiererWs", "http://[\\w\\.]*?raubkopierer\\.(ws|cc)/\\w+/\\d+/[\\-a-zA-Z0-9]+\\.html");
-        
+
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
 
@@ -615,34 +615,19 @@ public class JDInit {
 
     public void loadPluginOptional() {
 
-        new OptionalPluginWrapper("jdtrayicon.JDLightTray", 1.6, "trayicon", JDLocale.L("plugins.optional.trayicon.name", "Tray Icon(minimizer)"));
-
+        new OptionalPluginWrapper("jdtrayicon.JDLightTray", 1.6, "trayicon", JDLocale.L("plugins.optional.trayicon.name", "Tray Icon (Minimizer)"));
         new OptionalPluginWrapper("webinterface.JDWebinterface", 1.5, "webinterface", JDLocale.L("plugins.optional.webinterface.name", "WebInterface"));
-
         new OptionalPluginWrapper("schedule.Schedule", 1.5, "scheduler", JDLocale.L("addons.schedule.name", "Schedule"));
-
         new OptionalPluginWrapper("JDFolderWatch", 1.5, "folderwatch", JDLocale.L("plugins.optional.folderwatch.name", "JDFolderWatch"));
-
         new OptionalPluginWrapper("JDShutdown", 1.5, "shutdown", JDLocale.L("plugins.optional.jdshutdown.name", "JDShutdown"));
-
         new OptionalPluginWrapper("JDRemoteControl", 1.5, "remotecontrol", JDLocale.L("plugins.optional.remotecontrol.name", "RemoteControl"));
-
-        // new OptionalPluginWrapper("JDLowSpeed", 1.5);
-
         new OptionalPluginWrapper("jdchat.JDChat", 1.5, "chat", JDLocale.L("plugins.optional.jdchat.name", "JD Chat"));
-
         new OptionalPluginWrapper("Newsfeeds", 1.5, "newsfeed", JDLocale.L("plugins.optional.newsfeeds.pluginTitle", "Newsfeed Check"));
-
         new OptionalPluginWrapper("JDInfoFileWriter", 1.5, "infofilewriter", JDLocale.L("plugins.optional.infoFileWriter.name", "Info File Writer"));
-
         new OptionalPluginWrapper("langfileeditor.LangFileEditor", 1.5, "langfileditor", JDLocale.L("plugins.optional.langfileeditor.name", "Language File Editor"));
-
         new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5, "unrar", JDLocale.L("plugins.optional.jdunrar.name", "JD-Unrar"));
-
         new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5, "hjsplit", JDLocale.L("plugins.optional.jdhjsplit.name", "JD-HJMerge"));
-
         new OptionalPluginWrapper("JDPremiumCollector", 1.5, "premcol", JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector"));
-
         new OptionalPluginWrapper("JDGrowlNotification", 1.5, "growl", JDLocale.L("plugins.optional.jdgrowlnotification.name", "JDGrowlNotification"));
         new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5, "livescripter", JDLocale.L("plugins.optional.httpliveheaderscripter.name", "HTTPLiveHeaderScripter"));
 

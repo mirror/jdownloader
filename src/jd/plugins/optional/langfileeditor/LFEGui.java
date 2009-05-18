@@ -68,21 +68,21 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     private static final long serialVersionUID = -143452893912428555L;
 
-    private SubConfiguration subConfig = null;
+    private final SubConfiguration subConfig;
 
-    private static final String PROPERTY_COLORIZE_DONE = "PROPERTY_COLORIZE_DONE";
-    private static final String PROPERTY_COLORIZE_MISSING = "PROPERTY_COLORIZE_MISSING";
-    private static final String PROPERTY_COLORIZE_OLD = "PROPERTY_COLORIZE_OLD";
-    private static final String PROPERTY_DONE_COLOR = "PROPERTY_DONE_COLOR";
-    private static final String PROPERTY_MISSING_COLOR = "PROPERTY_MISSING_COLOR";
-    private static final String PROPERTY_OLD_COLOR = "PROPERTY_OLD_COLOR";
+    private final String PROPERTY_COLORIZE_DONE = "PROPERTY_COLORIZE_DONE";
+    private final String PROPERTY_COLORIZE_MISSING = "PROPERTY_COLORIZE_MISSING";
+    private final String PROPERTY_COLORIZE_OLD = "PROPERTY_COLORIZE_OLD";
+    private final String PROPERTY_DONE_COLOR = "PROPERTY_DONE_COLOR";
+    private final String PROPERTY_MISSING_COLOR = "PROPERTY_MISSING_COLOR";
+    private final String PROPERTY_OLD_COLOR = "PROPERTY_OLD_COLOR";
 
-    private static final String PROPERTY_SVN_REPOSITORY = "PROPERTY_SVN_REPOSITORY";
-    private static final String PROPERTY_SVN_ACCESS_ANONYMOUS = "PROPERTY_SVN_CHECKOUT_ANONYMOUS";
-    private static final String PROPERTY_SVN_ACCESS_USER = "PROPERTY_SVN_CHECKOUT_USER";
-    private static final String PROPERTY_SVN_ACCESS_PASS = "PROPERTY_SVN_CHECKOUT_PASS";
-    private static final String PROPERTY_SVN_WORKING_COPY = "PROPERTY_SVN_WORKING_COPY";
-    private static final String PROPERTY_SVN_UPDATE_ON_START = "PROPERTY_SVN_UPDATE_ON_START";
+    private final String PROPERTY_SVN_REPOSITORY = "PROPERTY_SVN_REPOSITORY";
+    private final String PROPERTY_SVN_ACCESS_ANONYMOUS = "PROPERTY_SVN_CHECKOUT_ANONYMOUS";
+    private final String PROPERTY_SVN_ACCESS_USER = "PROPERTY_SVN_CHECKOUT_USER";
+    private final String PROPERTY_SVN_ACCESS_PASS = "PROPERTY_SVN_CHECKOUT_PASS";
+    private final String PROPERTY_SVN_WORKING_COPY = "PROPERTY_SVN_WORKING_COPY";
+    private final String PROPERTY_SVN_UPDATE_ON_START = "PROPERTY_SVN_UPDATE_ON_START";
 
     private JXTable table;
     private MyTableModel tableModel;
@@ -106,7 +106,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private HashMap<String, Vector<String>> dupes = new HashMap<String, Vector<String>>();
     private String lngKey = null;
     private boolean changed = false;
-    private static final JDFileFilter fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter2", "LanguageFile (*.lng) or Folder with Sourcefiles"), ".lng", true);
+    private final JDFileFilter fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter2", "LanguageFile (*.lng) or Folder with Sourcefiles"), ".lng", true);
 
     private boolean colorizeDone, colorizeMissing, colorizeOld;
     private Color colorDone, colorMissing, colorOld;
