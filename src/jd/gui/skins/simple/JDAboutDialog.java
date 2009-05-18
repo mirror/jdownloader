@@ -73,6 +73,7 @@ public class JDAboutDialog extends JDialog {
         devs.add(new String[] { " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" });
         devs.add(new String[] { " Andrei", " andrei030@hotmail.com", " Logo Design (v2)" });
         devs.add(new String[] { " Trazo", " ancoar@gmail.com", " Logo Design (v3)" });
+        devs.add(new String[] { " ManiacMansion", " ManiacMansion@jdownloader.org", " OCR/AntiCaptcha, Hoster/Decrypter plugins, Bugfixing" });
         Collections.sort(devs, new Comparator<String[]>() {
 
             public int compare(String[] o1, String[] o2) {

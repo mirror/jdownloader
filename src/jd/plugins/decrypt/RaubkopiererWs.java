@@ -16,14 +16,36 @@
 
 package jd.plugins.decrypt;
 
+import java.awt.BorderLayout;
+import java.awt.Dialog;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Vector;
+
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSeparator;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.http.HTMLEntities;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.Screen;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
@@ -31,10 +53,21 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 
 public class RaubkopiererWs extends PluginForDecrypt {
-    
-    ProgressController progress;
+
+    private ProgressController progress;
+    private static final String[] knownMirrors = new String[] {"Netload.in", "Filefactory.com"};
+    private static String fpName;
+    private static String fpPass;
+    private static ArrayList<InputField> mirrors;
+    private static boolean getNFO = false;
+    private static boolean getSample = false;
+    private static boolean extraPackage = false;
+    private static long partcount = 1;
+    private static FilePackage fp = FilePackage.getInstance();
+    private static FilePackage fpExtra = FilePackage.getInstance();
 
     public RaubkopiererWs(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,26 +77,44 @@ public class RaubkopiererWs extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        FilePackage fp = FilePackage.getInstance();
         br.setFollowRedirects(false);
+        this.progress = progress;
+        DownloadLink nfoDLink = null;
+        DownloadLink sampleDLink = null;
+
+        /* single part-link handling */
+        if (parameter.contains("goto")) {
+            br.getPage(parameter.replace("goto", "frame"));
+            DownloadLink dlink = createDownloadlink(br.getRedirectLocation());
+            decryptedLinks.add(dlink);
+            return decryptedLinks;
+        }
 
         br.getPage(parameter);
         if ((br.getRedirectLocation() != null && br.getRedirectLocation().contains("error")) || br.containsHTML("class=\"error_msg\"")) {
+            logger.warning("No downloads on this page!");
             return null;
         }
-        String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0).trim();
-        if (fpName != null)
+        if (br.containsHTML("<h1>(.*?)(<img.*?)?</h1>"))
+            fpName = br.getRegex("<h1>(.*?)(<img.*?)?</h1>").getMatch(0).trim();
+        if (fpName != null && !fpName.isEmpty())
             fp.setName(HTMLEntities.unhtmlentities(fpName));
-        String fpPass = br.getRegex("Passwort:</b></th>\\s+<td>(.*?)</td>").getMatch(0);
-        if (fpPass != null)
+        if (br.containsHTML("Passwort:</b></th>\\s+<td>(.*?)</td>"))
+            fpPass = br.getRegex("Passwort:</b></th>\\s+<td>(.*?)</td>").getMatch(0).trim();
+        if (fpPass != null && !fpPass.isEmpty())
             fp.setPassword(fpPass);
 
         Form form = br.getFormbyProperty("name", "go_captcha");
-        ArrayList<InputField> mirrors = form.getInputFieldsByType("submit");
-        if (form == null || mirrors == null)
+        if (form != null) {
+            mirrors = form.getInputFieldsByType("submit");
+            if (mirrors.isEmpty())
+                return null;
+        } else
             return null;
+
+        showMirrorDialog();
+
         progress.setRange(mirrors.size());
-        long partcount = 1;
         for (int i = 0; i <= mirrors.size()-1; i++) {
             for (int retry = 1; retry <= 5; retry++) {
                 String captchaURL = "/captcha" + form.getRegex("<img\\ssrc=\"/captcha(.*?)\"").getMatch(0);
@@ -77,8 +128,47 @@ public class RaubkopiererWs extends PluginForDecrypt {
                 if (!br.containsHTML("Fehler: Der Sicherheits-Code")) {
                     break;
                 } else {
-                    logger.log(java.util.logging.Level.WARNING, JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
+                    logger.warning(JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
                 }
+            }
+
+            /* Get additional files */
+            if (getNFO && nfoDLink == null && br.containsHTML("<a\\shref=\"/nfo_files")) {
+                nfoDLink = createDownloadlink("http://"+this.getHost()+br.getRegex("<a\\shref=\"(/nfo_files/.*?\\.nfo)\"").getMatch(0));
+                //fp.add(nfoDLink);
+                //decryptedLinks.add(nfoDLink);
+            }
+            if (getSample && sampleDLink == null && br.containsHTML("<a\\shref=\"(/\\w+?/sl/\\w+?/\\d+?/goto-[a-z0-9]+?/?)\"")) {
+                Browser br2 = br.cloneBrowser();
+                String link = br.getRegex("<a\\shref=\"(/\\w+?/sl/\\w+?/\\d+?/goto-[a-z0-9]+?/?)\"").getMatch(0);
+                br2.getPage(link.replace("goto", "frame"));
+                sampleDLink = createDownloadlink(br2.getRedirectLocation());
+                //fp.add(sampleDLink);
+                //decryptedLinks.add(sampleDLink);
+            }
+
+            /* Check container availability and get them.
+             * Break current mirror-loop if got links from container */
+            if (br.containsHTML("/container/(dlc|ccf|rsdf)_files/")) {
+                if (!getContainer(br.toString(), parameter, "dlc", decryptedLinks)) {
+                    if (!getContainer(br.toString(), parameter, "ccf", decryptedLinks)) {
+                        if (!getContainer(br.toString(), parameter, "rsdf", decryptedLinks)) {
+                            ;
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        continue;
+                }
+                } else {
+                    continue;
+                }
+            }
+
+            /* Continue here if there are no containers or got no links from container */
+            if (!br.containsHTML("<a\\shref=\"(/\\w+?/dl/.+?/goto-[a-z0-9]+?/?)\"")) {
+                logger.severe("No downloads on this page!");
+                return null;
             }
             String[] parts = br.getRegex("<a\\shref=\"(/\\w+?/dl/.+?/goto-[a-z0-9]+?/?)\"").getColumn(0);
             if (parts.length != 0) {
@@ -89,15 +179,177 @@ public class RaubkopiererWs extends PluginForDecrypt {
                 for (String part : parts) {
                     br.getPage(part.replace("goto", "frame"));
                     DownloadLink dlink = createDownloadlink(br.getRedirectLocation());
-                    dlink.addSourcePluginPassword(fpPass);
-                    fp.add(dlink);
+                    if (fpPass != null && !fpPass.isEmpty())
+                        dlink.addSourcePluginPassword(fpPass);
+                    dlink.setFilePackage(fp);
+                    //fp.add(dlink);
                     decryptedLinks.add(dlink);
                     progress.increase(1);
                 }
             } else progress.increase(partcount);
         }
 
+        /* Add additional files to FilePackage and decryptedLinks */
+        if (!extraPackage) {
+            if (nfoDLink != null) {
+                nfoDLink.setFilePackage(fp);  
+                //fp.add(nfoDLink);
+                decryptedLinks.add(nfoDLink);
+            }
+            if (sampleDLink != null) {
+                sampleDLink.setFilePackage(fp);  
+                //fp.add(sampleDLink);
+                decryptedLinks.add(sampleDLink);
+            }
+        } else {
+            if (fpName.isEmpty() || fpName == null)
+                fpName = "raubkopierer.ws";
+            fpExtra.setName(fpName + " - Extras");
+            if (nfoDLink != null) {
+                nfoDLink.setFilePackage(fpExtra);
+                //fpExtra.add(nfoDLink);
+                decryptedLinks.add(nfoDLink);
+            }
+            if (sampleDLink != null) {
+                sampleDLink.setFilePackage(fpExtra);
+                //fpExtra.add(sampleDLink);
+                decryptedLinks.add(sampleDLink);
+            }
+        }
+
         return decryptedLinks;
+    }
+
+    private boolean getContainer(String page, String cryptedLink, String containerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {
+        String container_link = new Regex(page, "href=\"(/container/" + containerFormat + "_files/.+?\\." + containerFormat + ")\"").getMatch(0);
+        if (container_link != null) {
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
+            Browser browser = br.cloneBrowser();
+            browser.getDownload(container, Encoding.htmlDecode(container_link));
+            Vector<DownloadLink> dlinks = JDUtilities.getController().getContainerLinks(container);
+            container.delete();
+            if (dlinks.isEmpty())
+                return false;
+            fp.addAll(dlinks);
+            decryptedLinks.addAll(dlinks);
+            progress.increase(partcount);
+            return true;
+        }
+        return false;
+    }
+    
+    private void showMirrorDialog() {
+        mirrorDialog();
+    }
+
+    /**
+     * Mirrorauswahl Popup-Dialog mit dynamischen Mirror-Checkboxen
+     * 
+     * @info Hab mich beim Serienjunkies Plugin bedient ;)
+     *       greetz ManiacMansion
+     */
+    private void mirrorDialog() {
+
+        new GuiRunnable<Object>() {
+            private static final long serialVersionUID = 7264910846281984510L;
+
+            // @Override
+            public Object runSave() {
+
+                new Dialog(SimpleGUI.CURRENTGUI) {
+                    private static final long serialVersionUID = 1981746297816350752L;
+
+                    void init() {
+                        setLayout(new BorderLayout());
+                        setModal(true);
+                        setTitle(JDLocale.L("plugins.decrypt.RaubkopiererWS.mirrorDialog.title", "Raubkopierer.ws::Mirrors"));
+                        setAlwaysOnTop(true);
+                        JPanel panel = new JPanel(new GridBagLayout());
+
+                        addWindowListener(new WindowListener() {
+
+                            public void windowActivated(WindowEvent e) {}
+                            public void windowClosed(WindowEvent e) {}
+
+                            public void windowClosing(WindowEvent e) {
+                                mirrors.clear();
+                                dispose();
+                            }
+
+                            public void windowDeactivated(WindowEvent e) {}
+                            public void windowDeiconified(WindowEvent e) {}
+                            public void windowIconified(WindowEvent e) {}
+                            public void windowOpened(WindowEvent e) {}
+                        });
+
+                        Insets insets = new Insets(3, 5, 5, 5);
+                        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.mirror", "Wähle die gewünschten Mirrors aus:")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+                        insets = new Insets(0, 5, 0, 5);
+                        final JCheckBox[] checkMirror = new JCheckBox[mirrors.size()];
+                        for (int i = 0; i <= mirrors.size()-1; i++) {
+                            String mirrorDisplayName = mirrors.get(i).getKey(); 
+                            for (String knownMirror : knownMirrors){
+                                if (knownMirror.toLowerCase().contains(mirrors.get(i).getKey().toLowerCase())) {
+                                    mirrorDisplayName = knownMirror;                                    
+                                    break;
+                                }
+                            }
+                            checkMirror[i] = new JCheckBox(mirrorDisplayName, true);
+                            checkMirror[i].setFocusPainted(false);
+                            JDUtilities.addToGridBag(panel, checkMirror[i], GridBagConstraints.REMAINDER, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                        }
+
+                        insets = new Insets(5, 0, 0, 0);
+                        JDUtilities.addToGridBag(panel, new JSeparator(), GridBagConstraints.REMAINDER, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+
+                        insets = new Insets(3, 5, 5, 5);
+                        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.additional", "Folgendes downloaden falls vorhanden:")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+                        insets = new Insets(0, 5, 0, 5);
+                        final JCheckBox checkNFO = new JCheckBox(JDLocale.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.nfo", "NFO Datei"), false);
+                        checkNFO.setFocusPainted(false);
+                        JDUtilities.addToGridBag(panel, checkNFO, GridBagConstraints.REMAINDER, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                        final JCheckBox checkSample = new JCheckBox(JDLocale.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.sample", "Sample Video"), false);
+                        checkSample.setFocusPainted(false);
+                        JDUtilities.addToGridBag(panel, checkSample, GridBagConstraints.REMAINDER, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                        final JCheckBox checkExtraFP = new JCheckBox(JDLocale.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.extrapackage", "Zusätzliches Paket für NFO/Sample"), false);
+                        checkExtraFP.setFocusPainted(false);
+                        JDUtilities.addToGridBag(panel, checkExtraFP, GridBagConstraints.REMAINDER, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+                        insets = new Insets(10, 0, 2, 0);
+                        JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+                        btnOK.addActionListener(new ActionListener() {
+
+                            public void actionPerformed(ActionEvent e) {
+                                /* Mirror selection */
+                                ArrayList<InputField> c = new ArrayList<InputField>();
+                                for (int i = 0; i <= checkMirror.length-1; i++) {
+                                    if (!checkMirror[i].isSelected())
+                                        c.add(mirrors.get(i));
+                                }
+                                mirrors.removeAll(c);
+
+                                /* Additional Files */
+                                getNFO = checkNFO.isSelected();
+                                getSample = checkSample.isSelected();
+                                extraPackage = checkExtraFP.isSelected();
+                                dispose();
+                            }
+
+                        });
+                        insets = new Insets(10, 0, 2, 0);
+                        JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 2, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+                        add(panel, BorderLayout.CENTER);
+                        pack();
+                        setLocation(Screen.getCenterOfComponent(null, this));
+                        setResizable(false);
+                        setVisible(true);
+                    }
+                }.init();
+                return null;
+            }
+        }.waitForEDT();
     }
 
     //@Override
