@@ -106,7 +106,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private HashMap<String, Vector<String>> dupes = new HashMap<String, Vector<String>>();
     private String lngKey = null;
     private boolean changed = false;
-    private static final JDFileFilter fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter", "LanguageFiles (*.lng)"), ".lng", true);
+    private static final JDFileFilter fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter2", "LanguageFile (*.lng) or Folder with Sourcefiles"), ".lng", true);
 
     private boolean colorizeDone, colorizeMissing, colorizeOld;
     private Color colorDone, colorMissing, colorOld;
@@ -884,7 +884,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     private class KeyInfo implements Comparable<KeyInfo> {
 
-        private String key;
+        private final String key;
 
         private String source = "";
 
