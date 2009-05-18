@@ -704,7 +704,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         int[] ret = new int[rows.length];
 
         for (int i = 0; i < rows.length; ++i) {
-            ret[i] = table.getRowSorter().convertRowIndexToModel(rows[i]);
+            ret[i] = table.convertRowIndexToModel(rows[i]);
         }
 
         return ret;
