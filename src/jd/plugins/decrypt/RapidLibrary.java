@@ -1,12 +1,18 @@
-/* http://rapidlibrary.com/download_file_i.php?*
- * 
- * Testcases: 
- * http://rapidlibrary.com/download_file_i.php?qq=scsi&file=173062&desc=SCSI-9+-+Vega+EP-+DNR008+-WEB-2007-HQEM+.rar
- * http://rapidlibrary.com/download_file_i.php?qq=scsi&file=96439&desc=Scsi-9+-+Railway+Sessions++K2-018+-WEB-2006-TR+.zip
- * 
- * JDInit.java
- * new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
- */
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypt;
 

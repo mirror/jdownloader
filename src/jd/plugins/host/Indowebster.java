@@ -1,5 +1,3 @@
-package jd.plugins.host;
-
 //    jDownloader - Downloadmanager
 //    Copyright (C) 2009  JD-Team support@jdownloader.org
 //
@@ -15,6 +13,8 @@ package jd.plugins.host;
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package jd.plugins.host;
 
 import java.util.regex.Pattern;
 
