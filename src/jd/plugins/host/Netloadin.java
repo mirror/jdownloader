@@ -422,7 +422,7 @@ public class Netloadin extends PluginForHost {
             if (entries == null) {
                 entries = br.getRegex(";(.*?);(.*?);(.*?)").getRow(0);
                 if (entries == null || entries.length < 3) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                downloadLink.setDownloadSize((int) Regex.getSize(entries[1] + " bytes"));
+                downloadLink.setDownloadSize(Regex.getSize(entries[1] + " bytes"));
                 downloadLink.setFinalFileName(entries[0]);
                 fileStatusText = JDLocale.L("plugins.hoster.netloadin.errors.mightbeoffline", "Might be offline");
                 downloadLink.getLinkStatus().setStatusText(fileStatusText);
@@ -433,7 +433,7 @@ public class Netloadin extends PluginForHost {
 
             downloadLink.setFinalFileName(entries[1]);
             fileStatusText = entries[2];
-            downloadLink.setDownloadSize((int) Regex.getSize(entries[2] + " bytes"));
+            downloadLink.setDownloadSize(Regex.getSize(entries[2] + " bytes"));
 
             downloadLink.setMD5Hash(entries[4].trim());
             if (entries[3].equalsIgnoreCase("online")) { return AvailableStatus.TRUE; }

@@ -50,13 +50,13 @@ class Optimizer {
 
     private Optimizer(DownloadController INSTANCE2) {
         this.INSTANCE2 = INSTANCE2;
-        init();        
+        init();
     }
 
     private void init() {
         Vector<DownloadLink> links = INSTANCE2.getAllDownloadLinks();
         for (DownloadLink link : links) {
-            String url = link.getDownloadURL();
+            String url = link.getDownloadURL().trim();
             if (url != null) {
                 if (!url_links.containsKey(url)) {
                     url_links.put(url, new ArrayList<DownloadLink>());
@@ -85,7 +85,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     private JDController controller;
 
-    private Optimizer optimizer;
+    // private Optimizer optimizer;
 
     private transient DownloadControllerBroadcaster broadcaster = new DownloadControllerBroadcaster();
 
@@ -111,7 +111,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
         asyncSaveIntervalTimer = new Timer(2000, this);
         asyncSaveIntervalTimer.setInitialDelay(2000);
         asyncSaveIntervalTimer.setRepeats(false);
-        optimizer = Optimizer.getINSTANCE(this);
+        // optimizer = Optimizer.getINSTANCE(this);
         broadcaster.addListener(this);
     }
 
@@ -404,8 +404,21 @@ public class DownloadController implements FilePackageListener, DownloadControll
         return ret;
     }
 
+    // Den Optimizer muss ich noch fertig machen
+    // public boolean hasDownloadLinkwithURL(String url) {
+    // if (optimizer.getLinkswithURL(url) != null ||
+    // optimizer.getLinkswithURL(url).size() == 0) { return true; }
+    // return false;
+    // }
+
     public boolean hasDownloadLinkwithURL(String url) {
-        if (optimizer.getLinkswithURL(url) != null) { return true; }
+        if (url == null) return false;
+        url = url.trim();
+        synchronized (packages) {
+            for (DownloadLink dl : getAllDownloadLinks()) {
+                if (dl.getDownloadURL() != null && dl.getDownloadURL().equalsIgnoreCase(url)) return true;
+            }
+        }
         return false;
     }
 

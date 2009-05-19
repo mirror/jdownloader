@@ -184,14 +184,16 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         }
     }
 
-    public void MergeSingleOffline() {
+    public void mergeSingleandCompleteOffline() {
         synchronized (packages) {
             Vector<LinkGrabberFilePackage> fps = new Vector<LinkGrabberFilePackage>(packages);
             for (LinkGrabberFilePackage fp : fps) {
                 synchronized (fp.getDownloadLinks()) {
+                    boolean remove = false;
+                    if (fp.countFailedLinks(true) == fp.size()) remove = true;
                     Vector<DownloadLink> links = new Vector<DownloadLink>(fp.getDownloadLinks());
                     for (DownloadLink dl : links) {
-                        if (dl.isAvailabilityStatusChecked() && !dl.isAvailable() && links.size() == 1) {
+                        if (dl.isAvailabilityStatusChecked() && !dl.isAvailable() && (links.size() == 1 || remove)) {
                             this.AddorMoveDownloadLink(FP_OFFLINE, dl);
                         }
                     }
@@ -438,7 +440,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
             }
         }
         if (Math.min(a.length(), b.length()) == 0) { return 0; }
-        return c * 100 / Math.min(a.length(), b.length());
+        return c * 100 / Math.max(a.length(), b.length());
     }
 
     public void handle_LinkGrabberFilePackageEvent(LinkGrabberFilePackageEvent event) {

@@ -70,6 +70,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     private LinkGrabberController LGINSTANCE = null;
 
     protected boolean tablerefreshinprogress = false;
+    protected boolean addinginprogress = false;
 
     public static synchronized LinkGrabberPanel getLinkGrabber() {
         if (INSTANCE == null) INSTANCE = new LinkGrabberPanel();
@@ -157,6 +158,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     }
 
     public synchronized void addLinks(final DownloadLink[] linkList) {
+        addinginprogress = true;
         new Thread() {
             public void run() {
                 for (DownloadLink element : linkList) {
@@ -165,8 +167,13 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 }
                 Update_Async.restart();
                 gathertimer.restart();
+                addinginprogress = false;
             }
         }.start();
+    }
+
+    public boolean isAddinginProgress() {
+        return addinginprogress;
     }
 
     public synchronized void addToWaitingList(DownloadLink element) {
@@ -244,7 +251,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 lc.getBroadcaster().removeListener(INSTANCE);
                 pc.finalize();
                 pc.getBroadcaster().removeListener(INSTANCE);
-                LGINSTANCE.MergeSingleOffline();
+                LGINSTANCE.mergeSingleandCompleteOffline();
                 gatherer_running = false;
             }
         };
@@ -612,7 +619,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     }
 
     public boolean hasLinks() {
-        return waitingList.size() > 0 || LGINSTANCE.size() > 0 || LGINSTANCE.getFILTERPACKAGE().size() > 0;
+        return this.addinginprogress || waitingList.size() > 0 || LGINSTANCE.size() > 0 || LGINSTANCE.getFILTERPACKAGE().size() > 0;
     }
 
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
