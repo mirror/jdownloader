@@ -19,7 +19,6 @@ package jd.gui.skins.simple.config.subpanels;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Cursor;
-import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.ClipboardOwner;
@@ -111,8 +110,6 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
     private ArrayList<Account> list = new ArrayList<Account>();
 
-    // private Logger logger = JDLogger.getLogger();
-
     public PremiumPanel(GUIConfigEntry gce) {
         chartrefresh = new Timer(2000, this);
         chartrefresh.setInitialDelay(2000);
@@ -140,7 +137,6 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
         }
     }
 
-
     public void saveAccounts() {
         synchronized (Lock) {
             synchronized (list) {
@@ -153,12 +149,6 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
         }
     }
 
-    /**
-     * List ist immer eine ArrayList<Account> mit Daten aus der config
-     * 
-     * @param list
-     * @throws  
-     */
     public void loadAccounts() {
         try {
             if (!SimpleGUI.CURRENTGUI.isWaiting()) SimpleGUI.CURRENTGUI.setWaiting(true);
@@ -175,14 +165,12 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                 JDController.getInstance().addControlListener(this);
             }
         } finally {
-         try {
-            Thread.sleep(4000);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+            try {
+                Thread.sleep(4000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             SimpleGUI.CURRENTGUI.getRealContentPane().invalidate();
-      
         }
     }
 
@@ -281,7 +269,6 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
         }
 
-     
         public synchronized Account getAccount() {
             String pass = new String(txtPassword.getPassword());
             if (account == null) return null;
@@ -528,12 +515,10 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
         }
 
         public int getID() {
-            // TODO Auto-generated method stub
             return this.panelID;
         }
 
         public JToggleButton getLabel() {
-            // TODO Auto-generated method stub
             return this.chkEnable;
         }
 
