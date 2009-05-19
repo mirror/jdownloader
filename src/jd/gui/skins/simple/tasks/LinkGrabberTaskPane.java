@@ -203,7 +203,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
             return;
         }
         if (e.getSource() == lg_add_selected) {
-            this.broadcastEvent(new ActionEvent(this, LinkGrabberTreeTableAction.ADD_SELECTED, null));
+            this.broadcastEvent(new ActionEvent(this, LinkGrabberTreeTableAction.ADD_SELECTED_PACKAGES, null));
             return;
         }
         if (e.getSource() == lg_clear) {

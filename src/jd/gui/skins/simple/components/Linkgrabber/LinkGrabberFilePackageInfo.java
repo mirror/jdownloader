@@ -58,12 +58,12 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
     }
 
     public void setPackage(LinkGrabberFilePackage fp) {
-        if (this.fp != null && this.fp == fp) {
+        if (this.fp != null && this.fp == fp) {            
             update();
             return;
         }
         this.fp = fp;
-        if (this.fp != null) {
+        if (this.fp != null) {            
             update();
         }
     }

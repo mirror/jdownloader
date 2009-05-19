@@ -353,7 +353,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                             selected_packages = new Vector<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
                             selected_packages.add(LGINSTANCE.getFILTERPACKAGE());
                             break;
-                        case LinkGrabberTreeTableAction.ADD_SELECTED:
+                        case LinkGrabberTreeTableAction.ADD_SELECTED_PACKAGES:
                             selected_packages = new Vector<LinkGrabberFilePackage>(INSTANCE.internalTreeTable.getSelectedFilePackages());
                             break;
                         case LinkGrabberTreeTableAction.GUI_LOAD:
@@ -387,7 +387,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                             selected_packages = new Vector<LinkGrabberFilePackage>(fps);
                             selected_packages.add(LGINSTANCE.getFILTERPACKAGE());
                             break;
-                        case LinkGrabberTreeTableAction.ADD_SELECTED:
+                        case LinkGrabberTreeTableAction.ADD_SELECTED_PACKAGES:
                         case LinkGrabberTreeTableAction.EDIT_DIR:
                         case LinkGrabberTreeTableAction.SPLIT_HOSTER:
                             selected_packages = new Vector<LinkGrabberFilePackage>(INSTANCE.internalTreeTable.getSelectedFilePackages());
@@ -430,7 +430,10 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                                 Set<String> hosts = INSTANCE.getHosterList(links2);
                                 for (String host : hosts) {
                                     LinkGrabberFilePackage fp3 = new LinkGrabberFilePackage(fp2.getName());
+                                    fp3.setDownloadDirectory(fp2.getDownloadDirectory());
                                     fp3.setPassword(fp2.getPassword());
+                                    fp3.setExtractAfterDownload(fp2.isExtractAfterDownload());
+                                    fp3.setUseSubDir(fp2.useSubDir());
                                     fp3.setComment(fp2.getComment());
                                     for (DownloadLink dl : links2) {
                                         if (dl.getPlugin().getHost().equalsIgnoreCase(host)) {
@@ -509,7 +512,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                         Update_Async.restart();
                         return;
                     case LinkGrabberTreeTableAction.ADD_ALL:
-                    case LinkGrabberTreeTableAction.ADD_SELECTED:
+                    case LinkGrabberTreeTableAction.ADD_SELECTED_PACKAGES:
                         confirmPackages(selected_packages);
                         return;
                     case LinkGrabberTreeTableAction.DELETE:

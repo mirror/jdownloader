@@ -35,7 +35,8 @@ public class LinkGrabberTreeTableAction extends AbstractAction {
     public static final int DOWNLOAD_PRIO = 200;
     public static final int SET_PW = 201;
     public static final int ADD_ALL = 300;
-    public static final int ADD_SELECTED = 301;
+    public static final int ADD_SELECTED_PACKAGES = 301;
+    public static final int ADD_SELECTED_LINKS = 302;
     public static final int DE_ACTIVATE = 400;
     public static final int SELECT_HOSTER = 500;
     public static final int SPLIT_HOSTER = 501;
@@ -55,7 +56,6 @@ public class LinkGrabberTreeTableAction extends AbstractAction {
     public LinkGrabberTreeTableAction(ActionListener actionListener, ImageIcon icon, String ressourceName, int actionID) {
         this(actionListener, icon, ressourceName, actionID, null);
     }
-
 
     public LinkGrabberTreeTableAction(ActionListener actionListener, ImageIcon icon, String ressourceName, int actionID, Property property) {
 
