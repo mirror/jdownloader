@@ -31,8 +31,6 @@ import jd.OptionalPluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigGroup;
 import jd.config.MenuItem;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JDUnderlinedText;
@@ -41,7 +39,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-public class AddonTaskPane extends TaskPanel implements ActionListener, ControlListener {
+public class AddonTaskPane extends TaskPanel implements ActionListener {
 
     private static final long serialVersionUID = -7720749076951577192L;
     private HashMap<JButton, OptionalPluginWrapper> buttonMap;
@@ -50,7 +48,6 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
 
     public AddonTaskPane(String string, ImageIcon ii) {
         super(string, ii, "addons");
-        JDUtilities.getController().addControlListener(this);
 
         initGUI();
     }
@@ -60,7 +57,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
         this.buttonMap = new HashMap<JButton, OptionalPluginWrapper>();
         this.entries = new ArrayList<CollapseButton>();
         for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
-            if (!wrapper.isEnabled()||wrapper.getPlugin()==null) continue;
+            if (!wrapper.isEnabled() || wrapper.getPlugin() == null) continue;
             ArrayList<MenuItem> menuItems = wrapper.getPlugin().createMenuitems();
             if (menuItems != null && JDUtilities.getConfiguration().getBooleanProperty(wrapper.getConfigParamKey(), false)) {
                 if (menuItems.size() > 1 || wrapper.getPlugin().getConfig().getEntries().size() > 0) {
@@ -69,21 +66,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
                     add(bt, D1_BUTTON_ICON);
 
                     for (MenuItem entry : menuItems) {
-
-                        JComponent comp = createMenu(entry, null);
-
-                        switch (entry.getID()) {
-                        case MenuItem.CONTAINER:
-                        case MenuItem.NORMAL:
-                        case MenuItem.SEPARATOR:
-                            bt.getContentPane().add(comp, "gapleft 20");
-                            break;
-
-                        case MenuItem.TOGGLE:
-                            bt.getContentPane().add(comp, "gapleft 20");
-                            break;
-                        }
-
+                        bt.getContentPane().add(createMenu(entry, null), "gapleft 20");
                     }
                     bt.getButton().addActionListener(this);
                     buttonMap.put(bt.getButton(), wrapper);
@@ -98,7 +81,6 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
                     case MenuItem.SEPARATOR:
                         add(btn, D1_BUTTON_ICON);
                         break;
-
                     case MenuItem.TOGGLE:
                         add(btn, D1_TOGGLEBUTTON_ICON);
                         break;
@@ -133,41 +115,17 @@ public class AddonTaskPane extends TaskPanel implements ActionListener, ControlL
                 }
                 SimpleGUI.CURRENTGUI.getContentPane().display(new ConfigEntriesPanel(cfg));
             }
-
-            for (CollapseButton entry : entries) {
-                if (entry.getButton() != e.getSource()) {
-                    entry.setCollapsed(true);
-                }
-            }
         }
         if (e.getSource() == config) {
             SimpleGuiConstants.GUI_CONFIG.setProperty("LAST_CONFIG_PANEL", ConfigTaskPane.ACTION_ADDONS);
             SimpleGUI.CURRENTGUI.getTaskPane().switcher(SimpleGUI.CURRENTGUI.getCfgTskPane());
-
         }
-    }
 
-    public void controlEvent(ControlEvent event) {
-        // if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
-        // if (ContentPanel.PANEL != null && ContentPanel.PANEL.getRightPanel()
-        // instanceof ConfigPanel) {
-        // if (((ConfigPanel) ContentPanel.PANEL.getRightPanel()).hasChanges()
-        // != PropertyType.NONE) {
-        // this.changes = true;
-        // System.out.println("CHANGES !");
-        // if (((ConfigPanel) ContentPanel.PANEL.getRightPanel()).hasChanges()
-        // == PropertyType.NEEDS_RESTART) {
-        // System.out.println("RESTART !");
-        // this.restart = true;
-        // }
-        // }
-        // if (changes) {
-        // sav.setEnabled(true);
-        // }
-        //
-        // }
-        // }
-
+        for (CollapseButton entry : entries) {
+            if (entry.getButton() != e.getSource()) {
+                entry.setCollapsed(true);
+            }
+        }
     }
 
     private JComponent createMenu(final MenuItem entry, final ImageIcon ii) {
