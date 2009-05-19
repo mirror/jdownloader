@@ -19,7 +19,7 @@ public class ContentPanel extends JPanel {
         // PANEL = this;
         viewport = new JViewport();
         this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
-        
+
     }
 
     public void display(JTabbedPanel panel) {
@@ -35,15 +35,13 @@ public class ContentPanel extends JPanel {
         }
         rightPanel = panel;
 
+        if (rightPanel.needsViewport()) {
+            viewport.setView(rightPanel);
+            this.add(viewport, "cell 0 0");
 
-
-if(rightPanel.needsViewport()){
-    viewport.setView(rightPanel);
-    this.add(viewport, "cell 0 0");
-    
-}else{
-    this.add(rightPanel, "cell 0 0");
-}
+        } else {
+            this.add(rightPanel, "cell 0 0");
+        }
         rightPanel.setEnabled(true);
         rightPanel.setVisible(true);
         rightPanel.onDisplay();

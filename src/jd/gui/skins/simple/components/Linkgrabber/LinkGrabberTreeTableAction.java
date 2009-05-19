@@ -22,6 +22,7 @@ public class LinkGrabberTreeTableAction extends AbstractAction {
     public static final int ADD_SELECTED = 301;
     public static final int DE_ACTIVATE = 400;
     public static final int SELECT_HOSTER = 500;
+    public static final int SPLIT_HOSTER = 501;
     public static final int GUI_ADD = 600;
     public static final int GUI_LOAD = 601;
     public static final int DELETE = 999;

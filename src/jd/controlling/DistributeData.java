@@ -90,7 +90,7 @@ public class DistributeData extends Thread {
      */
     public DistributeData(String data) {
         super("JD-DistributeData");
-        this.data = data;
+        this.data = new String(data);
     }
 
     public DistributeData(String data, boolean disableDeepEmergencyScan) {

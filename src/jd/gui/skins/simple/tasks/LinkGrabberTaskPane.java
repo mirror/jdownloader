@@ -15,6 +15,7 @@ import javax.swing.Timer;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
@@ -196,12 +197,13 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     }
 
     public void setPanelID(final int i) {
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
                 SimpleGUI.CURRENTGUI.getContentPane().display(getPanel(i));
+                return null;
             }
-        });
-        return;
+        }.waitForEDT();
         // switch (i) {
         // case 0:
         // lg_add_all.setEnabled(false);

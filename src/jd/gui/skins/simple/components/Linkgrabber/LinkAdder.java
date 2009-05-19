@@ -31,6 +31,7 @@ public class LinkAdder extends JTabbedPanel {
     private JTextArea text;
     private Thread clipboardObserver;
     private JLabel lbl;
+    private boolean watchclipboard = false;
 
     public LinkAdder() {
         super(new MigLayout("ins 0 0 8 8,wrap 1", "[]", "[][fill,grow][]"));
@@ -96,30 +97,29 @@ public class LinkAdder extends JTabbedPanel {
     public void onDisplay() {
         ClipboardHandler.getClipboard().setTempDisableD(true);
         setClipboard(true);
-
     }
 
     public void reset() {
         text.setText(JDLocale.L("gui.linkgrabber.adder.links.default", "Insert any text containing links here. This textfield grabs all links out of your clipboard"));
-
     }
 
     private void setClipboard(boolean b) {
         if (b) {
+            watchclipboard = true;
             if (clipboardObserver != null && clipboardObserver.isAlive()) return;
             clipboardObserver = new Thread() {
                 public void run() {
                     String old = null;
-                    while (true) {
+                    while (true && watchclipboard) {
                         try {
                             String newText = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
                             ClipboardHandler.getClipboard().setOldData(newText);
                             if (newText != null && !newText.equalsIgnoreCase(old)) {
+                                old = newText;
                                 String[] links = HTMLParser.getHttpLinks(newText, null);
                                 if (links.length > 0) {
                                     addText(newText);
                                 }
-                                old = newText;
                             }
                         } catch (Exception e1) {
                         }
@@ -134,7 +134,7 @@ public class LinkAdder extends JTabbedPanel {
             };
             clipboardObserver.start();
         } else {
-            clipboardObserver.interrupt();
+            watchclipboard = false;
             clipboardObserver = null;
         }
 

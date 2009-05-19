@@ -61,21 +61,17 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         name = JDUtilities.removeEndingPoints(JDLocale.L("controller.packages.defaultname", "various"));
         useSubDir = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false);
         for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
-            if (wrapper.isEnabled()&&wrapper.getPlugin()!=null && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
+            if (wrapper.isEnabled() && wrapper.getPlugin() != null && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
                 extractAfterDownload = wrapper.getPluginConfig().getBooleanProperty("ACTIVATED", true);
             }
         }
-        getBroadcaster().addListener(this);
-    }
-
-    public synchronized JDBroadcaster<LinkGrabberFilePackageListener, LinkGrabberFilePackageEvent> getBroadcaster() {
-        if (broadcaster == null) broadcaster = new LinkGrabberFilePackageBroadcaster();
-        return this.broadcaster;
+        broadcaster = new LinkGrabberFilePackageBroadcaster();
+        broadcaster.addListener(this);
     }
 
     public LinkGrabberFilePackage(String name, LinkGrabberFilePackageListener listener) {
         this(name);
-        getBroadcaster().addListener(listener);
+        broadcaster.addListener(listener);
     }
 
     public synchronized long getDownloadSize(boolean forceUpdate) {
@@ -129,7 +125,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public void setUseSubDir(boolean b) {
         useSubDir = b;
-        getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public boolean useSubDir() {
@@ -138,7 +134,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public void setDownloadDirectory(String dir) {
         downloadDirectory = dir;
-        getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public LinkGrabberFilePackage(String name) {
@@ -155,7 +151,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
             if (!downloadLinks.contains(link)) {
                 LinkGrabberFilePackage fp = LinkGrabberController.getInstance().getFPwithLink(link);
                 downloadLinks.add(link);
-                getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK, link));
+                broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK, link));
                 if (fp != null && fp != this) fp.remove(link);
             }
 
@@ -230,7 +226,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                     downloadLinks.add(0, link);
                 } else
                     downloadLinks.add(index, link);
-                getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+                broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
             } else {
                 LinkGrabberFilePackage fp = LinkGrabberController.getInstance().getFPwithLink(link);
                 if (index > downloadLinks.size() - 1) {
@@ -239,7 +235,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                     downloadLinks.add(0, link);
                 } else
                     downloadLinks.add(index, link);
-                getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK, link));
+                broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK, link));
                 if (fp != null && fp != this) fp.remove(link);
             }
         }
@@ -259,7 +255,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public void setExtractAfterDownload(boolean extractAfterDownload) {
         this.extractAfterDownload = extractAfterDownload;
-        getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public void addAllAt(Vector<DownloadLink> links, int index) {
@@ -300,8 +296,8 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         synchronized (downloadLinks) {
             boolean ret = this.getDownloadLinks().remove(link);
             if (ret) downloadLinks.remove(link);
-            if (ret) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK, link));
-            if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
+            if (ret) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK, link));
+            if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
             return ret;
         }
     }
@@ -310,8 +306,8 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         synchronized (downloadLinks) {
             DownloadLink link = this.getDownloadLinks().remove(index);
             if (link != null) downloadLinks.remove(link);
-            if (link != null) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK, link));
-            if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
+            if (link != null) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK, link));
+            if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
             return link;
         }
     }
@@ -319,7 +315,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     public void setComment(String comment) {
         if (comment == null) comment = "";
         this.comment = comment;
-        getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public void clear() {
@@ -329,8 +325,8 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
         synchronized (downloadLinks) {
             this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
-            getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
-            if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
+            broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+            if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
         }
     }
 
@@ -339,13 +335,13 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
             this.name = JDUtilities.removeEndingPoints(JDLocale.L("controller.packages.defaultname", "various"));
         } else
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
-        getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public void setPassword(String password) {
         if (password == null) password = "";
         this.password = password;
-        getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public int size() {
@@ -389,7 +385,15 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
             });
         }
-        getBroadcaster().fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+    }
+
+    public void addListener(LinkGrabberFilePackageListener l) {
+        broadcaster.addListener(l);
+    }
+
+    public void removeListener(LinkGrabberFilePackageListener l) {
+        broadcaster.removeListener(l);
     }
 
     public String getHoster() {

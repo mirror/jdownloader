@@ -335,6 +335,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
                 popup.add(new JSeparator());
             }
             if (obj instanceof LinkGrabberFilePackage) {
+                popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.newpackage", 16, 16), JDLocale.L("gui.linkgrabberv2.splithoster", "Split by hoster") + " (" + sfp.size() + ")", LinkGrabberTreeTableAction.SPLIT_HOSTER)));
                 popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.add_package", 16, 16), JDLocale.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern") + " (" + sfp.size() + ")", LinkGrabberTreeTableAction.EDIT_DIR)));
                 popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.sort", 16, 16), JDLocale.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + this.getModel().getColumnName(col) + ")", LinkGrabberTreeTableAction.SORT, new Property("col", col))));
                 popup.add(new JSeparator());
@@ -344,8 +345,8 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
                 popup.add(buildExtMenu());
                 Set<String> hoster = linkgrabber.getHosterList(alllinks);
                 popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.addselected", 16, 16), JDLocale.L("gui.linkgrabberv2.onlyselectedhoster", "Keep only selected Hoster") + " (" + hoster.size() + ")", LinkGrabberTreeTableAction.SELECT_HOSTER, new Property("hoster", hoster))));
-                popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.newpackage", 16, 16), JDLocale.L("gui.table.contextmenu.newpackage", "In neues Paket verschieben") + " (" + alllinks.size() + ")", LinkGrabberTreeTableAction.NEW_PACKAGE, new Property("links", alllinks))));
-                popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.newpackage", 16, 16), JDLocale.L("gui.table.contextmenu.mergepackage", "In einzelnes Paket verschieben") + " (" + alllinks.size() + ")", LinkGrabberTreeTableAction.MERGE_PACKAGE, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.newpackage", 16, 16), JDLocale.L("gui.table.contextmenu.newpackage2", "Move to new package") + " (" + alllinks.size() + ")", LinkGrabberTreeTableAction.NEW_PACKAGE, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.newpackage", 16, 16), JDLocale.L("gui.table.contextmenu.mergepackage2", "Merge to one package") + " (" + alllinks.size() + ")", LinkGrabberTreeTableAction.MERGE_PACKAGE, new Property("links", alllinks))));
                 popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.password", 16, 16), JDLocale.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + alllinks.size() + ")", LinkGrabberTreeTableAction.SET_PW, new Property("links", alllinks))));
                 popup.add(new JSeparator());
                 HashMap<String, Object> prop = new HashMap<String, Object>();
