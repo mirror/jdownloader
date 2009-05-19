@@ -33,7 +33,6 @@ import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
-import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.utils.JDLocale;
@@ -149,8 +148,8 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setEditingRow(0);
-        JScrollPane sp;
-        tabbed.addTab(JDLocale.L("gui.config.panels.captcha.methodstab","OCR methods"), sp = new JScrollPane(table));
+
+        tabbed.addTab(JDLocale.L("gui.config.panels.captcha.methodstab","OCR methods"), new JScrollPane(table));
         tabbed.setIconAt(0,  JDTheme.II("gui.images.captcha.methods", 16, 16));
         tabbed.addTab(JDLocale.L("gui.config.panels.captcha.advancedtab","Advanced settings"), cep = new ConfigEntriesPanel(container));
         tabbed.setIconAt(1,  JDTheme.II("gui.images.config.ocr", 16, 16));

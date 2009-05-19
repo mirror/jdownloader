@@ -65,9 +65,11 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         load();
     }
-public boolean needsViewport(){
-    return false;
-}
+
+    public boolean needsViewport() {
+        return false;
+    }
+
     // @Override
     public void initPanel() {
         ConfigContainer container = new ConfigContainer(this);
@@ -273,10 +275,11 @@ public boolean needsViewport(){
     public void save() {
         cep.save();
         subConfig.save();
-        //updateLAF();
+        // updateLAF();
 
     }
 
+    @SuppressWarnings("unused")
     private void updateLAF() {
         new Thread() {
             public void run() {
@@ -311,7 +314,6 @@ public boolean needsViewport(){
     }
 
     public PropertyType hasChanges() {
-
         return PropertyType.getMax(super.hasChanges(), cep.hasChanges());
     }
 

@@ -55,7 +55,7 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener 
         }
     }
 
-    //@Override
+    // @Override
     public void initPanel() {
 
         JPanel buttons = new JPanel();
@@ -73,9 +73,7 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener 
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, configuration, Configuration.PARAM_HTTPSEND_PASS, JDLocale.L("gui.config.liveHeader.password", "Login Passwort (->%%%pass%%%)"))));
         addGUIConfigEntry(ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDLocale.L("gui.config.liveHeader.routerIP", "RouterIP (->%%%routerip%%%)"))));
 
-
-        JScrollPane sp;
-        panel.add(sp=new JScrollPane((new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS_CLR, JDLocale.L("gui.config.liveHeader.script", "HTTP Script")))).getInput()[0]), "gaptop 10,spanx,gapright 20,pushy, growy");
+        panel.add(new JScrollPane((new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS_CLR, JDLocale.L("gui.config.liveHeader.script", "HTTP Script")))).getInput()[0]), "gaptop 10,spanx,gapright 20,pushy, growy");
 
         // routerScript = new GUIConfigEntry();
         // this.entries.add(routerScript);
@@ -84,12 +82,12 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener 
         // add(routerScript);
     }
 
-    //@Override
+    // @Override
     public void load() {
         loadConfigEntries();
     }
 
-    //@Override
+    // @Override
     public void save() {
         saveConfigEntries();
     }

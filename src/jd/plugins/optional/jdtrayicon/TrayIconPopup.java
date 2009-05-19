@@ -77,7 +77,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         initEntryPanel();
         initBottomPanel();
 
-        add(new JLabel(JDLocale.L("plugins.trayicon.popup.title", "JDownloader") + " 0." + JDUtilities.getRevision()), "align center");
+        add(new JLabel("<html><b>" + JDLocale.L("plugins.trayicon.popup.title", "JDownloader") + " 0." + JDUtilities.getRevision() + "</b></html>"), "align center");
         add(new JSeparator(), "growx, spanx");
         add(entryPanel);
         add(new JSeparator(), "growx, spanx");

@@ -114,7 +114,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
                     }
                     new GuiRunnable<Object>() {
 
-                        //@Override
+                        // @Override
                         public Object runSave() {
                             JDRRGui jd = new JDRRGui(SimpleGUI.CURRENTGUI, ((JTextField) ip.getInput()[0]).getText());
                             jd.setModal(true);
@@ -195,7 +195,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
             });
             searchField.addFocusListener(new FocusAdapter() {
 
-                //@Override
+                // @Override
                 public void focusGained(FocusEvent e) {
 
                     if (searchField.getText().equals(text)) {
@@ -203,7 +203,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
                     }
                 }
 
-                //@Override
+                // @Override
                 public void focusLost(FocusEvent e) {
                     if (searchField.getText().equals("")) {
 
@@ -298,7 +298,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
 
     }
 
-    //@Override
+    // @Override
     public void initPanel() {
 
         this.setLayout(new MigLayout("ins 0 20 0 20, wrap 2", "[grow 20,fill][grow,fill]", "[]5[]5[]"));
@@ -331,21 +331,20 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
         ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDLocale.L("gui.config.httpliveheader.routerIP", "Router's ip")));
         addGUIConfigEntry(ip);
 
-        JScrollPane sp;
-        add(sp=new JScrollPane((script=new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.httpliveheader.script", "Reconnect Script")))).getInput()[0]), "gaptop 10,spanx,gapright 20,pushy, growy");
-//       sp.setBorder(null);
+        add(new JScrollPane((script = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.httpliveheader.script", "Reconnect Script")))).getInput()[0]), "gaptop 10,spanx,gapright 20,pushy, growy");
+        // sp.setBorder(null);
         // routerScript = new GUIConfigEntry();
         // this.entries.add(routerScript);
 
         // add(routerScript);
     }
 
-    //@Override
+    // @Override
     public void load() {
         loadConfigEntries();
     }
 
-    //@Override
+    // @Override
     public void save() {
         saveConfigEntries();
 
