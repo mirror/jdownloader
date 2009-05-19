@@ -19,6 +19,10 @@ public class AddUrlAction extends StartAction {
     }
 
     public void actionPerformed(ActionEvent e) {
+        AddUrlAction.addUrlDialog();
+    }
+
+    public static void addUrlDialog() {
         String def = "";
         try {
             String newText = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);

@@ -727,8 +727,6 @@ public class JDUtilities {
         return null;
     }
 
-
-
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück. Die liste
      * wird dabei sortiert zurückgegeben

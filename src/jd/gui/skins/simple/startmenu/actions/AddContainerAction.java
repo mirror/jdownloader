@@ -17,6 +17,10 @@ public class AddContainerAction extends StartAction {
     }
 
     public void actionPerformed(ActionEvent e) {
+        AddContainerAction.addContainerDialog();
+    }
+
+    public static void addContainerDialog() {
         JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
         fc.setDialogTitle(JDLocale.L("gui.filechooser.loaddlc", "Load DLC file"));
         fc.setFileFilter(new JDFileFilter(null, ".dlc|.rsdf|.ccf|.linkbackup", true));

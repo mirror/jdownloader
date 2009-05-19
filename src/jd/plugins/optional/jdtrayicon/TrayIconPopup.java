@@ -40,6 +40,8 @@ import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.startmenu.actions.AddContainerAction;
+import jd.gui.skins.simple.startmenu.actions.AddUrlAction;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -50,17 +52,17 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
 
     private static final long serialVersionUID = 2623190748929934409L;
 
-    private static final int ACTION_LOAD = 0;
-    private static final int ACTION_START = 1;
-    private static final int ACTION_STOP = 2;
-    private static final int ACTION_PAUSE = 3;
-    private static final int ACTION_ADD = 4;
+    private static final int ACTION_START = 0;
+    private static final int ACTION_STOP = 1;
+    private static final int ACTION_PAUSE = 2;
+    private static final int ACTION_ADD = 3;
+    private static final int ACTION_LOAD = 4;
     private static final int ACTION_UPDATE = 5;
-    private static final int ACTION_RECONNECT = 7;
-    private static final int ACTION_TOGGLE_PREMIUM = 8;
-    private static final int ACTION_TOGGLE_CLIPBOARD = 9;
-    private static final int ACTION_TOGGLE_RECONNECT = 10;
-    private static final int ACTION_EXIT = 11;
+    private static final int ACTION_RECONNECT = 6;
+    private static final int ACTION_TOGGLE_PREMIUM = 7;
+    private static final int ACTION_TOGGLE_CLIPBOARD = 8;
+    private static final int ACTION_TOGGLE_RECONNECT = 9;
+    private static final int ACTION_EXIT = 10;
 
     private JPanel entryPanel;
     private JPanel bottomPanel;
@@ -92,20 +94,22 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     private void initEntryPanel() {
         entryPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]0[]0[]0[]0[]0[]0[]0[]"));
 
-        addMenuEntry(ACTION_LOAD, "gui.images.load", JDLocale.L("plugins.trayicon.popup.menu.load", "Container laden"));
-
         switch (JDUtilities.getController().getDownloadStatus()) {
         case JDController.DOWNLOAD_NOT_RUNNING:
             addMenuEntry(ACTION_START, "gui.images.next", JDLocale.L("plugins.trayicon.popup.menu.start", "Download starten"));
+            addDisabledMenuEntry("gui.images.break", JDLocale.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
             break;
         case JDController.DOWNLOAD_RUNNING:
             addMenuEntry(ACTION_STOP, "gui.images.stop", JDLocale.L("plugins.trayicon.popup.menu.stop", "Download anhalten"));
+            addMenuEntry(ACTION_PAUSE, "gui.images.break", JDLocale.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
             break;
         default:
             addDisabledMenuEntry("gui.images.next", JDLocale.L("plugins.trayicon.popup.menu.start", "Download starten"));
+            addDisabledMenuEntry("gui.images.break", JDLocale.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
         }
 
         addMenuEntry(ACTION_ADD, "gui.images.add", JDLocale.L("plugins.trayicon.popup.menu.add", "Downloads hinzufügen"));
+        addMenuEntry(ACTION_LOAD, "gui.images.load", JDLocale.L("plugins.trayicon.popup.menu.load", "Container laden"));
         addMenuEntry(ACTION_UPDATE, "gui.images.update_manager", JDLocale.L("plugins.trayicon.popup.menu.update", "JD aktualisieren"));
         addMenuEntry(ACTION_RECONNECT, "gui.images.reconnect", JDLocale.L("plugins.trayicon.popup.menu.reconnect", "Reconnect durchführen"));
         addMenuEntry(ACTION_TOGGLE_PREMIUM, getPremiumImage(), JDLocale.L("plugins.trayicon.popup.menu.togglePremium", "Premium an/aus"));
@@ -231,18 +235,12 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
 
         switch (index) {
         case TrayIconPopup.ACTION_ADD:
-            /**
-             * TODO
-             */
-            // simplegui.actionPerformed(new ActionEvent(this,
-            // MenuAction.ITEMS_ADD, null));
+            dispose();
+            AddUrlAction.addUrlDialog();
             break;
         case TrayIconPopup.ACTION_LOAD:
-            /**
-             * TODO
-             */
-            // simplegui.actionPerformed(new ActionEvent(this,
-            // MenuAction.APP_LOAD_DLC, null));
+            dispose();
+            AddContainerAction.addContainerDialog();
             break;
         case TrayIconPopup.ACTION_PAUSE:
             JDUtilities.getController().pauseDownloads(true);
@@ -255,11 +253,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             JDUtilities.getController().toggleStartStop();
             break;
         case TrayIconPopup.ACTION_TOGGLE_CLIPBOARD:
-            /**
-             * TODO
-             */
-            // simplegui.actionPerformed(new ActionEvent(this,
-            // JDAction.MenuAction, null));
+            ClipboardHandler.getClipboard().setEnabled(!ClipboardHandler.getClipboard().isEnabled());
             break;
         case TrayIconPopup.ACTION_TOGGLE_RECONNECT:
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
