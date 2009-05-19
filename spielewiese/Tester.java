@@ -1,5 +1,3 @@
-package jd;
-
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -28,6 +26,9 @@ public class Tester extends JFrame {
         // vp.setView();
         this.add(sp = new JScrollPane(), "growx,pushx");
         sp.setViewport(vp = new JViewport() {
+
+            private static final long serialVersionUID = 1L;
+
             public void setViewSize(Dimension newSize) {
                 newSize.width = Tester.this.getSize().width;
                 super.setViewSize(newSize);
@@ -36,6 +37,8 @@ public class Tester extends JFrame {
         vp.setView(createPanel());
 
         sp.getViewport().setLayout(new ViewportLayout() {
+
+            private static final long serialVersionUID = 1L;
 
             public Dimension preferredLayoutSize(Container parent) {
 
@@ -62,9 +65,7 @@ public class Tester extends JFrame {
         ta.setText("This is just a very long dummytext. it is very long, so the textarea tries to be bigger than the jframe\rn\r\n\r\n\r\n\r\n\r\n\n\r\n\r\n\r\n\r\n\n\r\n\r\n\r\n\r\n\n\r\n\r\n\r\n\r\n\n\r\n\r\n\r\n\r\nHere is some text, too");
         panel.add(ta, "growx,pushx");
         panel.add(new JButton("Click me or not"), "alignx right");
-        
-        
-        
+
         return panel;
     }
 

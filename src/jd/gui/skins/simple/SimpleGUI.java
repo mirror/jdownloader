@@ -415,12 +415,15 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     public void onMainMenuMouseClick(MouseEvent e) {
         this.setWaiting(true);
-        JPopupMenu popup = new JPopupMenu(){
-            public void paint(Graphics g){
+        JPopupMenu popup = new JPopupMenu() {
+
+            private static final long serialVersionUID = 3510198302982639068L;
+
+            public void paint(Graphics g) {
                 super.paint(g);
                 setWaiting(false);
             }
-            
+
         };
 
         // menu.setSize(50,50);
