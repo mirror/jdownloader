@@ -6,8 +6,6 @@ import java.awt.Point;
 import javax.swing.JComponent;
 import javax.swing.JWindow;
 
-import net.miginfocom.swing.MigLayout;
-
 public class MouseFollower {
 
     private static JWindow window;
@@ -16,8 +14,6 @@ public class MouseFollower {
     public static void show(JComponent mouseOver) {
         if (window == null) {
             window = new JWindow();
-       
-       
 
             window.setAlwaysOnTop(true);
 
@@ -30,7 +26,7 @@ public class MouseFollower {
                             follower = null;
                             return;
                         }
-                        new GuiRunnable() {
+                        new GuiRunnable<Object>() {
 
                             private Point loc;
 
@@ -53,13 +49,12 @@ public class MouseFollower {
                 }
             };
             follower.start();
-//            window.setSize(100, 60);
+            // window.setSize(100, 60);
             window.setBackground(null);
 
-        
         }
         window.getContentPane().add(mouseOver);
-        
+
         window.setVisible(true);
         window.pack();
     }

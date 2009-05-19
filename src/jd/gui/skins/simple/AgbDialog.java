@@ -16,9 +16,6 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -26,15 +23,13 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
 
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.nutils.Formatter;
 import jd.nutils.Screen;
 import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 /**
  * Dieser Dialog wird angezeigt, wenn ein Download mit einem Plugin getätigt
@@ -65,15 +60,13 @@ public class AgbDialog extends JDialog implements ActionListener {
      */
 
     public AgbDialog(DownloadLink downloadLink, final int countdown) {
-
         super();
-        JPanel panel = new JPanel();
-        setContentPane(panel);
 
         this.downloadLink = downloadLink;
 
         setModal(true);
-        setLayout(new GridBagLayout());
+        // gapleft push
+        setLayout(new MigLayout("wrap 1", "[center]", ""));
         getRootPane().setDefaultButton(btnOK);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setTitle(JDLocale.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert"));
@@ -95,15 +88,15 @@ public class AgbDialog extends JDialog implements ActionListener {
         btnCancel.addActionListener(this);
         btnCancel.setFocusable(false);
 
-        JDUtilities.addToGridBag(this, labelInfo, 1, 1, 2, 1, 1, 1, new Insets(10, 5, 0, 5), GridBagConstraints.NONE, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(this, linkAgb, 1, 3, 2, 1, 1, 1, new Insets(5, 5, 10, 5), GridBagConstraints.NONE, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(this, checkAgbAccepted, 1, 4, 2, 1, 1, 1, new Insets(5, 5, 15, 5), GridBagConstraints.NONE, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(this, btnCancel, 2, 5, 1, 1, 1, 1, new Insets(5, 5, 5, 5), GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(this, btnOK, 1, 5, 1, 1, 1, 1, new Insets(5, 5, 5, 5), GridBagConstraints.NONE, GridBagConstraints.EAST);
+        add(labelInfo);
+        add(linkAgb);
+        add(checkAgbAccepted);
+        add(btnOK, "split 2");
+        add(btnCancel);
 
         countdownThread = new Thread() {
 
-            //@Override
+            // @Override
             public void run() {
                 int c = countdown;
 
@@ -123,9 +116,6 @@ public class AgbDialog extends JDialog implements ActionListener {
 
         };
         countdownThread.start();
-
-        int n = 10;
-        panel.setBorder(new EmptyBorder(n, n, n, n));
 
         pack();
         setResizable(false);

@@ -1,7 +1,6 @@
 package jd.gui.skins.simple.tasks;
 
 import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -24,9 +23,9 @@ public class CollapseButton extends JPanel {
         this.setLayout(new MigLayout("ins 0,wrap 1, gap 0 0", "grow,fill"));
         this.setOpaque(false);
         this.setBackground(null);
-      
+
         button = createButton(host, ii);
-        add(button,"width 165!");
+        add(button, "width 165!");
         button.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {

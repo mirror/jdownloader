@@ -16,10 +16,6 @@
 
 package jd.captcha;
 
-import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -30,12 +26,11 @@ import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 
 import jd.captcha.utils.UTILITIES;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class JACController {
     private static BrowseFile chooser;
@@ -44,7 +39,7 @@ public class JACController {
     public static void showDialog(final boolean isTrain) {
         JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(new BorderLayout());
+        frame.setLayout(new MigLayout("wrap 2"));
         if (isTrain) {
             frame.setTitle(JDLocale.L("train.chooser.title", "jDownloader :: TrainAll"));
         } else {
@@ -52,12 +47,10 @@ public class JACController {
         }
         frame.setAlwaysOnTop(true);
         frame.setLocation(20, 20);
-        JPanel panel = new JPanel(new GridBagLayout());
         File[] meths = new File(UTILITIES.getMethodDir()).listFiles(new FileFilter() {
 
             public boolean accept(File pathname) {
-                if (pathname.isDirectory()) { return true; }
-
+                if (pathname.isDirectory()) return true;
                 return false;
             }
         });
@@ -67,17 +60,17 @@ public class JACController {
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         }
         chooser.setEditable(true);
-        Insets insets = new Insets(0, 0, 0, 0);
+
         String chooserText = "";
         if (isTrain) {
             chooserText = JDLocale.L("train.choose.folder", "Wählen sie einen Ordner aus");
         } else {
             chooserText = JDLocale.L("showcaptcha.choose.file", "Wählen sie eine Bilddatei aus");
         }
-        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("train.method", "Wählen sie eine Methode aus:")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, methods, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, new JLabel(chooserText), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, chooser, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        frame.add(new JLabel(JDLocale.L("train.method", "Wählen sie eine Methode aus:")));
+        frame.add(methods, "growx, spanx");
+        frame.add(new JLabel(chooserText));
+        frame.add(chooser, "growx, spanx");
         JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
         btnOK.addActionListener(new ActionListener() {
 
@@ -99,9 +92,9 @@ public class JACController {
             }
 
         });
-        JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        frame.add(panel, BorderLayout.CENTER);
+        frame.add(btnOK, "span, right");
         frame.pack();
+        frame.setResizable(false);
         frame.setVisible(true);
     }
 

@@ -65,7 +65,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     public final static int STYLE_INPUTFIELD = 1 << 9;
     public final static int STYLE_NO_MSGLABLE = 1 << 10;
 
-    public static boolean showCountdownConfirmDialog(Frame owner, String msg, int countdown) {
+    public static boolean showCountdownConfirmDialog(JFrame owner, String msg, int countdown) {
         CountdownConfirmDialog d = new CountdownConfirmDialog(owner, msg, countdown);
         return d.result;
     }
@@ -86,19 +86,19 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     private String titleText;
     public String input = null;
 
-    public CountdownConfirmDialog(Frame owner, String msg, int countdown) {
+    public CountdownConfirmDialog(JFrame owner, String msg, int countdown) {
         this(owner, msg, countdown, false, STYLE_OK | STYLE_CANCEL | STYLE_STOP_COUNTDOWN);
     }
 
-    public CountdownConfirmDialog(final Frame owner, final String msg, final int countdown, final boolean defaultResult, final int style) {
+    public CountdownConfirmDialog(final JFrame owner, final String msg, final int countdown, final boolean defaultResult, final int style) {
         this(owner, null, msg, countdown, defaultResult, style);
     }
 
-    public CountdownConfirmDialog(final Frame owner, final String title, final String msg, final int countdown, final boolean defaultResult, final int style) {
+    public CountdownConfirmDialog(final JFrame owner, final String title, final String msg, final int countdown, final boolean defaultResult, final int style) {
         this(owner, title, countdown, defaultResult, null, style, msg);
     }
 
-    public CountdownConfirmDialog(final Frame owner, final String title, final int countdown, final boolean defaultResult, final Dimension size, final int style, final String... msg) {
+    public CountdownConfirmDialog(final JFrame owner, final String title, final int countdown, final boolean defaultResult, final Dimension size, final int style, final String... msg) {
         super(owner);
         this.titleText = title;
 
@@ -137,14 +137,14 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
         countdownThread = new Thread() {
 
-            //@Override
+            // @Override
             public void run() {
 
                 while (!isVisible() && isDisplayable()) {
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     }
                 }
                 int c = countdown;

@@ -31,7 +31,6 @@ import javax.swing.WindowConstants;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.Screen;
@@ -40,9 +39,6 @@ import net.miginfocom.swing.MigLayout;
 
 public abstract class AbstractDialog extends JCountdownDialog implements ActionListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -169149552591067268L;
 
     private static final String DIALOGS_CONFIG = "DIALOGS";
@@ -78,7 +74,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
     }
 
     public void init() {
-        if (JDFlags.hasAllFlags(flag , UserIO.DONT_SHOW_AGAIN)) {
+        if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN)) {
             SubConfiguration cfg = SubConfiguration.getConfig(DIALOGS_CONFIG);
             // System.out.println(cfg+toString()+"This restore" +
             // "DONT_SHOW_AGAIN_" + JDHash.getMD5(this.toString()) + " " +
@@ -138,25 +134,22 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         }
         this.toFront();
         this.setAlwaysOnTop(true);
-    
+
         if (JDFlags.hasNoFlags(flag, UserIO.NO_COUNTDOWN)) {
             this.countdown(UserIO.getCountdownTime());
-        }else{
+        } else {
             countDownLabel.setVisible(false);
         }
-this.packed();
+        this.packed();
         this.setVisible(true);
         this.toFront();
 
     }
 
-
-/**
- * may be overwritten to set focus to special components etc.
- */
+    /**
+     * may be overwritten to set focus to special components etc.
+     */
     protected void packed() {
-        // TODO Auto-generated method stub
-        
     }
 
     public String toString() {
@@ -203,8 +196,6 @@ this.packed();
     }
 
     public int getReturnValue() {
-        // TODO Auto-generated method stub
-
         return returnValue;
     }
 }

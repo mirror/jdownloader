@@ -16,8 +16,6 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -33,7 +31,7 @@ import jd.config.SubConfiguration;
 import jd.nutils.Formatter;
 import jd.nutils.Screen;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class InputDialog extends JDialog implements ActionListener, KeyListener {
 
@@ -55,13 +53,13 @@ public class InputDialog extends JDialog implements ActionListener, KeyListener 
     public InputDialog(final JFrame owner, final String title, final String def) {
         super(owner);
         countdown = Math.max(2, SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getIntegerProperty(SimpleGuiConstants.PARAM_INPUTTIMEOUT, 20));
-//        JDSounds.PT("sound.captcha.onCaptchaInput");
+        // JDSounds.PT("sound.captcha.onCaptchaInput");
         this.setModal(true);
-        this.setLayout(new GridBagLayout());
+        this.setLayout(new MigLayout());
 
         countdownThread = new Thread() {
 
-            //@Override
+            // @Override
             public void run() {
                 int c = countdown;
                 while (!isVisible()) {
@@ -80,7 +78,8 @@ public class InputDialog extends JDialog implements ActionListener, KeyListener 
                     } else {
                         setTitle("[" + Formatter.formatSeconds(c) + "]");
                     }
-//                    if (c <= 3) JDSounds.P("sound.captcha.onCaptchaInputEmergency");
+                    // if (c <= 3)
+                    // JDSounds.P("sound.captcha.onCaptchaInputEmergency");
 
                     try {
                         Thread.sleep(1000);
@@ -111,15 +110,15 @@ public class InputDialog extends JDialog implements ActionListener, KeyListener 
         btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
         btnOK.addActionListener(this);
 
-        btnBAD = new JButton(JDLocale.L("gui.btn_cancel", "CANCEL"));
+        btnBAD = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
         btnBAD.addActionListener(this);
 
         this.getRootPane().setDefaultButton(btnOK);
         this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 
-        JDUtilities.addToGridBag(this, textField, 1, 1, 1, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(this, btnOK, 2, 1, 1, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(this, btnBAD, 3, 1, 1, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        this.add(textField);
+        this.add(btnOK);
+        this.add(btnBAD);
         this.pack();
         this.setResizable(false);
         this.setLocation(Screen.getCenterOfComponent(null, this));

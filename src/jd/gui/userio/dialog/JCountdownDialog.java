@@ -1,15 +1,13 @@
 package jd.gui.userio.dialog;
 
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 
-import jd.config.SubConfiguration;
 import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.simple.JDMouseAdapter;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.Formatter;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -17,7 +15,7 @@ import jd.utils.JDTheme;
 public abstract class JCountdownDialog extends JDialog {
 
     private static final long serialVersionUID = 8114522313158766965L;
-  
+
     protected Thread countdownThread;
     protected int countdown;
 
@@ -28,33 +26,14 @@ public abstract class JCountdownDialog extends JDialog {
         this.countDownLabel = new JLabel();
         countDownLabel.setIcon(JDTheme.II("gui.images.cancel", 16, 16));
         countDownLabel.setToolTipText(JDLocale.L("gui.dialog.countdown.tooltip", "This dialog closes after a certain time. Click here to stop the countdown"));
-        countDownLabel.addMouseListener(new MouseListener() {
+        countDownLabel.addMouseListener(new JDMouseAdapter() {
 
+            @Override
             public void mouseClicked(MouseEvent e) {
                 interrupt();
                 countDownLabel.removeMouseListener(this);
-
             }
 
-            public void mouseEntered(MouseEvent e) {
-                // TODO Auto-generated method stub
-
-            }
-
-            public void mouseExited(MouseEvent e) {
-                // TODO Auto-generated method stub
-
-            }
-
-            public void mousePressed(MouseEvent e) {
-                // TODO Auto-generated method stub
-
-            }
-
-            public void mouseReleased(MouseEvent e) {
-                // TODO Auto-generated method stub
-
-            }
         });
         setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Please enter..."));
     }

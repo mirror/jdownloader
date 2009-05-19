@@ -136,7 +136,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     }
 
     private void addDisabledMenuEntry(String iconKey, String label) {
-        JButton b = Factory.createButton(label, JDTheme.II(iconKey, 16, 16), this);
+        JButton b = Factory.createButton(label, JDTheme.II(iconKey, 16, 16));
         b.setOpaque(false);
         b.setEnabled(false);
         b.setForeground(Color.GRAY);

@@ -33,8 +33,6 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
-import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.plugins.PluginOptional;
@@ -60,19 +58,19 @@ public class JDShutdown extends PluginOptional {
         initConfig();
     }
 
-    //@Override
+    // @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == menuItem) {
             menuItem.setSelected(!menuItem.isSelected());
             if (menuItem.isSelected()) {
-               UserIO.getInstance().requestMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.enabled", "Das System wird nach dem Download heruntergefahren."));
+                UserIO.getInstance().requestMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.enabled", "Das System wird nach dem Download heruntergefahren."));
             } else {
                 UserIO.getInstance().requestMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.disabled", "Das System wird nach dem Download NICHT heruntergefahren."));
             }
         }
     }
 
-    //@Override
+    // @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
         if (menuItem != null && menuItem.isSelected()) {
@@ -92,7 +90,7 @@ public class JDShutdown extends PluginOptional {
         }
     }
 
-    //@Override
+    // @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         if (menuItem == null) menuItem = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu", "Shutdown after downloads finished"), 0).setActionListener(this);
@@ -100,22 +98,22 @@ public class JDShutdown extends PluginOptional {
         return menu;
     }
 
-    //@Override
+    // @Override
     public String getHost() {
         return JDLocale.L("plugins.optional.jdshutdown.name", "JDShutdown");
     }
 
-    //@Override
+    // @Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public boolean initAddon() {
 
         JDUtilities.getController().addControlListener(this);
@@ -123,7 +121,7 @@ public class JDShutdown extends PluginOptional {
         return true;
     }
 
-    //@Override
+    // @Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
     }
@@ -208,10 +206,10 @@ public class JDShutdown extends PluginOptional {
             }
 
             logger.info("Shutting down now");
-            String message= JDLocale.L("interaction.shutdown.dialog.msg", "<h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>");
-UserIO.setCountdownTime(count);
-           int ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDLocale.L("interaction.shutdown.dialog.title","Shutdown"), message,UserIO.getInstance().getIcon(UserIO.ICON_WARNING) , null, null);
-      UserIO.setCountdownTime(null);
+            String message = JDLocale.L("interaction.shutdown.dialog.msg", "<h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>");
+            UserIO.setCountdownTime(count);
+            int ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDLocale.L("interaction.shutdown.dialog.title", "Shutdown"), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+            UserIO.setCountdownTime(null);
             if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
                 JDUtilities.getController().prepareShutdown();
                 switch (OSDetector.getOSID()) {
