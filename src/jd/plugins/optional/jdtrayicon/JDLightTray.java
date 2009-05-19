@@ -332,7 +332,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     /**
-     * gets called if mouse stays over the tray. Edit delay in TrayMouseAdapter
+     * gets called if mouse stays over the tray. Edit delay in TrayJDMouseAdapter
      * 
      * @param me
      */

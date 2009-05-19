@@ -100,7 +100,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
         setPause(false);
 
-        MouseAreaListener ml = new MouseAreaListener(LEFTGAP, 0, IMGSIZE + LEFTGAP, IMGSIZE);
+        MouseAreaListener ml = new MouseAreaListener(LEFTGAP, 0, IMGSIZE + LEFTGAP, DISPLAY);
         addMouseMotionListener(ml);
         addMouseListener(ml);
     }

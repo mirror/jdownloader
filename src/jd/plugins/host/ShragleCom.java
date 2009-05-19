@@ -154,7 +154,12 @@ public class ShragleCom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
+        if(downloadLink.getDownloadURL().contains("?")){
+            br.getPage(downloadLink.getDownloadURL()+"&jd=1");  
+        }else{
+            br.getPage(downloadLink.getDownloadURL()+"?jd=1");  
+        }
+     
         String wait = br.getRegex(Pattern.compile("Bitte warten Sie(.*?)Minuten", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l); }
         wait = br.getRegex("var downloadWait =(.*?);").getMatch(0);

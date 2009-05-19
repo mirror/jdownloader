@@ -2,7 +2,6 @@ package jd.gui.skins.simple;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -75,7 +74,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             premium.setIcon(JDTheme.II("gui.images.premium_disabled", 16, 16));
         }
         premium.setToolTipText(JDLocale.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
-       
+
         premium.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
@@ -105,7 +104,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         premium.setContentAreaFilled(false);
         premium.setBorderPainted(false);
         add(premium);
-        premium.addMouseListener(new MouseAdapter() {
+        premium.addMouseListener(new JDMouseAdapter() {
 
             public void mouseClicked(MouseEvent e) {
                 if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
@@ -139,11 +138,10 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
 
         for (int i = 0; i < BARCOUNT; i++) {
             TinyProgressBar pg = new TinyProgressBar();
-         
-            
+
             pg.setOpaque(false);
             bars[i] = pg;
-            bars[i].addMouseListener(new MouseAdapter() {
+            bars[i].addMouseListener(new JDMouseAdapter() {
 
                 public void mouseClicked(MouseEvent arg0) {
 

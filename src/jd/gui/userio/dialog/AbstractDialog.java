@@ -138,9 +138,9 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         }
         this.toFront();
         this.setAlwaysOnTop(true);
-        SubConfiguration cfg = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
+    
         if (JDFlags.hasNoFlags(flag, UserIO.NO_COUNTDOWN)) {
-            this.countdown(Math.max(2, cfg.getIntegerProperty(SimpleGuiConstants.PARAM_INPUTTIMEOUT, 20)));
+            this.countdown(UserIO.getCountdownTime());
         }else{
             countDownLabel.setVisible(false);
         }
@@ -149,6 +149,8 @@ this.packed();
         this.toFront();
 
     }
+
+
 /**
  * may be overwritten to set focus to special components etc.
  */

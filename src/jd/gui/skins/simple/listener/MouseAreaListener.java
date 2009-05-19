@@ -22,7 +22,7 @@ public class MouseAreaListener implements MouseMotionListener, MouseListener {
     }
 
     public boolean isOverIcon(Point p) {
-        if (p.x >= xStart && p.x <= xEnd && p.y >= yStart && p.y <= yEnd) return true;
+        if (p.x > xStart && p.x < xEnd && p.y > yStart && p.y < yEnd) return true;
         return false;
     }
 

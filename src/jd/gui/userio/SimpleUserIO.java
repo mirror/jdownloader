@@ -44,7 +44,7 @@ public class SimpleUserIO extends UserIO {
         // ), "01234", null);
         // System.out.println("result: " + res);
 
-       System.out.println(UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE, "title23", "message final\r\n int flag, f\r\ninal String title, final\r\n S\r\ntring message, final Ima\r\ngeIcon icon, final String okOption, final String cancelOption) {","defaultvalue", JDTheme.II("gui.clicknload", 32, 32), null, null));
+       UserIO.getInstance().requestMessageDialog("TEST");
     }
 
     // @Override
@@ -66,8 +66,21 @@ public class SimpleUserIO extends UserIO {
 
             // @Override
             public String runSave() {
-                return new InputDialog(flag, title, message,defaultMessage, icon, okOption, cancelOption).getReturnID();
+                return new InputDialog(flag, title, message, defaultMessage, icon, okOption, cancelOption).getReturnID();
             }
         }.getReturnValue();
+    }
+
+    @Override
+    public ImageIcon getIcon(int iconInfo) {
+        switch (iconInfo) {
+        case UserIO.ICON_ERROR:
+            return JDTheme.II("gui.images.stop", 32, 32);
+        case UserIO.ICON_WARNING:
+            return JDTheme.II("gui.images.warning", 32, 32);
+        default:
+            return JDTheme.II("gui.images.config.tip", 32, 32);
+        }
+
     }
 }

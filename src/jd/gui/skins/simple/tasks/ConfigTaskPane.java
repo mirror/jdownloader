@@ -67,12 +67,21 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
         add(addons, D1_BUTTON_ICON);
         add(eventmanager, D1_BUTTON_ICON);
 
+        general.setName(JDLocale.L("quickhelp.config.general","configuration general"));
+        download.setName(JDLocale.L("quickhelp.config.download","configuration download"));
+        gui.setName(JDLocale.L("quickhelp.config.gui","configuration gui"));
+        reconnect.setName(JDLocale.L("quickhelp.config.reconnect","configuration reconnect"));
+        host.setName(JDLocale.L("quickhelp.config.host","configuration host"));
+        captcha.setName(JDLocale.L("quickhelp.config.captcha","configuration captcha"));
+        addons.setName(JDLocale.L("quickhelp.config.addons","configuration addons"));
+        eventmanager.setName(JDLocale.L("quickhelp.config.eventmanager","configuration eventmanager"));
         add(new JSeparator());
 
         add(sav, D1_BUTTON_ICON);
     }
 
     public void actionPerformed(ActionEvent e) {
+        SimpleGUI.CURRENTGUI.setWaiting(true);
         if (e.getSource() == general) {
             this.broadcastEvent(new ActionEvent(this, ACTION_GENERAL, ((JButton) e.getSource()).getName()));
             return;

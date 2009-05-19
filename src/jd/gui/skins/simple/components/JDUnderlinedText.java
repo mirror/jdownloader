@@ -1,19 +1,20 @@
 package jd.gui.skins.simple.components;
 
 import java.awt.Font;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.font.TextAttribute;
 import java.util.Map;
 
 import javax.swing.JComponent;
 
-public class JDUnderlinedText extends MouseAdapter {
+import jd.gui.skins.simple.JDMouseAdapter;
+
+public class JDUnderlinedText extends JDMouseAdapter {
 
     private Font originalFont;
 
     @SuppressWarnings("unchecked")
-    //@Override
+    // @Override
     public void mouseEntered(MouseEvent evt) {
         if (!(evt.getSource() instanceof JComponent)) return;
         JComponent src = (JComponent) evt.getSource();
@@ -27,7 +28,7 @@ public class JDUnderlinedText extends MouseAdapter {
 
     }
 
-    //@Override
+    // @Override
     public void mouseExited(MouseEvent evt) {
         if (!(evt.getSource() instanceof JComponent)) return;
         JComponent src = (JComponent) evt.getSource();

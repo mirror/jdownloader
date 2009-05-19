@@ -18,9 +18,7 @@ package jd.gui.skins.simple;
 
 import java.awt.AWTEvent;
 import java.awt.Component;
-import java.awt.Cursor;
 import java.awt.EventQueue;
-import java.awt.Image;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
@@ -30,8 +28,12 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
 import javax.swing.MenuSelectionManager;
 import javax.swing.SwingUtilities;
@@ -40,20 +42,22 @@ import javax.swing.text.JTextComponent;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import net.miginfocom.swing.MigLayout;
 
 public class JDEventQueue extends EventQueue {
-    private Cursor cursor;
-    private Thread curserupdater;
+
     private int lastPoint = 0;
+
+    private JPanel mouseOver;
+
+    private JLabel lbl;
 
     public JDEventQueue() {
         super();
 
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-
-        Image image = JDTheme.I("gui.cursor.help");
-
-        cursor = toolkit.createCustomCursor(image, new Point(0, 0), "help");
+        mouseOver = new JPanel(new MigLayout("ins 3"));
+        mouseOver.add(lbl = new JLabel(JDTheme.II("gui.images.help", 24, 24)), "alignx left");
+        mouseOver.setBorder(BorderFactory.createLineBorder(mouseOver.getBackground().darker()));
 
     }
 
@@ -99,7 +103,9 @@ public class JDEventQueue extends EventQueue {
                 final StringBuilder sb = new StringBuilder();
                 while (source != null) {
                     Component source2 = source.getComponentAt(point);
-
+                    if (source instanceof JTabbedPane) {
+                        source2 = ((JTabbedPane) source).getSelectedComponent();
+                    }
                     if (source2 == source || source2 == null) {
                         if (sb.length() > 0) {
                             new Thread() {
@@ -143,43 +149,26 @@ public class JDEventQueue extends EventQueue {
                 while (source != null) {
 
                     Component source2 = source.getComponentAt(point);
-
-                    if (source == null || source2 == source) break;
+                    if (source instanceof JTabbedPane) {
+                        source2 = ((JTabbedPane) source).getSelectedComponent();
+                    }
+                    if (source == null || source2 == source || source2 == null) break;
                     source = source2;
                     point.x -= source.getLocation().x;
                     point.y -= source.getLocation().y;
                     // if (source == sdource || sdource == null) {
                     if (source.getName() != null) {
+                        lbl.setText(JDLocale.LF("gui.quickhelp.text", "Click for help: %s", source.getName()));
+                        mouseOver.revalidate();
+                        MouseFollower.show(mouseOver);
 
-                        if (curserupdater != null) {
-                            try {
-                                curserupdater.interrupt();
-                            } catch (Exception e2) {
-
-                            }
-                        }
-                        final Component found = source;
-                        curserupdater = new Thread() {
-                            public void run() {
-                                try {
-                                    long start = System.currentTimeMillis();
-                                    while ((System.currentTimeMillis() - start) < 750) {
-                                        found.setCursor(cursor);
-                                        Thread.sleep(50);
-                                    }
-
-                                    found.setCursor(Cursor.getDefaultCursor());
-                                } catch (Exception e) {
-
-                                }
-
-                            }
-                        };
-                        curserupdater.start();
                         break;
                     }
 
                 }
+            } else {
+                MouseFollower.hide();
+
             }
 
         }

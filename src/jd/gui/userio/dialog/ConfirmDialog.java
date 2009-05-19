@@ -4,6 +4,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.JTextPane;
 
+import jd.gui.UserIO;
+import jd.nutils.JDFlags;
+
 public class ConfirmDialog extends AbstractDialog {
 
     private JTextPane textField;
@@ -22,6 +25,11 @@ public class ConfirmDialog extends AbstractDialog {
 
     public void contentInit(JPanel cp) {
         textField = new JTextPane();
+        
+        if(JDFlags.hasAllFlags(this.flag, UserIO.STYLE_HTML)){
+            textField.setContentType("text/html");
+//            textPane.setEditable(false);
+        }
         textField.setBorder(null);
         textField.setBackground(null);
         textField.setOpaque(false);

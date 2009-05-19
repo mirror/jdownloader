@@ -57,7 +57,7 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
             input.addKeyListener(this);
             input.addMouseListener(this);
 
-            contentpane.add(input, "pushy,growy");
+            contentpane.add(input, "pushy,growy, width n:n:450");
         }
 
     }

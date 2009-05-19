@@ -30,6 +30,7 @@ import javax.swing.event.ChangeListener;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.JDImage;
 import net.miginfocom.swing.MigLayout;
 
@@ -86,7 +87,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
     }
 
     public void init() {
-
+        SimpleGUI.CURRENTGUI.setWaiting(true);
         initPanel();
         load();
 

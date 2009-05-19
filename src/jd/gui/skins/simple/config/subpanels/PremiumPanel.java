@@ -149,6 +149,14 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
         }
     }
 
+
+    /**
+     * List ist immer eine ArrayList<Account> mit Daten aus der config
+     * 
+     * @param list
+     * @throws
+     */
+
     public void loadAccounts() {
         try {
             if (!SimpleGUI.CURRENTGUI.isWaiting()) SimpleGUI.CURRENTGUI.setWaiting(true);
@@ -165,12 +173,9 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                 JDController.getInstance().addControlListener(this);
             }
         } finally {
-            try {
-                Thread.sleep(4000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+
             SimpleGUI.CURRENTGUI.getRealContentPane().invalidate();
+
         }
     }
 
@@ -412,7 +417,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             if (e.getSource() == chkEnable) {
                 boolean sel = chkEnable.isSelected();
                 ce.setChanges(true);
-                System.out.println(e);
+              
                 setEnabled(sel);
                 if (!sel) info.setCollapsed(true);
                 return;
@@ -421,7 +426,9 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                 if (info.isCollapsed()) {
                     AccountInfo ai;
                     try {
-                        ai = host.getAccountInformation(getAccount());
+                        Account acc = getAccount();
+                        if (acc == null) return;
+                        ai = host.getAccountInformation(acc);
                         if (ai == null) return;
                         Container details = info.getContentPane();
                         details.setLayout(new MigLayout("ins 0 0 0 0, wrap 3,aligny top", "[][fill,align right]15[grow, fill,align left]"));

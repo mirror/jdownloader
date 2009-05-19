@@ -32,8 +32,10 @@ import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
 import jd.event.ControlEvent;
+import jd.gui.UserIO;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
+import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
@@ -63,9 +65,9 @@ public class JDShutdown extends PluginOptional {
         if (e.getSource() == menuItem) {
             menuItem.setSelected(!menuItem.isSelected());
             if (menuItem.isSelected()) {
-                JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.enabled", "Das System wird nach dem Download heruntergefahren."));
+               UserIO.getInstance().requestMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.enabled", "Das System wird nach dem Download heruntergefahren."));
             } else {
-                JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.disabled", "Das System wird nach dem Download NICHT heruntergefahren."));
+                UserIO.getInstance().requestMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.disabled", "Das System wird nach dem Download NICHT heruntergefahren."));
             }
         }
     }
@@ -78,12 +80,12 @@ public class JDShutdown extends PluginOptional {
                 if ((InteractionTrigger) event.getSource() == Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS) {
                     if (shutdown != null) {
                         if (!shutdown.isAlive()) {
-                            shutdown = new shutDown();
-                            shutdown.run();
+                            shutdown = new ShutDown();
+                            shutdown.start();
                         }
                     } else {
-                        shutdown = new shutDown();
-                        shutdown.run();
+                        shutdown = new ShutDown();
+                        shutdown.start();
                     }
                 }
             }
@@ -179,7 +181,7 @@ public class JDShutdown extends PluginOptional {
         }
     }
 
-    class shutDown extends Thread {
+    class ShutDown extends Thread {
 
         /*
          * Wait for JD-Unrar
@@ -206,9 +208,11 @@ public class JDShutdown extends PluginOptional {
             }
 
             logger.info("Shutting down now");
-
-            CountdownConfirmDialog shutDownMessage = new CountdownConfirmDialog(((SimpleGUI) JDUtilities.getGUI()), JDLocale.L("interaction.shutdown.dialog.msg", "<h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>"), count, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
-            if (shutDownMessage.result) {
+            String message= JDLocale.L("interaction.shutdown.dialog.msg", "<h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>");
+UserIO.setCountdownTime(count);
+           int ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDLocale.L("interaction.shutdown.dialog.title","Shutdown"), message,UserIO.getInstance().getIcon(UserIO.ICON_WARNING) , null, null);
+      UserIO.setCountdownTime(null);
+            if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
                 JDUtilities.getController().prepareShutdown();
                 switch (OSDetector.getOSID()) {
                 case OSDetector.OS_WINDOWS_2003:

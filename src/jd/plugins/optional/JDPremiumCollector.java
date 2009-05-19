@@ -70,7 +70,7 @@ public class JDPremiumCollector extends PluginOptional {
             logger.severe(JDLocale.L("plugins.optional.premiumcollector.error.url", "Probably wrong URL! See log for more infos!"));
         }
 
-        if (br.containsHTML("Login faild")) {
+        if (br.containsHTML("Login failed")) {
             logger.severe(JDLocale.L("plugins.optional.premiumcollector.error.userpass", "Wrong username/password!"));
             return;
         }

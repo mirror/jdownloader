@@ -16,6 +16,7 @@
 
 package jd.gui.skins.simple.config;
 
+import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
@@ -33,6 +34,7 @@ import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.JTabbedPanel;
+import jd.gui.skins.simple.SimpleGUI;
 import net.miginfocom.swing.MigLayout;
 
 public abstract class ConfigPanel extends JTabbedPanel {
@@ -42,7 +44,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
     protected Vector<GUIConfigEntry> entries = new Vector<GUIConfigEntry>();
 
     protected Logger logger = jd.controlling.JDLogger.getLogger();
-    private boolean tabbed=false;
+    private boolean tabbed = false;
     protected JPanel panel;
 
     private ConfigGroup currentGroup;
@@ -52,7 +54,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
     public ConfigPanel() {
 
         panel = new JPanel();
-        this.setLayout(new MigLayout("ins 0 10 10 10", "[fill,grow]", "[fill,grow]"));
+        this.setLayout(new MigLayout("ins 0 0 0 0", "[fill,grow]", "[fill,grow]"));
         panel.setLayout(new MigLayout("ins 0 10 10 10,wrap 2", "[fill,grow 10]10[fill,grow]"));
         // this.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1,
         // this.getBackground().darker()));
@@ -61,10 +63,18 @@ public abstract class ConfigPanel extends JTabbedPanel {
     public boolean needsViewport() {
         return viewport;
     }
+
     public void setTabbed(boolean b) {
-        tabbed=b;
-         
-     }
+        tabbed = b;
+
+    }
+
+    public void paint(Graphics g) {
+
+        super.paint(g);
+        SimpleGUI.CURRENTGUI.setWaiting(false);
+    }
+
     public void addGUIConfigEntry(GUIConfigEntry entry, JPanel panel) {
 
         // JDUtilities.addToGridBag(panel, entry, GridBagConstraints.RELATIVE,
@@ -78,7 +88,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
             }
             if (entry.getDecoration() != null) {
                 if (entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) {
-                    panel.add(entry.getDecoration(), "spany " + entry.getInput().length + ",spanx, gapright 15");
+                    panel.add(entry.getDecoration(), "spany " + entry.getInput().length + ",spanx, gapright " + getGapRight());
 
                 } else {
                     panel.add(entry.getDecoration(), "spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
@@ -88,9 +98,10 @@ public abstract class ConfigPanel extends JTabbedPanel {
             for (JComponent c : entry.getInput()) {
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_TEXTAREA:
-                   panel.add(new JScrollPane(c), "spanx,gapright 20,growy,pushy");
-//                    panel.add(new JScrollPane(c), "spanx,gapright 20,growy,pushy");
-//                    viewport = false;
+                    panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy");
+                    // panel.add(new JScrollPane(c),
+                    // "spanx,gapright 20,growy,pushy");
+                    // viewport = false;
                     break;
                 case ConfigContainer.TYPE_PREMIUMPANEL:
                     this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
@@ -102,7 +113,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
                     // sp.setBorder(null);
                     break;
                 default:
-                    panel.add(c, entry.getDecoration() == null ? "spanx,gapright 20" : "gapright 20");
+                    panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + getGapRight() : "gapright " + getGapRight());
                     break;
                 }
 
@@ -119,10 +130,10 @@ public abstract class ConfigPanel extends JTabbedPanel {
             }
             if (entry.getDecoration() != null) {
                 if (entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) {
-                    panel.add(entry.getDecoration(), "gapleft 35,spany " + entry.getInput().length + ",spanx");
+                    panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + ",spanx");
 
                 } else {
-                    panel.add(entry.getDecoration(), "gapleft 35,spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
+                    panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
                 }
             }
 
@@ -130,9 +141,10 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_TEXTAREA:
-//                    viewport = false;
-                   // panel.add(new JScrollPane(c), "spanx,gapleft 35,gapright 20");
-                    panel.add(c, "spanx,gapleft 35,gapright 20");
+                    // viewport = false;
+                    // panel.add(new JScrollPane(c),
+                    // "spanx,gapleft 35,gapright 20");
+                    panel.add(c, "spanx,gapleft " + getGapLeft() + ",gapright " + this.getGapRight());
                     break;
                 case ConfigContainer.TYPE_PREMIUMPANEL:
 
@@ -143,7 +155,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
                     sp.setBorder(null);
                     break;
                 default:
-                    panel.add(c, entry.getDecoration() == null ? "spanx,gapright 20,gapleft 35" : "gapright 20");
+                    panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + this.getGapRight() + ",gapleft " + this.getGapLeft() : "gapright " + this.getGapRight());
                     break;
                 }
 
@@ -151,6 +163,16 @@ public abstract class ConfigPanel extends JTabbedPanel {
         }
         entries.add(entry);
 
+    }
+
+    private String getGapLeft() {
+        // TODO Auto-generated method stub
+        return tabbed ? "35" : "35";
+    }
+
+    private String getGapRight() {
+
+        return tabbed ? "16" : "20";
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry) {

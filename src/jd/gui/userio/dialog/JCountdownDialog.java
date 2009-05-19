@@ -6,8 +6,10 @@ import java.awt.event.MouseListener;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 
+import jd.config.SubConfiguration;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.Formatter;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -15,6 +17,7 @@ import jd.utils.JDTheme;
 public abstract class JCountdownDialog extends JDialog {
 
     private static final long serialVersionUID = 8114522313158766965L;
+  
     protected Thread countdownThread;
     protected int countdown;
 
@@ -28,29 +31,29 @@ public abstract class JCountdownDialog extends JDialog {
         countDownLabel.addMouseListener(new MouseListener() {
 
             public void mouseClicked(MouseEvent e) {
-               interrupt();
-               countDownLabel.removeMouseListener(this);
-                
+                interrupt();
+                countDownLabel.removeMouseListener(this);
+
             }
 
             public void mouseEntered(MouseEvent e) {
                 // TODO Auto-generated method stub
-                
+
             }
 
             public void mouseExited(MouseEvent e) {
                 // TODO Auto-generated method stub
-                
+
             }
 
             public void mousePressed(MouseEvent e) {
                 // TODO Auto-generated method stub
-                
+
             }
 
             public void mouseReleased(MouseEvent e) {
                 // TODO Auto-generated method stub
-                
+
             }
         });
         setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Please enter..."));
