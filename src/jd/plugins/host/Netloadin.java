@@ -80,15 +80,17 @@ public class Netloadin extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        try{
         requestFileInformation(downloadLink);
         br.setDebug(true);
+
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
         checkPassword(downloadLink);
-        System.out.println(br);
+      
         if (linkStatus.isFailed()) return;
         if (br.containsHTML("download_fast_link")) {
             handleFastLink(downloadLink);
@@ -150,6 +152,10 @@ public class Netloadin extends PluginForHost {
         sleep(20000, downloadLink);
         dl = RAFDownload.download(downloadLink, br.createRequest(finalURL));
         dl.startDownload();
+        }catch(IOException e){
+          throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,30000);
+            
+        }
     }
 
     private void handleErrors(DownloadLink downloadLink) throws PluginException {

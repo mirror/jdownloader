@@ -415,7 +415,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                         removes.add(link);
                                         continue;
                                     }
-                                    if (!link.isEnabled() && linkStatus.getTotalWaitTime() > 0) {
+                                    if (linkStatus.hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
 
                                         if (linkStatus.getRemainingWaittime() == 0) {
                                             // link.setEnabled(true);
@@ -435,7 +435,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                         }
 
                                     }
-
+                            
                                     if (linkStatus.getRemainingWaittime() > 0) {
                                         hasWaittimeLinks = true;
                                         updates.add(link);

@@ -23,6 +23,7 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -413,7 +414,14 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public void onMainMenuMouseClick(MouseEvent e) {
-        JPopupMenu popup = new JPopupMenu();
+        this.setWaiting(true);
+        JPopupMenu popup = new JPopupMenu(){
+            public void paint(Graphics g){
+                super.paint(g);
+                setWaiting(false);
+            }
+            
+        };
 
         // menu.setSize(50,50);
 
