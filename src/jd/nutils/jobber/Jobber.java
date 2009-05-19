@@ -18,17 +18,19 @@ package jd.nutils.jobber;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.Vector;
 
 public class Jobber {
 
     private int paralellWorkerNum;
     private LinkedList<JDRunnable> jobList;
-    private Worker[] workerList;
+    private Vector<Worker> workerList = new Vector<Worker>();
     private ArrayList<WorkerListener> listener;
     private boolean killWorkerAfterQueueFinished = true;
     private boolean running = false;
     private Integer jobsAdded = 0;
     boolean debug = false;
+    private Jobber INSTANCE = null;
 
     public int getJobsAdded() {
         return jobsAdded;
@@ -60,6 +62,7 @@ public class Jobber {
      *            Anzahl der paralellen Jobs
      */
     public Jobber(int i) {
+        this.INSTANCE = this;
         this.paralellWorkerNum = i;
         this.jobList = new LinkedList<JDRunnable>();
         this.listener = new ArrayList<WorkerListener>();
@@ -81,9 +84,11 @@ public class Jobber {
     }
 
     private void createWorker() {
-        this.workerList = new Worker[paralellWorkerNum];
-        for (int i = 0; i < paralellWorkerNum; i++) {
-            workerList[i] = new Worker(i);
+        synchronized (workerList) {
+            workerList = new Vector<Worker>();
+            for (int i = 0; i < paralellWorkerNum; i++) {
+                workerList.add(new Worker(i, INSTANCE));
+            }
         }
         if (debug) System.out.println("created " + paralellWorkerNum + " worker");
     }
@@ -98,10 +103,25 @@ public class Jobber {
         this.running = false;
         if (workerList == null) return;
         synchronized (workerList) {
-            for (Worker w : workerList) {
+            Vector<Worker> tmp = new Vector<Worker>(workerList);
+            for (Worker w : tmp) {
                 if (w != null) {
                     w.interrupt();
                 }
+            }
+        }
+    }
+
+    private synchronized void workerdone() {
+        int count = 0;
+        synchronized (workerList) {
+            Vector<Worker> tmp = new Vector<Worker>(workerList);
+            for (Worker w : tmp) {
+                if (w.isAlive()) count++;
+            }
+            if (count <= 1) {
+                running = false;
+                if (debug) System.out.println(this + " All worker done, this Jobber finished his job!");
             }
         }
     }
@@ -177,7 +197,8 @@ public class Jobber {
 
             if (workerList != null) {
                 synchronized (workerList) {
-                    for (Worker w : workerList) {
+                    Vector<Worker> tmp = new Vector<Worker>(workerList);
+                    for (Worker w : tmp) {
                         synchronized (w) {
                             if (w.waitFlag) {
                                 if (debug) System.out.println("Dhoo...Hey " + w + "!! Time to wake up and do some work.");
@@ -212,13 +233,15 @@ public class Jobber {
 
         private int id;
         private boolean waitFlag = false;
+        private Jobber INSTANCE;
 
         public int getWorkerID() {
             return id;
         }
 
-        public Worker(int i) {
+        public Worker(int i, Jobber instance) {
             super("JDWorkerThread" + i);
+            INSTANCE = instance;
             this.id = i;
             this.start();
         }
@@ -232,7 +255,10 @@ public class Jobber {
                 JDRunnable ra = getNextJDRunnable();
 
                 if (ra == null) {
-                    if (killWorkerAfterQueueFinished) return;
+                    if (killWorkerAfterQueueFinished) {
+                        INSTANCE.workerdone();
+                        return;
+                    }
                     if (debug) System.out.println(this + ": Work is done..I'll sleep now.");
                     waitFlag = true;
                     synchronized (this) {

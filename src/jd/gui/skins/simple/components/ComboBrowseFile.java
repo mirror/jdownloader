@@ -78,16 +78,13 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         initGUI();
     }
 
-    public void actionPerformed(ActionEvent e) {
-        System.out.println("actionPerformed");
-        if (e.getSource() == cmboInput) {
-            System.out.println("actionPerformed: cmboInput");
+    public void actionPerformed(ActionEvent e) {        
+        if (e.getSource() == cmboInput) {           
             Object sel = cmboInput.getSelectedItem();
             if (sel != null) {
                 setCurrentPath(new File(sel.toString()));
             }
-        } else if (e.getSource() == btnBrowse) {
-            System.out.println("actionbtnBrowse");
+        } else if (e.getSource() == btnBrowse) {            
             setCurrentPath(getPath());
         }
         for (ActionListener l : listenerList) {
