@@ -852,7 +852,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         LinkAdder linkadder = new LinkAdder();
 
         lgTaskPane.addPanel(new SingletonPanel(linkadder));
-        LinkGrabberController.getInstance().getBroadcaster().addListener(new LinkGrabberControllerListener() {
+        LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
             public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
                 switch (event.getID()) {
                 case LinkGrabberControllerEvent.ADDED:

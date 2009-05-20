@@ -116,7 +116,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         gathertimer.setRepeats(false);
         INSTANCE = this;
         LGINSTANCE = LinkGrabberController.getInstance();
-        LGINSTANCE.getBroadcaster().addListener(this);
+        LGINSTANCE.addListener(this);
     }
 
     public void showFilePackageInfo(LinkGrabberFilePackage fp) {
@@ -131,7 +131,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         JDCollapser.getInstance().setCollapsed(true);
     }
 
-    public synchronized void fireTableChanged() {
+    public void fireTableChanged() {
         if (tablerefreshinprogress) return;
         new Thread() {
             public void run() {
@@ -163,7 +163,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     // @Override
     public void onHide() {
-        LGINSTANCE.getBroadcaster().removeListener(this);
+        LGINSTANCE.removeListener(this);
         Update_Async.stop();
         visible = false;
         new GuiRunnable<Object>() {
@@ -295,7 +295,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             }
         }.waitForEDT();
         fireTableChanged();
-        LGINSTANCE.getBroadcaster().addListener(this);
+        LGINSTANCE.addListener(this);
         visible = true;
         Update_Async.restart();
     }
@@ -547,6 +547,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                         for (DownloadLink link : selected_links) {
                             link.setProperty("removed", true);
                             fp = LGINSTANCE.getFPwithLink(link);
+                            if (fp == null) continue;
                             fp.remove(link);
                         }
                         return;
@@ -575,7 +576,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             confirmPackage(all.get(i), null);
         }
         if (all.size() == 0) return;
-        LGINSTANCE.getBroadcaster().fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.ADDED));
+        LGINSTANCE.throwLinksAdded();
         if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
             JDController.getInstance().startDownloads();
         }

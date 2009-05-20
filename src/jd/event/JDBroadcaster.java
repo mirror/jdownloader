@@ -31,14 +31,8 @@ public abstract class JDBroadcaster<T extends EventListener, TT extends JDEvent>
     }
 
     public void addListener(T listener) {
-        synchronized (callList) {
-            synchronized (removeList) {
-                if (removeList.contains(listener)) {
-                    removeList.remove(listener);
-                }
-            }
-            if (!callList.contains(listener)) callList.add(listener);
-        }
+        if (removeList.contains(listener)) removeList.remove(listener);
+        if (!callList.contains(listener)) callList.add(listener);
     }
 
     public boolean hasListener() {
@@ -47,14 +41,12 @@ public abstract class JDBroadcaster<T extends EventListener, TT extends JDEvent>
 
     public boolean fireEvent(TT event) {
         // System.out.println("Broadcast start" + this.getClass());
-        synchronized (callList) {
-            synchronized (removeList) {
-                callList.removeAll(removeList);
-                removeList.clear();
-            }
-            for (int i = callList.size() - 1; i >= 0; i--) {
-                this.fireEvent(callList.get(i), event);
-            }
+        synchronized (removeList) {
+            callList.removeAll(removeList);
+            removeList.clear();
+        }
+        for (int i = callList.size() - 1; i >= 0; i--) {
+            this.fireEvent(callList.get(i), event);
         }
         return false;
         // System.out.println("Broadcast stop" + this.getClass());
@@ -63,8 +55,6 @@ public abstract class JDBroadcaster<T extends EventListener, TT extends JDEvent>
     protected abstract void fireEvent(T listener, TT event);
 
     public void removeListener(T listener) {
-        synchronized (removeList) {
-            if (!removeList.contains(listener)) removeList.add(listener);
-        }
+        if (!removeList.contains(listener)) removeList.add(listener);
     }
 }

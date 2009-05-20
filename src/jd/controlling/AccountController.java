@@ -39,14 +39,12 @@ class AccountControllerBroadcaster extends JDBroadcaster<AccountControllerListen
             super.fireEvent(event);
             return false;
         } else {
-            synchronized (callList) {
-                synchronized (removeList) {
-                    callList.removeAll(removeList);
-                    removeList.clear();
-                }
-                for (int i = callList.size() - 1; i >= 0; i--) {
-                    if (callList.get(i).vetoAccountGetEvent(event.getHost(), event.getAccount())) return true;
-                }
+            synchronized (removeList) {
+                callList.removeAll(removeList);
+                removeList.clear();
+            }
+            for (int i = callList.size() - 1; i >= 0; i--) {
+                if (callList.get(i).vetoAccountGetEvent(event.getHost(), event.getAccount())) return true;
             }
             return false;
         }
@@ -74,15 +72,13 @@ class AccountProviderBroadcaster extends JDBroadcaster<AccountProvider, AccountP
         ArrayList<Account> ret = new ArrayList<Account>();
         if (pluginForHost == null) return ret;
         String host = pluginForHost.getHost();
-        synchronized (callList) {
-            synchronized (removeList) {
-                callList.removeAll(removeList);
-                removeList.clear();
-            }
-            for (int i = callList.size() - 1; i >= 0; i--) {
-                ArrayList<Account> ret2 = callList.get(i).provideAccountsFor(host);
-                if (ret2 != null) ret.addAll(ret2);
-            }
+        synchronized (removeList) {
+            callList.removeAll(removeList);
+            removeList.clear();
+        }
+        for (int i = callList.size() - 1; i >= 0; i--) {
+            ArrayList<Account> ret2 = callList.get(i).provideAccountsFor(host);
+            if (ret2 != null) ret.addAll(ret2);
         }
         return ret;
     }

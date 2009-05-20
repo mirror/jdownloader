@@ -124,15 +124,13 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
             for (DownloadLink dl : downloadLinks) {
                 if (!hoster.contains(dl.getPlugin().getHost())) remove.add(dl);
             }
-            this.remove(remove);
-            countFailedLinks(true);
         }
+        this.remove(remove);
+        countFailedLinks(true);
     }
 
     public int indexOf(DownloadLink link) {
-        synchronized (downloadLinks) {
-            return this.downloadLinks.indexOf(link);
-        }
+        return this.downloadLinks.indexOf(link);
     }
 
     public String getDownloadDirectory() {
@@ -163,14 +161,11 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void add(DownloadLink link) {
-        synchronized (downloadLinks) {
-            if (!downloadLinks.contains(link)) {
-                LinkGrabberFilePackage fp = LinkGrabberController.getInstance().getFPwithLink(link);
-                downloadLinks.add(link);
-                broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK, link));
-                if (fp != null && fp != this) fp.remove(link);
-            }
-
+        if (!downloadLinks.contains(link)) {
+            LinkGrabberFilePackage fp = LinkGrabberController.getInstance().getFPwithLink(link);
+            downloadLinks.add(link);
+            broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK, link));
+            if (fp != null && fp != this) fp.remove(link);
         }
     }
 
@@ -182,32 +177,29 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                     remove.add(dl);
                 }
             }
-            this.remove(remove);
-            countFailedLinks(true);
         }
+        this.remove(remove);
+        countFailedLinks(true);
     }
 
     public void remove(Vector<DownloadLink> links) {
-        synchronized (downloadLinks) {
-            for (DownloadLink dl : links) {
-                this.remove(dl);
-            }
+        for (DownloadLink dl : links) {
+            this.remove(dl);
         }
     }
 
-    public void updateData() {
+    public synchronized void updateData() {
+        String password = this.password;
+        StringBuilder comment = new StringBuilder(this.comment);
+
+        String[] pws = JDUtilities.passwordStringToArray(password);
+        Vector<String> pwList = new Vector<String>();
+        for (String element : pws) {
+            pwList.add(element);
+        }
+
+        // Vector<String> dlpwList = new Vector<String>();
         synchronized (downloadLinks) {
-            String password = this.password;
-            StringBuilder comment = new StringBuilder(this.comment);
-
-            String[] pws = JDUtilities.passwordStringToArray(password);
-            Vector<String> pwList = new Vector<String>();
-            for (String element : pws) {
-                pwList.add(element);
-            }
-
-            // Vector<String> dlpwList = new Vector<String>();
-
             for (DownloadLink element : downloadLinks) {
                 pws = JDUtilities.passwordStringToArray(element.getSourcePluginPassword());
                 for (String element2 : pws) {
@@ -222,17 +214,18 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                     comment.append(newComment);
                 }
             }
-
-            String cmt = comment.toString();
-            if (cmt.startsWith("|")) {
-                cmt = cmt.substring(1);
-            }
-            this.comment = cmt;
-            this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
         }
+        String cmt = comment.toString();
+        if (cmt.startsWith("|")) {
+            cmt = cmt.substring(1);
+        }
+        this.comment = cmt;
+        this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
     }
 
     public void add(int index, DownloadLink link) {
+        boolean newadded = false;
+        LinkGrabberFilePackage fp = null;
         synchronized (downloadLinks) {
             if (downloadLinks.contains(link)) {
                 downloadLinks.remove(link);
@@ -242,26 +235,28 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                     downloadLinks.add(0, link);
                 } else
                     downloadLinks.add(index, link);
-                broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
             } else {
-                LinkGrabberFilePackage fp = LinkGrabberController.getInstance().getFPwithLink(link);
+                fp = LinkGrabberController.getInstance().getFPwithLink(link);
                 if (index > downloadLinks.size() - 1) {
                     downloadLinks.add(link);
                 } else if (index < 0) {
                     downloadLinks.add(0, link);
                 } else
                     downloadLinks.add(index, link);
-                broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK, link));
-                if (fp != null && fp != this) fp.remove(link);
+                newadded = true;
             }
+        }
+        if (newadded) {
+            broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK, link));
+            if (fp != null && fp != this) fp.remove(link);
+        } else {
+            broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
         }
     }
 
     public void addAll(Vector<DownloadLink> links) {
-        synchronized (downloadLinks) {
-            for (int i = 0; i < links.size(); i++) {
-                add(links.get(i));
-            }
+        for (int i = 0; i < links.size(); i++) {
+            add(links.get(i));
         }
     }
 
@@ -275,22 +270,20 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void addAllAt(Vector<DownloadLink> links, int index) {
-        synchronized (downloadLinks) {
-            for (int i = 0; i < links.size(); i++) {
-                add(index + i, links.get(i));
-            }
+        for (int i = 0; i < links.size(); i++) {
+            add(index + i, links.get(i));
         }
     }
 
     public boolean contains(DownloadLink link) {
-        synchronized (downloadLinks) {
-            return downloadLinks.contains(link);
-        }
+        return downloadLinks.contains(link);
     }
 
     public DownloadLink get(int index) {
-        synchronized (downloadLinks) {
+        try {
             return downloadLinks.get(index);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return null;
         }
     }
 
@@ -309,23 +302,23 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public boolean remove(DownloadLink link) {
-        synchronized (downloadLinks) {
-            boolean ret = this.getDownloadLinks().remove(link);
-            if (ret) downloadLinks.remove(link);
-            if (ret) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK, link));
-            if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
-            return ret;
-        }
+        boolean ret = downloadLinks.remove(link);
+        if (ret) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK, link));
+        if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
+        return ret;
     }
 
     public DownloadLink remove(int index) {
-        synchronized (downloadLinks) {
-            DownloadLink link = this.getDownloadLinks().remove(index);
-            if (link != null) downloadLinks.remove(link);
-            if (link != null) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK, link));
-            if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
-            return link;
+        DownloadLink link;
+        try {
+            link = downloadLinks.remove(index);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            link = null;
         }
+        if (link != null) downloadLinks.remove(link);
+        if (link != null) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK, link));
+        if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
+        return link;
     }
 
     public void setComment(String comment) {
@@ -339,11 +332,9 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
-        synchronized (downloadLinks) {
-            this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
-            broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
-            if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
-        }
+        this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
+        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+        if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
     }
 
     public void setName(String name) {
@@ -361,9 +352,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public int size() {
-        synchronized (downloadLinks) {
-            return downloadLinks.size();
-        }
+        return downloadLinks.size();
     }
 
     public void sort(final int col) {
@@ -423,8 +412,8 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
             for (DownloadLink dl : downloadLinks) {
                 hosterList.add(dl.getHost());
             }
-            hosts = hosterList.toString();
         }
+        hosts = hosterList.toString();
     }
 
     public void handle_LinkGrabberFilePackageEvent(LinkGrabberFilePackageEvent event) {

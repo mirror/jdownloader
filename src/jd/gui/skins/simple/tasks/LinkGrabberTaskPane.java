@@ -68,7 +68,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         super(string, ii, "linkgrabber");
         lgi = LinkGrabberController.getInstance();
         fps = lgi.getPackages();
-        lgi.getBroadcaster().addListener(this);
+        lgi.addListener(this);
         linkgrabberButtonsEnabled = false;
         initGUI();
         fadeTimer = new Timer(2000, this);

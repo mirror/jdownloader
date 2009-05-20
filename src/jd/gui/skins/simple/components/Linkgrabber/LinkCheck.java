@@ -98,8 +98,10 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                 for (int i = 0; i < hosterList.size(); i++) {
                     link = hosterList.get(i);
                     if (!check_running) return;
-                    link.isAvailable();
-                    getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, link));
+                    if (!link.getBooleanProperty("removed", false)) {
+                        link.isAvailable();
+                        getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, link));
+                    }
                     pc.increase(1);
                 }
             } else {

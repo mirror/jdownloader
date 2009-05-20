@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Vector;
 
@@ -104,9 +105,12 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private String ListHoster = null;
 
-    public synchronized JDBroadcaster<FilePackageListener, FilePackageEvent> getBroadcaster() {
-        if (broadcaster == null) broadcaster = new FilePackageBroadcaster();
-        return broadcaster;
+    public void addListener(FilePackageListener l) {
+        broadcaster.addListener(l);
+    }
+
+    public void removeListener(FilePackageListener l) {
+        broadcaster.removeListener(l);
     }
 
     public static FilePackage getInstance() {
@@ -119,14 +123,16 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         counter++;
         id = System.currentTimeMillis() + "_" + counter;
         downloadLinks = new Vector<DownloadLink>();
-        getBroadcaster().addListener(this);
+        broadcaster = new FilePackageBroadcaster();
+        broadcaster.addListener(this);
     }
 
     private void readObject(java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
         /* nach dem deserialisieren sollen die transienten neu geholt werden */
         stream.defaultReadObject();
         links_Disabled = new Integer(0);
-        getBroadcaster().addListener(this);
+        broadcaster = new FilePackageBroadcaster();
+        broadcaster.addListener(this);
     }
 
     /**
@@ -135,20 +141,19 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      */
 
     public void add(DownloadLink link) {
-        synchronized (downloadLinks) {
-            if (!downloadLinks.contains(link)) {
-                downloadLinks.add(link);
-                link.setFilePackage(this);
-                if (!link.isEnabled()) synchronized (links_Disabled) {
-                    links_Disabled++;
-                }
-                link.getBroadcaster().addListener(this);
-                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED, link));
+        if (!downloadLinks.contains(link)) {
+            downloadLinks.add(link);
+            link.setFilePackage(this);
+            if (!link.isEnabled()) synchronized (links_Disabled) {
+                links_Disabled++;
             }
+            link.getBroadcaster().addListener(this);
+            broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED, link));
         }
     }
 
     public void add(int index, DownloadLink link) {
+        boolean newadded = false;
         synchronized (downloadLinks) {
             if (downloadLinks.contains(link)) {
                 downloadLinks.remove(link);
@@ -158,7 +163,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                     downloadLinks.add(0, link);
                 } else
                     downloadLinks.add(index, link);
-                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
             } else {
                 if (index > downloadLinks.size() - 1) {
                     downloadLinks.add(link);
@@ -166,21 +170,24 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                     downloadLinks.add(0, link);
                 } else
                     downloadLinks.add(index, link);
-                if (!link.isEnabled()) synchronized (links_Disabled) {
-                    links_Disabled++;
-                }
-                link.setFilePackage(this);
-                link.getBroadcaster().addListener(this);
-                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED, link));
+                newadded = true;
             }
+        }
+        if (newadded) {
+            if (!link.isEnabled()) synchronized (links_Disabled) {
+                links_Disabled++;
+            }
+            link.setFilePackage(this);
+            link.getBroadcaster().addListener(this);
+            broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED, link));
+        } else {
+            broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
         }
     }
 
     public void addAll(Vector<DownloadLink> links) {
-        synchronized (downloadLinks) {
-            for (DownloadLink dl : links) {
-                add(dl);
-            }
+        for (DownloadLink dl : links) {
+            add(dl);
         }
     }
 
@@ -193,22 +200,20 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public void addAllAt(Vector<DownloadLink> links, int index) {
-        synchronized (downloadLinks) {
-            for (int i = 0; i < links.size(); i++) {
-                add(index + i, links.get(i));
-            }
+        for (int i = 0; i < links.size(); i++) {
+            add(index + i, links.get(i));
         }
     }
 
     public boolean contains(DownloadLink link) {
-        synchronized (downloadLinks) {
-            return downloadLinks.contains(link);
-        }
+        return downloadLinks.contains(link);
     }
 
     public DownloadLink get(int index) {
-        synchronized (downloadLinks) {
+        try {
             return downloadLinks.get(index);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return null;
         }
     }
 
@@ -239,9 +244,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public Vector<DownloadLink> getDownloadLinks() {
-        synchronized (downloadLinks) {
-            return downloadLinks;
-        }
+        return downloadLinks;
     }
 
     /**
@@ -335,19 +338,19 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         return password == null ? "" : password;
     }
 
-    public void updateData() {
+    public synchronized void updateData() {
+
+        String password = this.password;
+        StringBuilder comment = new StringBuilder(this.comment == null ? "" : this.comment);
+
+        String[] pws = JDUtilities.passwordStringToArray(password);
+        Vector<String> pwList = new Vector<String>();
+        for (String element : pws) {
+            pwList.add(element);
+        }
+
+        Vector<String> dlpwList = new Vector<String>();
         synchronized (downloadLinks) {
-            String password = this.password;
-            StringBuilder comment = new StringBuilder(this.comment == null ? "" : this.comment);
-
-            String[] pws = JDUtilities.passwordStringToArray(password);
-            Vector<String> pwList = new Vector<String>();
-            for (String element : pws) {
-                pwList.add(element);
-            }
-
-            Vector<String> dlpwList = new Vector<String>();
-
             for (DownloadLink element : downloadLinks) {
                 pws = JDUtilities.passwordStringToArray(element.getSourcePluginPassword());
 
@@ -365,14 +368,13 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                     comment.append(newComment);
                 }
             }
-
-            String cmt = comment.toString();
-            if (cmt.startsWith("|")) {
-                cmt = cmt.substring(1);
-            }
-            this.comment = cmt;
-            this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
         }
+        String cmt = comment.toString();
+        if (cmt.startsWith("|")) {
+            cmt = cmt.substring(1);
+        }
+        this.comment = cmt;
+        this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
     }
 
     /**
@@ -475,30 +477,28 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public int indexOf(DownloadLink link) {
-        synchronized (downloadLinks) {
-            return downloadLinks.indexOf(link);
-        }
+        return downloadLinks.indexOf(link);
     }
 
     public DownloadLink lastElement() {
-        synchronized (downloadLinks) {
+        try {
             return downloadLinks.lastElement();
+        } catch (NoSuchElementException e) {
+            return null;
         }
     }
 
     public void remove(DownloadLink link) {
         if (link == null) return;
-        synchronized (downloadLinks) {
-            boolean ret = downloadLinks.remove(link);
-            if (ret) {
-                if (!link.isEnabled()) synchronized (links_Disabled) {
-                    links_Disabled--;
-                }
-                link.getBroadcaster().removeListener(this);
-                link.setFilePackage(null);
-                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_REMOVED, link));
-                if (downloadLinks.size() == 0) getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_EMPTY));
+        boolean ret = downloadLinks.remove(link);
+        if (ret) {
+            if (!link.isEnabled()) synchronized (links_Disabled) {
+                links_Disabled--;
             }
+            link.getBroadcaster().removeListener(this);
+            link.setFilePackage(null);
+            broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_REMOVED, link));
+            if (downloadLinks.size() == 0) broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_EMPTY));
         }
     }
 
@@ -522,9 +522,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public int size() {
-        synchronized (downloadLinks) {
-            return downloadLinks.size();
-        }
+        return downloadLinks.size();
     }
 
     public void abortDownload() {
@@ -593,7 +591,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 }
             });
         }
-        getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
+        broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
     }
 
     /**
@@ -663,9 +661,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public int getLinksDisabled() {
-        synchronized (links_Disabled) {
-            return links_Disabled;
-        }
+        return links_Disabled;
     }
 
     public boolean isEnabled() {
@@ -685,35 +681,29 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public void handle_DownloadLinkEvent(DownloadLinkEvent event) {
-        synchronized (links_Disabled) {
-            switch (event.getID()) {
-            case DownloadLinkEvent.DISABLED:
+        switch (event.getID()) {
+        case DownloadLinkEvent.DISABLED:
+            synchronized (links_Disabled) {
                 links_Disabled++;
-                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
-                break;
-            case DownloadLinkEvent.ENABLED:
-                links_Disabled--;
-                getBroadcaster().fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
-                break;
             }
+            broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
+            break;
+        case DownloadLinkEvent.ENABLED:
+            synchronized (links_Disabled) {
+                links_Disabled--;
+            }
+            broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
+            break;
         }
     }
 
     public void onFilePackageEvent(FilePackageEvent event) {
-        synchronized (downloadLinks) {
-            switch (event.getID()) {
-            case FilePackageEvent.DOWNLOADLINK_ADDED:
-            case FilePackageEvent.DOWNLOADLINK_REMOVED:
-                Set<String> hosterList = new HashSet<String>();
-                synchronized (downloadLinks) {
-                    for (DownloadLink dl : downloadLinks) {
-                        if (dl.getHost() != null) hosterList.add(dl.getHost());
-                    }
-                }
-                ListHoster = hosterList.toString();
-                break;
-            }
+        switch (event.getID()) {
+        case FilePackageEvent.DOWNLOADLINK_ADDED:
+        case FilePackageEvent.DOWNLOADLINK_REMOVED:
+            ListHoster = null;
+            getHoster();
+            break;
         }
-
     }
 }
