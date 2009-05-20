@@ -38,11 +38,11 @@ import jd.utils.JDUtilities;
 
 public class Gwarezcc extends PluginForDecrypt {
 
-    private static final Pattern patternLink_Details_Download = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/\\d{1,}\\#details", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_Details_Download = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/\\d+", Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern patternLink_Details_Mirror_Check = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/check/\\d{1,}/", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternLink_Details_Mirror_Parts = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/parts/\\d{1,}/", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternLink_Download_DLC = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/download/dlc/\\d{1,}/", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_Details_Mirror_Check = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d+/checked/game/\\d+/", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_Details_Mirror_Parts = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d+/parts/game/\\d+/", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_Download_DLC = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/download/dlc/\\d+/", Pattern.CASE_INSENSITIVE);
 
     private static final String PREFER_DLC = "PREFER_DLC";
 
@@ -60,7 +60,7 @@ public class Gwarezcc extends PluginForDecrypt {
 
         if (parameter.matches(patternLink_Details_Mirror_Check.pattern())) {
             /* weiterleiten zur Mirror Parts Seite */
-            parameter = parameter.replaceAll("check", "parts");
+            parameter = parameter.replaceAll("checked", "parts");
         }
 
         if (parameter.matches(patternLink_Details_Download.pattern())) {
@@ -81,10 +81,10 @@ public class Gwarezcc extends PluginForDecrypt {
 
             if (dlc_found == false) {
                 /* Mirrors suchen (Verschlüsselt) */
-                String mirror_pages[] = br.getRegex(Pattern.compile("<img src=\"gfx/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(0);
+                String mirror_pages[] = br.getRegex(Pattern.compile("<img src=\"gfx/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/(\\d+)/checked/game/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(0);
                 for (String mirror_page : mirror_pages) {
                     /* Mirror Page zur weiteren Verarbeitung adden */
-                    decryptedLinks.add(createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "/parts/" + mirror_page + "/"));
+                    decryptedLinks.add(createDownloadlink("http://gwarez.cc/mirror/" + mirror_page + "/parts/game/" + downloadid + "/"));
                 }
             }
 
@@ -93,7 +93,7 @@ public class Gwarezcc extends PluginForDecrypt {
             br.getHeaders().put("Referer", parameter.replaceAll("parts", "check"));
 
             br.getPage(parameter);
-            String downloadid = new Regex(parameter, "\\/mirror/([\\d].*)/parts/([\\d].*)/").getMatch(0);
+            String downloadid = new Regex(parameter, "\\/mirror/\\d+/parts/game/(\\d+)/").getMatch(0);
             // /* Parts suchen */
             // String parts[] =
             // br.getRegex(Pattern.compile(
@@ -154,22 +154,16 @@ public class Gwarezcc extends PluginForDecrypt {
                     if (linkString == null) linkString = br.getRegex("<meta http-equiv=\"refresh\".*?URL=(.*?)\">").getMatch(0);
 
                     progress.increase(1);
-                    // String linkString = gWarezDecrypt(parts[ii]);
-                    Vector<DownloadLink> links = new DistributeData(linkString).findLinks(false);
-                    if (links.size() == 0) continue;
-                    for (DownloadLink l : links) {
-                        if (l.isAvailable()) {
 
-                            l.setSourcePluginComment("gwarez.cc - load and play your favourite game");
-                            l.addSourcePluginPassword(password);
-                            decryptedLinks.add(l);
-                        }
-                    }
+                    DownloadLink l = this.createDownloadlink(linkString);
+                    l.setSourcePluginComment("gwarez.cc - load and play your favourite game");
+                    l.addSourcePluginPassword(password);
+                    decryptedLinks.add(l);
                 }
             }
         } else if (parameter.matches(patternLink_Download_DLC.pattern())) {
             /* DLC laden */
-            String downloadid = new Regex(parameter, "\\/download/dlc/([\\d].*)/").getMatch(0);
+            String downloadid = new Regex(parameter, "\\/download/dlc/(\\d+)/").getMatch(0);
             /* Passwort suchen */
             br.getPage("http://gwarez.cc/" + downloadid + "#details");
             String password = br.getRegex(Pattern.compile("<img src=\"gfx/icons/passwort\\.png\"> <b>Passwort:</b>.*?class=\"up\">(.*?)<\\/td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);

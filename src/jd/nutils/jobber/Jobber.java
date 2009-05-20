@@ -121,7 +121,7 @@ public class Jobber {
             }
             if (count <= 1) {
                 running = false;
-                if (debug) System.out.println(this + " All worker done, this Jobber finished his job!");
+                if (debug) System.out.println(this + " All worker finished, this Jobber has done his job!");
             }
         }
     }
