@@ -199,6 +199,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     private SimpleGUI() {
         super("");
         SimpleGuiConstants.GUI_CONFIG = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
+        updateDecoration();
         JDLookAndFeelManager.setUIManager();
 
         /**
@@ -225,6 +226,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             // }
             //
             // });
+//            org.jvnet.substance.utils.SubstanceCoreUtilities.getTitlePane
             noTitlePane = false;
 
         } else {
@@ -271,7 +273,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // initMenuBar();
         JDLocale.initLocalisation();
 
-        updateDecoration();
+     
         buildUI();
 
         setName("MAINFRAME");
