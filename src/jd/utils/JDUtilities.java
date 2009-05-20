@@ -833,7 +833,7 @@ public class JDUtilities {
         exec.addParameters(parameter);
         exec.setRunin(runIn);
         exec.setWaitTimeout(waitForReturn);
-        exec.start();
+        exec.start(); 
         exec.waitTimeout();
         return exec.getOutputStream() + " \r\n " + exec.getErrorStream();
     }
