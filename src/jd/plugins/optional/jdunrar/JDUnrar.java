@@ -1081,8 +1081,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             break;
 
         default:
-            System.out.println("id ");
-
+            // System.out.println("id ");
         }
     }
 
@@ -1240,8 +1239,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             break;
 
         default:
-            System.out.println("id ");
-
+            // System.out.println("id ");
         }
 
     }

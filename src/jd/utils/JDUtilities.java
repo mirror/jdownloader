@@ -18,7 +18,6 @@ package jd.utils;
 
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.beans.XMLDecoder;
@@ -333,18 +332,7 @@ public class JDUtilities {
     }
 
     public static String getUserInput(String message, DownloadLink link) throws InterruptedException {
-
-        try {
-            link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
-            link.requestGuiUpdate();
-            String code = getUserInput(message, null, link);
-
-            link.requestGuiUpdate();
-            return code;
-
-        } finally {
-            link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO);
-        }
+        return getUserInput(message, null, link);
     }
 
     public static String getUserInput(String message, String defaultmessage, DownloadLink link) throws InterruptedException {
@@ -655,27 +643,6 @@ public class JDUtilities {
         return ret.toString();
     }
 
-    /**
-     * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ
-     * Frame gefunden wird, oder es keine übergeordnete Komponente gibt
-     * 
-     * @param comp
-     *            Komponente, dessen Frame Objekt gesucht wird
-     * @return Ein Frame Objekt, das die Komponente beinhält oder null, falls
-     *         keins gefunden wird
-     */
-    public static Frame getParentFrame(Component comp) {
-        if (comp == null) { return null; }
-        while (comp != null && !(comp instanceof Frame)) {
-            comp = comp.getParent();
-        }
-        if (comp instanceof Frame) {
-            return (Frame) comp;
-        } else {
-            return null;
-        }
-    }
-
     public static String getPercent(long downloadCurrent, long downloadMax) {
         DecimalFormat c = new DecimalFormat("0.00");
         return c.format(100.0 * downloadCurrent / (double) downloadMax) + "%";
@@ -720,7 +687,7 @@ public class JDUtilities {
         return null;
     }
 
-    public static PluginForHost getNewPluginForHostInstanz(String host) {
+    public static PluginForHost getNewPluginForHostInstance(String host) {
         for (int i = 0; i < HostPluginWrapper.getHostWrapper().size(); i++) {
             if (HostPluginWrapper.getHostWrapper().get(i).getHost().equals(host.toLowerCase())) { return (PluginForHost) HostPluginWrapper.getHostWrapper().get(i).getNewPluginInstance(); }
         }

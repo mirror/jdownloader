@@ -300,7 +300,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         // Anhand des Hostnamens aus dem DownloadLink
                         // wird ein passendes Plugin gesucht
                         try {
-                            pluginForHost = JDUtilities.getNewPluginForHostInstanz(localLink.getHost());
+                            pluginForHost = JDUtilities.getNewPluginForHostInstance(localLink.getHost());
                         } catch (Exception e) {
                             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                         }
