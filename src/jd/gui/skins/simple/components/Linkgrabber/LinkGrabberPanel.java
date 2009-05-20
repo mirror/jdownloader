@@ -405,6 +405,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                         case LinkGrabberTreeTableAction.SET_PW:
                         case LinkGrabberTreeTableAction.NEW_PACKAGE:
                         case LinkGrabberTreeTableAction.MERGE_PACKAGE:
+                        case LinkGrabberTreeTableAction.ADD_SELECTED_LINKS:
                             selected_links = (Vector<DownloadLink>) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("links");
                             break;
                         case LinkGrabberTreeTableAction.EXT_FILTER:
@@ -423,6 +424,33 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                         }
                     }
                     switch (arg0.getID()) {
+                    case LinkGrabberTreeTableAction.ADD_SELECTED_LINKS: {
+                        Vector<LinkGrabberFilePackage> selected_packages2 = new Vector<LinkGrabberFilePackage>();
+                        while (selected_links.size() > 0) {
+                            Vector<DownloadLink> links2 = new Vector<DownloadLink>(selected_links);
+                            LinkGrabberFilePackage fp3 = LGINSTANCE.getFPwithLink(selected_links.get(0));
+                            if (fp3 == null) {
+                                logger.warning("DownloadLink not controlled by LinkGrabberController!");
+                                selected_links.remove(selected_links.get(0));
+                                continue;
+                            }
+                            LinkGrabberFilePackage fp4 = new LinkGrabberFilePackage(fp3.getName());
+                            fp4.setDownloadDirectory(fp3.getDownloadDirectory());
+                            fp4.setPassword(fp3.getPassword());
+                            fp4.setExtractAfterDownload(fp3.isExtractAfterDownload());
+                            fp4.setUseSubDir(fp3.useSubDir());
+                            fp4.setComment(fp3.getComment());
+                            for (DownloadLink dl : links2) {
+                                if (LGINSTANCE.getFPwithLink(dl) != null && LGINSTANCE.getFPwithLink(dl) == fp3) {
+                                    fp4.add(dl);
+                                    selected_links.remove(dl);
+                                }
+                            }
+                            selected_packages2.add(fp4);
+                        }
+                        confirmPackages(selected_packages2);
+                    }
+                        break;
                     case LinkGrabberTreeTableAction.SPLIT_HOSTER: {
                         for (LinkGrabberFilePackage fp2 : selected_packages) {
                             synchronized (fp2) {

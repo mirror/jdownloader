@@ -112,7 +112,6 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         if (!txtName.isFocusOwner()) txtName.setText(fp.getName());
         if (!txtComment.isFocusOwner()) txtComment.setText(fp.getComment());
         if (!txtPassword.isFocusOwner()) txtPassword.setText(fp.getPassword());
-        this.txtPassword.setText(fp.getDLPassword());
         if (!brwSaveTo.isFocusOwner()) brwSaveTo.setText(fp.getDownloadDirectory());
         if (!chbExtract.isFocusOwner()) chbExtract.setSelected(fp.isExtractAfterDownload());
         /* neuzeichnen */

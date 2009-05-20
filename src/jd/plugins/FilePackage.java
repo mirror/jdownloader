@@ -83,7 +83,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     private String name = null;
 
     private String password;
-    private String dlpassword;
+
     private boolean extractAfterDownload = true;
 
     private long totalBytesLoaded_v2;
@@ -335,11 +335,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         return password == null ? "" : password;
     }
 
-    public String getDLPassword() {
-        updateData();
-        return dlpassword == null ? "" : dlpassword;
-    }
-
     public void updateData() {
         synchronized (downloadLinks) {
             String password = this.password;
@@ -377,7 +372,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             }
             this.comment = cmt;
             this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
-            this.dlpassword = JDUtilities.passwordArrayToString(dlpwList.toArray(new String[dlpwList.size()]));
         }
     }
 

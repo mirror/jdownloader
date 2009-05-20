@@ -351,7 +351,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
                 if (sfp.size() > 0) {
                     popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16), JDLocale.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)") + " (" + sfp.size() + ")", LinkGrabberTreeTableAction.ADD_SELECTED_PACKAGES)));
                 } else {
-                    popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16), JDLocale.L("gui.linkgrabberv2.lg.addselectedlinks", "Add selected link(s)") + " (" + alllinks.size() + ")", LinkGrabberTreeTableAction.ADD_SELECTED_LINKS)));
+                    popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16), JDLocale.L("gui.linkgrabberv2.lg.addselectedlinks", "Add selected link(s)") + " (" + alllinks.size() + ")", LinkGrabberTreeTableAction.ADD_SELECTED_LINKS, new Property("links", alllinks))));
                 }
                 popup.add(new JSeparator());
             }

@@ -84,8 +84,8 @@ public class Installer {
             this.aborted = true;
             return;
         }
-int answer = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("installer.firefox.title","Install firefox integration?"),  JDLocale.L("installer.firefox.message","Do you want to integrate JDownloader to Firefox?"), null, null, null);
-        if(JDFlags.hasAllFlags(answer, UserIO.RETURN_OK))installFirefoxaddon();
+        int answer = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("installer.firefox.title", "Install firefox integration?"), JDLocale.L("installer.firefox.message", "Do you want to integrate JDownloader to Firefox?"), null, null, null);
+        if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) installFirefoxaddon();
         JDUtilities.getConfiguration().save();
     }
 
@@ -120,7 +120,6 @@ int answer = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLo
 
                 exec.setWaitTimeout(180);
                 exec.start();
-                String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
             }
 
         } else if (OSDetector.isLinux()) {
@@ -130,7 +129,6 @@ int answer = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLo
 
             exec.setWaitTimeout(180);
             exec.start();
-            String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
 
         }
 
