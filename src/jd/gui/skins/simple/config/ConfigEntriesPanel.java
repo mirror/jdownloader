@@ -87,7 +87,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
     }
 
     public void init() {
-        SimpleGUI.CURRENTGUI.setWaiting(true);
+        if(SimpleGUI.CURRENTGUI!=null)SimpleGUI.CURRENTGUI.setWaiting(true);
         initPanel();
         load();
 

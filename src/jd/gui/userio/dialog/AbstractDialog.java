@@ -127,7 +127,10 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         this.setMinimumSize(new Dimension(300, -1));
         this.pack();
         this.setResizable(false);
-        if (SimpleGUI.CURRENTGUI == null || SimpleGUI.CURRENTGUI.getExtendedState() == JFrame.ICONIFIED || !SimpleGUI.CURRENTGUI.isVisible() || !SimpleGUI.CURRENTGUI.isActive()) {
+
+        if (SimpleGUI.CURRENTGUI == null) {
+            this.setLocation(Screen.getCenterOfComponent(null, this));
+        } else if (SimpleGUI.CURRENTGUI.getExtendedState() == JFrame.ICONIFIED || !SimpleGUI.CURRENTGUI.isVisible() || !SimpleGUI.CURRENTGUI.isActive()) {
             this.setLocation(Screen.getDockBottomRight(this));
         } else {
             this.setLocation(Screen.getCenterOfComponent(SimpleGUI.CURRENTGUI, this));

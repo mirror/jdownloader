@@ -66,7 +66,14 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
                     add(bt, D1_BUTTON_ICON);
 
                     for (MenuItem entry : menuItems) {
-                        bt.getContentPane().add(createMenu(entry, null), "gapleft 20");
+
+
+                        JComponent comp = createMenu(entry, null);
+                        comp.setOpaque(false);
+                    
+                            bt.getContentPane().add(comp, "gapleft 20");
+                     
+
                     }
                     bt.getButton().addActionListener(this);
                     buttonMap.put(bt.getButton(), wrapper);
@@ -74,17 +81,8 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
 
                 } else if (menuItems.size() == 1) {
                     JComponent btn = createMenu(menuItems.get(0), JDTheme.II(wrapper.getPlugin().getIconKey(), 16, 16));
-
-                    switch (menuItems.get(0).getID()) {
-                    case MenuItem.CONTAINER:
-                    case MenuItem.NORMAL:
-                    case MenuItem.SEPARATOR:
-                        add(btn, D1_BUTTON_ICON);
-                        break;
-                    case MenuItem.TOGGLE:
-                        add(btn, D1_TOGGLEBUTTON_ICON);
-                        break;
-                    }
+                    btn.setOpaque(false);
+                    add(btn, D1_TOGGLEBUTTON_ICON);
 
                 }
             }

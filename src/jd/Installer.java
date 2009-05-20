@@ -28,9 +28,12 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigurationPopup;
+import jd.nutils.Executer;
+import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.nutils.Screen;
 import jd.utils.JDLocale;
@@ -81,8 +84,56 @@ public class Installer {
             this.aborted = true;
             return;
         }
-
+int answer = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("installer.firefox.title","Install firefox integration?"),  JDLocale.L("installer.firefox.message","Do you want to integrate JDownloader to Firefox?"), null, null, null);
+        if(JDFlags.hasAllFlags(answer, UserIO.RETURN_OK))installFirefoxaddon();
         JDUtilities.getConfiguration().save();
+    }
+
+    public static void installFirefoxaddon() {
+        String path = null;
+
+        if (OSDetector.isWindows()) {
+
+            if (new File("C:\\Program Files\\Mozilla Firefox\\firefox.exe").exists()) {
+
+                path = "C:\\Program Files\\Mozilla Firefox\\firefox.exe";
+            } else if (new File("C:\\Programme\\Mozilla Firefox\\firefox.exe").exists()) {
+                path = "C:\\Programme\\Mozilla Firefox\\firefox.exe";
+            }
+            if (path != null) {
+                Executer exec = new Executer(path);
+                exec.addParameters(new String[] { JDUtilities.getResourceFile("tools/jdownff.xpi").getAbsolutePath() });
+
+                exec.setWaitTimeout(180);
+                exec.start();
+                String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
+
+                System.out.println(res);
+            }
+        } else if (OSDetector.isMac()) {
+
+            if (new File("/Applications/Firefox.app").exists()) {
+                path = "/Applications/Firefox.app " + JDUtilities.getResourceFile("tools/jdownff.xpi");
+
+                Executer exec = new Executer("open");
+                exec.addParameters(new String[] { path });
+
+                exec.setWaitTimeout(180);
+                exec.start();
+                String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
+            }
+
+        } else if (OSDetector.isLinux()) {
+
+            Executer exec = new Executer("firefox");
+            exec.addParameters(new String[] { JDUtilities.getResourceFile("tools/jdownff.xpi").getAbsolutePath() });
+
+            exec.setWaitTimeout(180);
+            exec.start();
+            String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
+
+        }
+
     }
 
     public static void showConfigDialog(final JFrame parent, final ConfigContainer configContainer, final boolean alwaysOnTop) {

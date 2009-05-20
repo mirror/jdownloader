@@ -72,7 +72,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
     public void paint(Graphics g) {
 
         super.paint(g);
-        SimpleGUI.CURRENTGUI.setWaiting(false);
+        if(SimpleGUI.CURRENTGUI!=null)SimpleGUI.CURRENTGUI.setWaiting(false);
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry, JPanel panel) {

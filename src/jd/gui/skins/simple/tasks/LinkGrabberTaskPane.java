@@ -148,7 +148,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         config.setIcon(JDTheme.II("gui.images.taskpanes.configuration", 16, 16));
 
         topOrBottom = new JCheckBox(JDLocale.L("gui.taskpanes.download.linkgrabber.config.addattop", "Add at top"));
-
+        topOrBottom.setOpaque(false);
         topOrBottom.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -162,6 +162,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         }
 
         startAfterAdding = new JCheckBox(JDLocale.L("gui.taskpanes.download.linkgrabber.config.startofter", "Start after adding"));
+        startAfterAdding.setOpaque(false);
         startAfterAdding.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

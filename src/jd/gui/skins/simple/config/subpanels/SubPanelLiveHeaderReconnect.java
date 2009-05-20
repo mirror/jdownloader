@@ -241,10 +241,12 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
 
                 public void valueChanged(ListSelectionEvent e) {
                     String selected = (String) list.getSelectedValue();
+                    if(selected!=null){
                     int id = Integer.parseInt(selected.split("\\.")[0]);
                     String[] data = scripts.get(id);
 
                     preview.setText(data[2]);
+                    }
                 }
 
             });
@@ -346,6 +348,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
 
     // @Override
     public void save() {
+        configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, script.getText());
         saveConfigEntries();
 
     }
