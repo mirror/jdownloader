@@ -779,7 +779,7 @@ public class JDUtilities {
             jargs.add(h);
         }
         jargs.add("-jar");
-        jargs.add("-JDownloader.jar");
+        jargs.add("JDownloader.jar");
 
         String[] javaArgs = jargs.toArray(new String[jargs.size()]);
         String[] finalArgs = new String[jdArgs.length + javaArgs.length];

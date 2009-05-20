@@ -78,13 +78,13 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         initGUI();
     }
 
-    public void actionPerformed(ActionEvent e) {        
-        if (e.getSource() == cmboInput) {           
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == cmboInput) {
             Object sel = cmboInput.getSelectedItem();
             if (sel != null) {
                 setCurrentPath(new File(sel.toString()));
             }
-        } else if (e.getSource() == btnBrowse) {            
+        } else if (e.getSource() == btnBrowse) {
             setCurrentPath(getPath());
         }
         for (ActionListener l : listenerList) {
@@ -156,6 +156,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     }
 
     public String getText() {
+        if (cmboInput.getSelectedItem() == null) return "";
         return cmboInput.getSelectedItem().toString();
     }
 
@@ -200,7 +201,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
      */
     public void setCurrentPath(final File currentPath) {
         if (currentPath == null) return;
-        if (getText() != null && getText().equalsIgnoreCase(currentPath.toString())) return;        
+        if (getText() != null && getText().equalsIgnoreCase(currentPath.toString())) return;
         this.currentPath = currentPath;
         String item = currentPath.toString();
         files.remove(item);
@@ -268,7 +269,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
     public void setText(final String text) {
         EventQueue.invokeLater(new Runnable() {
-            public void run() {                
+            public void run() {
                 if (text == null) {
                     setCurrentPath(new File(""));
                 } else {
