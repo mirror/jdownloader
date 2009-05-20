@@ -38,13 +38,13 @@ public class JDSubstanceUI extends SubstanceRootPaneUI {
 
     public void setMainMenuIcon(Image mainMenuIcon) {
         logo = mainMenuIcon;
-        if(titlePane!=null)
-  
+        if (titlePane != null)
+
         titlePane.setLogo(logo);
     }
 
     public void setToolTipText(String string) {
-        titlePane.setToolTipText(string);
+        if (titlePane != null) titlePane.setToolTipText(string);
     }
 
 }

@@ -211,31 +211,16 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         this.setEnabled(false);
         this.setWaiting(true);
 
-        if (isSubstance() && SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.DECORATION_ENABLED, true)) {
+        if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.DECORATION_ENABLED, true)) {
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 54, 54);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
-            this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
-
-            // JDController.getInstance().addControlListener(new
-            // ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
-            //
-            // // @Override
-            // public void onPropertyChanged(Property source, String
-            // propertyName) {
-            //
-            // }
-            //
-            // });
-//            org.jvnet.substance.utils.SubstanceCoreUtilities.getTitlePane
             noTitlePane = false;
-
         } else {
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 32, 32);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 32, 32);
-            this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
             this.noTitlePane = true;
-
         }
+        if (isSubstance()) this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
 
         toolBar = new JDToolBar(noTitlePane, mainMenuIcon);
 
@@ -274,7 +259,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // initMenuBar();
         JDLocale.initLocalisation();
 
-     
         buildUI();
 
         setName("MAINFRAME");
@@ -477,7 +461,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public void updateDecoration() {
-        
+
         if (UIManager.getLookAndFeel().getSupportsWindowDecorations() && SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.DECORATION_ENABLED, true)) {
             setUndecorated(true);
             getRootPane().setWindowDecorationStyle(JRootPane.FRAME);
@@ -871,10 +855,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         LinkGrabberController.getInstance().getBroadcaster().addListener(new LinkGrabberControllerListener() {
             public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
                 switch (event.getID()) {
-                case LinkGrabberControllerEvent.ADDED:                    
+                case LinkGrabberControllerEvent.ADDED:
                     taskPane.switcher(dlTskPane);
                     break;
-                case LinkGrabberControllerEvent.EMPTY:                    
+                case LinkGrabberControllerEvent.EMPTY:
                     lgTaskPane.setPanelID(0);
                     break;
                 }
