@@ -211,7 +211,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         this.setEnabled(false);
         this.setWaiting(true);
 
-        if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.DECORATION_ENABLED, true)) {
+        if (isSubstance() && SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.DECORATION_ENABLED, true)) {
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 54, 54);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
             noTitlePane = false;
