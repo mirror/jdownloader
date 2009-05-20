@@ -1,0 +1,233 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package jd.plugins.host;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Locale;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.Encoding;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDLocale;
+
+public class CZShareCom extends PluginForHost {
+
+    private int simultanpremium = 20;
+
+    public CZShareCom(PluginWrapper wrapper) {
+        super(wrapper);
+        enablePremium("http://czshare.com/create_user.php");
+    }
+
+    //@Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        br.setDebug(true);
+        String captchaurl = downloadLink.getStringProperty("captcha", null);
+        String dlurl = downloadLink.getStringProperty("dlurl", null);
+        if (captchaurl == null) {
+            requestFileInformation(downloadLink);
+            if (!br.containsHTML("value=\"FREE download\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
+            Form down = br.getFormBySubmitvalue("FREE+download");
+            if (down == null) br.getFormbyProperty("action", Encoding.urlEncode("http://czshare.com/trust_me.php"));
+            if (down == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            br.submitForm(down);
+            down = null;
+            if (br.containsHTML("Chyba 6 / Error 6")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,  60 * 60 * 1000);
+            br.setFollowRedirects(true);
+            String freepage = br.getRegex("form action=\"(.*?)\"").getMatch(0);
+            String freesubmit = br.getRegex("type=\"submit\" value=\"(.*?)\"").getMatch(0);
+            String freeid = br.getRegex("name=\"id\" value=\"(.*?)\"").getMatch(0);
+            String freefile = br.getRegex("name=\"file\" value=\"(.*?)\"").getMatch(0);
+            String freeticket = br.getRegex("name=\"ticket\" value=\"(.*?)\"").getMatch(0);
+            dlurl = "http://czshare.com/"+freepage+"?id="+freeid+"&file="+freefile+"&ticket="+freeticket+"&captchastring=CAPTCHACODEGOESHERE&submit="+freesubmit;
+            captchaurl = br.getRegex("img src=\"(captcha\\.php\\?ticket=.*?)\"").getMatch(0);
+            captchaurl = "http://czshare.com/" + captchaurl;
+            downloadLink.setProperty("captcha", captchaurl);
+            downloadLink.setProperty("dlurl", dlurl);
+        }
+        
+        URLConnectionAdapter con = br.openGetConnection(captchaurl);
+        File file = this.getLocalCaptchaFile();
+        Browser.download(file, con);
+        String code = getCaptchaCode(file, downloadLink);
+        dlurl = dlurl.replace("CAPTCHACODEGOESHERE", code);
+        br.getPage(dlurl);
+        if (br.containsHTML("Chyba 6 / Error 6")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,  60 * 60 * 1000);
+        if (br.containsHTML("Nesouhlasi kontrolni kod")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        Form down2 = br.getFormbyProperty("name","pre_download_form");
+        if (down2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl = br.openDownload(downloadLink, down2, false, 1);
+        downloadLink.setProperty("captcha", captchaurl);
+        downloadLink.setProperty("dlurl", dlurl);
+        dl.startDownload();
+    }
+
+    //@Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    private void login(Account account) throws Exception {
+        //this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        //br.clearCookies("czshare.com");
+        br.getPage("http://czshare.com/prihlasit.php");
+        Form login = br.getForm(0);
+        login.put("jmeno", Encoding.urlEncode(account.getUser()));
+        login.put("heslo", Encoding.urlEncode(account.getPass()));
+        login.put("trvale", "0");
+        br.submitForm(login);
+        if (!br.containsHTML("odhl.sit")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+
+    //@Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        br.getPage("http://czshare.com/profi/platnost.php");
+        if (br.containsHTML("Nemáte žádný platný kredit")) {
+            ai.setValid(false);
+            ai.setStatus(JDLocale.L("plugins.hoster.CZShareCom.nocreditleft", "No traffic credit left"));
+            return ai;
+        }
+        String trafficleft = br.getRegex("Platnost do</td>[^d]*d>(.*?)</td>").getMatch(0);
+        String expires = br.getRegex("Platnost do</td>.*<td>.*<td>(.*?)</td>").getMatch(0); 
+        if (expires != null) ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy HH:mm", Locale.GERMANY));
+        if (trafficleft != null) ai.setTrafficLeft(trafficleft);
+        
+        //Logout
+        br.getPage("http://czshare.com/profi/index.php?odhlasit=ano"); 
+        return ai;
+    }
+
+    //@Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return simultanpremium;
+    }
+
+    //@Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        br.setFollowRedirects(true);
+        String linkurl = null;
+        String previousLink = downloadLink.getStringProperty("directLink", null);
+        if (previousLink == null) {
+            requestFileInformation(downloadLink);
+            Form profidown = br.getFormBySubmitvalue("PROFI+download");
+            if (profidown == null) br.getFormbyProperty("action", Encoding.urlEncode("http://czshare.com/profi/profi_down.php"));
+            if (profidown == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            String id = br.getRegex("type=\"hidden\" name=\"id\" value=\"(.*?)\"").getMatch(0);
+            br.submitForm(profidown);
+            Form login = br.getForm(0);
+            login.put("jmeno", Encoding.urlEncode(account.getUser()));
+            login.put("heslo", Encoding.urlEncode(account.getPass()));
+            login.put("trvale", "0");
+            br.submitForm(login);
+            // find premium links
+            String[] links = br.getRegex("<td class=\"table2-black\"><a href=\"(.*?)\"").getColumn(0);
+            // choose link with proper ID
+            for (int i=0; i<links.length; i++)
+            {
+                if (links[i].contains("="+id+"&"))
+                {
+                    linkurl = links[i];
+                    break;
+                }
+            }
+            
+            if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);  
+        }    
+        else {
+            linkurl = previousLink;
+        }
+        dl = br.openDownload(downloadLink, linkurl, true, 0);
+        URLConnectionAdapter con = dl.getConnection();
+        if (!con.isOK()) {
+            if (previousLink != null) {
+                downloadLink.setProperty("directLink", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM);
+            }
+        }
+        downloadLink.setProperty("directLink", linkurl);
+        dl.startDownload();
+        // Remove link if finished
+        if (downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+        String kod = new Regex(linkurl, "kod=([a-zA-Z0-9_]+)&").getMatch(0); 
+        if (kod != null) br.postPage("http://czshare.com/profi/smazat_profi.php", "smaz%5B%5D="+kod);
+        }
+        // Logout
+        br.getPage("http://czshare.com/profi/index.php?odhlasit=ano"); 
+
+    }
+
+    //@Override
+    public String getAGBLink() {
+        return "http://www.czshare.com/pravidla.html";
+    }
+
+    //@Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Soubor nenalezen")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex("N.zev souboru:</strong></span>\\s+<span[^>]*><strong>(.*?)</strong>").getMatch(0));
+        String filesize = br.getRegex("Velikost:</td>\\s+<td[^>]*>(.*?)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    //@Override
+    public String getVersion() {
+        return getVersion("$Revision$");
+    }
+
+    //@Override
+    public void reset() {
+    }
+
+    //@Override
+    public void resetPluginGlobals() {
+    }
+
+    //@Override
+    public void reset_downloadlink(DownloadLink link) {
+        link.setProperty("directLink", null);  
+        link.setProperty("captcha", null);
+        link.setProperty("dlurl", null);
+    }
+
+}
