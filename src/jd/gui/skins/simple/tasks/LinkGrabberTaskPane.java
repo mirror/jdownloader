@@ -220,7 +220,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
                 SimpleGUI.CURRENTGUI.getContentPane().display(getPanel(i));
                 return null;
             }
-        }.waitForEDT();
+        }.start();
         // switch (i) {
         // case 0:
         // lg_add_all.setEnabled(false);
