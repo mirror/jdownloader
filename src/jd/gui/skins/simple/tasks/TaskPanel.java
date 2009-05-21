@@ -52,7 +52,7 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     protected static final String GAP_BUTTON_LEFT = "gapleft 10";
     private ArrayList<SingletonPanel> panels;
     protected static final String D1_BUTTON_ICON = "spanx,alignx left,gaptop 2";
-    protected static final String D1_TOGGLEBUTTON_ICON = "spanx,alignx left,gaptop 2,gapleft 3";
+    protected static final String D1_TOGGLEBUTTON_ICON = "spanx,alignx left,gaptop 2,gapleft 14";
     protected static final String D1_LABEL_ICON = "spanx,alignx left,gaptop 7,gapleft 7";
     protected static final String D2_LABEL = "spanx,alignx left,gaptop 2,gapleft 27";
     protected static final String D1_LABEL = "spanx,alignx left,gaptop 7,gapleft 7";

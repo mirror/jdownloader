@@ -42,7 +42,7 @@ import jd.utils.JDUtilities;
 public class AddonTaskPane extends TaskPanel implements ActionListener {
 
     private static final long serialVersionUID = -7720749076951577192L;
-    private HashMap<JButton, OptionalPluginWrapper> buttonMap;
+    private HashMap<Object, OptionalPluginWrapper> buttonMap;
     private JButton config;
     private ArrayList<CollapseButton> entries;
 
@@ -54,7 +54,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
 
     public void initGUI() {
         this.removeAll();
-        this.buttonMap = new HashMap<JButton, OptionalPluginWrapper>();
+        this.buttonMap = new HashMap<Object, OptionalPluginWrapper>();
         this.entries = new ArrayList<CollapseButton>();
         for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
             if (!wrapper.isEnabled() || wrapper.getPlugin() == null) continue;
@@ -67,12 +67,10 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
 
                     for (MenuItem entry : menuItems) {
 
-
                         JComponent comp = createMenu(entry, null);
                         comp.setOpaque(false);
-                    
-                            bt.getContentPane().add(comp, "gapleft 20");
-                     
+
+                        bt.getContentPane().add(comp, "gapleft 20");
 
                     }
                     bt.getButton().addActionListener(this);
@@ -82,8 +80,25 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
                 } else if (menuItems.size() == 1) {
                     JComponent btn = createMenu(menuItems.get(0), JDTheme.II(wrapper.getPlugin().getIconKey(), 16, 16));
                     btn.setOpaque(false);
-                    add(btn, D1_TOGGLEBUTTON_ICON);
+                    if (menuItems.get(0).getType() == MenuItem.TOGGLE) {
+                        add(btn, D1_TOGGLEBUTTON_ICON);
+                    } else {
+                        add(btn, D1_BUTTON_ICON);
+                    }
 
+                }
+            } else if (JDUtilities.getConfiguration().getBooleanProperty(wrapper.getConfigParamKey(), false)) {
+                menuItems = new ArrayList<MenuItem>();
+                MenuItem mi;
+                menuItems.add(mi = new MenuItem(wrapper.getPlugin().getHost(), 0));
+                mi.setActionListener(this);
+                buttonMap.put(mi, wrapper);
+                JComponent btn = createMenu(menuItems.get(0), JDTheme.II(wrapper.getPlugin().getIconKey(), 16, 16));
+                btn.setOpaque(false);
+                if (menuItems.get(0).getType() == MenuItem.TOGGLE) {
+                    add(btn, D1_TOGGLEBUTTON_ICON);
+                } else {
+                    add(btn, D1_BUTTON_ICON);
                 }
             }
         }
@@ -129,12 +144,12 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
     private JComponent createMenu(final MenuItem entry, final ImageIcon ii) {
 
         JButton bt;
-        switch (entry.getID()) {
+        switch (entry.getType()) {
         case MenuItem.CONTAINER:
             CollapseButton col = new CollapseButton(entry.getTitle(), ii);
             for (int i = 0; i < entry.getSize(); i++) {
 
-                switch (entry.get(i).getID()) {
+                switch (entry.get(i).getType()) {
                 case MenuItem.CONTAINER:
                 case MenuItem.NORMAL:
                 case MenuItem.SEPARATOR:

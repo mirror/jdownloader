@@ -90,7 +90,7 @@ public class MenuItem extends Property {
         return actionListener;
     }
 
-    public int getID() {
+    public int getType() {
 
         return id;
     }

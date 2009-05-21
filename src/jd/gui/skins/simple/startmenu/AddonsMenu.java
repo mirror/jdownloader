@@ -101,7 +101,7 @@ public class AddonsMenu extends JStartMenu {
                         c.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                         c.setSelectedIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                         c.setDisabledSelectedIcon(null);
-                        if (mi.getID() == MenuItem.TOGGLE) {
+                        if (mi.getType() == MenuItem.TOGGLE) {
                             itemsToggle.add(c);
                         } else {
                             if (config) {

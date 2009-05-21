@@ -35,7 +35,7 @@ public class JDMenu extends JMenu {
 
     public static JMenuItem getJMenuItem(final MenuItem mi) {
         JMenuItem m;
-        switch (mi.getID()) {
+        switch (mi.getType()) {
         case MenuItem.SEPARATOR:
             return null;
         case MenuItem.NORMAL:
