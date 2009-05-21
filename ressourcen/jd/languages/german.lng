@@ -1210,3 +1210,7 @@ wrapper.webupdate.updateupdater = Updater herunterladen
 wrapper.webupdate.updateupdater.error_crc = CRC Fehler beim Herunterladen der jdupdate.jar
 wrapper.webupdate.updateupdater.error_rename = Konnte jdupdate.jar.tmp nicht zu jdupdate.jar umbenennen
 wrapper.webupdate.updateupdater.error_reqeust = Konnte jdupdate.jar nicht herunterladen
+gui.cnl.install=Click'n'load ist ein komfortabler Weg Links in JDownloader einzufügen. \r\nUm Click'n'Load zu installieren muss JDownloader einige Registryeinträge schreiben. \r\nZur Installation sind aus diesem Grund unter Umständen einige Windowsdialoge zu bestätigen.
+gui.cnl.install.title =Click'n'Load Installation
+gui.cnl.install.error.title =Click'n'Load Installation fehlgeschlagen
+gui.cnl.install.error.message=Die Installation von Click'n'Load ist fehlgeschlagen. Bitte teste diese Alternativen:\r\n *  JDownloader mir Administartorrechten starten.\r\n * %s manuell ausführen.\r\n * Einstellungen->Allgemein->Click'n'Load [Installieren] öfnen.\r\n Weitere Informationen unter http://jdownloader.org/click-n-load.
