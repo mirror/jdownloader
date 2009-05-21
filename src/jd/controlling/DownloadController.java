@@ -351,7 +351,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                     convert.remove(fp);
                     continue;
                 }
-                convert.add(fp);
+            
                 it = fp.getDownloadLinkList().iterator();
                 while (it.hasNext()) {
                     localLink = it.next();
