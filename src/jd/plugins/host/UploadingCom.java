@@ -127,7 +127,8 @@ public class UploadingCom extends PluginForHost {
     }
 
     //@Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        try{
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://www.uploading.com/", "_lang", "en");
@@ -135,10 +136,20 @@ public class UploadingCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         String filesize = br.getRegex("File size:(.*?)<br").getMatch(0);
         String filename = br.getRegex(Pattern.compile("Download file.*?<b>(.*?)</b>", Pattern.DOTALL)).getMatch(0);
-        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if(filename==null){
+            filename = br.getRegex("<b>(.*?)</b>  File size").getMatch(0);
+           
+        }
+        if (filesize == null || filename == null){
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
+        }catch(Exception e){
+            
+            throw e;
+        }
     }
 
     //@Override
