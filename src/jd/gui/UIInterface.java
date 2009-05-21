@@ -16,7 +16,7 @@
 
 package jd.gui;
 
-import java.util.Vector;
+import java.util.ArrayList;
 
 import jd.event.ControlListener;
 import jd.plugins.Account;
@@ -55,7 +55,7 @@ public interface UIInterface extends ControlListener {
      * 
      * @param links
      */
-    public void addLinksToGrabber(Vector<DownloadLink> links, boolean hideGrabber);
+    public void addLinksToGrabber(ArrayList<DownloadLink> links, boolean hideGrabber);
 
     public void displayMiniWarning(String shortWarn, String longWarn, int showtime);
 

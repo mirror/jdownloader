@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -64,7 +64,10 @@ class DownloadLinkBroadcaster extends JDBroadcaster<DownloadLinkListener, Downlo
 
 public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink> {
 
-    public static enum AvailableStatus{UNCHECKED,FALSE,UNCHECKABLE,TRUE}
+    public static enum AvailableStatus {
+        UNCHECKED, FALSE, UNCHECKABLE, TRUE
+    }
+
     public static final int LINKTYPE_CONTAINER = 1;
 
     public static final int LINKTYPE_JDU = 2;
@@ -142,7 +145,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private String sourcePluginComment = null;
 
-    private Vector<String> sourcePluginPasswords = null;
+    private ArrayList<String> sourcePluginPasswordList = null;
 
     // Speedmeter zum berechnen des Downloadspeeds
     private transient SpeedMeter speedMeter;
@@ -190,7 +193,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.plugin = plugin;
         priority = 0;
         setName(name);
-        sourcePluginPasswords = new Vector<String>();
+        sourcePluginPasswordList = new ArrayList<String>();
 
         downloadMax = 0;
         this.host = host == null ? null : host.toLowerCase();
@@ -210,8 +213,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
-        if (sourcePluginPasswords.indexOf(sourcePluginPassword) < 0 && sourcePluginPassword != null && sourcePluginPassword.trim().length() > 0) {
-            sourcePluginPasswords.add(sourcePluginPassword);
+        if (sourcePluginPasswordList.indexOf(sourcePluginPassword) < 0 && sourcePluginPassword != null && sourcePluginPassword.trim().length() > 0) {
+            sourcePluginPasswordList.add(sourcePluginPassword);
         }
         return this;
     }
@@ -222,7 +225,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
     }
 
-    public void addSourcePluginPasswords(Vector<String> sourcePluginPasswords) {
+    public void addSourcePluginPasswordList(ArrayList<String> sourcePluginPasswords) {
         for (int i = 0; i < sourcePluginPasswords.size(); i++) {
             addSourcePluginPassword(sourcePluginPasswords.get(i));
         }
@@ -506,16 +509,16 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public String getSourcePluginPassword() {
-        if (sourcePluginPasswords.size() == 0) { return null; }
-        if (sourcePluginPasswords.size() == 1) { return sourcePluginPasswords.get(0); }
+        if (sourcePluginPasswordList.size() == 0) { return null; }
+        if (sourcePluginPasswordList.size() == 1) { return sourcePluginPasswordList.get(0); }
         StringBuilder ret = new StringBuilder();
         ret.append('{');
-        for (int i = 0; i < sourcePluginPasswords.size(); i++) {
-            if (sourcePluginPasswords.get(i).trim().length() > 0) {
+        for (int i = 0; i < sourcePluginPasswordList.size(); i++) {
+            if (sourcePluginPasswordList.get(i).trim().length() > 0) {
                 ret.append('"');
-                ret.append(sourcePluginPasswords.get(i));
+                ret.append(sourcePluginPasswordList.get(i));
                 ret.append('"');
-                if (i < sourcePluginPasswords.size() - 1) {
+                if (i < sourcePluginPasswordList.size() - 1) {
                     ret.append(new char[] { ',', ' ' });
                 }
             }
@@ -524,8 +527,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return ret.toString();
     }
 
-    public Vector<String> getSourcePluginPasswords() {
-        return sourcePluginPasswords;
+    public ArrayList<String> getSourcePluginPasswordList() {
+        return sourcePluginPasswordList;
     }
 
     /**
@@ -581,7 +584,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return true/false
      */
     public boolean isAvailable() {
-       return getAvailableStatus()!=AvailableStatus.FALSE;        
+        return getAvailableStatus() != AvailableStatus.FALSE;
     }
 
     public AvailableStatus getAvailableStatus() {
@@ -601,7 +604,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 break;
             } catch (PluginException e) {
                 e.fillLinkStatus(this.getLinkStatus());
-              
+
                 availableStatus = AvailableStatus.FALSE;
                 break;
             } catch (IOException e) {
@@ -722,7 +725,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void setAvailable(boolean available) {
-        this.availableStatus = available?AvailableStatus.TRUE:AvailableStatus.FALSE;
+        this.availableStatus = available ? AvailableStatus.TRUE : AvailableStatus.FALSE;
     }
 
     /**
@@ -922,8 +925,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return this;
     }
 
-    public DownloadLink setSourcePluginPasswords(Vector<String> sourcePluginPassword) {
-        sourcePluginPasswords = sourcePluginPassword;
+    public DownloadLink setSourcePluginPasswordList(ArrayList<String> sourcePluginPassword) {
+        sourcePluginPasswordList = sourcePluginPassword;
         return this;
     }
 

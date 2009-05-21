@@ -17,7 +17,7 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -38,7 +38,7 @@ public class Rlslog extends PluginForDecrypt {
     //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        Vector<String> passwords;
+        ArrayList<String> passwords;
         String parameter = param.toString();
         br.getPage(parameter);
         String directComment = new Regex(param.toString(), "http://[\\w\\.]*?rlslog\\.net/.+/.+/#comments|/.+/#comments|/.+/.*?#(comment-\\d+)").getMatch(0);
@@ -50,12 +50,12 @@ public class Rlslog extends PluginForDecrypt {
             for (String link : links) {
                 if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link,true)) {
                     DownloadLink dLink = createDownloadlink(link);
-                    dLink.addSourcePluginPasswords(passwords);
+                    dLink.addSourcePluginPasswordList(passwords);
                     decryptedLinks.add(dLink);
                 }
             }
         } else {
-            Vector<String> pages = new Vector<String>();
+            ArrayList<String> pages = new ArrayList<String>();
             pages.add(param.toString());
             String comment_pages_tag = br.getRegex(Pattern.compile("<!-- Comment page numbers -->(.*?)<!-- End comment page numbers -->", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             if (comment_pages_tag != null) {
@@ -73,7 +73,7 @@ public class Rlslog extends PluginForDecrypt {
                     for (String link : links) {
                         if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link,true)) {
                             DownloadLink dLink = createDownloadlink(link);
-                            dLink.addSourcePluginPasswords(passwords);
+                            dLink.addSourcePluginPasswordList(passwords);
                             decryptedLinks.add(dLink);
                         }
                     }

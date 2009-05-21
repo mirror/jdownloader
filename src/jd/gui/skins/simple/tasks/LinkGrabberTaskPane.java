@@ -19,7 +19,7 @@ package jd.gui.skins.simple.tasks;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -58,7 +58,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     private JLabel packages;
     private JLabel totalsize;
     private Timer fadeTimer;
-    private Vector<LinkGrabberFilePackage> fps;
+    private ArrayList<LinkGrabberFilePackage> fps;
     private LinkGrabberController lgi;
     private JCheckBox topOrBottom;
     private JCheckBox startAfterAdding;

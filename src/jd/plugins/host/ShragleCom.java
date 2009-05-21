@@ -154,12 +154,12 @@ public class ShragleCom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if(downloadLink.getDownloadURL().contains("?")){
-            br.getPage(downloadLink.getDownloadURL()+"&jd=1");  
-        }else{
-            br.getPage(downloadLink.getDownloadURL()+"?jd=1");  
+        if (downloadLink.getDownloadURL().contains("?")) {
+            br.getPage(downloadLink.getDownloadURL() + "&jd=1");
+        } else {
+            br.getPage(downloadLink.getDownloadURL() + "?jd=1");
         }
-     
+        br.setDebug(true);
         String wait = br.getRegex(Pattern.compile("Bitte warten Sie(.*?)Minuten", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l); }
         wait = br.getRegex("var downloadWait =(.*?);").getMatch(0);
@@ -167,6 +167,8 @@ public class ShragleCom extends PluginForHost {
         if (wait == null) wait = "10";
         sleep(Long.parseLong(wait.trim()) * 1000l, downloadLink);
         br.setFollowRedirects(true);
+
+        form.setAction(form.getAction() + "?jd=1");
         dl = br.openDownload(downloadLink, form, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {

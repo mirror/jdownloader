@@ -49,6 +49,7 @@ public class Megauploadcom extends PluginForHost {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
     private static final String CAPTCHA_MODE = "CAPTCHAMODE";
+    private static String PASSWORD = null;
     private static int FREE = 30;
     // private static int FREE = 1;
 
@@ -146,8 +147,14 @@ public class Megauploadcom extends PluginForHost {
             if (form != null && form.containsHTML("logout")) form = br.getForm(1);
             if (form != null && form.containsHTML("filepassword")) {
                 String passCode;
+                boolean usedGlobal = false;
                 if (link.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput(null, link);
+                    if (PASSWORD == null) {
+                        passCode = Plugin.getUserInput("Password?", link);
+                    } else {
+                        usedGlobal = true;
+                        passCode = PASSWORD;
+                    }
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = link.getStringProperty("pass", null);
@@ -158,9 +165,11 @@ public class Megauploadcom extends PluginForHost {
                 if (form != null && form.containsHTML("logout")) form = br.getForm(1);
                 if (form != null && form.containsHTML("filepassword")) {
                     link.setProperty("pass", null);
+                    if (usedGlobal) PASSWORD = null;
                     throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
                 } else {
                     link.setProperty("pass", passCode);
+                    PASSWORD = passCode;
                 }
             }
             url = br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
@@ -365,9 +374,15 @@ public class Megauploadcom extends PluginForHost {
 
             if (form != null && form.containsHTML("logout")) form = br.getForm(1);
             if (form != null && form.containsHTML("filepassword")) {
+                boolean usedGlobal = false;
                 String passCode;
                 if (link.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput(null, link);
+                    if (PASSWORD == null) {
+                        passCode = Plugin.getUserInput("Password?", link);
+                    } else {
+                        usedGlobal = true;
+                        passCode = PASSWORD;
+                    }
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = link.getStringProperty("pass", null);
@@ -378,9 +393,11 @@ public class Megauploadcom extends PluginForHost {
                 if (form != null && form.containsHTML("logout")) form = br.getForm(1);
                 if (form != null && form.containsHTML("filepassword")) {
                     link.setProperty("pass", null);
+                    if (usedGlobal) PASSWORD = null;
                     throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
                 } else {
                     link.setProperty("pass", passCode);
+                    PASSWORD = passCode;
                 }
             }
             if (form != null && form.containsHTML("captchacode")) {

@@ -24,7 +24,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.List;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
@@ -68,11 +68,11 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
             if (current == null) return false;
             switch (draggingType) {
             case DRAG_LINKS:
-                Vector<DownloadLink> downloadLinks = (Vector<DownloadLink>) draggingObjects;
+                ArrayList<DownloadLink> downloadLinks = (ArrayList<DownloadLink>) draggingObjects;
                 if (current.getLastPathComponent() instanceof DownloadLink && downloadLinks.contains(current.getLastPathComponent())) return false;
                 break;
             case DRAG_PACKAGES:
-                Vector<LinkGrabberFilePackage> packages = (Vector<LinkGrabberFilePackage>) draggingObjects;
+                ArrayList<LinkGrabberFilePackage> packages = (ArrayList<LinkGrabberFilePackage>) draggingObjects;
                 if (current.getLastPathComponent() instanceof LinkGrabberFilePackage && packages.contains(current.getLastPathComponent())) return false;
                 if (current.getLastPathComponent() instanceof DownloadLink) {
                     LinkGrabberFilePackage fp = LGINSTANCE.getFPwithLink(((DownloadLink) current.getLastPathComponent()));
@@ -93,8 +93,8 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
     //@Override
     protected Transferable createTransferable(JComponent c) {
         isDragging = true;
-        Vector<LinkGrabberFilePackage> packages = treeTable.getSelectedFilePackages();
-        Vector<DownloadLink> downloadLinks = treeTable.getSelectedDownloadLinks();
+        ArrayList<LinkGrabberFilePackage> packages = treeTable.getSelectedFilePackages();
+        ArrayList<DownloadLink> downloadLinks = treeTable.getSelectedDownloadLinks();
         int row = treeTable.rowAtPoint(treeTable.getMousePosition());
         TreePath current = treeTable.getPathForRow(row);
         if (current.getLastPathComponent() instanceof LinkGrabberFilePackage) {
@@ -122,7 +122,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
         synchronized (DownloadController.getInstance().getPackages()) {
             switch (draggingType) {
             case DRAG_LINKS:
-                final Vector<DownloadLink> downloadLinks = (Vector<DownloadLink>) draggingObjects;
+                final ArrayList<DownloadLink> downloadLinks = (ArrayList<DownloadLink>) draggingObjects;
 
                 if (current.getLastPathComponent() instanceof LinkGrabberFilePackage) {
                     /* Links in Package */
@@ -176,7 +176,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
                 }
                 break;
             case DRAG_PACKAGES:
-                final Vector<LinkGrabberFilePackage> packages = (Vector<LinkGrabberFilePackage>) draggingObjects;
+                final ArrayList<LinkGrabberFilePackage> packages = (ArrayList<LinkGrabberFilePackage>) draggingObjects;
                 final LinkGrabberFilePackage fp;
                 final String name;
                 if (current.getLastPathComponent() instanceof LinkGrabberFilePackage) {

@@ -19,7 +19,7 @@ package jd.plugins.decrypt;
 import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -51,12 +51,12 @@ public class Stealth extends PluginForDecrypt {
         String id = new Regex(parameter, Pattern.compile("\\?id\\=([a-zA-Z0-9]+)")).getMatch(0);
         if (id != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
-            Vector<DownloadLink> dl_links;
+            ArrayList<DownloadLink> dl_links;
             try {
                 Browser.download(container, br.openGetConnection("http://stealth.to/?go=rsdf&id=" + id));
                 dl_links = (JDUtilities.getController().getContainerLinks(container));
             } catch (Exception e) {
-                dl_links = new Vector<DownloadLink>();
+                dl_links = new ArrayList<DownloadLink>();
             }
             for (DownloadLink dl_link : dl_links) {
                 decryptedLinks.add(dl_link);
@@ -64,12 +64,12 @@ public class Stealth extends PluginForDecrypt {
             container.delete();
             if (decryptedLinks.size() == 0) {
                 container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-                dl_links = new Vector<DownloadLink>();
+                dl_links = new ArrayList<DownloadLink>();
                 try {
                     Browser.download(container, br.openGetConnection("http://stealth.to/?go=dlc&id=" + id));
                     dl_links = (JDUtilities.getController().getContainerLinks(container));
                 } catch (Exception e) {
-                    dl_links = new Vector<DownloadLink>();
+                    dl_links = new ArrayList<DownloadLink>();
                 }
                 for (DownloadLink dl_link : dl_links) {
                     decryptedLinks.add(dl_link);

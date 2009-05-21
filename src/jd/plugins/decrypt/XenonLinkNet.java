@@ -17,7 +17,7 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.DistributeData;
@@ -42,7 +42,7 @@ public class XenonLinkNet extends PluginForDecrypt {
         br.getPage("http://www.xenonlink.net/index.php?p=2&dg=" + dataCode);
 
         String jdlist = br.getRegex("<body bgcolor=#3366CC>(.*)").getMatch(0);
-        Vector<DownloadLink> links = new DistributeData(jdlist).findLinks();
+        ArrayList<DownloadLink> links = new DistributeData(jdlist).findLinks();
         decryptedLinks.addAll(links);
 
         return decryptedLinks;

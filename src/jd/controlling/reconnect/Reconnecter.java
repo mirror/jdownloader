@@ -18,7 +18,7 @@ package jd.controlling.reconnect;
 
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
@@ -70,7 +70,7 @@ public class Reconnecter {
 
             if (System.currentTimeMillis() - lastIPUpdate > 1000 * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) {
                 ipChangeSuccess = Reconnecter.checkExternalIPChange();
-                JDUtilities.getGUI().displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."), 60000);
+//                JDUtilities.getGUI().displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."), 60000);
             }
 
             if (!ipChangeSuccess) {
@@ -96,7 +96,7 @@ public class Reconnecter {
                 // controller.pauseDownloads(true);
 
                 for (FilePackage fp : controller.getPackages()) {
-                    for (DownloadLink nextDownloadLink : fp.getDownloadLinks()) {
+                    for (DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
                         if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
                             nextDownloadLink.setEnabled(false);
                             logger.info("disabled " + nextDownloadLink);
@@ -164,10 +164,10 @@ public class Reconnecter {
     }
 
     private static void resetAllLinks() {
-        Vector<FilePackage> packages = JDUtilities.getController().getPackages();
+        ArrayList<FilePackage> packages = JDUtilities.getController().getPackages();
         synchronized (packages) {
             for (FilePackage fp : packages) {
-                for (DownloadLink nextDownloadLink : fp.getDownloadLinks()) {
+                for (DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
                     if (nextDownloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
                         if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED)) {
                             nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);

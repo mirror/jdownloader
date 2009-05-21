@@ -17,7 +17,7 @@
 package jd.utils;
 
 import java.util.Calendar;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
  */
 public class Replacer {
 
-    private static Vector<String[]> KEYS = null;
+    private static ArrayList<String[]> KEYS = null;
 
     public static String[] getKeyList() {
         if (KEYS == null) Replacer.initKeys();
@@ -48,7 +48,7 @@ public class Replacer {
     }
 
     private static void initKeys() {
-        KEYS = new Vector<String[]>();
+        KEYS = new ArrayList<String[]>();
         KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.PASSWORD", JDLocale.L("replacer.password", "Last finished package: Password") });
         KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.FILELIST", JDLocale.L("replacer.filelist", "Last finished package: Filelist") });
         KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.PACKAGENAME", JDLocale.L("replacer.packagename", "Last finished package: Packagename") });
@@ -79,7 +79,7 @@ public class Replacer {
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.FILELIST")) {
             if (dLink == null) return "";
-            Vector<DownloadLink> files = dLink.getFilePackage().getDownloadLinks();
+            ArrayList<DownloadLink> files = dLink.getFilePackage().getDownloadLinkList();
             return files.toString();
         }
 

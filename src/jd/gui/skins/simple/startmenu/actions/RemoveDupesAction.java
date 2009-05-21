@@ -37,7 +37,7 @@ public class RemoveDupesAction extends StartAction {
         Vector<DownloadLink> downloadstodelete = new Vector<DownloadLink>();
         synchronized (dlc.getPackages()) {
             for (FilePackage fp : dlc.getPackages()) {
-                downloadstodelete.addAll(fp.getLinksWithStatus(LinkStatus.ERROR_ALREADYEXISTS));
+                downloadstodelete.addAll(fp.getLinksListbyStatus(LinkStatus.ERROR_ALREADYEXISTS));
             }
         }
         for (DownloadLink dl : downloadstodelete) {

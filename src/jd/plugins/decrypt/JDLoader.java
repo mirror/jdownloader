@@ -18,7 +18,7 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -48,7 +48,7 @@ public class JDLoader extends PluginForDecrypt {
         if (jdlist != null) {
             /* Links einlesen */
             jdlist = Encoding.Base64Decode(jdlist);
-            Vector<DownloadLink> links = new DistributeData(jdlist).findLinks();
+            ArrayList<DownloadLink> links = new DistributeData(jdlist).findLinks();
             decryptedLinks.addAll(links);
         } else {
             /* Container einlesen */
@@ -65,7 +65,7 @@ public class JDLoader extends PluginForDecrypt {
             if (format == null) throw new DecrypterException("Unknown Container prefix");
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + format);
             Browser.download(container, br.cloneBrowser().openGetConnection("http://" + url));
-            Vector<DownloadLink> links = JDUtilities.getController().getContainerLinks(container);
+            ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(container);
             for (DownloadLink dLink : links) {
                 decryptedLinks.add(dLink);
             }

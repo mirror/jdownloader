@@ -197,7 +197,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
             FilePackage fp = (FilePackage) source.getProperty("PACKAGE");
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            for (DownloadLink l : fp.getDownloadLinks()) {
+            for (DownloadLink l : fp.getDownloadLinkList()) {
                 if (l.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                     file = new File(l.getFileOutput());
                     if (this.validateArchive(file)) {

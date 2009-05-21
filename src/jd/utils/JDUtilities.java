@@ -306,7 +306,7 @@ public class JDUtilities {
 
     }
 
-    public static String createContainerString(Vector<DownloadLink> downloadLinks, String encryption) {
+    public static String createContainerString(ArrayList<DownloadLink> downloadLinks, String encryption) {
         ArrayList<CPluginWrapper> pfc = CPluginWrapper.getCWrapper();
         for (int i = 0; i < pfc.size(); i++) {
             String pn = pfc.get(i).getHost();

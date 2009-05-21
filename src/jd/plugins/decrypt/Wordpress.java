@@ -18,7 +18,7 @@ package jd.plugins.decrypt;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -58,7 +58,7 @@ public class Wordpress extends PluginForDecrypt {
         br.getPage(parameter);
 
         /* Defaultpasswörter der Seite setzen */
-        Vector<String> link_passwds = new Vector<String>();
+        ArrayList<String> link_passwds = new ArrayList<String>();
         for (String host : defaultPasswords.keySet()) {
             if (br.getHost().toLowerCase().contains(host)) {
                 for (String password : defaultPasswords.get(host)) {
@@ -77,7 +77,7 @@ public class Wordpress extends PluginForDecrypt {
         for (String link : links) {
             if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link,true)) {
                 DownloadLink dLink = createDownloadlink(link);
-                dLink.setSourcePluginPasswords(link_passwds);
+                dLink.setSourcePluginPasswordList(link_passwds);
                 decryptedLinks.add(dLink);
                 progress.increase(1);
             }

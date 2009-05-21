@@ -20,7 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -141,7 +141,7 @@ public class ProtectorTO extends PluginForDecrypt {
                     URLConnectionAdapter con = br.cloneBrowser().openGetConnection(containerlink);
                     File container = JDUtilities.getResourceFile("container/" + getFileNameFormHeader(con));
                     Browser.download(container, con);
-                    Vector<DownloadLink> link = JDUtilities.getController().getContainerLinks(container);
+                    ArrayList<DownloadLink> link = JDUtilities.getController().getContainerLinks(container);
                     for (DownloadLink downloadLink : link) {
                         decryptedLinks.add(downloadLink);
                     }

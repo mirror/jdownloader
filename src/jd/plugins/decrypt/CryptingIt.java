@@ -18,7 +18,7 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -45,7 +45,7 @@ public class CryptingIt extends PluginForDecrypt {
         String dlcLink = "http://crypting.it/files/download.php?fileid=" + id + "-m1.dlc";
 
         File containerFile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-        Vector<DownloadLink> links = null;
+        ArrayList<DownloadLink> links = null;
         Browser.download(containerFile, dlcLink);
         links = JDUtilities.getController().getContainerLinks(containerFile);
         containerFile.delete();

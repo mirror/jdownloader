@@ -36,7 +36,7 @@ public class CleanupPackages extends StartAction {
         Vector<FilePackage> packagestodelete = new Vector<FilePackage>();
         synchronized (dlc.getPackages()) {
             for (FilePackage fp : dlc.getPackages()) {
-                if (fp.getLinksWithStatus(LinkStatus.FINISHED).size() == fp.size()) packagestodelete.add(fp);
+                if (fp.getLinksListbyStatus(LinkStatus.FINISHED).size() == fp.size()) packagestodelete.add(fp);
             }
         }
         for (FilePackage fp : packagestodelete) {

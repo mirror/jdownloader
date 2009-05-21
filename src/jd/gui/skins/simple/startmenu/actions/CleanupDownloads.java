@@ -37,7 +37,7 @@ public class CleanupDownloads extends StartAction {
         Vector<DownloadLink> downloadstodelete = new Vector<DownloadLink>();
         synchronized (dlc.getPackages()) {
             for (FilePackage fp : dlc.getPackages()) {
-                downloadstodelete.addAll(fp.getLinksWithStatus(LinkStatus.FINISHED));
+                downloadstodelete.addAll(fp.getLinksListbyStatus(LinkStatus.FINISHED));
             }
         }
         for (DownloadLink dl : downloadstodelete) {

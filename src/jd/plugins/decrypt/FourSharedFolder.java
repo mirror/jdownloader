@@ -17,7 +17,7 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -59,7 +59,7 @@ public class FourSharedFolder extends PluginForDecrypt {
                 decryptedLinks.add(this.createDownloadlink(dl));
             }
         }
-        fp.addAll(new Vector<DownloadLink>(decryptedLinks));
+        fp.addLinks(new ArrayList<DownloadLink>(decryptedLinks));
         return decryptedLinks;
     }
 

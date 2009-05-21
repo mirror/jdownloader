@@ -23,8 +23,9 @@ import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
@@ -60,23 +61,24 @@ public class TreeTableTransferHandler extends TransferHandler {
     // @Override
     public boolean canImport(TreeTableTransferHandler.TransferSupport info) {
         if (isDragging) {
-            //ACHTUNG 1.6!!!
-            //ON_OR_INSERT_ROW
-//            ((javax.swing.JTable.DropLocation) info.getDropLocation()).isInsertColumn();
-//            ((javax.swing.JTable.DropLocation) info.getDropLocation()).isInsertRow();
+            // ACHTUNG 1.6!!!
+            // ON_OR_INSERT_ROW
+            // ((javax.swing.JTable.DropLocation)
+            // info.getDropLocation()).isInsertColumn();
+            // ((javax.swing.JTable.DropLocation)
+            // info.getDropLocation()).isInsertRow();
 
-          
             if (draggingObjects == null) return false;
             int row = ((JTable.DropLocation) info.getDropLocation()).getRow();
             TreePath current = treeTable.getPathForRow(row);
             if (current == null) return false;
             switch (draggingType) {
             case DRAG_LINKS:
-                Vector<DownloadLink> downloadLinks = (Vector<DownloadLink>) draggingObjects;
+                ArrayList<DownloadLink> downloadLinks = (ArrayList<DownloadLink>) draggingObjects;
                 if (current.getLastPathComponent() instanceof DownloadLink && downloadLinks.contains(current.getLastPathComponent())) return false;
                 break;
             case DRAG_PACKAGES:
-                Vector<FilePackage> packages = (Vector<FilePackage>) draggingObjects;
+                ArrayList<FilePackage> packages = (ArrayList<FilePackage>) draggingObjects;
                 if (current.getLastPathComponent() instanceof FilePackage && packages.contains(current.getLastPathComponent())) return false;
                 if (current.getLastPathComponent() instanceof DownloadLink && packages.contains(((DownloadLink) current.getLastPathComponent()).getFilePackage())) return false;
                 break;
@@ -94,8 +96,8 @@ public class TreeTableTransferHandler extends TransferHandler {
     // @Override
     protected Transferable createTransferable(JComponent c) {
         isDragging = true;
-        Vector<FilePackage> packages = treeTable.getSelectedFilePackages();
-        Vector<DownloadLink> downloadLinks = treeTable.getSelectedDownloadLinks();
+        ArrayList<FilePackage> packages = treeTable.getSelectedFilePackages();
+        ArrayList<DownloadLink> downloadLinks = treeTable.getSelectedDownloadLinks();
         int row = treeTable.rowAtPoint(treeTable.getMousePosition());
         TreePath current = treeTable.getPathForRow(row);
         if (current.getLastPathComponent() instanceof FilePackage) {
@@ -123,7 +125,7 @@ public class TreeTableTransferHandler extends TransferHandler {
         synchronized (DownloadController.getInstance().getPackages()) {
             switch (draggingType) {
             case DRAG_LINKS:
-                final Vector<DownloadLink> downloadLinks = (Vector<DownloadLink>) draggingObjects;
+                final ArrayList<DownloadLink> downloadLinks = (ArrayList<DownloadLink>) draggingObjects;
 
                 if (current.getLastPathComponent() instanceof FilePackage) {
                     /* Links in Package */
@@ -134,7 +136,7 @@ public class TreeTableTransferHandler extends TransferHandler {
                         public void actionPerformed(ActionEvent e) {
                             synchronized (DownloadController.getInstance().getPackages()) {
                                 FilePackage fp = ((FilePackage) current.getLastPathComponent());
-                                fp.addAllAt(downloadLinks, 0);
+                                fp.addLinksAt(downloadLinks, 0);
                             }
                         }
                     });
@@ -145,7 +147,7 @@ public class TreeTableTransferHandler extends TransferHandler {
                         public void actionPerformed(ActionEvent e) {
                             synchronized (DownloadController.getInstance().getPackages()) {
                                 FilePackage fp = ((FilePackage) current.getLastPathComponent());
-                                fp.addAllAt(downloadLinks, fp.size());
+                                fp.addLinksAt(downloadLinks, fp.size());
                             }
                         }
                     });
@@ -159,7 +161,7 @@ public class TreeTableTransferHandler extends TransferHandler {
                         public void actionPerformed(ActionEvent e) {
                             synchronized (DownloadController.getInstance().getPackages()) {
                                 FilePackage fp = ((DownloadLink) current.getLastPathComponent()).getFilePackage();
-                                fp.addAllAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()) - 1);
+                                fp.addLinksAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()) - 1);
                             }
                         }
                     });
@@ -170,14 +172,14 @@ public class TreeTableTransferHandler extends TransferHandler {
                         public void actionPerformed(ActionEvent e) {
                             synchronized (DownloadController.getInstance().getPackages()) {
                                 FilePackage fp = ((DownloadLink) current.getLastPathComponent()).getFilePackage();
-                                fp.addAllAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()) + 1);
+                                fp.addLinksAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()) + 1);
                             }
                         }
                     });
                 }
                 break;
             case DRAG_PACKAGES:
-                final Vector<FilePackage> packages = (Vector<FilePackage>) draggingObjects;
+                final ArrayList<FilePackage> packages = (ArrayList<FilePackage>) draggingObjects;
                 final FilePackage fp;
                 final String name;
                 if (current.getLastPathComponent() instanceof FilePackage) {

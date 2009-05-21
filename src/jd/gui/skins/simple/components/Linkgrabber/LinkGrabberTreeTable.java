@@ -33,7 +33,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import javax.swing.DropMode;
 import javax.swing.JCheckBoxMenuItem;
@@ -82,8 +82,8 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
     private LinkGrabberTreeTableRenderer cellRenderer;
     private TableColumnExt[] cols;
 
-    private Vector<DownloadLink> selectedLinks = new Vector<DownloadLink>();
-    private Vector<LinkGrabberFilePackage> selectedPackages = new Vector<LinkGrabberFilePackage>();
+    private ArrayList<DownloadLink> selectedLinks = new ArrayList<DownloadLink>();
+    private ArrayList<LinkGrabberFilePackage> selectedPackages = new ArrayList<LinkGrabberFilePackage>();
     private String[] prioDescs;
 
     public static final String PROPERTY_EXPANDED = "lg_expanded";
@@ -173,9 +173,9 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         }
     }
 
-    public Vector<DownloadLink> getSelectedDownloadLinks() {
+    public ArrayList<DownloadLink> getSelectedDownloadLinks() {
         int[] rows = getSelectedRows();
-        Vector<DownloadLink> ret = new Vector<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         TreePath path;
         for (int element : rows) {
             path = getPathForRow(element);
@@ -186,9 +186,9 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         return ret;
     }
 
-    public Vector<DownloadLink> getAllSelectedDownloadLinks() {
-        Vector<DownloadLink> links = getSelectedDownloadLinks();
-        Vector<LinkGrabberFilePackage> fps = getSelectedFilePackages();
+    public ArrayList<DownloadLink> getAllSelectedDownloadLinks() {
+        ArrayList<DownloadLink> links = getSelectedDownloadLinks();
+        ArrayList<LinkGrabberFilePackage> fps = getSelectedFilePackages();
         for (LinkGrabberFilePackage filePackage : fps) {
             for (DownloadLink dl : filePackage.getDownloadLinks()) {
                 if (!links.contains(dl)) links.add(dl);
@@ -197,9 +197,9 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         return links;
     }
 
-    public Vector<LinkGrabberFilePackage> getSelectedFilePackages() {
+    public ArrayList<LinkGrabberFilePackage> getSelectedFilePackages() {
         int[] rows = getSelectedRows();
-        Vector<LinkGrabberFilePackage> ret = new Vector<LinkGrabberFilePackage>();
+        ArrayList<LinkGrabberFilePackage> ret = new ArrayList<LinkGrabberFilePackage>();
         TreePath path;
         for (int element : rows) {
             path = getPathForRow(element);
@@ -332,7 +332,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         }
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
 
-            Vector<DownloadLink> alllinks = getAllSelectedDownloadLinks();
+            ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
             int links_enabled = 0;
             for (DownloadLink next : alllinks) {
                 if (next.isEnabled()) {
@@ -340,7 +340,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
                 }
             }
             int links_disabled = alllinks.size() - links_enabled;
-            Vector<LinkGrabberFilePackage> sfp = getSelectedFilePackages();
+            ArrayList<LinkGrabberFilePackage> sfp = getSelectedFilePackages();
             Object obj = getPathForRow(row).getLastPathComponent();
             JPopupMenu popup = new JPopupMenu();
             if (obj instanceof LinkGrabberFilePackage || obj instanceof DownloadLink) {
@@ -398,7 +398,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         return men;
     }
 
-    private JMenu buildpriomenu(Vector<DownloadLink> links) {
+    private JMenu buildpriomenu(ArrayList<DownloadLink> links) {
         JMenuItem tmp;
         JMenu prioPopup = new JMenu(JDLocale.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
         Integer prio = null;
@@ -504,7 +504,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
 
     public void keyReleased(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_DELETE) {
-            Vector<DownloadLink> alllinks = getAllSelectedDownloadLinks();
+            ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
             LinkGrabberTreeTableAction test = new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.delete", 16, 16), JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", LinkGrabberTreeTableAction.DELETE, new Property("links", alllinks));
             test.actionPerformed(new ActionEvent(test, 0, ""));
         }

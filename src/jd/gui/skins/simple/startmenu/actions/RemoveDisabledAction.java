@@ -36,8 +36,8 @@ public class RemoveDisabledAction extends StartAction {
         Vector<DownloadLink> downloadstodelete = new Vector<DownloadLink>();
         synchronized (dlc.getPackages()) {
             for (FilePackage fp : dlc.getPackages()) {
-                synchronized (fp.getDownloadLinks()) {
-                    for (DownloadLink dl : fp.getDownloadLinks()) {
+                synchronized (fp.getDownloadLinkList()) {
+                    for (DownloadLink dl : fp.getDownloadLinkList()) {
                         if (!dl.isEnabled()) downloadstodelete.add(dl);
                     }
                 }

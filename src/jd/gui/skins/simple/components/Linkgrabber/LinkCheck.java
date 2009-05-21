@@ -21,7 +21,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import javax.swing.Timer;
 
@@ -51,7 +51,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
     private Timer checkTimer = null;
     private Thread checkThread = null;
 
-    private Vector<DownloadLink> LinksToCheck = new Vector<DownloadLink>();
+    private ArrayList<DownloadLink> LinksToCheck = new ArrayList<DownloadLink>();
     private boolean check_running = false;
     protected ProgressController pc;
     protected Jobber checkJobbers;
@@ -79,7 +79,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
         return this.broadcaster;
     }
 
-    public synchronized void checkLinks(Vector<DownloadLink> links) {
+    public synchronized void checkLinks(ArrayList<DownloadLink> links) {
         if (links == null || links.size() == 0) return;
         check_running = true;
         for (DownloadLink element : links) {
@@ -90,7 +90,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
         checkTimer.restart();
     }
 
-    private void checkHosterList(Vector<DownloadLink> hosterList) {
+    private void checkHosterList(ArrayList<DownloadLink> hosterList) {
         if (hosterList.size() != 0) {
             DownloadLink link = hosterList.get(0);
             boolean ret = ((PluginForHost) link.getPlugin()).checkLinks(hosterList.toArray(new DownloadLink[] {}));
@@ -122,28 +122,28 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                 pc.getBroadcaster().addListener(LinkCheck.getLinkChecker());
                 pc.setRange(0);
                 while (LinksToCheck.size() != 0) {
-                    Vector<DownloadLink> currentList;
+                    ArrayList<DownloadLink> currentList;
                     synchronized (LinksToCheck) {
-                        currentList = new Vector<DownloadLink>(LinksToCheck);
+                        currentList = new ArrayList<DownloadLink>(LinksToCheck);
                         pc.addToMax(currentList.size());
                     }
                     /* onlinecheck, multithreaded damit schneller */
-                    HashMap<String, Vector<DownloadLink>> map = new HashMap<String, Vector<DownloadLink>>();
+                    HashMap<String, ArrayList<DownloadLink>> map = new HashMap<String, ArrayList<DownloadLink>>();
                     for (DownloadLink dl : currentList) {
                         /*
                          * aufteilung in hosterlisten, um schnellere checks zu
                          * ermöglichen
                          */
-                        Vector<DownloadLink> localList = map.get(dl.getPlugin().getHost());
+                        ArrayList<DownloadLink> localList = map.get(dl.getPlugin().getHost());
                         if (localList == null) {
-                            localList = new Vector<DownloadLink>();
+                            localList = new ArrayList<DownloadLink>();
                             map.put(dl.getPlugin().getHost(), localList);
                         }
                         localList.add(dl);
                     }
                     checkJobbers = new Jobber(4);
-                    Vector<DownloadLink> hosterList;
-                    for (Iterator<Vector<DownloadLink>> it = map.values().iterator(); it.hasNext();) {
+                    ArrayList<DownloadLink> hosterList;
+                    for (Iterator<ArrayList<DownloadLink>> it = map.values().iterator(); it.hasNext();) {
                         hosterList = it.next();
                         CheckThread cthread = new CheckThread(hosterList);
                         checkJobbers.add(cthread);
@@ -187,9 +187,9 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
     }
 
     class CheckThread implements JDRunnable {
-        private Vector<DownloadLink> links = null;
+        private ArrayList<DownloadLink> links = null;
 
-        public CheckThread(Vector<DownloadLink> links) {
+        public CheckThread(ArrayList<DownloadLink> links) {
             this.links = links;
         }
 
@@ -217,7 +217,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             checkThread.interrupt();
         }
         synchronized (LinksToCheck) {
-            LinksToCheck = new Vector<DownloadLink>();
+            LinksToCheck = new ArrayList<DownloadLink>();
         }
     }
 

@@ -16,7 +16,7 @@
 
 package jd.gui.skins.simple.components.Linkgrabber;
 
-import java.util.Vector;
+import java.util.ArrayList;
 
 import jd.controlling.LinkGrabberController;
 import jd.plugins.DownloadLink;
@@ -152,7 +152,7 @@ public class LinkGrabberTreeTableModel extends AbstractTreeTableModel {
      * 
      *         Have to implement this:
      */
-    public Vector<LinkGrabberFilePackage> getPackages() {
+    public ArrayList<LinkGrabberFilePackage> getPackages() {
         return lgi.getPackages();
     }
 

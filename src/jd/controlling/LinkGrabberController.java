@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Vector;
+
 
 import jd.config.ConfigPropertyListener;
 import jd.config.Property;
@@ -53,7 +53,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public static final String CONFIG = "LINKGRABBER";
     public static final String IGNORE_LIST = "IGNORE_LIST";
 
-    private static Vector<LinkGrabberFilePackage> packages = new Vector<LinkGrabberFilePackage>();
+    private static ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
     private static final HashSet<String> extensionFilter = new HashSet<String>();
 
     private static LinkGrabberController INSTANCE = null;
@@ -121,7 +121,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     public void clearExtensionFilter() {
         extensionFilter.clear();
-        this.FP_FILTERED.setDownloadLinks(new Vector<DownloadLink>());
+        this.FP_FILTERED.setDownloadLinks(new ArrayList<DownloadLink>());
     }
 
     public void FilterExtension(String ext, boolean b) {
@@ -163,7 +163,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         System.out.println("REMOVED LISTENER " + cpl);
     }
 
-    public Vector<LinkGrabberFilePackage> getPackages() {
+    public ArrayList<LinkGrabberFilePackage> getPackages() {
         return packages;
     }
 
@@ -195,7 +195,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public LinkGrabberFilePackage getFPwithLink(DownloadLink link) {
         synchronized (packages) {
             if (link == null) return null;
-            Vector<LinkGrabberFilePackage> fps = new Vector<LinkGrabberFilePackage>(packages);
+            ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(packages);
             fps.add(this.FP_FILTERED);
             for (LinkGrabberFilePackage fp : fps) {
                 if (fp.contains(link)) return fp;
@@ -206,11 +206,11 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     public void mergeOfflineandUncheckable() {
         synchronized (packages) {
-            Vector<LinkGrabberFilePackage> fps = new Vector<LinkGrabberFilePackage>(packages);
+            ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(packages);
             for (LinkGrabberFilePackage fp : fps) {
                 boolean remove = false;
                 if (fp.countFailedLinks(true) == fp.size()) remove = true;
-                Vector<DownloadLink> links = new Vector<DownloadLink>(fp.getDownloadLinks());
+                ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(fp.getDownloadLinks());
                 for (DownloadLink dl : links) {
                     if (dl.isAvailabilityStatusChecked() && dl.getAvailableStatus() == AvailableStatus.UNCHECKABLE && links.size() == 1) {
                         FP_UNCHECKABLE.add(dl);
@@ -247,7 +247,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         }
     }
 
-    public void addAllAt(Vector<LinkGrabberFilePackage> links, int index) {
+    public void addAllAt(ArrayList<LinkGrabberFilePackage> links, int index) {
         for (int i = 0; i < links.size(); i++) {
             addPackageAt(links.get(i), index + i);
         }
@@ -327,11 +327,11 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     public void FilterPackages() {
         synchronized (packages) {
-            Vector<LinkGrabberFilePackage> fps = new Vector<LinkGrabberFilePackage>(packages);
+            ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(packages);
             fps.add(this.FP_FILTERED);
             for (LinkGrabberFilePackage fp : fps) {
                 if (fp == this.FP_UNCHECKED || fp == this.FP_OFFLINE || fp == this.FP_UNSORTED) continue;
-                Vector<DownloadLink> links = new Vector<DownloadLink>(fp.getDownloadLinks());
+                ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(fp.getDownloadLinks());
                 for (DownloadLink dl : links) {
                     if (this.isExtensionFiltered(dl)) {
                         FP_FILTERED.add(dl);

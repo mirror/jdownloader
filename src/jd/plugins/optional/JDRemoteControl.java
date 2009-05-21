@@ -224,9 +224,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 for (Package_ID = 0; Package_ID < JDUtilities.getController().getPackages().size(); Package_ID++) {
                     filePackage = JDUtilities.getController().getPackages().get(Package_ID);
-                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
+                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinkList().size(); Download_ID++) {
 
-                        dLink = filePackage.getDownloadLinks().get(Download_ID);
+                        dLink = filePackage.getDownloadLinkList().get(Download_ID);
                         if (dLink.getLinkStatus().isPluginActive()) {
                             counter++;
                         }
@@ -261,9 +261,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     output = output + " package_todo=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"";
                     output = output + " >";// Close Package
 
-                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
+                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinkList().size(); Download_ID++) {
 
-                        dLink = filePackage.getDownloadLinks().get(Download_ID);
+                        dLink = filePackage.getDownloadLinkList().get(Download_ID);
                         if (dLink.getLinkStatus().isPluginActive()) {
                             /* Download Infos */
                             output = output + "<file";// Open File
@@ -292,7 +292,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 for (Package_ID = 0; Package_ID < JDUtilities.getController().getPackages().size(); Package_ID++) {
                     filePackage = JDUtilities.getController().getPackages().get(Package_ID);
 
-                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
+                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinkList().size(); Download_ID++) {
                         counter++;
                     }
                 }
@@ -325,9 +325,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     output.append(" package_todo=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"");
                     output.append(" >");// Close Package
 
-                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
+                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinkList().size(); Download_ID++) {
 
-                        dLink = filePackage.getDownloadLinks().get(Download_ID);
+                        dLink = filePackage.getDownloadLinkList().get(Download_ID);
                         /* Download Infos */
                         output.append("<file");// Open File
                         output.append(" file_name=\"" + dLink.getName() + "\"");
@@ -355,9 +355,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 for (Package_ID = 0; Package_ID < JDUtilities.getController().getPackages().size(); Package_ID++) {
                     filePackage = JDUtilities.getController().getPackages().get(Package_ID);
 
-                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
+                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinkList().size(); Download_ID++) {
 
-                        dLink = filePackage.getDownloadLinks().get(Download_ID);
+                        dLink = filePackage.getDownloadLinkList().get(Download_ID);
                         if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                             counter++;
                         }
@@ -392,9 +392,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     output.append(" package_todo=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"");
                     output.append(" >");// Close Package
 
-                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
+                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinkList().size(); Download_ID++) {
 
-                        dLink = filePackage.getDownloadLinks().get(Download_ID);
+                        dLink = filePackage.getDownloadLinkList().get(Download_ID);
                         if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                             /* Download Infos */
                             output.append("<file");// Open File

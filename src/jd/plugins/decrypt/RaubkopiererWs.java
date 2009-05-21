@@ -24,7 +24,7 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -227,10 +227,10 @@ public class RaubkopiererWs extends PluginForDecrypt {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
             Browser browser = br.cloneBrowser();
             browser.getDownload(container, Encoding.htmlDecode(container_link));
-            Vector<DownloadLink> dlinks = JDUtilities.getController().getContainerLinks(container);
+            ArrayList<DownloadLink> dlinks = JDUtilities.getController().getContainerLinks(container);
             container.delete();
             if (dlinks.isEmpty()) return false;
-            fp.addAll(dlinks);
+            fp.addLinks(dlinks);
             decryptedLinks.addAll(dlinks);
             progress.increase(partcount);
             return true;

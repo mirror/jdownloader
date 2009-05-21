@@ -20,7 +20,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.logging.Level;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -125,7 +125,7 @@ public class PackageManager extends Interaction implements Serializable {
                 // distributeData = new
                 // DistributeData(pkg.getStringProperty("light-url"));
                 // }
-                Vector<DownloadLink> links = distributeData.findLinks();
+                ArrayList<DownloadLink> links = distributeData.findLinks();
                 for (DownloadLink link : links) {
                     logger.info("Add link " + link /* + " : " + pkg */);
                     link.setFilePackage(fp);
@@ -280,7 +280,7 @@ public class PackageManager extends Interaction implements Serializable {
                         downloadLink.getFilePackage().remove(downloadLink);
                         boolean ch = false;
                         all: for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                            for (DownloadLink dLink : fp.getDownloadLinks()) {
+                            for (DownloadLink dLink : fp.getDownloadLinkList()) {
                                 if (dLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
                                     ch = true;
                                     break all;

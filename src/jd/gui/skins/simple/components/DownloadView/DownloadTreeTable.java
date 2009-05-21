@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import javax.swing.DropMode;
 import javax.swing.JMenu;
@@ -324,9 +324,9 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         return (DownloadTreeTableModel) getTreeTableModel();
     }
 
-    public Vector<DownloadLink> getSelectedDownloadLinks() {
+    public ArrayList<DownloadLink> getSelectedDownloadLinks() {
         int[] rows = getSelectedRows();
-        Vector<DownloadLink> ret = new Vector<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         TreePath path;
         for (int element : rows) {
             path = getPathForRow(element);
@@ -338,20 +338,20 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         return ret;
     }
 
-    public Vector<DownloadLink> getAllSelectedDownloadLinks() {
-        Vector<DownloadLink> links = getSelectedDownloadLinks();
-        Vector<FilePackage> fps = getSelectedFilePackages();
+    public ArrayList<DownloadLink> getAllSelectedDownloadLinks() {
+        ArrayList<DownloadLink> links = getSelectedDownloadLinks();
+        ArrayList<FilePackage> fps = getSelectedFilePackages();
         for (FilePackage filePackage : fps) {
-            for (DownloadLink dl : filePackage.getDownloadLinks()) {
+            for (DownloadLink dl : filePackage.getDownloadLinkList()) {
                 if (!links.contains(dl)) links.add(dl);
             }
         }
         return links;
     }
 
-    public Vector<FilePackage> getSelectedFilePackages() {
+    public ArrayList<FilePackage> getSelectedFilePackages() {
         int[] rows = getSelectedRows();
-        Vector<FilePackage> ret = new Vector<FilePackage>();
+        ArrayList<FilePackage> ret = new ArrayList<FilePackage>();
         TreePath path;
         for (int element : rows) {
             path = getPathForRow(element);
@@ -368,7 +368,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     public void keyReleased(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_DELETE) {
-            Vector<DownloadLink> alllinks = getAllSelectedDownloadLinks();
+            ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
             TreeTableAction test = new TreeTableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TreeTableAction.DELETE, new Property("links", alllinks));
             test.actionPerformed(new ActionEvent(test, 0, ""));
         }
@@ -428,9 +428,9 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
 
             if (getPathForRow(row) == null) { return; }
-            Vector<DownloadLink> alllinks = getAllSelectedDownloadLinks();
-            Vector<DownloadLink> resumlinks = new Vector<DownloadLink>();
-            Vector<DownloadLink> allnoncon = new Vector<DownloadLink>();
+            ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
+            ArrayList<DownloadLink> resumlinks = new ArrayList<DownloadLink>();
+            ArrayList<DownloadLink> allnoncon = new ArrayList<DownloadLink>();
             int links_enabled = 0;
             for (DownloadLink next : alllinks) {
                 if (next.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
@@ -444,7 +444,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 }
             }
             int links_disabled = alllinks.size() - links_enabled;
-            Vector<FilePackage> sfp = getSelectedFilePackages();
+            ArrayList<FilePackage> sfp = getSelectedFilePackages();
             Object obj = getPathForRow(row).getLastPathComponent();
             JPopupMenu popup = new JPopupMenu();
 
@@ -498,7 +498,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         }
     }
 
-    private JMenu buildpriomenu(Vector<DownloadLink> links) {
+    private JMenu buildpriomenu(ArrayList<DownloadLink> links) {
         JMenuItem tmp;
         JMenu prioPopup = new JMenu(JDLocale.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
         Integer prio = null;

@@ -28,6 +28,7 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.net.MalformedURLException;
@@ -35,7 +36,7 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import javax.swing.JDialog;
@@ -192,6 +193,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     private JViewport taskPaneView;
 
     private SwingWorker<Object, Object> cursorworker;
+
+    private JPopupMenu startMenu;
 
     /**
      * Das Hauptfenster wird erstellt. Singleton. Use SimpleGUI.createGUI
@@ -402,7 +405,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     public void onMainMenuMouseClick(MouseEvent e) {
         this.setWaiting(true);
-        JPopupMenu popup = new JPopupMenu() {
+    
+       startMenu = new JPopupMenu() {
 
             private static final long serialVersionUID = 3510198302982639068L;
 
@@ -410,17 +414,22 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 super.paint(g);
                 setWaiting(false);
             }
+            public void setVisible(boolean b){
+                super.setVisible(b);
+                if(b)startMenu=null;
+            }
 
         };
+      
 
         // menu.setSize(50,50);
 
         // menu.setPreferredSize(mb.getMinimumSize());
         // menu.setMinimumSize(mb.getMinimumSize());
 
-        JDStartMenu.createMenu(popup);
+        JDStartMenu.createMenu(startMenu);
 
-        popup.show(e.getComponent(), e.getPoint().x, e.getPoint().y);
+        startMenu.show(e.getComponent(), e.getPoint().x, e.getPoint().y);
         // mb.add(menu);
     }
 
@@ -672,7 +681,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     // }
     // }
 
-    public synchronized void addLinksToGrabber(final Vector<DownloadLink> links, final boolean hideGrabber) {
+    public synchronized void addLinksToGrabber(final ArrayList<DownloadLink> links, final boolean hideGrabber) {
         new GuiRunnable<Object>() {
 
             // @Override

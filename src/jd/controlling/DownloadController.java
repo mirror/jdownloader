@@ -70,7 +70,7 @@ class Optimizer {
     }
 
     private void init() {
-        Vector<DownloadLink> links = INSTANCE2.getAllDownloadLinks();
+        ArrayList<DownloadLink> links = INSTANCE2.getAllDownloadLinks();
         for (DownloadLink link : links) {
             String url = link.getDownloadURL().trim();
             if (url != null) {
@@ -95,7 +95,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     private static DownloadController INSTANCE = null;
 
-    private Vector<FilePackage> packages = new Vector<FilePackage>();
+    private ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
 
     private Logger logger = null;
 
@@ -152,7 +152,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
             packages = null;
         }
         if (packages == null) {
-            packages = new Vector<FilePackage>();
+            packages = new ArrayList<FilePackage>();
             File file = JDUtilities.getResourceFile("backup/links.linkbackup");
             if (file.exists()) {
                 logger.warning("Strange: No Linklist,Try to restore from backup file");
@@ -170,7 +170,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
         for (FilePackage filePackage : packages) {
             filePackage.addListener(this);
             filePackage.update_linksDisabled();
-            for (DownloadLink downloadLink : filePackage.getDownloadLinks()) {
+            for (DownloadLink downloadLink : filePackage.getDownloadLinkList()) {
                 // downloadLink.setProperty(DownloadTreeTable.PROPERTY_SELECTED,
                 // false);
                 downloadLink.getBroadcaster().addListener(filePackage);
@@ -211,7 +211,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     public void backupDownloadLinks() {
         synchronized (packages) {
-            Vector<DownloadLink> links = getAllDownloadLinks();
+            ArrayList<DownloadLink> links = getAllDownloadLinks();
             Iterator<DownloadLink> it = links.iterator();
             ArrayList<BackupLink> ret = new ArrayList<BackupLink>();
             while (it.hasNext()) {
@@ -254,14 +254,14 @@ public class DownloadController implements FilePackageListener, DownloadControll
      * 
      * @param file
      *            Die Datei, aus der die Links gelesen werden
-     * @return Ein neuer Vector mit den DownloadLinks
+     * @return Ein neuer ArrayList mit den DownloadLinks
      * @throws Exception
      */
     @SuppressWarnings("unchecked")
-    private Vector<FilePackage> loadDownloadLinks() throws Exception {
+    private ArrayList<FilePackage> loadDownloadLinks() throws Exception {
         Object obj = JDUtilities.getDatabaseConnector().getLinks();
-        if (obj != null && obj instanceof Vector && (((Vector) obj).size() == 0 || ((Vector) obj).size() > 0 && ((Vector) obj).get(0) instanceof FilePackage)) {
-            Vector<FilePackage> packages = (Vector<FilePackage>) obj;
+        if (obj != null && obj instanceof ArrayList && (((ArrayList) obj).size() == 0 || ((ArrayList) obj).size() > 0 && ((ArrayList) obj).get(0) instanceof FilePackage)) {
+            ArrayList<FilePackage> packages = (ArrayList<FilePackage>) obj;
             Iterator<FilePackage> iterator = packages.iterator();
             DownloadLink localLink;
             PluginForHost pluginForHost = null;
@@ -272,11 +272,11 @@ public class DownloadController implements FilePackageListener, DownloadControll
             FilePackage fp;
             while (iterator.hasNext()) {
                 fp = iterator.next();
-                if (fp.getDownloadLinks().size() == 0) {
+                if (fp.getDownloadLinkList().size() == 0) {
                     iterator.remove();
                     continue;
                 }
-                it = fp.getDownloadLinks().iterator();
+                it = fp.getDownloadLinkList().iterator();
                 while (it.hasNext()) {
                     localLink = it.next();
                     if (localLink.getLinkType() == DownloadLink.LINKTYPE_JDU && (localLink.getProperty("JDU") == null || !(localLink.getProperty("JDU") instanceof PackageData))) {
@@ -292,7 +292,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                     }
                     if (localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 1) {
                         it.remove();
-                        if (fp.getDownloadLinks().size() == 0) {
+                        if (fp.getDownloadLinkList().size() == 0) {
                             iterator.remove();
                             continue;
                         }
@@ -329,11 +329,87 @@ public class DownloadController implements FilePackageListener, DownloadControll
                 }
             }
             return packages;
+        } else if (obj != null && obj instanceof Vector && (((Vector) obj).size() == 0 || ((Vector) obj).size() > 0 && ((Vector) obj).get(0) instanceof FilePackage)) {
+            Vector<FilePackage> packages = (Vector<FilePackage>) obj;
+            ArrayList<FilePackage> convert = new ArrayList<FilePackage>();
+            Iterator<FilePackage> iterator = packages.iterator();
+            DownloadLink localLink;
+            PluginForHost pluginForHost = null;
+            PluginsC pluginForContainer = null;
+            String tmp1 = null;
+            String tmp2 = null;
+            Iterator<DownloadLink> it;
+            FilePackage fp;
+            while (iterator.hasNext()) {
+                fp = iterator.next();
+                if(fp.getDownloadLinkList()==null){
+                   
+                    fp.convert();
+                }
+                convert.add(fp);
+                if (fp.getDownloadLinkList().size() == 0) {
+                    convert.remove(fp);
+                    continue;
+                }
+                convert.add(fp);
+                it = fp.getDownloadLinkList().iterator();
+                while (it.hasNext()) {
+                    localLink = it.next();
+                    if (localLink.getLinkType() == DownloadLink.LINKTYPE_JDU && (localLink.getProperty("JDU") == null || !(localLink.getProperty("JDU") instanceof PackageData))) {
+                        convert.remove(fp);
+                        continue;
+                    }
+                    if (!localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                        tmp1 = localLink.getLinkStatus().getStatusText();
+                        tmp2 = localLink.getLinkStatus().getErrorMessage();
+                        localLink.getLinkStatus().reset();
+                        localLink.getLinkStatus().setErrorMessage(tmp2);
+                        localLink.getLinkStatus().setStatusText(tmp1);
+                    }
+                    if (localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 1) {
+                        it.remove();
+                        if (fp.getDownloadLinkList().size() == 0) {
+                            convert.remove(fp);
+                            continue;
+                        }
+                    } else {
+                        // Anhand des Hostnamens aus dem DownloadLink
+                        // wird ein passendes Plugin gesucht
+                        try {
+                            pluginForHost = JDUtilities.getNewPluginForHostInstance(localLink.getHost());
+                        } catch (Exception e) {
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                        }
+                        // Gibt es einen Names für ein Containerformat,
+                        // wird ein passendes Plugin gesucht
+                        try {
+                            if (localLink.getContainer() != null) {
+                                pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer(), localLink.getContainerFile());
+                                if (pluginForContainer == null) {
+                                    localLink.setEnabled(false);
+                                }
+                            }
+                        } catch (NullPointerException e) {
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                        }
+                        if (pluginForHost != null) {
+                            localLink.setLoadedPlugin(pluginForHost);
+                        }
+                        if (pluginForContainer != null) {
+                            localLink.setLoadedPluginForContainer(pluginForContainer);
+                        }
+                        if (pluginForHost == null) {
+                            logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
+                        }
+                    }
+                }
+            }
+            return convert;
         }
         throw new Exception("Linklist incompatible");
     }
 
-    public Vector<FilePackage> getPackages() {
+    public ArrayList<FilePackage> getPackages() {
         return packages;
     }
 
@@ -388,7 +464,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
         }
     }
 
-    public void addAllAt(Vector<FilePackage> links, int index) {
+    public void addAllAt(ArrayList<FilePackage> links, int index) {
         for (int i = 0; i < links.size(); i++) {
             addPackageAt(links.get(i), index + i);
         }
@@ -410,11 +486,11 @@ public class DownloadController implements FilePackageListener, DownloadControll
      * 
      * @return Alle DownloadLinks zurück
      */
-    public Vector<DownloadLink> getAllDownloadLinks() {
-        Vector<DownloadLink> ret = new Vector<DownloadLink>();
+    public ArrayList<DownloadLink> getAllDownloadLinks() {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         synchronized (packages) {
             for (FilePackage fp : packages) {
-                ret.addAll(fp.getDownloadLinks());
+                ret.addAll(fp.getDownloadLinkList());
             }
         }
         return ret;

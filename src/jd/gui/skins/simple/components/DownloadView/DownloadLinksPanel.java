@@ -28,7 +28,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import javax.swing.JMenuItem;
@@ -211,8 +211,8 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                                 job_links.add(dl);
                             }
                         }
-                    } else if (Param instanceof Vector) {
-                        for (DownloadLink dl : (Vector<DownloadLink>) Param) {
+                    } else if (Param instanceof ArrayList) {
+                        for (DownloadLink dl : (ArrayList<DownloadLink>) Param) {
                             if (!job_links.contains(dl)) {
                                 changed = true;
                                 job_links.add(dl);
@@ -248,8 +248,8 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     fireTableTask();
                     return;
                 }
-                Vector<FilePackage> selected_packages = new Vector<FilePackage>();
-                Vector<DownloadLink> selected_links = new Vector<DownloadLink>();
+                ArrayList<FilePackage> selected_packages = new ArrayList<FilePackage>();
+                ArrayList<DownloadLink> selected_links = new ArrayList<DownloadLink>();
                 HashMap<String, Object> prop = new HashMap<String, Object>();
                 Object obj = null;
                 FilePackage fp = null;
@@ -260,16 +260,16 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     switch (e.getID()) {
                     case TreeTableAction.EDIT_NAME:
                     case TreeTableAction.EDIT_DIR:
-                        selected_packages = (Vector<FilePackage>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("packages");
+                        selected_packages = (ArrayList<FilePackage>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("packages");
                         break;
                     case TreeTableAction.SORT:
                         col = (Integer) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("col");
-                        selected_packages = new Vector<FilePackage>(INTSANCE.internalTreeTable.getSelectedFilePackages());
+                        selected_packages = new ArrayList<FilePackage>(INTSANCE.internalTreeTable.getSelectedFilePackages());
                         break;
                     case TreeTableAction.DOWNLOAD_PRIO:
                     case TreeTableAction.DE_ACTIVATE:
                         prop = (HashMap<String, Object>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("infos");
-                        selected_links = (Vector<DownloadLink>) prop.get("links");
+                        selected_links = (ArrayList<DownloadLink>) prop.get("links");
                         break;
                     case TreeTableAction.DELETE:
                     case TreeTableAction.SET_PW:
@@ -280,7 +280,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     case TreeTableAction.DOWNLOAD_RESET:
                     case TreeTableAction.DOWNLOAD_DLC:
                     case TreeTableAction.DOWNLOAD_RESUME:
-                        selected_links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("links");
+                        selected_links = (ArrayList<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("links");
                         break;
                     case TreeTableAction.DOWNLOAD_DIR:
                         folder = (File) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("folder");
@@ -298,7 +298,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                         col = (Integer) ((TreeTableAction) e.getSource()).getProperty().getProperty("col");
                         break;
                     case TreeTableAction.DELETE:
-                        selected_links = (Vector<DownloadLink>) ((TreeTableAction) e.getSource()).getProperty().getProperty("links");
+                        selected_links = (ArrayList<DownloadLink>) ((TreeTableAction) e.getSource()).getProperty().getProperty("links");
                         break;
                     }
                 }
@@ -307,7 +307,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     DownloadWatchDog.getInstance().toggleStopMark(obj);
                     return;
                 case TreeTableAction.EDIT_DIR: {
-                    final Vector<FilePackage> selected_packages2 = new Vector<FilePackage>(selected_packages);
+                    final ArrayList<FilePackage> selected_packages2 = new ArrayList<FilePackage>(selected_packages);
                     new GuiRunnable<Object>() {
                         // @Override
                         public Object runSave() {
@@ -319,7 +319,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                                 File ret = fc.getSelectedFile();
                                 if (ret != null) {
                                     for (int i = 0; i < selected_packages2.size(); i++) {
-                                        selected_packages2.elementAt(i).setDownloadDirectory(ret.getAbsolutePath());
+                                        selected_packages2.get(i).setDownloadDirectory(ret.getAbsolutePath());
                                     }
                                 }
                             }
@@ -332,15 +332,15 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.editpackagename.message", "Neuer Paketname"), selected_packages.get(0).getName());
                     if (name != null) {
                         for (int i = 0; i < selected_packages.size(); i++) {
-                            selected_packages.elementAt(i).setName(name);
+                            selected_packages.get(i).setName(name);
                         }
                     }
                     return;
                 }
                 case TreeTableAction.DOWNLOAD_RESUME: {
                     for (int i = 0; i < selected_links.size(); i++) {
-                        selected_links.elementAt(i).getLinkStatus().setStatus(LinkStatus.TODO);
-                        selected_links.elementAt(i).getLinkStatus().setStatusText(JDLocale.L("gui.linklist.status.doresume", "Warte auf Fortsetzung"));
+                        selected_links.get(i).getLinkStatus().setStatus(LinkStatus.TODO);
+                        selected_links.get(i).getLinkStatus().setStatusText(JDLocale.L("gui.linklist.status.doresume", "Warte auf Fortsetzung"));
                     }
                     return;
                 }
@@ -377,7 +377,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     return;
                 }
                 case TreeTableAction.DOWNLOAD_RESET: {
-                    final Vector<DownloadLink> links = selected_links;
+                    final ArrayList<DownloadLink> links = selected_links;
                     new Thread() {
                         public void run() {
 
@@ -390,7 +390,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                             }
                             if (b) {
                                 for (int i = 0; i < links.size(); i++) {
-                                    links.elementAt(i).reset();
+                                    links.get(i).reset();
                                 }
                             }
                         }
@@ -423,7 +423,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     Set<String> List = new HashSet<String>();
                     StringBuilder build = new StringBuilder();
                     for (int i = 0; i < selected_links.size(); i++) {
-                        String url = selected_links.elementAt(i).getBrowserUrl();
+                        String url = selected_links.get(i).getBrowserUrl();
                         if (!List.contains(url)) {
                             List.add(url);
                             build.append(url + "\n");
@@ -437,7 +437,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                 case TreeTableAction.DOWNLOAD_PRIO: {
                     int prio = (Integer) prop.get("prio");
                     for (int i = 0; i < selected_links.size(); i++) {
-                        selected_links.elementAt(i).setPriority(prio);
+                        selected_links.get(i).setPriority(prio);
                     }
                     DownloadController.getInstance().fireDownloadLinkUpdate(selected_links);
                     return;
@@ -472,7 +472,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                         FilePackage nfp = FilePackage.getInstance();
                         nfp.setName(name);
                         for (int i = 0; i < selected_links.size(); i++) {
-                            selected_links.elementAt(i).setFilePackage(nfp);
+                            selected_links.get(i).setFilePackage(nfp);
                         }
                         JDUtilities.getDownloadController().addPackage(nfp);
                     }
@@ -481,7 +481,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                 case TreeTableAction.SET_PW: {
                     String pw = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.setpw.message", "Set download password"), null);
                     for (int i = 0; i < selected_links.size(); i++) {
-                        selected_links.elementAt(i).setProperty("pass", pw);
+                        selected_links.get(i).setProperty("pass", pw);
                     }
                     return;
                 }
@@ -495,7 +495,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     }
                     if (b) {
                         for (int i = 0; i < selected_links.size(); i++) {
-                            selected_links.elementAt(i).getFilePackage().remove(selected_links.elementAt(i));
+                            selected_links.get(i).getFilePackage().remove(selected_links.get(i));
                         }
                     }
                     return;
@@ -508,7 +508,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     private void sort(final int col) {
         lastSort = !lastSort;
-        Vector<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
+        ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
         synchronized (packages) {
 
             Collections.sort(packages, new Comparator<FilePackage>() {

@@ -19,7 +19,7 @@ package jd.plugins.decrypt;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -135,7 +135,7 @@ public class DDLWarez extends PluginForDecrypt {
                 br.getPage(parameter);
 
                 String pass = br.getRegex(Pattern.compile("<td>Passwort:</td>\\s*<td style=\"padding-left:10px;\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-                Vector<String> passwords = new Vector<String>();
+                ArrayList<String> passwords = new ArrayList<String>();
                 passwords.add("ddl-warez");
                 if (pass != null && !pass.equals("kein Passwort")) {
                     passwords.add(pass);
@@ -214,7 +214,7 @@ public class DDLWarez extends PluginForDecrypt {
                         DDLWarez_Linkgrabbers[i].join();
                         if (DDLWarez_Linkgrabbers[i].status() == DDLWarez_Linkgrabber.THREADPASS) {
                             DownloadLink link = createDownloadlink(DDLWarez_Linkgrabbers[i].getlink());
-                            link.setSourcePluginPasswords(passwords);
+                            link.setSourcePluginPasswordList(passwords);
                             decryptedLinks.add(link);
                         }
                     } catch (InterruptedException e) {

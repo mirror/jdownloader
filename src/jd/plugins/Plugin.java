@@ -24,7 +24,7 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Random;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,7 +67,7 @@ public abstract class Plugin implements ActionListener {
      * @return
      */
     public static String findPassword(String data) {
-        Vector<String> passwords = HTMLParser.findPasswords(data);
+        ArrayList<String> passwords = HTMLParser.findPasswords(data);
         return JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
     }
 

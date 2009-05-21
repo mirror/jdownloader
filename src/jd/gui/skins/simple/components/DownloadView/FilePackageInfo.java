@@ -249,10 +249,10 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
                     progressBarFilePackage.setMaximums(null);
                     progressBarDownloadLink.setMaximums(null);
                     if (fp != null) {
-                        long[] max = new long[fp.getDownloadLinks().size()];
-                        long[] values = new long[fp.getDownloadLinks().size()];
+                        long[] max = new long[fp.getDownloadLinkList().size()];
+                        long[] values = new long[fp.getDownloadLinkList().size()];
                         int i = 0;
-                        for (DownloadLink dl : fp.getDownloadLinks()) {
+                        for (DownloadLink dl : fp.getDownloadLinkList()) {
                             max[i] = Math.max(1024, dl.getDownloadSize());
                             values[i] = Math.max(1, dl.getDownloadCurrent());
                             i++;

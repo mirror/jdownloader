@@ -18,7 +18,7 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -69,7 +69,7 @@ public class VetaXin extends PluginForDecrypt {
             if (rsdf != null) {
                 File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
                 Browser.download(container, br.openGetConnection("http://vetax.in" + rsdf));
-                Vector<DownloadLink> dl_links = JDUtilities.getController().getContainerLinks(container);
+                ArrayList<DownloadLink> dl_links = JDUtilities.getController().getContainerLinks(container);
                 container.delete();
                 for (DownloadLink dl_link : dl_links) {
                     dl_link.addSourcePluginPassword(pw);

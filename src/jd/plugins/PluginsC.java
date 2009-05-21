@@ -21,7 +21,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.logging.Level;
 
 import jd.HostPluginWrapper;
@@ -50,9 +50,9 @@ public abstract class PluginsC extends Plugin {
         // TODO Auto-generated constructor stub
     }
 
-    private static HashMap<String, Vector<DownloadLink>> CONTAINER = new HashMap<String, Vector<DownloadLink>>();
+    private static HashMap<String, ArrayList<DownloadLink>> CONTAINER = new HashMap<String, ArrayList<DownloadLink>>();
 
-    private static HashMap<String, Vector<String>> CONTAINERLINKS = new HashMap<String, Vector<String>>();
+    private static HashMap<String, ArrayList<String>> CONTAINERLINKS = new HashMap<String, ArrayList<String>>();
 
     private static HashMap<String, PluginsC> PLUGINS = new HashMap<String, PluginsC>();
 
@@ -60,11 +60,11 @@ public abstract class PluginsC extends Plugin {
 
     private static final int STATUS_ERROR_EXTRACTING = 1;
 
-    protected Vector<DownloadLink> cls = new Vector<DownloadLink>();
+    protected ArrayList<DownloadLink> cls = new ArrayList<DownloadLink>();
 
     private ContainerStatus containerStatus = null;
 
-    protected Vector<String> dlU;
+    protected ArrayList<String> dlU;
 
     protected String md5;
     protected byte[] k;
@@ -82,7 +82,7 @@ public abstract class PluginsC extends Plugin {
         return match != null && match.equalsIgnoreCase(data);
     }
 
-    public String createContainerString(Vector<DownloadLink> downloadLinks) {
+    public String createContainerString(ArrayList<DownloadLink> downloadLinks) {
         return null;
     }
 
@@ -96,8 +96,8 @@ public abstract class PluginsC extends Plugin {
      * sind.
      */
     private void decryptLinkProtectorLinks() {
-        Vector<DownloadLink> tmpDlink = new Vector<DownloadLink>();
-        Vector<String> tmpURL = new Vector<String>();
+        ArrayList<DownloadLink> tmpDlink = new ArrayList<DownloadLink>();
+        ArrayList<String> tmpURL = new ArrayList<String>();
 
         int i = 0;
         int c = 0;
@@ -108,7 +108,7 @@ public abstract class PluginsC extends Plugin {
             progress.setStatusText(JDLocale.LF("plugins.container.decrypt", "Decrypt link %s", i));
 
             DistributeData distributeData = new DistributeData(string);
-            Vector<DownloadLink> links = distributeData.findLinks();
+            ArrayList<DownloadLink> links = distributeData.findLinks();
 
             DownloadLink srcLink = cls.get(i);
             Iterator<DownloadLink> it = links.iterator();
@@ -128,7 +128,7 @@ public abstract class PluginsC extends Plugin {
                     next.setDownloadSize(srcLink.getDownloadSize());
                 }
 
-                next.getSourcePluginPasswords().addAll(srcLink.getSourcePluginPasswords());
+                next.getSourcePluginPasswordList().addAll(srcLink.getSourcePluginPasswordList());
                 String comment = "";
                 if (srcLink.getSourcePluginComment() != null) {
                     comment += srcLink.getSourcePluginComment();
@@ -215,7 +215,7 @@ public abstract class PluginsC extends Plugin {
      * @param downloadLink
      */
     private void checkWorkaround(DownloadLink downloadLink) {
-        Vector<DownloadLink> links = JDUtilities.getDownloadController().getAllDownloadLinks();
+        ArrayList<DownloadLink> links = JDUtilities.getDownloadController().getAllDownloadLinks();
         ArrayList<DownloadLink> failed = new ArrayList<DownloadLink>();
         int biggestIndex = 0;
         for (DownloadLink l : links) {
@@ -304,10 +304,10 @@ public abstract class PluginsC extends Plugin {
      * 
      * @param filename
      *            Die Containerdatei
-     * @return Ein Vector mit DownloadLinks
+     * @return Ein ArrayList mit DownloadLinks
      */
-    public Vector<DownloadLink> getContainedDownloadlinks() {
-        return cls == null ? new Vector<DownloadLink>() : cls;
+    public ArrayList<DownloadLink> getContainedDownloadlinks() {
+        return cls == null ? new ArrayList<DownloadLink>() : cls;
     }
 
     /**

@@ -17,7 +17,7 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -37,14 +37,14 @@ public class NewzFindCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        Vector<String> passwords = HTMLParser.findPasswords(br.getPage(parameter));
+        ArrayList<String> passwords = HTMLParser.findPasswords(br.getPage(parameter));
 
         br.getPage("http://newzfind.com/ajax/links.html?a=" + parameter.substring(parameter.lastIndexOf("/") + 1));
         String links[] = br.getRegex("<link title=\"(.*?)\"").getColumn(0);
         progress.setRange(links.length);
         for (String element : links) {
             DownloadLink dl_link = createDownloadlink(element);
-            dl_link.addSourcePluginPasswords(passwords);
+            dl_link.addSourcePluginPasswordList(passwords);
             decryptedLinks.add(dl_link);
             progress.increase(1);
         }

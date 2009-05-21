@@ -18,6 +18,7 @@ package jd.plugins;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -59,7 +60,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private String downloadDirectory;
 
-    private Vector<DownloadLink> downloadLinks;
+    private ArrayList<DownloadLink> downloadLinkList;
     private transient static FilePackage FP = null;
 
     public static FilePackage getDefaultFilePackage() {
@@ -105,6 +106,8 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private String ListHoster = null;
 
+    private Vector<DownloadLink> downloadLinks;
+
     public void addListener(FilePackageListener l) {
         broadcaster.addListener(l);
     }
@@ -122,7 +125,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
         counter++;
         id = System.currentTimeMillis() + "_" + counter;
-        downloadLinks = new Vector<DownloadLink>();
+        downloadLinkList = new ArrayList<DownloadLink>();
         broadcaster = new FilePackageBroadcaster();
         broadcaster.addListener(this);
     }
@@ -141,8 +144,8 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      */
 
     public void add(DownloadLink link) {
-        if (!downloadLinks.contains(link)) {
-            downloadLinks.add(link);
+        if (!downloadLinkList.contains(link)) {
+            downloadLinkList.add(link);
             link.setFilePackage(this);
             if (!link.isEnabled()) synchronized (links_Disabled) {
                 links_Disabled++;
@@ -154,22 +157,22 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     public void add(int index, DownloadLink link) {
         boolean newadded = false;
-        synchronized (downloadLinks) {
-            if (downloadLinks.contains(link)) {
-                downloadLinks.remove(link);
-                if (index > downloadLinks.size() - 1) {
-                    downloadLinks.add(link);
+        synchronized (downloadLinkList) {
+            if (downloadLinkList.contains(link)) {
+                downloadLinkList.remove(link);
+                if (index > downloadLinkList.size() - 1) {
+                    downloadLinkList.add(link);
                 } else if (index < 0) {
-                    downloadLinks.add(0, link);
+                    downloadLinkList.add(0, link);
                 } else
-                    downloadLinks.add(index, link);
+                    downloadLinkList.add(index, link);
             } else {
-                if (index > downloadLinks.size() - 1) {
-                    downloadLinks.add(link);
+                if (index > downloadLinkList.size() - 1) {
+                    downloadLinkList.add(link);
                 } else if (index < 0) {
-                    downloadLinks.add(0, link);
+                    downloadLinkList.add(0, link);
                 } else
-                    downloadLinks.add(index, link);
+                    downloadLinkList.add(index, link);
                 newadded = true;
             }
         }
@@ -185,7 +188,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         }
     }
 
-    public void addAll(Vector<DownloadLink> links) {
+    public void addLinks(ArrayList<DownloadLink> links) {
         for (DownloadLink dl : links) {
             add(dl);
         }
@@ -199,19 +202,19 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         this.extractAfterDownload = extractAfterDownload;
     }
 
-    public void addAllAt(Vector<DownloadLink> links, int index) {
+    public void addLinksAt(ArrayList<DownloadLink> links, int index) {
         for (int i = 0; i < links.size(); i++) {
             add(index + i, links.get(i));
         }
     }
 
     public boolean contains(DownloadLink link) {
-        return downloadLinks.contains(link);
+        return downloadLinkList.contains(link);
     }
 
     public DownloadLink get(int index) {
         try {
-            return downloadLinks.get(index);
+            return downloadLinkList.get(index);
         } catch (ArrayIndexOutOfBoundsException e) {
             return null;
         }
@@ -241,6 +244,11 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     public String getDownloadDirectoryName() {
         if (!hasDownloadDirectory()) { return "."; }
         return new File(downloadDirectory).getName();
+    }
+
+    public ArrayList<DownloadLink> getDownloadLinkList() {
+        
+        return downloadLinkList;
     }
 
     public Vector<DownloadLink> getDownloadLinks() {
@@ -307,8 +315,8 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             updateTime1 = System.currentTimeMillis();
             boolean value = true;
             if (linksFinished > 0) {
-                synchronized (downloadLinks) {
-                    for (DownloadLink lk : downloadLinks) {
+                synchronized (downloadLinkList) {
+                    for (DownloadLink lk : downloadLinkList) {
                         if (!lk.getLinkStatus().hasStatus(LinkStatus.FINISHED) && lk.isEnabled()) {
                             value = false;
                             break;
@@ -344,14 +352,14 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         StringBuilder comment = new StringBuilder(this.comment == null ? "" : this.comment);
 
         String[] pws = JDUtilities.passwordStringToArray(password);
-        Vector<String> pwList = new Vector<String>();
+        ArrayList<String> pwList = new ArrayList<String>();
         for (String element : pws) {
             pwList.add(element);
         }
 
-        Vector<String> dlpwList = new Vector<String>();
-        synchronized (downloadLinks) {
-            for (DownloadLink element : downloadLinks) {
+        ArrayList<String> dlpwList = new ArrayList<String>();
+        synchronized (downloadLinkList) {
+            for (DownloadLink element : downloadLinkList) {
                 pws = JDUtilities.passwordStringToArray(element.getSourcePluginPassword());
 
                 String dlpw = element.getStringProperty("pass", null);
@@ -408,8 +416,8 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     // Gibt die erste gefundene sfv datei im Paket zurück
     public DownloadLink getSFV() {
-        synchronized (downloadLinks) {
-            for (DownloadLink dl : downloadLinks) {
+        synchronized (downloadLinkList) {
+            for (DownloadLink dl : downloadLinkList) {
                 if (dl.getFileOutput().toLowerCase().endsWith(".sfv")) return dl;
             }
         }
@@ -477,12 +485,13 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public int indexOf(DownloadLink link) {
-        return downloadLinks.indexOf(link);
+        return downloadLinkList.indexOf(link);
     }
 
     public DownloadLink lastElement() {
         try {
-            return downloadLinks.lastElement();
+            if (downloadLinkList.size() == 0) return null;
+            return downloadLinkList.get(downloadLinkList.size() - 1);
         } catch (NoSuchElementException e) {
             return null;
         }
@@ -490,7 +499,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     public void remove(DownloadLink link) {
         if (link == null) return;
-        boolean ret = downloadLinks.remove(link);
+        boolean ret = downloadLinkList.remove(link);
         if (ret) {
             if (!link.isEnabled()) synchronized (links_Disabled) {
                 links_Disabled--;
@@ -498,7 +507,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             link.getBroadcaster().removeListener(this);
             link.setFilePackage(null);
             broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_REMOVED, link));
-            if (downloadLinks.size() == 0) broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_EMPTY));
+            if (downloadLinkList.size() == 0) broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_EMPTY));
         }
     }
 
@@ -522,21 +531,21 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public int size() {
-        return downloadLinks.size();
+        return downloadLinkList.size();
     }
 
     public void abortDownload() {
-        synchronized (downloadLinks) {
-            for (DownloadLink downloadLink : downloadLinks) {
+        synchronized (downloadLinkList) {
+            for (DownloadLink downloadLink : downloadLinkList) {
                 downloadLink.setAborted(true);
             }
         }
     }
 
-    public Vector<DownloadLink> getLinksWithStatus(int status) {
-        Vector<DownloadLink> ret = new Vector<DownloadLink>();
-        synchronized (downloadLinks) {
-            for (DownloadLink dl : downloadLinks) {
+    public ArrayList<DownloadLink> getLinksListbyStatus(int status) {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        synchronized (downloadLinkList) {
+            for (DownloadLink dl : downloadLinkList) {
                 if (dl.getLinkStatus().hasStatus(status)) {
                     ret.add(dl);
                 }
@@ -548,8 +557,8 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     public String getHoster() {
         if (ListHoster == null) {
             Set<String> hosterList = new HashSet<String>();
-            synchronized (downloadLinks) {
-                for (DownloadLink dl : downloadLinks) {
+            synchronized (downloadLinkList) {
+                for (DownloadLink dl : downloadLinkList) {
                     hosterList.add(dl.getHost());
                 }
             }
@@ -560,9 +569,9 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     public void sort(final int col) {
         lastSort = !lastSort;
-        synchronized (downloadLinks) {
+        synchronized (downloadLinkList) {
 
-            Collections.sort(downloadLinks, new Comparator<DownloadLink>() {
+            Collections.sort(downloadLinkList, new Comparator<DownloadLink>() {
 
                 public int compare(DownloadLink a, DownloadLink b) {
                     if (a.getName().endsWith(".sfv")) { return -1; }
@@ -603,7 +612,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public void updateCollectives() {
-        synchronized (downloadLinks) {
+        synchronized (downloadLinkList) {
 
             totalEstimatedPackageSize_v2 = 0;
             totalDownloadSpeed_v2 = 0;
@@ -615,7 +624,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             DownloadLink next;
             int i = 0;
 
-            for (Iterator<DownloadLink> it = downloadLinks.iterator(); it.hasNext();) {
+            for (Iterator<DownloadLink> it = downloadLinkList.iterator(); it.hasNext();) {
                 next = it.next();
 
                 if (next.getDownloadSize() > 0) {
@@ -652,7 +661,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 }
                 linksInProgress += next.getLinkStatus().isPluginActive() ? 1 : 0;
                 linksFinished += next.getLinkStatus().hasStatus(LinkStatus.FINISHED) ? 1 : 0;
-                if (next.getLinkStatus().isFailed()&&next.isEnabled()) {
+                if (next.getLinkStatus().isFailed() && next.isEnabled()) {
                     linksFailed++;
                 }
             }
@@ -665,15 +674,15 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public boolean isEnabled() {
-        if (downloadLinks.size() <= getLinksDisabled()) return false;
+        if (downloadLinkList.size() <= getLinksDisabled()) return false;
         return true;
     }
 
     public void update_linksDisabled() {
         synchronized (links_Disabled) {
             links_Disabled = 0;
-            synchronized (downloadLinks) {
-                for (DownloadLink dl : downloadLinks) {
+            synchronized (downloadLinkList) {
+                for (DownloadLink dl : downloadLinkList) {
                     if (!dl.isEnabled()) links_Disabled++;
                 }
             }
@@ -706,4 +715,12 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             break;
         }
     }
+
+    public void convert() {
+        this.downloadLinkList = new ArrayList<DownloadLink>();
+        this.downloadLinkList.addAll(getDownloadLinks());      
+        this.downloadLinks = null;
+
+    }
+
 }

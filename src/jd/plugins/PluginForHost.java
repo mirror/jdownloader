@@ -30,7 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.logging.Level;
 
 import javax.imageio.ImageIO;
@@ -360,18 +360,18 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * Hier werden Treffer für Downloadlinks dieses Anbieters in diesem Text
-     * gesucht. Gefundene Links werden dann in einem Vector zurückgeliefert
+     * gesucht. Gefundene Links werden dann in einem ArrayList zurückgeliefert
      * 
      * @param data
      *            Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
-     * @return Ein Vector mit den gefundenen Downloadlinks
+     * @return Ein ArrayList mit den gefundenen Downloadlinks
      */
-    public Vector<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
+    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
 
-        Vector<DownloadLink> links = null;
+        ArrayList<DownloadLink> links = null;
         String[] hits = new Regex(data, getSupportedLinks()).getColumn(-1);
         if (hits != null && hits.length > 0) {
-            links = new Vector<DownloadLink>();
+            links = new ArrayList<DownloadLink>();
             for (String file : hits) {
                 while (file.charAt(0) == '"') {
                     file = file.substring(1);

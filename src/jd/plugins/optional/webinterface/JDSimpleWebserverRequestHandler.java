@@ -20,7 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.OptionalPluginWrapper;
@@ -143,8 +143,8 @@ public class JDSimpleWebserverRequestHandler {
                         int counter_max = Formatter.filterInt(requestParameter.get("package_single_add_counter"));
                         int counter_index = 0;
                         DownloadLink link;
-                        Vector<DownloadLink> links = new Vector<DownloadLink>();
-                        Vector<LinkGrabberFilePackage> packages = new Vector<LinkGrabberFilePackage>();
+                        ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+                        ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
                         for (counter_index = 1; counter_index <= counter_max; counter_index++) {
                             if (requestParameter.containsKey("package_single_add_" + counter_index)) {
                                 ids = requestParameter.get("package_single_add_" + counter_index).toString().split("[+]", 2);
@@ -171,7 +171,7 @@ public class JDSimpleWebserverRequestHandler {
                                 }
                             } else if (dowhat.compareToIgnoreCase("remove+offline") == 0) {
                                 /* entfernen(offline) */
-                                links = new Vector<DownloadLink>();
+                                links = new ArrayList<DownloadLink>();
                                 for (int i = 0; i < lgi.getPackages().size(); i++) {
                                     for (int ii = 0; ii < lgi.getPackages().get(i).size(); ii++) {
                                         links.add(lgi.getPackages().get(i).get(ii));
@@ -203,14 +203,14 @@ public class JDSimpleWebserverRequestHandler {
                     int counter_max = Formatter.filterInt(requestParameter.get("package_single_download_counter"));
                     int counter_index = 0;
                     DownloadLink link;
-                    Vector<DownloadLink> links = new Vector<DownloadLink>();
+                    ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
                     for (counter_index = 1; counter_index <= counter_max; counter_index++) {
                         if (requestParameter.containsKey("package_single_download_" + counter_index)) {
                             ids = requestParameter.get("package_single_download_" + counter_index).toString().split("[+]", 2);
                             package_id = Formatter.filterInt(ids[0].toString());
                             download_id = Formatter.filterInt(ids[1].toString());
 
-                            links.add(JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id));
+                            links.add(JDUtilities.getController().getPackages().get(package_id).getDownloadLinkList().get(download_id));
                         }
                     }
 
@@ -340,14 +340,14 @@ public class JDSimpleWebserverRequestHandler {
             } else if (requestParameter.get("do").compareToIgnoreCase("add") == 0) {
                 if (requestParameter.containsKey("addlinks")) {
                     String AddLinks = Encoding.htmlDecode(requestParameter.get("addlinks"));
-                    Vector<DownloadLink> waitingLinkList = new DistributeData(AddLinks).findLinks();
+                    ArrayList<DownloadLink> waitingLinkList = new DistributeData(AddLinks).findLinks();
                     DownloadLink[] linkList = waitingLinkList.toArray(new DownloadLink[] {});
                     LinkGrabberPanel.getLinkGrabber().addLinks(linkList);
                 }
             } else if (requestParameter.get("do").compareToIgnoreCase("upload") == 0) {
                 if (requestParameter.containsKey("file")) {
                     File container = JDUtilities.getResourceFile("container/" + requestParameter.get("file"));
-                    Vector<DownloadLink> waitingLinkList = JDUtilities.getController().getContainerLinks(container);
+                    ArrayList<DownloadLink> waitingLinkList = JDUtilities.getController().getContainerLinks(container);
                     DownloadLink[] linkList = waitingLinkList.toArray(new DownloadLink[] {});
                     LinkGrabberPanel.getLinkGrabber().addLinks(linkList);
                 }

@@ -18,7 +18,7 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -38,7 +38,7 @@ public class Wiireloaded extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         int submitvalue = getPluginConfig().getIntegerProperty("WIIReloaded_SubmitValue", 5);
         String parameter = param.toString();
-        Vector<String> link_passwds = new Vector<String>();
+        ArrayList<String> link_passwds = new ArrayList<String>();
         link_passwds.add("wii-reloaded.info");
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
@@ -126,7 +126,7 @@ public class Wiireloaded extends PluginForDecrypt {
                 }
                 if (brc.getRedirectLocation() != null) {
                     DownloadLink link = createDownloadlink(brc.getRedirectLocation());
-                    link.setSourcePluginPasswords(link_passwds);
+                    link.setSourcePluginPasswordList(link_passwds);
                     decryptedLinks.add(link);
                     break;
                 }

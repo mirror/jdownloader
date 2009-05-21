@@ -21,7 +21,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,9 +37,9 @@ public class HTMLParser {
      * @param data
      * @return
      */
-    public static Vector<String> findPasswords(String data) {
-        if (data == null) { return new Vector<String>(); }
-        Vector<String> ret = new Vector<String>();
+    public static ArrayList<String> findPasswords(String data) {
+        if (data == null) { return new ArrayList<String>(); }
+        ArrayList<String> ret = new ArrayList<String>();
         data = data.replaceAll("(?s)<!-- .*? -->", "").replaceAll("(?s)<script .*?>.*?</script>", "").replaceAll("(?s)<.*?>", "").replaceAll("Spoiler:", "").replaceAll("(no.{0,2}|kein.{0,8}|ohne.{0,8}|nicht.{0,8})(pw|passwort|password|pass)", "").replaceAll("(pw|passwort|password|pass).{0,12}(nicht|falsch|wrong)", "");
 
         Pattern pattern = Pattern.compile("(pw|passwort|password|pass)[\\s][\\s]*?[\"']([[^\\:\"'\\s]][^\"'\\s]*)[\"']?", Pattern.CASE_INSENSITIVE);

@@ -19,7 +19,7 @@ package jd.controlling;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
@@ -135,7 +135,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
 
         synchronized (DownloadControllers) {
-            Vector<SingleDownloadController> cons = new Vector<SingleDownloadController>(DownloadControllers.values());
+            ArrayList<SingleDownloadController> cons = new ArrayList<SingleDownloadController>(DownloadControllers.values());
             for (SingleDownloadController singleDownloadController : cons) {
                 al.add(singleDownloadController.abortDownload().getDownloadLink());
             }
@@ -147,7 +147,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             while (true) {
                 progress.setStatusText("Stopping all downloads " + activeDownloads);
                 check = true;
-                Vector<DownloadLink> links = new Vector<DownloadLink>(DownloadControllers.keySet());
+                ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(DownloadControllers.keySet());
                 for (DownloadLink link : links) {
                     if (link.getLinkStatus().isPluginActive()) {
                         check = false;
@@ -175,24 +175,24 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      */
     private void clearDownloadListStatus() {
         synchronized (DownloadControllers) {
-            Vector<DownloadLink> links = new Vector<DownloadLink>(DownloadControllers.keySet());
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(DownloadControllers.keySet());
             for (DownloadLink link : links) {
                 this.deactivateDownload(link);
             }
         }
         PluginForHost.resetStatics();
-        Vector<FilePackage> fps;
-        Vector<DownloadLink> links;
+        ArrayList<FilePackage> fps;
+        ArrayList<DownloadLink> links;
         fps = dlc.getPackages();
         synchronized (fps) {
             for (FilePackage filePackage : fps) {
-                links = filePackage.getDownloadLinks();
+                links = filePackage.getDownloadLinkList();
                 for (int i = 0; i < links.size(); i++) {
-                    if (!links.elementAt(i).getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        links.elementAt(i).getLinkStatus().setStatusText(null);
-                        links.elementAt(i).setAborted(false);
-                        links.elementAt(i).getLinkStatus().setStatus(LinkStatus.TODO);
-                        links.elementAt(i).getLinkStatus().resetWaitTime();
+                    if (!links.get(i).getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                        links.get(i).getLinkStatus().setStatusText(null);
+                        links.get(i).setAborted(false);
+                        links.get(i).getLinkStatus().setStatus(LinkStatus.TODO);
+                        links.get(i).getLinkStatus().resetWaitTime();
                     }
                 }
             }
@@ -278,7 +278,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         DownloadLink returnDownloadLink = null;
         try {
             for (FilePackage filePackage : dlc.getPackages()) {
-                for (Iterator<DownloadLink> it2 = filePackage.getDownloadLinks().iterator(); it2.hasNext();) {
+                for (Iterator<DownloadLink> it2 = filePackage.getDownloadLinkList().iterator(); it2.hasNext();) {
                     nextDownloadLink = it2.next();
                     // Setzt die Wartezeit zurück
                     if (!nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
@@ -379,9 +379,9 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 public void run() {
                     JDUtilities.getController().addControlListener(INSTANCE);
                     this.setName("DownloadWatchDog");
-                    Vector<DownloadLink> links;
+                    ArrayList<DownloadLink> links;
                     ArrayList<DownloadLink> updates = new ArrayList<DownloadLink>();
-                    Vector<FilePackage> fps;
+                    ArrayList<FilePackage> fps;
                     DownloadLink link;
                     LinkStatus linkStatus;
                     boolean hasWaittimeLinks;
@@ -391,7 +391,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     int stopCounter = 5;
                     int currentTotalSpeed = 0;
                     int inProgress = 0;
-                    Vector<DownloadLink> removes = new Vector<DownloadLink>();
+                    ArrayList<DownloadLink> removes = new ArrayList<DownloadLink>();
                     while (aborted != true) {
 
                         hasWaittimeLinks = false;
@@ -405,10 +405,10 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                         try {
 
                             for (FilePackage filePackage : fps) {
-                                links = filePackage.getDownloadLinks();
+                                links = filePackage.getDownloadLinkList();
 
                                 for (int i = 0; i < links.size(); i++) {
-                                    link = links.elementAt(i);
+                                    link = links.get(i);
                                     linkStatus = link.getLinkStatus();
                                     if (!link.isEnabled() && link.getLinkType() == DownloadLink.LINKTYPE_JDU && linkStatus.getTotalWaitTime() <= 0) {
 
@@ -463,7 +463,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
                                 for (FilePackage filePackage : fps) {
 
-                                    Iterator<DownloadLink> iter = filePackage.getDownloadLinks().iterator();
+                                    Iterator<DownloadLink> iter = filePackage.getDownloadLinkList().iterator();
                                     int maxspeed = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
                                     if (maxspeed == 0) {
                                         maxspeed = Integer.MAX_VALUE;
@@ -573,7 +573,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 return false;
             }
             if (stopMark instanceof FilePackage) {
-                for (DownloadLink dl : ((FilePackage) stopMark).getDownloadLinks()) {
+                for (DownloadLink dl : ((FilePackage) stopMark).getDownloadLinkList()) {
                     if (dl.isEnabled() && (!dl.getLinkStatus().isPluginActive() || !dl.getLinkStatus().hasStatus(LinkStatus.FINISHED))) return false;
                 }
                 return true;

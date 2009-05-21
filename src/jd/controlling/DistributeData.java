@@ -20,7 +20,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.DecryptPluginWrapper;
@@ -70,7 +70,7 @@ public class DistributeData extends Thread {
      */
     private boolean hideGrabber;
 
-    private Vector<DownloadLink> linkData;
+    private ArrayList<DownloadLink> linkData;
 
     /**
      * Download nach Beendigung starten
@@ -147,8 +147,8 @@ public class DistributeData extends Thread {
      */
     private boolean deepDecrypt(ArrayList<DownloadLink> decryptedLinks) {
         if (decryptedLinks.isEmpty()) return false;
-        final Vector<DownloadLink> newdecryptedLinks = new Vector<DownloadLink>();
-        final Vector<DownloadLink> notdecryptedLinks = new Vector<DownloadLink>();
+        final ArrayList<DownloadLink> newdecryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> notdecryptedLinks = new ArrayList<DownloadLink>();
         class DThread extends Thread implements JDRunnable {
             private DownloadLink link = null;
 
@@ -189,7 +189,7 @@ public class DistributeData extends Thread {
                             ArrayList<DownloadLink> dLinks = plg.decryptLinks(decryptableLinks);
                             // Reicht die Passwörter weiter
                             for (DownloadLink dLink : dLinks) {
-                                dLink.addSourcePluginPasswords(link.getSourcePluginPasswords());
+                                dLink.addSourcePluginPasswordList(link.getSourcePluginPasswordList());
                             }
                             /* Das Plugin konnte arbeiten */
                             coulddecrypt = true;
@@ -235,14 +235,14 @@ public class DistributeData extends Thread {
 
     /**
      * Ermittelt über die Plugins alle Passenden Links und gibt diese in einem
-     * Vector zurück
+     * ArrayList zurück
      * 
-     * @return Link-Vector
+     * @return Link-ArrayList
      */
-    public Vector<DownloadLink> findLinks() {
+    public ArrayList<DownloadLink> findLinks() {
         data = HTMLEntities.unhtmlentities(data);
         data = data.replaceAll("jd://", "http://");
-        Vector<DownloadLink> ret = findLinks(true);
+        ArrayList<DownloadLink> ret = findLinks(true);
         data = Encoding.urlDecode(data, true);
         ret.addAll(findLinks(true));
         if (!filterNormalHTTP) {
@@ -256,12 +256,12 @@ public class DistributeData extends Thread {
         return ret;
     }
 
-    public Vector<DownloadLink> findLinks(boolean searchpw) {
+    public ArrayList<DownloadLink> findLinks(boolean searchpw) {
 
-        Vector<DownloadLink> links = new Vector<DownloadLink>();
-        if (JDUtilities.getPluginsForHost() == null) return new Vector<DownloadLink>();
+        ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+        if (JDUtilities.getPluginsForHost() == null) return new ArrayList<DownloadLink>();
 
-        Vector<String> foundPasswords = new Vector<String>();
+        ArrayList<String> foundPasswords = new ArrayList<String>();
         if (searchpw == true) {
             foundPasswords = HTMLParser.findPasswords(data);
         }
@@ -292,17 +292,17 @@ public class DistributeData extends Thread {
         return links;
     }
 
-    private boolean checkdecrypted(ArrayList<HostPluginWrapper> pHostAll, Vector<String> foundPasswords, Vector<DownloadLink> links, DownloadLink decrypted) {
+    private boolean checkdecrypted(ArrayList<HostPluginWrapper> pHostAll, ArrayList<String> foundPasswords, ArrayList<DownloadLink> links, DownloadLink decrypted) {
         if (decrypted.getDownloadURL() == null) return true;
         if (LinkGrabberController.isFiltered(decrypted)) return true;
         boolean gothost = false;
         for (HostPluginWrapper pHost : pHostAll) {
             try {
                 if (pHost.usePlugin() && pHost.canHandle(decrypted.getDownloadURL())) {
-                    Vector<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != FilePackage.getDefaultFilePackage() ? decrypted.getFilePackage() : null);
+                    ArrayList<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != FilePackage.getDefaultFilePackage() ? decrypted.getFilePackage() : null);
                     for (int c = 0; c < dLinks.size(); c++) {
-                        dLinks.get(c).addSourcePluginPasswords(foundPasswords);
-                        dLinks.get(c).addSourcePluginPasswords(decrypted.getSourcePluginPasswords());
+                        dLinks.get(c).addSourcePluginPasswordList(foundPasswords);
+                        dLinks.get(c).addSourcePluginPasswordList(decrypted.getSourcePluginPasswordList());
                         dLinks.get(c).setSourcePluginComment(decrypted.getSourcePluginComment());
                         dLinks.get(c).setName(decrypted.getName());
                         dLinks.get(c).setFinalFileName(decrypted.getFinalFileName());
@@ -325,13 +325,13 @@ public class DistributeData extends Thread {
         return gothost;
     }
 
-    private void useHoster(Vector<String> passwords, Vector<DownloadLink> links) {
+    private void useHoster(ArrayList<String> passwords, ArrayList<DownloadLink> links) {
         for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
             if (pHost.usePlugin() && pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
-                Vector<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
+                ArrayList<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
                 if (passwords.size() > 0) {
                     for (DownloadLink dLink : dl) {
-                        dLink.addSourcePluginPasswords(passwords);
+                        dLink.addSourcePluginPasswordList(passwords);
                     }
                 }
                 for (DownloadLink dll : dl) {
@@ -347,7 +347,7 @@ public class DistributeData extends Thread {
         }
     }
 
-    public Vector<DownloadLink> getLinkData() {
+    public ArrayList<DownloadLink> getLinkData() {
         return linkData;
     }
 
@@ -426,7 +426,7 @@ public class DistributeData extends Thread {
     // @Override
     public void run() {
 
-        Vector<DownloadLink> links = findLinks();
+        ArrayList<DownloadLink> links = findLinks();
 
         if (links.size() == 0 && !disableDeepEmergencyScan) {
             String[] ls = HTMLParser.getHttpLinks(data, null);
@@ -465,7 +465,7 @@ public class DistributeData extends Thread {
         }
     }
 
-    public void setLinkData(Vector<DownloadLink> linkData) {
+    public void setLinkData(ArrayList<DownloadLink> linkData) {
         this.linkData = linkData;
     }
 

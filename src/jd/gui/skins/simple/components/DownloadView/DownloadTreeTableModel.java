@@ -16,7 +16,7 @@
 
 package jd.gui.skins.simple.components.DownloadView;
 
-import java.util.Vector;
+import java.util.ArrayList;
 
 import jd.controlling.JDLogger;
 import jd.plugins.DownloadLink;
@@ -60,7 +60,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             child = getPackages().get(index);
         } else if (parent instanceof FilePackage) {
             FilePackage pack = (FilePackage) parent;
-            child = pack.getDownloadLinks().get(index);
+            child = pack.getDownloadLinkList().get(index);
         } else if (parent instanceof DownloadLink) {
             // for now, DownloadLinks do not have Children
         }
@@ -84,7 +84,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             count = getPackages().size();
         } else if (parent instanceof FilePackage) {
             FilePackage pack = (FilePackage) parent;
-            count = pack.getDownloadLinks().size();
+            count = pack.getDownloadLinkList().size();
         } else if (parent instanceof DownloadLink) {
             count = 0;
         }
@@ -102,7 +102,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
         case COL_HOSTER:
             return String.class;
-  
+
         case COL_STATUS:
             return String.class;
         case COL_PROGRESS:
@@ -128,7 +128,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
         if (parent instanceof String) {
             index = getPackages().indexOf(child);
         } else if (parent instanceof FilePackage) {
-            index = ((FilePackage) parent).getDownloadLinks().indexOf(child);
+            index = ((FilePackage) parent).getDownloadLinkList().indexOf(child);
         } else if (parent instanceof DownloadLink) {
             index = -1;
         }
@@ -154,7 +154,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
      * 
      *         Have to implement this:
      */
-    public Vector<FilePackage> getPackages() {
+    public ArrayList<FilePackage> getPackages() {
         return JDUtilities.getDownloadController().getPackages();
     }
 

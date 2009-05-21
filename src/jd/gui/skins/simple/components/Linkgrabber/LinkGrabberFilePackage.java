@@ -16,11 +16,11 @@
 
 package jd.gui.skins.simple.components.Linkgrabber;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Vector;
 
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
@@ -48,7 +48,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
      */
     private static final long serialVersionUID = 5865820033205069205L;
     private String downloadDirectory;
-    private Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
+    private ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();
     private String name = "";
     private boolean extractAfterDownload = true;
     private boolean useSubDir = true;
@@ -119,7 +119,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void keepHostersOnly(Set<String> hoster) {
-        Vector<DownloadLink> remove = new Vector<DownloadLink>();
+        ArrayList<DownloadLink> remove = new ArrayList<DownloadLink>();
         synchronized (downloadLinks) {
             for (DownloadLink dl : downloadLinks) {
                 if (!hoster.contains(dl.getPlugin().getHost())) remove.add(dl);
@@ -170,7 +170,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void removeOffline() {
-        Vector<DownloadLink> remove = new Vector<DownloadLink>();
+        ArrayList<DownloadLink> remove = new ArrayList<DownloadLink>();
         synchronized (downloadLinks) {
             for (DownloadLink dl : downloadLinks) {
                 if ((dl.isAvailabilityStatusChecked() && !dl.isAvailable())) {
@@ -182,7 +182,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         countFailedLinks(true);
     }
 
-    public void remove(Vector<DownloadLink> links) {
+    public void remove(ArrayList<DownloadLink> links) {
         for (DownloadLink dl : links) {
             this.remove(dl);
         }
@@ -193,7 +193,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         StringBuilder comment = new StringBuilder(this.comment);
 
         String[] pws = JDUtilities.passwordStringToArray(password);
-        Vector<String> pwList = new Vector<String>();
+        ArrayList<String> pwList = new ArrayList<String>();
         for (String element : pws) {
             pwList.add(element);
         }
@@ -254,7 +254,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         }
     }
 
-    public void addAll(Vector<DownloadLink> links) {
+    public void addAll(ArrayList<DownloadLink> links) {
         for (int i = 0; i < links.size(); i++) {
             add(links.get(i));
         }
@@ -269,7 +269,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
-    public void addAllAt(Vector<DownloadLink> links, int index) {
+    public void addAllAt(ArrayList<DownloadLink> links, int index) {
         for (int i = 0; i < links.size(); i++) {
             add(index + i, links.get(i));
         }
@@ -287,7 +287,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         }
     }
 
-    public Vector<DownloadLink> getDownloadLinks() {
+    public ArrayList<DownloadLink> getDownloadLinks() {
         return downloadLinks;
     }
 
@@ -328,11 +328,11 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void clear() {
-        this.setDownloadLinks(new Vector<DownloadLink>());
+        this.setDownloadLinks(new ArrayList<DownloadLink>());
     }
 
-    public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
-        this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
+    public void setDownloadLinks(ArrayList<DownloadLink> downloadLinks) {
+        this.downloadLinks = new ArrayList<DownloadLink>(downloadLinks);
         broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
         if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
     }
