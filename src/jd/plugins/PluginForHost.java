@@ -95,19 +95,56 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected String getCaptchaCode(File captchaFile, DownloadLink downloadLink) throws PluginException, InterruptedException {
-        return getCaptchaCode(this.getHost(), captchaFile, 0, downloadLink, null, null);
+        String status = downloadLink.getLinkStatus().getStatusText();
+        ImageIcon statusIcon = downloadLink.getLinkStatus().getStatusIcon();
+        downloadLink.getLinkStatus().setStatusText(JDLocale.L("gui.downloadview.statustext.jac", "Captcha recognition"));
+        BufferedImage img;
+        try {
+            img = ImageIO.read(captchaFile);
+
+            downloadLink.getLinkStatus().setStatusIcon(JDImage.getScaledImageIcon(img, 16, 16));
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+        try {
+            return getCaptchaCode(this.getHost(), captchaFile, 0, downloadLink, null, null);
+        } finally {
+            downloadLink.getLinkStatus().setStatusText(status);
+            downloadLink.getLinkStatus().setStatusIcon(null);
+            DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+        }
     }
 
     protected String getCaptchaCode(String method, File file, int flag, DownloadLink link, String defaultValue, String explain) throws PluginException, InterruptedException {
+        String status = link.getLinkStatus().getStatusText();
+        ImageIcon statusIcon = link.getLinkStatus().getStatusIcon();
         try {
             link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
-            link.requestGuiUpdate();
+
+            link.getLinkStatus().setStatusText(JDLocale.L("gui.downloadview.statustext.jac", "Captcha recognition"));
+            BufferedImage img;
+            try {
+                img = ImageIO.read(file);
+
+                link.getLinkStatus().setStatusIcon(JDImage.getScaledImageIcon(img, 16, 16));
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            DownloadController.getInstance().fireDownloadLinkUpdate(link);
             String cc = new CaptchaController(method, file, defaultValue, explain).getCode(flag);
 
             if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return cc;
         } finally {
             link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO);
+
+            link.getLinkStatus().setStatusText(status);
+            link.getLinkStatus().setStatusIcon(null);
+            DownloadController.getInstance().fireDownloadLinkUpdate(link);
+
         }
     }
 
@@ -607,13 +644,14 @@ public abstract class PluginForHost extends Plugin {
             try {
                 this.sleep(time, downloadLink);
             } catch (PluginException e) {
-                downloadLink.getLinkStatus().setStatusText(null);
+
+                // downloadLink.getLinkStatus().setStatusText(null);
                 throw new InterruptedException();
             }
-            downloadLink.getLinkStatus().setStatusText(null);
+            // downloadLink.getLinkStatus().setStatusText(null);
             return true;
         } else {
-            downloadLink.getLinkStatus().setStatusText(null);
+            // downloadLink.getLinkStatus().setStatusText(null);
             return false;
         }
     }

@@ -152,7 +152,21 @@ public class JDImage {
         return ret;
 
     }
+    public static BufferedImage getImage(File file) {
+ 
+        BufferedImage ret;
+        if ((ret = BUFFERED_IMAGE_CACHE.get(file.getAbsolutePath())) != null) { return ret; }
 
+        try {
+            ret = ImageIO.read(file);
+        } catch (IOException e) {
+            JDLogger.exception(e);
+            return null;
+        }
+        BUFFERED_IMAGE_CACHE.put(file.getAbsolutePath(), ret);
+        return ret;
+
+    }
     public static ImageIcon getImageIcon(String string) {
         ImageIcon ret;
         if ((ret = IMAGE_ICON_CACHE.get(string)) != null) { return ret; }
@@ -160,4 +174,13 @@ public class JDImage {
         IMAGE_ICON_CACHE.put(string, ret);
         return ret;
     }
+    public static ImageIcon getImageIcon(File pat) {
+        ImageIcon ret;
+        if ((ret = IMAGE_ICON_CACHE.get(pat.getAbsolutePath())) != null) { return ret; }
+        ret = new ImageIcon(getImage(pat));
+        IMAGE_ICON_CACHE.put(pat.getAbsolutePath(), ret);
+        return ret;
+    }
+
+
 }

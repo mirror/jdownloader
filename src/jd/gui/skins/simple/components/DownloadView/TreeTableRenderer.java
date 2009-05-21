@@ -401,6 +401,9 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
             counter = 0;
             this.clearSB();
+            
+        
+            
             if (JDController.getInstance().getWatchdog() != null && JDController.getInstance().getWatchdog().isStopMark(value)) {
                 statuspanel.rights[counter].setIcon(imgStopMark);
                 if (counter > 0) sb.append(" | ");
@@ -409,7 +412,13 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 counter++;
             }
 
-            if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+            if (dLink.getLinkStatus().getStatusIcon()!=null) {
+                statuspanel.rights[counter].setIcon(dLink.getLinkStatus().getStatusIcon());
+                if (counter > 0) sb.append(" | ");
+              
+
+                counter++;
+            } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 statuspanel.rights[counter].setIcon(imgFinished);
                 if (counter > 0) sb.append(" | ");
                 sb.append(strTTFinished);

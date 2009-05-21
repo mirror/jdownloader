@@ -20,6 +20,8 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.logging.Level;
 
+import javax.swing.ImageIcon;
+
 import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
 import jd.utils.JDLocale;
@@ -140,6 +142,8 @@ public class LinkStatus implements Serializable {
     private long value = 0;
     private long waitUntil = 0;
     private int retryCount = 0;
+
+    private ImageIcon statusIcon;
 
     public LinkStatus(DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
@@ -406,7 +410,7 @@ public class LinkStatus implements Serializable {
         return null;
     }
 
-    //@Override
+    // @Override
     public String toString() {
         Class<? extends LinkStatus> cl = this.getClass();
         Field[] fields = cl.getDeclaredFields();
@@ -466,5 +470,14 @@ public class LinkStatus implements Serializable {
     public int getStatus() {
         // TODO Auto-generated method stub
         return status;
+    }
+
+    public void setStatusIcon(ImageIcon scaledImageIcon) {
+        statusIcon = scaledImageIcon;
+
+    }
+
+    public ImageIcon getStatusIcon() {
+        return statusIcon;
     }
 }

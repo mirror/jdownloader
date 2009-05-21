@@ -21,12 +21,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-import javax.swing.JPanel;
-
 import jd.gui.skins.simple.tasks.TaskPanel;
 import net.miginfocom.swing.MigLayout;
 
-public class TaskPane extends JPanel implements ActionListener {
+import org.jdesktop.swingx.JXTaskPaneContainer;
+
+public class TaskPane extends JXTaskPaneContainer implements ActionListener {
 
     private static final long serialVersionUID = 2484591650508276173L;
     private ArrayList<TaskPanel> panels;
@@ -34,14 +34,14 @@ public class TaskPane extends JPanel implements ActionListener {
 
     public TaskPane() {
         panels = new ArrayList<TaskPanel>();
-//        this.setBackgroundPainter(null);
-        this.setPreferredSize(new Dimension(180, 10));
+        // this.setBackgroundPainter(null);
+//        this.setPreferredSize(new Dimension(180, 10));
         this.setLayout(new MigLayout("ins 5, wrap 1", "[fill,grow]", "[]2[]2[]2[]2[]2[]2[]2[]2[fill,grow]"));
     }
 
     public void add(TaskPanel panel) {
         super.add(panel);
-        panel.setMaximumSize(new Dimension(193, Integer.MAX_VALUE));
+//        panel.setMaximumSize(new Dimension(193, Integer.MAX_VALUE));
         if (!panels.contains(panel)) {
             panel.addActionListener(this);
             panels.add(panel);
@@ -51,7 +51,7 @@ public class TaskPane extends JPanel implements ActionListener {
 
     public void add(int index, TaskPanel panel) {
         super.add(panel, index);
-        panel.setMaximumSize(new Dimension(193, Integer.MAX_VALUE));
+//        panel.setMaximumSize(new Dimension(193, Integer.MAX_VALUE));
         if (!panels.contains(panel)) {
             panel.addActionListener(this);
             switcher(null);
