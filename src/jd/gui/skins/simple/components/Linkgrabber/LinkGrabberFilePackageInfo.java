@@ -22,8 +22,12 @@ import java.awt.event.ActionListener;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import jd.config.Configuration;
+import jd.controlling.DownloadController;
+import jd.controlling.PasswordList;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
@@ -90,10 +94,29 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
         return fp;
     }
 
+    private void addChangeListener(final JDTextField txtName2) {
+        txtName2.getDocument().addDocumentListener(new DocumentListener(){
+
+            public void changedUpdate(DocumentEvent e) {
+             actionPerformed(new ActionEvent(txtName2,0,null));                
+            }
+            public void insertUpdate(DocumentEvent e) {
+                actionPerformed(new ActionEvent(txtName2,0,null)); 
+                }
+
+            public void removeUpdate(DocumentEvent e) {
+                actionPerformed(new ActionEvent(txtName2,0,null));
+                
+                
+            }
+            
+        });
+        
+    }
     private void buildGui() {
         txtName = new JDTextField();
         txtName.setAutoSelect(true);
-        txtName.addActionListener(this);
+       addChangeListener(txtName);
 
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
         brwSaveTo.setEditable(true);
@@ -105,7 +128,8 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
         txtPassword.addActionListener(this);
         txtComment = new JDTextField();
         txtComment.addActionListener(this);
-
+        addChangeListener(txtPassword);
+        addChangeListener(txtComment);
         chbExtract = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
         chbExtract.setSelected(true);
         chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
@@ -146,6 +170,7 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
         } else if (e.getSource() == chbUseSubdirectory) {
             fp.setUseSubDir(chbUseSubdirectory.isSelected());
         }
+        DownloadController.getInstance().fireDownloadLinkUpdate(fp.get(0));
     }
 
     // @Override
@@ -156,6 +181,9 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
     // @Override
     public void onHide() {
         if (this.fp == null) return;
+        PasswordList.addPassword(txtPassword.getText());
+        PasswordList.save();
+        actionPerformed(new ActionEvent(this.brwSaveTo,0,null)); 
         fp = null;
     }
 

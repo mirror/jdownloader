@@ -216,6 +216,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
             // @Override
             public boolean doHighlight(DownloadLink dLink) {
+                if(dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED))return false;
                 return dLink.getLinkStatus().getRemainingWaittime() > 0 || dLink.getPlugin() == null || dLink.getPlugin().getRemainingHosterWaittime() > 0;
             }
         });

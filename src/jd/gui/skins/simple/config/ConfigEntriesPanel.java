@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.DefaultSingleSelectionModel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
@@ -47,8 +48,6 @@ public class ConfigEntriesPanel extends ConfigPanel {
     private JTabbedPane tabbedPane = null;
 
     private boolean inited = false;
-
-
 
     public ConfigEntriesPanel(ConfigContainer container) {
         this(container, false);
@@ -87,7 +86,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
     }
 
     public void init() {
-        if(SimpleGUI.CURRENTGUI!=null)SimpleGUI.CURRENTGUI.setWaiting(true);
+        if (SimpleGUI.CURRENTGUI != null) SimpleGUI.CURRENTGUI.setWaiting(true);
         initPanel();
         load();
 
@@ -98,7 +97,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
         configPanelPlugin.setTabbed(true);
         JScrollPane sp;
         if (configPanelPlugin.container != null && configPanelPlugin.container.getEntries().size() > 0 && configPanelPlugin.container.getEntries().get(0).getGroup() != null) {
-            tabbedPane.addTab(title, JDImage.getScaledImageIcon(configPanelPlugin.container.getEntries().get(0).getGroup().getIcon(),16,16), sp = new JScrollPane(configPanelPlugin));
+            tabbedPane.addTab(title, JDImage.getScaledImageIcon(configPanelPlugin.container.getEntries().get(0).getGroup().getIcon(), 16, 16), sp = new JScrollPane(configPanelPlugin));
         } else {
             tabbedPane.addTab(title, sp = new JScrollPane(configPanelPlugin));
 
@@ -107,8 +106,6 @@ public class ConfigEntriesPanel extends ConfigPanel {
         sp.setBorder(null);
 
     }
-
- 
 
     public Vector<ConfigEntriesPanel> getSubPanels() {
         return subPanels;
@@ -135,6 +132,22 @@ public class ConfigEntriesPanel extends ConfigPanel {
             tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
             tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
             tabbedPane.setTabPlacement(SwingConstants.TOP);
+            tabbedPane.setModel(new DefaultSingleSelectionModel() {
+                public void setSelectedIndex(int index) {
+                    
+                    
+                   if(tabbedPane.getSelectedComponent()!=null){
+                       if (tabbedPane.getSelectedComponent() instanceof JScrollPane) {
+                           ((ConfigEntriesPanel) ((JScrollPane) tabbedPane.getSelectedComponent()).getViewport().getView()).save();
+                       } else {
+                           ((ConfigEntriesPanel) tabbedPane.getSelectedComponent()).save();
+                       }
+                       
+                   }
+                
+                    super.setSelectedIndex(index);
+                }
+            });
             tabbedPane.addChangeListener(new ChangeListener() {
 
                 public void stateChanged(ChangeEvent e) {

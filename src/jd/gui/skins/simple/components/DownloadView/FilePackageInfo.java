@@ -24,8 +24,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import jd.config.Configuration;
+import jd.controlling.DownloadController;
+import jd.controlling.PasswordList;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
@@ -134,18 +138,22 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
     private JPanel createFilePackageInfo() {
         txtName = new JDTextField();
         txtName.setAutoSelect(true);
-        txtName.addActionListener(this);
+
+        addChangeListener(txtName);
         txtName.setBackground(null);
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
         brwSaveTo.setEditable(true);
         brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
         brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
         brwSaveTo.addActionListener(this);
+
         brwSaveTo.getInput().setBackground(null);
         txtPassword = new JDTextField();
-        txtPassword.addActionListener(this);
+        addChangeListener(txtPassword);
+
         txtComment = new JDTextField();
-        txtComment.addActionListener(this);
+        addChangeListener(txtComment);
+
         txtComment.setBackground(null);
         txtPassword.setBackground(null);
         chbExtract = new JCheckBox(JDLocale.L("gui.fileinfopanel.packagetab.chb.extractAfterdownload", "Extract"));
@@ -174,6 +182,26 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         panel.add(txtComment, "gapright 10, growx");
         panel.add(chbUseSubdirectory, "alignx right");
         return panel;
+    }
+
+    private void addChangeListener(final JDTextField txtName2) {
+        txtName2.getDocument().addDocumentListener(new DocumentListener() {
+
+            public void changedUpdate(DocumentEvent e) {
+                actionPerformed(new ActionEvent(txtName2, 0, null));
+            }
+
+            public void insertUpdate(DocumentEvent e) {
+                actionPerformed(new ActionEvent(txtName2, 0, null));
+            }
+
+            public void removeUpdate(DocumentEvent e) {
+                actionPerformed(new ActionEvent(txtName2, 0, null));
+
+            }
+
+        });
+
     }
 
     private JPanel createLinkInfo() {
@@ -207,6 +235,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         } else if (e.getSource() == chbExtract) {
             fp.setExtractAfterDownload(chbExtract.isSelected());
         }
+        DownloadController.getInstance().fireDownloadLinkUpdate(fp.get(0));
     }
 
     // @Override
@@ -274,6 +303,10 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
             updater.interrupt();
             updater = null;
         }
+        
+        PasswordList.addPassword(txtPassword.getText());
+        PasswordList.save();
+        actionPerformed(new ActionEvent(this.brwSaveTo, 0, null));
         this.progressBarFilePackage.setMaximums(null);
         this.progressBarDownloadLink.setMaximums(null);
         downloadLink = null;

@@ -652,7 +652,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 }
                 linksInProgress += next.getLinkStatus().isPluginActive() ? 1 : 0;
                 linksFinished += next.getLinkStatus().hasStatus(LinkStatus.FINISHED) ? 1 : 0;
-                if (next.getLinkStatus().isFailed()) {
+                if (next.getLinkStatus().isFailed()&&next.isEnabled()) {
                     linksFailed++;
                 }
             }

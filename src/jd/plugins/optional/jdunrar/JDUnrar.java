@@ -33,6 +33,7 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigurationListener;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
+import jd.controlling.PasswordList;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
@@ -702,7 +703,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             }
 
         });
-        passwordConfig.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, SubConfiguration.getConfig(PasswordList.PROPERTY_PASSWORDLIST), "LIST", JDLocale.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", Regex.getLines(SubConfiguration.getConfig(PasswordList.PROPERTY_PASSWORDLIST).getStringProperty("LIST", "")).length + "")));
+        passwordConfig.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, SubConfiguration.getConfig(PasswordList.PROPERTY_PASSWORDLIST), "LIST", JDLocale.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s",  "")));
 
         ConfigContainer ext = new ConfigContainer(this, JDLocale.L("plugins.optional.jdunrar.config.advanced", "Advanced settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));

@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.optional.jdunrar;
+package jd.controlling;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -34,6 +34,7 @@ public class PasswordList {
     }
 
     public static void addPassword(String pw) {
+        if (pw == null || pw.trim().length() == 0) return;
         ArrayList<String> list = getPasswordList();
         list.remove(pw);
         list.add(0, pw);
@@ -43,6 +44,18 @@ public class PasswordList {
     public static ArrayList<String> getPasswordList() {
         if (LIST != null) return LIST;
 
+        importOld1();
+
+        ArrayList<String> list = new ArrayList<String>();
+        String[] spl = Regex.getLines(getConfig().getStringProperty("LIST", ""));
+        for (String pw : spl) {
+            list.add(pw);
+        }
+        LIST = list;
+        return list;
+    }
+
+    private static void importOld1() {
         LinkedList<String> oldList = (LinkedList<String>) SubConfiguration.getConfig("unrarPasswords").getProperty("PASSWORDLIST");
 
         if (oldList != null) {
@@ -52,12 +65,7 @@ public class PasswordList {
             SubConfiguration.getConfig("unrarPasswords").save();
             save();
         }
-        ArrayList<String> list = new ArrayList<String>();
-        String[] spl = Regex.getLines(getConfig().getStringProperty("LIST", ""));
-        for (String pw : spl)
-            list.add(pw);
-        LIST = list;
-        return list;
+
     }
 
     private static void addPasswords(LinkedList<String> list) {
