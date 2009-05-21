@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -35,7 +34,7 @@ public class Rlslog extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> passwords;
@@ -48,7 +47,7 @@ public class Rlslog extends PluginForDecrypt {
             passwords = HTMLParser.findPasswords(comment);
             String[] links = new Regex(comment, "rel=\"nofollow\">(.*?)</a>", Pattern.CASE_INSENSITIVE).getColumn(0);
             for (String link : links) {
-                if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link,true)) {
+                if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
                     DownloadLink dLink = createDownloadlink(link);
                     dLink.addSourcePluginPasswordList(passwords);
                     decryptedLinks.add(dLink);
@@ -71,7 +70,7 @@ public class Rlslog extends PluginForDecrypt {
                     passwords = HTMLParser.findPasswords(comment);
                     String[] links = new Regex(comment, "rel=\"nofollow\">(.*?)</a>", Pattern.CASE_INSENSITIVE).getColumn(0);
                     for (String link : links) {
-                        if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link,true)) {
+                        if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
                             DownloadLink dLink = createDownloadlink(link);
                             dLink.addSourcePluginPasswordList(passwords);
                             decryptedLinks.add(dLink);
@@ -83,7 +82,7 @@ public class Rlslog extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

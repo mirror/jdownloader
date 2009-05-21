@@ -18,7 +18,6 @@ package jd.plugins.decrypt;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -49,12 +48,12 @@ public class Wordpress extends PluginForDecrypt {
         defaultPasswords.put("blogload.org", new String[] { "blogload.org" });
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-//        System.out.println(param);
+        // System.out.println(param);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         br.getPage(parameter);
 
         /* Defaultpasswörter der Seite setzen */
@@ -75,7 +74,7 @@ public class Wordpress extends PluginForDecrypt {
         String[] links = br.getRegex(Pattern.compile("href=.*?(http://[^\"']+)", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.setRange(links.length);
         for (String link : links) {
-            if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link,true)) {
+            if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
                 DownloadLink dLink = createDownloadlink(link);
                 dLink.setSourcePluginPasswordList(link_passwds);
                 decryptedLinks.add(dLink);
@@ -86,7 +85,7 @@ public class Wordpress extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

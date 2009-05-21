@@ -24,7 +24,6 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -292,8 +291,6 @@ public class RaubkopiererWs extends PluginForDecrypt {
                             add(checkMirror[i]);
                         }
 
-                        
-
                         add(new JLabel(JDLocale.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.additional", "Additional files (if available):")), "split 2");
                         add(new JSeparator(), "gaptop 3, growx, spanx");
 
@@ -308,7 +305,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
                         final JComboBox comboSampleMirror = new JComboBox(mirrors.getNames());
                         comboSampleMirror.setFocusable(false);
                         comboSampleMirror.setEnabled(false);
-                        
+
                         ActionListener action = new ActionListener() {
                             public void actionPerformed(ActionEvent e) {
                                 if (checkNFO.isSelected() || checkSample.isSelected()) {
@@ -316,9 +313,8 @@ public class RaubkopiererWs extends PluginForDecrypt {
                                     if (e.getSource() == checkSample && checkSample.isSelected())
                                         comboSampleMirror.setEnabled(true);
                                     else if (e.getSource() == checkSample) comboSampleMirror.setEnabled(false);
-                                }
-                                else {
-                                    //checkExtraFP.setSelected(false);
+                                } else {
+                                    // checkExtraFP.setSelected(false);
                                     checkExtraFP.setEnabled(false);
                                     comboSampleMirror.setEnabled(false);
                                 }
@@ -339,11 +335,11 @@ public class RaubkopiererWs extends PluginForDecrypt {
                                 /* Submit Mirror selection */
                                 for (int i = 0; i <= checkMirror.length - 1; i++) {
                                     if (!checkMirror[i].isSelected()) mirrors.get(i).setUse(false);
-                                    
+
                                 }
 
                                 /* Submit Additional Files Info */
-                                mirrors.get(comboSampleMirror.getSelectedIndex()).setUseForSample(true);
+                                mirrors.get(comboSampleMirror.getSelectedIndex()).setUseForSample(checkSample.isSelected());
                                 getNFO = checkNFO.isSelected();
                                 getSample = checkSample.isSelected();
                                 extraPackage = checkExtraFP.isSelected() && checkExtraFP.isEnabled();
@@ -352,7 +348,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
 
                         });
                         add(btnOK, "align center, split 2, gaptop 8");
-                        
+
                         JButton btnAbort = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
                         btnAbort.addActionListener(new ActionListener() {
 
@@ -363,7 +359,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
 
                         });
                         add(btnAbort);
-                        
+
                         getRootPane().setDefaultButton(btnOK);
                         pack();
                         setLocation(Screen.getCenterOfComponent(null, this));
@@ -375,7 +371,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
             }
         }.waitForEDT();
     }
-    
+
     private class Mirrors {
         private class SingleMirror {
             public String key;
@@ -404,7 +400,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
             public boolean getUse() {
                 return use;
             }
-            
+
             public boolean getUseForSample() {
                 return useForSample;
             }
@@ -420,7 +416,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
             public void setUse(boolean use) {
                 this.use = use;
             }
-            
+
             public void setUseForSample(boolean useForSample) {
                 this.useForSample = useForSample;
             }
@@ -428,7 +424,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
         }
 
         public ArrayList<SingleMirror> mirrorArray;
-        
+
         public Mirrors() {
             this.mirrorArray = new ArrayList<SingleMirror>();
         }
@@ -440,27 +436,30 @@ public class RaubkopiererWs extends PluginForDecrypt {
         public void add(String key, String name, boolean use, boolean useForSample) {
             this.mirrorArray.add(new SingleMirror(key, name, use, useForSample));
         }
-        
+
         public String[] getNames() {
             String[] n = new String[this.useNum()];
             for (int i = 0; i <= this.mirrorArray.size() - 1; i++)
                 if (this.mirrorArray.get(i).getUse()) n[i] = this.mirrorArray.get(i).getName();
             return n;
         }
+
         public int useNum() {
             int i = 0;
-            for (SingleMirror m : this.mirrorArray) if (m.getUse()) i++;
+            for (SingleMirror m : this.mirrorArray)
+                if (m.getUse()) i++;
             return i;
         }
-        
+
         public boolean isEmpty() {
             return this.mirrorArray.isEmpty();
         }
-        
+
         public void clear() {
-            for (SingleMirror m : this.mirrorArray) m.setUse(false);
+            for (SingleMirror m : this.mirrorArray)
+                m.setUse(false);
         }
-        
+
         public int size() {
             return this.mirrorArray.size();
         }

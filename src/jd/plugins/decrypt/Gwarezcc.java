@@ -18,13 +18,11 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;

@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;

@@ -19,7 +19,6 @@ package jd.plugins.decrypt;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;

@@ -57,23 +57,33 @@ public class CryptMeCom extends PluginForDecrypt {
                 br.getPage(parameter);
                 cont = false;
             }
-            /* Rechencaptcha */
+            /* Calculation-Captcha */
             if (br.containsHTML("<img src=\"http://crypt-me.com/rechen-captcha.php\">")) {
                 cont = false;
                 Form form = br.getForm(0);
                 String captchaAddress = "http://crypt-me.com/rechen-captcha.php";
                 File captchaFile = this.getLocalCaptchaFile();
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
-                String captchaCode = getCaptchaCode(captchaFile, param);
+                String captchaCode = getCaptchaCode("crypt-me.com.Calc", captchaFile, param);
+                /* Calculation process */
+                captchaCode = captchaCode.replaceAll("_", "-").replaceAll("=", "").replaceAll("!", "");
+                if (captchaCode.contains("-")) {
+                    String[] values = captchaCode.split("-");
+                    captchaCode = Integer.toString(Integer.parseInt(values[0]) - Integer.parseInt(values[1]));
+                } else if (captchaCode.contains("+")) {
+                    String[] values = captchaCode.split("\\+");
+                    captchaCode = Integer.toString(Integer.parseInt(values[0]) + Integer.parseInt(values[1]));
+                }
                 form.put("sicherheitscode", captchaCode);
                 br.submitForm(form);
+                /* "Normal" Captcha */
             } else if (br.containsHTML("Bitte geben sie Captcha ein")) {
                 cont = false;
                 Form form = br.getForm(0);
                 String captchaAddress = br.getRegex("<img src=\"(http://crypt-me\\.com/captchanew/show\\.php.*?)\"").getMatch(0);
                 File captchaFile = this.getLocalCaptchaFile();
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
-                String captchaCode = getCaptchaCode(captchaFile, param);
+                String captchaCode = getCaptchaCode("linkprotect.in", captchaFile, param);
                 form.put("code", captchaCode);
                 br.submitForm(form);
             } else {

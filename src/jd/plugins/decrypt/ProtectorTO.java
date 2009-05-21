@@ -20,7 +20,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;

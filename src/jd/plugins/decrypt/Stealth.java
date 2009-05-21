@@ -19,7 +19,6 @@ package jd.plugins.decrypt;
 import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
