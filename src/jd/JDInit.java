@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -601,11 +601,12 @@ public class JDInit {
         new HostPluginWrapper("Uptal.com", "UptalCom", "http://[\\w\\.]*?uptal\\.com/\\?d=[A-Fa-f0-9]+");
         new HostPluginWrapper("IFile.it", "IFileIt", "http://[\\w\\.]*?ifile\\.it/[A-Za-z0-9]+/?");
         new HostPluginWrapper("Mihd.net", "IFileIt", "http://[\\w\\.]*?mihd\\.net/[A-Za-z0-9]+/?");
-        new HostPluginWrapper("BitRoad.net", "BitRoadNet", "http://[\\w\\.]*?bitroad\\.net/download/[A-Fa-f0-9]+/.*?\\.html");
+        new HostPluginWrapper("BitRoad.net", "BitRoadNet", "http://[\\w\\.]*?bitroad\\.net/download/[A-Fa-f0-9]+/[^\\s]+\\.html");
         new HostPluginWrapper("MaxUpload.eu", "MaxUploadEu", "http://[\\w\\.]*?maxupload\\.eu/../\\d+");
         new HostPluginWrapper("NetGull.com", "NetGullCom", "http://[\\w\\.]*?netgull\\.com/\\?d=[0-9a-fA-F]+");
         new HostPluginWrapper("myupload.dk", "MyuploadDK", "http://[\\w\\.]*?myupload\\.dk/showfile/[0-9a-fA-F]+");
-        new HostPluginWrapper("indowebster.com", "Indowebster", "http://[\\w\\.]*?indowebster\\.com/.*?\\.html");
+        new HostPluginWrapper("indowebster.com", "Indowebster", "http://[\\w\\.]*?indowebster\\.com/[^\\s]+\\.html");
+        new HostPluginWrapper("QuickShare.cz", "QuickShareCz", "http://[\\w\\.]*?quickshare\\.cz/stahnout-soubor/\\d+:[^\\s]+");
 
         // Hoster from Extern
         new HostPluginWrapper("iFolder.ru", "IfolderRu", "http://[\\-\\w\\.]*?ifolder\\.ru/\\d+");
