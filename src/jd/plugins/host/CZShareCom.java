@@ -202,7 +202,7 @@ public class CZShareCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Soubor nenalezen")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("N.zev souboru:</strong></span>\\s+<span[^>]*><strong>(.*?)</strong>").getMatch(0));
+        String filename = Encoding.htmlDecode(br.getRegex("souboru:</strong></span>\\s<span[^>]*><strong>(.*?)</strong>").getMatch(0));
         String filesize = br.getRegex("Velikost:</td>\\s+<td[^>]*>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
