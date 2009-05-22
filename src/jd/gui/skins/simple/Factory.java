@@ -47,7 +47,7 @@ public class Factory {
         JPanel ret = new JPanel(new MigLayout("ins 0", "[]10[grow,fill]3[]"));
         JLinkButton label;
         try {
-            ret.add(label = new JLinkButton("<html><u><b>" + name + "</b></u></html>", icon, new URL("http://wiki.jdownloader.org/?do=search&id=" + Encoding.urlEncode(name))));
+            ret.add(label = new JLinkButton("<html><u><b>" + name + "</b></u></html>", icon, new URL("http://wiki.jdownloader.org/quickhelp/" + name.replace(" ", "-"))));
             label.setIconTextGap(8);
             label.setBorder(null);
         } catch (MalformedURLException e) {

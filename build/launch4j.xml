@@ -2,17 +2,17 @@
   <dontWrapJar>true</dontWrapJar>
   <headerType>gui</headerType>
   <jar>JDownloader.jar</jar>
-  <outfile>D:\jdworkspace2\JDownloader\dist\JDownloader.exe</outfile>
+  <outfile>C:\Users\thomas\Desktop\JDownloader.exe</outfile>
   <errTitle></errTitle>
   <cmdLine></cmdLine>
   <chdir></chdir>
   <priority>normal</priority>
   <downloadUrl>http://java.com/download</downloadUrl>
   <supportUrl>http://jdownloader.org</supportUrl>
-  <customProcName>false</customProcName>
+  <customProcName>true</customProcName>
   <stayAlive>false</stayAlive>
   <manifest></manifest>
-  <icon>D:\jdworkspace2\JDownloader\ressourcen\jd\img\logo\64 px only icon.ico</icon>
+  <icon>C:\Users\thomas\workspace\JDownloader\ressourcen\artwork\icons\by TRazo\jdicon.ico</icon>
   <jre>
     <path></path>
     <minVersion>1.5.0</minVersion>
@@ -20,4 +20,16 @@
     <jdkPreference>preferJre</jdkPreference>
     <maxHeapSize>512</maxHeapSize>
   </jre>
+  <versionInfo>
+    <fileVersion>3.0.0.0</fileVersion>
+    <txtFileVersion>3.0.0.0</txtFileVersion>
+    <fileDescription>JDownloader Launcher v3</fileDescription>
+    <copyright>AppWork UG (haftungsbeschränkt)</copyright>
+    <productVersion>3.0.0.0</productVersion>
+    <txtProductVersion>3.0.0.0</txtProductVersion>
+    <productName>JDownloader Launcher v3</productName>
+    <companyName>AppWork UG (haftungsbeschränkt)</companyName>
+    <internalName>Jdownloader Launcher Trazo</internalName>
+    <originalFilename>JDownloader.exe</originalFilename>
+  </versionInfo>
 </launch4jConfig>

@@ -334,6 +334,8 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
         addGUIConfigEntry(ip);
 
         add(new JScrollPane((script = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.httpliveheader.script", "Reconnect Script")))).getInput()[0]), "gaptop 10,spanx,gapright 20,pushy, growy");
+        
+        script.setData(configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS));
         // sp.setBorder(null);
         // routerScript = new GUIConfigEntry();
         // this.entries.add(routerScript);

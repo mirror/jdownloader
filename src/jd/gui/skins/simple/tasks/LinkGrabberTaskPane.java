@@ -196,10 +196,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == fadeTimer) {
-            if (!this.isCollapsed()) update();
-            return;
-        }
+       
         if (e.getSource() == panel_add_links) {
             this.broadcastEvent(new ActionEvent(this, LinkGrabberTreeTableAction.GUI_ADD, null));
             return;

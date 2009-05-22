@@ -509,7 +509,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public String getSourcePluginPassword() {
-        if (sourcePluginPasswordList.size() == 0) { return null; }
+        if (sourcePluginPasswordList==null||sourcePluginPasswordList.size() == 0) { return null; }
         if (sourcePluginPasswordList.size() == 1) { return sourcePluginPasswordList.get(0); }
         StringBuilder ret = new StringBuilder();
         ret.append('{');

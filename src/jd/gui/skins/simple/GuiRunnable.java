@@ -90,6 +90,7 @@ public abstract class GuiRunnable<T> implements Runnable {
      * Starts the Runnable and adds it to the ETD
      */
     public void start() {
+//        new Exception().printStackTrace();
         setStarted(true);
         if (SwingUtilities.isEventDispatchThread()) {
             run();

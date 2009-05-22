@@ -49,6 +49,8 @@ import jd.utils.JDUtilities;
 
 public class JDInit {
 
+    private static final boolean TEST_INSTALLER = false;
+
     private static Logger logger = jd.controlling.JDLogger.getLogger();
 
     private boolean installerVisible = false;
@@ -186,7 +188,7 @@ public class JDInit {
             // }
         }
 
-        if (obj != null && ((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null) {
+        if (!TEST_INSTALLER&&obj != null && ((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null) {
 
             Configuration configuration = (Configuration) obj;
             JDUtilities.setConfiguration(configuration);

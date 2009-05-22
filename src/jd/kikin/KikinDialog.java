@@ -64,7 +64,8 @@ public class KikinDialog extends AbstractDialog {
         p.add(new JLabel(JDLocale.L("gui.installer.kikin.message", "Personalize your search experience")), "alignx left, aligny bottom");
         p.add(new JLabel(JDImage.getImageIcon(JDUtilities.getResourceFile("tools/Windows/kikin/kikin.png"))), "alignx right,aligny top");
         p.add(new JSeparator(), "spanx,growx,pushx");
-        if (JDLocale.getLocale() == "german") {
+        String loc = JDLocale.getLocale();
+        if (JDLocale.getLocale().equalsIgnoreCase("german")) {
             label = new JLabel(JDImage.getImageIcon(JDUtilities.getResourceFile("tools/Windows/kikin/ins_de.png")));
         } else {
             label = new JLabel(JDImage.getImageIcon(JDUtilities.getResourceFile("tools/Windows/kikin/ins_en.png")));

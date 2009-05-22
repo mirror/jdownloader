@@ -113,6 +113,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         OptionalPluginWrapper wrapper = buttonMap.get(e.getSource());
+        boolean isAction = false;
         if (wrapper != null) {
             ConfigContainer cfg = wrapper.getPlugin().getConfig();
             if (cfg != null) {
@@ -126,17 +127,20 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
 
                     }
                 }
+                isAction = true;
                 SimpleGUI.CURRENTGUI.getContentPane().display(new ConfigEntriesPanel(cfg));
             }
         }
         if (e.getSource() == config) {
             SimpleGuiConstants.GUI_CONFIG.setProperty("LAST_CONFIG_PANEL", ConfigTaskPane.ACTION_ADDONS);
             SimpleGUI.CURRENTGUI.getTaskPane().switcher(SimpleGUI.CURRENTGUI.getCfgTskPane());
+            isAction = true;
         }
-
-        for (CollapseButton entry : entries) {
-            if (entry.getButton() != e.getSource()) {
-                entry.setCollapsed(true);
+        if (isAction) {
+            for (CollapseButton entry : entries) {
+                if (entry.getButton() != e.getSource()) {
+                    entry.setCollapsed(true);
+                }
             }
         }
     }

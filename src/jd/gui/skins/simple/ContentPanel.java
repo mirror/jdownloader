@@ -38,7 +38,9 @@ public class ContentPanel extends JPanel {
 
     }
 
-    public void display(JTabbedPanel panel) {
+    public synchronized void display(JTabbedPanel panel) {
+//        System.out.println(panel);
+//       new Exception().printStackTrace();
         if (rightPanel == panel) return;
         JDCollapser.getInstance().setCollapsed(true);
         if (rightPanel != null) {
