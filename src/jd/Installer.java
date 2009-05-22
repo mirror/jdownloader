@@ -30,7 +30,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.nutils.Executer;
@@ -89,11 +88,8 @@ public class Installer {
         if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) installFirefoxaddon();
         JDUtilities.getConfiguration().save();
 
-        try {
-            JLinkButton.openURL("http://jdownloader.net:8080/version0.5/faq");
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        if (OSDetector.isWindows()) {
+            new KikinDialog();
         }
     }
 

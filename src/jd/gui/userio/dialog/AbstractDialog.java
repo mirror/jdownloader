@@ -45,7 +45,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     private JButton btnCancel;
 
-    private JButton btnOK;
+    protected JButton btnOK;
 
     protected JPanel contentpane;
 
