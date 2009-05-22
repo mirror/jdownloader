@@ -32,7 +32,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-public class DownloadTaskPane extends TaskPanel  {
+public class DownloadTaskPane extends TaskPanel {
 
     private static final long serialVersionUID = -9134449913836967453L;
     public static final int ACTION_SHOW_PANEL = 1;
@@ -47,7 +47,6 @@ public class DownloadTaskPane extends TaskPanel  {
     private JLabel downloadlist;
     private JLabel progresslabel;
     private Thread fadeTimer;
-    protected boolean updateinprogress = false;
 
     public DownloadTaskPane(String string, ImageIcon ii) {
         super(string, ii, "downloadtask");
@@ -56,8 +55,7 @@ public class DownloadTaskPane extends TaskPanel  {
         fadeTimer = new Thread() {
             public void run() {
                 while (true) {
-                    
-                    if (!isCollapsed())update();
+                    if (!isCollapsed()) update();
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -68,7 +66,6 @@ public class DownloadTaskPane extends TaskPanel  {
                 }
             }
         };
-
         fadeTimer.start();
     }
 
@@ -76,7 +73,6 @@ public class DownloadTaskPane extends TaskPanel  {
      * TODO: soll mal über events aktuallisiert werden
      */
     private void update() {
-        if (updateinprogress) return;
 
         final DownloadController dlc = JDUtilities.getDownloadController();
         long tot = 0;
@@ -97,7 +93,7 @@ public class DownloadTaskPane extends TaskPanel  {
             @Override
             public Object runSave() {
 
-                packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", dlc.getPackages().size()));
+                packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", dlc.size()));
                 downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", dlc.getAllDownloadLinks().size()));
                 totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot2)));
                 progress.setMaximum(tot2);
@@ -144,9 +140,7 @@ public class DownloadTaskPane extends TaskPanel  {
 
     public void actionPerformed(ActionEvent e) {
         // TODO Auto-generated method stub
-        
-    }
 
-  
+    }
 
 }

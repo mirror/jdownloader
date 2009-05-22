@@ -23,11 +23,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Vector;
 
 import jd.config.Property;
+import jd.controlling.DownloadController;
 import jd.event.JDBroadcaster;
 import jd.nutils.io.JDIO;
 import jd.utils.JDLocale;
@@ -144,47 +144,53 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      */
 
     public void add(DownloadLink link) {
-        if (!downloadLinkList.contains(link)) {
-            downloadLinkList.add(link);
-            link.setFilePackage(this);
-            if (!link.isEnabled()) synchronized (links_Disabled) {
-                links_Disabled++;
+        synchronized (DownloadController.ControllerLock) {
+            synchronized (downloadLinkList) {
+                if (!downloadLinkList.contains(link)) {
+                    downloadLinkList.add(link);
+                    link.setFilePackage(this);
+                    if (!link.isEnabled()) synchronized (links_Disabled) {
+                        links_Disabled++;
+                    }
+                    link.getBroadcaster().addListener(this);
+                    broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED, link));
+                }
             }
-            link.getBroadcaster().addListener(this);
-            broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED, link));
         }
     }
 
     public void add(int index, DownloadLink link) {
-        boolean newadded = false;
-        synchronized (downloadLinkList) {
-            if (downloadLinkList.contains(link)) {
-                downloadLinkList.remove(link);
-                if (index > downloadLinkList.size() - 1) {
-                    downloadLinkList.add(link);
-                } else if (index < 0) {
-                    downloadLinkList.add(0, link);
-                } else
-                    downloadLinkList.add(index, link);
+        synchronized (DownloadController.ControllerLock) {
+            boolean newadded = false;
+            synchronized (downloadLinkList) {
+                if (downloadLinkList.contains(link)) {
+                    downloadLinkList.remove(link);
+                    if (index > downloadLinkList.size() - 1) {
+                        downloadLinkList.add(link);
+                    } else if (index < 0) {
+                        downloadLinkList.add(0, link);
+                    } else
+                        downloadLinkList.add(index, link);
+                } else {
+                    if (index > downloadLinkList.size() - 1) {
+                        downloadLinkList.add(link);
+                    } else if (index < 0) {
+                        downloadLinkList.add(0, link);
+                    } else
+                        downloadLinkList.add(index, link);
+                    newadded = true;
+                }
+            }
+            if (newadded) {
+                if (!link.isEnabled()) synchronized (links_Disabled) {
+                    links_Disabled++;
+                }
+                link.setFilePackage(this);
+                link.getBroadcaster().addListener(this);
+                broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED, link));
             } else {
-                if (index > downloadLinkList.size() - 1) {
-                    downloadLinkList.add(link);
-                } else if (index < 0) {
-                    downloadLinkList.add(0, link);
-                } else
-                    downloadLinkList.add(index, link);
-                newadded = true;
+                broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
             }
-        }
-        if (newadded) {
-            if (!link.isEnabled()) synchronized (links_Disabled) {
-                links_Disabled++;
-            }
-            link.setFilePackage(this);
-            link.getBroadcaster().addListener(this);
-            broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED, link));
-        } else {
-            broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
         }
     }
 
@@ -213,10 +219,12 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public DownloadLink get(int index) {
-        try {
-            return downloadLinkList.get(index);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            return null;
+        synchronized (downloadLinkList) {
+            try {
+                return downloadLinkList.get(index);
+            } catch (IndexOutOfBoundsException e) {
+                return null;
+            }
         }
     }
 
@@ -247,7 +255,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public ArrayList<DownloadLink> getDownloadLinkList() {
-        
         return downloadLinkList;
     }
 
@@ -485,29 +492,26 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public int indexOf(DownloadLink link) {
-        return downloadLinkList.indexOf(link);
-    }
-
-    public DownloadLink lastElement() {
-        try {
-            if (downloadLinkList.size() == 0) return null;
-            return downloadLinkList.get(downloadLinkList.size() - 1);
-        } catch (NoSuchElementException e) {
-            return null;
+        synchronized (downloadLinkList) {
+            return downloadLinkList.indexOf(link);
         }
     }
 
     public void remove(DownloadLink link) {
         if (link == null) return;
-        boolean ret = downloadLinkList.remove(link);
-        if (ret) {
-            if (!link.isEnabled()) synchronized (links_Disabled) {
-                links_Disabled--;
+        synchronized (DownloadController.ControllerLock) {
+            synchronized (downloadLinkList) {
+                boolean ret = downloadLinkList.remove(link);
+                if (ret) {
+                    if (!link.isEnabled()) synchronized (links_Disabled) {
+                        links_Disabled--;
+                    }
+                    link.getBroadcaster().removeListener(this);
+                    link.setFilePackage(null);
+                    broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_REMOVED, link));
+                    if (downloadLinkList.size() == 0) broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_EMPTY));
+                }
             }
-            link.getBroadcaster().removeListener(this);
-            link.setFilePackage(null);
-            broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_REMOVED, link));
-            if (downloadLinkList.size() == 0) broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_EMPTY));
         }
     }
 
@@ -531,7 +535,9 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public int size() {
-        return downloadLinkList.size();
+        synchronized (downloadLinkList) {
+            return downloadLinkList.size();
+        }
     }
 
     public void abortDownload() {
@@ -608,7 +614,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      */
     // @Override
     public String toString() {
-        return this.getName() + " " + this.size();
+        return this.getName();
     }
 
     public void updateCollectives() {
@@ -674,8 +680,10 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public boolean isEnabled() {
-        if (downloadLinkList.size() <= getLinksDisabled()) return false;
-        return true;
+        synchronized (downloadLinkList) {
+            if (downloadLinkList.size() <= getLinksDisabled()) return false;
+            return true;
+        }
     }
 
     public void update_linksDisabled() {
@@ -718,7 +726,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     public void convert() {
         this.downloadLinkList = new ArrayList<DownloadLink>();
-        this.downloadLinkList.addAll(getDownloadLinks());      
+        this.downloadLinkList.addAll(getDownloadLinks());
         this.downloadLinks = null;
 
     }

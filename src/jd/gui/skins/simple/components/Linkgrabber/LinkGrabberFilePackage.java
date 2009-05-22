@@ -130,7 +130,9 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public int indexOf(DownloadLink link) {
-        return this.downloadLinks.indexOf(link);
+        synchronized (downloadLinks) {
+            return this.downloadLinks.indexOf(link);
+        }
     }
 
     public String getDownloadDirectory() {
@@ -161,11 +163,16 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void add(DownloadLink link) {
-        if (!downloadLinks.contains(link)) {
-            LinkGrabberFilePackage fp = LinkGrabberController.getInstance().getFPwithLink(link);
-            downloadLinks.add(link);
-            broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK, link));
-            if (fp != null && fp != this) fp.remove(link);
+        if (link == null) return;
+        synchronized (LinkGrabberController.ControllerLock) {
+            synchronized (downloadLinks) {
+                if (!downloadLinks.contains(link)) {
+                    LinkGrabberFilePackage fp = LinkGrabberController.getInstance().getFPwithLink(link);
+                    downloadLinks.add(link);
+                    broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK, link));
+                    if (fp != null && fp != this) fp.remove(link);
+                }
+            }
         }
     }
 
@@ -224,33 +231,36 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void add(int index, DownloadLink link) {
-        boolean newadded = false;
-        LinkGrabberFilePackage fp = null;
-        synchronized (downloadLinks) {
-            if (downloadLinks.contains(link)) {
-                downloadLinks.remove(link);
-                if (index > downloadLinks.size() - 1) {
-                    downloadLinks.add(link);
-                } else if (index < 0) {
-                    downloadLinks.add(0, link);
-                } else
-                    downloadLinks.add(index, link);
-            } else {
-                fp = LinkGrabberController.getInstance().getFPwithLink(link);
-                if (index > downloadLinks.size() - 1) {
-                    downloadLinks.add(link);
-                } else if (index < 0) {
-                    downloadLinks.add(0, link);
-                } else
-                    downloadLinks.add(index, link);
-                newadded = true;
+        if (link == null) return;
+        synchronized (LinkGrabberController.ControllerLock) {
+            synchronized (downloadLinks) {
+                boolean newadded = false;
+                LinkGrabberFilePackage fp = null;
+                if (downloadLinks.contains(link)) {
+                    downloadLinks.remove(link);
+                    if (index > downloadLinks.size() - 1) {
+                        downloadLinks.add(link);
+                    } else if (index < 0) {
+                        downloadLinks.add(0, link);
+                    } else
+                        downloadLinks.add(index, link);
+                } else {
+                    fp = LinkGrabberController.getInstance().getFPwithLink(link);
+                    if (index > downloadLinks.size() - 1) {
+                        downloadLinks.add(link);
+                    } else if (index < 0) {
+                        downloadLinks.add(0, link);
+                    } else
+                        downloadLinks.add(index, link);
+                    newadded = true;
+                }
+                if (newadded) {
+                    broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK, link));
+                    if (fp != null && fp != this) fp.remove(link);
+                } else {
+                    broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+                }
             }
-        }
-        if (newadded) {
-            broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.ADD_LINK, link));
-            if (fp != null && fp != this) fp.remove(link);
-        } else {
-            broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
         }
     }
 
@@ -276,14 +286,18 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public boolean contains(DownloadLink link) {
-        return downloadLinks.contains(link);
+        synchronized (downloadLinks) {
+            return downloadLinks.contains(link);
+        }
     }
 
     public DownloadLink get(int index) {
-        try {
-            return downloadLinks.get(index);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            return null;
+        synchronized (downloadLinks) {
+            try {
+                return downloadLinks.get(index);
+            } catch (IndexOutOfBoundsException e) {
+                return null;
+            }
         }
     }
 
@@ -302,23 +316,32 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public boolean remove(DownloadLink link) {
-        boolean ret = downloadLinks.remove(link);
-        if (ret) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK, link));
-        if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
-        return ret;
+        if (link == null) return false;
+        synchronized (LinkGrabberController.ControllerLock) {
+            synchronized (downloadLinks) {
+                boolean ret = downloadLinks.remove(link);
+                if (ret) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK, link));
+                if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
+                return ret;
+            }
+        }
     }
 
     public DownloadLink remove(int index) {
-        DownloadLink link;
-        try {
-            link = downloadLinks.remove(index);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            link = null;
+        synchronized (LinkGrabberController.ControllerLock) {
+            synchronized (downloadLinks) {
+                DownloadLink link;
+                try {
+                    link = downloadLinks.remove(index);
+                } catch (IndexOutOfBoundsException e) {
+                    link = null;
+                }
+                if (link != null) downloadLinks.remove(link);
+                if (link != null) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK, link));
+                if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
+                return link;
+            }
         }
-        if (link != null) downloadLinks.remove(link);
-        if (link != null) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.REMOVE_LINK, link));
-        if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
-        return link;
     }
 
     public void setComment(String comment) {
@@ -332,9 +355,13 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void setDownloadLinks(ArrayList<DownloadLink> downloadLinks) {
-        this.downloadLinks = new ArrayList<DownloadLink>(downloadLinks);
-        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
-        if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
+        synchronized (LinkGrabberController.ControllerLock) {
+            synchronized (downloadLinks) {
+                this.downloadLinks = new ArrayList<DownloadLink>(downloadLinks);
+                broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+                if (downloadLinks.size() == 0) broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.EMPTY_EVENT));
+            }
+        }
     }
 
     public void setName(String name) {
@@ -352,7 +379,9 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public int size() {
-        return downloadLinks.size();
+        synchronized (downloadLinks) {
+            return downloadLinks.size();
+        }
     }
 
     public void sort(final int col) {

@@ -142,7 +142,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                         ArrayList<LinkGrabberFilePackage> fps = LGINSTANCE.getPackages();
                         int count = 0;
                         for (LinkGrabberFilePackage fp : fps) {
-                            count += 1 + fp.getDownloadLinks().size();
+                            count += 1 + fp.size();
                         }
                         if (count > (internalTreeTable.getSize().getHeight() / 16.0)) {
                             for (LinkGrabberFilePackage fp : fps) {

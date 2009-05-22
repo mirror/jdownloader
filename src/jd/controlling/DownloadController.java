@@ -93,6 +93,8 @@ class Optimizer {
 
 public class DownloadController implements FilePackageListener, DownloadControllerListener, ActionListener {
 
+    public final static Object ControllerLock = new Object();
+
     private static DownloadController INSTANCE = null;
 
     private ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
@@ -342,8 +344,8 @@ public class DownloadController implements FilePackageListener, DownloadControll
             FilePackage fp;
             while (iterator.hasNext()) {
                 fp = iterator.next();
-                if(fp.getDownloadLinkList()==null){
-                   
+                if (fp.getDownloadLinkList() == null) {
+
                     fp.convert();
                 }
                 convert.add(fp);
@@ -351,7 +353,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                     convert.remove(fp);
                     continue;
                 }
-            
+
                 it = fp.getDownloadLinkList().iterator();
                 while (it.hasNext()) {
                     localLink = it.next();
@@ -415,12 +417,16 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     public void addPackage(FilePackage fp) {
         if (fp == null) return;
-        if (!packages.contains(fp)) {
-            fp.addListener(this);
-            packages.add(fp);
-            PasswordList.addPassword(fp.getPassword());
-            PasswordList.save();
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE, fp));
+        synchronized (DownloadController.ControllerLock) {
+            synchronized (packages) {
+                if (!packages.contains(fp)) {
+                    fp.addListener(this);
+                    packages.add(fp);
+                    PasswordList.addPassword(fp.getPassword());
+                    PasswordList.save();
+                    broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE, fp));
+                }
+            }
         }
     }
 
@@ -430,37 +436,40 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     public void addPackageAt(FilePackage fp, int index) {
         if (fp == null) return;
-        if (packages.size() == 0) {
-            addPackage(fp);
-            return;
-        }
-        boolean newadded = false;
-        synchronized (packages) {
-            if (packages.contains(fp)) {
-                packages.remove(fp);
-                if (index > packages.size() - 1) {
-                    packages.add(fp);
-                } else if (index < 0) {
-                    packages.add(0, fp);
-                } else
-                    packages.add(index, fp);
-            } else {
-                if (index > packages.size() - 1) {
-                    packages.add(fp);
-                } else if (index < 0) {
-                    packages.add(0, fp);
-                } else
-                    packages.add(index, fp);
-                newadded = true;
+        synchronized (DownloadController.ControllerLock) {
+            synchronized (packages) {
+                if (packages.size() == 0) {
+                    addPackage(fp);
+                    return;
+                }
+                boolean newadded = false;
+                if (packages.contains(fp)) {
+                    packages.remove(fp);
+                    if (index > packages.size() - 1) {
+                        packages.add(fp);
+                    } else if (index < 0) {
+                        packages.add(0, fp);
+                    } else
+                        packages.add(index, fp);
+                } else {
+                    if (index > packages.size() - 1) {
+                        packages.add(fp);
+                    } else if (index < 0) {
+                        packages.add(0, fp);
+                    } else
+                        packages.add(index, fp);
+                    newadded = true;
+                }
+                PasswordList.addPassword(fp.getPassword());
+                PasswordList.save();
+
+                if (newadded) {
+                    fp.addListener(this);
+                    broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE, fp));
+                } else {
+                    broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
+                }
             }
-            PasswordList.addPassword(fp.getPassword());
-            PasswordList.save();
-        }
-        if (newadded) {
-            fp.addListener(this);
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE, fp));
-        } else {
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REFRESH_STRUCTURE));
         }
     }
 
@@ -472,13 +481,19 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     public void removePackage(FilePackage fp2) {
         if (fp2 == null) return;
-        fp2.abortDownload();
-        fp2.removeListener(this);
-        if (packages.remove(fp2)) broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REMOVE_FILPACKAGE, fp2));
+        synchronized (DownloadController.ControllerLock) {
+            synchronized (packages) {
+                fp2.abortDownload();
+                fp2.removeListener(this);
+                if (packages.remove(fp2)) broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.REMOVE_FILPACKAGE, fp2));
+            }
+        }
     }
 
     public int size() {
-        return packages.size();
+        synchronized (packages) {
+            return packages.size();
+        }
     }
 
     /**
