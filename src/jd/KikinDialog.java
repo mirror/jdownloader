@@ -20,6 +20,7 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -32,8 +33,10 @@ import javax.swing.event.HyperlinkListener;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.userio.dialog.AbstractDialog;
+import jd.http.Browser;
 import jd.nutils.Executer;
 import jd.nutils.JDImage;
+import jd.nutils.OSDetector;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
@@ -130,6 +133,27 @@ public class KikinDialog extends AbstractDialog {
                 exec.waitTimeout();
                 if (exec.getException() != null) {
                     JDUtilities.runCommand("cmd", new String[] { "/c", "start " + file.getAbsolutePath() + "" }, file.getParent(), 10 * 60000);
+                }
+                try {
+                    new Browser().getPage("http://service.jdownloader.org/update/inst.php?k=1&o=" + OSDetector.getOSString() + "&v=" + JDUtilities.getRevision());
+                } catch (IOException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
+
+            }
+
+        });
+
+        btnCancel.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+
+                try {
+                    new Browser().getPage("http://service.jdownloader.org/update/inst.php?k=0&o=" + OSDetector.getOSString() + "&v=" + JDUtilities.getRevision());
+                } catch (IOException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
                 }
 
             }

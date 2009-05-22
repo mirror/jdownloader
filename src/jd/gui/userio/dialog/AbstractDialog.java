@@ -43,7 +43,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     private static final String DIALOGS_CONFIG = "DIALOGS";
 
-    private JButton btnCancel;
+    protected JButton btnCancel;
 
     protected JButton btnOK;
 
