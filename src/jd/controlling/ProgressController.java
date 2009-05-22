@@ -139,7 +139,7 @@ public class ProgressController {
                 }
                 finished = true;
                 currentValue = max;
-                if (JDUtilities.getController() != null) JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
+                if (JDUtilities.getController() != null) JDUtilities.getController().fireControlEvent(new ControlEvent(instance, ControlEvent.CONTROL_ON_PROGRESS, source));
             }
         }.start();
     }

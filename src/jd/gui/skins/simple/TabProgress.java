@@ -107,7 +107,7 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
 
     private void addController(ProgressController source) {
         synchronized (controllers) {
-            controllers.add(0, source);
+            if (!controllers.contains(source)) controllers.add(0, source);
         }
     }
 
@@ -127,32 +127,35 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
         synchronized (controllers) {
             if (event.getID() == ControlEvent.CONTROL_ON_PROGRESS && event.getSource() instanceof ProgressController) {
                 ProgressController source = (ProgressController) event.getSource();
-                try {
-                    if (source.isFinished()) {
-                        removeController(source);
-                        return;
-                    }
-                    if (!hasController(source)) {
-                        addController(source);
-                    }
-                } finally {
+                addController(source);
+                if (source.isFinished()) {
+                    removeController(source);
                     new GuiRunnable<Object>() {
                         @Override
                         public Object runSave() {
-                            update();
+                            update(true);
                             return null;
                         }
-
+                    }.start();
+                } else {
+                    new GuiRunnable<Object>() {
+                        @Override
+                        public Object runSave() {
+                            update(false);
+                            return null;
+                        }
                     }.start();
                 }
             }
         }
     }
 
-    protected void update() {
-        if (updateinprogress) return;
-        if ((System.currentTimeMillis() - last_update) < (500)) return;
-        updateinprogress = true;
+    protected void update(boolean force) {
+        if (!force) {
+            if (updateinprogress) return;
+            if ((System.currentTimeMillis() - last_update) < (500)) return;
+            updateinprogress = true;
+        }
         sortControllers();
         synchronized (controllers) {
             for (int i = 0; i < Math.min(controllers.size(), MAX_BARS); i++) {
@@ -183,7 +186,7 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
             this.setTitle(JDLocale.LF("gui.progresspane.title", "%s module(s) running", "" + controllers.size()));
             this.revalidate();
             this.repaint();
-            updateinprogress = false;
+            if (!force) updateinprogress = false;
             last_update = System.currentTimeMillis();
         }
     }
