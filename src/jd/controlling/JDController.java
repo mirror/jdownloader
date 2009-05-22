@@ -732,6 +732,7 @@ public class JDController implements ControlListener {
     public void saveDLC(File file, ArrayList<DownloadLink> links) {
         String xml = JDUtilities.createContainerString(links, "dlc");
         String cipher = encryptDLC(xml);
+        xml=xml;
         if (cipher != null) {
             SubConfiguration cfg = SubConfiguration.getConfig("DLCrypt");
             JDIO.writeLocalFile(file, cipher);

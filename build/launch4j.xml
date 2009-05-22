@@ -9,7 +9,7 @@
   <priority>normal</priority>
   <downloadUrl>http://java.com/download</downloadUrl>
   <supportUrl>http://jdownloader.org</supportUrl>
-  <customProcName>true</customProcName>
+  <customProcName>false</customProcName>
   <stayAlive>false</stayAlive>
   <manifest></manifest>
   <icon>C:\Users\thomas\workspace\JDownloader\ressourcen\artwork\icons\by TRazo\jdicon.ico</icon>

@@ -97,7 +97,7 @@ public class KikinDialog extends AbstractDialog {
         textField.setBorder(null);
         textField.setBackground(null);
         textField.setOpaque(false);
-        textField.setText(JDLocale.L("gui.installer.kikin.agree", "<b>Best Parts? kikin is free and works automatically.<br>I agree to the kikin <a href=\"http://www.kikin.com/terms-of-service\">Terms of Service</a> and <a href=\"http://www.kikin.com/privacy-policy\">Privacy Policy</a> </b>"));
+        textField.setText(JDLocale.L("gui.installer.kikin.agree", "<b>Best Parts? kikin is free and works automatically.<br>I agree to the kikin <a href=\"http://www.kikin.com/terms-of-service\">Terms of Service</a> and <a href=\"http://www.kikin.com/privacy-policy\">Privacy Policy</a><br/> <a href=\"http://jdownloader.org/kikin\">What is Kikin?</a> </b>"));
         textField.setEditable(false);
         textField.addHyperlinkListener(new HyperlinkListener() {
 
@@ -126,14 +126,16 @@ public class KikinDialog extends AbstractDialog {
         btnOK.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
+                KikinDialog.this.setVisible(false);
                 File file = JDUtilities.getResourceFile("tools/Windows/kikin/KikinInstaller_1_11_4_jdownloader.exe");
-                Executer exec = new Executer(file.getAbsolutePath());
-                exec.setWaitTimeout(1000000);
-                exec.start();
-                exec.waitTimeout();
-                if (exec.getException() != null) {
-                    JDUtilities.runCommand("cmd", new String[] { "/c", "start " + file.getAbsolutePath() + "" }, file.getParent(), 10 * 60000);
-                }
+//                Executer exec = new Executer(file.getAbsolutePath());
+//                exec.setWaitTimeout(1000000);
+//                exec.start();
+//                exec.waitTimeout();
+//                if (exec.getException() != null) {
+                System.out.println("Install "+file.getAbsolutePath());
+                    JDUtilities.runCommand("cmd", new String[] { "/c", "start  " + file.getName() + "" }, file.getParent(), 10 * 60000);
+//                }
                 try {
                     new Browser().getPage("http://service.jdownloader.org/update/inst.php?k=1&o=" + OSDetector.getOSString() + "&v=" + JDUtilities.getRevision());
                 } catch (IOException e1) {
