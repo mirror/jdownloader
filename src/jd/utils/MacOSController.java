@@ -16,7 +16,7 @@
 
 package jd.utils;
 
-import jd.gui.skins.simple.JDAboutDialog;
+import jd.gui.skins.simple.AboutDialog;
 import jd.gui.skins.simple.SimpleGUI;
 
 import com.apple.eawt.Application;
@@ -39,7 +39,7 @@ public class MacOSController extends Application {
 
         public void handleAbout(ApplicationEvent e) {
             e.setHandled(true);
-            JDAboutDialog.showDialog();
+            new AboutDialog();
         }
 
         // public void handlePreferences(ApplicationEvent e) {

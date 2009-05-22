@@ -18,7 +18,7 @@ package jd.gui.skins.simple.startmenu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.skins.simple.JDAboutDialog;
+import jd.gui.skins.simple.AboutDialog;
 
 public class AboutAction extends StartAction {
 
@@ -29,7 +29,7 @@ public class AboutAction extends StartAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        JDAboutDialog.showDialog();
+        new AboutDialog();
 
     }
 

@@ -108,7 +108,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         }
         contentInit(contentpane);
         add(contentpane, "pushx,growx,pushy,growy,spanx,aligny center,wrap");
-        add(this.countDownLabel, "split 6,growx");
+        add(this.countDownLabel, "split 6,growx,hidemode 3");
 
         if ((flag & UserIO.DONT_SHOW_AGAIN) > 0) {
             dont = new JCheckBox();
@@ -144,9 +144,16 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             countDownLabel.setVisible(false);
         }
         this.packed();
-        this.setVisible(true);
         this.toFront();
+        this.afterPacked();
+        this.setVisible(true);
+       
 
+    }
+
+    protected void afterPacked() {
+        // TODO Auto-generated method stub
+        
     }
 
     /**
