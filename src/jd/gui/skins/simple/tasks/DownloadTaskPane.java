@@ -17,8 +17,6 @@
 package jd.gui.skins.simple.tasks;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
@@ -48,6 +46,10 @@ public class DownloadTaskPane extends TaskPanel {
     private JLabel progresslabel;
     private Thread fadeTimer;
 
+    private long tot = 0;
+    private long loaded = 0;
+    private long speedm = 0;
+
     public DownloadTaskPane(String string, ImageIcon ii) {
         super(string, ii, "downloadtask");
         initGUI();
@@ -73,10 +75,9 @@ public class DownloadTaskPane extends TaskPanel {
      * TODO: soll mal über events aktuallisiert werden
      */
     private void update() {
-
         final DownloadController dlc = JDUtilities.getDownloadController();
-        long tot = 0;
-        long loaded = 0;
+        tot = 0;
+        loaded = 0;
         for (DownloadLink l : dlc.getAllDownloadLinks()) {
             if (!l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS) && l.isEnabled()) {
                 tot += l.getDownloadSize();
@@ -84,24 +85,19 @@ public class DownloadTaskPane extends TaskPanel {
             }
         }
 
-        final long tot2 = tot;
-        final long loaded2 = loaded;
-
-        final long speedm = JDUtilities.getController().getSpeedMeter();
+        speedm = JDUtilities.getController().getSpeedMeter();
         new GuiRunnable<Object>() {
-
             @Override
             public Object runSave() {
-
                 packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", dlc.size()));
                 downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", dlc.getAllDownloadLinks().size()));
-                totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot2)));
-                progress.setMaximum(tot2);
-                progress.setValue(loaded2);
-                progress.setToolTipText(Math.round((loaded2 * 10000.0) / tot2) / 100.0 + "%");
+                totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
+                progress.setMaximum(tot);
+                progress.setValue(loaded);
+                progress.setToolTipText(Math.round((loaded * 10000.0) / tot) / 100.0 + "%");
                 if (speedm > 1024) {
                     speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(speedm) + "/s"));
-                    long etanum = (tot2 - loaded2) / speedm;
+                    long etanum = (tot - loaded) / speedm;
                     eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", Formatter.formatSeconds(etanum)));
                 } else {
                     eta.setText("");
@@ -109,9 +105,7 @@ public class DownloadTaskPane extends TaskPanel {
                 }
                 return null;
             }
-
         }.waitForEDT();
-
     }
 
     private void initGUI() {
@@ -138,7 +132,7 @@ public class DownloadTaskPane extends TaskPanel {
         add(eta, D2_LABEL);
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(ActionEvent arg0) {
         // TODO Auto-generated method stub
 
     }

@@ -26,8 +26,6 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
-import javax.swing.Timer;
-
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
@@ -57,12 +55,15 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     private JLabel filteredlinks;
     private JLabel packages;
     private JLabel totalsize;
-    private Timer fadeTimer;
+    private Thread fadeTimer;
     private ArrayList<LinkGrabberFilePackage> fps;
     private LinkGrabberController lgi;
     private JCheckBox topOrBottom;
     private JCheckBox startAfterAdding;
     protected boolean updateinprogress = false;
+
+    private long tot = 0;
+    private long links = 0;
 
     public LinkGrabberTaskPane(String string, ImageIcon ii) {
         super(string, ii, "linkgrabber");
@@ -71,8 +72,20 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         lgi.addListener(this);
         linkgrabberButtonsEnabled = false;
         initGUI();
-        fadeTimer = new Timer(2000, this);
-        fadeTimer.setInitialDelay(0);
+        fadeTimer = new Thread() {
+            public void run() {
+                while (true) {
+                    if (!isCollapsed()) update();
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                        return;
+                    }
+                }
+            }
+        };
         fadeTimer.start();
     }
 
@@ -96,26 +109,24 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
      * TODO: soll man über events aktuallisiert werden
      */
     private void update() {
-        if (updateinprogress) return;
-        new Thread() {
-            public void run() {
-                updateinprogress = true;
-                this.setName("LinkGrabber: infoupdate");
+        tot = 0;
+        links = 0;
+        synchronized (fps) {
+            for (LinkGrabberFilePackage fp : fps) {
+                tot += fp.getDownloadSize(false);
+                links += fp.getDownloadLinks().size();
+            }
+        }
+        new GuiRunnable<Object>() {
+            @Override
+            public Object runSave() {
                 packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", fps.size()));
-                long tot = 0;
-                long links = 0;
-                synchronized (fps) {
-                    for (LinkGrabberFilePackage fp : fps) {
-                        tot += fp.getDownloadSize(false);
-                        links += fp.getDownloadLinks().size();
-                    }
-                }
                 downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", links));
                 filteredlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.filteredLinks", "%s filtered Link(s)", lgi.getFILTERPACKAGE().size()));
                 totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
-                updateinprogress = false;
+                return null;
             }
-        }.start();
+        }.waitForEDT();
     }
 
     private void initGUI() {

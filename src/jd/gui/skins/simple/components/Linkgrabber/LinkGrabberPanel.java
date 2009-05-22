@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import javax.swing.JCheckBoxMenuItem;
@@ -137,25 +136,31 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             public void run() {
                 tablerefreshinprogress = true;
                 this.setName("LinkGrabber: refresh Table");
-                synchronized (LGINSTANCE.getPackages()) {
-                    if (gatherer_running) {
-                        ArrayList<LinkGrabberFilePackage> fps = LGINSTANCE.getPackages();
-                        int count = 0;
-                        for (LinkGrabberFilePackage fp : fps) {
-                            count += 1 + fp.size();
-                        }
-                        if (count > (internalTreeTable.getSize().getHeight() / 16.0)) {
+                synchronized (LinkGrabberController.ControllerLock) {
+                    synchronized (LGINSTANCE.getPackages()) {
+                        if (gatherer_running) {
+                            ArrayList<LinkGrabberFilePackage> fps = LGINSTANCE.getPackages();
+                            int count = 0;
                             for (LinkGrabberFilePackage fp : fps) {
-                                if (!(Boolean) fp.getProperty(LinkGrabberTreeTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false);
+                                count += 1 + fp.size();
                             }
-                        } else {
-                            for (LinkGrabberFilePackage fp : fps) {
-                                if (!(Boolean) fp.getProperty(LinkGrabberTreeTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, true);
+                            if (count > (internalTreeTable.getSize().getHeight() / 16.0)) {
+                                for (LinkGrabberFilePackage fp : fps) {
+                                    if (!(Boolean) fp.getProperty(LinkGrabberTreeTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false);
+                                }
+                            } else {
+                                for (LinkGrabberFilePackage fp : fps) {
+                                    if (!(Boolean) fp.getProperty(LinkGrabberTreeTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, true);
+                                }
                             }
                         }
+                        try {
+                            internalTreeTable.fireTableChanged();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        tablerefreshinprogress = false;
                     }
-                    internalTreeTable.fireTableChanged();
-                    tablerefreshinprogress = false;
                 }
             }
         }.start();

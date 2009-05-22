@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.ArrayList;
 import java.util.logging.Level;
 
 import javax.xml.parsers.DocumentBuilderFactory;

@@ -28,7 +28,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import javax.swing.JMenuItem;
@@ -134,10 +133,16 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         new Thread() {
             public void run() {
                 tablerefreshinprogress = true;
-                synchronized (JDUtilities.getController().getPackages()) {
-                    internalTreeTable.fireTableChanged(id2, links2);
+                synchronized (DownloadController.ControllerLock) {
+                    synchronized (JDUtilities.getController().getPackages()) {
+                        try{
+                        internalTreeTable.fireTableChanged(id2, links2);
+                        }catch (Exception e){
+                            e.printStackTrace();
+                        }
+                    }
+                    tablerefreshinprogress = false;
                 }
-                tablerefreshinprogress = false;
             }
         }.start();
     }

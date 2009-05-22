@@ -18,7 +18,6 @@ package jd.controlling.reconnect;
 
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;

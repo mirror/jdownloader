@@ -778,6 +778,10 @@ public class JDUtilities {
             }
             jargs.add(h);
         }
+        jargs.add("-Xms64m");
+        jargs.add("-XX:+UseConcMarkSweepGC");
+        jargs.add("-XX:MinHeapFreeRatio=0");
+        jargs.add("-XX:MaxHeapFreeRatio=0");
         jargs.add("-jar");
         jargs.add("JDownloader.jar");
 
@@ -833,7 +837,7 @@ public class JDUtilities {
         exec.addParameters(parameter);
         exec.setRunin(runIn);
         exec.setWaitTimeout(waitForReturn);
-        exec.start(); 
+        exec.start();
         exec.waitTimeout();
         return exec.getOutputStream() + " \r\n " + exec.getErrorStream();
     }

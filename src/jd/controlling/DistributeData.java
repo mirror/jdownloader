@@ -20,7 +20,6 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.DecryptPluginWrapper;

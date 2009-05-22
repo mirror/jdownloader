@@ -66,6 +66,10 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
 
     private JLabel title;
 
+    private boolean updateinprogress = false;
+
+    private long last_update = 0;
+
     /**
      * Die Tabelle für die Pluginaktivitäten
      */
@@ -101,98 +105,111 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
         setVisible(false);
     }
 
-    private synchronized void addController(ProgressController source) {
-        controllers.add(0, source);
+    private void addController(ProgressController source) {
+        synchronized (controllers) {
+            controllers.add(0, source);
+        }
     }
 
-    private synchronized boolean hasController(ProgressController source) {
-        return controllers.contains(source);
+    private boolean hasController(ProgressController source) {
+        synchronized (controllers) {
+            return controllers.contains(source);
+        }
     }
 
-    private synchronized void removeController(ProgressController source) {
-        controllers.remove(source);
+    private void removeController(ProgressController source) {
+        synchronized (controllers) {
+            controllers.remove(source);
+        }
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_ON_PROGRESS && event.getSource() instanceof ProgressController) {
-            ProgressController source = (ProgressController) event.getSource();
-            try {
-                if (source.isFinished()) {
-                    removeController(source);
-                    return;
-                }
-                if (!hasController(source)) {
-                    addController(source);
-                }
-            } finally {
-                sortControllers();
-                new GuiRunnable<Object>() {
-
-                    @Override
-                    public Object runSave() {
-                        update();
-                        return null;
+        synchronized (controllers) {
+            if (event.getID() == ControlEvent.CONTROL_ON_PROGRESS && event.getSource() instanceof ProgressController) {
+                ProgressController source = (ProgressController) event.getSource();
+                try {
+                    if (source.isFinished()) {
+                        removeController(source);
+                        return;
                     }
+                    if (!hasController(source)) {
+                        addController(source);
+                    }
+                } finally {
+                    new GuiRunnable<Object>() {
+                        @Override
+                        public Object runSave() {
+                            update();
+                            return null;
+                        }
 
-                }.start();
-
+                    }.start();
+                }
             }
-
         }
-
     }
 
     protected void update() {
-        for (int i = 0; i < Math.min(controllers.size(), MAX_BARS); i++) {
-            if (!lines[i].isAttached()) {
-                this.add(lines[i], "height 20!");
-                // System.out.println("ATTACH " + i);
-                lines[i].setAttached(true);
+        if (updateinprogress) return;
+        if ((System.currentTimeMillis() - last_update) < (500)) return;
+        updateinprogress = true;
+        sortControllers();
+        synchronized (controllers) {
+            for (int i = 0; i < Math.min(controllers.size(), MAX_BARS); i++) {
+                if (!lines[i].isAttached()) {
+                    this.add(lines[i], "height 20!");
+                    // System.out.println("ATTACH " + i);
+                    lines[i].setAttached(true);
+                } else {
+                    // System.out.println("OK " + i);
+                }
+                lines[i].update(controllers.get(i));
+
+            }
+            for (int i = Math.max(0, Math.min(controllers.size(), MAX_BARS)); i < MAX_BARS; i++) {
+                if (lines[i].isAttached()) {
+                    this.remove(lines[i]);
+                    // System.out.println("GONE " + i);
+
+                    lines[i].setAttached(false);
+                }
+
+            }
+            if (controllers.size() == 0) {
+                this.setVisible(false);
             } else {
-                // System.out.println("OK " + i);
+                this.setVisible(true);
             }
-            lines[i].update(controllers.get(i));
-
+            this.setTitle(JDLocale.LF("gui.progresspane.title", "%s module(s) running", "" + controllers.size()));
+            this.revalidate();
+            this.repaint();
+            updateinprogress = false;
+            last_update = System.currentTimeMillis();
         }
-        for (int i = Math.max(0, Math.min(controllers.size(), MAX_BARS)); i < MAX_BARS; i++) {
-            if (lines[i].isAttached()) {
-                this.remove(lines[i]);
-                // System.out.println("GONE " + i);
-
-                lines[i].setAttached(false);
-            }
-
-        }
-        if (controllers.size() == 0) {
-            this.setVisible(false);
-        } else {
-            this.setVisible(true);
-        }
-        this.setTitle(JDLocale.LF("gui.progresspane.title", "%s module(s) running", "" + controllers.size()));
-        this.revalidate();
-        this.repaint();
     }
 
     /**
      * Sorts the controllers
      */
     private void sortControllers() {
-        Collections.sort(controllers, new Comparator<ProgressController>() {
+        synchronized (controllers) {
+            Collections.sort(controllers, new Comparator<ProgressController>() {
 
-            public int compare(ProgressController o1, ProgressController o2) {
-                if (o1.getPercent() == o2.getPercent()) return 0;
-                return o1.getPercent() < o2.getPercent() ? 1 : -1;
-            }
+                public int compare(ProgressController o1, ProgressController o2) {
+                    if (o1.getPercent() == o2.getPercent()) return 0;
+                    return o1.getPercent() < o2.getPercent() ? 1 : -1;
+                }
 
-        });
-        Collections.sort(controllers, new Comparator<ProgressController>() {
+            });
+            Collections.sort(controllers, new Comparator<ProgressController>() {
 
-            public int compare(ProgressController o1, ProgressController o2) {
-                if (o1.isFinalizing()) return 1;
-                return 0;
-            }
+                public int compare(ProgressController o1, ProgressController o2) {
+                    if (o1.isFinalizing()) return 1;
+                    return 0;
+                }
 
-        });
+            });
+        }
     }
 
     private class ProgressEntry extends JPanel implements ActionListener {

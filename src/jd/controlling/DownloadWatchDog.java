@@ -19,7 +19,6 @@ package jd.controlling;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;

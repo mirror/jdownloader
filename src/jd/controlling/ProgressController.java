@@ -122,6 +122,7 @@ public class ProgressController {
     }
 
     public void finalize(final long waittimer) {
+        if (finalizing) return;
         finalizing = true;
         final ProgressController instance = this;
         new Thread() {
