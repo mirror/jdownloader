@@ -938,6 +938,17 @@ abstract public class DownloadInterface {
 
         }
 
+        public void closeConnections() {
+            try{
+            inputStream.close();
+            source.close();
+            logger.info("Closed connection before closing file");
+            }catch(Exception e){
+                
+            }
+            
+        }
+
     }
 
     public static final int ERROR_REDIRECTED = -1;

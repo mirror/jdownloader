@@ -173,7 +173,11 @@ public class RAFDownload extends DownloadInterface {
             }
         }       
         //
-        logger.info("CLOSE HD FILE");
+        logger.info("Close connections if the are not closed yet");
+        for(Chunk c:this.getChunks()){
+            c.closeConnections();
+        }
+        logger.info("Close File. Let AV programs run");
         try {
             outputChannel.force(false);
         } catch (Exception e) {
