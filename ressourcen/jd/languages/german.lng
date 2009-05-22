@@ -1215,3 +1215,9 @@ gui.cnl.install=Click'n'load ist ein komfortabler Weg Links in JDownloader einzu
 gui.cnl.install.title =Click'n'Load Installation
 gui.cnl.install.error.title =Click'n'Load Installation fehlgeschlagen
 gui.cnl.install.error.message=Die Installation von Click'n'Load ist fehlgeschlagen. Bitte teste diese Alternativen:\r\n *  JDownloader mir Administartorrechten starten.\r\n * %s manuell ausführen.\r\n * Einstellungen->Allgemein->Click'n'Load [Installieren] öfnen.\r\n Weitere Informationen unter http://jdownloader.org/click-n-load.
+gui.installer.kikin.title=Kikin Installation
+gui.installer.kikin.ok=Weiter
+gui.installer.kikin.cancel=Abbrechen
+gui.installer.kikin.message=Kostenlos!  Personalisieren Sie Ihre Suchergebnisse mit kikin.
+gui.installer.kikin.tooltip=Um Kikin zu installieren bitte die AGB und Datenschutzerklärungen lesen und akzeptieren.
+gui.installer.kikin.agree=<b>Das Beste? kikin ist kostenlos und funktioniert vollautomatisch.<br>Ich stimme den kikin <a href=\"http://www.kikin.com/terms-of-service\">Nutzungsbedingungen</a> und den <a href=\"http://www.kikin.com/privacy-policy\">Datenschutzrichtlinien</a> zu. </b>
