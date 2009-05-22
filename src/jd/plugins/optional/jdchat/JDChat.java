@@ -42,6 +42,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
@@ -912,10 +913,16 @@ public class JDChat extends PluginOptional implements ControlListener {
 
             // @Override
             public void onDisplay() {
+
             }
 
             // @Override
             public void onHide() {
+            }
+
+            public boolean needsViewport() {
+
+                return false;
             }
 
         };
@@ -1481,7 +1488,9 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         private void initGUI() {
             // sp.setMaximumSize(new Dimension(300, 300));
-            this.add(right);
+            JScrollPane sp;
+            this.add(sp = new JScrollPane(right), "height n:n:300");
+            sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         }
 
         public void actionPerformed(ActionEvent e) {

@@ -186,7 +186,7 @@ public class JDInit {
             // }
         }
 
-        if (false&&obj != null && ((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null) {
+        if (obj != null && ((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null) {
 
             Configuration configuration = (Configuration) obj;
             JDUtilities.setConfiguration(configuration);
