@@ -17,7 +17,6 @@ package jd.gui.skins.simple;
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import java.awt.Color;
-import java.awt.FlowLayout;
 import java.io.IOException;
 import java.util.Vector;
 
@@ -76,8 +75,8 @@ public class AboutDialog extends AbstractDialog {
         textField.setContentType("text/html");
         textField.setBackground(Color.WHITE);
         textField.setBorder(null);
-      
-//        textField.setOpaque(false);
+
+        // textField.setOpaque(false);
         textField.setText("");
         textField.setEditable(false);
         new Thread() {
@@ -105,7 +104,6 @@ public class AboutDialog extends AbstractDialog {
 
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
 
-                   
                     try {
                         JLinkButton.openURL(e.getURL());
                     } catch (Exception e1) {
@@ -129,7 +127,7 @@ public class AboutDialog extends AbstractDialog {
         cp.add(new JScrollPane(textField), "");
         cp.add(new JSeparator(), "spanx,growx,pushx");
         JLabel lbl;
-        cp.add(lbl=new JLabel("JDownloader © AppWork UG (haftungsbeschränkt) 2007-2009"),"split 2,aligny center");
+        cp.add(lbl = new JLabel("JDownloader © AppWork UG (haftungsbeschränkt) 2007-2009"), "split 2,aligny center");
         lbl.setEnabled(false);
         this.getContentPane().setBackground(Color.WHITE);
         JPanel links = new JPanel();
@@ -138,11 +136,12 @@ public class AboutDialog extends AbstractDialog {
         links.add(new JLinkButton(JDLocale.L("gui.dialog.about.forum", "Support board"), JDLocale.L("gui.dialog.about.forumurl", "http://board.jdownloader.org")));
         links.add(new JLinkButton(JDLocale.L("gui.dialog.about.chat", "Chat"), JDLocale.L("gui.dialog.about.chaturl", "http://www.jdownloader.org/support?lng=en")));
 
-        cp.add(links,"alignx right,aligny bottom");
+        cp.add(links, "alignx right,aligny bottom");
 
     }
 
     protected void afterPacked() {
+        this.remove(countDownLabel);
         this.setSize(800, 450);
         this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -179,7 +178,14 @@ public class AboutDialog extends AbstractDialog {
     }
 
     public static void main(String[] args) {
-        new AboutDialog();
+        new GuiRunnable() {
+
+            @Override
+            public Object runSave() {
+                new AboutDialog();
+                return null;
+            }
+        }.start();
 
     }
 
@@ -232,15 +238,14 @@ public class AboutDialog extends AbstractDialog {
 
         public String getHTML() {
             String ret = "<h2>" + name + "</h2>";
-            ret+="<h3>Email</h3>"+mail;
-            ret+="<h3>Section</h3>";
+            ret += "<h3>Email</h3>" + mail;
+            ret += "<h3>Section</h3>";
             ret += "<ul>";
             for (String d : descs) {
                 ret += "<li>" + d.trim() + "</li>";
             }
             ret += "</ul>";
-          
-         
+
             return ret;
         }
 

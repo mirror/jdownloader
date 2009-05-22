@@ -17,6 +17,7 @@
 package jd.utils;
 
 import jd.gui.skins.simple.AboutDialog;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 
 import com.apple.eawt.Application;
@@ -39,7 +40,13 @@ public class MacOSController extends Application {
 
         public void handleAbout(ApplicationEvent e) {
             e.setHandled(true);
+            new GuiRunnable(){
+
+                @Override
+                public Object runSave() {
             new AboutDialog();
+            return null;
+                }}.start();
         }
 
         // public void handlePreferences(ApplicationEvent e) {
