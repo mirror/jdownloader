@@ -343,233 +343,235 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 String name = null;
                 int col = 0;
                 boolean b = false;
-                synchronized (LGINSTANCE.getPackages()) {
-                    ArrayList<LinkGrabberFilePackage> fps = LGINSTANCE.getPackages();
-                    if (arg0.getSource() instanceof LinkGrabberTaskPane) {
+                synchronized (LinkGrabberController.ControllerLock) {
+                    synchronized (LGINSTANCE.getPackages()) {
+                        ArrayList<LinkGrabberFilePackage> fps = LGINSTANCE.getPackages();
+                        if (arg0.getSource() instanceof LinkGrabberTaskPane) {
+                            switch (arg0.getID()) {
+                            case LinkGrabberTreeTableAction.ADD_ALL:
+                                LGINSTANCE.getFILTERPACKAGE().clear();
+                                selected_packages = new ArrayList<LinkGrabberFilePackage>(fps);
+                                break;
+                            case LinkGrabberTreeTableAction.CLEAR:
+                                stopLinkGatherer();
+                                lc.abortLinkCheck();
+                                LGINSTANCE.getFILTERPACKAGE().clear();
+                                selected_packages = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
+                                selected_packages.add(LGINSTANCE.getFILTERPACKAGE());
+                                break;
+                            case LinkGrabberTreeTableAction.ADD_SELECTED_PACKAGES:
+                                selected_packages = new ArrayList<LinkGrabberFilePackage>(INSTANCE.internalTreeTable.getSelectedFilePackages());
+                                break;
+                            case LinkGrabberTreeTableAction.GUI_LOAD:
+                                new GuiRunnable<Object>() {
+                                    // @Override
+                                    public Object runSave() {
+                                        JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
+                                        fc.setDialogTitle(JDLocale.L("gui.filechooser.loaddlc", "Load DLC file"));
+                                        fc.setFileFilter(new JDFileFilter(null, ".dlc|.rsdf|.ccf|.linkbackup", true));
+                                        if (fc.showOpenDialog(null) == JDFileChooser.APPROVE_OPTION) {
+                                            File ret2 = fc.getSelectedFile();
+                                            if (ret2 != null) {
+                                                JDUtilities.getController().loadContainerFile(ret2);
+                                            }
+                                        }
+                                        return null;
+                                    }
+                                }.waitForEDT();
+                                return;
+                            }
+                        } else if (arg0.getSource() instanceof JMenuItem) {
+                            switch (arg0.getID()) {
+                            case LinkGrabberTreeTableAction.SELECT_HOSTER:
+                                hoster = (Set<String>) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("hoster");
+                                selected_packages = new ArrayList<LinkGrabberFilePackage>(fps);
+                                selected_packages.add(LGINSTANCE.getFILTERPACKAGE());
+                                break;
+                            case LinkGrabberTreeTableAction.ADD_ALL:
+                                LGINSTANCE.getFILTERPACKAGE().clear();
+                            case LinkGrabberTreeTableAction.DELETE_OFFLINE:
+                                selected_packages = new ArrayList<LinkGrabberFilePackage>(fps);
+                                selected_packages.add(LGINSTANCE.getFILTERPACKAGE());
+                                break;
+                            case LinkGrabberTreeTableAction.ADD_SELECTED_PACKAGES:
+                            case LinkGrabberTreeTableAction.EDIT_DIR:
+                            case LinkGrabberTreeTableAction.SPLIT_HOSTER:
+                                selected_packages = new ArrayList<LinkGrabberFilePackage>(INSTANCE.internalTreeTable.getSelectedFilePackages());
+                                break;
+                            case LinkGrabberTreeTableAction.SORT:
+                                col = (Integer) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("col");
+                                selected_packages = new ArrayList<LinkGrabberFilePackage>(INSTANCE.internalTreeTable.getSelectedFilePackages());
+                                break;
+                            case LinkGrabberTreeTableAction.DOWNLOAD_PRIO:
+                            case LinkGrabberTreeTableAction.DE_ACTIVATE:
+                                prop = (HashMap<String, Object>) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("infos");
+                                selected_links = (ArrayList<DownloadLink>) prop.get("links");
+                                break;
+                            case LinkGrabberTreeTableAction.DELETE:
+                            case LinkGrabberTreeTableAction.SET_PW:
+                            case LinkGrabberTreeTableAction.NEW_PACKAGE:
+                            case LinkGrabberTreeTableAction.MERGE_PACKAGE:
+                            case LinkGrabberTreeTableAction.ADD_SELECTED_LINKS:
+                                selected_links = (ArrayList<DownloadLink>) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("links");
+                                break;
+                            case LinkGrabberTreeTableAction.EXT_FILTER:
+                                ext = (String) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("extension");
+                                b = ((JCheckBoxMenuItem) arg0.getSource()).isSelected();
+                                break;
+                            }
+                        } else if (arg0.getSource() instanceof LinkGrabberTreeTableAction) {
+                            switch (arg0.getID()) {
+                            case LinkGrabberTreeTableAction.DELETE:
+                                selected_links = (ArrayList<DownloadLink>) ((LinkGrabberTreeTableAction) arg0.getSource()).getProperty().getProperty("links");
+                                break;
+                            case LinkGrabberTreeTableAction.SORT_ALL:
+                                col = (Integer) ((LinkGrabberTreeTableAction) arg0.getSource()).getProperty().getProperty("col");
+                                break;
+                            }
+                        }
                         switch (arg0.getID()) {
-                        case LinkGrabberTreeTableAction.ADD_ALL:
-                            LGINSTANCE.getFILTERPACKAGE().clear();
-                            selected_packages = new ArrayList<LinkGrabberFilePackage>(fps);
+                        case LinkGrabberTreeTableAction.ADD_SELECTED_LINKS: {
+                            ArrayList<LinkGrabberFilePackage> selected_packages2 = new ArrayList<LinkGrabberFilePackage>();
+                            while (selected_links.size() > 0) {
+                                ArrayList<DownloadLink> links2 = new ArrayList<DownloadLink>(selected_links);
+                                LinkGrabberFilePackage fp3 = LGINSTANCE.getFPwithLink(selected_links.get(0));
+                                if (fp3 == null) {
+                                    logger.warning("DownloadLink not controlled by LinkGrabberController!");
+                                    selected_links.remove(selected_links.get(0));
+                                    continue;
+                                }
+                                LinkGrabberFilePackage fp4 = new LinkGrabberFilePackage(fp3.getName());
+                                fp4.setDownloadDirectory(fp3.getDownloadDirectory());
+                                fp4.setPassword(fp3.getPassword());
+                                fp4.setExtractAfterDownload(fp3.isExtractAfterDownload());
+                                fp4.setUseSubDir(fp3.useSubDir());
+                                fp4.setComment(fp3.getComment());
+                                for (DownloadLink dl : links2) {
+                                    if (LGINSTANCE.getFPwithLink(dl) != null && LGINSTANCE.getFPwithLink(dl) == fp3) {
+                                        fp4.add(dl);
+                                        selected_links.remove(dl);
+                                    }
+                                }
+                                selected_packages2.add(fp4);
+                            }
+                            confirmPackages(selected_packages2);
+                        }
                             break;
-                        case LinkGrabberTreeTableAction.CLEAR:
-                            stopLinkGatherer();
-                            lc.abortLinkCheck();
-                            LGINSTANCE.getFILTERPACKAGE().clear();
-                            selected_packages = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
-                            selected_packages.add(LGINSTANCE.getFILTERPACKAGE());
+                        case LinkGrabberTreeTableAction.SPLIT_HOSTER: {
+                            for (LinkGrabberFilePackage fp2 : selected_packages) {
+                                synchronized (fp2) {
+                                    ArrayList<DownloadLink> links2 = new ArrayList<DownloadLink>(fp2.getDownloadLinks());
+                                    Set<String> hosts = INSTANCE.getHosterList(links2);
+                                    for (String host : hosts) {
+                                        LinkGrabberFilePackage fp3 = new LinkGrabberFilePackage(fp2.getName());
+                                        fp3.setDownloadDirectory(fp2.getDownloadDirectory());
+                                        fp3.setPassword(fp2.getPassword());
+                                        fp3.setExtractAfterDownload(fp2.isExtractAfterDownload());
+                                        fp3.setUseSubDir(fp2.useSubDir());
+                                        fp3.setComment(fp2.getComment());
+                                        for (DownloadLink dl : links2) {
+                                            if (dl.getPlugin().getHost().equalsIgnoreCase(host)) {
+                                                fp3.add(dl);
+                                            }
+                                        }
+                                        LGINSTANCE.addPackage(fp3);
+                                    }
+                                }
+                            }
+                        }
                             break;
-                        case LinkGrabberTreeTableAction.ADD_SELECTED_PACKAGES:
-                            selected_packages = new ArrayList<LinkGrabberFilePackage>(INSTANCE.internalTreeTable.getSelectedFilePackages());
+                        case LinkGrabberTreeTableAction.DELETE_OFFLINE:
+                            for (LinkGrabberFilePackage fp2 : selected_packages) {
+                                fp2.removeOffline();
+                            }
                             break;
-                        case LinkGrabberTreeTableAction.GUI_LOAD:
+                        case LinkGrabberTreeTableAction.SORT:
+                            for (LinkGrabberFilePackage fp2 : selected_packages) {
+                                fp2.sort(col);
+                            }
+                            break;
+                        case LinkGrabberTreeTableAction.SORT_ALL:
+                            if (LGINSTANCE.size() == 1) {
+                                LGINSTANCE.getPackages().get(0).sort(col);
+                            } else
+                                LGINSTANCE.sort(col);
+                            break;
+                        case LinkGrabberTreeTableAction.SELECT_HOSTER:
+                            for (LinkGrabberFilePackage fp2 : selected_packages) {
+                                fp2.keepHostersOnly(hoster);
+                            }
+                            break;
+                        case LinkGrabberTreeTableAction.EDIT_DIR:
+                            final ArrayList<LinkGrabberFilePackage> selected_packages2 = new ArrayList<LinkGrabberFilePackage>(selected_packages);
                             new GuiRunnable<Object>() {
                                 // @Override
                                 public Object runSave() {
-                                    JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
-                                    fc.setDialogTitle(JDLocale.L("gui.filechooser.loaddlc", "Load DLC file"));
-                                    fc.setFileFilter(new JDFileFilter(null, ".dlc|.rsdf|.ccf|.linkbackup", true));
-                                    if (fc.showOpenDialog(null) == JDFileChooser.APPROVE_OPTION) {
-                                        File ret2 = fc.getSelectedFile();
-                                        if (ret2 != null) {
-                                            JDUtilities.getController().loadContainerFile(ret2);
+                                    JDFileChooser fc = new JDFileChooser();
+                                    fc.setApproveButtonText(JDLocale.L("gui.btn_ok", "OK"));
+                                    fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
+                                    fc.setCurrentDirectory(new File(selected_packages2.get(0).getDownloadDirectory()));
+                                    if (fc.showOpenDialog(INSTANCE) == JDFileChooser.APPROVE_OPTION) {
+                                        if (fc.getSelectedFile() != null) {
+                                            for (LinkGrabberFilePackage fp2 : selected_packages2) {
+                                                fp2.setDownloadDirectory(fc.getSelectedFile().getAbsolutePath());
+                                            }
                                         }
                                     }
                                     return null;
                                 }
                             }.waitForEDT();
+                            break;
+                        case LinkGrabberTreeTableAction.MERGE_PACKAGE:
+                            fp = LGINSTANCE.getFPwithLink(selected_links.get(0));
+                            name = fp.getName();
+                        case LinkGrabberTreeTableAction.NEW_PACKAGE:
+                            fp = LGINSTANCE.getFPwithLink(selected_links.get(0));
+                            if (name == null) name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
+                            if (name != null) {
+                                LinkGrabberFilePackage nfp = new LinkGrabberFilePackage(name, LGINSTANCE);
+                                nfp.addAll(selected_links);
+                            }
+                            return;
+                        case LinkGrabberTreeTableAction.SET_PW:
+                            pw = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.setpw.message", "Set download password"), null);
+                            for (int i = 0; i < selected_links.size(); i++) {
+                                selected_links.get(i).setProperty("pass", pw);
+                            }
+                            return;
+                        case LinkGrabberTreeTableAction.DE_ACTIVATE:
+                            b = (Boolean) prop.get("boolean");
+                            for (int i = 0; i < selected_links.size(); i++) {
+                                selected_links.get(i).setEnabled(b);
+                            }
+                            Update_Async.restart();
+                            return;
+                        case LinkGrabberTreeTableAction.ADD_ALL:
+                        case LinkGrabberTreeTableAction.ADD_SELECTED_PACKAGES:
+                            confirmPackages(selected_packages);
+                            return;
+                        case LinkGrabberTreeTableAction.DELETE:
+                            for (DownloadLink link : selected_links) {
+                                link.setProperty("removed", true);
+                                fp = LGINSTANCE.getFPwithLink(link);
+                                if (fp == null) continue;
+                                fp.remove(link);
+                            }
+                            return;
+                        case LinkGrabberTreeTableAction.CLEAR:
+                            for (LinkGrabberFilePackage fp2 : selected_packages) {
+                                fp2.setDownloadLinks(new ArrayList<DownloadLink>());
+                            }
+                            return;
+                        case LinkGrabberTreeTableAction.DOWNLOAD_PRIO:
+                            prio = (Integer) prop.get("prio");
+                            for (int i = 0; i < selected_links.size(); i++) {
+                                selected_links.get(i).setPriority(prio);
+                            }
+                            return;
+                        case LinkGrabberTreeTableAction.EXT_FILTER:
+                            LGINSTANCE.FilterExtension(ext, b);
                             return;
                         }
-                    } else if (arg0.getSource() instanceof JMenuItem) {
-                        switch (arg0.getID()) {
-                        case LinkGrabberTreeTableAction.SELECT_HOSTER:
-                            hoster = (Set<String>) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("hoster");
-                            selected_packages = new ArrayList<LinkGrabberFilePackage>(fps);
-                            selected_packages.add(LGINSTANCE.getFILTERPACKAGE());
-                            break;
-                        case LinkGrabberTreeTableAction.ADD_ALL:
-                            LGINSTANCE.getFILTERPACKAGE().clear();
-                        case LinkGrabberTreeTableAction.DELETE_OFFLINE:
-                            selected_packages = new ArrayList<LinkGrabberFilePackage>(fps);
-                            selected_packages.add(LGINSTANCE.getFILTERPACKAGE());
-                            break;
-                        case LinkGrabberTreeTableAction.ADD_SELECTED_PACKAGES:
-                        case LinkGrabberTreeTableAction.EDIT_DIR:
-                        case LinkGrabberTreeTableAction.SPLIT_HOSTER:
-                            selected_packages = new ArrayList<LinkGrabberFilePackage>(INSTANCE.internalTreeTable.getSelectedFilePackages());
-                            break;
-                        case LinkGrabberTreeTableAction.SORT:
-                            col = (Integer) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("col");
-                            selected_packages = new ArrayList<LinkGrabberFilePackage>(INSTANCE.internalTreeTable.getSelectedFilePackages());
-                            break;
-                        case LinkGrabberTreeTableAction.DOWNLOAD_PRIO:
-                        case LinkGrabberTreeTableAction.DE_ACTIVATE:
-                            prop = (HashMap<String, Object>) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("infos");
-                            selected_links = (ArrayList<DownloadLink>) prop.get("links");
-                            break;
-                        case LinkGrabberTreeTableAction.DELETE:
-                        case LinkGrabberTreeTableAction.SET_PW:
-                        case LinkGrabberTreeTableAction.NEW_PACKAGE:
-                        case LinkGrabberTreeTableAction.MERGE_PACKAGE:
-                        case LinkGrabberTreeTableAction.ADD_SELECTED_LINKS:
-                            selected_links = (ArrayList<DownloadLink>) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("links");
-                            break;
-                        case LinkGrabberTreeTableAction.EXT_FILTER:
-                            ext = (String) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("extension");
-                            b = ((JCheckBoxMenuItem) arg0.getSource()).isSelected();
-                            break;
-                        }
-                    } else if (arg0.getSource() instanceof LinkGrabberTreeTableAction) {
-                        switch (arg0.getID()) {
-                        case LinkGrabberTreeTableAction.DELETE:
-                            selected_links = (ArrayList<DownloadLink>) ((LinkGrabberTreeTableAction) arg0.getSource()).getProperty().getProperty("links");
-                            break;
-                        case LinkGrabberTreeTableAction.SORT_ALL:
-                            col = (Integer) ((LinkGrabberTreeTableAction) arg0.getSource()).getProperty().getProperty("col");
-                            break;
-                        }
-                    }
-                    switch (arg0.getID()) {
-                    case LinkGrabberTreeTableAction.ADD_SELECTED_LINKS: {
-                        ArrayList<LinkGrabberFilePackage> selected_packages2 = new ArrayList<LinkGrabberFilePackage>();
-                        while (selected_links.size() > 0) {
-                            ArrayList<DownloadLink> links2 = new ArrayList<DownloadLink>(selected_links);
-                            LinkGrabberFilePackage fp3 = LGINSTANCE.getFPwithLink(selected_links.get(0));
-                            if (fp3 == null) {
-                                logger.warning("DownloadLink not controlled by LinkGrabberController!");
-                                selected_links.remove(selected_links.get(0));
-                                continue;
-                            }
-                            LinkGrabberFilePackage fp4 = new LinkGrabberFilePackage(fp3.getName());
-                            fp4.setDownloadDirectory(fp3.getDownloadDirectory());
-                            fp4.setPassword(fp3.getPassword());
-                            fp4.setExtractAfterDownload(fp3.isExtractAfterDownload());
-                            fp4.setUseSubDir(fp3.useSubDir());
-                            fp4.setComment(fp3.getComment());
-                            for (DownloadLink dl : links2) {
-                                if (LGINSTANCE.getFPwithLink(dl) != null && LGINSTANCE.getFPwithLink(dl) == fp3) {
-                                    fp4.add(dl);
-                                    selected_links.remove(dl);
-                                }
-                            }
-                            selected_packages2.add(fp4);
-                        }
-                        confirmPackages(selected_packages2);
-                    }
-                        break;
-                    case LinkGrabberTreeTableAction.SPLIT_HOSTER: {
-                        for (LinkGrabberFilePackage fp2 : selected_packages) {
-                            synchronized (fp2) {
-                                ArrayList<DownloadLink> links2 = new ArrayList<DownloadLink>(fp2.getDownloadLinks());
-                                Set<String> hosts = INSTANCE.getHosterList(links2);
-                                for (String host : hosts) {
-                                    LinkGrabberFilePackage fp3 = new LinkGrabberFilePackage(fp2.getName());
-                                    fp3.setDownloadDirectory(fp2.getDownloadDirectory());
-                                    fp3.setPassword(fp2.getPassword());
-                                    fp3.setExtractAfterDownload(fp2.isExtractAfterDownload());
-                                    fp3.setUseSubDir(fp2.useSubDir());
-                                    fp3.setComment(fp2.getComment());
-                                    for (DownloadLink dl : links2) {
-                                        if (dl.getPlugin().getHost().equalsIgnoreCase(host)) {
-                                            fp3.add(dl);
-                                        }
-                                    }
-                                    LGINSTANCE.addPackage(fp3);
-                                }
-                            }
-                        }
-                    }
-                        break;
-                    case LinkGrabberTreeTableAction.DELETE_OFFLINE:
-                        for (LinkGrabberFilePackage fp2 : selected_packages) {
-                            fp2.removeOffline();
-                        }
-                        break;
-                    case LinkGrabberTreeTableAction.SORT:
-                        for (LinkGrabberFilePackage fp2 : selected_packages) {
-                            fp2.sort(col);
-                        }
-                        break;
-                    case LinkGrabberTreeTableAction.SORT_ALL:
-                        if (LGINSTANCE.size() == 1) {
-                            LGINSTANCE.getPackages().get(0).sort(col);
-                        } else
-                            LGINSTANCE.sort(col);
-                        break;
-                    case LinkGrabberTreeTableAction.SELECT_HOSTER:
-                        for (LinkGrabberFilePackage fp2 : selected_packages) {
-                            fp2.keepHostersOnly(hoster);
-                        }
-                        break;
-                    case LinkGrabberTreeTableAction.EDIT_DIR:
-                        final ArrayList<LinkGrabberFilePackage> selected_packages2 = new ArrayList<LinkGrabberFilePackage>(selected_packages);
-                        new GuiRunnable<Object>() {
-                            // @Override
-                            public Object runSave() {
-                                JDFileChooser fc = new JDFileChooser();
-                                fc.setApproveButtonText(JDLocale.L("gui.btn_ok", "OK"));
-                                fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-                                fc.setCurrentDirectory(new File(selected_packages2.get(0).getDownloadDirectory()));
-                                if (fc.showOpenDialog(INSTANCE) == JDFileChooser.APPROVE_OPTION) {
-                                    if (fc.getSelectedFile() != null) {
-                                        for (LinkGrabberFilePackage fp2 : selected_packages2) {
-                                            fp2.setDownloadDirectory(fc.getSelectedFile().getAbsolutePath());
-                                        }
-                                    }
-                                }
-                                return null;
-                            }
-                        }.waitForEDT();
-                        break;
-                    case LinkGrabberTreeTableAction.MERGE_PACKAGE:
-                        fp = LGINSTANCE.getFPwithLink(selected_links.get(0));
-                        name = fp.getName();
-                    case LinkGrabberTreeTableAction.NEW_PACKAGE:
-                        fp = LGINSTANCE.getFPwithLink(selected_links.get(0));
-                        if (name == null) name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
-                        if (name != null) {
-                            LinkGrabberFilePackage nfp = new LinkGrabberFilePackage(name, LGINSTANCE);
-                            nfp.addAll(selected_links);
-                        }
-                        return;
-                    case LinkGrabberTreeTableAction.SET_PW:
-                        pw = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.setpw.message", "Set download password"), null);
-                        for (int i = 0; i < selected_links.size(); i++) {
-                            selected_links.get(i).setProperty("pass", pw);
-                        }
-                        return;
-                    case LinkGrabberTreeTableAction.DE_ACTIVATE:
-                        b = (Boolean) prop.get("boolean");
-                        for (int i = 0; i < selected_links.size(); i++) {
-                            selected_links.get(i).setEnabled(b);
-                        }
-                        Update_Async.restart();
-                        return;
-                    case LinkGrabberTreeTableAction.ADD_ALL:
-                    case LinkGrabberTreeTableAction.ADD_SELECTED_PACKAGES:
-                        confirmPackages(selected_packages);
-                        return;
-                    case LinkGrabberTreeTableAction.DELETE:
-                        for (DownloadLink link : selected_links) {
-                            link.setProperty("removed", true);
-                            fp = LGINSTANCE.getFPwithLink(link);
-                            if (fp == null) continue;
-                            fp.remove(link);
-                        }
-                        return;
-                    case LinkGrabberTreeTableAction.CLEAR:
-                        for (LinkGrabberFilePackage fp2 : selected_packages) {
-                            fp2.setDownloadLinks(new ArrayList<DownloadLink>());
-                        }
-                        return;
-                    case LinkGrabberTreeTableAction.DOWNLOAD_PRIO:
-                        prio = (Integer) prop.get("prio");
-                        for (int i = 0; i < selected_links.size(); i++) {
-                            selected_links.get(i).setPriority(prio);
-                        }
-                        return;
-                    case LinkGrabberTreeTableAction.EXT_FILTER:
-                        LGINSTANCE.FilterExtension(ext, b);
-                        return;
                     }
                 }
             }
