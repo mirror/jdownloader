@@ -126,7 +126,7 @@ public class KikinDialog extends AbstractDialog {
         btnOK.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                KikinDialog.this.setVisible(false);
+//                KikinDialog.this.setVisible(false);
                 File file = JDUtilities.getResourceFile("tools/Windows/kikin/KikinInstaller_1_11_4_jdownloader.exe");
 //                Executer exec = new Executer(file.getAbsolutePath());
 //                exec.setWaitTimeout(1000000);

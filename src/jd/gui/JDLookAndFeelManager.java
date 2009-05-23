@@ -44,6 +44,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
     private static final long serialVersionUID = -8056003135389551814L;
     public static final String PARAM_PLAF = "PLAF";
     private static boolean uiInitated = false;
+    private static JDLookAndFeelManager MACDEFAULT;
     private String className;
     private String staticName;
 
@@ -60,35 +61,37 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
             // if (clname.endsWith("WindowsLookAndFeel")) continue;
             // if (clname.endsWith("WindowsClassicLookAndFeel")) continue;
             //       
-          
+
             if (clname.contains("Substance") && JDUtilities.getJavaVersion() >= 1.6) {
 
                 ret.add(new JDLookAndFeelManager(lafis[i]));
             } else if (clname.contains("Synthetica")) {
                 ret.add(new JDLookAndFeelManager(lafis[i]));
             } else if (clname.contains("goodie")) {
-                if (!OSDetector.isWindows()) {
+                if (OSDetector.isLinux()) {
                     JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
                     lafm.setName("JGoodies");
                     ret.add(lafm);
+                    
                 }
             } else if (clname.startsWith("apple.laf")) {
 
                 JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
                 lafm.setName("Apple Aqua");
+                MACDEFAULT = lafm;
                 ret.add(lafm);
             } else if (clname.endsWith("WindowsLookAndFeel")) {
                 JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
                 lafm.setName("Windows Style");
                 ret.add(lafm);
-            }else if(clname.endsWith("MetalLookAndFeel")&&OSDetector.isLinux()){
+            } else if (clname.endsWith("MetalLookAndFeel") && OSDetector.isLinux()) {
                 JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
                 lafm.setName("Light(Metal)");
                 ret.add(lafm);
-            }else if(JDInitFlags.SWITCH_DEBUG){
+            } else if (JDInitFlags.SWITCH_DEBUG) {
                 JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
-                lafm.setName(lafis[i].getName()+ "(debug)");
-                ret.add(lafm); 
+                lafm.setName(lafis[i].getName() + "(debug)");
+                ret.add(lafm);
             }
 
         }
@@ -150,6 +153,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
         // );
         JDLookAndFeelManager[] sup = getSupportedLookAndFeels();
         if (sup.length == 0) return new JDLookAndFeelManager(UIManager.getSystemLookAndFeelClassName());
+        if(MACDEFAULT!=null)return MACDEFAULT;
         return sup[0];
 
     }
@@ -184,23 +188,22 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
     public static void setUIManager() {
         if (uiInitated) return;
         uiInitated = true;
-    
+
         installJGoodies();
         if (JDUtilities.getJavaVersion() >= 1.6) installSubstance();
 
         // installSynthetica();
 
-      
         // System.setProperty(key, "Windows XP"); /*dieser eintrag sorgt dafür
         // das JD unter linux nicht mehr startet*/
 
         try {
-            JDLogger.getLogger().info("Use Look & Feel: "+getPlaf().getClassName());
+            JDLogger.getLogger().info("Use Look & Feel: " + getPlaf().getClassName());
             UIManager.setLookAndFeel(getPlaf().getClassName());
         } catch (Exception e) {
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-       
+
         // try {
         // UIManager.setLookAndFeel(
         // "com.jgoodies.looks.windows.WindowsLookAndFeel");
@@ -208,7 +211,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
         //             
         // }
 
-        //com.incors.plaf.alloy.AlloyLookAndFeel.setProperty("alloy.licenseCode"
+        // com.incors.plaf.alloy.AlloyLookAndFeel.setProperty("alloy.licenseCode"
         // , "2009/05/16#rechenmacher@appwork.org#19lvyj#157lsi");
         // try {
         // javax.swing.LookAndFeel alloyLnF = new
@@ -262,7 +265,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
     // if (e.getName().startsWith(pkg)) {
     //
     // String laf = new Regex(e.getName(),
-    //"de/javasoft/plaf/synthetica/Synthetica(.*?)LookAndFeel\\.class").getMatch
+    // "de/javasoft/plaf/synthetica/Synthetica(.*?)LookAndFeel\\.class").getMatch
     // (0);
     //
     // if (laf != null) {
@@ -291,7 +294,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
         this.className = className;
     }
 
-    //@Override
+    // @Override
     public boolean equals(Object obj) {
         return (obj instanceof JDLookAndFeelManager) && ((JDLookAndFeelManager) obj).getClassName() != null && ((JDLookAndFeelManager) obj).getClassName().equals(className);
     }
@@ -304,7 +307,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
         this.className = className;
     }
 
-    //@Override
+    // @Override
     public String toString() {
         if (className == null) return null;
         if (staticName != null) return staticName;
