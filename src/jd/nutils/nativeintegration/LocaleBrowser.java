@@ -123,8 +123,9 @@ abstract public class LocaleBrowser implements Serializable {
             }
 
         }
-        if (OSDetector.isLinux()) {
+        if (OSDetector.isLinux()&&ret.size()==0) {
             Executer exec = new Executer("firefox");
+            exec.addParameter("-v");
             exec.setWaitTimeout(10);
             exec.start();
             exec.waitTimeout();
@@ -138,8 +139,8 @@ abstract public class LocaleBrowser implements Serializable {
 
                     @Override
                     public void openURL(URL url) throws Exception {
-                        Executer exec = new Executer("open");
-                        exec.addParameters(new String[] { "/Applications/Safari.app", "-new-tab", url.toString() });
+                        Executer exec = new Executer("firefox");
+                        exec.addParameters(new String[] {"-new-tab", url.toString() });
                         exec.setWaitTimeout(10);
                         exec.start();
                         exec.waitTimeout();
