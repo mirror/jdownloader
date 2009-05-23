@@ -70,6 +70,7 @@ import jd.http.Browser;
 import jd.http.JDProxy;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
+import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -778,10 +779,12 @@ public class JDUtilities {
             }
             jargs.add(h);
         }
-        jargs.add("-Xms64m");
-        jargs.add("-XX:+UseConcMarkSweepGC");
-        jargs.add("-XX:MinHeapFreeRatio=0");
-        jargs.add("-XX:MaxHeapFreeRatio=0");
+        if (OSDetector.isLinux()) {
+            jargs.add("-Xms64m");
+            jargs.add("-XX:+UseConcMarkSweepGC");
+            jargs.add("-XX:MinHeapFreeRatio=0");
+            jargs.add("-XX:MaxHeapFreeRatio=0");
+        }
         jargs.add("-jar");
         jargs.add("JDownloader.jar");
 
@@ -790,7 +793,12 @@ public class JDUtilities {
         System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
         System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);
 
-        JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
+        if (!OSDetector.isMac()) {
+            JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
+        } else {
+            JDLogger.getLogger().info(JDUtilities.runCommand("open", new String[] { "-n", "jDownloader.app" }, JDUtilities.getResourceFile(".").getParentFile().getParentFile().getParentFile().getParentFile().getAbsolutePath(), 0));
+        }
+
         System.exit(0);
     }
 
@@ -838,7 +846,7 @@ public class JDUtilities {
         exec.setRunin(runIn);
         exec.setWaitTimeout(waitForReturn);
         exec.start();
-        exec.waitTimeout(); 
+        exec.waitTimeout();
         return exec.getOutputStream() + " \r\n " + exec.getErrorStream();
     }
 

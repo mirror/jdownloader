@@ -89,7 +89,7 @@ public class KikinDialog extends AbstractDialog {
             }
 
         });
-        cp.add(checkbox, "split 2,growx 0,gaptop 18");
+        
         checkbox.setBackground(Color.WHITE);
         textField = new JTextPane();
         textField.setContentType("text/html");
@@ -97,7 +97,8 @@ public class KikinDialog extends AbstractDialog {
         textField.setBorder(null);
         textField.setBackground(null);
         textField.setOpaque(false);
-        textField.setText(JDLocale.L("gui.installer.kikin.agree", "<b>Best Parts? kikin is free and works automatically.<br>I agree to the kikin <a href=\"http://www.kikin.com/terms-of-service\">Terms of Service</a> and <a href=\"http://www.kikin.com/privacy-policy\">Privacy Policy</a><br/> <a href=\"http://jdownloader.org/kikin\">What is Kikin?</a> </b>"));
+        
+        textField.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>"+JDLocale.L("gui.installer.kikin.agree", "<b><a href=\"http://jdownloader.org/kikin\">What is Kikin?</a> <br/>Best Parts? kikin is free and works automatically.<br>I agree to the kikin <a href=\"http://www.kikin.com/terms-of-service\">Terms of Service</a> and <a href=\"http://www.kikin.com/privacy-policy\">Privacy Policy</a></b>"));
         textField.setEditable(false);
         textField.addHyperlinkListener(new HyperlinkListener() {
 
@@ -119,8 +120,11 @@ public class KikinDialog extends AbstractDialog {
             }
 
         });
-        cp.add(textField, "pushx, growx,gaptop 3");
-        cp.add(new JSeparator(), "spanx,growx,pushx");
+        JPanel pp = new JPanel(new MigLayout("ins 0,wrap 2","[shrink][grow,fill]","[]"));
+        pp.add(checkbox, "aligny bottom");
+        pp.add(textField, "aligny bottom,gapbottom 2");
+        pp.add(new JSeparator(), "spanx,growx,pushx");
+        cp.add(pp,"growx,pushx");
         btnOK.setEnabled(false);
         btnOK.setToolTipText(JDLocale.L("gui.installer.kikin.tooltip", "Please read and accept the conditions"));
         btnOK.addActionListener(new ActionListener() {
