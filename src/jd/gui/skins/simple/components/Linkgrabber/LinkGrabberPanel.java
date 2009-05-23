@@ -377,7 +377,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                                         }
                                         return null;
                                     }
-                                }.waitForEDT();
+                                }.start();
                                 return;
                             }
                         } else if (arg0.getSource() instanceof JMenuItem) {

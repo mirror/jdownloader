@@ -309,7 +309,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                         }
                         return null;
                     }
-                }.waitForEDT();
+                }.start();
             }
         }.start();
 

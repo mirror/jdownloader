@@ -111,7 +111,7 @@ final Exception source= new Exception();
                     return;
                 }
               
-                source.printStackTrace();;
+                source.printStackTrace();
                 System.out.println("FREEZE DETECTED!!");
                 
             }

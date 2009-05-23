@@ -87,7 +87,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         spMaxChunks.setToolTipText(JDLocale.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
         spMaxChunks.addChangeListener(this);
 
-        add(new PremiumStatus(), "gaptop 1");
+        add(new PremiumStatus(), "gaptop 1,aligny top");
         add(lblMaxChunks);
         add(spMaxChunks, "width 70!,height 20!");
         add(lblMaxDls);

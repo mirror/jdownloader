@@ -401,7 +401,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                     return null;
                 }
 
-            }.waitForEDT();
+            }.start();
 
         }
 

@@ -330,7 +330,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                             }
                             return null;
                         }
-                    }.waitForEDT();
+                    }.start();
                     return;
                 }
                 case TreeTableAction.EDIT_NAME: {

@@ -1353,7 +1353,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 return null;
             }
 
-        }.waitForEDT();
+        }.start();
     }
 
     public void closeWindow() {

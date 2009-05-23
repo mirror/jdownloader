@@ -166,7 +166,7 @@ public class Installer {
                 return null;
             }
 
-        }.waitForEDT();
+        }.start();
     }
 
     public boolean isAborted() {

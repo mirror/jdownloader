@@ -126,7 +126,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
                 totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
                 return null;
             }
-        }.waitForEDT();
+        }.start();
     }
 
     private void initGUI() {

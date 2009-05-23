@@ -119,7 +119,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         premium.setFocusPainted(false);
         premium.setContentAreaFilled(false);
         premium.setBorderPainted(false);
-        add(premium);
+        add(premium,"aligny top");
         premium.addMouseListener(new JDMouseAdapter() {
 
             public void mouseClicked(MouseEvent e) {
@@ -149,8 +149,8 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             }
 
         });
-        add(new JSeparator(JSeparator.VERTICAL), "height 16,aligny center");
-        add(lbl, "hidemode 3");
+        add(new JSeparator(JSeparator.VERTICAL), "height 16,aligny center,aligny top");
+        add(lbl, "hidemode 3,aligny top");
 
         for (int i = 0; i < BARCOUNT; i++) {
             TinyProgressBar pg = new TinyProgressBar();
@@ -180,7 +180,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             });
 
             pg.setVisible(false);
-            add(pg, "hidemode 3");
+            add(pg, "hidemode 3,aligny top");
 
         }
         for (int i = 0; i < BARCOUNT; i++) {
