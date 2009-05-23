@@ -49,6 +49,7 @@ import javax.swing.JRootPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JViewport;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
@@ -195,7 +196,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private JPopupMenu startMenu;
 
-    private JButton startbutton;
+    private JLabel startbutton;
 
     /**
      * Das Hauptfenster wird erstellt. Singleton. Use SimpleGUI.createGUI
@@ -306,13 +307,13 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         }.start();
 
         JPanel glass = new JPanel(new MigLayout("ins 0"));
-        startbutton = new JButton(new ImageIcon(mainMenuIcon));
+        startbutton = new JLabel(new ImageIcon(mainMenuIcon));
         // mainMenuIconRollOver
-        startbutton.setBorderPainted(false);
-        startbutton.setToolTipText(JDLocale.L("gui.menu.tooltip","Click here to open main menu"));
-        startbutton.setContentAreaFilled(false);
-        startbutton.setSelectedIcon(new ImageIcon(mainMenuIconRollOver));
-        startbutton.setFocusPainted(false);
+//        startbutton.setBorderPainted(false);
+        startbutton.setToolTipText(JDLocale.L("gui.menu.tooltip", "Click here to open main menu"));
+//        startbutton.setContentAreaFilled(false);
+//        startbutton.setSelectedIcon(new ImageIcon(mainMenuIconRollOver));
+//        startbutton.setFocusPainted(false);
         startbutton.addMouseListener(new JDMouseAdapter() {
             public void mouseEntered(MouseEvent e) {
                 startbutton.setIcon(new ImageIcon(mainMenuIconRollOver));
@@ -343,12 +344,15 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
                 JDStartMenu.createMenu(startMenu);
 
-                startMenu.show(e.getComponent(), startMenu.getLocation().x, startMenu.getLocation().y+54);
+                startMenu.show(e.getComponent(), startMenu.getLocation().x, startMenu.getLocation().y + mainMenuIcon.getHeight(null));
             }
 
         });
-
-        glass.add(startbutton, "alignx left,aligny top");
+//        startbutton.setAlignmentX(0.0f);
+//        startbutton.setBounds(0, 0, 32, 3op 2);
+        
+//        startbutton.setHorizontalAlignment(SwingConstants.LEFT);
+        glass.add(startbutton, "gapleft 2,gaptop 2,alignx left,aligny top");
         glass.setOpaque(false);
         this.setGlassPane(glass);
 
