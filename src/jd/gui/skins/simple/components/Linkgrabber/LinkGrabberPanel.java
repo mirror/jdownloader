@@ -177,7 +177,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_ALL, true, JDLocale.L("gui.linkgrabber.toolbar.disabled", "Switch to downloadtask to enable buttons"));
                 return null;
             }
-        }.waitForEDT();
+        }.start();
     }
 
     public synchronized void addLinks(final DownloadLink[] linkList) {
@@ -298,7 +298,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_CONTROL | JDToolBar.ENTRY_INTERACTION, false, JDLocale.L("gui.linkgrabber.toolbar.disabled", "Switch to downloadtask to enable buttons"));
                 return null;
             }
-        }.waitForEDT();
+        }.start();
         fireTableChanged();
         LGINSTANCE.addListener(this);
         visible = true;

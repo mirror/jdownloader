@@ -32,6 +32,7 @@ public abstract class GuiRunnable<T> implements Runnable {
     /**
      * 
      */
+    private static int COUNTER = 0;
 
     public GuiRunnable() {
         this.id = System.currentTimeMillis();
@@ -80,7 +81,7 @@ public abstract class GuiRunnable<T> implements Runnable {
                         System.out.println(id + " lock ");
                         if (lock != null) {
                             lock.wait();
-                        }else{
+                        } else {
                             System.out.println(id + " concurrent Thread faster ");
                         }
                         System.out.println(id + " unlocked ");
@@ -89,21 +90,42 @@ public abstract class GuiRunnable<T> implements Runnable {
                         // "Exception occured", e);
                     }
                 }
-            }else{
+            } else {
                 System.out.println(id + " concurrent Thread faster ");
             }
-            
+
         }
-        System.out.println(id + " return ");
+        System.out.println(COUNTER + " : " + id + " return ");
         done = true;
     }
 
     public void run() {
-        System.out.println(id + " run ");
+        System.out.println(COUNTER + " : " + id + " run ");
+        final long starttime = System.currentTimeMillis(); 
+final Exception source= new Exception();
+        Thread observer = new Thread() {
+            public void run() {
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    return;
+                }
+              
+                source.printStackTrace();;
+                System.out.println("FREEZE DETECTED!!");
+                
+            }
+        };
+        observer.start();
         this.returnValue = this.runSave();
-        System.out.println(id + " finished ");
+        try{
+        observer.interrupt();
+        observer=null;
+        }catch(Exception e){}
+        System.out.println(COUNTER + " : " + id + " finished ");
+        COUNTER--;
         synchronized (lock) {
-            System.out.println(id + " notify ");
+            System.out.println(COUNTER + " : " + id + " notify ");
             lock.notify();
             lock = null;
         }
@@ -116,13 +138,14 @@ public abstract class GuiRunnable<T> implements Runnable {
      */
     public void start() {
         // new Exception().printStackTrace();
-        System.out.println(id + " Started ");
+        System.out.println(COUNTER + " : " + id + " Started ");
         setStarted(true);
+        COUNTER++;
         if (SwingUtilities.isEventDispatchThread()) {
-            System.out.println(id + " run direct ");
+            System.out.println(COUNTER + " : " + id + " run direct ");
             run();
         } else {
-            System.out.println(id + " queue ");
+            System.out.println(COUNTER + " : " + id + " queue ");
             EventQueue.invokeLater(this);
 
         }
