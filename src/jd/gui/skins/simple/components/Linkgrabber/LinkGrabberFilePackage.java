@@ -57,7 +57,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     private long size = -1;
 
     private long lastSizeCalc = 0;
-    private boolean lastSort = false;
+    private boolean sortasc = false;
     private int lastfail = 0;
     private long lastFailCount = 0;
     private String hosts;
@@ -384,8 +384,12 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         }
     }
 
-    public void sort(final int col) {
-        lastSort = !lastSort;
+    public void sort(final int col, boolean asc) {
+        if (asc) {
+            sortasc = true;
+        } else {
+            sortasc = !sortasc;
+        }
         synchronized (downloadLinks) {
 
             Collections.sort(downloadLinks, new Comparator<DownloadLink>() {
@@ -395,15 +399,15 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                     if (b.getName().endsWith(".sfv")) { return 1; }
                     DownloadLink aa = a;
                     DownloadLink bb = b;
-                    if (lastSort) {
-                        aa = b;
-                        bb = a;
+                    if (sortasc) {
+                        aa = a;
+                        bb = b;
                     }
                     switch (col) {
                     case 1:
                         return aa.getName().compareToIgnoreCase(bb.getName());
                     case 2:
-                        return aa.getDownloadSize() > bb.getDownloadSize() ? 1 : -1;
+                        return aa.getDownloadSize() < bb.getDownloadSize() ? 1 : -1;
                     case 3:
                         return aa.getHost().compareToIgnoreCase(bb.getHost());
                     case 4:

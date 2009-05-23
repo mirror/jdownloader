@@ -74,7 +74,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     // Eindeutige PaketID
     private String id;
 
-    private boolean lastSort = false;
+    private boolean sortasc = false;
 
     private int linksFailed;
 
@@ -574,7 +574,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public void sort(final int col) {
-        lastSort = !lastSort;
+        sortasc = !sortasc;
         synchronized (downloadLinkList) {
 
             Collections.sort(downloadLinkList, new Comparator<DownloadLink>() {
@@ -584,9 +584,9 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                     if (b.getName().endsWith(".sfv")) { return 1; }
                     DownloadLink aa = a;
                     DownloadLink bb = b;
-                    if (lastSort) {
-                        aa = b;
-                        bb = a;
+                    if (sortasc) {
+                        aa = a;
+                        bb = b;
                     }
                     switch (col) {
                     case 1:
@@ -599,7 +599,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                         } else
                             return -1;
                     case 4:
-                        return aa.getPercent() > bb.getPercent() ? 1 : -1;
+                        return aa.getPercent() < bb.getPercent() ? 1 : -1;
                     default:
                         return -1;
                     }

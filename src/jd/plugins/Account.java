@@ -17,6 +17,7 @@
 package jd.plugins;
 
 import jd.config.Property;
+import jd.controlling.AccountController;
 
 public class Account extends Property {
 
@@ -64,8 +65,8 @@ public class Account extends Property {
 
     public void setEnabled(boolean enabled) {
         if (this.enabled == enabled) return;
-        System.out.println(this + ": " + enabled);
         this.enabled = enabled;
+        AccountController.getInstance().throwUpdateEvent(null, this);
     }
 
     public void setPass(String pass) {

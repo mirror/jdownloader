@@ -263,6 +263,9 @@ public class Main {
         } catch (AlreadyLockedException e) {
             LOGGER.info("existing jD instance found!");
             instanceStarted = false;
+        } catch (Exception e) {
+            LOGGER.severe("Instance Handling not possible!");
+            instanceStarted = true;
         }
         if (instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
             SPLASH = null;
@@ -440,7 +443,7 @@ public class Main {
         new WebUpdate().doWebupdate(false);
         try {
             loadDynamics();
-        } catch (IOException e1) {            
+        } catch (IOException e1) {
             JDLogger.exception(Level.FINEST, e1);
         }
         WebUpdate.DynamicPluginsFinished();
@@ -483,7 +486,6 @@ public class Main {
         LOGGER.info("Revision: " + JDUtilities.getJDTitle());
         LOGGER.finer("Runtype: " + JDUtilities.getRunType());
 
-       
         if (!Main.isBeta()) init.checkUpdate();
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));

@@ -277,8 +277,12 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     public void throwUpdateEvent(PluginForHost pluginForHost, Account account) {
-        if (pluginForHost == null) return;
-        this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, pluginForHost.getHost(), account));
+        if (pluginForHost != null) {
+            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, pluginForHost.getHost(), account));    
+        }else{
+            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, null, account));
+        }
+        
     }
 
     public void saveAsync() {

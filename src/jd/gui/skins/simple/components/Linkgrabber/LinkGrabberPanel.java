@@ -274,7 +274,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 lc.getBroadcaster().removeListener(INSTANCE);
                 pc.finalize();
                 pc.getBroadcaster().removeListener(INSTANCE);
-                LGINSTANCE.mergeOfflineandUncheckable();
+                LGINSTANCE.postprocessing();
                 gatherer_running = false;
             }
         };
@@ -487,12 +487,12 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                             break;
                         case LinkGrabberTreeTableAction.SORT:
                             for (LinkGrabberFilePackage fp2 : selected_packages) {
-                                fp2.sort(col);
+                                fp2.sort(col, false);
                             }
                             break;
                         case LinkGrabberTreeTableAction.SORT_ALL:
                             if (LGINSTANCE.size() == 1) {
-                                LGINSTANCE.getPackages().get(0).sort(col);
+                                LGINSTANCE.getPackages().get(0).sort(col, false);
                             } else
                                 LGINSTANCE.sort(col);
                             break;

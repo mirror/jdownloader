@@ -211,7 +211,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         }
     }
 
-    public void mergeOfflineandUncheckable() {
+    public void postprocessing() {
         synchronized (LinkGrabberController.ControllerLock) {
             synchronized (packages) {
                 ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(packages);
@@ -226,6 +226,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                             FP_OFFLINE.add(dl);
                         }
                     }
+                    fp.sort(1, true);
                 }
             }
         }
