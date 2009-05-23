@@ -807,7 +807,7 @@ public class JDUtilities {
         if (cl == null) {
             System.err.println("Classloader == null");
             return null;
-        }
+        } 
         return cl.getResource(resource);
     }
 
