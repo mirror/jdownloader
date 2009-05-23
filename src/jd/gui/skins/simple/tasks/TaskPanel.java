@@ -180,7 +180,12 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     }
 
     public void mouseReleased(MouseEvent e) {
-        super.setCollapsed(false);
+        if(super.isCollapsed()){
+            super.setCollapsed(false); 
+        }else{
+            super.setCollapsed(true);
+        }
+        
 
         broadcastEvent(new ActionEvent(this, ACTION_CLICK, "Toggle"));
     }
