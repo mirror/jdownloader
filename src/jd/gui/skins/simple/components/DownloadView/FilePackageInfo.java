@@ -16,6 +16,7 @@
 
 package jd.gui.skins.simple.components.DownloadView;
 
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -150,7 +151,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
         brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
         brwSaveTo.addActionListener(this);
-
+     
         brwSaveTo.getInput().setBackground(null);
         txtPassword = new JDTextField();
         addChangeListener(txtPassword);
@@ -175,9 +176,9 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         panel.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
         panel.add(progressBarFilePackage, "spanx,growx,pushx");
         panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.packagetab.lbl.name", "Paketname")));
-        panel.add(txtName, "span 2");
+        panel.add(txtName, "span 2,growx,spanx");
         panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.packagetab.lbl.saveto", "Speichern unter")));
-        panel.add(brwSaveTo.getInput(), "gapright 10, growx");
+        panel.add(brwSaveTo.getInput(), "gapright 10,shrinkx");
         panel.add(brwSaveTo.getButton(), "pushx,growx");
         panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.packagetab.lbl.password", "Archivpasswort")));
         panel.add(txtPassword, " gapright 10, growx");
@@ -224,10 +225,10 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.saveto", "Save to")));
         panel.add(txtpathlabel, "growx, span 2");
         panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.url", "URL")));
-        panel.add(txtURL=new JDTextField(), "growx, span 2");
+        panel.add(txtURL = new JDTextField(), "growx, span 2");
         txtURL.setEditable(false);
         panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.filesize", "Filesize")));
-        panel.add(lblSize=new JLabel(""), "growx, span 2");
+        panel.add(lblSize = new JLabel(""), "growx, span 2");
 
         return panel;
     }
@@ -285,9 +286,9 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
 
                             FilePackageInfo.this.progressBarDownloadLink.setMaximums(max);
                             FilePackageInfo.this.progressBarDownloadLink.setValues(values);
-                        }else{
-                            FilePackageInfo.this.progressBarDownloadLink.setMaximums(new long[]{10});
-                            FilePackageInfo.this.progressBarDownloadLink.setValues(new long[]{0});
+                        } else {
+                            FilePackageInfo.this.progressBarDownloadLink.setMaximums(new long[] { 10 });
+                            FilePackageInfo.this.progressBarDownloadLink.setValues(new long[] { 0 });
                         }
                         speed.setText(JDLocale.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", Formatter.formatReadable(Math.max(0, downloadLink.getDownloadSpeed()))));
                         if (downloadLink.getDownloadSpeed() <= 0) {
@@ -316,7 +317,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
             updater.interrupt();
             updater = null;
         }
-        
+
         PasswordList.addPassword(txtPassword.getText());
         PasswordList.save();
         actionPerformed(new ActionEvent(this.brwSaveTo, 0, null));
@@ -344,9 +345,9 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
             hosterlabel.setToolTipText(downloadLink.getHost());
             typeicon.setToolTipText(downloadLink.getHost());
             this.lblSize.setText(Formatter.formatReadable(downloadLink.getDownloadSize()));
-            if(downloadLink.getLinkType()==DownloadLink.LINKTYPE_NORMAL){
-             this.txtURL.setText(downloadLink.getDownloadURL());
-            }else{
+            if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
+                this.txtURL.setText(downloadLink.getDownloadURL());
+            } else {
                 this.txtURL.setText("**************");
             }
         }

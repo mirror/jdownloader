@@ -56,6 +56,7 @@ abstract public class LocaleBrowser implements Serializable {
 
                     @Override
                     public void openURL(URL url) throws Exception {
+                        if(url==null)return;
                         BrowserLauncher launcher = new BrowserLauncher();
                         launcher.openURLinBrowser(this.getName(), url.toString());
                     }
@@ -77,6 +78,7 @@ abstract public class LocaleBrowser implements Serializable {
 
                 @Override
                 public void openURL(URL url) throws IOException {
+                    if(url==null)return;
                     com.apple.eio.FileManager.openURL(url.toString());
                 }
 
@@ -91,6 +93,7 @@ abstract public class LocaleBrowser implements Serializable {
 
                     @Override
                     public void openURL(URL url) throws Exception {
+                        if(url==null)return;
                         Executer exec = new Executer("open");
                         exec.addParameters(new String[] { "/Applications/Firefox.app", "-new-tab", url.toString() });
                         exec.setWaitTimeout(10);
@@ -111,6 +114,7 @@ abstract public class LocaleBrowser implements Serializable {
 
                     @Override
                     public void openURL(URL url) throws Exception {
+                        if(url==null)return;
                         Executer exec = new Executer("open");
                         exec.addParameters(new String[] { "/Applications/Safari.app", "-new-tab", url.toString() });
                         exec.setWaitTimeout(10);
@@ -139,6 +143,7 @@ abstract public class LocaleBrowser implements Serializable {
 
                     @Override
                     public void openURL(URL url) throws Exception {
+                        if(url==null)return;
                         Executer exec = new Executer("firefox");
                         exec.addParameters(new String[] {"-new-tab", url.toString() });
                         exec.setWaitTimeout(10);

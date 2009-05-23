@@ -27,16 +27,15 @@ import javax.swing.SwingUtilities;
  * 
  */
 public abstract class GuiRunnable<T> implements Runnable {
-    private long id;
+    // private long id;
 
     /**
      * 
      */
-    private static int COUNTER = 0;
-
+    // private static int COUNTER = 0;
     public GuiRunnable() {
-        this.id = System.currentTimeMillis();
-        System.out.println("Created " + id);
+        // this.id = System.currentTimeMillis();
+        // //System.out.println("Created " + id);
     }
 
     private static final long serialVersionUID = 7777074589566807490L;
@@ -78,54 +77,55 @@ public abstract class GuiRunnable<T> implements Runnable {
             if (lock != null) {
                 synchronized (lock) {
                     try {
-                        System.out.println(id + " lock ");
+                        // System.out.println(id + " lock ");
                         if (lock != null) {
                             lock.wait();
                         } else {
-                            System.out.println(id + " concurrent Thread faster ");
+                            // System.out.println(id +
+                            // " concurrent Thread faster ");
                         }
-                        System.out.println(id + " unlocked ");
+                        // System.out.println(id + " unlocked ");
                     } catch (InterruptedException e) {
                         // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,
                         // "Exception occured", e);
                     }
                 }
             } else {
-                System.out.println(id + " concurrent Thread faster ");
+                // System.out.println(id + " concurrent Thread faster ");
             }
 
         }
-        System.out.println(COUNTER + " : " + id + " return ");
+        // System.out.println(COUNTER + " : " + id + " return ");
         done = true;
     }
 
     public void run() {
-        System.out.println(COUNTER + " : " + id + " run ");
-        final long starttime = System.currentTimeMillis(); 
-final Exception source= new Exception();
-        Thread observer = new Thread() {
-            public void run() {
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException e) {
-                    return;
-                }
-              
-                source.printStackTrace();
-                System.out.println("FREEZE DETECTED!!");
-                
-            }
-        };
-        observer.start();
+        // System.out.println(COUNTER + " : " + id + " run ");
+        // final long starttime = System.currentTimeMillis();
+        // final Exception source= new Exception();
+        // Thread observer = new Thread() {
+        // public void run() {
+        // try {
+        // Thread.sleep(10000);
+        // } catch (InterruptedException e) {
+        // return;
+        // }
+        //              
+        // source.printStackTrace();
+        // //System.out.println("FREEZE DETECTED!!");
+        //                
+        // }
+        // };
+        // observer.start();
         this.returnValue = this.runSave();
-        try{
-        observer.interrupt();
-        observer=null;
-        }catch(Exception e){}
-        System.out.println(COUNTER + " : " + id + " finished ");
-        COUNTER--;
+        // try{
+        // observer.interrupt();
+        // observer=null;
+        // }catch(Exception e){}
+        // System.out.println(COUNTER + " : " + id + " finished ");
+        // COUNTER--;
         synchronized (lock) {
-            System.out.println(COUNTER + " : " + id + " notify ");
+            // System.out.println(COUNTER + " : " + id + " notify ");
             lock.notify();
             lock = null;
         }
@@ -138,14 +138,14 @@ final Exception source= new Exception();
      */
     public void start() {
         // new Exception().printStackTrace();
-        System.out.println(COUNTER + " : " + id + " Started ");
+        // System.out.println(COUNTER + " : " + id + " Started ");
         setStarted(true);
-        COUNTER++;
+        // COUNTER++;
         if (SwingUtilities.isEventDispatchThread()) {
-            System.out.println(COUNTER + " : " + id + " run direct ");
+            // System.out.println(COUNTER + " : " + id + " run direct ");
             run();
         } else {
-            System.out.println(COUNTER + " : " + id + " queue ");
+            // System.out.println(COUNTER + " : " + id + " queue ");
             EventQueue.invokeLater(this);
 
         }
