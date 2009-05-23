@@ -105,7 +105,7 @@ public class DownloadTaskPane extends TaskPanel {
 //                }
                 return null;
             }
-        }.start()
+        }.start();
     }
 
     private void initGUI() {

@@ -26,22 +26,17 @@ import org.jvnet.substance.SubstanceRootPaneUI;
 public class JDSubstanceUI extends SubstanceRootPaneUI {
 
     private JDSubstanceTitlePane titlePane;
-    private Image logo;
+ 
 
     public JDSubstanceUI(Image mainMenuIcon) {
-        logo = mainMenuIcon;
+       
     }
 
     protected JComponent createTitlePane(JRootPane root) {
-        return titlePane = new JDSubstanceTitlePane(root, this, logo);
+        return titlePane = new JDSubstanceTitlePane(root, this, null);
     }
 
-    public void setMainMenuIcon(Image mainMenuIcon) {
-        logo = mainMenuIcon;
-        if (titlePane != null)
 
-        titlePane.setLogo(logo);
-    }
 
     public void setToolTipText(String string) {
         if (titlePane != null) titlePane.setToolTipText(string);

@@ -37,6 +37,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Logger;
 
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -116,7 +118,6 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingworker.SwingWorker;
 import org.jdesktop.swingx.JXFrame;
 import org.jdesktop.swingx.JXLoginDialog;
-import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTitledSeparator;
 import org.jdesktop.swingx.JXLoginPane.Status;
 import org.jvnet.lafwidget.LafWidget;
@@ -194,6 +195,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private JPopupMenu startMenu;
 
+    private JButton startbutton;
+
     /**
      * Das Hauptfenster wird erstellt. Singleton. Use SimpleGUI.createGUI
      */
@@ -221,6 +224,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 32, 32);
             this.noTitlePane = true;
         }
+
         if (isSubstance()) this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
 
         toolBar = new JDToolBar(noTitlePane, mainMenuIcon);
@@ -301,11 +305,61 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             }
         }.start();
 
+        JPanel glass = new JPanel(new MigLayout("ins 0"));
+        startbutton = new JButton(new ImageIcon(mainMenuIcon));
+        // mainMenuIconRollOver
+        startbutton.setBorderPainted(false);
+        startbutton.setToolTipText(JDLocale.L("gui.menu.tooltip","Click here to open main menu"));
+        startbutton.setContentAreaFilled(false);
+        startbutton.setSelectedIcon(new ImageIcon(mainMenuIconRollOver));
+        startbutton.setFocusPainted(false);
+        startbutton.addMouseListener(new JDMouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                startbutton.setIcon(new ImageIcon(mainMenuIconRollOver));
+            }
+
+            public void mouseExited(MouseEvent e) {
+                startbutton.setIcon(new ImageIcon(mainMenuIcon));
+            }
+
+            public void mouseClicked(MouseEvent e) {
+                setWaiting(true);
+
+                startMenu = new JPopupMenu() {
+
+                    private static final long serialVersionUID = 3510198302982639068L;
+
+                    public void paint(Graphics g) {
+                        super.paint(g);
+                        setWaiting(false);
+                    }
+
+                    public void setVisible(boolean b) {
+                        super.setVisible(b);
+                        if (b) startMenu = null;
+                    }
+
+                };
+
+                JDStartMenu.createMenu(startMenu);
+
+                startMenu.show(e.getComponent(), startMenu.getLocation().x, startMenu.getLocation().y+54);
+            }
+
+        });
+
+        glass.add(startbutton, "alignx left,aligny top");
+        glass.setOpaque(false);
+        this.setGlassPane(glass);
+
+        // glass.setOpaque(false);
+
+        glass.setVisible(true);
     }
 
     public void setWaiting(boolean b) {
         if (b == isWaiting()) return;
-        super.setWaiting(b);
+        // super.setWaiting(b);
     }
 
     /**
@@ -362,7 +416,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     private void initWaitPane() {
-        JXPanel glass = new JXPanel(new MigLayout("ins 80,wrap 1", "[fill,grow]", "[fill,grow][]"));
+
         // JXLabel lbl = new
         // JXLabel(JDImage.getScaledImageIcon(JDImage.getImage(
         // "logo/jd_logo_128_128"), 300, 300));
@@ -371,14 +425,14 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         // glass.add(prg, "alignx center, aligny center,shrink");
         // prg.setStringPainted(false);
         // prg.setIndeterminate(true);
-        glass.setOpaque(false);
-        glass.setAlpha(0.5f);
+        // glass.setOpaque(false);
+        // glass.setAlpha(0.5f);
         // AbstractPainter fgPainter = (AbstractPainter)
         // lbl.getForegroundPainter();
         // StackBlurFilter filter = new StackBlurFilter();
         // fgPainter.setFilters(filter);
-        glass.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        this.setWaitPane(glass);
+        // glass.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        // this.setWaitPane(glass);
     }
 
     public void onLAFChanged() {
@@ -399,58 +453,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             noTitlePane = false;
         }
 
-    }
-
-    public void onMainMenuMouseClick(MouseEvent e) {
-        this.setWaiting(true);
-    
-       startMenu = new JPopupMenu() {
-
-            private static final long serialVersionUID = 3510198302982639068L;
-
-            public void paint(Graphics g) {
-                super.paint(g);
-                setWaiting(false);
-            }
-            public void setVisible(boolean b){
-                super.setVisible(b);
-                if(b)startMenu=null;
-            }
-
-        };
-      
-
-        // menu.setSize(50,50);
-
-        // menu.setPreferredSize(mb.getMinimumSize());
-        // menu.setMinimumSize(mb.getMinimumSize());
-
-        JDStartMenu.createMenu(startMenu);
-
-        startMenu.show(e.getComponent(), e.getPoint().x, e.getPoint().y);
-        // mb.add(menu);
-    }
-
-    public void onMainMenuMouseExit() {
-        if (!mainMenuRollOverStatus) return;
-        this.mainMenuRollOverStatus = false;
-        toolBar.setMainMenuIcon(mainMenuIcon);
-        toolBar.setToolTipText(null);
-        if (titleUI != null) {
-            titleUI.setMainMenuIcon(mainMenuIcon);
-            titleUI.setToolTipText(null);
-        }
-    }
-
-    public void onMainMenuMouseEnter() {
-        if (mainMenuRollOverStatus) return;
-        this.mainMenuRollOverStatus = true;
-        toolBar.setMainMenuIcon(mainMenuIconRollOver);
-        toolBar.setToolTipText(JDLocale.L("gui.menu.tooltip", "Click to open the main menu"));
-        if (titleUI != null) {
-            titleUI.setMainMenuIcon(mainMenuIconRollOver);
-            titleUI.setToolTipText("Click to open the main menu");
-        }
     }
 
     private void setAnimate() {

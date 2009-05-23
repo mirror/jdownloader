@@ -17,8 +17,6 @@
 package jd.gui.skins.simple;
 
 import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -40,7 +38,6 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
-import jd.gui.skins.simple.listener.MouseAreaListener;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -116,9 +113,10 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
         setPause(false);
 
-        MouseAreaListener ml = new MouseAreaListener(LEFTGAP, 0, IMGSIZE + LEFTGAP, DISPLAY);
-        addMouseMotionListener(ml);
-        addMouseListener(ml);
+        // MouseAreaListener ml = new MouseAreaListener(LEFTGAP, 0, IMGSIZE +
+        // LEFTGAP, DISPLAY);
+        // addMouseMotionListener(ml);
+        // addMouseListener(ml);
     }
 
     public void setEnabled(int flag, boolean b, String tt) {
@@ -197,14 +195,16 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     }
 
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        if (noTitlePainter) {
-            ((Graphics2D) g).drawImage(logo, LEFTGAP, 0, 32 + LEFTGAP, 32, 0, 0, 32, 32, null);
-        } else {
-            ((Graphics2D) g).drawImage(logo, LEFTGAP, 0, IMGSIZE + LEFTGAP, DISPLAY, 0, IMGSIZE - DISPLAY, IMGSIZE, IMGSIZE, null);
-        }
-    }
+    // public void paintComponent(Graphics g) {
+    // super.paintComponent(g);
+    // if (noTitlePainter) {
+    // ((Graphics2D) g).drawImage(logo, LEFTGAP, 0, 32 + LEFTGAP, 32, 0, 0, 32,
+    // 32, null);
+    // } else {
+    // ((Graphics2D) g).drawImage(logo, LEFTGAP, 0, IMGSIZE + LEFTGAP, DISPLAY,
+    // 0, IMGSIZE - DISPLAY, IMGSIZE, IMGSIZE, null);
+    // }
+    // }
 
     private void initQuickConfig() {
         /* Clipboard */

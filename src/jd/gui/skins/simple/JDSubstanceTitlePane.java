@@ -28,8 +28,6 @@ import java.awt.Window;
 import javax.swing.JMenuBar;
 import javax.swing.JRootPane;
 
-import jd.gui.skins.simple.listener.MouseAreaListener;
-
 import org.jvnet.lafwidget.animation.effects.GhostPaintingUtils;
 import org.jvnet.substance.SubstanceLookAndFeel;
 import org.jvnet.substance.SubstanceRootPaneUI;
@@ -46,12 +44,11 @@ public class JDSubstanceTitlePane extends SubstanceTitlePane {
 
     private static final long serialVersionUID = -2571143182567635859L;
     // private SubstanceColorScheme scheme;
-    private Image logo;
-    private MouseAreaListener listener;
+ 
 
     public JDSubstanceTitlePane(JRootPane root, SubstanceRootPaneUI ui, Image logo) {
         super(root, ui);
-        this.logo = logo;
+      
         // final JRootPane rootPane = this.getRootPane();
 
         // SubstanceSkin skin = SubstanceCoreUtilities.getSkin(rootPane);
@@ -98,11 +95,7 @@ public class JDSubstanceTitlePane extends SubstanceTitlePane {
         super.paintComponent(g);
 
         if (!(this.getWindow() instanceof Frame)) return;
-        if (this.listener == null) {
-
-            this.addMouseMotionListener(listener = new MouseAreaListener(JDToolBar.LEFTGAP, getHeight() - (48 - JDToolBar.DISPLAY), 48 + JDToolBar.LEFTGAP, getHeight()));
-            this.addMouseListener(listener);
-        }
+    
         final JRootPane rootPane = this.getRootPane();
 
         int width = this.getWidth();
@@ -151,16 +144,12 @@ public class JDSubstanceTitlePane extends SubstanceTitlePane {
 
         GhostPaintingUtils.paintGhostImages(this, graphics);
 
-        graphics.drawImage(logo, JDToolBar.LEFTGAP, height - (JDToolBar.IMGSIZE - JDToolBar.DISPLAY), JDToolBar.IMGSIZE + JDToolBar.LEFTGAP, height, 0, 0, JDToolBar.IMGSIZE, JDToolBar.IMGSIZE - JDToolBar.DISPLAY, null);
+//        graphics.drawImage(logo, JDToolBar.LEFTGAP, height - (JDToolBar.IMGSIZE - JDToolBar.DISPLAY), JDToolBar.IMGSIZE + JDToolBar.LEFTGAP, height, 0, 0, JDToolBar.IMGSIZE, JDToolBar.IMGSIZE - JDToolBar.DISPLAY, null);
         // long end = System.nanoTime();
         // System.out.println(end - start);
         graphics.dispose();
     }
 
-    public void setLogo(Image mainMenuIcon) {
-        logo = mainMenuIcon;
-        this.repaint(0, 0, JDToolBar.IMGSIZE, JDToolBar.IMGSIZE);
-
-    }
+  
 
 }
