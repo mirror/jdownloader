@@ -802,7 +802,7 @@ public class JDUtilities {
         System.exit(0);
     }
 
-    public static URL getResourceURL(String resource) {
+    public static URL getResourceURL(String resource) { 
         JDClassLoader cl = JDUtilities.getJDClassLoader();
         if (cl == null) {
             System.err.println("Classloader == null");
