@@ -101,7 +101,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
                     panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy");
                     // panel.add(new JScrollPane(c),
                     // "spanx,gapright 20,growy,pushy");
-                    // viewport = false;
+                    viewport = false;
                     break;
                 case ConfigContainer.TYPE_PREMIUMPANEL:
                     this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
@@ -141,10 +141,11 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_TEXTAREA:
-                    // viewport = false;
+                    viewport = false;
                     // panel.add(new JScrollPane(c),
                     // "spanx,gapleft 35,gapright 20");
-                    panel.add(c, "spanx,gapleft " + getGapLeft() + ",gapright " + this.getGapRight());
+                    panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy,gapleft " + getGapLeft());
+               
                     break;
                 case ConfigContainer.TYPE_PREMIUMPANEL:
 

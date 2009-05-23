@@ -95,14 +95,14 @@ public class DownloadTaskPane extends TaskPanel {
                 progress.setMaximum(tot);
                 progress.setValue(loaded);
                 progress.setToolTipText(Math.round((loaded * 10000.0) / tot) / 100.0 + "%");
-                if (speedm > 1024) {
+                //if (speedm > 1024) {
                     speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(speedm) + "/s"));
-                    long etanum = (tot - loaded) / speedm;
+                    long etanum = speedm==0?0:(tot - loaded) / speedm;
                     eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", Formatter.formatSeconds(etanum)));
-                } else {
-                    eta.setText("");
-                    speed.setText("");
-                }
+//                } else {
+//                    eta.setText("");
+//                    speed.setText("");
+//                }
                 return null;
             }
         }.waitForEDT();

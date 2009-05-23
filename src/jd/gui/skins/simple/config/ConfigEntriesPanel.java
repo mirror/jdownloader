@@ -22,6 +22,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.DefaultSingleSelectionModel;
+import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
@@ -96,14 +97,17 @@ public class ConfigEntriesPanel extends ConfigPanel {
         subPanels.add(configPanelPlugin);
         configPanelPlugin.setTabbed(true);
         JScrollPane sp;
+        JComponent comp = configPanelPlugin;
+        if (configPanelPlugin.needsViewport()) {
+            comp = (sp = new JScrollPane(configPanelPlugin));
+            sp.setBorder(null);
+        }
         if (configPanelPlugin.container != null && configPanelPlugin.container.getEntries().size() > 0 && configPanelPlugin.container.getEntries().get(0).getGroup() != null) {
-            tabbedPane.addTab(title, JDImage.getScaledImageIcon(configPanelPlugin.container.getEntries().get(0).getGroup().getIcon(), 16, 16), sp = new JScrollPane(configPanelPlugin));
+            tabbedPane.addTab(title, JDImage.getScaledImageIcon(configPanelPlugin.container.getEntries().get(0).getGroup().getIcon(), 16, 16), comp);
         } else {
-            tabbedPane.addTab(title, sp = new JScrollPane(configPanelPlugin));
+            tabbedPane.addTab(title, comp);
 
         }
-
-        sp.setBorder(null);
 
     }
 
@@ -134,17 +138,16 @@ public class ConfigEntriesPanel extends ConfigPanel {
             tabbedPane.setTabPlacement(SwingConstants.TOP);
             tabbedPane.setModel(new DefaultSingleSelectionModel() {
                 public void setSelectedIndex(int index) {
-                    
-                    
-                   if(tabbedPane.getSelectedComponent()!=null){
-                       if (tabbedPane.getSelectedComponent() instanceof JScrollPane) {
-                           ((ConfigEntriesPanel) ((JScrollPane) tabbedPane.getSelectedComponent()).getViewport().getView()).save();
-                       } else {
-                           ((ConfigEntriesPanel) tabbedPane.getSelectedComponent()).save();
-                       }
-                       
-                   }
-                
+
+                    if (tabbedPane.getSelectedComponent() != null) {
+                        if (tabbedPane.getSelectedComponent() instanceof JScrollPane) {
+                            ((ConfigEntriesPanel) ((JScrollPane) tabbedPane.getSelectedComponent()).getViewport().getView()).save();
+                        } else {
+                            ((ConfigEntriesPanel) tabbedPane.getSelectedComponent()).save();
+                        }
+
+                    }
+
                     super.setSelectedIndex(index);
                 }
             });

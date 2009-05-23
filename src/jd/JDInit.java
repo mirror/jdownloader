@@ -621,7 +621,7 @@ public class JDInit {
 
     public void loadPluginOptional() {
 
-        new OptionalPluginWrapper("jdtrayicon.JDLightTray", 1.6, "trayicon", JDLocale.L("plugins.optional.trayicon.name", "Tray Icon (Minimizer)"));
+        if(JDUtilities.getJavaVersion()>=1.6)  new OptionalPluginWrapper("jdtrayicon.JDLightTray", 1.6, "trayicon", JDLocale.L("plugins.optional.trayicon.name", "Tray Icon (Minimizer)"));
         new OptionalPluginWrapper("webinterface.JDWebinterface", 1.5, "webinterface", JDLocale.L("plugins.optional.webinterface.name", "WebInterface"));
         new OptionalPluginWrapper("schedule.Schedule", 1.5, "scheduler", JDLocale.L("addons.schedule.name", "Schedule"));
         new OptionalPluginWrapper("JDFolderWatch", 1.5, "folderwatch", JDLocale.L("plugins.optional.folderwatch.name", "JDFolderWatch"));
@@ -634,7 +634,7 @@ public class JDInit {
         new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5, "unrar", JDLocale.L("plugins.optional.jdunrar.name", "JD-Unrar"));
         new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5, "hjsplit", JDLocale.L("plugins.optional.jdhjsplit.name", "JD-HJMerge"));
         new OptionalPluginWrapper("JDPremiumCollector", 1.5, "premcol", JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector"));
-        new OptionalPluginWrapper("JDGrowlNotification", 1.5, "growl", JDLocale.L("plugins.optional.jdgrowlnotification.name", "JDGrowlNotification"));
+       if(OSDetector.isMac()) new OptionalPluginWrapper("JDGrowlNotification", 1.5, "growl", JDLocale.L("plugins.optional.jdgrowlnotification.name", "JDGrowlNotification"));
         new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5, "livescripter", JDLocale.L("plugins.optional.httpliveheaderscripter.name", "HTTPLiveHeaderScripter"));
 
     }

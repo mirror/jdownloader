@@ -71,7 +71,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
 
     private MultiProgressBar progressBarFilePackage;
 
-    private JLabel txtpathlabel;
+    private JDTextField txtpathlabel;
 
     private JLabel hosterlabel;
 
@@ -86,6 +86,10 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
     private JLabel eta;
 
     private JLabel speed;
+
+    private JLabel lblSize;
+
+    private JDTextField txtURL;
 
     public FilePackageInfo() {
         buildGui();
@@ -205,7 +209,8 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
     }
 
     private JPanel createLinkInfo() {
-        txtpathlabel = new JLabel();
+        txtpathlabel = new JDTextField();
+        txtpathlabel.setEditable(false);
         progressBarDownloadLink = new MultiProgressBar();
         panel = new JPanel();
         panel.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
@@ -218,6 +223,11 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
 
         panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.saveto", "Save to")));
         panel.add(txtpathlabel, "growx, span 2");
+        panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.url", "URL")));
+        panel.add(txtURL=new JDTextField(), "growx, span 2");
+        txtURL.setEditable(false);
+        panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.filesize", "Filesize")));
+        panel.add(lblSize=new JLabel(""), "growx, span 2");
 
         return panel;
     }
@@ -275,6 +285,9 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
 
                             FilePackageInfo.this.progressBarDownloadLink.setMaximums(max);
                             FilePackageInfo.this.progressBarDownloadLink.setValues(values);
+                        }else{
+                            FilePackageInfo.this.progressBarDownloadLink.setMaximums(new long[]{10});
+                            FilePackageInfo.this.progressBarDownloadLink.setValues(new long[]{0});
                         }
                         speed.setText(JDLocale.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", Formatter.formatReadable(Math.max(0, downloadLink.getDownloadSpeed()))));
                         if (downloadLink.getDownloadSpeed() <= 0) {
@@ -330,6 +343,12 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
 
             hosterlabel.setToolTipText(downloadLink.getHost());
             typeicon.setToolTipText(downloadLink.getHost());
+            this.lblSize.setText(Formatter.formatReadable(downloadLink.getDownloadSize()));
+            if(downloadLink.getLinkType()==DownloadLink.LINKTYPE_NORMAL){
+             this.txtURL.setText(downloadLink.getDownloadURL());
+            }else{
+                this.txtURL.setText("**************");
+            }
         }
         if (this.fp != null) {
             update();

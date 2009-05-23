@@ -60,7 +60,7 @@ public class MultiProgressBar extends JPanel {
     }
 
     public Dimension getPreferredSize() {
-        return new Dimension(600, 30);
+        return new Dimension(100, 30);
     }
 
     private int scale(long point, double faktor) {

@@ -27,13 +27,21 @@ import javax.swing.SwingUtilities;
  * 
  */
 public abstract class GuiRunnable<T> implements Runnable {
+    private long id;
+
     /**
      * 
      */
+
+    public GuiRunnable() {
+        this.id = System.currentTimeMillis();
+        System.out.println("Created " + id);
+    }
+
     private static final long serialVersionUID = 7777074589566807490L;
 
     private T returnValue;
-    private final Object lock = new Object();
+    private Object lock = new Object();
 
     private boolean started = false;
     private boolean done = false;
@@ -66,21 +74,38 @@ public abstract class GuiRunnable<T> implements Runnable {
         if (done) return;
         if (!isStarted()) start();
         if (!SwingUtilities.isEventDispatchThread()) {
-            synchronized (lock) {
-                try {
-                    lock.wait();
-                } catch (InterruptedException e) {
-                    //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            if (lock != null) {
+                synchronized (lock) {
+                    try {
+                        System.out.println(id + " lock ");
+                        if (lock != null) {
+                            lock.wait();
+                        }else{
+                            System.out.println(id + " concurrent Thread faster ");
+                        }
+                        System.out.println(id + " unlocked ");
+                    } catch (InterruptedException e) {
+                        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,
+                        // "Exception occured", e);
+                    }
                 }
+            }else{
+                System.out.println(id + " concurrent Thread faster ");
             }
+            
         }
+        System.out.println(id + " return ");
         done = true;
     }
 
     public void run() {
+        System.out.println(id + " run ");
         this.returnValue = this.runSave();
+        System.out.println(id + " finished ");
         synchronized (lock) {
+            System.out.println(id + " notify ");
             lock.notify();
+            lock = null;
         }
     }
 
@@ -90,11 +115,14 @@ public abstract class GuiRunnable<T> implements Runnable {
      * Starts the Runnable and adds it to the ETD
      */
     public void start() {
-//        new Exception().printStackTrace();
+        // new Exception().printStackTrace();
+        System.out.println(id + " Started ");
         setStarted(true);
         if (SwingUtilities.isEventDispatchThread()) {
+            System.out.println(id + " run direct ");
             run();
         } else {
+            System.out.println(id + " queue ");
             EventQueue.invokeLater(this);
 
         }
