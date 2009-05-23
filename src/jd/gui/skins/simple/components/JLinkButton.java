@@ -48,6 +48,7 @@ import jd.controlling.JDLogger;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.Executer;
+import jd.nutils.nativeintegration.LocaleBrowser;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 import edu.stanford.ejalbert.BrowserLauncher;
@@ -196,48 +197,9 @@ public class JLinkButton extends JButton {
 
             if (url != null) {
                 String browser = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_BROWSER, null);
-                if (browser == null) {
-                    BrowserLauncher launcher;
-                    List<?> ar = null;
-
-                    launcher = new BrowserLauncher();
-                    ar = launcher.getBrowserList();
-
-                    Object[] browserArray = (Object[]) SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, null);
-
-                    if (browserArray == null) {
-                        if (ar.size() < 2) {
-                            browserArray = new Object[] { "JavaBrowser" };
-                        } else {
-                            browserArray = new Object[ar.size() + 1];
-                            for (int i = 0; i < browserArray.length - 1; i++) {
-                                browserArray[i] = ar.get(i);
-                            }
-                            browserArray[browserArray.length - 1] = "JavaBrowser";
-                        }
-                        SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, browserArray);
-                        SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty(SimpleGuiConstants.PARAM_BROWSER, browserArray[0]);
-                        browser = (String) browserArray[0];
-                        SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).save();
-                    }
-                }
-                if (browser.equals("JavaBrowser")) {
-                    DnDWebBrowser javaBrowser = new DnDWebBrowser(((SimpleGUI) JDUtilities.getGUI()));
-                    javaBrowser.goTo(url);
-                    javaBrowser.setDefaultCloseOperation(DnDWebBrowser.DISPOSE_ON_CLOSE);
-                    javaBrowser.setSize(800, 600);
-                    javaBrowser.setVisible(true);
-                } else {
-                    try {
-                        BrowserLauncher launcher = new BrowserLauncher();
-                        launcher.openURLinBrowser(browser, url.toString());
-                    } catch (BrowserLaunchingInitializingException e1) {
-                        JDLogger.exception(e1);
-                    } catch (UnsupportedOperatingSystemException e1) {
-                        JDLogger.exception(e1);
-                    }
-
-                }
+                LocaleBrowser.openURL(browser,url);
+                
+                
 
             }
         }

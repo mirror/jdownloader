@@ -42,6 +42,7 @@ import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.nutils.OSDetector;
+import jd.nutils.nativeintegration.LocaleBrowser;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -165,31 +166,31 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setDefaultValue("#Ignorefiletype 'olo':\r\n\r\n.+?\\.olo\r\n\r\n#Ignore hoster 'examplehost.com':\r\n\r\n.*?examplehost\\.com.*?");
 
         // Browser Tab
-        Object[] browserArray = (Object[]) subConfig.getProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, null);
-        if (browserArray == null) {
-            BrowserLauncher launcher;
-            List<?> ar = null;
-            try {
-                launcher = new BrowserLauncher();
-                ar = launcher.getBrowserList();
-            } catch (BrowserLaunchingInitializingException e) {
-                JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
-            } catch (UnsupportedOperatingSystemException e) {
-                JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
-            }
-            if (ar == null || ar.size() < 2) {
-                browserArray = new Object[] { "JavaBrowser" };
-            } else {
-                browserArray = new Object[ar.size() + 1];
-                for (int i = 0; i < browserArray.length - 1; i++) {
-                    browserArray[i] = ar.get(i);
-                }
-                browserArray[browserArray.length - 1] = "JavaBrowser";
-            }
-            subConfig.setProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, browserArray);
-            subConfig.setProperty(SimpleGuiConstants.PARAM_BROWSER, browserArray[0]);
-            subConfig.save();
-        }
+//        Object[] browserArray = (Object[]) subConfig.getProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, null);
+//        if (browserArray == null) {
+//            BrowserLauncher launcher;
+//            List<?> ar = null;
+//            try {
+//                launcher = new BrowserLauncher();
+//                ar = launcher.getBrowserList();
+//            } catch (BrowserLaunchingInitializingException e) {
+//                JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
+//            } catch (UnsupportedOperatingSystemException e) {
+//                JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
+//            }
+//            if (ar == null || ar.size() < 2) {
+//                browserArray = new Object[] { "JavaBrowser" };
+//            } else {
+//                browserArray = new Object[ar.size() + 1];
+//                for (int i = 0; i < browserArray.length - 1; i++) {
+//                    browserArray[i] = ar.get(i);
+//                }
+//                browserArray[browserArray.length - 1] = "JavaBrowser";
+//            }
+//            subConfig.setProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, browserArray);
+//            subConfig.setProperty(SimpleGuiConstants.PARAM_BROWSER, browserArray[0]);
+//            subConfig.save();
+//        }
 
         ConfigContainer browser = new ConfigContainer(this, JDLocale.L("gui.config.gui.Browser", "Browser"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, browser));
@@ -200,6 +201,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                 if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.config.gui.testbrowser.message", "JDownloader now tries to open http://jdownloader.org in your browser."))) {
                     try {
                         save();
+                      
                         JLinkButton.openURL("http://jdownloader.org");
                     } catch (Exception e) {
                         JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
@@ -213,8 +215,8 @@ public class ConfigPanelGUI extends ConfigPanel {
         ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_CUSTOM_BROWSER_USE, JDLocale.L("gui.config.gui.use_custom_browser", "Use custom browser"));
         conditionEntry.setDefaultValue(false);
 
-        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_BROWSER, browserArray, JDLocale.L("gui.config.gui.Browser", "Browser")));
-        ce.setDefaultValue(browserArray[0]);
+        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_BROWSER,  LocaleBrowser.getBrowserList(), JDLocale.L("gui.config.gui.Browser", "Browser")));
+      
         ce.setEnabledCondidtion(conditionEntry, "==", false);
 
         browser.addEntry(conditionEntry);

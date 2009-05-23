@@ -29,11 +29,12 @@ import javax.swing.JTextPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
+import jd.controlling.JDLogger;
 import jd.gui.UserIO;
-import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.userio.dialog.AbstractDialog;
 import jd.nutils.Executer;
 import jd.nutils.JDImage;
+import jd.nutils.nativeintegration.LocaleBrowser;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
@@ -104,14 +105,14 @@ public class KikinDialog extends AbstractDialog {
 
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
 
-                    // "rundll32.exe url.dll,FileProtocolHandler
+                   
+
                     try {
-                        JLinkButton.openURL(e.getURL());
+                        LocaleBrowser.openDefaultURL(e.getURL());
                     } catch (Exception e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                        JDUtilities.runCommand("cmd", new String[] { "/c", "start " + e.getURL() + "" }, null, 0);
+                        JDLogger.getLogger().warning("Could not open URL " + e.getURL());
                     }
+
                     //
                 }
             }
