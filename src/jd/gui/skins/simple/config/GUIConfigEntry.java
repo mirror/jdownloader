@@ -48,6 +48,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.container.JDLabelContainer;
 import jd.controlling.JDLogger;
+import jd.controlling.PasswordListController;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.gui.skins.simple.components.JDTextArea;
 import jd.gui.skins.simple.components.JDTextField;
@@ -137,6 +138,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
             break;
         case ConfigContainer.TYPE_TEXTAREA:
+        case ConfigContainer.TYPE_UNRARPASSWORDS:
             decoration = new JLabel(configEntry.getLabel());
 
             input[0] = new JDTextArea();
@@ -268,7 +270,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
                 decoration.setToolTipText(tooltip);
             }
             for (JComponent c : input) {
-                if (c != null){
+                if (c != null) {
                     c.setToolTipText(tooltip);
                     c.setName(configEntry.getHelptags());
                 }
@@ -316,6 +318,9 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             return ((JCheckBox) input[0]).isSelected();
         case ConfigContainer.TYPE_PREMIUMPANEL:
             ((PremiumPanel) input[0]).saveAccounts();
+            return null;
+        case ConfigContainer.TYPE_UNRARPASSWORDS:
+            PasswordListController.getInstance().setPasswordList(((JDTextArea) input[0]).getText());
             return null;
         case ConfigContainer.TYPE_BUTTON:
             return null;
@@ -408,6 +413,9 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             break;
         case ConfigContainer.TYPE_TEXTFIELD:
             ((JDTextField) input[0]).setText(text == null ? "" : text.toString());
+            break;
+        case ConfigContainer.TYPE_UNRARPASSWORDS:
+            ((JDTextArea) input[0]).setText(PasswordListController.getInstance().getPasswordListasString());
             break;
         case ConfigContainer.TYPE_TEXTAREA:
             ((JDTextArea) input[0]).setText(text == null ? "" : text.toString());

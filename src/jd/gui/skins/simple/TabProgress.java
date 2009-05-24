@@ -111,12 +111,6 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
         }
     }
 
-    private boolean hasController(ProgressController source) {
-        synchronized (controllers) {
-            return controllers.contains(source);
-        }
-    }
-
     private void removeController(ProgressController source) {
         synchronized (controllers) {
             controllers.remove(source);

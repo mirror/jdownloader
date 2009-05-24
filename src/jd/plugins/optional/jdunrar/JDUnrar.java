@@ -21,7 +21,6 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -30,10 +29,9 @@ import javax.swing.filechooser.FileFilter;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.ConfigurationListener;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
-import jd.controlling.PasswordList;
+import jd.controlling.PasswordListController;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
@@ -151,19 +149,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
-            break;
-        case ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS:
-            ArrayList<DownloadLink> list = (ArrayList<DownloadLink>) event.getParameter();
-            FilePackage old = null;
-            for (DownloadLink l : list) {
-                if (l.getFilePackage() == old) continue;
-                old = l.getFilePackage();
-                String[] pws = JDUtilities.passwordStringToArray(l.getFilePackage().getPassword());
-                for (String pw : pws) {
-                    PasswordList.addPassword(pw);
-                }
-            }
-            PasswordList.save();
             break;
 
         case ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU:
@@ -378,7 +363,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         for (String pw : linkPws) {
             pwList.add(pw);
         }
-        pwList.addAll(PasswordList.getPasswordList());
+        pwList.addAll(PasswordListController.getInstance().getPasswordList());
         // Fügt den Archivnamen und dan dateinamen ans ende der passwortliste
         pwList.add(this.getArchiveName(link));
         pwList.add(new File(link.getFileOutput()).getName());
@@ -689,21 +674,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         this.passwordConfig = new ConfigContainer(this, JDLocale.L("plugins.optional.jdunrar.config.passwordtab", "List of passwords"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, passwordConfig));
-        SubConfiguration.getConfig(PasswordList.PROPERTY_PASSWORDLIST).addConfigurationListener(new ConfigurationListener() {
 
-            // @Override
-            public void onPostSave(SubConfiguration subConfiguration) {
-                // TODO Auto-generated method stub
-
-            }
-
-            // @Override
-            public void onPreSave(SubConfiguration subConfiguration) {
-                PasswordList.cleanList();
-            }
-
-        });
-        passwordConfig.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, SubConfiguration.getConfig(PasswordList.PROPERTY_PASSWORDLIST), "LIST", JDLocale.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", "")));
+        passwordConfig.addEntry(new ConfigEntry(ConfigContainer.TYPE_UNRARPASSWORDS, SubConfiguration.getConfig(PasswordListController.PASSWORDCONTROLLER), "LIST", JDLocale.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", "")));
 
         ConfigContainer ext = new ConfigContainer(this, JDLocale.L("plugins.optional.jdunrar.config.advanced", "Advanced settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
@@ -1089,10 +1061,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     private void assignRealDownloadDir(UnrarWrapper wrapper) {
         // progress.get(wrapper).setStatusText(wrapper.getFile().getName() +
         // ": " + "Archive opened successfull");
-        if (wrapper.getPassword() != null) {
-            PasswordList.addPassword(wrapper.getPassword());
-            PasswordList.save();
-        }
+        PasswordListController.getInstance().addPassword(wrapper.getPassword());
 
         int min = this.getPluginConfig().getIntegerProperty(JDUnrarConstants.CONFIG_KEY_SUBPATH_MINNUM, 0);
         if (min > 0) {
@@ -1353,35 +1322,13 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     }
 
-    @SuppressWarnings("unchecked")
+    
     // @Override
     public Object interact(String command, Object parameter) {
-
-        if (command.equals("getPasswordList")) {
-            return PasswordList.getPasswordList();
-        } else if (command.equals("addPassword") && parameter instanceof String && parameter != "") {
-            PasswordList.addPassword((String) parameter);
-            PasswordList.save();
-            PasswordList.cleanList();
-            PasswordList.save();
-            return true;
-        } else if (command.equals("setPasswordList") && parameter instanceof ArrayList) {
-            PasswordList.clearList();
-            ArrayList<String> arrayList = new ArrayList<String>();
-            arrayList.addAll((Collection<? extends String>) parameter);
-            for (String pw : arrayList) {
-                PasswordList.addPassword(pw);
-            }
-            PasswordList.save();
-            PasswordList.cleanList();
-            PasswordList.save();
-            return true;
-        } else if (command.equals("isWorking")) {
+        if (command.equals("isWorking")) {
             return queue.isAlive();
         } else {
             return null;
         }
-
     }
-
 }

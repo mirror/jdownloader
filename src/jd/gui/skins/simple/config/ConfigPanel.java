@@ -72,7 +72,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
     public void paint(Graphics g) {
 
         super.paint(g);
-        if(SimpleGUI.CURRENTGUI!=null)SimpleGUI.CURRENTGUI.setWaiting(false);
+        if (SimpleGUI.CURRENTGUI != null) SimpleGUI.CURRENTGUI.setWaiting(false);
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry, JPanel panel) {
@@ -87,7 +87,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
                 panel.add(new JSeparator(), "spanx,gapbottom 15,gaptop 15");
             }
             if (entry.getDecoration() != null) {
-                if (entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) {
+                if ((entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) || (entry.getConfigEntry().getType() == ConfigContainer.TYPE_UNRARPASSWORDS)) {
                     panel.add(entry.getDecoration(), "spany " + entry.getInput().length + ",spanx, gapright " + getGapRight());
 
                 } else {
@@ -98,6 +98,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
             for (JComponent c : entry.getInput()) {
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_TEXTAREA:
+                case ConfigContainer.TYPE_UNRARPASSWORDS:
                     panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy");
                     // panel.add(new JScrollPane(c),
                     // "spanx,gapright 20,growy,pushy");
@@ -145,7 +146,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
                     // panel.add(new JScrollPane(c),
                     // "spanx,gapleft 35,gapright 20");
                     panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy,gapleft " + getGapLeft());
-               
+
                     break;
                 case ConfigContainer.TYPE_PREMIUMPANEL:
 

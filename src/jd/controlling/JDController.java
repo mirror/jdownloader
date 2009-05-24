@@ -277,20 +277,6 @@ public class JDController implements ControlListener {
 
             break;
 
-        case ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS:
-            ArrayList<DownloadLink> linksAdded = (ArrayList<DownloadLink>) event.getParameter();
-
-            for (DownloadLink link : linksAdded) {
-                link.getLinkStatus().setStatusText(JDLocale.L("sys.linklist.addnew.prepare", "Preparing Downloadlink"));
-                link.requestGuiUpdate();
-                try {
-                    link.getPlugin().prepareLink(link);
-                } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-                }
-                link.getLinkStatus().setStatusText(null);
-            }
-            break;
         case ControlEvent.CONTROL_LOG_OCCURED:
 
             break;
@@ -377,6 +363,7 @@ public class JDController implements ControlListener {
         stopDownloads();
         JDUtilities.getDownloadController().saveDownloadLinksSyncnonThread();
         AccountController.getInstance().saveSyncnonThread();
+        PasswordListController.getInstance().saveSync();
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
         Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
         JDUtilities.getDatabaseConnector().shutdownDatabase();
@@ -732,7 +719,6 @@ public class JDController implements ControlListener {
     public void saveDLC(File file, ArrayList<DownloadLink> links) {
         String xml = JDUtilities.createContainerString(links, "dlc");
         String cipher = encryptDLC(xml);
-        xml=xml;
         if (cipher != null) {
             SubConfiguration cfg = SubConfiguration.getConfig("DLCrypt");
             JDIO.writeLocalFile(file, cipher);

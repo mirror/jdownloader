@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 import jd.captcha.JACController;
 import jd.controlling.DistributeData;
 import jd.controlling.JDController;
+import jd.controlling.PasswordListController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.UIInterface;
 import jd.utils.JDUtilities;
@@ -173,8 +174,7 @@ public class ParameterManager {
 
                 for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
                     if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
-                        Object obj = wrapper.getPlugin().interact("addPassword", currentArg);
-                        if (obj == null) logger.warning("Couldn't add password");
+                        PasswordListController.getInstance().addPassword(currentArg);
                         break;
                     }
                 }

@@ -722,16 +722,6 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Diese funktion wird vom Controller aufegrufen wenn ein DownloadLink
-     * frisch in die Linkliste eingefügt worden ist. Hier können
-     * Initialisierungsfunktionen für das PLugin stehen.
-     * 
-     * @throws Exception
-     */
-    public void prepareLink(DownloadLink downloadLink) throws Exception {
-    }
-
-    /**
      * returns hosterspecific infos. for example the downloadserver
      * 
      * @return

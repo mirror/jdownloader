@@ -32,6 +32,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.LinkGrabberController;
+import jd.controlling.PasswordListController;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
 import jd.nutils.Formatter;
@@ -175,7 +176,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
         for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
             if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
-                Object obj = wrapper.getPlugin().interact("getPasswordList", null);
+                Object obj = PasswordListController.getInstance().getPasswordList();
                 if (obj != null && obj instanceof ArrayList) {
                     ArrayList<String> arrayList = new ArrayList<String>();
                     arrayList.addAll((Collection<? extends String>) obj);

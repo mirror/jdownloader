@@ -29,7 +29,7 @@ import javax.swing.event.DocumentListener;
 
 import jd.config.Configuration;
 import jd.controlling.DownloadController;
-import jd.controlling.PasswordList;
+import jd.controlling.PasswordListController;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
@@ -316,9 +316,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
             updater.interrupt();
             updater = null;
         }
-
-        PasswordList.addPassword(txtPassword.getText());
-        PasswordList.save();
+        PasswordListController.getInstance().addPassword(txtPassword.getText());        
         actionPerformed(new ActionEvent(this.brwSaveTo, 0, null));
         this.progressBarFilePackage.setMaximums(null);
         this.progressBarDownloadLink.setMaximums(null);

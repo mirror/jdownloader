@@ -75,6 +75,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
                     switch (cfgEntry.getType()) {
 
                     case ConfigContainer.TYPE_TEXTAREA:
+                    case ConfigContainer.TYPE_UNRARPASSWORDS:
                         viewport = false;
                         break;
                     }
@@ -137,6 +138,11 @@ public class ConfigEntriesPanel extends ConfigPanel {
             tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
             tabbedPane.setTabPlacement(SwingConstants.TOP);
             tabbedPane.setModel(new DefaultSingleSelectionModel() {
+                /**
+                 * 
+                 */
+                private static final long serialVersionUID = -4014914744929365725L;
+
                 public void setSelectedIndex(int index) {
 
                     if (tabbedPane.getSelectedComponent() != null) {

@@ -30,8 +30,6 @@ public class ControlEvent extends AWTEvent {
      */
     public final static int CONTROL_ALL_DOWNLOADS_FINISHED = 1;
 
-
-
     /**
      * Das Verteilen des Inhalts der Zwischenablage ist abgeschlossen Als
      * Parameter wird hier ein Vector mit DownloadLinks übergeben, die
@@ -113,8 +111,7 @@ public class ControlEvent extends AWTEvent {
      */
     public static final int CONTROL_SYSTEM_EXIT = 26;
     public static final int CONTROL_INIT_COMPLETE = 30;
-    public static final int CONTROL_DOWNLOADLIST_ADDED_LINKS = 31;
-    public static final int CONTROL_DOWNLOADLIST_REMOVED_LINKS = 32;
+
     /**
      * serialVersionUID
      */
@@ -131,7 +128,6 @@ public class ControlEvent extends AWTEvent {
      * werden als File[] parameter übergeben
      */
     public static final int CONTROL_ON_FILEOUTPUT = 33;
-
 
     /**
      * Die ID des Ereignisses
@@ -153,7 +149,7 @@ public class ControlEvent extends AWTEvent {
         this.parameter = parameter;
     }
 
-    //@Override
+    // @Override
     public int getID() {
         return controlID;
     }
@@ -162,7 +158,7 @@ public class ControlEvent extends AWTEvent {
         return parameter;
     }
 
-    //@Override
+    // @Override
     public String toString() {
         return "[source:" + source + ", controlID:" + controlID + ", parameter:" + parameter + "]";
     }

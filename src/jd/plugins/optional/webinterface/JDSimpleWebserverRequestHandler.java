@@ -28,6 +28,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadController;
 import jd.controlling.LinkGrabberController;
+import jd.controlling.PasswordListController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
@@ -364,8 +365,7 @@ public class JDSimpleWebserverRequestHandler {
                             for (String pw : Regex.getLines(passwordList)) {
                                 pws.add(0, pw);
                             }
-                            Object obj = wrapper.getPlugin().interact("setPasswordList", pws);
-                            if (obj == null) logger.warning("Couldn't set password list");
+                            PasswordListController.getInstance().setPasswordList(pws);
                             break;
                         }
                     }

@@ -27,7 +27,7 @@ import javax.swing.event.DocumentListener;
 
 import jd.config.Configuration;
 import jd.controlling.DownloadController;
-import jd.controlling.PasswordList;
+import jd.controlling.PasswordListController;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
@@ -62,12 +62,12 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
     }
 
     public void setPackage(LinkGrabberFilePackage fp) {
-        if (this.fp != null && this.fp == fp) {            
+        if (this.fp != null && this.fp == fp) {
             update();
             return;
         }
         this.fp = fp;
-        if (this.fp != null) {            
+        if (this.fp != null) {
             update();
         }
     }
@@ -95,28 +95,29 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
     }
 
     private void addChangeListener(final JDTextField txtName2) {
-        txtName2.getDocument().addDocumentListener(new DocumentListener(){
+        txtName2.getDocument().addDocumentListener(new DocumentListener() {
 
             public void changedUpdate(DocumentEvent e) {
-             actionPerformed(new ActionEvent(txtName2,0,null));                
+                actionPerformed(new ActionEvent(txtName2, 0, null));
             }
+
             public void insertUpdate(DocumentEvent e) {
-                actionPerformed(new ActionEvent(txtName2,0,null)); 
-                }
+                actionPerformed(new ActionEvent(txtName2, 0, null));
+            }
 
             public void removeUpdate(DocumentEvent e) {
-                actionPerformed(new ActionEvent(txtName2,0,null));
-                
-                
+                actionPerformed(new ActionEvent(txtName2, 0, null));
+
             }
-            
+
         });
-        
+
     }
+
     private void buildGui() {
         txtName = new JDTextField();
         txtName.setAutoSelect(true);
-       addChangeListener(txtName);
+        addChangeListener(txtName);
 
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
         brwSaveTo.setEditable(true);
@@ -181,9 +182,8 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
     // @Override
     public void onHide() {
         if (this.fp == null) return;
-        PasswordList.addPassword(txtPassword.getText());
-        PasswordList.save();
-        actionPerformed(new ActionEvent(this.brwSaveTo,0,null)); 
+        PasswordListController.getInstance().addPassword(txtPassword.getText());
+        actionPerformed(new ActionEvent(this.brwSaveTo, 0, null));
         fp = null;
     }
 

@@ -98,6 +98,8 @@ public class ConfigContainer implements Serializable {
     public static final int TYPE_LINK = 12;
     public static final int TYPE_CONTAINER = 13;
     public static final int TYPE_PREMIUMPANEL = 14;
+
+    public static final int TYPE_UNRARPASSWORDS = 110;
     /**
      * ConfigElement ist ein Combobox ConfigEntry(int type, Property
      * propertyInstance, String propertyName, Object[] list, String label)
@@ -135,7 +137,7 @@ public class ConfigContainer implements Serializable {
      *            Der Eintrag, der hinzugefügt werden soll
      */
     public void addEntry(ConfigEntry entry) {
-        if(entry.getGroup()==null)entry.setGroup(group);
+        if (entry.getGroup() == null) entry.setGroup(group);
         if (entry.getContainer() != null) {
             containers++;
         }
@@ -209,18 +211,21 @@ public class ConfigContainer implements Serializable {
     public void setTitle(String title) {
         this.title = title;
     }
-/**
- * Sets a configgroup for this container. the containers add method will add this configgroup to every new entry
- * @param configGroup
- */
+
+    /**
+     * Sets a configgroup for this container. the containers add method will add
+     * this configgroup to every new entry
+     * 
+     * @param configGroup
+     */
     public void setGroup(ConfigGroup configGroup) {
-        this.group=configGroup;
-        
+        this.group = configGroup;
+
     }
 
-public ConfigGroup getGroup() {
-    // TODO Auto-generated method stub
-    return group;
-}
+    public ConfigGroup getGroup() {
+        // TODO Auto-generated method stub
+        return group;
+    }
 
 }

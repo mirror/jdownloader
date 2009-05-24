@@ -422,8 +422,6 @@ public class DownloadController implements FilePackageListener, DownloadControll
                 if (!packages.contains(fp)) {
                     fp.addListener(this);
                     packages.add(fp);
-                    PasswordList.addPassword(fp.getPassword());
-                    PasswordList.save();
                     broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE, fp));
                 }
             }
@@ -460,9 +458,6 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         packages.add(index, fp);
                     newadded = true;
                 }
-                PasswordList.addPassword(fp.getPassword());
-                PasswordList.save();
-
                 if (newadded) {
                     fp.addListener(this);
                     broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_FILEPACKAGE, fp));
