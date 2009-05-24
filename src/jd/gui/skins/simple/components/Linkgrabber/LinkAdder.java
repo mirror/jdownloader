@@ -115,7 +115,7 @@ public class LinkAdder extends JTabbedPanel {
     public void onDisplay() {
         if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_LINKGRABBER_CLIPBOARD_OBSERVER, true)) return;
         
-        ClipboardHandler.getClipboard().setTempDisableD(true);
+        ClipboardHandler.getClipboard().setTempDisabled(true);
         setClipboard(true);
     }
 
@@ -176,6 +176,6 @@ public class LinkAdder extends JTabbedPanel {
     // @Override
     public void onHide() {
         setClipboard(false);
-        ClipboardHandler.getClipboard().setTempDisableD(false);
+        ClipboardHandler.getClipboard().setTempDisabled(false);
     }
 }

@@ -16,8 +16,8 @@
 
 package jd.utils;
 
-import java.util.Calendar;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;

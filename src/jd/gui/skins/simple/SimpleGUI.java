@@ -280,12 +280,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
         setVisible(true);
 
-        ClipboardHandler.getClipboard().setTempDisableD(false);
-        this.contentPanel.addMouseListener(new JDMouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                System.out.println("Entered");
-            }
-        });
+        ClipboardHandler.getClipboard().setTempDisabled(false);
+
         new Thread("guiworker") {
             public void run() {
                 while (true) {

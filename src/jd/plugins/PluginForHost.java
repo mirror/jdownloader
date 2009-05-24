@@ -34,7 +34,6 @@ import java.util.logging.Level;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
-import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;

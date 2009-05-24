@@ -143,7 +143,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
         }
     }
 
-    public void setTempDisableD(boolean v) {
+    public void setTempDisabled(boolean v) {
         this.tempdisabled = v;
         if (waitFlag) {
             waitFlag = false;

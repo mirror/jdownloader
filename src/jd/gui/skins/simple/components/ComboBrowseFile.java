@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple.components;
 
-import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -164,23 +163,8 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     private void initGUI() {
         this.setLayout(new MigLayout("insets 0", "[left, grow]15px[]", ""));
 
-        cmboInput = new JComboBox(files){
-            public Dimension getMaximumSize(){
-               
-                return new Dimension(20,20);
-            }
-            public Dimension getMinimumSize(){
-                
-                return new Dimension(20,20);
-            }
-            public Dimension getPreferredSize(){
-              
-                return new Dimension(20,20);
-            }
-            
-        };
+        cmboInput = new JComboBox(files);
         cmboInput.setEditable(false);
-       
         cmboInput.addActionListener(this);
         if (cmboInput.getItemCount() > 0) cmboInput.setSelectedIndex(0);
 
@@ -216,8 +200,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
      *            the currentPath to set
      */
     public void setCurrentPath(final File currentPath) {
-        if (currentPath == null) return;
-        if (getText() != null && getText().equalsIgnoreCase(currentPath.toString())) return;
+        if (currentPath == null || currentPath.equals(this.currentPath)) return;
         this.currentPath = currentPath;
         String item = currentPath.toString();
         files.remove(item);
@@ -225,6 +208,8 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
         SubConfiguration.getConfig("GUI").setProperty(getName(), new Vector<String>(files.subList(0, Math.min(files.size(), 20))));
         SubConfiguration.getConfig("GUI").save();
+
+        if (getText() != null && getText().equalsIgnoreCase(currentPath.toString())) return;
         cmboInput.setSelectedIndex(0);
         /* EXPERIMENTAL: rausgenommen da freezes verursacht hat */
         // cmboInput.invalidate();

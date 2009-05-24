@@ -16,7 +16,6 @@
 
 package jd.controlling;
 
-import java.awt.Frame;
 import java.io.File;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -32,7 +31,6 @@ import jd.event.ControlEvent;
 import jd.gui.skins.simple.AgbDialog;
 import jd.gui.skins.simple.Balloon;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;

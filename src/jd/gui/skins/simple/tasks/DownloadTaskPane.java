@@ -17,6 +17,7 @@
 package jd.gui.skins.simple.tasks;
 
 import java.awt.event.ActionEvent;
+
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
