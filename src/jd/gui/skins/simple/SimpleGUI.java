@@ -302,11 +302,11 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         JPanel glass = new JPanel(new MigLayout("ins 0"));
         startbutton = new JLabel(new ImageIcon(mainMenuIcon));
         // mainMenuIconRollOver
-//        startbutton.setBorderPainted(false);
+        // startbutton.setBorderPainted(false);
         startbutton.setToolTipText(JDLocale.L("gui.menu.tooltip", "Click here to open main menu"));
-//        startbutton.setContentAreaFilled(false);
-//        startbutton.setSelectedIcon(new ImageIcon(mainMenuIconRollOver));
-//        startbutton.setFocusPainted(false);
+        // startbutton.setContentAreaFilled(false);
+        // startbutton.setSelectedIcon(new ImageIcon(mainMenuIconRollOver));
+        // startbutton.setFocusPainted(false);
         startbutton.addMouseListener(new JDMouseAdapter() {
             public void mouseEntered(MouseEvent e) {
                 startbutton.setIcon(new ImageIcon(mainMenuIconRollOver));
@@ -341,10 +341,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             }
 
         });
-//        startbutton.setAlignmentX(0.0f);
-//        startbutton.setBounds(0, 0, 32, 3op 2);
-        
-//        startbutton.setHorizontalAlignment(SwingConstants.LEFT);
+        // startbutton.setAlignmentX(0.0f);
+        // startbutton.setBounds(0, 0, 32, 3op 2);
+
+        // startbutton.setHorizontalAlignment(SwingConstants.LEFT);
         glass.add(startbutton, "gapleft 2,gaptop 2,alignx left,aligny top");
         glass.setOpaque(false);
         this.setGlassPane(glass);
@@ -774,7 +774,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
                 switch (e.getID()) {
                 case DownloadTaskPane.ACTION_CLICK:
-
                     contentPanel.display(((TaskPanel) e.getSource()).getPanel(0));
 
                 }
@@ -911,7 +910,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             public void actionPerformed(ActionEvent e) {
                 switch (e.getID()) {
                 case DownloadTaskPane.ACTION_CLICK:
-
                     contentPanel.display(dlTskPane.getPanel(0));
                     break;
                 case DownloadTaskPane.ACTION_STARTSTOP:
@@ -1019,7 +1017,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     public void displayMiniWarning(final String shortWarn, final String toolTip, final int showtime) {
 
-        Balloon.show(shortWarn, JDTheme.II("gui.images.warning",32,32), toolTip);
+        Balloon.show(shortWarn, JDTheme.II("gui.images.warning", 32, 32), toolTip);
 
         // if (shortWarn == null) {
         // SwingUtilities.invokeLater(new Runnable() {

@@ -70,6 +70,10 @@ public class Balloon {
         }
 
         final JWindow w = new JWindow() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 8925461815465551749L;
             private SwingWorker timer;
 
             public void dispose() {

@@ -24,7 +24,7 @@ import javax.swing.JViewport;
 import net.miginfocom.swing.MigLayout;
 
 public class ContentPanel extends JPanel {
-
+    private static final Object LOCK = new Object();
     private static final long serialVersionUID = 1606909731977454208L;
     private JTabbedPanel rightPanel = null;
     private JViewport viewport;
@@ -39,36 +39,36 @@ public class ContentPanel extends JPanel {
     }
 
     public void display(JTabbedPanel panel) {
-        // System.out.println(panel);
-        // new Exception().printStackTrace();
-        if (rightPanel == panel) return;
-        JDCollapser.getInstance().setCollapsed(true);
-        if (rightPanel != null) {
+        synchronized (LOCK) {
+            // System.out.println(panel);
+            // new Exception().printStackTrace();
+            if (rightPanel == panel) return;
+            JDCollapser.getInstance().setCollapsed(true);
+            if (rightPanel != null) {
 
-            this.remove(viewport);
-            this.remove(rightPanel);
-            rightPanel.setEnabled(false);
-            rightPanel.setVisible(false);
+                this.remove(viewport);
+                this.remove(rightPanel);
+                rightPanel.setEnabled(false);
+                rightPanel.setVisible(false);
 
-            rightPanel.onHide();
+                rightPanel.onHide();
+            }
+            rightPanel = panel;
+
+            if (rightPanel.needsViewport()) {
+                viewport.setView(rightPanel);
+                this.add(viewport, "cell 0 0");
+
+            } else {
+                this.add(rightPanel, "cell 0 0");
+            }
+            rightPanel.setEnabled(true);
+            rightPanel.setVisible(true);
+            rightPanel.onDisplay();
+            this.setPreferredSize(new Dimension(100, 10));
+            this.revalidate();
+            this.repaint();
         }
-        rightPanel = panel;
-
-        if (rightPanel.needsViewport()) {
-            viewport.setView(rightPanel);
-            this.add(viewport, "cell 0 0");
-
-        } else {
-            this.add(rightPanel, "cell 0 0");
-        }
-        rightPanel.setEnabled(true);
-        rightPanel.setVisible(true);
-        rightPanel.onDisplay();
-        this.setPreferredSize(new Dimension(100, 10));
-        this.revalidate();
-        this.repaint();
-      
-
     }
 
     public JTabbedPanel getRightPanel() {

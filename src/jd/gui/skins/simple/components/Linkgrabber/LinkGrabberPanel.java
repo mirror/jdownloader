@@ -40,6 +40,7 @@ import jd.controlling.LinkGrabberControllerListener;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
+import jd.gui.skins.simple.Balloon;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDCollapser;
 import jd.gui.skins.simple.JDToolBar;
@@ -55,6 +56,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -268,6 +270,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                     try {
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {
+                        e.printStackTrace();
                         return;
                     }
                 }
@@ -276,6 +279,14 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 pc.getBroadcaster().removeListener(INSTANCE);
                 LGINSTANCE.postprocessing();
                 gatherer_running = false;
+                ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>();
+                fps.addAll(LGINSTANCE.getPackages());
+                fps.add(LGINSTANCE.getFILTERPACKAGE());
+                int links = 0;
+                for (LinkGrabberFilePackage fp : fps) {
+                    links += fp.getDownloadLinks().size();
+                }
+                Balloon.showIfHidden("Linkgrabber", JDTheme.II("gui.images.add", 32, 32), JDLocale.LF("gui.linkgrabber.finished", "Grabbed %s link(s) in %s Package(s)", "" + fps.size(), "" + links));
             }
         };
         gatherer.start();

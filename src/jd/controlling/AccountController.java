@@ -172,8 +172,6 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     public void addAccount(PluginForHost pluginForHost, Account account) {
         String host = pluginForHost.getHost();
-        Balloon.show(JDLocale.L("gui.ballon.accountmanager.title","Accountmanager"), JDTheme.II("gui.images.add",32,32), JDLocale.LF("gui.ballon.addaccount", "Added Account: %s(%s)",host,account.getUser()));
-        
         addAccount(host, account);
     }
 
@@ -271,6 +269,7 @@ public class AccountController extends SubConfiguration implements ActionListene
     public void onAccountControllerEvent(AccountControllerEvent event) {
         switch (event.getID()) {
         case AccountControllerEvent.ACCOUNT_ADDED:
+            Balloon.show(JDLocale.L("gui.ballon.accountmanager.title", "Accountmanager"), JDTheme.II("gui.images.add", 32, 32), JDLocale.LF("gui.ballon.addaccount", "Added Account: %s(%s)", event.getHost(), event.getAccount().getUser()));
             saveAsync();
             break;
         case AccountControllerEvent.ACCOUNT_REMOVED:
@@ -283,11 +282,11 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     public void throwUpdateEvent(PluginForHost pluginForHost, Account account) {
         if (pluginForHost != null) {
-            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, pluginForHost.getHost(), account));    
-        }else{
+            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, pluginForHost.getHost(), account));
+        } else {
             this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, null, account));
         }
-        
+
     }
 
     public void saveAsync() {
