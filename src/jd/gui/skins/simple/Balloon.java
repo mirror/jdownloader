@@ -241,4 +241,16 @@ public class Balloon {
         });
         return p;
     }
+
+    /**
+     * Displays only if mainframe is hidden
+     * 
+     * @param l
+     * @param ii
+     * @param lf
+     */
+    public static void showIfHidden(String title, ImageIcon icon, String htmlmessage) {
+        if (!SimpleGUI.CURRENTGUI.isActive()) Balloon.show(title, icon, htmlmessage);
+
+    }
 }
