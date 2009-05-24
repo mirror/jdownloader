@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.host;
 
 import java.io.IOException;
@@ -33,7 +32,7 @@ public class Zippysharecom extends PluginForHost {
 
     public Zippysharecom(PluginWrapper wrapper) {
         super(wrapper);
-        this.setStartIntervall(5000l);
+        this.setStartIntervall(2000l);
         br.setFollowRedirects(true);
     }
 
@@ -46,12 +45,25 @@ public class Zippysharecom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL().replaceAll("locale=..", "locale=en"));
-        if (br.containsHTML("<title>Zippyshare.com - File does not exist</title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<strong>Name: </strong>(.*?)</font><br", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (br.containsHTML("<title>Zippyshare.com - File does not exist</title>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filesize = br.getRegex(Pattern.compile("<strong>Size: </strong>(.*?)</font><br", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-
-        downloadLink.setName(filename);
+        if (filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String linkurl = br.getRegex(Pattern.compile("'fck(http.*?)';", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (linkurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
+        System.out.println(Encoding.htmlDecode(linkurl));
+        URLConnectionAdapter con = br.openGetConnection(Encoding.htmlDecode(linkurl));
+        if (!con.isContentDisposition()) {
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
+        downloadLink.setFinalFileName(Zippysharecom.getFileNameFormHeader(con));
+        con.disconnect();
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
@@ -64,22 +76,10 @@ public class Zippysharecom extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String[] linkurls = new Regex(br, Pattern.compile("'(http.*?www.*?zippyshare\\.com.*?)';", Pattern.CASE_INSENSITIVE)).getColumn(0);
-        if (linkurls == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        br.getPage(downloadLink.getDownloadURL());
+        String linkurl = br.getRegex(Pattern.compile("'fck(http.*?)';", Pattern.CASE_INSENSITIVE)).getMatch(0);
         br.setFollowRedirects(true);
-        String downloadURL=null;
-        for(int i=0;i<linkurls.length;i++)
-        {
-            downloadURL = Encoding.htmlDecode(linkurls[i]);
-            URLConnectionAdapter con = br.openGetConnection(downloadURL);
-            if (!con.isContentDisposition()) {
-                con.disconnect();
-            }else
-            {
-                con.disconnect();
-                break;
-            }
-        }
+        String downloadURL = Encoding.htmlDecode(linkurl);
         dl = br.openDownload(downloadLink, downloadURL);
         sleep(10000l, downloadLink);
         dl.startDownload();
@@ -101,6 +101,5 @@ public class Zippysharecom extends PluginForHost {
     //@Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-
     }
 }
