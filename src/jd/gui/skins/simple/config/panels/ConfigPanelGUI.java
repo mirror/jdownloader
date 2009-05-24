@@ -215,7 +215,9 @@ public class ConfigPanelGUI extends ConfigPanel {
         conditionEntry.setDefaultValue(false);
 
         browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_BROWSER,  LocaleBrowser.getBrowserList(), JDLocale.L("gui.config.gui.Browser", "Browser")));
-      
+      if(LocaleBrowser.getBrowserList().length>0){
+         ce.setDefaultValue(LocaleBrowser.getBrowserList()[0]);
+      }
         ce.setEnabledCondidtion(conditionEntry, "==", false);
 
         browser.addEntry(conditionEntry);

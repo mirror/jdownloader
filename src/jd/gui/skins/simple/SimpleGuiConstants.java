@@ -35,7 +35,7 @@ public class SimpleGuiConstants {
     public static final String PARAM_JAC_LOG = "JAC_DOLOG";
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
 //    public static final String PARAM_BROWSER_VARS = "BROWSER_VARS";
-    public static final String PARAM_BROWSER = "BROWSER";
+    public static final String PARAM_BROWSER = "BROWSER2";
     public transient static SubConfiguration GUI_CONFIG = null;
     public static final String GUICONFIGNAME = "simpleGUI";
     public static final String PARAM_SIDEBAR_COLLAPSED = "PARAM_SIDEBAR_COLLAPSED";
