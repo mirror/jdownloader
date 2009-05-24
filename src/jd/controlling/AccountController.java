@@ -28,8 +28,11 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.event.JDBroadcaster;
 import jd.event.JDEvent;
+import jd.gui.skins.simple.Balloon;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 class AccountControllerBroadcaster extends JDBroadcaster<AccountControllerListener, AccountControllerEvent> {
@@ -169,6 +172,8 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     public void addAccount(PluginForHost pluginForHost, Account account) {
         String host = pluginForHost.getHost();
+        Balloon.show(JDLocale.L("gui.ballon.accountmanager.title","Accountmanager"), JDTheme.II("gui.images.add",32,32), JDLocale.LF("gui.ballon.addaccount", "Added Account: %s(%s)",host,account.getUser()));
+        
         addAccount(host, account);
     }
 

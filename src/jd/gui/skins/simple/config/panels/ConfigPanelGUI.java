@@ -105,7 +105,10 @@ public class ConfigPanelGUI extends ConfigPanel {
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_INPUTTIMEOUT, JDLocale.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600).setDefaultValue(20).setGroup(feel));
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")).setGroup(feel));
         ce.setDefaultValue(true);
-
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_LINKGRABBER_CLIPBOARD_OBSERVER, JDLocale.L("gui.config.gui.disable.linkgrabberclipboard", "Linkgrabber Clipboard observer")).setGroup(feel));
+        ce.setDefaultValue(true);
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_BALLON, JDLocale.L("gui.config.gui.showBalloon", "Show Ballon infos")).setGroup(feel));
+        ce.setDefaultValue(true);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")).setGroup(feel));
         ce.setDefaultValue(false);
         ConfigGroup perf = new ConfigGroup(JDLocale.L("gui.config.gui.performance", "Performance"), JDTheme.II("gui.images.performance", 32, 32));

@@ -15,6 +15,7 @@ import javax.swing.JWindow;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
+import jd.config.SubConfiguration;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
@@ -45,13 +46,14 @@ public class Balloon {
     }
 
     public static void show(String title, final ImageIcon icon, final String htmlmessage) {
-        if (LASTSTRING.equals(title + htmlmessage)) return;
+        if (LASTSTRING != null && LASTSTRING.equals(title + htmlmessage)) return;
         LASTSTRING = title + htmlmessage;
 
         show(title, null, icon, htmlmessage);
     }
 
     public static void show(final String string, final ImageIcon ii, final ImageIcon ii2, final String string2) {
+        if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_BALLON, true)) return;
         new GuiRunnable<Object>() {
 
             @Override

@@ -38,14 +38,15 @@ public class ContentPanel extends JPanel {
 
     }
 
-    public synchronized void display(JTabbedPanel panel) {
-//        System.out.println(panel);
-//       new Exception().printStackTrace();
+    public void display(JTabbedPanel panel) {
+        // System.out.println(panel);
+        // new Exception().printStackTrace();
         if (rightPanel == panel) return;
         JDCollapser.getInstance().setCollapsed(true);
         if (rightPanel != null) {
 
-            this.removeAll();
+            this.remove(viewport);
+            this.remove(rightPanel);
             rightPanel.setEnabled(false);
             rightPanel.setVisible(false);
 
@@ -63,9 +64,10 @@ public class ContentPanel extends JPanel {
         rightPanel.setEnabled(true);
         rightPanel.setVisible(true);
         rightPanel.onDisplay();
+        this.setPreferredSize(new Dimension(100, 10));
         this.revalidate();
         this.repaint();
-        this.setPreferredSize(new Dimension(100, 10));
+      
 
     }
 

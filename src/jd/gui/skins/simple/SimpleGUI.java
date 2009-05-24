@@ -735,7 +735,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         taskPaneView = new JViewport();
         taskPaneView.setView(taskPane);
 
-        center.add(taskPaneView, "hidemode 2,spany 2,aligny top");
+        center.add(taskPaneView, "hidemode 2,spany 2,aligny top,width 160:n:n");
         sep = new JDSeparator();
 
         center.add(sep, "width 6!,gapright 2,spany 2,growy, pushy");

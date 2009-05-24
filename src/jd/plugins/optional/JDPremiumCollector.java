@@ -31,6 +31,7 @@ import jd.controlling.AccountController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
+import jd.gui.skins.simple.Balloon;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.Account;
@@ -38,6 +39,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class JDPremiumCollector extends PluginOptional {
@@ -67,10 +69,12 @@ public class JDPremiumCollector extends PluginOptional {
             post += "&apipassword=" + subConfig.getStringProperty(PROPERTY_LOGIN_PASS);
             br.postPage(subConfig.getStringProperty(PROPERTY_API_URL), post);
         } catch (IOException e1) {
+            Balloon.show(getHost()+" "+JDLocale.L("gui.balloon.error.title","title"), JDTheme.II("gui.images.bad",32,32), JDLocale.L("plugins.optional.premiumcollector.error.url", "Probably wrong URL! See log for more infos!"));
             logger.severe(JDLocale.L("plugins.optional.premiumcollector.error.url", "Probably wrong URL! See log for more infos!"));
         }
 
         if (br.containsHTML("Login failed")) {
+            Balloon.show(getHost()+" "+JDLocale.L("gui.balloon.error.title","title"), JDTheme.II("gui.images.bad",32,32), JDLocale.L("plugins.optional.premiumcollector.error.userpass", "Wrong username/password!"));
             logger.severe(JDLocale.L("plugins.optional.premiumcollector.error.userpass", "Wrong username/password!"));
             return;
         }

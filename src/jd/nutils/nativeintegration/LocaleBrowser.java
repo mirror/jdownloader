@@ -220,15 +220,17 @@ abstract public class LocaleBrowser implements Serializable {
     abstract public void openURL(URL url) throws Exception;
 
     public static void openURL(String browser, URL url) throws Exception {
-        if (browser == null) return;
+       
         if (url == null) return;
         LocaleBrowser[] browsers = getBrowserList();
         if (browsers == null || browsers.length == 0) return;
+        if(browser!=null){
         for (LocaleBrowser b : browsers) {
             if (browser.equalsIgnoreCase(b.toString())) {
                 b.openURL(url);
                 return;
             }
+        }
         }
         browsers[0].openURL(url);
     }

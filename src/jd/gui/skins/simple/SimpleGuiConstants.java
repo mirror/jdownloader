@@ -45,6 +45,8 @@ public class SimpleGuiConstants {
     public static final int TOP = 1<<0;
     public static final int BOTTOM = 1<<1;
     public static final String PARAM_START_AFTER_ADDING_LINKS = "PARAM_START_AFTER_ADDING_LINKS";
+    public static final String PARAM_SHOW_BALLON = "PARAM_SHOW_BALLON";
+    public static final String PARAM_LINKGRABBER_CLIPBOARD_OBSERVER = "PARAM_DISABLE_LINKGRABBER_CLIPBOARD_OBSERVER";
   
     
     public static boolean isAnimated() {
