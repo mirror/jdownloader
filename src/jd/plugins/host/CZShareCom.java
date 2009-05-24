@@ -89,7 +89,7 @@ public class CZShareCom extends PluginForHost {
 
     //@Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 20;
     }
 
     private void login(Account account) throws Exception {
