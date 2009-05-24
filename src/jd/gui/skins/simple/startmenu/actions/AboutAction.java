@@ -19,7 +19,6 @@ package jd.gui.skins.simple.startmenu.actions;
 import java.awt.event.ActionEvent;
 
 import jd.gui.skins.simple.AboutDialog;
-import jd.gui.skins.simple.GuiRunnable;
 
 public class AboutAction extends StartAction {
 

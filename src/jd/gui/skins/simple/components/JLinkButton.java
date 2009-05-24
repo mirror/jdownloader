@@ -27,8 +27,6 @@ import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.EventObject;
-import java.util.List;
-
 import javax.swing.Action;
 import javax.swing.ButtonModel;
 import javax.swing.Icon;
@@ -45,15 +43,10 @@ import javax.swing.table.TableCellRenderer;
 
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.Executer;
 import jd.nutils.nativeintegration.LocaleBrowser;
 import jd.parser.Regex;
-import jd.utils.JDUtilities;
-import edu.stanford.ejalbert.BrowserLauncher;
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 class BasicLinkButtonUI extends MetalButtonUI {
     private static final BasicLinkButtonUI ui = new BasicLinkButtonUI();

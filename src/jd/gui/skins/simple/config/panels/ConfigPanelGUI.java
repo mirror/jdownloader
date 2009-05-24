@@ -19,7 +19,6 @@ package jd.gui.skins.simple.config.panels;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 
@@ -47,9 +46,6 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
-import edu.stanford.ejalbert.BrowserLauncher;
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class ConfigPanelGUI extends ConfigPanel {
 

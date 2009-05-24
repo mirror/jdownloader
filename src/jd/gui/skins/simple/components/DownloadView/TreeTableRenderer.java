@@ -23,7 +23,6 @@ import java.text.DecimalFormat;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.border.Border;
 

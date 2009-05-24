@@ -34,7 +34,6 @@ import jd.gui.UserIO;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.userio.dialog.AbstractDialog;
 import jd.http.Browser;
-import jd.nutils.Executer;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.utils.JDLocale;

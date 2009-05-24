@@ -33,7 +33,6 @@ import jd.config.ConfigGroup;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.components.JDUnderlinedText;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.http.Encoding;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 

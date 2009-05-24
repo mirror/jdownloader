@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple.components.DownloadView;
 
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -151,7 +150,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
         brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
         brwSaveTo.addActionListener(this);
-     
+
         brwSaveTo.getInput().setBackground(null);
         txtPassword = new JDTextField();
         addChangeListener(txtPassword);
@@ -346,7 +345,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
             typeicon.setToolTipText(downloadLink.getHost());
             this.lblSize.setText(Formatter.formatReadable(downloadLink.getDownloadSize()));
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
-                this.txtURL.setText(downloadLink.getDownloadURL());
+                this.txtURL.setText(downloadLink.getBrowserUrl());
             } else {
                 this.txtURL.setText("**************");
             }
