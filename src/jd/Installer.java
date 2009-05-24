@@ -89,15 +89,15 @@ public class Installer {
         JDUtilities.getConfiguration().save();
 
         if (OSDetector.isWindows()) {
-          new GuiRunnable(){
+            new GuiRunnable<Object>() {
 
-            @Override
-            public Object runSave() {
-                new KikinDialog();
-                return null;
-            }
-              
-          }.waitForEDT();
+                @Override
+                public Object runSave() {
+                    new KikinDialog();
+                    return null;
+                }
+
+            }.waitForEDT();
         }
     }
 

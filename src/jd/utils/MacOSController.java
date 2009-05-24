@@ -40,13 +40,15 @@ public class MacOSController extends Application {
 
         public void handleAbout(ApplicationEvent e) {
             e.setHandled(true);
-            new GuiRunnable(){
+            new GuiRunnable<Object>() {
 
                 @Override
                 public Object runSave() {
-            new AboutDialog();
-            return null;
-                }}.start();
+                    new AboutDialog();
+                    return null;
+                }
+
+            }.start();
         }
 
         // public void handlePreferences(ApplicationEvent e) {

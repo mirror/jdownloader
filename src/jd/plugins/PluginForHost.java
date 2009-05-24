@@ -95,15 +95,11 @@ public abstract class PluginForHost extends Plugin {
 
     protected String getCaptchaCode(File captchaFile, DownloadLink downloadLink) throws PluginException, InterruptedException {
         String status = downloadLink.getLinkStatus().getStatusText();
-        ImageIcon statusIcon = downloadLink.getLinkStatus().getStatusIcon();
         downloadLink.getLinkStatus().setStatusText(JDLocale.L("gui.downloadview.statustext.jac", "Captcha recognition"));
-        BufferedImage img;
         try {
-            img = ImageIO.read(captchaFile);
-
+            BufferedImage img = ImageIO.read(captchaFile);
             downloadLink.getLinkStatus().setStatusIcon(JDImage.getScaledImageIcon(img, 16, 16));
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
@@ -118,18 +114,13 @@ public abstract class PluginForHost extends Plugin {
 
     protected String getCaptchaCode(String method, File file, int flag, DownloadLink link, String defaultValue, String explain) throws PluginException, InterruptedException {
         String status = link.getLinkStatus().getStatusText();
-        ImageIcon statusIcon = link.getLinkStatus().getStatusIcon();
         try {
             link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
-
             link.getLinkStatus().setStatusText(JDLocale.L("gui.downloadview.statustext.jac", "Captcha recognition"));
-            BufferedImage img;
             try {
-                img = ImageIO.read(file);
-
+                BufferedImage img = ImageIO.read(file);
                 link.getLinkStatus().setStatusIcon(JDImage.getScaledImageIcon(img, 16, 16));
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
             DownloadController.getInstance().fireDownloadLinkUpdate(link);
@@ -139,11 +130,9 @@ public abstract class PluginForHost extends Plugin {
             return cc;
         } finally {
             link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO);
-
             link.getLinkStatus().setStatusText(status);
             link.getLinkStatus().setStatusIcon(null);
             DownloadController.getInstance().fireDownloadLinkUpdate(link);
-
         }
     }
 
@@ -239,19 +228,19 @@ public abstract class PluginForHost extends Plugin {
             AccountInfo ret = fetchAccountInfo(account);
 
             if (ret == null) return null;
-            
+
             if (ret.isExpired()) {
                 account.setEnabled(false);
                 account.setProperty(AccountInfo.PARAM_INSTANCE, null);
                 String shortWarn = JDLocale.LF("gui.shortwarn.accountdisabled.expired", "Account %s(%s) got disabled(expired)", this.getHost(), account.getUser());
 
-                JDController.getInstance().getUiInterface().displayMiniWarning(JDLocale.L("gui.ballon.accountmanager.title","Accountmanager"), shortWarn, 10000);
+                JDController.getInstance().getUiInterface().displayMiniWarning(JDLocale.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn, 10000);
             } else if (!ret.isValid()) {
                 account.setEnabled(false);
                 account.setProperty(AccountInfo.PARAM_INSTANCE, null);
                 String shortWarn = JDLocale.LF("gui.shortwarn.accountdisabled.invalid", "Account %s(%s) got disabled(invalid)", this.getHost(), account.getUser());
 
-                JDController.getInstance().getUiInterface().displayMiniWarning(JDLocale.L("gui.ballon.accountmanager.title","Accountmanager"), shortWarn, 10000);
+                JDController.getInstance().getUiInterface().displayMiniWarning(JDLocale.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn, 10000);
             }
 
             account.setProperty(AccountInfo.PARAM_INSTANCE, ret);

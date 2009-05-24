@@ -20,7 +20,6 @@ import java.awt.Color;
 import java.io.IOException;
 import java.util.Vector;
 
-import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -44,8 +43,6 @@ import net.miginfocom.swing.MigLayout;
 
 public class AboutDialog extends AbstractDialog {
 
-    private JLabel label;
-    private JCheckBox checkbox;
     private JTextPane textField;
     private JList list;
 
@@ -55,9 +52,6 @@ public class AboutDialog extends AbstractDialog {
         init();
     }
 
-    /**
-* 
-*/
     private static final long serialVersionUID = -7647771640756844691L;
 
     public void contentInit(JPanel cp) {
@@ -149,104 +143,76 @@ public class AboutDialog extends AbstractDialog {
 
     private DevEntry[] getDevs() {
         Vector<DevEntry> devs = new Vector<DevEntry>();
-        devs.add(new DevEntry("coalado", " support@jdownloader.org", " JDownloader core, Framework, OCR, Swing GUI, Reconnect, Container, Website, Project Administration"));
+        devs.add(new DevEntry("coalado", "support@jdownloader.org", "JDownloader core, Framework, OCR, Swing GUI, Reconnect, Container, Website, Project Administration"));
 
-        devs.add(new DevEntry("Botzi", " botzi@jdownloader.org", " Hoster / Decrypter / Addons, Bugfixing, Database backend, No Support"));
-        devs.add(new DevEntry("DwD", " dwd@jdownloader.org", " hoster, ocr, decrypter, extractor, reconnect"));
-        devs.add(new DevEntry("jiaz", " jiaz@jdownloader.org", " JDownloader core, Framework, Addons/Plugins, Support, Server Administration"));
-        devs.add(new DevEntry("Greeny", " greeny@jdownloader.org", " LangFileEditor, Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly"));
-        devs.add(new DevEntry("scr4ve", " scr4ve@jdownloader.org", " Security Stuff, Addons, Decrypter-Plugins, Support and Bugfixing"));
+        devs.add(new DevEntry("Botzi", "botzi@jdownloader.org", "Hoster / Decrypter / Addons, Bugfixing, Database backend, No Support"));
+        devs.add(new DevEntry("DwD", "dwd@jdownloader.org", "hoster, ocr, decrypter, extractor, reconnect"));
+        devs.add(new DevEntry("jiaz", "jiaz@jdownloader.org", "JDownloader core, Framework, Addons/Plugins, Support, Server Administration"));
+        devs.add(new DevEntry("Greeny", "greeny@jdownloader.org", "LangFileEditor, Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly"));
+        devs.add(new DevEntry("scr4ve", "scr4ve@jdownloader.org", "Security Stuff, Addons, Decrypter-Plugins, Support and Bugfixing"));
 
-        devs.add(new DevEntry("gocsp", " gocsp@jdownloader.org", " Mac Developer"));
-        devs.add(new DevEntry("gluewurm", " ---", " Developing innovative ideas, Bugfixing, Technical-Feasibility-Advisor"));
-        devs.add(new DevEntry("jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD."));
-        devs.add(new DevEntry("djuzi", " djuzi@jdownloader.org", " Hoster/Decrypter plugins, Bug fixes, Localizing, PL Translation"));
-        devs.add(new DevEntry("eXecuTe", " jd.execute@gmail.com", " command line support, language editor, newsfeed addon, tango theme, some plugins"));
-        devs.add(new DevEntry(" ManiacMansion", " ManiacMansion@jdownloader.org", " OCR/AntiCaptcha, Hoster/Decrypter plugins, Bugfixing"));
+        devs.add(new DevEntry("gocsp", "gocsp@jdownloader.org", "Mac Developer"));
+        devs.add(new DevEntry("gluewurm", null, "Developing innovative ideas, Bugfixing, Technical-Feasibility-Advisor"));
+        devs.add(new DevEntry("jago", "jago@jdownloader.org", "Senior software architect in real life. Responsible for the Swing GUI design of JD."));
+        devs.add(new DevEntry("djuzi", "djuzi@jdownloader.org", "Hoster/Decrypter plugins, Bug fixes, Localizing, PL Translation"));
+        devs.add(new DevEntry("eXecuTe", "jd.execute@gmail.com", "command line support, language editor, newsfeed addon, tango theme, some plugins"));
+        devs.add(new DevEntry("ManiacMansion", "ManiacMansion@jdownloader.org", "OCR/AntiCaptcha, Hoster/Decrypter plugins, Bugfixing"));
 
-        devs.add(new DevEntry(" Sheadox", " sheadox@jdownloader.org", " Hoster plugins, Decrypt plugins, Support"));
-        devs.add(new DevEntry(" Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing"));
-        devs.add(new DevEntry(" Andrei", " andrei030@hotmail.com", " Logo Design (v2)"));
-        devs.add(new DevEntry(" Trazo", " ancoar@gmail.com", " Logo Design (v3)"));
+        devs.add(new DevEntry("Sheadox", "sheadox@jdownloader.org", "Hoster plugins, Decrypt plugins, Support"));
+        devs.add(new DevEntry("Viperb0y", "support@jdownloader.org", "Hoster / Decrypter, Support and Bugfixing"));
+        devs.add(new DevEntry("Andrei", "andrei030@hotmail.com", "Logo Design (v2)"));
+        devs.add(new DevEntry("Trazo", "ancoar@gmail.com", "Logo Design (v3)"));
         // Collections.sort(devs);
         return devs.toArray(new DevEntry[] {});
     }
 
     public Integer getReturnID() {
-        // TODO Auto-generated method stub
         return (Integer) super.getReturnValue();
     }
 
-    public static void main(String[] args) {
-        new GuiRunnable() {
-
-            @Override
-            public Object runSave() {
-                new AboutDialog();
-                return null;
-            }
-        }.start();
-
-    }
-
-    class DevEntry implements Comparable<DevEntry> {
+    private class DevEntry implements Comparable<DevEntry> {
 
         private String name;
         private String mail;
-        private String desc;
         private String[] descs;
 
-        public DevEntry(String string, String string2, String string3) {
-            name = string.trim();
-            mail = string2.trim();
-            desc = string3;
-            descs = string3.split(",");
+        public DevEntry(String name, String mail, String descs) {
+            this.name = name;
+            this.mail = mail;
+            this.descs = descs.split(",");
         }
 
         public String getName() {
             return name;
         }
 
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getMail() {
-            return mail;
-        }
-
-        public void setMail(String mail) {
-            this.mail = mail;
-        }
-
-        public String getDesc() {
-            return desc;
-        }
-
-        public void setDesc(String desc) {
-            this.desc = desc;
+        public String toString() {
+            return getName();
         }
 
         public int compareTo(DevEntry o) {
-            // TODO Auto-generated method stub
             return name.compareToIgnoreCase(o.getName());
         }
 
-        public String toString() {
-            return name;
-        }
-
         public String getHTML() {
-            String ret = "<h2>" + name + "</h2>";
-            ret += "<h3>Email</h3>" + mail;
-            ret += "<h3>Section</h3>";
-            ret += "<ul>";
-            for (String d : descs) {
-                ret += "<li>" + d.trim() + "</li>";
+            StringBuilder ret = new StringBuilder();
+            ret.append("<h2>");
+            ret.append(name);
+            ret.append("</h2>");
+            if (mail != null) {
+                ret.append("<h3>Email</h3>");
+                ret.append(mail);
             }
-            ret += "</ul>";
+            ret.append("<h3>Section</h3>");
+            ret.append("<ul>");
+            for (String d : descs) {
+                ret.append("<li>");
+                ret.append(d.trim());
+                ret.append("</li>");
+            }
+            ret.append("</ul>");
 
-            return ret;
+            return ret.toString();
         }
 
     }

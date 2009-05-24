@@ -16,6 +16,7 @@
 
 package jd.gui.skins.simple.components;
 
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -163,7 +164,23 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     private void initGUI() {
         this.setLayout(new MigLayout("insets 0", "[left, grow]15px[]", ""));
 
-        cmboInput = new JComboBox(files);
+        cmboInput = new JComboBox(files) {
+
+            private static final long serialVersionUID = 5288948184335860046L;
+
+            public Dimension getMaximumSize() {
+                return new Dimension(20, 20);
+            }
+
+            public Dimension getMinimumSize() {
+                return new Dimension(20, 20);
+            }
+
+            public Dimension getPreferredSize() {
+                return new Dimension(20, 20);
+            }
+
+        };
         cmboInput.setEditable(false);
         cmboInput.addActionListener(this);
         if (cmboInput.getItemCount() > 0) cmboInput.setSelectedIndex(0);
