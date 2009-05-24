@@ -55,7 +55,7 @@ public class LogTaskPane extends TaskPanel implements ActionListener {
         add(save, D1_BUTTON_ICON);
         add(upload, D1_BUTTON_ICON);
         add(new JSeparator());
-        add(new JLabel(JDLocale.L("gui.config.general.loggerLevel", "Level für's Logging")), D1_LABEL);
+        add(new JLabel(JDLocale.L("gui.taskpanels.logfilter", "Filter für Log-Einträge")), D1_LABEL);
         add(box = new JComboBox(new Level[] { Level.ALL, Level.FINER, Level.INFO, Level.WARNING, Level.SEVERE }), D1_COMPONENT);
         box.addActionListener(this);
     }

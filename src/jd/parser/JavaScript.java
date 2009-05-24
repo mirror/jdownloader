@@ -127,15 +127,15 @@ public final class JavaScript {
                         cx.evaluateString(scope, parseJS(reg[i][2]), "<cmd>", 1, null);
                     } catch (Exception e) {
                         if (debug) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                             System.err.println(reg[i][2]);
                         }
                     }
                     String data2 = d.getInnerHTML().replaceAll("(?is)((?<!<script [^>]{0,100}>\\s{0,30})<!--.*?-->)", "");
                     executed.add(reg[i][2]);
-                    runString(d.content.toString());
+                    runString(d.getContent());
                     // System.out.println(data2);
-                    if (!data2.equals(data) && !d.content.toString().equals(data)) {
+                    if (!data2.equals(data) && !d.getContent().equals(data)) {
                         runString(data2);
                         return;
                     }
@@ -166,15 +166,15 @@ public final class JavaScript {
                                 cx.evaluateString(scope, parseJS(page), "<cmd>", 1, null);
                             } catch (Exception e) {
                                 if (debug) {
-                                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                                     System.err.println(link);
                                 }
                             }
                             String data2 = d.getInnerHTML().replaceAll("(?is)((?<!<script [^>]{0,100}>\\s{0,30})<!--.*?-->)", "");
 
-                            runString(d.content.toString());
+                            runString(d.getContent());
                             // System.out.println(data2);
-                            if (!data2.equals(data) && !d.content.toString().equals(data)) {
+                            if (!data2.equals(data) && !d.getContent().equals(data)) {
                                 runString(data2);
                                 return;
                             }
@@ -190,7 +190,7 @@ public final class JavaScript {
         if (cx != null && scope != null) return;
         if (br == null) return;
         String data = br.toString();
-        //Logger.getLogger(HTMLDocumentImpl.class.getName()).setLevel(Level.OFF)
+        // Logger.getLogger(HTMLDocumentImpl.class.getName()).setLevel(Level.OFF)
         // ;
         if (debug)
             Logger.getLogger(JavaFunctionObject.class.getName()).setLevel(Level.WARNING);
