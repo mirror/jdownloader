@@ -16,8 +16,6 @@
 
 package jd.gui.skins.simple.components.DownloadView;
 
-import java.awt.Component;
-import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
@@ -27,10 +25,12 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 import javax.swing.tree.TreePath;
 
@@ -97,22 +97,26 @@ public class TreeTableTransferHandler extends TransferHandler {
     // @Override
     protected Transferable createTransferable(JComponent c) {
         isDragging = true;
+        String url = "http://www.jdownloader.org";
         ArrayList<FilePackage> packages = treeTable.getSelectedFilePackages();
         ArrayList<DownloadLink> downloadLinks = treeTable.getSelectedDownloadLinks();
-       
-       Point point = MouseInfo.getPointerInfo().getLocation();   
-       point.x -= (treeTable.getLocationOnScreen().x);
-       point.y -= (treeTable.getLocationOnScreen().y);
-        int row = treeTable.rowAtPoint( point);
+        Point p = SimpleGUI.CURRENTGUI.getMousePosition();
+        p = SwingUtilities.convertPoint(SimpleGUI.CURRENTGUI, p, treeTable);
+        int row = treeTable.rowAtPoint(p);
         TreePath current = treeTable.getPathForRow(row);
+        if (current == null) {
+            isDragging = false;
+            return null;
+        }
         if (current.getLastPathComponent() instanceof FilePackage) {
             this.draggingObjects = packages;
             this.draggingType = DRAG_PACKAGES;
         } else {
             this.draggingObjects = downloadLinks;
+            if (downloadLinks.get(0).getLinkType() == DownloadLink.LINKTYPE_NORMAL) url = downloadLinks.get(0).getBrowserUrl();
             this.draggingType = DRAG_LINKS;
         }
-        return new StringSelection("JDAFFE");
+        return new StringSelection(url);
     }
 
     // @Override
@@ -131,7 +135,6 @@ public class TreeTableTransferHandler extends TransferHandler {
             switch (draggingType) {
             case DRAG_LINKS:
                 final ArrayList<DownloadLink> downloadLinks = (ArrayList<DownloadLink>) draggingObjects;
-
                 if (current.getLastPathComponent() instanceof FilePackage) {
                     /* Links in Package */
                     String name = ((FilePackage) current.getLastPathComponent()).getName();
@@ -139,9 +142,11 @@ public class TreeTableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (DownloadController.getInstance().getPackages()) {
-                                FilePackage fp = ((FilePackage) current.getLastPathComponent());
-                                fp.addLinksAt(downloadLinks, 0);
+                            synchronized (DownloadController.ControllerLock) {
+                                synchronized (DownloadController.getInstance().getPackages()) {
+                                    FilePackage fp = ((FilePackage) current.getLastPathComponent());
+                                    fp.addLinksAt(downloadLinks, 0);
+                                }
                             }
                         }
                     });
@@ -150,9 +155,11 @@ public class TreeTableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (DownloadController.getInstance().getPackages()) {
-                                FilePackage fp = ((FilePackage) current.getLastPathComponent());
-                                fp.addLinksAt(downloadLinks, fp.size());
+                            synchronized (DownloadController.ControllerLock) {
+                                synchronized (DownloadController.getInstance().getPackages()) {
+                                    FilePackage fp = ((FilePackage) current.getLastPathComponent());
+                                    fp.addLinksAt(downloadLinks, fp.size());
+                                }
                             }
                         }
                     });
@@ -164,9 +171,11 @@ public class TreeTableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (DownloadController.getInstance().getPackages()) {
-                                FilePackage fp = ((DownloadLink) current.getLastPathComponent()).getFilePackage();
-                                fp.addLinksAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()) - 1);
+                            synchronized (DownloadController.ControllerLock) {
+                                synchronized (DownloadController.getInstance().getPackages()) {
+                                    FilePackage fp = ((DownloadLink) current.getLastPathComponent()).getFilePackage();
+                                    fp.addLinksAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()) - 1);
+                                }
                             }
                         }
                     });
@@ -175,9 +184,11 @@ public class TreeTableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (DownloadController.getInstance().getPackages()) {
-                                FilePackage fp = ((DownloadLink) current.getLastPathComponent()).getFilePackage();
-                                fp.addLinksAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()) + 1);
+                            synchronized (DownloadController.ControllerLock) {
+                                synchronized (DownloadController.getInstance().getPackages()) {
+                                    FilePackage fp = ((DownloadLink) current.getLastPathComponent()).getFilePackage();
+                                    fp.addLinksAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()) + 1);
+                                }
                             }
                         }
                     });
@@ -200,7 +211,11 @@ public class TreeTableTransferHandler extends TransferHandler {
                 m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        DownloadController.getInstance().addAllAt(packages, DownloadController.getInstance().indexOf(fp));
+                        synchronized (DownloadController.ControllerLock) {
+                            synchronized (DownloadController.getInstance().getPackages()) {
+                                DownloadController.getInstance().addAllAt(packages, DownloadController.getInstance().indexOf(fp));
+                            }
+                        }
                     }
 
                 });
@@ -209,7 +224,11 @@ public class TreeTableTransferHandler extends TransferHandler {
                 m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        DownloadController.getInstance().addAllAt(packages, DownloadController.getInstance().indexOf(fp) + 1);
+                        synchronized (DownloadController.ControllerLock) {
+                            synchronized (DownloadController.getInstance().getPackages()) {
+                                DownloadController.getInstance().addAllAt(packages, DownloadController.getInstance().indexOf(fp) + 1);
+                            }
+                        }
                     }
                 });
 

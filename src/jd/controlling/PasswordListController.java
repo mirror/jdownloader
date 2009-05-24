@@ -203,10 +203,10 @@ public class PasswordListController implements ActionListener, DownloadControlle
     public void onDownloadControllerEvent(DownloadControllerEvent event) {
         switch (event.getID()) {
         case DownloadControllerEvent.ADD_DOWNLOADLINK:
-            this.addPasswords(((DownloadLink) event.getSource()).getSourcePluginPasswordList());
+            this.addPasswords(((DownloadLink) event.getParameter()).getSourcePluginPasswordList());
             break;
         case DownloadControllerEvent.ADD_FILEPACKAGE:
-            this.addPasswords(JDUtilities.passwordStringToArray((((FilePackage) event.getSource()).getPassword())));
+            this.addPasswords(JDUtilities.passwordStringToArray((((FilePackage) event.getParameter()).getPassword())));
             break;
         default:
             break;

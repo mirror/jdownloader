@@ -65,7 +65,6 @@ import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
-import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;

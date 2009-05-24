@@ -21,7 +21,7 @@ abstract public class LocaleBrowser implements Serializable {
      * 
      */
     private static final long serialVersionUID = 7153058016440180347L;
-    private static LocaleBrowser[] BROWSERLIST=null;
+    private static LocaleBrowser[] BROWSERLIST = null;
     private String name;
 
     public String getName() {
@@ -56,7 +56,7 @@ abstract public class LocaleBrowser implements Serializable {
 
                     @Override
                     public void openURL(URL url) throws Exception {
-                        if(url==null)return;
+                        if (url == null) return;
                         BrowserLauncher launcher = new BrowserLauncher();
                         launcher.openURLinBrowser(this.getName(), url.toString());
                     }
@@ -78,7 +78,7 @@ abstract public class LocaleBrowser implements Serializable {
 
                 @Override
                 public void openURL(URL url) throws IOException {
-                    if(url==null)return;
+                    if (url == null) return;
                     com.apple.eio.FileManager.openURL(url.toString());
                 }
 
@@ -93,7 +93,7 @@ abstract public class LocaleBrowser implements Serializable {
 
                     @Override
                     public void openURL(URL url) throws Exception {
-                        if(url==null)return;
+                        if (url == null) return;
                         Executer exec = new Executer("open");
                         exec.addParameters(new String[] { "/Applications/Firefox.app", "-new-tab", url.toString() });
                         exec.setWaitTimeout(10);
@@ -114,7 +114,7 @@ abstract public class LocaleBrowser implements Serializable {
 
                     @Override
                     public void openURL(URL url) throws Exception {
-                        if(url==null)return;
+                        if (url == null) return;
                         Executer exec = new Executer("open");
                         exec.addParameters(new String[] { "/Applications/Safari.app", "-new-tab", url.toString() });
                         exec.setWaitTimeout(10);
@@ -127,7 +127,7 @@ abstract public class LocaleBrowser implements Serializable {
             }
 
         }
-        if (OSDetector.isLinux()&&ret.size()==0) {
+        if (OSDetector.isLinux() && ret.size() == 0) {
             Executer exec = new Executer("firefox");
             exec.addParameter("-v");
             exec.setWaitTimeout(10);
@@ -139,13 +139,12 @@ abstract public class LocaleBrowser implements Serializable {
                      * 
                      */
                     private static final long serialVersionUID = 6186304252605346654L;
-                 
 
                     @Override
                     public void openURL(URL url) throws Exception {
-                        if(url==null)return;
+                        if (url == null) return;
                         Executer exec = new Executer("firefox");
-                        exec.addParameters(new String[] {"-new-tab", url.toString() });
+                        exec.addParameters(new String[] { "-new-tab", url.toString() });
                         exec.setWaitTimeout(10);
                         exec.start();
                         exec.waitTimeout();
@@ -214,23 +213,24 @@ abstract public class LocaleBrowser implements Serializable {
     }
 
     public void openURL(String url) throws Exception {
+        if (url == null) return;
         openURL(new URL(url));
     }
 
     abstract public void openURL(URL url) throws Exception;
 
     public static void openURL(String browser, URL url) throws Exception {
+        if (browser == null) return;
+        if (url == null) return;
         LocaleBrowser[] browsers = getBrowserList();
         if (browsers == null || browsers.length == 0) return;
         for (LocaleBrowser b : browsers) {
-
             if (browser.equalsIgnoreCase(b.toString())) {
                 b.openURL(url);
                 return;
             }
         }
         browsers[0].openURL(url);
-
     }
 
     public static void openDefaultURL(URL url) throws Exception {

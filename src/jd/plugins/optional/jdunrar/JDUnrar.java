@@ -787,7 +787,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     }
                 }
                 if (OSDetector.isMac()) {
-                    path = JDUtilities.getResourceFile("tools/mac/unrar").getAbsolutePath();
+                    path = JDUtilities.getResourceFile("tools/mac/unrar/unrar").getAbsolutePath();
                     chmodUnrar(path);
                     if (isUnrarCommandValid(path)) {
                         this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
@@ -1322,7 +1322,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     }
 
-    
     // @Override
     public Object interact(String command, Object parameter) {
         if (command.equals("isWorking")) {

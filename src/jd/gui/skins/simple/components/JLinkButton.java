@@ -172,13 +172,14 @@ public class JLinkButton extends JButton {
     }
 
     public static void openURL(String url) throws Exception {
+        if (url == null) return;
         JLinkButton.openURL(new URL(url));
     }
 
     public static void openURL(URL url) throws Exception {
+        if (url == null) return;
         SubConfiguration cfg = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
         if (cfg.getBooleanProperty(SimpleGuiConstants.PARAM_CUSTOM_BROWSER_USE, false)) {
-
             Executer exec = new Executer(cfg.getStringProperty(SimpleGuiConstants.PARAM_CUSTOM_BROWSER));
             String params = cfg.getStringProperty(SimpleGuiConstants.PARAM_CUSTOM_BROWSER_PARAM).replace("%url", url + "");
             exec.addParameters(Regex.getLines(params));
@@ -187,13 +188,9 @@ public class JLinkButton extends JButton {
             exec.waitTimeout();
             if (exec.getException() != null) { throw exec.getException(); }
         } else {
-
             if (url != null) {
                 String browser = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_BROWSER, null);
-                LocaleBrowser.openURL(browser,url);
-                
-                
-
+                LocaleBrowser.openURL(browser, url);
             }
         }
     }

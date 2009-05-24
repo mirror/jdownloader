@@ -289,11 +289,14 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
                             FilePackageInfo.this.progressBarDownloadLink.setMaximums(new long[] { 10 });
                             FilePackageInfo.this.progressBarDownloadLink.setValues(new long[] { 0 });
                         }
-                        speed.setText(JDLocale.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", Formatter.formatReadable(Math.max(0, downloadLink.getDownloadSpeed()))));
+
                         if (downloadLink.getDownloadSpeed() <= 0) {
                             eta.setVisible(false);
+                            speed.setVisible(false);
                         } else {
                             eta.setText(JDLocale.LF("gui.fileinfopanel.linktab.eta", "ETA: %s mm:ss", Formatter.formatSeconds((downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent()) / downloadLink.getDownloadSpeed())));
+                            speed.setText(JDLocale.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", Formatter.formatReadable(Math.max(0, downloadLink.getDownloadSpeed()))));
+                            speed.setVisible(true);
                             eta.setVisible(true);
                         }
                     }
@@ -316,7 +319,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
             updater.interrupt();
             updater = null;
         }
-        PasswordListController.getInstance().addPassword(txtPassword.getText());        
+        PasswordListController.getInstance().addPassword(txtPassword.getText());
         actionPerformed(new ActionEvent(this.brwSaveTo, 0, null));
         this.progressBarFilePackage.setMaximums(null);
         this.progressBarDownloadLink.setMaximums(null);
