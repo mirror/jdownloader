@@ -228,66 +228,86 @@ public class Rapidshare extends PluginForHost {
                 if (!checkLinksIntern(links.toArray(new DownloadLink[] {}))) return false;
             }
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
         return true;
     }
 
     public boolean checkLinksIntern(DownloadLink[] urls) {
+        if (urls == null) { return false; }
+        ArrayList<DownloadLink> checkurls = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> finishedurls = new ArrayList<DownloadLink>();
+        for (DownloadLink u : urls) {
+            checkurls.add(u);
+        }
         try {
-            if (urls == null) { return false; }
-
-            StringBuilder idlist = new StringBuilder();
-            StringBuilder namelist = new StringBuilder();
-
-            for (DownloadLink u : urls) {
-                idlist.append("," + getID(u.getDownloadURL()));
-                namelist.append("," + getName(u.getDownloadURL()));
-            }
-            br.getPage("http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1");
-
-            String[][] matches = br.getRegex("([^\n^\r^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^\n^\r]+)").getMatches();
-            int i = 0;
-            for (DownloadLink u : urls) {
-                u.setDownloadSize(Long.parseLong(matches[i][2]));
-                u.setFinalFileName(matches[i][1]);
-                u.setMD5Hash(matches[i][6]);
-                // 0=File not found 1=File OK 2=File OK (direct download)
-                // 3=Server down 4=File abused 5
-                switch (Integer.parseInt(matches[i][4])) {
-                case 0:
-                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.filenotfound", "File not found"));
-                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.filenotfound", "File not found"));
-                    u.setAvailable(false);
-                    break;
-                case 1:
-                    // u.getLinkStatus().setStatusText("alles prima");
-                    u.setAvailable(true);
-                    u.getLinkStatus().setStatusText("");
-                    break;
-                case 2:
-                    u.setAvailable(true);
-                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.directdownload", "Direct Download"));
-                    break;
-                case 3:
-                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.servernotavailable", "Server temp. not available. Try later!"));
-                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.servernotavailable", "Server temp. not available. Try later!"));
-                    u.setAvailable(false);
-                    break;
-                case 4:
-                    u.setAvailable(false);
-                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.abused", "File abused"));
-                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.abused", "File abused"));
-                    break;
-                case 5:
-                    u.setAvailable(true);
-                    u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.anonymous", "File without Account(annonymous)"));
-                    u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.anonymous", "File without Account(annonymous)"));
-                    break;
+            for (int retry = 0; retry < 3; retry++) {
+                StringBuilder idlist = new StringBuilder();
+                StringBuilder namelist = new StringBuilder();
+                checkurls.removeAll(finishedurls);
+                for (DownloadLink u : checkurls) {
+                    idlist.append("," + getID(u.getDownloadURL()));
+                    namelist.append("," + getName(u.getDownloadURL()));
                 }
-                i++;
+                br.getPage("http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1");
+
+                if (br.containsHTML("access flood")) {
+                    logger.warning("RS API flooded! will not check again the next 5 minutes!");
+                    rsapiwait = System.currentTimeMillis() + 5 * 60 * 1000l;
+                    return false;
+                }
+
+                String[][] matches = br.getRegex("([^\n^\r^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^\n^\r]+)").getMatches();
+                int i = 0;
+                boolean doretry = false;
+                for (DownloadLink u : checkurls) {
+                    finishedurls.add(u);
+                    if (i > matches.length - 1) {
+                        doretry = true;
+                        break;
+                    }
+                    u.setDownloadSize(Long.parseLong(matches[i][2]));
+                    u.setFinalFileName(matches[i][1]);
+                    u.setMD5Hash(matches[i][6]);
+                    // 0=File not found 1=File OK 2=File OK (direct download)
+                    // 3=Server down 4=File abused 5
+                    switch (Integer.parseInt(matches[i][4])) {
+                    case 0:
+                        u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.filenotfound", "File not found"));
+                        u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.filenotfound", "File not found"));
+                        u.setAvailable(false);
+                        break;
+                    case 1:
+                        // u.getLinkStatus().setStatusText("alles prima");
+                        u.setAvailable(true);
+                        u.getLinkStatus().setStatusText("");
+                        break;
+                    case 2:
+                        u.setAvailable(true);
+                        u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.directdownload", "Direct Download"));
+                        break;
+                    case 3:
+                        u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.servernotavailable", "Server temp. not available. Try later!"));
+                        u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.servernotavailable", "Server temp. not available. Try later!"));
+                        u.setAvailable(false);
+                        break;
+                    case 4:
+                        u.setAvailable(false);
+                        u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.abused", "File abused"));
+                        u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.abused", "File abused"));
+                        break;
+                    case 5:
+                        u.setAvailable(true);
+                        u.getLinkStatus().setErrorMessage(JDLocale.L("plugin.host.rapidshare.status.anonymous", "File without Account(annonymous)"));
+                        u.getLinkStatus().setStatusText(JDLocale.L("plugin.host.rapidshare.status.anonymous", "File without Account(annonymous)"));
+                        break;
+                    }
+                    i++;
+                }
+                if (!doretry) return true;
             }
-            return true;
+            return false;
         } catch (Exception e) {
             if (br.containsHTML("access flood")) {
                 logger.warning("RS API flooded! will not check again the next 5 minutes!");
@@ -295,7 +315,6 @@ public class Rapidshare extends PluginForHost {
             }
             return false;
         }
-
     }
 
     private String getName(String downloadURL) {
