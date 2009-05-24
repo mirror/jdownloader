@@ -59,7 +59,7 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     protected static final String D2_PROGRESSBAR = "height 10!,gaptop 7,gapleft 27, width null:110:180";
     protected static final String D1_COMPONENT = "spanx,alignx left,gaptop 2,gapleft 7";
 
-    protected static final String D2_CHECKBOX = "spanx,alignx left,gaptop 2,gapleft 23";;
+    protected static final String D2_CHECKBOX = "spanx,alignx left,gaptop 2,gapleft 23";
     public boolean pressed;
 
     public TaskPanel(String string, ImageIcon ii, String pid) {
@@ -172,20 +172,18 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     }
 
     public void mouseExited(MouseEvent e) {
-        pressed = false;
     }
 
     public void mousePressed(MouseEvent e) {
-        this.pressed = true;
+        pressed = true;
     }
 
     public void mouseReleased(MouseEvent e) {
-        if(super.isCollapsed()){
-            super.setCollapsed(false); 
-        }else{
+        if (super.isCollapsed()) {
+            super.setCollapsed(false);
+        } else {
             super.setCollapsed(true);
         }
-        
 
         broadcastEvent(new ActionEvent(this, ACTION_CLICK, "Toggle"));
     }
@@ -204,7 +202,6 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
 
     public JButton createButton(String string, Icon i) {
         return Factory.createButton(string, i, this);
-
     }
 
     public void propertyChange(PropertyChangeEvent evt) {
@@ -214,6 +211,7 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
                 broadcastEvent(new ActionEvent(this, ACTION_TOGGLE, "Toggle"));
                 cfg.setProperty(getPanelID() + "_collapsed", this.isCollapsed());
                 cfg.save();
+                pressed = false;
             }
         }
 

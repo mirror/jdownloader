@@ -27,7 +27,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
-import javax.swing.WindowConstants;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.event.ListSelectionEvent;
@@ -121,23 +120,19 @@ public class AboutDialog extends AbstractDialog {
         cp.add(new JScrollPane(textField), "");
         cp.add(new JSeparator(), "spanx,growx,pushx");
         JLabel lbl;
-        cp.add(lbl = new JLabel("JDownloader © AppWork UG (haftungsbeschränkt) 2007-2009"), "split 2,aligny center");
+        cp.add(lbl = new JLabel("JDownloader © AppWork UG (haftungsbeschränkt) 2007-2009"), "split 4, aligny center");
         lbl.setEnabled(false);
         this.getContentPane().setBackground(Color.WHITE);
-        JPanel links = new JPanel();
-        links.setBackground(Color.WHITE);
-        links.add(new JLinkButton(JDLocale.L("gui.dialog.about.homepage", "Homepage"), JDLocale.L("gui.dialog.about.homeurl", "http://www.jdownloader.org/home?lng=en")));
-        links.add(new JLinkButton(JDLocale.L("gui.dialog.about.forum", "Support board"), JDLocale.L("gui.dialog.about.forumurl", "http://board.jdownloader.org")));
-        links.add(new JLinkButton(JDLocale.L("gui.dialog.about.chat", "Chat"), JDLocale.L("gui.dialog.about.chaturl", "http://www.jdownloader.org/support?lng=en")));
 
-        cp.add(links, "alignx right,aligny bottom");
-
+        cp.add(new JLinkButton(JDLocale.L("gui.dialog.about.homepage", "Homepage"), JDLocale.L("gui.dialog.about.homeurl", "http://www.jdownloader.org/home?lng=en")), "alignx right, aligny bottom");
+        cp.add(new JLinkButton(JDLocale.L("gui.dialog.about.forum", "Support board"), JDLocale.L("gui.dialog.about.forumurl", "http://board.jdownloader.org")), "alignx right, aligny bottom");
+        cp.add(new JLinkButton(JDLocale.L("gui.dialog.about.chat", "Chat"), JDLocale.L("gui.dialog.about.chaturl", "http://www.jdownloader.org/support?lng=en")), "alignx right, aligny bottom");
     }
 
     protected void afterPacked() {
         this.remove(countDownLabel);
         this.setSize(800, 450);
-        this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        this.setDefaultCloseOperation(AbstractDialog.DISPOSE_ON_CLOSE);
 
     }
 
