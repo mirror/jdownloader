@@ -1023,14 +1023,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
     }
 
     public void displayMiniWarning(final String shortWarn, final String toolTip, final int showtime) {
-        new Thread() {
-            public void run() {
-                ProgressController pc = new ProgressController(shortWarn, 10);
-                pc.setColor(Color.RED);
-                pc.setStatus(10);
-                pc.finalize(showtime);
-            }
-        }.start();
+
+        Balloon.show(shortWarn, JDTheme.II("gui.images.warning",32,32), toolTip);
 
         // if (shortWarn == null) {
         // SwingUtilities.invokeLater(new Runnable() {

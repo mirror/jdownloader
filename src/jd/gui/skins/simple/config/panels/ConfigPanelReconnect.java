@@ -282,6 +282,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     // @Override
     public void load() {
+        tabbed.setSelectedIndex(configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, 0));
         loadConfigEntries();
     }
 

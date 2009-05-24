@@ -43,6 +43,8 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
     private static final long serialVersionUID = -3912572910439565199L;
 
+    private static final String NULL_BYTE_PROGRESS = "0.00%(0 B/* MB)";
+
     private DecimalFormat c = new DecimalFormat("0.00");
 
     private Component co;
@@ -372,7 +374,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 }
                 progress.setString(sb.toString());
             } else {
-                progress.setString("");
+                progress.setString(NULL_BYTE_PROGRESS);
             }
 //            progress.setToolTipText(null);
             progress.setForeground(COL_PROGRESS_NORMAL);

@@ -16,6 +16,8 @@
 
 package jd.gui.skins.simple.components.DownloadView;
 
+import java.awt.Component;
+import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
@@ -33,6 +35,7 @@ import javax.swing.TransferHandler;
 import javax.swing.tree.TreePath;
 
 import jd.controlling.DownloadController;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -96,7 +99,11 @@ public class TreeTableTransferHandler extends TransferHandler {
         isDragging = true;
         ArrayList<FilePackage> packages = treeTable.getSelectedFilePackages();
         ArrayList<DownloadLink> downloadLinks = treeTable.getSelectedDownloadLinks();
-        int row = treeTable.rowAtPoint(treeTable.getMousePosition());
+       
+       Point point = MouseInfo.getPointerInfo().getLocation();   
+       point.x -= (treeTable.getLocationOnScreen().x);
+       point.y -= (treeTable.getLocationOnScreen().y);
+        int row = treeTable.rowAtPoint( point);
         TreePath current = treeTable.getPathForRow(row);
         if (current.getLastPathComponent() instanceof FilePackage) {
             this.draggingObjects = packages;
