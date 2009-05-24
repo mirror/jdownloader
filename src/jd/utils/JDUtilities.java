@@ -770,20 +770,36 @@ public class JDUtilities {
         List<String> lst = ManagementFactory.getRuntimeMXBean().getInputArguments();
         ArrayList<String> jargs = new ArrayList<String>();
 
+        boolean xmxset = false;
+        boolean xmsset = false;
+        boolean useconc = false;
+        boolean minheap = false;
+        boolean maxheap = false;
+
         for (String h : lst) {
             if (h.contains("Xmx")) {
+                xmxset = true;
                 if (Runtime.getRuntime().maxMemory() < 533000000) {
                     jargs.add("-Xmx512m");
                     continue;
                 }
+            } else if (h.contains("xms")) {
+                xmsset = true;
+            } else if (h.contains("XX:+useconc")) {
+                useconc = true;
+            } else if (h.contains("minheapfree")) {
+                minheap = true;
+            } else if (h.contains("maxheapfree")) {
+                maxheap = true;
             }
             jargs.add(h);
         }
+        if (!xmxset) jargs.add("-Xmx512m");
         if (OSDetector.isLinux()) {
-            jargs.add("-Xms64m");
-            jargs.add("-XX:+UseConcMarkSweepGC");
-            jargs.add("-XX:MinHeapFreeRatio=0");
-            jargs.add("-XX:MaxHeapFreeRatio=0");
+            if (!xmsset) jargs.add("-Xms64m");
+            if (!useconc) jargs.add("-XX:+UseConcMarkSweepGC");
+            if (!minheap) jargs.add("-XX:MinHeapFreeRatio=0");
+            if (!maxheap) jargs.add("-XX:MaxHeapFreeRatio=0");
         }
         jargs.add("-jar");
         jargs.add("JDownloader.jar");
@@ -802,12 +818,12 @@ public class JDUtilities {
         System.exit(0);
     }
 
-    public static URL getResourceURL(String resource) { 
+    public static URL getResourceURL(String resource) {
         JDClassLoader cl = JDUtilities.getJDClassLoader();
         if (cl == null) {
             System.err.println("Classloader == null");
             return null;
-        } 
+        }
         return cl.getResource(resource);
     }
 

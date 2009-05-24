@@ -348,7 +348,7 @@ public class Main {
         JDInitFlags.ENOUGH_MEMORY = !(Runtime.getRuntime().maxMemory() < 100000000);
         if (!JDInitFlags.ENOUGH_MEMORY) {
             JDInitFlags.SHOW_SPLASH = false;
-            LOGGER.warning("Heapcheck: Not enough heap. use: java -jar -Xmx512m JDownloader.jar");
+            LOGGER.warning("Heapcheck: Not enough heap. use: java -Xmx512m -jar JDownloader.jar");
         }
     }
 

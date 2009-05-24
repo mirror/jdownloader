@@ -250,7 +250,7 @@ public class Main {
 
             Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
             JDUtilities.getDatabaseConnector().shutdownDatabase();
-            JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-Xms64m", "-XX:+UseConcMarkSweepGC", "-XX:MinHeapFreeRatio=0", "-XX:MaxHeapFreeRatio=0", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+            JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
 
             logWindow.setText(log.toString());
             Main.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
@@ -352,7 +352,7 @@ public class Main {
                         Main.log(log, "Local: " + new File("").getAbsolutePath());
                         Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
 
-                        JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-Xms64m", "-XX:+UseConcMarkSweepGC", "-XX:MinHeapFreeRatio=0", "-XX:MaxHeapFreeRatio=0", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+                        JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
 
                         logWindow.setText(log.toString());
                         Main.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
@@ -372,7 +372,7 @@ public class Main {
 
                 Main.log(log, "Not found: " + (JDUtilities.getResourceFile("/backup/").getAbsolutePath()) + "\r\n");
                 JOptionPane.showMessageDialog(frame, "JDownloader could not create a backup. Please make sure that\r\n " + JDUtilities.getResourceFile("/backup/").getAbsolutePath() + " exists and is writable before starting the update");
-                JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-Xms64m", "-XX:+UseConcMarkSweepGC", "-XX:MinHeapFreeRatio=0", "-XX:MaxHeapFreeRatio=0", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+                JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
                 System.exit(0);
                 return;
             }
@@ -393,7 +393,7 @@ public class Main {
                 }
 
                 if (JOptionPane.showConfirmDialog(frame, msg, "There is no backup of your current Downloadqueue", JOptionPane.WARNING_MESSAGE) != JOptionPane.OK_OPTION) {
-                    JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-Xms64m", "-XX:+UseConcMarkSweepGC", "-XX:MinHeapFreeRatio=0", "-XX:MaxHeapFreeRatio=0", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+                    JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
                     System.exit(0);
                     return;
                 }
