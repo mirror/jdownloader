@@ -28,7 +28,7 @@ public class Jobber {
     private ArrayList<WorkerListener> listener;
     private boolean killWorkerAfterQueueFinished = true;
     private boolean running = false;
-    private Integer jobsAdded = 0;
+    private Integer jobsAdded = new Integer(0);
     boolean debug = false;
     private Jobber INSTANCE = null;
 
@@ -40,7 +40,7 @@ public class Jobber {
         debug = b;
     }
 
-    private Integer jobsFinished = 0;
+    private Integer jobsFinished = new Integer(0);
 
     public int getJobsFinished() {
         synchronized (jobsFinished) {
@@ -48,7 +48,7 @@ public class Jobber {
         }
     }
 
-    private Integer jobsStarted = 0;
+    private Integer jobsStarted = new Integer(0);
 
     public int getJobsStarted() {
         return jobsStarted;
@@ -187,6 +187,7 @@ public class Jobber {
      * @return
      */
     public int add(JDRunnable runnable) {
+        if (jobList == null) System.out.println("Dhoo...No joblist available!?");
         synchronized (jobList) {
             jobList.add(runnable);
             synchronized (this.jobsAdded) {
@@ -199,12 +200,14 @@ public class Jobber {
                 synchronized (workerList) {
                     Vector<Worker> tmp = new Vector<Worker>(workerList);
                     for (Worker w : tmp) {
-                        synchronized (w) {
-                            if (w.waitFlag) {
-                                if (debug) System.out.println("Dhoo...Hey " + w + "!! Time to wake up and do some work.");
-                                w.waitFlag = false;
-                                w.notify();
-                                break;
+                        if (w != null) {
+                            synchronized (w) {
+                                if (w.waitFlag) {
+                                    if (debug) System.out.println("Dhoo...Hey " + w + "!! Time to wake up and do some work.");
+                                    w.waitFlag = false;
+                                    w.notify();
+                                    break;
+                                }
                             }
                         }
                     }
@@ -212,7 +215,6 @@ public class Jobber {
             }
             return jobList.size();
         }
-
     }
 
     public void setKillWorkerAfterQueueFinished(boolean killWorkerAfterQueueFinished) {
