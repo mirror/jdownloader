@@ -346,7 +346,7 @@ public class Rapidshare extends PluginForHost {
                 logger.warning("could not get newURL");
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-br.setFollowRedirects(true);
+
             // Post um freedownload auszuwählen
             Form[] forms = br.getForms();
 
