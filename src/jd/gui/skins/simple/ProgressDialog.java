@@ -16,8 +16,6 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -29,13 +27,9 @@ import javax.swing.JProgressBar;
 
 import jd.nutils.Screen;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class ProgressDialog extends JDialog implements ActionListener {
-
-    private static int REL = GridBagConstraints.RELATIVE;
-
-    private static int REM = GridBagConstraints.REMAINDER;
 
     private static final long serialVersionUID = -1749561448228487759L;
 
@@ -52,7 +46,7 @@ public class ProgressDialog extends JDialog implements ActionListener {
     public ProgressDialog(JFrame owner, String message, Thread ob, boolean ok, boolean cancel) {
         super(owner);
         setModal(true);
-        setLayout(new GridBagLayout());
+        setLayout(new MigLayout("wrap 1", "[center]"));
         setAlwaysOnTop(true);
         setTitle(JDLocale.L("gui.dialogs.progress.title", "Fortschritt...bitte warten"));
         setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
@@ -61,18 +55,18 @@ public class ProgressDialog extends JDialog implements ActionListener {
         lblMessage = new JLabel(message);
         progress = new JProgressBar();
 
-        JDUtilities.addToGridBag(this, lblMessage, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
-        JDUtilities.addToGridBag(this, progress, REL, REL, REM, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        this.add(lblMessage, "growx");
+        this.add(progress, "growx");
         if (ok) {
             btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
             btnOK.addActionListener(this);
             getRootPane().setDefaultButton(btnOK);
-            JDUtilities.addToGridBag(this, btnOK, REL, REL, cancel ? REL : REM, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+            this.add(btnOK, cancel ? "split 2" : "");
         }
         if (cancel) {
             btnNotOK = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
             btnNotOK.addActionListener(this);
-            JDUtilities.addToGridBag(this, btnNotOK, REL, REL, REM, 1, ok ? 0 : 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+            this.add(btnNotOK);
         }
         setLocation(Screen.getCenterOfComponent(owner, this));
 
