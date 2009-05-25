@@ -31,34 +31,40 @@ public class AddatHu extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.addat.hu/";
     }
 
-    //@Override
+    // @Override
     public String getCoder() {
         return "TnS";
     }
 
-    //@Override
+    private void correctUrl(DownloadLink link) {
+        String url = link.getDownloadURL();
+        if (!url.toLowerCase().endsWith(".html")) link.setUrlDownload(link.getDownloadURL() + ".html");
+    }
+
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
+        correctUrl(downloadLink);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
-        String[] dat = br.getRegex("<b>http://addat.hu/.*/(.*)</b> \\((.*) bytes\\)").getRow(0);
+        String[] dat = br.getRegex("<b>http://addat.hu/.*/(.*).html</b> \\((.*)\\)").getRow(0);
         long length = Regex.getSize(dat[1].trim());
         downloadLink.setDownloadSize(length);
         downloadLink.setName(dat[0].trim());
         return AvailableStatus.TRUE;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         requestFileInformation(downloadLink);
@@ -66,32 +72,31 @@ public class AddatHu extends PluginForHost {
         br.openDownload(downloadLink, link, true, 1).startDownload();
     }
 
-    //@Override
+    // @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
 
-    //@Override
+    // @Override
     public int getMaxConnections() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-        
     }
+
 }

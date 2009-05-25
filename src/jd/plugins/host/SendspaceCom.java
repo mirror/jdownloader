@@ -44,7 +44,7 @@ public class SendspaceCom extends PluginForHost {
         setStartIntervall(5000l);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.sendspace.com/terms.html";
     }
@@ -63,7 +63,7 @@ public class SendspaceCom extends PluginForHost {
         return false;
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
@@ -92,7 +92,7 @@ public class SendspaceCom extends PluginForHost {
         return ai;
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
@@ -104,31 +104,31 @@ public class SendspaceCom extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
-        String downloadName = null;
-        String downloadSize = null;
         br.getPage(url);
         if (!br.containsHTML("the file you requested is not available")) {
-            downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<b>Name:</b> (.*?)[ \t]+<br><b>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-            downloadSize = (br.getRegex(Pattern.compile("<b>Size:</b> (.*?)[ \t]+<br>")).getMatch(0));
+            Regex infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>");
+            String downloadName = Encoding.htmlDecode(infos.getMatch(0));
+            String downloadSize = infos.getMatch(1);
+            System.out.println(downloadName + " == " + downloadSize);
             if (!(downloadName == null || downloadSize == null)) {
                 downloadLink.setName(downloadName.trim());
-                downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
+                downloadLink.setDownloadSize(Regex.getSize(downloadSize.trim().replaceAll(",", "\\.")));
                 return AvailableStatus.TRUE;
             }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
@@ -172,22 +172,21 @@ public class SendspaceCom extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 2;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
+
 }
