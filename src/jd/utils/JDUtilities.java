@@ -36,13 +36,12 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -143,34 +142,30 @@ public class JDUtilities {
         return ret.toString();
     }
 
-    public static <K extends Comparable<K>, V> Map<K, V> revSortByKey(Map<K, V> map) {
-        List<Map.Entry<K, V>> list = new LinkedList<Map.Entry<K, V>>(map.entrySet());
-        Collections.sort(list, new Comparator<Map.Entry<K, V>>() {
-            public int compare(Map.Entry<K, V> o1, Map.Entry<K, V> o2) {
-                return o1.getKey().compareTo(o2.getKey());
+    public static <K extends Comparable<K>, V> TreeMap<K, V> revSortByKey(Map<K, V> map) {
+        TreeMap<K, V> a = new TreeMap<K, V>(new Comparator<K>() {
+
+            public int compare(K o1, K o2) {
+                return o2.compareTo(o1);
             }
+
         });
-        // JDUtilities.getLogger().info(list);
-        Map<K, V> result = new LinkedHashMap<K, V>();
-        for (Map.Entry<K, V> entry : list) {
-            result.put(entry.getKey(), entry.getValue());
-        }
-        return result;
+        a.putAll(map);
+
+        return a;
     }
 
-    public static <K extends Comparable<K>, V> Map<K, V> sortByKey(Map<K, V> map) {
-        List<Map.Entry<K, V>> list = new LinkedList<Map.Entry<K, V>>(map.entrySet());
-        Collections.sort(list, new Comparator<Map.Entry<K, V>>() {
-            public int compare(Map.Entry<K, V> o1, Map.Entry<K, V> o2) {
-                return o2.getKey().compareTo(o1.getKey());
+    public static <K extends Comparable<K>, V> TreeMap<K, V> sortByKey(Map<K, V> map) {
+        TreeMap<K, V> a = new TreeMap<K, V>(new Comparator<K>() {
+
+            public int compare(K o1, K o2) {
+                return o1.compareTo(o2);
             }
+
         });
-        // JDUtilities.getLogger().info(list);
-        Map<K, V> result = new LinkedHashMap<K, V>();
-        for (Map.Entry<K, V> entry : list) {
-            result.put(entry.getKey(), entry.getValue());
-        }
-        return result;
+        a.putAll(map);
+
+        return a;
     }
 
     /**
