@@ -434,11 +434,11 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     private String cleanFileName(String name) {
         /** remove rar extensions */
-        name = getNameMatch(name, "(.*?)\\d+$");
         name = getNameMatch(name, "(.*)\\.part[0]*[1].rar$");
         name = getNameMatch(name, "(.*)\\.part[0-9]+.rar$");
         name = getNameMatch(name, "(.*)\\.rar$");
         name = getNameMatch(name, "(.*)\\.r\\d+$");
+        name = getNameMatch(name, "(.*?)\\d+$");
 
         /**
          * remove 7zip and hjmerge extensions

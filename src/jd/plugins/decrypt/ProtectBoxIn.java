@@ -49,8 +49,8 @@ public class ProtectBoxIn extends PluginForDecrypt {
 
         Form form = br.getForm(1);
         Browser.download(file, br.cloneBrowser().openGetConnection("http://www.protectbox.in/captcha/imagecreate.php"));
-        ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, "Captcha", JDLocale.L("plugins.decrypt.charts4you.captcha", "Please click on the Circle with a gap"), 20, null);
-        if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
+        ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, JDLocale.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"), 20, null);
+        if (d.abort) throw new DecrypterException(DecrypterException.CAPTCHA);
         Point p = d.result;
         form.remove("x");
         form.remove("y");

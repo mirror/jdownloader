@@ -30,6 +30,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDLocale;
 
 public class RomNewsOrg extends PluginForDecrypt {
 
@@ -54,8 +55,8 @@ public class RomNewsOrg extends PluginForDecrypt {
             String cap = br.getRegex("\"image\" src=\"(.*?image.*?)\"").getMatch(0);
             Form form = br.getForm(0);
             Browser.download(file, br.cloneBrowser().openGetConnection(cap));
-            ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, "Captcha", whattoclick, 20, null);
-            if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
+            ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, JDLocale.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), whattoclick, 20, null);
+            if (d.abort) throw new DecrypterException(DecrypterException.CAPTCHA);
             Point p = d.result;
             form.remove("x");
             form.remove("y");

@@ -115,8 +115,8 @@ public class CryptMeCom extends PluginForDecrypt {
                 Form form = new Form();
                 form.setAction(url);
                 Browser.download(file, brc.cloneBrowser().openGetConnection("http://crypt-me.com/kreiscaptcha.php"));
-                ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, "Captcha", JDLocale.L("plugins.decrypt.charts4you.captcha", "Please click on the Circle with a gap"), 20, null);
-                if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
+                ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, JDLocale.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"), 20, null);
+                if (d.abort) throw new DecrypterException(DecrypterException.CAPTCHA);
                 Point p = d.result;
                 form.setMethod(MethodType.POST);
                 form.put("button", "send");

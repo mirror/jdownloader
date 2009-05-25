@@ -119,7 +119,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         premium.setFocusPainted(false);
         premium.setContentAreaFilled(false);
         premium.setBorderPainted(false);
-        add(premium,"aligny top");
+        add(premium, "aligny top");
         premium.addMouseListener(new JDMouseAdapter() {
 
             public void mouseClicked(MouseEvent e) {
@@ -149,7 +149,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             }
 
         });
-        add(new JSeparator(JSeparator.VERTICAL), "height 16,aligny center,aligny top");
+        add(new JSeparator(JSeparator.VERTICAL), "growy, aligny center");
         add(lbl, "hidemode 3,aligny top");
 
         for (int i = 0; i < BARCOUNT; i++) {
