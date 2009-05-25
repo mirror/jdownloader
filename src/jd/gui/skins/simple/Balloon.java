@@ -70,11 +70,9 @@ public class Balloon {
         }
 
         final JWindow w = new JWindow() {
-            /**
-             * 
-             */
+
             private static final long serialVersionUID = 8925461815465551749L;
-            private SwingWorker timer;
+            private SwingWorker<Object, Object> timer;
 
             public void dispose() {
                 Balloon.remove(this);
@@ -86,7 +84,7 @@ public class Balloon {
 
                 if (b) {
                     Balloon.add(this);
-                    this.timer = new SwingWorker() {
+                    this.timer = new SwingWorker<Object, Object>() {
 
                         @Override
                         protected Object doInBackground() throws Exception {

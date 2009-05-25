@@ -179,13 +179,13 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
     private AddonTaskPane addonTaskPanel;
 
-    private JDSubstanceUI titleUI;
+    // private JDSubstanceUI titleUI;
 
     private Image mainMenuIconRollOver;
 
     private Image mainMenuIcon;
 
-    private boolean mainMenuRollOverStatus = false;
+    // private boolean mainMenuRollOverStatus = false;
 
     private JViewport taskPaneView;
 
@@ -223,7 +223,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             this.noTitlePane = true;
         }
 
-        if (isSubstance()) this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
+        if (isSubstance()) this.getRootPane().setUI(new JDSubstanceUI(mainMenuIcon));
 
         toolBar = new JDToolBar(noTitlePane, mainMenuIcon);
 
@@ -437,7 +437,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
 
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 54, 54);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
-            this.getRootPane().setUI(titleUI = new JDSubstanceUI(mainMenuIcon));
+            this.getRootPane().setUI(new JDSubstanceUI(mainMenuIcon));
 
             JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
 

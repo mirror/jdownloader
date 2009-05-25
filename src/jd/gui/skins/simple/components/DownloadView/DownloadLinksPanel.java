@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple.components.DownloadView;
 
-import java.awt.BorderLayout;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
@@ -58,12 +57,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, DownloadControllerListener, LinkCheckListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -6029423913449902141L;
 
     private final int NO_JOB = -1;
@@ -92,15 +89,12 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     private boolean tablerefreshinprogress = false;
 
-    private static DownloadLinksPanel INTSANCE;
-
     public DownloadLinksPanel() {
-        super(new BorderLayout());
+        super(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[grow, fill]"));
         internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(), this);
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
-        INTSANCE = this;
         filePackageInfo = new FilePackageInfo();
-        this.add(scrollPane);
+        this.add(scrollPane, "cell 0 0");
         JDUtilities.getDownloadController().addListener(this);
         Update_Async = new Timer(UPDATE_TIMING, this);
         last_async_update = 0;
@@ -110,7 +104,6 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     }
 
     public boolean needsViewport() {
-        // TODO Auto-generated method stub
         return false;
     }
 
@@ -249,7 +242,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         new Thread() {
             public void run() {
                 this.setName("DownloadLinks: actionPerformed");
-                if (e.getSource() == INTSANCE.Update_Async) {
+                if (e.getSource() == DownloadLinksPanel.this.Update_Async) {
                     fireTableTask();
                     return;
                 }
@@ -269,7 +262,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                         break;
                     case TreeTableAction.SORT:
                         col = (Integer) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("col");
-                        selected_packages = new ArrayList<FilePackage>(INTSANCE.internalTreeTable.getSelectedFilePackages());
+                        selected_packages = new ArrayList<FilePackage>(DownloadLinksPanel.this.internalTreeTable.getSelectedFilePackages());
                         break;
                     case TreeTableAction.DOWNLOAD_PRIO:
                     case TreeTableAction.DE_ACTIVATE:
@@ -320,7 +313,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                             fc.setApproveButtonText(JDLocale.L("gui.btn_ok", "OK"));
                             fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
                             fc.setCurrentDirectory(selected_packages2.get(0).getDownloadDirectory() != null ? new File(selected_packages2.get(0).getDownloadDirectory()) : JDUtilities.getResourceFile("downloads"));
-                            if (fc.showOpenDialog(INTSANCE) == JDFileChooser.APPROVE_OPTION) {
+                            if (fc.showOpenDialog(DownloadLinksPanel.this) == JDFileChooser.APPROVE_OPTION) {
                                 File ret = fc.getSelectedFile();
                                 if (ret != null) {
                                     for (int i = 0; i < selected_packages2.size(); i++) {
@@ -449,7 +442,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                 }
                 case TreeTableAction.CHECK:
                     LinkCheck.getLinkChecker().checkLinks(selected_links);
-                    LinkCheck.getLinkChecker().getBroadcaster().addListener(INTSANCE);
+                    LinkCheck.getLinkChecker().getBroadcaster().addListener(DownloadLinksPanel.this);
                     break;
                 case TreeTableAction.SORT_ALL:
                     if (DownloadController.getInstance().size() == 1) {

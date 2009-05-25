@@ -48,13 +48,13 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     private static final long serialVersionUID = 7533138014274040205L;
 
-    private static final Object BUTTON_CONSTRAINTS = "gaptop 2";
-
-    public static final int DISPLAY = 28;
+    // public static final int DISPLAY = 28;
 
     public static final int LEFTGAP = 2;
 
-    public static final int IMGSIZE = 54;
+    // public static final int IMGSIZE = 54;
+
+    private static final String BUTTON_CONSTRAINTS = "gaptop 2, gapleft " + LEFTGAP;
 
     private JButton playButton;
     private JToggleButton pauseButton;
@@ -64,8 +64,6 @@ public class JDToolBar extends JToolBar implements ControlListener {
     private JToggleButton reconnect;
 
     private SpeedMeterPanel speedmeter;
-
-    private Image logo;
 
     private boolean noTitlePainter;
 
@@ -91,7 +89,6 @@ public class JDToolBar extends JToolBar implements ControlListener {
         super(JToolBar.HORIZONTAL);
 
         noTitlePainter = noTitlePane;
-        logo = mainMenuIcon;
 
         JDUtilities.getController().addControlListener(this);
 
@@ -401,8 +398,4 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     }
 
-    public void setMainMenuIcon(Image mainMenuIcon) {
-        this.logo = mainMenuIcon;
-        this.repaint(LEFTGAP, 0, IMGSIZE + LEFTGAP, IMGSIZE);
-    }
 }
