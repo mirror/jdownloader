@@ -174,13 +174,13 @@ public class WebUpdate implements ControlListener {
 
                             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
                                 CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("init.webupdate.auto.countdowndialog", "Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
-                                if (ccd.result) {
+                                if (ccd.getResult()) {
                                     doUpdate();
                                 }
                             } else {
                                 try {
                                     CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("system.dialogs.update", "Updates available"), 20, false, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, JDLocale.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size(), packages.size()));
-                                    if (ccd.result) {
+                                    if (ccd.getResult()) {
                                         doUpdate();
                                     }
                                 } catch (HeadlessException e) {

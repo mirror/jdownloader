@@ -22,9 +22,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -46,9 +43,6 @@ import net.miginfocom.swing.MigLayout;
 
 public class CountdownConfirmDialog extends JDialog implements ActionListener, HyperlinkListener {
 
-    @SuppressWarnings("unused")
-    private static Logger logger = jd.controlling.JDLogger.getLogger();
-
     private static final long serialVersionUID = 1L;
 
     public final static int STYLE_OK = 1 << 1;
@@ -67,21 +61,18 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
         return d.result;
     }
 
-    private JButton btnBAD;
     private JButton btnCnTh;
-    private JTextField inputField;
-    /**
-     * Bestätigungsknopf
-     */
     private JButton btnOK;
+    private JButton btnBAD;
+    private JTextField inputField;
     private Thread countdownThread;
 
     private Component htmlArea;
-    public boolean result = false;
+    private boolean result = false;
     private JScrollPane scrollPane;
-    public boolean window_Closed = false;
+
     private String titleText;
-    public String input = null;
+    private String input = null;
 
     public CountdownConfirmDialog(JFrame owner, String msg, int countdown) {
         this(owner, null, countdown, false, STYLE_OK | STYLE_CANCEL | STYLE_STOP_COUNTDOWN, msg);
@@ -97,14 +88,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
         setModal(true);
         if ((style & STYLE_NOTALWAYSONTOP) == 0) setAlwaysOnTop(true);
-        addWindowListener(new WindowAdapter() {
 
-            public void windowClosed(WindowEvent e) {
-                window_Closed = true;
-                setVisible(false);
-            }
-
-        });
         setLayout(new MigLayout("", "[center]"));
 
         countdownThread = new Thread() {
@@ -116,7 +100,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                        JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     }
                 }
                 int c = countdown;
@@ -242,7 +226,14 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
         setLocation(Screen.getCenterOfComponent(null, this));
         countdownThread.start();
         setVisible(true);
+    }
 
+    public boolean getResult() {
+        return result;
+    }
+
+    public String getInput() {
+        return input;
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -270,10 +261,6 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
                 JDLogger.exception(e1);
             }
         }
-    }
-
-    public static void main(String... args) {
-        new CountdownConfirmDialog(null, "TEST", 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL | CountdownConfirmDialog.STYLE_STOP_COUNTDOWN | CountdownConfirmDialog.STYLE_DETAILLABLE | CountdownConfirmDialog.STYLE_INPUTFIELD | CountdownConfirmDialog.STYLE_MSGLABLE, "TEST1", "TEST2");
     }
 
 }

@@ -98,7 +98,7 @@ public class JDRRGui extends JDialog implements ActionListener {
     }
 
     private void save() {
-        if (new CountdownConfirmDialog(this.frame, JDLocale.L("gui.config.jdrr.savereconnect", "Der Reconnect war erfolgreich möchten sie jetzt speichern?"), 10, true, CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO).result) {
+        if (new CountdownConfirmDialog(this.frame, JDLocale.L("gui.config.jdrr.savereconnect", "Der Reconnect war erfolgreich möchten sie jetzt speichern?"), 10, true, CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO).getResult()) {
 
             Configuration configuration = JDUtilities.getConfiguration();
 

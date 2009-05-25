@@ -778,7 +778,7 @@ public class GetRouterInfo {
                         if (isalv.meths == null) {
 
                             confirm = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.LF("gui.config.liveHeader.warning.upnpinactive", "Bitte aktivieren sie fals vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: Upnp Routern</a><br>drücken sie Ok wenn sie Upnp aktiviert haben oder abbrechen wenn sie fortfahren wollen!", infos.getRouterHost()), 600, false, CountdownConfirmDialog.STYLE_CANCEL | CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_STOP_COUNTDOWN | CountdownConfirmDialog.STYLE_NOTALWAYSONTOP);
-                            if (confirm.result) {
+                            if (confirm.getResult()) {
                                 try {
                                     setProgressText(JDLocale.L("gui.config.routeripfinder.status.testingupnp", "Testing UPnP..."));
                                     for (int i = 0; i < 30 && !cancel; i++) {

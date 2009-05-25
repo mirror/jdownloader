@@ -164,8 +164,8 @@ public class DDLWarez extends PluginForDecrypt {
                                         @Override
                                         public String runSave() {
                                             CountdownConfirmDialog input = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("plugins.decrypt.ddlwarez.humanverification", "DDL-Warez Human Verification"), 10, true, CountdownConfirmDialog.STYLE_INPUTFIELD | CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, text, new Regex(Encoding.deepHtmlDecode(HTMLEntities.unhtmlAngleBrackets(text)), "[A-Za-z0-9_äÄöÖüÜß\\s\\,\\.]+[^A-Za-z0-9_äÄöÖüÜß\\,\\.]+\\s(\\S+)").getMatch(0));
-                                            if (input.result) {
-                                                return input.input;
+                                            if (input.getResult()) {
+                                                return input.getInput();
                                             } else {
                                                 return null;
                                             }
