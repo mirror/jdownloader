@@ -27,7 +27,7 @@ public class ScheduleFrameSettings implements Serializable {
 
     private static final long serialVersionUID = 2529016898978067651L;
 
-    private String name;
+    private final String name;
 
     private int maxDls;
 

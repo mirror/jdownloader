@@ -358,17 +358,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             File sourceFile = cmboSource.getCurrentPath();
             if (sourceFile == this.sourceFile) return;
 
-            if (changed) {
-                int res = JOptionPane.showConfirmDialog(this, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
-                if (res == JOptionPane.CANCEL_OPTION) {
-                    cmboSource.setCurrentPath(this.sourceFile);
-                    return;
-                } else if (res == JOptionPane.YES_OPTION) {
-                    saveLanguageFile(languageFile);
-                } else {
-                    changed = false;
-                }
-            }
+            if (!saveChanges(this.sourceFile, true, null)) return;
 
             if (sourceFile != this.sourceFile && sourceFile != null) {
                 this.sourceFile = sourceFile;
@@ -380,18 +370,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             File languageFile = cmboFile.getCurrentPath();
             if (languageFile == this.languageFile) return;
 
-            if (changed) {
-                int res = JOptionPane.showConfirmDialog(this, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
-                if (res == JOptionPane.CANCEL_OPTION) {
-                    cmboFile.setCurrentPath(this.languageFile);
-                    return;
-                } else if (res == JOptionPane.YES_OPTION) {
-                    saveLanguageFile(this.languageFile);
-                    cmboFile.setCurrentPath(languageFile);
-                } else {
-                    changed = false;
-                }
-            }
+            if (!saveChanges(this.languageFile, false, languageFile)) return;
 
             if (languageFile != this.languageFile && languageFile != null) {
                 this.languageFile = languageFile;
@@ -400,16 +379,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         } else if (e.getSource() == mnuNew) {
 
-            if (changed) {
-                int res = JOptionPane.showConfirmDialog(this, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
-                if (res == JOptionPane.CANCEL_OPTION) {
-                    return;
-                } else if (res == JOptionPane.YES_OPTION) {
-                    saveLanguageFile(languageFile);
-                } else {
-                    changed = false;
-                }
-            }
+            if (!saveChanges()) return;
 
             JDFileChooser chooser = new JDFileChooser("LANGFILEEDITOR_FILE");
             chooser.setFileFilter(fileFilter);
@@ -463,16 +433,8 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         } else if (e.getSource() == mnuReload) {
 
-            if (changed) {
-                int res = JOptionPane.showConfirmDialog(this, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
-                if (res == JOptionPane.CANCEL_OPTION) {
-                    return;
-                } else if (res == JOptionPane.YES_OPTION) {
-                    saveLanguageFile(languageFile);
-                } else {
-                    changed = false;
-                }
-            }
+            if (!saveChanges()) return;
+
             initLocaleDataComplete();
 
         } else if (e.getSource() == mnuAdopt || e.getSource() == mnuContextAdopt) {
@@ -644,6 +606,33 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         }
 
+    }
+
+    private boolean saveChanges() {
+        return saveChanges(null, false, null);
+    }
+
+    private boolean saveChanges(File cancelFileToReturn, boolean returnOnCancelToSource, File yesFileToReturn) {
+        if (changed) {
+            int res = JOptionPane.showConfirmDialog(this, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
+            if (res == JOptionPane.CANCEL_OPTION) {
+                if (cancelFileToReturn != null) {
+                    if (returnOnCancelToSource) {
+                        cmboSource.setCurrentPath(cancelFileToReturn);
+                    } else {
+                        cmboFile.setCurrentPath(cancelFileToReturn);
+                    }
+                }
+                return false;
+            } else if (res == JOptionPane.YES_OPTION) {
+                saveLanguageFile(languageFile);
+                if (yesFileToReturn != null) cmboFile.setCurrentPath(yesFileToReturn);
+            } else {
+                changed = false;
+            }
+        }
+
+        return true;
     }
 
     private void updateSVN() {
