@@ -19,10 +19,7 @@ package jd.gui.skins.simple;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -37,7 +34,6 @@ import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.components.JDFileChooser;
-import jd.gui.skins.simple.components.JHelpDialog;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.tasks.LogTaskPane;
 import jd.http.Encoding;
@@ -72,26 +68,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
 
         logField = new JTextArea(10, 60);
         logField.setEditable(true);
-        // logField.getDocument().addDocumentListener(new DocumentListener(){
-        //
-        // public void changedUpdate(DocumentEvent e) {
-        // System.out.println("II");
-        //                
-        // }
-        //
-        // public void insertUpdate(DocumentEvent e) {
-        // if(logField.hasFocus()){
-        // System.out.println("II");
-        // }
-        //                
-        // }
-        //
-        // public void removeUpdate(DocumentEvent e) {
-        // System.out.println("II");
-        //                
-        // }
-        //            
-        // });
+        logField.setAutoscrolls(true);
         add(new JScrollPane(logField));
     }
 
@@ -111,27 +88,19 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
                 if (ret != null) {
                     String content = toString();
                     JDIO.writeLocalFile(ret, content);
-                    jd.controlling.JDLogger.getLogger().info("Log saved to file: " + ret.getAbsolutePath());
+                    JDLogger.getLogger().info("Log saved to file: " + ret.getAbsolutePath());
                 }
             }
             break;
         case LogTaskPane.ACTION_UPLOAD:
-            Level level = jd.controlling.JDLogger.getLogger().getLevel();
+            Level level = JDLogger.getLogger().getLevel();
             if (!level.equals(Level.ALL)) {
-                try {
-                    JHelpDialog.showHelpMessage(SimpleGUI.CURRENTGUI, null, JDLocale.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), new URL("http://jdownloader.org/knowledge/wiki/support/create-a-jd-log"), null, 30);
-                } catch (MalformedURLException e1) {
-                    JDLogger.exception(e1);
-                }
+                SimpleGUI.CURRENTGUI.showHelpMessage(null, JDLocale.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), false, "http://jdownloader.org/knowledge/wiki/support/create-a-jd-log", null, 30);
             }
             String content = logField.getSelectedText();
             if (content == null || content.length() == 0) {
                 content = Encoding.UTF8Encode(logField.getText());
             }
-            // content = TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI,
-            // JDLocale.L("gui.logdialog.edittitle", "Edit Log"),
-            // JDLocale.L("gui.logdialog.yourlog",
-            // "Hochgeladener Log: Editieren möglich!"), content);
 
             if (content == null || content.length() == 0) return;
 
@@ -177,24 +146,21 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
          * enable autoscrolling by setting the caret to the last position
          */
         /**
-         * TODO: not synchronized properbly in  loop.
+         * TODO: not synchronized properbly in loop.
          */
         try {
             SimpleGUI.CURRENTGUI.setWaiting(true);
             JDUtilities.getController().addControlListener(this);
             ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
             StringBuilder sb = new StringBuilder();
-            LogRecord lr;
-            for (Iterator<LogRecord> it = buff.iterator(); it.hasNext();) {
-                lr = it.next();
+            for (LogRecord lr : buff) {
                 if (lr.getLevel().intValue() >= JDLogger.getLogger().getLevel().intValue()) sb.append(JDLogHandler.getHandler().getFormatter().format(lr));
-                // sb.append("\r\n");
             }
             logField.setText(sb.toString());
             SimpleGUI.CURRENTGUI.setWaiting(false);
             logField.setCaretPosition(logField.getText().length());
         } catch (Exception e) {
-
+            e.printStackTrace();
         }
     }
 
@@ -205,11 +171,8 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
 
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED) {
-
             logField.append(JDLogHandler.getHandler().getFormatter().format((LogRecord) event.getParameter()));
-            // logField.append("\r\n");
         }
-
     }
 
 }
