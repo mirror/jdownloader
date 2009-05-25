@@ -36,6 +36,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class JDGrowlNotification extends PluginOptional {
+
     public static int getAddonInterfaceVersion() {
         return 3;
     }
@@ -46,22 +47,22 @@ public class JDGrowlNotification extends PluginOptional {
 
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
 
-    //@Override
+    // @Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public String getHost() {
         return JDLocale.L("plugins.optional.jdgrowlnotification.name", "JDGrowlNotification");
     }
 
-    //@Override
+    // @Override
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
         logger.info("Growl OK");
@@ -77,7 +78,7 @@ public class JDGrowlNotification extends PluginOptional {
         }
     }
 
-    //@Override
+    // @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
@@ -116,7 +117,7 @@ public class JDGrowlNotification extends PluginOptional {
         }
     }
 
-    public void growlNotification(String headline, String message, String title) {
+    private void growlNotification(String headline, String message, String title) {
         if (OSDetector.isMac()) {
             Executer exec = new Executer("/usr/bin/osascript");
             exec.addParameter(JDUtilities.getResourceFile("jd/osx/growlNotification.scpt").getAbsolutePath());
@@ -128,13 +129,14 @@ public class JDGrowlNotification extends PluginOptional {
         }
     }
 
-    //@Override
+    // @Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
     }
 
-    public String getDateAndTime() {
+    private String getDateAndTime() {
         DateFormat dfmt = new SimpleDateFormat("'Am 'EEEE.', den' dd.MM.yy 'um' hh:mm:ss");
         return dfmt.format(new Date());
     }
+
 }

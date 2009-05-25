@@ -36,6 +36,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDLocale;
 
 public class DDLWarez extends PluginForDecrypt {
     static class DDLWarez_Linkgrabber extends Thread {
@@ -162,7 +163,7 @@ public class DDLWarez extends PluginForDecrypt {
                                     String res = new GuiRunnable<String>() {
                                         @Override
                                         public String runSave() {
-                                            CountdownConfirmDialog input = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, "DDL-Warez Human Verification", 10, true, null, CountdownConfirmDialog.STYLE_INPUTFIELD | CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, text, new Regex(Encoding.deepHtmlDecode(HTMLEntities.unhtmlAngleBrackets(text)), "[A-Za-z0-9_äÄöÖüÜß\\s\\,\\.]+[^A-Za-z0-9_äÄöÖüÜß\\,\\.]+\\s(\\S+)").getMatch(0));
+                                            CountdownConfirmDialog input = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("plugins.decrypt.ddlwarez.humanverification", "DDL-Warez Human Verification"), 10, true, CountdownConfirmDialog.STYLE_INPUTFIELD | CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, text, new Regex(Encoding.deepHtmlDecode(HTMLEntities.unhtmlAngleBrackets(text)), "[A-Za-z0-9_äÄöÖüÜß\\s\\,\\.]+[^A-Za-z0-9_äÄöÖüÜß\\,\\.]+\\s(\\S+)").getMatch(0));
                                             if (input.result) {
                                                 return input.input;
                                             } else {

@@ -32,27 +32,28 @@ public class JDExit extends Interaction implements Serializable {
 
     private static final long serialVersionUID = -4825002404662625527L;
 
-    //@Override
+    // @Override
     public boolean doInteraction(Object arg) {
         logger.info("Starting Exit");
-        CountdownConfirmDialog shutDownMessage = new CountdownConfirmDialog(((SimpleGUI) JDUtilities.getGUI()), "JD will close itself in 10 secs!", 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
+        CountdownConfirmDialog shutDownMessage = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("interaction.jdexit.message", "JD will close itself in 10 secs!"), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
         if (shutDownMessage.result) {
             JDUtilities.getController().exit();
         }
         return true;
     }
 
-    //@Override
+    // @Override
     public String getInteractionName() {
         return JDLocale.L("interaction.jdexit.name", "JD Beenden");
     }
 
-    //@Override
+    // @Override
     public void initConfig() {
     }
 
-    //@Override
+    // @Override
     public String toString() {
         return JDLocale.L("interaction.jdexit.name", "JD Beenden");
     }
+
 }
