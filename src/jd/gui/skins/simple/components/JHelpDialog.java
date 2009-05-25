@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple.components;
 
-import java.awt.ComponentOrientation;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -25,10 +24,7 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URL;
-import java.util.logging.Logger;
 
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -36,8 +32,8 @@ import javax.swing.JLabel;
 import javax.swing.JTextPane;
 import javax.swing.WindowConstants;
 
+import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
-import jd.nutils.JDImage;
 import jd.nutils.Screen;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -73,14 +69,12 @@ public class JHelpDialog extends JDialog implements ActionListener {
         d.getBtn1().setText(helpMsg);
         d.getBtn2().setText(JDLocale.L("gui.btn_ok", "OK"));
         d.action1 = d.new Action() {
-            //@Override
+            // @Override
             public boolean doAction() {
                 try {
                     JLinkButton.openURL(url);
-
                 } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
                 return true;
             }
@@ -99,9 +93,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
     private JButton btn4;
 
     private JTextPane htmlArea;
-    protected Insets insets = new Insets(5, 5, 5, 5);
-
-    protected Logger logger = jd.controlling.JDLogger.getLogger();
+    private Insets insets = new Insets(5, 5, 5, 5);
 
     private JFrame parentFrame;
     private int status = STATUS_UNANSWERED;
@@ -133,13 +125,9 @@ public class JHelpDialog extends JDialog implements ActionListener {
         htmlArea.setText(html);
         htmlArea.setOpaque(false);
         htmlArea.requestFocusInWindow();
-        setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-        Icon imageIcon = new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.config.tip")));
 
-        JDUtilities.addToGridBag(this, new JLabel(imageIcon), 0, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
-
+        JDUtilities.addToGridBag(this, new JLabel(JDTheme.II("gui.images.config.tip")), 0, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
         JDUtilities.addToGridBag(this, htmlArea, 1, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-
         JDUtilities.addToGridBag(this, getBtn1(), 2, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         JDUtilities.addToGridBag(this, getBtn2(), 3, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         JDUtilities.addToGridBag(this, getBtn3(), 4, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
@@ -148,7 +136,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
 
             countdownThread = new Thread() {
 
-                //@Override
+                // @Override
                 public void run() {
                     int c = countdown;
 
