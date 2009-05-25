@@ -110,13 +110,10 @@ public class SendspaceCom extends PluginForHost {
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
         if (!br.containsHTML("the file you requested is not available")) {
-            Regex infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>");
-            String downloadName = Encoding.htmlDecode(infos.getMatch(0));
-            String downloadSize = infos.getMatch(1);
-            System.out.println(downloadName + " == " + downloadSize);
-            if (!(downloadName == null || downloadSize == null)) {
-                downloadLink.setName(downloadName.trim());
-                downloadLink.setDownloadSize(Regex.getSize(downloadSize.trim().replaceAll(",", "\\.")));
+            String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);
+            if (infos != null) {
+                downloadLink.setName(Encoding.htmlDecode(infos[0]).trim());
+                downloadLink.setDownloadSize(Regex.getSize(infos[1].trim().replaceAll(",", "\\.")));
                 return AvailableStatus.TRUE;
             }
         }
