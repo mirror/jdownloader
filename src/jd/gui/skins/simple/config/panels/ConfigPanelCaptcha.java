@@ -16,12 +16,11 @@
 
 package jd.gui.skins.simple.config.panels;
 
-import java.awt.Dimension;
+import java.awt.Component;
 import java.util.Vector;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
@@ -35,9 +34,15 @@ import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
+import jd.nutils.Colors;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdesktop.swingx.JXTable;
+import org.jdesktop.swingx.decorator.HighlightPredicate;
+import org.jdesktop.swingx.decorator.PainterHighlighter;
+import org.jdesktop.swingx.painter.MattePainter;
 
 public class ConfigPanelCaptcha extends ConfigPanel {
 
@@ -117,7 +122,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
 
     private Vector<JACMethod> methods;
 
-    private JTable table;
+    private JXTable table;
 
     private InternalTableModel tableModel;
 
@@ -138,21 +143,12 @@ public class ConfigPanelCaptcha extends ConfigPanel {
     public void initPanel() {
         setupContainer();
 
-        tabbed = new JTabbedPane();
-
-        panel.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
-        panel.add(tabbed);
-
         tableModel = new InternalTableModel();
-        table = new JTable(tableModel);
-        table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
+        table = new JXTable(tableModel);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setEditingRow(0);
+        table.getTableHeader().setReorderingAllowed(false);
+        table.addHighlighter(new PainterHighlighter(HighlightPredicate.ROLLOVER_ROW, new MattePainter<Component>(Colors.getColor(getBackground().brighter(), 50))));
 
-        tabbed.addTab(JDLocale.L("gui.config.panels.captcha.methodstab","OCR methods"), new JScrollPane(table));
-        tabbed.setIconAt(0,  JDTheme.II("gui.images.captcha.methods", 16, 16));
-        tabbed.addTab(JDLocale.L("gui.config.panels.captcha.advancedtab","Advanced settings"), cep = new ConfigEntriesPanel(container));
-        tabbed.setIconAt(1,  JDTheme.II("gui.images.config.ocr", 16, 16));
         TableColumn column = null;
         for (int c = 0; c < tableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
@@ -172,10 +168,16 @@ public class ConfigPanelCaptcha extends ConfigPanel {
                 break;
             }
         }
-       
-//        panel.add(Factory.createHeader(new ConfigGroup(JDLocale.L("gui.config.captcha.list", "Captcha Methods"), JDTheme.II("gui.images.captcha.methods", 32, 32))), "spanx,gaptop 15,gapleft 20, gapright 20");
-//
-//        panel.add(sp, "spanx,gapleft 55, gapright 40");
+
+        tabbed = new JTabbedPane();
+        tabbed.addTab(JDLocale.L("gui.config.panels.captcha.methodstab", "OCR methods"), new JScrollPane(table));
+        tabbed.setIconAt(0, JDTheme.II("gui.images.captcha.methods", 16, 16));
+        tabbed.addTab(JDLocale.L("gui.config.panels.captcha.advancedtab", "Advanced settings"), cep = new ConfigEntriesPanel(container));
+        tabbed.setIconAt(1, JDTheme.II("gui.images.config.ocr", 16, 16));
+
+        panel.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
+        panel.add(tabbed);
+
         setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
         add(panel);
     }

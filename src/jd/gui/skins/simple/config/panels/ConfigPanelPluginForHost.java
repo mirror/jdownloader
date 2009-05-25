@@ -244,8 +244,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 btnLoad.setEnabled(!hpw.isLoaded());
             }
         });
-        // table.setDefaultRenderer(Object.class, new
-        // PluginTableCellRenderer<HostPluginWrapper>(pluginsForHost));
+        table.getTableHeader().setReorderingAllowed(false);
+
         PainterHighlighter highlighter = new PainterHighlighter(new HighlightPredicate() {
             public boolean isHighlighted(Component renderer, ComponentAdapter adapter) {
                 return pluginsForHost.get(adapter.row).hasConfig();
@@ -255,11 +255,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         table.addHighlighter(highlighter);
         table.addHighlighter(new PainterHighlighter(HighlightPredicate.ROLLOVER_ROW, new MattePainter<Component>(Colors.getColor(getBackground().brighter(), 50))));
-
         table.setDragEnabled(true);
 
-        // FadeConfigurationManager.getInstance().disallowFades(FadeKind.ROLLOVER,
-        // table);
         new DropTarget(table, this);
 
         TableColumn column = null;

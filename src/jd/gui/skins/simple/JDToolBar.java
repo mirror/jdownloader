@@ -50,11 +50,11 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     // public static final int DISPLAY = 28;
 
-    public static final int LEFTGAP = 2;
+    // public static final int LEFTGAP = 2;
 
     // public static final int IMGSIZE = 54;
 
-    private static final String BUTTON_CONSTRAINTS = "gaptop 2, gapleft " + LEFTGAP;
+    private static final String BUTTON_CONSTRAINTS = "gaptop 2, gapleft 2";
 
     private JButton playButton;
     private JToggleButton pauseButton;
