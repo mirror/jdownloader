@@ -16,28 +16,18 @@
 
 package jd.router.reconnectrecorder;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Graphics;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
-import javax.swing.WindowConstants;
-import javax.swing.border.EmptyBorder;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
@@ -45,12 +35,12 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.nutils.JDImage;
 import jd.nutils.Screen;
 import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class JDRRGui extends JDialog implements ActionListener {
 
@@ -75,42 +65,34 @@ public class JDRRGui extends JDialog implements ActionListener {
     public JDRRGui(JFrame frame, String ip) {
         super(frame);
         this.frame = frame;
+
         RouterIP = ip;
-        int n = 10;
-        this.setTitle(JDLocale.L("gui.config.jdrr.title", "Reconnect Recorder"));
+
         routerip = new JTextField(RouterIP);
+
         btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);
 
         btnStart = new JButton(JDLocale.L("gui.btn_start", "Start"));
         btnStart.addActionListener(this);
+
         rawmode = new JCheckBox("RawMode?");
         rawmode.setSelected(false);
+
         JTextPane infolable = new JTextPane();
         infolable.setEditable(false);
         infolable.setContentType("text/html");
         infolable.addHyperlinkListener(JLinkButton.getHyperlinkListener());
         infolable.setText(JDLocale.L("gui.config.jdrr.infolable", "<span color=\"#4682B4\">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href=\"http://wiki.jdownloader.org/index.php?title=Recorder\">hier</a>"));
-        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.CENTER, n, 0));
-        bpanel.add(btnCancel);
-        bpanel.add(btnStart);
 
-        JPanel spanel = new JPanel(new GridBagLayout());
-        GridBagConstraints c = new GridBagConstraints();
-        spanel.add(new JLabel(JDLocale.L("gui.fengshuiconfig.routerip", "RouterIP") + ":"));
-
-        c.weightx = 100;
-
-        c.fill = GridBagConstraints.BOTH;
-        spanel.add(routerip, c);
-        spanel.add(rawmode);
-
-        JPanel panel = new JPanel(new BorderLayout(n, n));
-        panel.setBorder(new EmptyBorder(n, n, n, n));
-        panel.add(spanel, BorderLayout.NORTH);
-        panel.add(infolable, BorderLayout.CENTER);
-        panel.add(bpanel, BorderLayout.SOUTH);
-        this.setContentPane(panel);
+        this.setTitle(JDLocale.L("gui.config.jdrr.title", "Reconnect Recorder"));
+        this.setLayout(new MigLayout("wrap 1", "[center]"));
+        this.add(new JLabel(JDLocale.L("gui.fengshuiconfig.routerip", "RouterIP") + ":"), "split 3");
+        this.add(routerip, "growx");
+        this.add(rawmode);
+        this.add(infolable, "growx");
+        this.add(btnStart, "split 2");
+        this.add(btnCancel);
         this.pack();
         this.setLocation(Screen.getCenterOfComponent(null, this));
     }
@@ -158,13 +140,11 @@ public class JDRRGui extends JDialog implements ActionListener {
 
             try {
                 JLinkButton.openURL("http://localhost:" + (SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972)));
-
             } catch (Exception e1) {
-                // TODO Auto-generated catch block
                 JDLogger.exception(e1);
             }
             final JDRRInfoPopup popup = new JDRRInfoPopup(ip_before);
-            popup.start_check();
+            popup.startCheck();
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     popup.setVisible(true);
@@ -184,15 +164,13 @@ public class JDRRGui extends JDialog implements ActionListener {
         public JDRRInfoPopup(String ipbefore) {
             super();
             setModal(true);
-            setLayout(new GridBagLayout());
-            JPanel p = new JPanel(new GridBagLayout());
+            setLayout(new MigLayout("wrap 1", "[center, grow, fill]"));
             btnStop = new JButton(JDLocale.L("gui.btn_abort", "Abort"));
             btnStop.addActionListener(this);
             statusicon = new RRStatus();
-            JDUtilities.addToGridBag(p, statusicon, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.NORTH);
-            JDUtilities.addToGridBag(p, btnStop, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTH);
-            JDUtilities.addToGridBag(this, p, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-            setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+            this.add(statusicon, "w 32!, h 32!");
+            this.add(btnStop);
+            setDefaultCloseOperation(JDRRInfoPopup.DO_NOTHING_ON_CLOSE);
 
             setResizable(false);
             setUndecorated(true);
@@ -202,7 +180,7 @@ public class JDRRGui extends JDialog implements ActionListener {
             pack();
         }
 
-        public void start_check() {
+        public void startCheck() {
             new Thread() {
                 public void run() {
                     statusicon.setStatus(0);
@@ -227,48 +205,31 @@ public class JDRRGui extends JDialog implements ActionListener {
             }.start();
         }
 
-        public class RRStatus extends JComponent {
+        public class RRStatus extends JLabel {
 
             private static final long serialVersionUID = -3280613281656283625L;
 
-            private int status = 0;
+            private ImageIcon imageProgress;
 
-            private Image imageProgress;
+            private ImageIcon imageBad;
 
-            private Image imageBad;
-
-            private Image imageGood;
+            private ImageIcon imageGood;
 
             public RRStatus() {
-                status = 0;
-                imageProgress = JDImage.getImage(JDTheme.V("gui.images.reconnect"));
-                imageBad = JDImage.getImage(JDTheme.V("gui.images.reconnect_bad"));
-                imageGood = JDImage.getImage(JDTheme.V("gui.images.reconnect_ok"));
-                setPreferredSize(new Dimension(32, 32));
-            }
-
-            public int getImageHeight() {
-                return imageGood.getHeight(this);
-            }
-
-            public int getImageWidth() {
-                return imageGood.getWidth(this);
-            }
-
-            //@Override
-            public void paintComponent(Graphics g) {
-                if (status == 0) {
-                    g.drawImage(imageProgress, 0, 0, null);
-                } else if (status == 1) {
-                    g.drawImage(imageGood, 0, 0, null);
-                } else {
-                    g.drawImage(imageBad, 0, 0, null);
-                }
+                imageProgress = JDTheme.II("gui.images.reconnect", 32, 32);
+                imageBad = JDTheme.II("gui.images.unselected", 32, 32);
+                imageGood = JDTheme.II("gui.images.selected", 32, 32);
+                setStatus(0);
             }
 
             public void setStatus(int state) {
-                status = state;
-                repaint();
+                if (state == 0) {
+                    this.setIcon(imageProgress);
+                } else if (state == 1) {
+                    this.setIcon(imageGood);
+                } else {
+                    this.setIcon(imageBad);
+                }
             }
         }
 

@@ -18,8 +18,6 @@ package jd.gui.skins.simple.components;
 
 import java.awt.Cursor;
 import java.awt.Frame;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -34,7 +32,6 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
-import javax.swing.WindowConstants;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
@@ -44,6 +41,7 @@ import jd.nutils.Formatter;
 import jd.nutils.Screen;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class ClickPositionDialog extends JDialog implements ActionListener, HyperlinkListener, MouseListener {
 
@@ -83,7 +81,7 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
         super(owner);
         setModal(true);
 
-        setLayout(new GridBagLayout());
+        setLayout(new MigLayout("wrap 1", "[center]"));
 
         countdownThread = new Thread() {
 
@@ -94,7 +92,7 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                        JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                     }
                 }
                 int c = countdown;
@@ -134,7 +132,7 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
         button.addMouseListener(this);
         button.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
         button.setToolTipText(msg);
-        JDUtilities.addToGridBag(this, button, 0, 0, 3, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        this.add(button, "growx");
 
         if (msg != null) {
             htmlArea = new JTextPane();
@@ -144,25 +142,23 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
             htmlArea.requestFocusInWindow();
             htmlArea.addHyperlinkListener(this);
 
-            JDUtilities.addToGridBag(this, new JScrollPane(htmlArea), 0, 1, 3, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+            this.add(new JScrollPane(htmlArea), "growx");
         }
-
-        int d = 0;
 
         btnCnTh = new JButton(JDLocale.L("gui.btn_cancelCountdown", "Stop Countdown"));
         btnCnTh.addActionListener(this);
-        JDUtilities.addToGridBag(this, btnCnTh, d++, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        this.add(btnCnTh, "split 2");
 
         btnBAD = new JButton(JDLocale.L("gui.btn_cancel", "CANCEL"));
         btnBAD.addActionListener(this);
-        JDUtilities.addToGridBag(this, btnBAD, d++, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        this.add(btnBAD);
 
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(ClickPositionDialog.DISPOSE_ON_CLOSE);
         this.setAlwaysOnTop(true);
-        pack();
-        setLocation(Screen.getCenterOfComponent(null, this));
-        countdownThread.start();
-        setVisible(true);
+        this.pack();
+        this.setLocation(Screen.getCenterOfComponent(null, this));
+        this.countdownThread.start();
+        this.setVisible(true);
 
     }
 
@@ -183,17 +179,12 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
 
     public void hyperlinkUpdate(HyperlinkEvent e) {
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-
             try {
                 JLinkButton.openURL(e.getURL());
-
             } catch (Exception e1) {
-                // TODO Auto-generated catch block
                 JDLogger.exception(e1);
             }
-
         }
-
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -209,10 +200,9 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
     }
 
     public void mouseReleased(MouseEvent e) {
-
         this.result = e.getPoint();
         setVisible(false);
         dispose();
-
     }
+
 }
