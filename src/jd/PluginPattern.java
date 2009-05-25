@@ -47,6 +47,7 @@ public class PluginPattern {
         completePattern.append("|(blogload\\.org/\\d+.*)");
         completePattern.append("|(pressefreiheit\\.ws/[\\d]+/.+\\.html)");
         completePattern.append("|(zeitungsjunge\\.info/.*?/.*?/.*?/)");
+        completePattern.append("|(serien-blog\\.com/download/[\\d]+/.+\\.html)");
         String[] listType1 = { "hd-area.org", "movie-blog.org", "doku.cc", "sound-blog.org" };
         for (String pattern : listType1) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\d{4}/\\d{2}/\\d{2}/.+)");
@@ -60,7 +61,7 @@ public class PluginPattern {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\?p=[\\d]+)");
         }
         completePattern.append(")");
-        logger.finest("Wordpress: " + (1 + 1 + 1 + listType1.length + listType2.length + listType3.length) + " Pattern added!");
+        logger.finest("Wordpress: " + (12 + listType1.length + listType2.length + listType3.length) + " Pattern added!");
         return completePattern.toString();
     }
 
