@@ -43,20 +43,27 @@ public class RomNewsOrg extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        File file = this.getLocalCaptchaFile();
-        String whattoclick = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-        whattoclick = whattoclick.replaceAll("(</span>|\">|<span class=\")", " ");
-        String cap = br.getRegex("\"image\" src=\"(.*?image.*?)\"").getMatch(0);
-        Form form = br.getForm(0);
-        Browser.download(file, br.cloneBrowser().openGetConnection(cap));
-        ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, "Captcha", whattoclick, 20, null);
-        if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
-        Point p = d.result;
-        form.remove("x");
-        form.remove("y");
-        form.put("name.x", p.x + "");
-        form.put("name.y", p.y + "");
-        br.submitForm(form);
+        if (br.getRedirectLocation() != null) {
+            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            return decryptedLinks;
+        }
+        for (int i = 1; i <= 5; i++) {
+            File file = this.getLocalCaptchaFile();
+            String whattoclick = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
+            whattoclick = whattoclick.replaceAll("(</span>|\">|<span class=\")", " ");
+            String cap = br.getRegex("\"image\" src=\"(.*?image.*?)\"").getMatch(0);
+            Form form = br.getForm(0);
+            Browser.download(file, br.cloneBrowser().openGetConnection(cap));
+            ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, "Captcha", whattoclick, 20, null);
+            if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
+            Point p = d.result;
+            form.remove("x");
+            form.remove("y");
+            form.put("name.x", p.x + "");
+            form.put("name.y", p.y + "");
+            br.submitForm(form);
+            if (br.getRedirectLocation() != null) break;
+        }
 
         decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
 
