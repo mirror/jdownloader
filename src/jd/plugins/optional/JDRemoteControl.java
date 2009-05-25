@@ -56,18 +56,20 @@ import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
 public class JDRemoteControl extends PluginOptional implements ControlListener {
+
     public JDRemoteControl(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public String getIconKey() {
-
         return "gui.images.network";
     }
 
-    class Serverhandler implements Handler {
+    private class Serverhandler implements Handler {
 
         public void handle(Request request, Response response) {
+            StringBuilder output = new StringBuilder();
+
             response.setReturnType("text/html");
             response.setReturnStatus(Response.OK);
 
@@ -172,50 +174,31 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     response.addContent("<tr><td valign=\"top\"><a href=\"http://127.0.0.1:" + getPluginConfig().getIntegerProperty("PORT", 10025) + commandvec.get(commandcount) + "\">" + commandvec.get(commandcount) + "</a></td><td valign=\"top\">" + infovector.get(commandcount) + "</td></tr>");
                 }
                 response.addContent("</table><br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;</p></body></html>");
-            }
-
-            // ---------------------------------------
-            // Get
-            // ---------------------------------------
-
-            // Get IP
-            else if (request.getRequestUrl().equals("/get/ip")) {
+            } else if (request.getRequestUrl().equals("/get/ip")) {
+                // Get IP
                 response.addContent(JDUtilities.getIPAddress(null));
-            }
-
-            // Get Config
-            else if (request.getRequestUrl().equals("/get/config")) {
+            } else if (request.getRequestUrl().equals("/get/config")) {
+                // Get Config
                 Property config = JDUtilities.getConfiguration();
                 response.addContent("<pre>");
                 if (request.getParameters().containsKey("sub")) {
-
                     config = SubConfiguration.getConfig(((String) request.getParameters().get("sub")).toUpperCase());
                 }
-                Entry<String, Object> next;
-                for (Iterator<Entry<String, Object>> it = config.getProperties().entrySet().iterator(); it.hasNext();) {
-                    next = it.next();
+                for (Entry<String, Object> next : config.getProperties().entrySet()) {
                     response.addContent(next.getKey() + " = " + next.getValue() + "\r\n");
                 }
                 response.addContent("</pre>");
-            }
-
-            // Get Version
-            else if (request.getRequestUrl().equals("/get/version")) {
-                response.addContent(JDUtilities.JD_VERSION + JDUtilities.getRevision());
-            }
-
-            // Get RemoteControlVersion
-            else if (request.getRequestUrl().equals("/get/rcversion")) {
+            } else if (request.getRequestUrl().equals("/get/version")) {
+                // Get Version
+                response.addContent(JDUtilities.getJDTitle());
+            } else if (request.getRequestUrl().equals("/get/rcversion")) {
+                // Get RemoteControlVersion
                 response.addContent(getVersion());
-            }
-
-            // Get SpeedLimit
-            else if (request.getRequestUrl().equals("/get/speedlimit")) {
+            } else if (request.getRequestUrl().equals("/get/speedlimit")) {
+                // Get SpeedLimit
                 response.addContent(SubConfiguration.getConfig("DOWNLOAD").getProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, "0"));
-            }
-
-            // Get Current DLs COUNT
-            else if (request.getRequestUrl().equals("/get/downloads/currentcount")) {
+            } else if (request.getRequestUrl().equals("/get/downloads/currentcount")) {
+                // Get Current DLs COUNT
                 int counter = 0;
                 FilePackage filePackage;
                 DownloadLink dLink;
@@ -233,12 +216,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     }
                 }
                 response.addContent(counter);
-            }
-
-            // Get Current DLs
-            else if (request.getRequestUrl().equals("/get/downloads/currentlist")) {
-                String output = "";
-
+            } else if (request.getRequestUrl().equals("/get/downloads/currentlist")) {
+                // Get Current DLs
                 FilePackage filePackage;
                 DownloadLink dLink;
                 Integer Package_ID;
@@ -248,42 +227,40 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     filePackage = JDUtilities.getController().getPackages().get(Package_ID);
 
                     /* Paket Infos */
-                    output = output + "<package";// Open Package
-                    output = output + " package_name=\"" + filePackage.getName() + "\"";
-                    output = output + " package_id=\"" + Package_ID.toString() + "\"";
-                    output = output + " package_percent=\"" + f.format(filePackage.getPercent()) + "\"";
-                    output = output + " package_linksinprogress=\"" + filePackage.getLinksInProgress() + "\"";
-                    output = output + " package_linkstotal=\"" + filePackage.size() + "\"";
-                    output = output + " package_ETA=\"" + Formatter.formatSeconds(filePackage.getETA()) + "\"";
-                    output = output + " package_speed=\"" + Formatter.formatReadable(filePackage.getTotalDownloadSpeed()) + "/s\"";
-                    output = output + " package_loaded=\"" + Formatter.formatReadable(filePackage.getTotalKBLoaded()) + "\"";
-                    output = output + " package_size=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize()) + "\"";
-                    output = output + " package_todo=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"";
-                    output = output + " >";// Close Package
+                    output.append("<package");// Open Package
+                    output.append(" package_name=\"" + filePackage.getName() + "\"");
+                    output.append(" package_id=\"" + Package_ID.toString() + "\"");
+                    output.append(" package_percent=\"" + f.format(filePackage.getPercent()) + "\"");
+                    output.append(" package_linksinprogress=\"" + filePackage.getLinksInProgress() + "\"");
+                    output.append(" package_linkstotal=\"" + filePackage.size() + "\"");
+                    output.append(" package_ETA=\"" + Formatter.formatSeconds(filePackage.getETA()) + "\"");
+                    output.append(" package_speed=\"" + Formatter.formatReadable(filePackage.getTotalDownloadSpeed()) + "/s\"");
+                    output.append(" package_loaded=\"" + Formatter.formatReadable(filePackage.getTotalKBLoaded()) + "\"");
+                    output.append(" package_size=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize()) + "\"");
+                    output.append(" package_todo=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"");
+                    output.append(" >");// Close Package
 
                     for (Download_ID = 0; Download_ID < filePackage.getDownloadLinkList().size(); Download_ID++) {
 
                         dLink = filePackage.getDownloadLinkList().get(Download_ID);
                         if (dLink.getLinkStatus().isPluginActive()) {
                             /* Download Infos */
-                            output = output + "<file";// Open File
-                            output = output + " file_name=\"" + dLink.getName() + "\"";
-                            output = output + " file_id=\"" + Download_ID.toString() + "\"";
-                            output = output + " file_package=\"" + Package_ID.toString() + "\"";
-                            output = output + " file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadSize())) + "\"";
-                            output = output + " file_hoster=\"" + dLink.getHost() + "\"";
-                            output = output + " file_status=\"" + dLink.getLinkStatus().getStatusString().toString() + "\"";
-                            output = output + " file_speed=\"" + dLink.getDownloadSpeed() + "\"";
-                            output = output + " > ";// Close File
+                            output.append("<file");// Open File
+                            output.append(" file_name=\"" + dLink.getName() + "\"");
+                            output.append(" file_id=\"" + Download_ID.toString() + "\"");
+                            output.append(" file_package=\"" + Package_ID.toString() + "\"");
+                            output.append(" file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadSize())) + "\"");
+                            output.append(" file_hoster=\"" + dLink.getHost() + "\"");
+                            output.append(" file_status=\"" + dLink.getLinkStatus().getStatusString().toString() + "\"");
+                            output.append(" file_speed=\"" + dLink.getDownloadSpeed() + "\"");
+                            output.append(" /> ");// Close File
                         }
                     }
-                    output = output + "</package> ";// Close Package
+                    output.append("</package> ");// Close Package
                 }
-                response.addContent(output);
-            }
-
-            // Get DLList COUNT
-            else if (request.getRequestUrl().equals("/get/downloads/allcount")) {
+                response.addContent(output.toString());
+            } else if (request.getRequestUrl().equals("/get/downloads/allcount")) {
+                // Get DLList COUNT
                 int counter = 0;
                 FilePackage filePackage;
                 Integer Package_ID;
@@ -297,12 +274,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     }
                 }
                 response.addContent(counter);
-            }
-
-            // Get DLList
-            else if (request.getRequestUrl().equals("/get/downloads/alllist")) {
-                StringBuilder output = new StringBuilder();
-
+            } else if (request.getRequestUrl().equals("/get/downloads/alllist")) {
+                // Get DLList
                 FilePackage filePackage;
                 DownloadLink dLink;
                 Integer Package_ID;
@@ -337,15 +310,13 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                         output.append(" file_hoster=\"" + dLink.getHost() + "\"");
                         output.append(" file_status=\"" + dLink.getLinkStatus().getStatusString().toString() + "\"");
                         output.append(" file_speed=\"" + dLink.getDownloadSpeed() + "\"");
-                        output.append(" > ");// Close File
+                        output.append(" /> ");// Close File
                     }
                     output.append("</package> ");// Close Package
                 }
                 response.addContent(output.toString());
-            }
-
-            // Get finished DLs COUNT
-            else if (request.getRequestUrl().equals("/get/downloads/finishedcount")) {
+            } else if (request.getRequestUrl().equals("/get/downloads/finishedcount")) {
+                // Get finished DLs COUNT
                 int counter = 0;
                 FilePackage filePackage;
                 DownloadLink dLink;
@@ -364,12 +335,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     }
                 }
                 response.addContent(counter);
-            }
-
-            // Get finished DLs
-            else if (request.getRequestUrl().equals("/get/downloads/finishedlist")) {
-                StringBuilder output = new StringBuilder();
-
+            } else if (request.getRequestUrl().equals("/get/downloads/finishedlist")) {
+                // Get finished DLs
                 FilePackage filePackage;
                 DownloadLink dLink;
                 Integer Package_ID;
@@ -405,56 +372,37 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                             output.append(" file_hoster=\"" + dLink.getHost() + "\"");
                             output.append(" file_status=\"" + dLink.getLinkStatus().getStatusString().toString() + "\"");
                             output.append(" file_speed=\"" + dLink.getDownloadSpeed() + "\"");
-                            output.append(" > ");// Close File
+                            output.append(" /> ");// Close File
                         }
                     }
                     output.append("</package> ");// Close Package
                 }
                 response.addContent(output.toString());
-            }
-
-            // Get current Speed
-            else if (request.getRequestUrl().equals("/get/speed")) {
+            } else if (request.getRequestUrl().equals("/get/speed")) {
+                // Get current Speed
                 response.addContent(JDUtilities.getController().getSpeedMeter() / 1000);
-            }
-
-            // Get IsReconnect
-            else if (request.getRequestUrl().equals("/get/isreconnect")) {
+            } else if (request.getRequestUrl().equals("/get/isreconnect")) {
+                // Get IsReconnect
                 response.addContent(!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
-            }
-
-            // ---------------------------------------
-            // Control
-            // ---------------------------------------
-
-            // Do Start Download
-            else if (request.getRequestUrl().equals("/action/start")) {
+            } else if (request.getRequestUrl().equals("/action/start")) {
+                // Do Start Download
                 JDUtilities.getController().startDownloads();
 
                 response.addContent("Downloads started");
-            }
-
-            // Do Pause Download
-            else if (request.getRequestUrl().equals("/action/pause")) {
+            } else if (request.getRequestUrl().equals("/action/pause")) {
+                // Do Pause Download
                 JDUtilities.getController().pauseDownloads(true);
                 response.addContent("Downloads paused");
-            }
-
-            // Do Stop Download
-            else if (request.getRequestUrl().equals("/action/stop")) {
+            } else if (request.getRequestUrl().equals("/action/stop")) {
+                // Do Stop Download
                 JDUtilities.getController().stopDownloads();
                 response.addContent("Downloads stopped");
-            }
-
-            // Do Toggle Download
-            else if (request.getRequestUrl().equals("/action/toggle")) {
+            } else if (request.getRequestUrl().equals("/action/toggle")) {
+                // Do Toggle Download
                 JDUtilities.getController().toggleStartStop();
                 response.addContent("Downloads toggled");
-            }
-
-            // Do Make Webupdate
-            else if (request.getRequestUrl().matches("[\\s\\S]*?/action/update/force[01]{1}/[\\s\\S]*")) {
-
+            } else if (request.getRequestUrl().matches("[\\s\\S]*?/action/update/force[01]{1}/[\\s\\S]*")) {
+                // Do Make Webupdate
                 Integer force = Integer.parseInt(new Regex(request.getRequestUrl(), "[\\s\\S]*?/action/update/force([01]{1})/[\\s\\S]*").getMatch(0));
                 if (force == 1) {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, true);
@@ -464,10 +412,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 new WebUpdate().doWebupdate(true);
 
                 response.addContent("Do Webupdate...");
-            }
-
-            // Do Reconnect
-            else if (request.getRequestUrl().equals("/action/reconnect")) {
+            } else if (request.getRequestUrl().equals("/action/reconnect")) {
+                // Do Reconnect
                 response.addContent("Do Reconnect...");
 
                 boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
@@ -482,16 +428,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, tmp);
 
-            }
-
-            // Do Restart JD
-            else if (request.getRequestUrl().equals("/action/restart")) {
+            } else if (request.getRequestUrl().equals("/action/restart")) {
+                // Do Restart JD
                 response.addContent("Restarting...");
 
-                class JDClose implements Runnable {
-                    JDClose() {
-                        new Thread(this).start();
-                    }
+                new Thread(new Runnable() {
 
                     public void run() {
                         try {
@@ -502,20 +443,13 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                         }
                         JDUtilities.restartJD();
                     }
-                }
-                @SuppressWarnings("unused")
-                JDClose jdshutdown = new JDClose();
-            }
 
-            // Do Shutdown JD
-            else if (request.getRequestUrl().equals("/action/shutdown")) {
-
+                }).start();
+            } else if (request.getRequestUrl().equals("/action/shutdown")) {
+                // Do Shutdown JD
                 response.addContent("Shutting down...");
 
-                class JDClose implements Runnable {
-                    JDClose() {
-                        new Thread(this).start();
-                    }
+                new Thread(new Runnable() {
 
                     public void run() {
                         try {
@@ -526,31 +460,24 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                         }
                         JDUtilities.getController().exit();
                     }
-                }
-                @SuppressWarnings("unused")
-                JDClose jdshutdown = new JDClose();
-            }
 
-            // Set Downloadlimit
-            else if (request.getRequestUrl().matches("(?is).*/action/set/download/limit/[0-9]+.*")) {
+                }).start();
+            } else if (request.getRequestUrl().matches("(?is).*/action/set/download/limit/[0-9]+.*")) {
+                // Set Downloadlimit
                 Integer newdllimit = Integer.parseInt(new Regex(request.getRequestUrl(), "[\\s\\S]*/action/set/download/limit/([0-9]+).*").getMatch(0));
                 logger.fine("RemoteControl - Set max. Downloadspeed: " + newdllimit.toString());
                 SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, newdllimit.toString());
                 SubConfiguration.getConfig("DOWNLOAD").save();
                 response.addContent("newlimit=" + newdllimit);
-            }
-
-            // Set max. sim. Downloads
-            else if (request.getRequestUrl().matches("(?is).*/action/set/download/max/[0-9]+.*")) {
+            } else if (request.getRequestUrl().matches("(?is).*/action/set/download/max/[0-9]+.*")) {
+                // Set max. sim. Downloads
                 Integer newsimdl = Integer.parseInt(new Regex(request.getRequestUrl(), "[\\s\\S]*/action/set/download/max/([0-9]+).*").getMatch(0));
                 logger.fine("RemoteControl - Set max. sim. Downloads: " + newsimdl.toString());
                 SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
                 SubConfiguration.getConfig("DOWNLOAD").save();
                 response.addContent("newmax=" + newsimdl);
-            }
-
-            // Add Link(s)
-            else if (request.getRequestUrl().matches("(?is).*/action/add/links/grabber[01]{1}/start[01]{1}/[\\s\\S]+")) {
+            } else if (request.getRequestUrl().matches("(?is).*/action/add/links/grabber[01]{1}/start[01]{1}/[\\s\\S]+")) {
+                // Add Link(s)
                 String link = new Regex(request.getRequestUrl(), "[\\s\\S]*?/action/add/links/grabber[01]{1}/start[01]{1}/(.*)").getMatch(0);
                 if (request.getParameters().size() > 0) {
                     link += "?";
@@ -582,28 +509,22 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 new DistributeData(link, hidegrabber, startdl).start();
                 response.addContent("Link(s) added. (" + link + ")");
-            }
-
-            // Open DLC Container
-            else if (request.getRequestUrl().matches("(?is).*/action/add/container/[\\s\\S]+")) {
+            } else if (request.getRequestUrl().matches("(?is).*/action/add/container/[\\s\\S]+")) {
+                // Open DLC Container
                 String dlcfilestr = new Regex(request.getRequestUrl(), "[\\s\\S]*/action/add/container/([\\s\\S]+)").getMatch(0);
                 dlcfilestr = Encoding.htmlDecode(dlcfilestr);
                 // wegen leerzeichen etc, die ja in urls verändert werden...
                 JDUtilities.getController().loadContainerFile(new File(dlcfilestr));
                 response.addContent("Container opened. (" + dlcfilestr + ")");
-            }
-
-            // Save Linklist as DLC Container
-            else if (request.getRequestUrl().matches("(?is).*/action/save/container/[\\s\\S]+")) {
+            } else if (request.getRequestUrl().matches("(?is).*/action/save/container/[\\s\\S]+")) {
+                // Save Linklist as DLC Container
                 String dlcfilestr = new Regex(request.getRequestUrl(), "[\\s\\S]*/action/save/container/([\\s\\S]+)").getMatch(0);
                 dlcfilestr = Encoding.htmlDecode(dlcfilestr);
                 // wegen leerzeichen etc, die ja in urls verändert werden...
                 JDUtilities.getController().saveDLC(new File(dlcfilestr), JDUtilities.getDownloadController().getAllDownloadLinks());
                 response.addContent("Container saved. (" + dlcfilestr + ")");
-            }
-
-            // Set ReconnectEnabled
-            else if (request.getRequestUrl().matches("(?is).*/action/set/reconnectenabled/.*")) {
+            } else if (request.getRequestUrl().matches("(?is).*/action/set/reconnectenabled/.*")) {
+                // Set ReconnectEnabled
                 boolean newrc = Boolean.parseBoolean(new Regex(request.getRequestUrl(), "[\\s\\S]*/action/set/reconnectenabled/(.*)").getMatch(0));
                 boolean disprc = newrc;
                 if (newrc == false) {
@@ -620,10 +541,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 } else {
                     response.addContent("reconnect=" + disprc + " (CHANGED=false)");
                 }
-            }
-
-            // Set use premium
-            else if (request.getRequestUrl().matches("(?is).*/action/set/premiumenabled/.*")) {
+            } else if (request.getRequestUrl().matches("(?is).*/action/set/premiumenabled/.*")) {
+                // Set use premium
                 boolean newuseprem = Boolean.parseBoolean(new Regex(request.getRequestUrl(), "[\\s\\S]*/action/set/premiumenabled/(.*)").getMatch(0));
                 logger.fine("RemoteControl - Set Premium: " + newuseprem);
                 if (newuseprem ^ JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem)) {
