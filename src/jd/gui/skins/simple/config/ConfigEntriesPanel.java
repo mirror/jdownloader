@@ -204,10 +204,11 @@ public class ConfigEntriesPanel extends ConfigPanel {
 
     public PropertyType hasChanges() {
         PropertyType ret = super.hasChanges();
-
         if (subPanels != null) {
-            for (int i = 0; i < subPanels.size(); i++) {
-                ret = ret.getMax(subPanels.get(i).hasChanges());
+            synchronized (subPanels) {
+                for (int i = 0; i < subPanels.size(); i++) {
+                    ret = ret.getMax(subPanels.get(i).hasChanges());
+                }
             }
         }
         return ret;

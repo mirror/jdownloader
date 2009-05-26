@@ -234,33 +234,34 @@ public abstract class ConfigPanel extends JTabbedPanel {
         PropertyType ret = ConfigEntry.PropertyType.NONE;
         GUIConfigEntry akt;
         Object old;
-        for (Iterator<GUIConfigEntry> it = entries.iterator(); it.hasNext();) {
-            akt = it.next();
+        synchronized (entries) {
+            for (Iterator<GUIConfigEntry> it = entries.iterator(); it.hasNext();) {
+                akt = it.next();
 
-            if (akt.getConfigEntry().getPropertyInstance() != null && akt.getConfigEntry().getPropertyName() != null) {
-                if (akt.getConfigEntry().hasChanges()) {
-                    ret = ret.getMax(PropertyType.NORMAL);
-                }
-                old = akt.getConfigEntry().getPropertyInstance().getProperty(akt.getConfigEntry().getPropertyName());
-                if (old == null && akt.getText() != null) {
-                    ret = ret.getMax(akt.getConfigEntry().getPropertyType());
-                    System.out.println(akt.getConfigEntry().getPropertyName() + "1: " + ret);
-                    continue;
-                }
-                if (old == akt.getText()) {
-                    System.out.println(akt.getConfigEntry().getPropertyName() + "2: " + ret);
-                    continue;
-                }
-                if (!old.equals(akt.getText())) {
-                    ret = ret.getMax(akt.getConfigEntry().getPropertyType());
+                if (akt.getConfigEntry().getPropertyInstance() != null && akt.getConfigEntry().getPropertyName() != null) {
+                    if (akt.getConfigEntry().hasChanges()) {
+                        ret = ret.getMax(PropertyType.NORMAL);
+                    }
+                    old = akt.getConfigEntry().getPropertyInstance().getProperty(akt.getConfigEntry().getPropertyName());
+                    if (old == null && akt.getText() != null) {
+                        ret = ret.getMax(akt.getConfigEntry().getPropertyType());
+                        System.out.println(akt.getConfigEntry().getPropertyName() + "1: " + ret);
+                        continue;
+                    }
+                    if (old == akt.getText()) {
+                        System.out.println(akt.getConfigEntry().getPropertyName() + "2: " + ret);
+                        continue;
+                    }
+                    if (!old.equals(akt.getText())) {
+                        ret = ret.getMax(akt.getConfigEntry().getPropertyType());
 
-                    System.out.println(akt.getConfigEntry().getPropertyName() + "3: " + ret);
-                    continue;
+                        System.out.println(akt.getConfigEntry().getPropertyName() + "3: " + ret);
+                        continue;
+                    }
                 }
+
             }
-
         }
-
         return ret;
     }
 
