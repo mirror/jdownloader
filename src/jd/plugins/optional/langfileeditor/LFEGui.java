@@ -18,7 +18,6 @@ package jd.plugins.optional.langfileeditor;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -40,8 +39,6 @@ import java.util.logging.Level;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JColorChooser;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -64,7 +61,6 @@ import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
-import jd.nutils.Screen;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
@@ -560,7 +556,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         } else if (e.getSource() == mnuShowDupes) {
 
-            new DupeDialog(SimpleGUI.CURRENTGUI, dupes);
+            LFEDupeDialog.showDialog(SimpleGUI.CURRENTGUI, dupes);
 
         } else if (e.getSource() == mnuTranslate || e.getSource() == mnuContextTranslate) {
 
@@ -664,13 +660,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     private String getLanguageKey() {
         if (lngKey == null) {
-            String result = JOptionPane.showInputDialog(this, JDLocale.L("plugins.optional.langfileeditor.translate.message", "Please insert the Language Key to provide a correct translation of Google:"), JDLocale.L("plugins.optional.langfileeditor.translate.title", "Insert Language Key"), JOptionPane.QUESTION_MESSAGE);
-            if (result == null) return null;
-            if (!isSupportedLanguageKey(result)) {
-                JOptionPane.showMessageDialog(this, JDLocale.L("plugins.optional.langfileeditor.translate.error.message", "The Language Key, you have entered, is not supported by Google!"), JDLocale.L("plugins.optional.langfileeditor.translate.error.title", "Wrong Language Key!"), JOptionPane.ERROR_MESSAGE);
-                return null;
-            }
-            lngKey = result;
+            lngKey = LFELngKeyDialog.showDialog(SimpleGUI.CURRENTGUI, lngKey);
         }
         return lngKey;
     }
@@ -717,16 +707,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         }
 
         return ret;
-    }
-
-    private boolean isSupportedLanguageKey(String lngKey) {
-        String[] lngKeys = new String[] { "da", "de", "fi", "fr", "el", "hi", "it", "ja", "ko", "hr", "nl", "no", "pl", "pt", "ro", "ru", "sv", "es", "cs", "en", "ar" };
-
-        for (String element : lngKeys) {
-            if (element.equals(lngKey)) return true;
-        }
-
-        return false;
     }
 
     private void saveLanguageFile(File file) {
@@ -1059,96 +1039,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             }
         }
 
-    }
-
-    private class DupeDialog extends JDialog {
-
-        private static final long serialVersionUID = 1L;
-
-        public DupeDialog(JFrame owner, HashMap<String, Vector<String>> dupes) {
-            super(owner);
-
-            setModal(true);
-            setTitle(JDLocale.L("plugins.optional.langfileeditor.duplicatedEntries", "Duplicated Entries") + " [" + dupes.size() + "]");
-
-            MyDupeTableModel internalTableModel = new MyDupeTableModel(dupes);
-            JXTable table = new JXTable(internalTableModel);
-            table.getTableHeader().setReorderingAllowed(false);
-            table.getColumnModel().getColumn(0).setPreferredWidth(50);
-            table.getColumnModel().getColumn(0).setMinWidth(50);
-            table.getColumnModel().getColumn(0).setMaxWidth(50);
-            table.getColumnModel().getColumn(2).setMinWidth(450);
-            table.addHighlighter(HighlighterFactory.createAlternateStriping());
-            table.addHighlighter(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, null, Color.BLUE));
-
-            add(new JScrollPane(table));
-
-            setMinimumSize(new Dimension(900, 600));
-            setPreferredSize(new Dimension(900, 600));
-            pack();
-            setLocation(Screen.getCenterOfComponent(owner, this));
-            setVisible(true);
-        }
-
-        private class MyDupeTableModel extends AbstractTableModel {
-
-            private static final long serialVersionUID = -5434313385327397539L;
-
-            private String[] columnNames = { "*", JDLocale.L("plugins.optional.langfileeditor.string", "String"), JDLocale.L("plugins.optional.langfileeditor.keys", "Keys") };
-
-            private HashMap<String, Vector<String>> tableData;
-
-            private String[] keys;
-
-            public MyDupeTableModel(HashMap<String, Vector<String>> data) {
-                tableData = data;
-                keys = data.keySet().toArray(new String[data.size()]);
-                this.fireTableRowsInserted(0, tableData.size() - 1);
-            }
-
-            public int getColumnCount() {
-                return columnNames.length;
-            }
-
-            public int getRowCount() {
-                return tableData.size();
-            }
-
-            // @Override
-            public String getColumnName(int col) {
-                return columnNames[col];
-            }
-
-            public Object getValueAt(int row, int col) {
-                switch (col) {
-                case 0:
-                    return tableData.get(getValueAt(row, 1)).size();
-                case 1:
-                    return keys[row];
-                case 2:
-                    StringBuilder ret = new StringBuilder();
-                    Vector<String> values = tableData.get(keys[row]);
-                    for (String value : values) {
-                        if (ret.length() > 0) ret.append(" || ");
-                        ret.append(value);
-                    }
-                    return ret.toString();
-                }
-                return "";
-            }
-
-            // @Override
-            public Class<?> getColumnClass(int col) {
-                if (col == 0) return Integer.class;
-                return String.class;
-            }
-
-            // @Override
-            public boolean isCellEditable(int row, int col) {
-                return (col == 1);
-            }
-
-        }
     }
 
     // @Override
