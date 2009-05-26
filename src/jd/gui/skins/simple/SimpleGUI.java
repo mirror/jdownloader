@@ -65,6 +65,9 @@ import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
+import jd.controlling.ProgressController;
+import jd.controlling.ProgressControllerEvent;
+import jd.controlling.ProgressControllerListener;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
@@ -939,19 +942,36 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                     SimpleGUI.this.setWaiting(false);
 
                     SimpleGUI.this.setEnabled(true);
-
-                    if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
-                        JDUtilities.getController().startDownloads();
-                    }
                     try {
                         Main.SPLASH.finish();
                     } catch (Exception e) {
+                    }
+                    if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
+                        new Thread() {
+                            public void run() {
+                                this.setName("Autostart counter");
+                                final ProgressController pc = new ProgressController(JDLocale.L("gui.autostart", "Autostart downloads in few secounds..."));
+                                pc.getBroadcaster().addListener(new ProgressControllerListener() {
+                                    public void onProgressControllerEvent(ProgressControllerEvent event) {
+                                        pc.setStatusText("Autostart aborted!");
+                                    }
+                                });
+                                pc.finalize(10 * 1000l);
+                                while (!pc.isFinished()) {
+                                    try {
+                                        Thread.sleep(1000);
+                                    } catch (InterruptedException e) {
+                                        break;
+                                    }
+                                }
+                                if (!pc.isAbort()) JDUtilities.getController().startDownloads();
+                            }
+                        }.start();
                     }
                     break;
                 case ControlEvent.CONTROL_PLUGIN_ACTIVE:
                     logger.info("Module started: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
-
                         setTitle(JDUtilities.JD_TITLE + " | " + JDLocale.L("gui.titleaddaction", "Action: ") + " " + ((Interaction) event.getSource()).getInteractionName());
                     }
                     break;
@@ -962,26 +982,21 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 case ControlEvent.CONTROL_PLUGIN_INACTIVE:
                     logger.info("Module finished: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
-
                         if (Interaction.areInteractionsInProgress()) {
-
                             setTitle(JDUtilities.getJDTitle());
                         }
                     }
                     break;
 
                 case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-
                     if (speedmeter != null) speedmeter.stop();
                     for (DownloadLink link : DownloadController.getInstance().getAllDownloadLinks()) {
                         if (link.getLinkStatus().hasStatus(LinkStatus.TODO)) {
                             logger.info("Downloads stopped");
                             return;
                         }
-
                     }
                     logger.info("All downloads finished");
-
                     break;
                 case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                     break;
@@ -991,24 +1006,18 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
                     setTitle(JDUtilities.getJDTitle());
                     break;
-
                 case ControlEvent.CONTROL_JDPROPERTY_CHANGED:
                     if ((Property) event.getSource() == JDUtilities.getConfiguration()) {
                         if (event.getParameter().equals(Configuration.PARAM_DISABLE_RECONNECT)) {
-
                         } else if (event.getParameter().equals(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE)) {
-
                         }
                     }
                     break;
                 case ControlEvent.CONTROL_DOWNLOAD_START:
-
                     if (speedmeter != null) speedmeter.start();
-
                     break;
                 case ControlEvent.CONTROL_DOWNLOAD_STOP:
                     if (speedmeter != null) speedmeter.stop();
-
                     break;
                 }
             }

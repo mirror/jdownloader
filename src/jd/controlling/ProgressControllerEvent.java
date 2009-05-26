@@ -27,4 +27,6 @@ public class ProgressControllerEvent extends JDEvent {
 
     public static final int CANCEL = 1;
 
+    public static final int SUCCESSFULL = 2;
+
 }

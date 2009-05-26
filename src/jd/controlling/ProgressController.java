@@ -26,7 +26,7 @@ import jd.utils.JDUtilities;
 
 class ProgressControllerBroadcaster extends JDBroadcaster<ProgressControllerListener, ProgressControllerEvent> {
 
-    //@Override
+    // @Override
     protected void fireEvent(ProgressControllerListener listener, ProgressControllerEvent event) {
         listener.onProgressControllerEvent(event);
 
@@ -59,6 +59,7 @@ public class ProgressController {
     public Icon icon = null;
 
     private transient ProgressControllerBroadcaster broadcaster = new ProgressControllerBroadcaster();
+    private boolean abort = false;
 
     public Icon getIcon() {
         return icon;
@@ -108,13 +109,12 @@ public class ProgressController {
         setStatus(currentValue - 1);
     }
 
-    //@Override
+    // @Override
     public void finalize() {
         if (finalizing) return;
         finished = true;
         currentValue = max;
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
-
     }
 
     public boolean isFinalizing() {
@@ -184,6 +184,10 @@ public class ProgressController {
         return finished;
     }
 
+    public boolean isAbort() {
+        return abort;
+    }
+
     public void setRange(long max) {
         this.max = max;
         setStatus(currentValue);
@@ -210,12 +214,13 @@ public class ProgressController {
         fireChanges();
     }
 
-    //@Override
+    // @Override
     public String toString() {
         return "ProgressController " + id;
     }
 
     public void fireCancelAction() {
+        abort = true;
         getBroadcaster().fireEvent(new ProgressControllerEvent(this, ProgressControllerEvent.CANCEL));
     }
 }
