@@ -85,16 +85,15 @@ public class JDEventQueue extends EventQueue {
 
     // @Override
     protected void dispatchEvent(AWTEvent ev) {
-
-        if (ev instanceof MouseEvent) {
+        qh: if (ev instanceof MouseEvent) {
             MouseEvent e = (MouseEvent) ev;
 
             if ((e.getID() == MouseEvent.MOUSE_RELEASED || e.getID() == MouseEvent.MOUSE_CLICKED) && lastPoint > 0) {
-                System.out.println("ignore");
+
                 lastPoint--;
-                return;
+                break qh;
             } else if (e.getID() == MouseEvent.MOUSE_PRESSED && e.isControlDown() && e.isShiftDown()) {
-                System.out.println("helppress");
+       
                 this.lastPoint = 2;
                 Point point = e.getPoint();
                 Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
@@ -179,7 +178,12 @@ public class JDEventQueue extends EventQueue {
         MouseEvent e = (MouseEvent) ev;
         if (!e.isPopupTrigger()) { return; }
         if (e.getComponent() == null) return;
-        Component c = SwingUtilities.getDeepestComponentAt(e.getComponent(), e.getX(), e.getY());
+        
+        Point point = e.getPoint();
+        Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
+        point.x -= (source.getLocationOnScreen().x - SimpleGUI.CURRENTGUI.getLocationOnScreen().x);
+        point.y -= (source.getLocationOnScreen().y - SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
+        Component c = SwingUtilities.getDeepestComponentAt(source, (int)point.getX(), (int)point.getY());
         if (!(c instanceof JTextComponent)) { return; }
         if (MenuSelectionManager.defaultManager().getSelectedPath().length > 0) { return; }
         final JTextComponent t = (JTextComponent) c;

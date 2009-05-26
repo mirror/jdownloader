@@ -57,6 +57,8 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
         messageArea.setOpaque(false);
         messageArea.setText(this.message);
         messageArea.setEditable(false);
+        
+        
         contentpane.add(messageArea);
         if (JDFlags.hasAllFlags(flag, UserIO.STYLE_LARGE)) {
             input = new JTextPane();

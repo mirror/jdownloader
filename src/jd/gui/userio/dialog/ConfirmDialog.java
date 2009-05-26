@@ -16,6 +16,8 @@
 
 package jd.gui.userio.dialog;
 
+import java.awt.Dimension;
+
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.JTextPane;
@@ -51,7 +53,8 @@ public class ConfirmDialog extends AbstractDialog {
         textField.setOpaque(false);
         textField.setText(this.message);
         textField.setEditable(false);
-        cp.add(textField);
+      
+        cp.add(textField,"width n:n:450");
     }
 
     public Integer getReturnID() {
