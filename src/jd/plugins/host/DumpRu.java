@@ -31,13 +31,13 @@ public class DumpRu extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://dump.ru/pages/about/";
     }
 
-    //@Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
+    // @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
             setBrowserExclusive();
             br.setFollowRedirects(true);
@@ -45,7 +45,7 @@ public class DumpRu extends PluginForHost {
             // File not found
             if (br.containsHTML("Запрошенный файл не обнаружен")) {
                 logger.warning("File not found");
-                return AvailableStatus.FALSE;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
 
             // Filesize
@@ -66,38 +66,38 @@ public class DumpRu extends PluginForHost {
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-        return AvailableStatus.FALSE;
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        requestFileInformation(downloadLink);
         br.submitForm(br.getForm(1));
         String link = br.getRegex(Pattern.compile("<a href=\"(http://.*?dump\\.ru/file_download/.*?)\">")).getMatch(0);
         dl = br.openDownload(downloadLink, link);
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         /* TODO: Wert nachprüfen */
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

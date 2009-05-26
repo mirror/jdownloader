@@ -39,34 +39,31 @@ public class Speedy_ShareCom extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.speedy-share.com/tos.html";
     }
 
-    //@Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
+    // @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.getPage(downloadLink.getDownloadURL());
         if (!br.containsHTML("File Not Found")) {
             downloadLink.setName(Encoding.htmlDecode(br.getRegex("File Name:</span>(.*?)</span>").getMatch(0)));
             downloadLink.setDownloadSize(Regex.getSize(br.getRegex("File Size:</span>(.*?)</span>").getMatch(0)));
             return AvailableStatus.TRUE;
         }
-        return AvailableStatus.FALSE;
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
 
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
-        /* Nochmals das File überprüfen */
-        if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
+        requestFileInformation(downloadLink);
         /* Link holen */
         HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(br.toString());
         postdata = "act=" + Encoding.urlEncode(submitvalues.get("act"));
@@ -86,20 +83,20 @@ public class Speedy_ShareCom extends PluginForHost {
         br.openDownload(downloadLink, downloadLink.getDownloadURL(), postdata).startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

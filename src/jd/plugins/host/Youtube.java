@@ -55,9 +55,9 @@ public class Youtube extends PluginForHost {
         // }
         // tmp.disconnect();
         return AvailableStatus.TRUE; /*
-                      * warum sollte ein video das der decrypter sagte es sei
-                      * online, offline sein ;)
-                      */
+                                      * warum sollte ein video das der decrypter
+                                      * sagte es sei online, offline sein ;)
+                                      */
     }
 
     // @Override
@@ -67,14 +67,8 @@ public class Youtube extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-        if (!downloadLink.isAvailable()) {
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.hoster.youtube.errors.serverunavailable", "Server unavailable"));
-            return;
-        }
         dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {
@@ -93,13 +87,7 @@ public class Youtube extends PluginForHost {
 
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         login(account);
-        if (!downloadLink.isAvailable()) {
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.hoster.youtube.errors.serverunavailable", "Server unavailable"));
-            return;
-        }
         dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {

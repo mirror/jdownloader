@@ -25,6 +25,7 @@ import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
@@ -46,18 +47,18 @@ public class SpiegelDe extends PluginForHost {
     }
 
     //@Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         URLConnectionAdapter urlConnection;
         try {
             urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
         } catch (IOException e) {
             logger.severe(e.getMessage());
             downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.FALSE;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (!urlConnection.isOK()) {
             urlConnection.disconnect();
-            return AvailableStatus.FALSE;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         downloadLink.setDownloadSize(urlConnection.getLongContentLength());
         urlConnection.disconnect();
@@ -76,11 +77,7 @@ public class SpiegelDe extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        /* Nochmals das File überprüfen */
-        if (!downloadLink.isAvailable()) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
+        this.requestFileInformation(downloadLink);
         dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
         dl.setChunkNum(1);
         dl.setResume(false);

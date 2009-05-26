@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
@@ -33,58 +34,51 @@ public class UploadStube extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.uploadstube.de/regeln.php";
     }
 
-    //@Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
-
+    // @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         String page = br.getPage(downloadLink.getDownloadURL());
-
-        downloadLink.setName(new Regex(page, "<b>Dateiname: </b>(.*?) <br>").getMatch(0).trim());
-        downloadLink.setDownloadSize(Regex.getSize(new Regex(page, "<b>Dateigr..e:</b> (.*?)<br>").getMatch(0).trim()));
-
+        Regex filename = new Regex(page, "<b>Dateiname: </b>(.*?) <br>");
+        Regex filesize = new Regex(page, "<b>Dateigr..e:</b> (.*?)<br>");
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename.getMatch(0).trim());
+        downloadLink.setDownloadSize(Regex.getSize(filesize.getMatch(0).trim()));
         return AvailableStatus.TRUE;
-
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
 
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        if (!downloadLink.isAvailable()) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
-
+        this.requestFileInformation(downloadLink);
         dl = new RAFDownload(this, downloadLink, br.createGetRequest((new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("onClick=\"window\\.location=..(http://www.uploadstube.de/.*?)..\"", Pattern.CASE_INSENSITIVE)).getMatch(0))));
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

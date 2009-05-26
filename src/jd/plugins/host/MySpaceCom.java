@@ -38,17 +38,17 @@ public class MySpaceCom extends PluginForHost {
         return link.getDownloadURL().replaceAll("myspace://", "");
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    //@Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
+    // @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         URLConnectionAdapter urlConnection = br.openGetConnection(getDownloadUrl(downloadLink));
         if (!urlConnection.isOK()) {
             urlConnection.disconnect();
-            return AvailableStatus.FALSE;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
         downloadLink.setDownloadSize(urlConnection.getLongContentLength());
@@ -56,38 +56,35 @@ public class MySpaceCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
 
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        /* Nochmals das File Überprüfen */
-        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-
+        this.requestFileInformation(downloadLink);
         dl = RAFDownload.download(downloadLink, br.createRequest(getDownloadUrl(downloadLink)), true, 0);
-
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

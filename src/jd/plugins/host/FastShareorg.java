@@ -23,6 +23,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
@@ -35,13 +36,13 @@ public class FastShareorg extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.fastshare.org/discl.php";
     }
 
-    //@Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
+    // @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
             br.setCookiesExclusive(true);
             br.clearCookies(getHost());
@@ -61,27 +62,22 @@ public class FastShareorg extends PluginForHost {
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-        downloadLink.setAvailable(false);
-        return AvailableStatus.FALSE;
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
 
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         url = downloadLink.getDownloadURL();
+        requestFileInformation(downloadLink);
 
-        /* Nochmals das File überprüfen */
-        if (!downloadLink.isAvailable()) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
         /* Link holen */
         Form form = br.getForm(0);
         br.submitForm(form);
@@ -105,20 +101,20 @@ public class FastShareorg extends PluginForHost {
 
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

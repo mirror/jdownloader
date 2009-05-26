@@ -31,13 +31,13 @@ public class FileMojoCom extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.filemojo.com/help/tos.php";
     }
 
-    //@Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
+    // @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
             br.setCookiesExclusive(true);
             br.clearCookies(getHost());
@@ -50,7 +50,7 @@ public class FileMojoCom extends PluginForHost {
 
             br.getPage(url);
 
-            if (br.containsHTML("Sorry File Not Found")) return AvailableStatus.FALSE;
+            if (br.containsHTML("Sorry File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String size = br.getRegex("(\\d+\\.\\d+) (MB|KB)").getMatch(-1);
             downloadLink.setDownloadSize(Regex.getSize(size));
 
@@ -61,37 +61,38 @@ public class FileMojoCom extends PluginForHost {
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-        return AvailableStatus.FALSE;
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
 
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        requestFileInformation(downloadLink);
+
         dl = RAFDownload.download(downloadLink, br.createFormRequest(br.getForm(1)));
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         /* TODO: Wert nachprüfen */
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

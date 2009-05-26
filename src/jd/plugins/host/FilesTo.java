@@ -41,7 +41,7 @@ public class FilesTo extends PluginForHost {
     }
 
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
             br.getPage(downloadLink.getDownloadURL());
             if (!br.containsHTML("Die angeforderte Datei konnte nicht gefunden werden")) {
@@ -52,8 +52,7 @@ public class FilesTo extends PluginForHost {
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-        downloadLink.setAvailable(false);
-        return AvailableStatus.FALSE;
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     // @Override
@@ -62,10 +61,8 @@ public class FilesTo extends PluginForHost {
     }
 
     // @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-
-        if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
+    public void handleFree(DownloadLink downloadLink) throws Exception {        
+        this.requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         String captchaAddress = br.getRegex("<img src=\"(http://www\\.files\\.to/captcha_[\\d]+\\.jpg\\?)").getMatch(0);
 

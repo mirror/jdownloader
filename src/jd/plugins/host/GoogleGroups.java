@@ -37,12 +37,12 @@ public class GoogleGroups extends PluginForHost {
         // TODO Auto-generated constructor stub
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://groups.google.com/intl/de/googlegroups/terms_of_service3.html";
     }
 
-    //@Override
+    // @Override
     public boolean checkLinks(DownloadLink[] urls) {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -71,7 +71,7 @@ public class GoogleGroups extends PluginForHost {
                         if (strings[0].contains(na) || downloadLink.getName().equals(strings[1])) {
 
                             downloadLink.setAvailable(true);
-                            downloadLink.setFinalFileName(strings[1]);                            
+                            downloadLink.setFinalFileName(strings[1]);
                             downloadLink.setDownloadSize(Regex.getSize(strings[2]));
                             break;
                         }
@@ -87,20 +87,21 @@ public class GoogleGroups extends PluginForHost {
         return true;
     }
 
-    //@Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
+    // @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         checkLinks(new DownloadLink[] { downloadLink });
+        if (downloadLink.getAvailableStatus() == AvailableStatus.FALSE) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return downloadLink.getAvailableStatus();
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        requestFileInformation(downloadLink);
         // .googlegroups.com/web/
         String na = downloadLink.getDownloadURL().replaceFirst("\\?gda=.*", "");
         na = na.replaceFirst("googlegroups.com/web/.*", "googlegroups.com/web/") + URLEncoder.encode(na.replaceFirst("http://.*?\\.googlegroups.com/web/", ""), "UTF-8");
@@ -110,20 +111,20 @@ public class GoogleGroups extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

@@ -22,6 +22,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
@@ -34,13 +35,13 @@ public class Dataupde extends PluginForHost {
 
     private String downloadurl;
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.dataup.de/agb";
     }
 
-    //@Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
+    // @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
             downloadurl = downloadLink.getDownloadURL();
             br.getPage(downloadurl);
@@ -55,25 +56,19 @@ public class Dataupde extends PluginForHost {
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-        downloadLink.setAvailable(false);
-        return AvailableStatus.FALSE;
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
 
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        /* Nochmals das File überprüfen */
-        if (!downloadLink.isAvailable()) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
+        requestFileInformation(downloadLink);
 
         /* 10 seks warten, kann weggelassen werden */
         // this.sleep(10000, downloadLink);
@@ -101,21 +96,21 @@ public class Dataupde extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
 
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

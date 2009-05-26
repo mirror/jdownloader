@@ -44,7 +44,8 @@ public class ClipfishDe extends PluginForHost {
          * warum sollte ein video das der decrypter sagte es sei online, offline
          * sein ;)
          * 
-         * coa: hm.. weil er vieleicht so nem anderen zeitpunk eingefügt worden ist als er dann geladen wird?
+         * coa: hm.. weil er vieleicht so nem anderen zeitpunk eingefügt worden
+         * ist als er dann geladen wird?
          */
         return AvailableStatus.TRUE;
     }
@@ -66,11 +67,6 @@ public class ClipfishDe extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        /* Nochmals das File überprüfen */
-        if (!downloadLink.isAvailable()) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
 
         URLConnectionAdapter urlConnection;
         dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());

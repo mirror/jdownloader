@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
@@ -34,53 +35,49 @@ public class RomHustlerNet extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://romhustler.net/disclaimer.php";
     }
 
-    //@Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
+    // @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
             this.setBrowserExclusive();
             br.getPage(downloadLink.getDownloadURL());
             downloadUrl = decodeurl(br.getRegex(Pattern.compile("link_enc=new Array\\((.*?)\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
-            if (downloadUrl == null) return AvailableStatus.FALSE;
+            if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String name = Encoding.htmlDecode(downloadUrl.replaceAll("^.*/", ""));
             downloadLink.setName(name);
             return AvailableStatus.TRUE;
         } catch (Exception e) {
         }
-        return AvailableStatus.FALSE;
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        if (!downloadLink.isAvailable()) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
-        br.openDownload(downloadLink, downloadUrl, true, 1).startDownload();
+        requestFileInformation(downloadLink);
+        dl = br.openDownload(downloadLink, downloadUrl, true, 1);
+        dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         /* TODO: Wert nachprüfen */
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
@@ -99,7 +96,7 @@ public class RomHustlerNet extends PluginForHost {
         return sb.toString();
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

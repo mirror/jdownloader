@@ -53,7 +53,6 @@ public class MyVideo extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FATAL); }
         dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {

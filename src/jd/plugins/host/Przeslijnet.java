@@ -33,13 +33,13 @@ public class Przeslijnet extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www2.przeslij.net/#";
     }
 
-    //@Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
+    // @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
             br.getPage(downloadLink.getDownloadURL());
             if (!br.containsHTML("Invalid download link")) {
@@ -50,20 +50,19 @@ public class Przeslijnet extends PluginForHost {
         } catch (IOException e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-        downloadLink.setAvailable(false);
-        return AvailableStatus.FALSE;
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
 
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        requestFileInformation(downloadLink);
 
         /* Zwangswarten, 15seks */
         sleep(15000, downloadLink);
@@ -72,20 +71,20 @@ public class Przeslijnet extends PluginForHost {
         br.openDownload(downloadLink, Encoding.htmlDecode(br.getRegex("onClick=\"window\\.location=\\\\\'(.*?)\\\\\'").getMatch(0))).startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

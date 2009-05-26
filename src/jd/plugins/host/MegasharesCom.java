@@ -104,7 +104,7 @@ public class MegasharesCom extends PluginForHost {
 
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        requestFileInformation(downloadLink);
         login(account);
         // Password protection
         loadpage(downloadLink.getDownloadURL());
@@ -123,7 +123,7 @@ public class MegasharesCom extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        requestFileInformation(downloadLink);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // Password protection
         if (!checkPassword(downloadLink)) { return; }
@@ -216,7 +216,7 @@ public class MegasharesCom extends PluginForHost {
     }
 
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         loadpage(downloadLink.getDownloadURL());
         if (br.containsHTML("continue using Free service")) {
@@ -235,7 +235,7 @@ public class MegasharesCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         String[] dat = br.getRegex("<dt>Filename:.*?<strong>(.*?)</strong>.*?size:(.*?)</dt>").getRow(0);
-        if (dat == null) { return AvailableStatus.FALSE; }
+        if (dat == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(dat[0].trim());
         downloadLink.setDownloadSize(Regex.getSize(dat[1]));
         return AvailableStatus.TRUE;

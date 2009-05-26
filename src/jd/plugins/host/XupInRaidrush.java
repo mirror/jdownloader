@@ -34,53 +34,50 @@ public class XupInRaidrush extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    //@Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
-
+    // @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.getPage(downloadLink.getDownloadURL());
         String title = br.getRegex("<title>(.*?)\\|.*?</title>").getMatch(0).trim();
         String size = br.getRegex("Gr.*?e / Size</font></td>.*?<td>(\\d+?)</td>").getMatch(0).trim();
-
+        if (title == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(title);
         downloadLink.setDownloadSize(Integer.parseInt(size));
         return AvailableStatus.TRUE;
-
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        this.requestFileInformation(downloadLink);
         Form download = br.getForms()[0];
-        br.openDownload(downloadLink, download).startDownload();
-
+        dl = br.openDownload(downloadLink, download);
+        dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
 
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 
