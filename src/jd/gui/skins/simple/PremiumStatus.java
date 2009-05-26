@@ -80,7 +80,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         bars = new TinyProgressBar[BARCOUNT];
         lbl = new JLabel(JDLocale.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
         setName(JDLocale.L("quickhelp.premiumstatusbar", "Premium statusbar"));
-        this.setLayout(new MigLayout("ins 0", "[]", "[]"));
+        this.setLayout(new MigLayout("ins 0", "", "[center]"));
         premium = new JToggleButton();
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
             premium.setSelected(true);
@@ -119,7 +119,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         premium.setFocusPainted(false);
         premium.setContentAreaFilled(false);
         premium.setBorderPainted(false);
-        add(premium, "aligny top");
+        add(premium);
         premium.addMouseListener(new JDMouseAdapter() {
 
             public void mouseClicked(MouseEvent e) {
@@ -149,8 +149,8 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             }
 
         });
-        add(new JSeparator(JSeparator.VERTICAL), "growy, aligny center");
-        add(lbl, "hidemode 3,aligny top");
+        add(new JSeparator(JSeparator.VERTICAL), "growy");
+        add(lbl, "hidemode 3");
 
         for (int i = 0; i < BARCOUNT; i++) {
             TinyProgressBar pg = new TinyProgressBar();
@@ -180,7 +180,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             });
 
             pg.setVisible(false);
-            add(pg, "hidemode 3,aligny top");
+            add(pg, "hidemode 3");
 
         }
         for (int i = 0; i < BARCOUNT; i++) {

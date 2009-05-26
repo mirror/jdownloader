@@ -145,7 +145,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         colorizeMissing = subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, true);
         colorizeOld = subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false);
 
-        showDone = subConfig.getBooleanProperty(PROPERTY_SHOW_DONE, false);
+        showDone = subConfig.getBooleanProperty(PROPERTY_SHOW_DONE, true);
         showMissing = subConfig.getBooleanProperty(PROPERTY_SHOW_MISSING, true);
         showOld = subConfig.getBooleanProperty(PROPERTY_SHOW_OLD, true);
 
@@ -383,6 +383,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
             JDFileChooser chooser = new JDFileChooser("LANGFILEEDITOR_FILE");
             chooser.setFileFilter(fileFilter);
+            if (languageFile != null) chooser.setCurrentDirectory(languageFile.getParentFile());
 
             if (chooser.showSaveDialog(this) == JDFileChooser.APPROVE_OPTION) {
                 languageFile = chooser.getSelectedFile();
@@ -395,6 +396,8 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                     }
                 }
                 cmboFile.setCurrentPath(languageFile);
+
+                initLocaleDataComplete();
             }
 
         } else if (e.getSource() == mnuSave) {
@@ -405,6 +408,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
             JDFileChooser chooser = new JDFileChooser("LANGFILEEDITOR_FILE");
             chooser.setFileFilter(fileFilter);
+            chooser.setCurrentDirectory(languageFile.getParentFile());
 
             if (chooser.showSaveDialog(this) == JDFileChooser.APPROVE_OPTION) {
                 languageFile = chooser.getSelectedFile();
@@ -996,7 +1000,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         @Override
         public boolean test(int row) {
             boolean result = true;
-            if (!subConfig.getBooleanProperty(PROPERTY_SHOW_DONE, false)) result = result && !(!getInputString(row, 1).equals("") && !getInputString(row, 2).equals(""));
+            if (!subConfig.getBooleanProperty(PROPERTY_SHOW_DONE, true)) result = result && !(!getInputString(row, 1).equals("") && !getInputString(row, 2).equals(""));
             if (!subConfig.getBooleanProperty(PROPERTY_SHOW_MISSING, true)) result = result && !getInputString(row, 2).equals("");
             if (!subConfig.getBooleanProperty(PROPERTY_SHOW_OLD, true)) result = result && !getInputString(row, 1).equals("");
             return result;
