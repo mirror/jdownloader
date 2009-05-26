@@ -336,7 +336,7 @@ public abstract class PluginForHost extends Plugin {
         ConfigContainer premiumConfig = new ConfigContainer(this, JDLocale.L("plugins.hoster.premiumtab", "Premium Einstellungen"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, premiumConfig));
 
-        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PREMIUMPANEL, AccountController.getInstance(), this.getHost(), 0));
+        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PREMIUMPANEL, null, this.getHost(), 0));
         cfg.setActionListener(this);
         cfg.setDefaultValue(new ArrayList<Account>());
 
