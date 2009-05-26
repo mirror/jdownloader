@@ -146,7 +146,7 @@ public class JDTheme {
         BufferedImage img = JDImage.getImage(string + "_" + width + "_" + height);
         if (img != null) return img;
         try {
-            
+
             return JDImage.getScaledImage(JDImage.getImage(string), width, height);
         } catch (Exception e) {
             logger.severe("Could not find image: " + string);
@@ -163,9 +163,9 @@ public class JDTheme {
         File file = JDUtilities.getResourceFile(THEME_DIR + themeID + ".thm");
 
         if (!file.exists()) {
-            logger.severe("Theme " + themeID + " not installed");
-            themeID="default";
-            return;
+            logger.severe("Theme " + themeID + " not installed, switch to default theme");
+            themeID = "default";
+            // return;
         }
         currentTheme = themeID;
         data = new HashMap<String, String>();

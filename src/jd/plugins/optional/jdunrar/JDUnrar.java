@@ -169,7 +169,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 m.setSelected(link.getFilePackage().isExtractAfterDownload());
                 m.setProperty("LINK", link);
                 container.addMenuItem(m = new MenuItem(MenuItem.SEPARATOR));
-                container.addMenuItem(m = new MenuItem(MenuItem.NORMAL, JDLocale.LF("plugins.optional.jdunrar.linkmenu.setextract", "Set Extract to..."), 1003).setActionListener(this));
+                container.addMenuItem(m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.linkmenu.setextract", "Set Extract to..."), 1003).setActionListener(this));
 
                 m.setProperty("LINK", link);
                 File dir = this.getExtractToPath(link);
