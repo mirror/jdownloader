@@ -299,7 +299,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
             }
         }.start();
 
-        JPanel glass = new JPanel(new MigLayout("ins 0"));
+        JPanel glass = new GlassPanel(new MigLayout("ins 0"));
         startbutton = new JLabel(new ImageIcon(mainMenuIcon));
         // mainMenuIconRollOver
         // startbutton.setBorderPainted(false);

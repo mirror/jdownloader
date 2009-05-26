@@ -47,11 +47,12 @@ public class JDTheme {
     public static Vector<String> getThemeIDs() {
         File dir = JDUtilities.getResourceFile(THEME_DIR);
         if (!dir.exists()) return null;
-        File[] files = dir.listFiles(new JDFileFilter(null, ".thm", false));
+        File[] files = dir.listFiles(new JDFileFilter(null, ".icl", false));
         Vector<String> ret = new Vector<String>();
-        for (File element : files) {
-            ret.add(element.getName().split("\\.")[0]);
-        }
+        ret.add("default");
+         for (File element : files) {
+         ret.add(element.getName().split("\\.")[0]);
+         }
         return ret;
     }
 
@@ -160,12 +161,14 @@ public class JDTheme {
     }
 
     public static void setTheme(String themeID) {
-        File file = JDUtilities.getResourceFile(THEME_DIR + themeID + ".thm");
+        File file = JDUtilities.getResourceFile(THEME_DIR + themeID + ".icl");
 
         if (!file.exists()) {
+
             logger.severe("Theme " + themeID + " not installed, switch to default theme");
             themeID = "default";
             // return;
+
         }
         currentTheme = themeID;
         data = new HashMap<String, String>();
@@ -190,7 +193,7 @@ public class JDTheme {
         }
         if (defaultData == null) {
             defaultData = new HashMap<String, String>();
-            file = JDUtilities.getResourceFile(THEME_DIR + "default.thm");
+            file = JDUtilities.getResourceFile(THEME_DIR + "default.icl");
 
             if (!file.exists()) {
                 logger.severe("Theme default not installed");

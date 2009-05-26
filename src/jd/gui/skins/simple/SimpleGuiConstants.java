@@ -29,7 +29,7 @@ public class SimpleGuiConstants {
     public static final String SELECTED_CONFIG_TAB = "SELECTED_CONFIG_TAB";
     public static final String PARAM_INPUTTIMEOUT = "PARAM_INPUTTIMEOUT";
 
-    public static final String PARAM_THEME = "THEME";
+    public static final String PARAM_THEME = "THEME2";
     public static final String PARAM_START_DOWNLOADS_AFTER_START = "START_DOWNLOADS_AFTER_START";
     public static final String PARAM_SHOW_SPLASH = "SHOW_SPLASH";
     public static final String PARAM_JAC_LOG = "JAC_DOLOG";

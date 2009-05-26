@@ -1,9 +1,12 @@
 package jd;
 
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Vector;
+import java.awt.Cursor;
+import java.awt.GridLayout;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 
 public class Tester {
 
@@ -14,35 +17,29 @@ public class Tester {
      */
     public static void main(String[] args) {
 
-        test(new Vector<Object>());
+        JFrame frame = new JFrame();
+        frame.setLayout(new GridLayout(2, 2));
+        frame.add(new JButton("1"));
+        frame.add(new JButton("2"));
+        /**
+         * create component with Handcursor
+         */
+        JLabel lbl;
+        frame.add(lbl = new JLabel("CURSOR"));
+        lbl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        frame.add(new JButton("3"));
+        frame.add(new JButton("4"));
+        frame.add(new JButton("5"));
 
-        test(new ArrayList<Object>());
-        test(new LinkedList<Object>());
+        JPanel glass = new JPanel();
+        glass.setOpaque(false);
+        glass.add(new JLabel("I'm glassy"));
+
+        frame.setGlassPane(glass);
+         frame.getGlassPane().setVisible(true);
+
+        frame.setVisible(true);
+        frame.pack();
     }
 
-    private static void test(AbstractList<Object> col) {
-        long t = System.currentTimeMillis();
-        long free = Runtime.getRuntime().freeMemory();
-        Object res;
-        System.out.println(col.getClass() + "\r\n\r\n");
-        for (int i = 0; i < MASS; i++) {
-            col.add(new Long(i));
-        }
-        System.out.println(MASS + " adds: " + (System.currentTimeMillis() - t));
-        t = System.currentTimeMillis();
-        for (int i = 0; i < MASS; i++) {
-            res = col.get((int) (Math.random() * MASS));
-        }
-        System.out.println(MASS + " random gets: " + (System.currentTimeMillis() - t));
-        t = System.currentTimeMillis();
-        for (int i = 0; i < MASS; i++) {
-            col.remove((int) (Math.random() * col.size()));
-        }
-        System.out.println(MASS + " random removes: " + (System.currentTimeMillis() - t));
-        // t = System.currentTimeMillis();
-
-        // System.out.println(col.getClass() + ": " +
-        // (System.currentTimeMillis() - t) + " ms " + (free -
-        // Runtime.getRuntime().freeMemory()) + " bytes");
-    }
 }

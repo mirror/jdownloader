@@ -138,6 +138,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
     }
 
     public void saveAccounts() {
+        this.getAccounts();
         synchronized (Lock) {
             synchronized (list) {
                 ArrayList<Account> accounts = new ArrayList<Account>(list);
@@ -148,7 +149,6 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             }
         }
     }
-
 
     /**
      * List ist immer eine ArrayList<Account> mit Daten aus der config
@@ -210,6 +210,18 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
             public void actionPerformed(ActionEvent arg0) {
                 SimpleGUI.CURRENTGUI.setWaiting(true);
+
+                // Container p = PremiumPanel.this;
+                // main: while ((p = p.getParent()) != null) {
+                // if (p instanceof ConfigPanel) {
+                // ((ConfigPanel) p).save();
+                // ((ConfigPanel) p).saveConfigEntries();
+                // break main;
+                //
+                // }
+                //
+                // }
+                saveAccounts();
                 synchronized (list) {
                     list.add(new Account("", new String("")));
                 }
@@ -417,7 +429,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             if (e.getSource() == chkEnable) {
                 boolean sel = chkEnable.isSelected();
                 ce.setChanges(true);
-              
+
                 setEnabled(sel);
                 if (!sel) info.setCollapsed(true);
                 return;
