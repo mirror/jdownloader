@@ -109,8 +109,12 @@ public class AccountController extends SubConfiguration implements ActionListene
     private AccountController() {
         super("AccountController");
         hosteraccounts = loadAccounts();
-        importOldAccounts();
-        importOldAccounts2();
+        try {
+            importOldAccounts();
+            importOldAccounts2();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         asyncSaveIntervalTimer = new Timer(2000, this);
         asyncSaveIntervalTimer.setInitialDelay(2000);
         asyncSaveIntervalTimer.setRepeats(false);
@@ -145,20 +149,20 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     @SuppressWarnings("unchecked")
     private void importOldAccounts() {
-        if (getBooleanProperty("oldimported", false)) return;
+        if (getBooleanProperty("oldimported21", false)) return;
         for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
             ArrayList<Account> list = (ArrayList<Account>) wrapper.getPluginConfig().getProperty("PREMIUM", new ArrayList<Account>());
             for (Account acc : list) {
                 addAccount(wrapper.getHost(), acc);
             }
         }
-        setProperty("oldimported", true);
+        setProperty("oldimported21", true);
         saveSync();
     }
 
     @SuppressWarnings("unchecked")
     private void importOldAccounts2() {
-        if (getBooleanProperty("oldimported2", false)) return;
+        if (getBooleanProperty("oldimported22", false)) return;
         SubConfiguration sub = SubConfiguration.getConfig("AccountManager");
         for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
             ArrayList<Account> list = (ArrayList<Account>) sub.getProperty(wrapper.getHost(), new ArrayList<Account>());
@@ -166,7 +170,7 @@ public class AccountController extends SubConfiguration implements ActionListene
                 addAccount(wrapper.getHost(), acc);
             }
         }
-        setProperty("oldimported2", true);
+        setProperty("oldimported22", true);
         saveSync();
     }
 

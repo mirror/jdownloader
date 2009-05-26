@@ -85,7 +85,7 @@ public class FourSharedCom extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink downloadLink) throws Exception {
-        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        requestFileInformation(downloadLink);
         String url = br.getRegex("<a href=\"(http://www.4shared.com/get.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\">").getMatch(0);
 
         br.getPage(url);

@@ -434,7 +434,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                         }
 
                                     }
-                            
+
                                     if (linkStatus.getRemainingWaittime() > 0) {
                                         hasWaittimeLinks = true;
                                         updates.add(link);
@@ -573,7 +573,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             }
             if (stopMark instanceof FilePackage) {
                 for (DownloadLink dl : ((FilePackage) stopMark).getDownloadLinkList()) {
-                    if (dl.isEnabled() && (!dl.getLinkStatus().isPluginActive() || !dl.getLinkStatus().hasStatus(LinkStatus.FINISHED))) return false;
+                    if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) continue;
+                    if (dl.isEnabled() && !dl.getLinkStatus().isPluginActive()) return false;
                 }
                 return true;
             }
