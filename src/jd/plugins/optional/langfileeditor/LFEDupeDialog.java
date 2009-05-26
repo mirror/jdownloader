@@ -55,16 +55,16 @@ public class LFEDupeDialog extends JDialog {
 
         private static final long serialVersionUID = -5434313385327397539L;
 
-        private String[] columnNames = { "*", JDLocale.L("plugins.optional.langfileeditor.string", "String"), JDLocale.L("plugins.optional.langfileeditor.keys", "Keys") };
+        private String[] columnNames;
 
         private HashMap<String, Vector<String>> tableData;
 
-        private String[] keys;
+        private Vector<String> keys;
 
         public MyDupeTableModel(HashMap<String, Vector<String>> data) {
+            columnNames = new String[] { "*", JDLocale.L("plugins.optional.langfileeditor.string", "String"), JDLocale.L("plugins.optional.langfileeditor.keys", "Keys") };
             tableData = data;
-            keys = data.keySet().toArray(new String[data.size()]);
-            this.fireTableRowsInserted(0, tableData.size() - 1);
+            keys = new Vector<String>(data.keySet());
         }
 
         public int getColumnCount() {
@@ -83,12 +83,12 @@ public class LFEDupeDialog extends JDialog {
         public Object getValueAt(int row, int col) {
             switch (col) {
             case 0:
-                return tableData.get(getValueAt(row, 1)).size();
+                return tableData.get(keys.get(row)).size();
             case 1:
-                return keys[row];
+                return keys.get(row);
             case 2:
                 StringBuilder ret = new StringBuilder();
-                Vector<String> values = tableData.get(keys[row]);
+                Vector<String> values = tableData.get(keys.get(row));
                 for (String value : values) {
                     if (ret.length() > 0) ret.append(" || ");
                     ret.append(value);
