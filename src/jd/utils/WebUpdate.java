@@ -216,7 +216,7 @@ public class WebUpdate implements ControlListener {
             }
         }
 
-        DownloadController.getInstance().backupDownloadLinks();
+        DownloadController.getInstance().backupDownloadLinksSync();
 
         try {
             WebUpdate.updateUpdater();

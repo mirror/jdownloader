@@ -114,6 +114,8 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     private boolean saveinprogress;
 
+    private boolean backupinprogress = false;
+
     public synchronized static DownloadController getInstance() {
         /* darf erst nachdem der JDController init wurde, aufgerufen werden */
         if (INSTANCE == null) {
@@ -211,7 +213,19 @@ public class DownloadController implements FilePackageListener, DownloadControll
         }
     }
 
-    public void backupDownloadLinks() {
+    public void backupDownloadLinksAsync() {
+        if (backupinprogress) return;
+        new Thread() {
+            public void run() {
+                this.setName("DownloadController: Backuping");
+                backupinprogress = true;
+                backupDownloadLinksSync();
+                backupinprogress = false;
+            }
+        }.start();
+    }
+
+    public void backupDownloadLinksSync() {
         synchronized (packages) {
             ArrayList<DownloadLink> links = getAllDownloadLinks();
             Iterator<DownloadLink> it = links.iterator();

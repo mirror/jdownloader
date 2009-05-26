@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -30,20 +31,37 @@ public class KnofflCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         br.getPage(parameter);
         String[] links = br.getRegex("dl\\('(.*?)'\\)").getColumn(0);
+        if (links.length == 0) {
+            String url = br.getRegex("<frame src=\"(http://knoffl.com/\\?goto=.*?)\"").getMatch(0);
+            br.getPage(url);
+            links = br.getRegex("dl\\('(.*?)'\\)").getColumn(0);
+        }
+        if (links.length == 0) {
+            String url = br.getRegex("<a href=\"(http://.*?knoffl\\.com.*?/.*?)\">").getMatch(0);
+            br.getPage(url);
+            links = br.getRegex("dl\\('(.*?)'\\)").getColumn(0);
+        }
+        Browser brc;
         for (String element : links) {
-            decryptedLinks.add(createDownloadlink(element));
+            Thread.sleep(1000);
+            brc = br.cloneBrowser();
+            brc.getPage(element);
+            String url = brc.getRegex("<frame src=\"(out\\.php\\?page=.*?)\"").getMatch(0);
+            brc.getPage(url);
+            url = brc.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
+            decryptedLinks.add(createDownloadlink(url));
         }
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

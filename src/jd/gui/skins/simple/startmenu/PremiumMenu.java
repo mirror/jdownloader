@@ -22,7 +22,6 @@ public class PremiumMenu extends JStartMenu {
 
     public PremiumMenu() {
         super("gui.menu.premium", "gui.images.taskpanes.premium");
-
     }
 
 }

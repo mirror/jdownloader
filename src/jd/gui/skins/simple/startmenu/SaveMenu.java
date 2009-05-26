@@ -16,12 +16,15 @@
 
 package jd.gui.skins.simple.startmenu;
 
+import jd.gui.skins.simple.startmenu.actions.BackupAction;
+
 public class SaveMenu extends JStartMenu {
 
     private static final long serialVersionUID = -153884445300435027L;
 
     public SaveMenu() {
         super("gui.menu.save", "gui.images.save");
+        this.add(new BackupAction());
     }
 
 }

@@ -425,20 +425,34 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 LinkGrabberFilePackage fp = new LinkGrabberFilePackage(packageName, this);
                 fp.add(link);
             } else {
-                String newPackageName = autoPackage ? JDUtilities.getSimString(bestp.getName(), packageName) : packageName;
+                String newPackageName = autoPackage ? getSimString(bestp.getName(), packageName) : packageName;
                 bestp.setName(newPackageName);
                 bestp.add(link);
             }
         }
     }
 
+    private String getSimString(String a, String b) {
+        String aa = a.toLowerCase();
+        String bb = b.toLowerCase();
+        StringBuilder ret = new StringBuilder();
+        for (int i = 0; i < Math.min(aa.length(), bb.length()); i++) {
+            if (aa.charAt(i) == bb.charAt(i)) {
+                ret.append(aa.charAt(i));
+            }
+        }
+        return ret.toString();
+    }
+
     private String cleanFileName(String name) {
         /** remove rar extensions */
+        String tmp;
         name = getNameMatch(name, "(.*)\\.part[0]*[1].rar$");
         name = getNameMatch(name, "(.*)\\.part[0-9]+.rar$");
         name = getNameMatch(name, "(.*)\\.rar$");
         name = getNameMatch(name, "(.*)\\.r\\d+$");
-        name = getNameMatch(name, "(.*?)\\d+$");
+        tmp = getNameMatch(name, "(.*?)\\d+$");
+        if (tmp != null && tmp.length() > 0) name = tmp;
 
         /**
          * remove 7zip and hjmerge extensions
@@ -466,13 +480,15 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     private int comparepackages(String a, String b) {
         int c = 0;
-        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
-            if (a.charAt(i) == b.charAt(i)) {
+        String aa = a.toLowerCase();
+        String bb = b.toLowerCase();
+        for (int i = 0; i < Math.min(aa.length(), bb.length()); i++) {
+            if (aa.charAt(i) == bb.charAt(i)) {
                 c++;
             }
         }
-        if (Math.min(a.length(), b.length()) == 0) { return 0; }
-        return c * 100 / Math.max(a.length(), b.length());
+        if (Math.min(aa.length(), bb.length()) == 0) { return 0; }
+        return c * 100 / Math.max(aa.length(), bb.length());
     }
 
     public void handle_LinkGrabberFilePackageEvent(LinkGrabberFilePackageEvent event) {

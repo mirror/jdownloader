@@ -132,16 +132,6 @@ public class JDUtilities {
 
     private static String[] jdArgs = new String[1];
 
-    public static String getSimString(String a, String b) {
-        StringBuilder ret = new StringBuilder();
-        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
-            if (a.charAt(i) == b.charAt(i)) {
-                ret.append(a.charAt(i));
-            }
-        }
-        return ret.toString();
-    }
-
     public static <K extends Comparable<K>, V> TreeMap<K, V> revSortByKey(Map<K, V> map) {
         TreeMap<K, V> a = new TreeMap<K, V>(new Comparator<K>() {
 

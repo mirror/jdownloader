@@ -128,9 +128,9 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                 tablerefreshinprogress = true;
                 synchronized (DownloadController.ControllerLock) {
                     synchronized (JDUtilities.getController().getPackages()) {
-                        try{
-                        internalTreeTable.fireTableChanged(id2, links2);
-                        }catch (Exception e){
+                        try {
+                            internalTreeTable.fireTableChanged(id2, links2);
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
@@ -472,7 +472,11 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                         for (int i = 0; i < selected_links.size(); i++) {
                             selected_links.get(i).setFilePackage(nfp);
                         }
-                        JDUtilities.getDownloadController().addPackage(nfp);
+                        if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
+                            JDUtilities.getDownloadController().addPackageAt(nfp, 0);
+                        } else {
+                            JDUtilities.getDownloadController().addPackage(nfp);
+                        }
                     }
                     return;
                 }

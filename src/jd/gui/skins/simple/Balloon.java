@@ -53,7 +53,7 @@ public class Balloon {
     }
 
     public static void show(final String string, final ImageIcon ii, final ImageIcon ii2, final String string2) {
-        if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_BALLON, true)) return;
+        if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_BALLOON, true)) return;
         new GuiRunnable<Object>() {
 
             @Override

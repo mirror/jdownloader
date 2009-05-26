@@ -467,6 +467,7 @@ public class JDInit {
         new DecryptPluginWrapper("raubkopierer.ws", "RaubkopiererWs", "http://[\\w\\.]*?raubkopierer\\.(ws|cc)/\\w+/[\\w/]*?\\d+/.+");
         new DecryptPluginWrapper("yourref.de", "YourRefDe", "http://[\\w\\.]*?yourref\\.de/\\?\\d+");
         new DecryptPluginWrapper("pspisos.org", "PspIsosOrg", "http://[\\w\\.]*?pspisos\\.org/(d\\d\\d?wn|d3741l5)/.+(/\\d+)?");
+        new DecryptPluginWrapper("fileducky.com", "Fileducky", "http://[\\w\\.]*?fileducky\\.com/[a-zA-Z0-9]+/?");
 
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");

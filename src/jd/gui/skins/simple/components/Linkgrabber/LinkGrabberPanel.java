@@ -279,14 +279,12 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 pc.getBroadcaster().removeListener(INSTANCE);
                 LGINSTANCE.postprocessing();
                 gatherer_running = false;
-                ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>();
-                fps.addAll(LGINSTANCE.getPackages());
-                fps.add(LGINSTANCE.getFILTERPACKAGE());
+                ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
                 int links = 0;
                 for (LinkGrabberFilePackage fp : fps) {
                     links += fp.getDownloadLinks().size();
                 }
-                Balloon.showIfHidden("Linkgrabber", JDTheme.II("gui.images.add", 32, 32), JDLocale.LF("gui.linkgrabber.finished", "Grabbed %s link(s) in %s Package(s)", "" + fps.size(), "" + links));
+                Balloon.showIfHidden("Linkgrabber", JDTheme.II("gui.images.add", 32, 32), JDLocale.LF("gui.linkgrabber.finished", "Grabbed %s link(s) in %s Package(s)", "" + links, "" + fps.size()));
             }
         };
         gatherer.start();
@@ -537,10 +535,16 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                             name = fp.getName();
                         case LinkGrabberTreeTableAction.NEW_PACKAGE:
                             fp = LGINSTANCE.getFPwithLink(selected_links.get(0));
+                            LinkGrabberFilePackage nfp;
                             if (name == null) name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
                             if (name != null) {
-                                LinkGrabberFilePackage nfp = new LinkGrabberFilePackage(name, LGINSTANCE);
+                                nfp = new LinkGrabberFilePackage(name, LGINSTANCE);
                                 nfp.addAll(selected_links);
+                                if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
+                                    LGINSTANCE.addPackageAt(nfp, 0);
+                                } else {
+                                    LGINSTANCE.addPackage(nfp);
+                                }
                             }
                             return;
                         case LinkGrabberTreeTableAction.SET_PW:
@@ -668,7 +672,6 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             } else {
                 JDUtilities.getDownloadController().addPackage(fp);
             }
-
         }
     }
 
