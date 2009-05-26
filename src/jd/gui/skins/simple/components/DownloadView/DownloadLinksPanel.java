@@ -497,6 +497,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     }
                     if (b) {
                         for (int i = 0; i < selected_links.size(); i++) {
+                            selected_links.get(i).setAborted(true);
                             selected_links.get(i).getFilePackage().remove(selected_links.get(i));
                         }
                     }
