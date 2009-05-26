@@ -17,6 +17,7 @@ package jd;
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -63,7 +64,13 @@ public class KikinDialog extends AbstractDialog {
         JPanel p = new JPanel(new MigLayout("ins 5,wrap 2"));
         p.setBackground(Color.WHITE);
         cp.setBackground(Color.WHITE);
-        p.add(new JLabel(JDLocale.L("gui.installer.kikin.message", "Personalize your search experience")), "alignx left, aligny bottom");
+        JLabel lbl;
+        p.add(lbl=new JLabel(JDLocale.L("gui.installer.kikin.message", "Free! Personalize your search experience")), "alignx left, aligny bottom");
+        Font f = lbl.getFont();
+
+     // bold
+        lbl.setFont(f.deriveFont(f.getStyle() ^ Font.BOLD));
+
         p.add(new JLabel(JDImage.getImageIcon(JDUtilities.getResourceFile("tools/Windows/kikin/kikin.png"))), "alignx right,aligny top");
         p.add(new JSeparator(), "spanx,growx,pushx");
         if (JDLocale.getLocale() == "german") {
