@@ -68,7 +68,6 @@ public class LFELngKeyDialog extends JDialog implements ActionListener {
         add(btnCancel);
         pack();
         setLocation(Screen.getCenterOfComponent(owner, this));
-        setVisible(true);
     }
 
     public void actionPerformed(ActionEvent e) {
