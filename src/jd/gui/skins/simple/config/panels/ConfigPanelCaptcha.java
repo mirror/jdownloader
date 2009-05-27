@@ -107,6 +107,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
 
         public void setValueAt(Object value, int row, int col) {
             if (col == 0) {
+                System.out.println("Setze " + jacKeyForMethod(row) + " auf " + value);
                 configuration.setProperty(jacKeyForMethod(row), value);
             }
         }
@@ -210,7 +211,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
     }
 
     private String jacKeyForMethod(int index) {
-        return Configuration.PARAM_JAC_METHODS + "_" + methods.get(index).getServiceName();
+        return Configuration.PARAM_JAC_METHODS + "_" + methods.get(index).getServiceName().toLowerCase();
     }
 
 }

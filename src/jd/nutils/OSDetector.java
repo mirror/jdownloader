@@ -17,28 +17,8 @@
 package jd.nutils;
 
 public class OSDetector {
-    private enum MultiState {
-        UNCHECKED, TRUE, FALSE;
-
-        public Boolean getState() {
-            switch (this) {
-            case TRUE:
-                return true;
-            case FALSE:
-                return false;
-            default:
-                return null;
-            }
-        }
-
-        public boolean hasState() {
-
-            return this != UNCHECKED;
-        }
-    }
 
     private static byte OS_ID = -1;
-    private static MultiState IS_WINDOWS_VISTA_ADMIN = MultiState.UNCHECKED;
     private static String OS_STRING;
     public static final byte OS_LINUX_OTHER = 6;
     public static final byte OS_MAC_OTHER = 5;
@@ -78,8 +58,6 @@ public class OSDetector {
         return OS_ID;
 
     }
-
-  
 
     public static boolean isLinux() {
         byte id = OSDetector.getOSID();
