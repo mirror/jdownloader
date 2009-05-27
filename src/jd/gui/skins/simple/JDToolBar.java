@@ -148,44 +148,20 @@ public class JDToolBar extends JToolBar implements ControlListener {
     }
 
     private void initListeners() {
-        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT) {
+        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT, Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, Configuration.PARAM_DISABLE_RECONNECT) {
 
             @Override
-            public void onPropertyChanged(Property source, String valid) {
+            public void onPropertyChanged(Property source, final String key) {
                 SwingUtilities.invokeLater(new Runnable() {
 
                     public void run() {
-                        updateReconnectButtons();
-                    }
-
-                });
-            }
-
-        });
-
-        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE) {
-
-            @Override
-            public void onPropertyChanged(Property source, String valid) {
-                SwingUtilities.invokeLater(new Runnable() {
-
-                    public void run() {
-                        updateClipboardButton();
-                    }
-
-                });
-            }
-
-        });
-
-        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DISABLE_RECONNECT) {
-
-            @Override
-            public void onPropertyChanged(Property source, String valid) {
-                SwingUtilities.invokeLater(new Runnable() {
-
-                    public void run() {
-                        updateReconnectButtonIcon();
+                        if (key == Configuration.PARAM_LATEST_RECONNECT_RESULT) {
+                            updateReconnectButtons();
+                        } else if (key == Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE) {
+                            updateClipboardButton();
+                        } else if (key == Configuration.PARAM_DISABLE_RECONNECT) {
+                            updateReconnectButtonIcon();
+                        }
                     }
 
                 });

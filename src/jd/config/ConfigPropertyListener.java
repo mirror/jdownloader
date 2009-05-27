@@ -44,16 +44,14 @@ public abstract class ConfigPropertyListener implements ControlListener {
 
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
-            for (String valid : list) {
+            for (String key : list) {
                 if (strict) {
-                    if (event.getParameter().equals(valid)) {
-
-                        onPropertyChanged((Property) event.getSource(), valid);
+                    if (event.getParameter().equals(key)) {
+                        onPropertyChanged((Property) event.getSource(), key);
                     }
                 } else {
-                    if (event.getParameter() == valid) {
-
-                        onPropertyChanged((Property) event.getSource(), valid);
+                    if (event.getParameter() == key) {
+                        onPropertyChanged((Property) event.getSource(), key);
                     }
                 }
             }
@@ -61,6 +59,6 @@ public abstract class ConfigPropertyListener implements ControlListener {
         }
     }
 
-    abstract public void onPropertyChanged(Property source, String valid);
+    abstract public void onPropertyChanged(Property source, String key);
 
 }
