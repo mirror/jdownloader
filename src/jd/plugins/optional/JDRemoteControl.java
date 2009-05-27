@@ -57,8 +57,15 @@ import jd.utils.WebUpdate;
 
 public class JDRemoteControl extends PluginOptional implements ControlListener {
 
+    private static final String PARAM_PORT = "PORT";
+    private static final String PARAM_ENABLED = "ENABLED";
+    private final SubConfiguration subConfig;
+
     public JDRemoteControl(PluginWrapper wrapper) {
         super(wrapper);
+
+        subConfig = getPluginConfig();
+        initConfig();
     }
 
     public String getIconKey() {
@@ -171,7 +178,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 response.addContent("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\"http://www.w3.org/TR/html4/strict.dtd\"><html><head><title>JDRemoteControl Help</title><style type=\"text/css\">a {    font-size: 14px;    text-decoration: none;    background: none;    color: #599ad6;}a:hover {    text-decoration: underline;    color:#333333;}body {    color: #333333;    background:#f0f0f0;    font-family: Verdana, Arial, Helvetica, sans-serif;    font-size: 14px;    vertical-align: top;  }</style></head><body><p><br /><b>JDRemoteControl " + getVersion() + "<br /><br />Usage:</b><br />&nbsp;<br />1)Replace %X% with your value<br />Sample: /action/save/container/C:\\backup.dlc <br />2)Replace (true|false) with true or false<br /><table border=\"0\" cellspacing=\"5\">");
                 for (int commandcount = 0; commandcount < commandvec.size(); commandcount++) {
-                    response.addContent("<tr><td valign=\"top\"><a href=\"http://127.0.0.1:" + getPluginConfig().getIntegerProperty("PORT", 10025) + commandvec.get(commandcount) + "\">" + commandvec.get(commandcount) + "</a></td><td valign=\"top\">" + infovector.get(commandcount) + "</td></tr>");
+                    response.addContent("<tr><td valign=\"top\"><a href=\"http://127.0.0.1:" + subConfig.getIntegerProperty(PARAM_PORT, 10025) + commandvec.get(commandcount) + "\">" + commandvec.get(commandcount) + "</a></td><td valign=\"top\">" + infovector.get(commandcount) + "</td></tr>");
                 }
                 response.addContent("</table><br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;</p></body></html>");
             } else if (request.getRequestUrl().equals("/get/ip")) {
@@ -527,13 +534,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 // Set ReconnectEnabled
                 boolean newrc = Boolean.parseBoolean(new Regex(request.getRequestUrl(), "[\\s\\S]*/action/set/reconnectenabled/(.*)").getMatch(0));
                 boolean disprc = newrc;
-                if (newrc == false) {
-                    newrc = true;
-                } else {
-                    newrc = false;
-                }
+                newrc = !newrc;
                 logger.fine("RemoteControl - Set ReConnect: " + disprc);
-                if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false) == newrc) {
+                if (newrc != JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, newrc);
                     JDUtilities.getConfiguration().save();
 
@@ -545,9 +548,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 // Set use premium
                 boolean newuseprem = Boolean.parseBoolean(new Regex(request.getRequestUrl(), "[\\s\\S]*/action/set/premiumenabled/(.*)").getMatch(0));
                 logger.fine("RemoteControl - Set Premium: " + newuseprem);
-                if (newuseprem ^ JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem)) {
+                if (newuseprem != JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem);
                     JDUtilities.getConfiguration().save();
+
                     response.addContent("newprem=" + newuseprem + " (CHANGED=true)");
                 } else {
                     response.addContent("newprem=" + newuseprem + " (CHANGED=false)");
@@ -568,15 +572,18 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     private HttpServer server;
 
     public void actionPerformed(ActionEvent e) {
-        if (server == null) { return; }
         try {
-            if (server.isStarted()) {
-                server.sstop();
-                JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDLocale.L("plugins.optional.remotecontrol.stopped", "stopped."));
-            } else {
-                server = new HttpServer(getPluginConfig().getIntegerProperty("PORT", 10025), new Serverhandler());
+            boolean enablePlugin = !subConfig.getBooleanProperty(PARAM_ENABLED, true);
+            subConfig.setProperty(PARAM_ENABLED, enablePlugin);
+            subConfig.save();
+
+            if (enablePlugin) {
+                server = new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler());
                 server.start();
-                JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDLocale.L("plugins.optional.remotecontrol.startedonport", "started on port") + " " + getPluginConfig().getIntegerProperty("PORT", 10025) + "\n http://127.0.0.1:" + getPluginConfig().getIntegerProperty("PORT", 10025) + JDLocale.L("plugins.optional.remotecontrol.help", "/help for Developer Information."));
+                JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDLocale.L("plugins.optional.remotecontrol.startedonport", "started on port") + " " + subConfig.getIntegerProperty(PARAM_PORT, 10025) + "\n http://127.0.0.1:" + subConfig.getIntegerProperty(PARAM_PORT, 10025) + JDLocale.L("plugins.optional.remotecontrol.help", "/help for Developer Information."));
+            } else {
+                if (server != null) server.sstop();
+                JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDLocale.L("plugins.optional.remotecontrol.stopped", "stopped."));
             }
         } catch (Exception ex) {
             JDLogger.exception(ex);
@@ -585,7 +592,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        menu.add(new MenuItem(JDLocale.L("plugins.optional.remotecontrol.toggle", "Start/Stop RemoteControl"), 0).setActionListener(this));
+
+        MenuItem m;
+        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.remotecontrol.activate", "Aktivieren"), 0).setActionListener(this));
+        m.setSelected(subConfig.getBooleanProperty(PARAM_ENABLED, true));
+
         return menu;
     }
 
@@ -608,17 +619,20 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         return true;
     }
 
-    public void initRemoteControl() {
+    private void initConfig() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "PORT", JDLocale.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PARAM_PORT, JDLocale.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500));
         cfg.setDefaultValue(10025);
+    }
 
-        try {
-            server = new HttpServer(getPluginConfig().getIntegerProperty("PORT", 10025), new Serverhandler());
-            server.start();
-
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Exception occured", e);
+    private void initRemoteControl() {
+        if (subConfig.getBooleanProperty(PARAM_ENABLED, true)) {
+            try {
+                server = new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler());
+                server.start();
+            } catch (Exception e) {
+                JDLogger.exception(e);
+            }
         }
     }
 

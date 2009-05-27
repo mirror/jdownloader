@@ -69,7 +69,6 @@ public class Shareplacecom extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
         /* Link holen */
         url = Encoding.htmlDecode(br.getRegex(Pattern.compile("document.location=\"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0));

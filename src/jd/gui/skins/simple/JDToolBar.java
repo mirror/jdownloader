@@ -25,8 +25,6 @@ import javax.swing.JButton;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import jd.Main;
 import jd.config.ConfigPropertyListener;
@@ -210,10 +208,9 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
         add(clipboard = new JToggleButton(JDTheme.II("gui.images.clipboard_disabled", 24, 24)), BUTTON_CONSTRAINTS);
         clipboard.setToolTipText(JDLocale.L("gui.menu.action.clipboard.desc", null));
-        clipboard.addChangeListener(new ChangeListener() {
+        clipboard.addActionListener(new ActionListener() {
 
-            public void stateChanged(ChangeEvent e) {
-
+            public void actionPerformed(ActionEvent e) {
                 if (clipboard.isSelected()) {
                     clipboard.setIcon(JDTheme.II("gui.images.clipboard_enabled", 24, 24));
                 } else {
@@ -232,9 +229,9 @@ public class JDToolBar extends JToolBar implements ControlListener {
         /* reconect */
         add(reconnect = new JToggleButton(JDTheme.II("gui.images.reconnect_disabled", 24, 24)), BUTTON_CONSTRAINTS);
         reconnect.setName(JDLocale.L("quickhelp.toolbar.reconnect", "Reconnect Toolbar"));
-        reconnect.addChangeListener(new ChangeListener() {
+        reconnect.addActionListener(new ActionListener() {
 
-            public void stateChanged(ChangeEvent e) {
+            public void actionPerformed(ActionEvent e) {
                 if (reconnect.isSelected()) {
                     reconnect.setIcon(JDTheme.II("gui.images.reconnect_enabled", 24, 24));
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
@@ -246,7 +243,6 @@ public class JDToolBar extends JToolBar implements ControlListener {
                 if (JDUtilities.getConfiguration().isChanges()) {
                     JDUtilities.getConfiguration().save();
                 }
-
             }
 
         });

@@ -183,7 +183,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     }
 
     private String getPremiumImage() {
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, false)) {
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
             return "gui.images.premium_enabled";
         } else {
             return "gui.images.premium_disabled";
@@ -276,7 +276,8 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             JDUtilities.getController().exit();
             break;
         case TrayIconPopup.ACTION_TOGGLE_PREMIUM:
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, false));
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
+            JDUtilities.getConfiguration().save();
             break;
         }
         dispose();

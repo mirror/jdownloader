@@ -31,17 +31,19 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.JToolTip;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import jd.HostPluginWrapper;
+import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.MenuItem;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
+import jd.controlling.JDController;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -91,25 +93,12 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         }
         premium.setToolTipText(JDLocale.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
 
-        premium.addChangeListener(new ChangeListener() {
+        premium.addActionListener(new ActionListener() {
 
-            public void stateChanged(ChangeEvent e) {
+            public void actionPerformed(ActionEvent e) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
                 if (JDUtilities.getConfiguration().isChanges()) {
-                    if (premium.isSelected()) {
-                        premium.setIcon(JDTheme.II("gui.images.premium_enabled", 16, 16));
-                    } else {
-                        premium.setIcon(JDTheme.II("gui.images.premium_disabled", 16, 16));
-                        // JDUtilities.getConfiguration().setProperty(
-                        // Configuration.PARAM_USE_GLOBAL_PREMIUM,
-                        // false);
-                    }
-
-                    for (int i = 0; i < BARCOUNT; i++) {
-                        if (bars[i] != null) {
-                            bars[i].setEnabled(premium.isSelected());
-                        }
-                    }
+                    updateGUI();
                     JDUtilities.getConfiguration().save();
                 }
 
@@ -212,6 +201,35 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         updateTimer.start();
 
         AccountController.getInstance().addListener(this);
+        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_USE_GLOBAL_PREMIUM) {
+
+            @Override
+            public void onPropertyChanged(Property source, String valid) {
+                SwingUtilities.invokeLater(new Runnable() {
+
+                    public void run() {
+                        premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
+                        updateGUI();
+                    }
+                    
+                });
+            }
+
+        });
+    }
+
+    private void updateGUI() {
+        if (premium.isSelected()) {
+            premium.setIcon(JDTheme.II("gui.images.premium_enabled", 16, 16));
+        } else {
+            premium.setIcon(JDTheme.II("gui.images.premium_disabled", 16, 16));
+        }
+
+        for (int i = 0; i < BARCOUNT; i++) {
+            if (bars[i] != null) {
+                bars[i].setEnabled(premium.isSelected());
+            }
+        }
     }
 
     private void showDetails(PluginForHost plugin) {

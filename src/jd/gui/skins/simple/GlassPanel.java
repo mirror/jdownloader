@@ -13,10 +13,12 @@ import net.miginfocom.swing.MigLayout;
 
 public class GlassPanel extends JPanel implements MouseListener, MouseMotionListener {
 
+    private static final long serialVersionUID = -2540267779038104394L;
+
     public GlassPanel(MigLayout migLayout) {
         super(migLayout);
-//        this.addMouseListener(this);
-//        this.addMouseMotionListener(this);
+        // this.addMouseListener(this);
+        // this.addMouseMotionListener(this);
     }
 
     private void redispatchMouseEvent(MouseEvent e, boolean repaint) {
