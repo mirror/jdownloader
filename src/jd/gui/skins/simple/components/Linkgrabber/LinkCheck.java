@@ -51,8 +51,8 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
     private Timer checkTimer = null;
     private Thread checkThread = null;
 
-    private ArrayList<DownloadLink> LinksToCheck = new ArrayList<DownloadLink>();
-    private boolean check_running = false;
+    private ArrayList<DownloadLink> linksToCheck = new ArrayList<DownloadLink>();
+    private boolean checkRunning = false;
     protected ProgressController pc;
     protected Jobber checkJobbers;
     transient private LinkCheckBroadcaster broadcaster = new LinkCheckBroadcaster();
@@ -71,7 +71,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
     }
 
     public boolean isRunning() {
-        return check_running;
+        return checkRunning;
     }
 
     public synchronized JDBroadcaster<LinkCheckListener, LinkCheckEvent> getBroadcaster() {
@@ -81,10 +81,10 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
 
     public synchronized void checkLinks(ArrayList<DownloadLink> links) {
         if (links == null || links.size() == 0) return;
-        check_running = true;
+        checkRunning = true;
         for (DownloadLink element : links) {
-            synchronized (LinksToCheck) {
-                if (!LinksToCheck.contains(element)) LinksToCheck.add(element);
+            synchronized (linksToCheck) {
+                if (!linksToCheck.contains(element)) linksToCheck.add(element);
             }
         }
         checkTimer.restart();
@@ -97,7 +97,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             if (!ret) {
                 for (int i = 0; i < hosterList.size(); i++) {
                     link = hosterList.get(i);
-                    if (!check_running) return;
+                    if (!checkRunning) return;
                     if (!link.getBooleanProperty("removed", false)) {
                         link.isAvailable();
                         getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, link));
@@ -121,10 +121,10 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                 pc = new ProgressController(JDLocale.L("gui.linkgrabber.pc.onlinecheck", "Checking online availability..."));
                 pc.getBroadcaster().addListener(LinkCheck.getLinkChecker());
                 pc.setRange(0);
-                while (LinksToCheck.size() != 0) {
+                while (linksToCheck.size() != 0) {
                     ArrayList<DownloadLink> currentList;
-                    synchronized (LinksToCheck) {
-                        currentList = new ArrayList<DownloadLink>(LinksToCheck);
+                    synchronized (linksToCheck) {
+                        currentList = new ArrayList<DownloadLink>(linksToCheck);
                         pc.addToMax(currentList.size());
                     }
                     /* onlinecheck, multithreaded damit schneller */
@@ -158,8 +158,8 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                         }
                     }
                     checkJobbers.stop();
-                    synchronized (LinksToCheck) {
-                        LinksToCheck.removeAll(currentList);
+                    synchronized (linksToCheck) {
+                        linksToCheck.removeAll(currentList);
                     }
                     try {
                         Thread.sleep(2000);
@@ -170,7 +170,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                 pc.finalize();
                 pc.getBroadcaster().removeListener(LinkCheck.getLinkChecker());
                 getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.STOP));
-                check_running = false;
+                checkRunning = false;
             }
         };
         checkThread.start();
@@ -179,7 +179,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
     public void actionPerformed(ActionEvent arg0) {
         if (arg0.getSource() == checkTimer) {
             checkTimer.stop();
-            if (LinksToCheck.size() > 0) {
+            if (linksToCheck.size() > 0) {
                 startLinkCheck();
             }
             return;
@@ -204,7 +204,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
     }
 
     public void abortLinkCheck() {
-        check_running = false;
+        checkRunning = false;
         checkTimer.stop();
         if (checkThread != null && checkThread.isAlive()) {
             EventQueue.invokeLater(new Runnable() {
@@ -216,8 +216,8 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             checkJobbers.stop();
             checkThread.interrupt();
         }
-        synchronized (LinksToCheck) {
-            LinksToCheck = new ArrayList<DownloadLink>();
+        synchronized (linksToCheck) {
+            linksToCheck = new ArrayList<DownloadLink>();
         }
     }
 

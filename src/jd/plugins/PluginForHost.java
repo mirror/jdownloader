@@ -520,7 +520,7 @@ public abstract class PluginForHost extends Plugin {
             }
 
             long traffic = downloadLink.getDownloadCurrent() - before;
-            if (account.getProperty(AccountInfo.PARAM_INSTANCE) != null) {
+            if (traffic>0&&account.getProperty(AccountInfo.PARAM_INSTANCE) != null) {
                 AccountInfo ai = (AccountInfo) account.getProperty(AccountInfo.PARAM_INSTANCE);
                 ai.setTrafficLeft(ai.getTrafficLeft() - traffic);
             }

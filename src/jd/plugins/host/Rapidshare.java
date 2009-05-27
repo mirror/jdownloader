@@ -551,14 +551,14 @@ public class Rapidshare extends PluginForHost {
                         uips.add(ip);
                     }
                 }
-                if (uips.size() > 3) {
+                if (uips.size() > 2) {
                     logger.severe("Premaccount disabled due to fraud protection");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premaccount disabled due to fraud protection", LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
 
                 }
 
             }
-
+          if(true) throw new PluginException(LinkStatus.ERROR_PREMIUM, "TEST", LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
                 if (Sniffy.hasSniffer()) throw new SnifferException();
             }
@@ -899,6 +899,9 @@ public class Rapidshare extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         checkLinks(new DownloadLink[] { downloadLink });
+        if(!downloadLink.isAvailabilityStatusChecked()){
+            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        }
         return downloadLink.getAvailableStatus();
     }
 

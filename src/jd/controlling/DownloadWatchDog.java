@@ -63,7 +63,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
     private int totalSpeed = 0;
 
-    private Thread WatchDogThread = null;
+    private Thread watchDogThread = null;
 
     private DownloadController dlc = null;
 
@@ -349,13 +349,13 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     }
 
     public boolean isAborted() {
-        if (WatchDogThread == null) return false;
-        return !WatchDogThread.isAlive();
+        if (watchDogThread == null) return false;
+        return !watchDogThread.isAlive();
     }
 
     public boolean isAlive() {
-        if (WatchDogThread == null) return false;
-        return WatchDogThread.isAlive();
+        if (watchDogThread == null) return false;
+        return watchDogThread.isAlive();
     }
 
     boolean isDownloadLinkActive(DownloadLink nextDownloadLink) {
@@ -383,8 +383,14 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     }
 
     private synchronized void startWatchDogThread() {
-        if (this.WatchDogThread == null || !this.WatchDogThread.isAlive()) {
-            WatchDogThread = new Thread() {
+        if (this.watchDogThread == null || !this.watchDogThread.isAlive()) {
+            /**
+             * Workaround, due to activeDownloads bug. 
+             */
+            synchronized (this.activeDownloads) {
+                this.activeDownloads=0;
+            }
+            watchDogThread = new Thread() {
                 public void run() {
                     JDUtilities.getController().addControlListener(INSTANCE);
                     this.setName("DownloadWatchDog");
@@ -538,7 +544,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     Interaction.handleInteraction(Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED, this);
                 }
             };
-            WatchDogThread.start();
+            watchDogThread.start();
         }
     }
 
