@@ -77,6 +77,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private static final Pattern CMD_ACTION = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_CONNECT = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_DISCONNECT = Pattern.compile("(disconnect|trennen)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CMD_EXIT = Pattern.compile("(exit|quit)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_MODE = Pattern.compile("(mode|modus)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_JOIN = Pattern.compile("join", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_NICK = Pattern.compile("(nick|name)", Pattern.CASE_INSENSITIVE);
@@ -1339,6 +1340,8 @@ public class JDChat extends PluginOptional implements ControlListener {
                 if (conn != null && conn.isConnected()) {
                     conn.close();
                 }
+            } else if (Regex.matches(cmd, CMD_EXIT)) {
+                setEnabled(false);
             } else {
                 addToText(null, STYLE_ERROR, "Command /" + cmd + " is not available");
             }
