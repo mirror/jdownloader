@@ -25,6 +25,7 @@ import javax.swing.JButton;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
+import javax.swing.SwingUtilities;
 
 import jd.Main;
 import jd.config.ConfigPropertyListener;
@@ -45,12 +46,6 @@ import net.miginfocom.swing.MigLayout;
 public class JDToolBar extends JToolBar implements ControlListener {
 
     private static final long serialVersionUID = 7533138014274040205L;
-
-    // public static final int DISPLAY = 28;
-
-    // public static final int LEFTGAP = 2;
-
-    // public static final int IMGSIZE = 54;
 
     private static final String BUTTON_CONSTRAINTS = "gaptop 2, gapleft 2";
 
@@ -107,12 +102,10 @@ public class JDToolBar extends JToolBar implements ControlListener {
         initInteractions();
         addSpeedMeter();
 
-        setPause(false);
+        updateReconnectButtons();
+        updateClipboardButton();
 
-        // MouseAreaListener ml = new MouseAreaListener(LEFTGAP, 0, IMGSIZE +
-        // LEFTGAP, DISPLAY);
-        // addMouseMotionListener(ml);
-        // addMouseListener(ml);
+        initListeners();
     }
 
     public void setEnabled(int flag, boolean b, String tt) {
@@ -152,19 +145,56 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     }
 
-    private void initInteractions() {
-        add(reconnectButton = new JButton(JDTheme.II("gui.images.reconnect", 24, 24)), BUTTON_CONSTRAINTS);
-
-        updateManReconnectButton();
-
+    private void initListeners() {
         JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT) {
 
             @Override
             public void onPropertyChanged(Property source, String valid) {
-                updateManReconnectButton();
+                SwingUtilities.invokeLater(new Runnable() {
+
+                    public void run() {
+                        updateReconnectButtons();
+                    }
+
+                });
             }
 
         });
+
+        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE) {
+
+            @Override
+            public void onPropertyChanged(Property source, String valid) {
+                SwingUtilities.invokeLater(new Runnable() {
+
+                    public void run() {
+                        updateClipboardButton();
+                    }
+
+                });
+            }
+
+        });
+
+        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DISABLE_RECONNECT) {
+
+            @Override
+            public void onPropertyChanged(Property source, String valid) {
+                SwingUtilities.invokeLater(new Runnable() {
+
+                    public void run() {
+                        updateReconnectButtonIcon();
+                    }
+
+                });
+            }
+
+        });
+    }
+
+    private void initInteractions() {
+        add(reconnectButton = new JButton(JDTheme.II("gui.images.reconnect", 24, 24)), BUTTON_CONSTRAINTS);
+
         reconnectButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -191,17 +221,6 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     }
 
-    // public void paintComponent(Graphics g) {
-    // super.paintComponent(g);
-    // if (noTitlePainter) {
-    // ((Graphics2D) g).drawImage(logo, LEFTGAP, 0, 32 + LEFTGAP, 32, 0, 0, 32,
-    // 32, null);
-    // } else {
-    // ((Graphics2D) g).drawImage(logo, LEFTGAP, 0, IMGSIZE + LEFTGAP, DISPLAY,
-    // 0, IMGSIZE - DISPLAY, IMGSIZE, IMGSIZE, null);
-    // }
-    // }
-
     private void initQuickConfig() {
         /* Clipboard */
 
@@ -223,15 +242,8 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
         });
         clipboard.setName(JDLocale.L("quickhelp.toolbar.clipboard", "Toolbar clipboard observer"));
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true)) {
-            clipboard.setSelected(true);
-            clipboard.setIcon(JDTheme.II("gui.images.clipboard_enabled", 24, 24));
-        } else {
-            clipboard.setSelected(false);
-            clipboard.setIcon(JDTheme.II("gui.images.clipboard_disabled", 24, 24));
-        }
 
-        /* reconect */
+        /* reconnect */
         add(reconnect = new JToggleButton(JDTheme.II("gui.images.reconnect_disabled", 24, 24)), BUTTON_CONSTRAINTS);
         reconnect.setName(JDLocale.L("quickhelp.toolbar.reconnect", "Reconnect Toolbar"));
         reconnect.addActionListener(new ActionListener() {
@@ -251,43 +263,41 @@ public class JDToolBar extends JToolBar implements ControlListener {
             }
 
         });
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true)) {
+
+    }
+
+    private void updateClipboardButton() {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true)) {
+            clipboard.setSelected(true);
+            clipboard.setIcon(JDTheme.II("gui.images.clipboard_enabled", 24, 24));
+        } else {
+            clipboard.setSelected(false);
+            clipboard.setIcon(JDTheme.II("gui.images.clipboard_disabled", 24, 24));
+        }
+    }
+
+    private void updateReconnectButtons() {
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) {
+            reconnectButton.setIcon(JDTheme.II("gui.images.reconnect_warning", 24, 24));
+            reconnectButton.setToolTipText(JDLocale.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
+            reconnect.setEnabled(true);
+            reconnect.setToolTipText(JDLocale.L("gui.menu.action.doreconnect.desc", null));
+        } else {
+            reconnectButton.setToolTipText(JDLocale.L("gui.menu.action.reconnectman.desc", "Manual reconnect. Get a new IP by resetting your internet connection"));
+            reconnectButton.setIcon(JDTheme.II("gui.images.reconnect", 24, 24));
+            reconnect.setEnabled(true);
+            reconnect.setToolTipText(JDLocale.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
+
+        }
+    }
+
+    private void updateReconnectButtonIcon() {
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
             reconnect.setSelected(true);
             reconnect.setIcon(JDTheme.II("gui.images.reconnect_enabled", 24, 24));
         } else {
             reconnect.setSelected(false);
             reconnect.setIcon(JDTheme.II("gui.images.reconnect_disabled", 24, 24));
-        }
-
-        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT) {
-
-            @Override
-            public void onPropertyChanged(Property source, String valid) {
-                updateReconnectButton();
-            }
-
-        });
-        updateReconnectButton();
-
-    }
-
-    private void updateManReconnectButton() {
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) {
-            reconnectButton.setIcon(JDTheme.II("gui.images.reconnect_warning", 24, 24));
-            reconnectButton.setToolTipText(JDLocale.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
-        } else {
-            reconnectButton.setToolTipText(JDLocale.L("gui.menu.action.reconnectman.desc", "Manual reconnect. Get a new IP by resetting your internet connection"));
-            reconnectButton.setIcon(JDTheme.II("gui.images.reconnect", 24, 24));
-        }
-    }
-
-    private void updateReconnectButton() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) {
-            reconnect.setEnabled(true);
-            reconnect.setToolTipText(JDLocale.L("gui.menu.action.doreconnect.desc", null));
-        } else {
-            reconnect.setEnabled(true);
-            reconnect.setToolTipText(JDLocale.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
         }
     }
 
@@ -298,8 +308,8 @@ public class JDToolBar extends JToolBar implements ControlListener {
         playButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                JDUtilities.getController().startDownloads();
                 setPause(false);
+                JDUtilities.getController().startDownloads();
             }
 
         });
@@ -354,9 +364,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
                     stopButton.setEnabled(true);
                     pauseButton.setEnabled(true);
                     playButton.setEnabled(false);
-                    if (speedmeter != null) {
-                        speedmeter.start();
-                    }
+                    if (speedmeter != null) speedmeter.start();
                     break;
                 case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 case ControlEvent.CONTROL_DOWNLOAD_STOP:
@@ -364,23 +372,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
                     pauseButton.setEnabled(false);
                     playButton.setEnabled(true);
                     if (speedmeter != null) speedmeter.stop();
-
                     break;
-                case ControlEvent.CONTROL_JDPROPERTY_CHANGED:
-                    if (event.getParameter() == Configuration.PARAM_LATEST_RECONNECT_RESULT) {
-                        if (((Configuration) event.getSource()).getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) {
-                            reconnect.setEnabled(true);
-                            reconnect.setToolTipText(JDLocale.L("gui.menu.action.reconnect.desc", null));
-                        } else {
-                            reconnect.setEnabled(true);
-                            reconnect.setToolTipText(JDLocale.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
-                        }
-
-                    }
-                    if (event.getParameter() == Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE) {
-                        clipboard.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false));
-                    }
-
                 }
                 return null;
             }

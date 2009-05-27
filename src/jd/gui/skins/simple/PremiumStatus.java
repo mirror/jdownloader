@@ -211,7 +211,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                         premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
                         updateGUI();
                     }
-                    
+
                 });
             }
 
@@ -291,12 +291,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                             }
 
                         }
-                        // try {
-                        // Thread.sleep(10000000);
-                        // } catch (InterruptedException e) {
-                        // // TODO Auto-generated catch block
-                        // e.printStackTrace();
-                        // }
                     }
                 }
             }
@@ -429,7 +423,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     }
 
     public boolean vetoAccountGetEvent(String host, Account account) {
-        // TODO Auto-generated method stub
         return false;
     }
 

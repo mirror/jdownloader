@@ -423,7 +423,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 // Do Reconnect
                 response.addContent("Do Reconnect...");
 
-                boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
+                boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
 
                 if (JDUtilities.getController().stopDownloads()) {

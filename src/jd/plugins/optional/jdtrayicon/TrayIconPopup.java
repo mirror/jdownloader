@@ -177,7 +177,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     }
 
     private String getPremiumImage() {
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
             return "gui.images.premium_enabled";
         } else {
             return "gui.images.premium_disabled";
