@@ -42,7 +42,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -681,29 +680,8 @@ public class JDUtilities {
      * 
      * @return Plugins zum Downloaden von einem Anbieter
      */
-    @SuppressWarnings("unchecked")
     public static ArrayList<HostPluginWrapper> getPluginsForHost() {
-
-        ArrayList<HostPluginWrapper> plgs = new ArrayList<HostPluginWrapper>();
-
-        plgs.addAll(HostPluginWrapper.getHostWrapper());
-
-        ArrayList<HostPluginWrapper> pfh = new ArrayList<HostPluginWrapper>();
-        Vector<String> priority = (Vector<String>) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_HOST_PRIORITY, new Vector<String>());
-        for (int i = 0; i < priority.size(); i++) {
-            for (int b = plgs.size() - 1; b >= 0; b--) {
-                if (plgs.get(b).getHost() == null) {
-                    JDLogger.getLogger().info("OO");
-                }
-                if (plgs.get(b).getHost().equalsIgnoreCase(priority.get(i))) {
-                    HostPluginWrapper plg = plgs.remove(b);
-                    pfh.add(plg);
-                    break;
-                }
-            }
-        }
-        pfh.addAll(plgs);
-        return pfh;
+       return HostPluginWrapper.getHostWrapper();
     }
 
     /**

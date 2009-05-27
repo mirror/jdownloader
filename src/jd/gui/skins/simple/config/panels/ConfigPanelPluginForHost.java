@@ -18,17 +18,12 @@ package jd.gui.skins.simple.config.panels;
 
 import java.awt.Component;
 import java.awt.FlowLayout;
-import java.awt.dnd.DropTarget;
-import java.awt.dnd.DropTargetDragEvent;
-import java.awt.dnd.DropTargetDropEvent;
-import java.awt.dnd.DropTargetEvent;
-import java.awt.dnd.DropTargetListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.Collections;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -61,7 +56,7 @@ import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.PainterHighlighter;
 import org.jdesktop.swingx.painter.MattePainter;
 
-public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener, DropTargetListener {
+public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener {
 
     private class InternalTableModel extends AbstractTableModel {
 
@@ -73,23 +68,21 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         }
 
         public int getColumnCount() {
-            return 6;
+            return 5;
         }
 
         // @Override
         public String getColumnName(int column) {
             switch (column) {
             case 0:
-                return JDLocale.L("gui.column_id", "ID");
-            case 1:
                 return JDLocale.L("gui.column_host", "Host");
-            case 2:
+            case 1:
                 return JDLocale.L("gui.column_version", "Version");
-            case 3:
+            case 2:
                 return JDLocale.L("gui.column_agbChecked", "akzeptieren");
-            case 4:
+            case 3:
                 return JDLocale.L("gui.column_usePlugin", "verwenden");
-            case 5:
+            case 4:
                 return JDLocale.L("gui.column_agb", "AGB");
             }
             return super.getColumnName(column);
@@ -102,16 +95,14 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         public Object getValueAt(final int rowIndex, final int columnIndex) {
             switch (columnIndex) {
             case 0:
-                return rowIndex;
-            case 1:
                 return pluginsForHost.get(rowIndex).getHost();
-            case 2:
+            case 1:
                 return pluginsForHost.get(rowIndex).getVersion();
-            case 3:
+            case 2:
                 return pluginsForHost.get(rowIndex).isAGBChecked();
-            case 4:
+            case 3:
                 return pluginsForHost.get(rowIndex).usePlugin();
-            case 5:
+            case 4:
                 JLinkButton ret = new JLinkButton(new AbstractAction(JDLocale.L("gui.config.plugin.host.readAGB", "AGB")) {
 
                     private static final long serialVersionUID = 5915595466511261075L;
@@ -134,12 +125,12 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         // @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return columnIndex == 3 || columnIndex == 4 || columnIndex == 5;
+            return columnIndex >= 2;
         }
 
         // @Override
         public void setValueAt(Object value, int row, int col) {
-            if (col == 3) {
+            if (col == 2) {
                 if ((Boolean) value) {
                     String msg = JDLocale.L("gui.config.plugin.host.desc", "Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB <br> der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!") + "\r\n\r\n" + JDLocale.LF("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!", pluginsForHost.get(row).getHost());
                     if (JOptionPane.showConfirmDialog(SimpleGUI.CURRENTGUI, msg) == JOptionPane.OK_OPTION) {
@@ -148,7 +139,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 } else {
                     pluginsForHost.get(row).setAGBChecked((Boolean) value);
                 }
-            } else if (col == 4) {
+            } else if (col == 3) {
                 pluginsForHost.get(row).setUsePlugin((Boolean) value);
             }
         }
@@ -160,10 +151,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private JButton btnLoad;
 
-    private Configuration configuration;
-
-    private HostPluginWrapper draggedPlugin;
-
     private ArrayList<HostPluginWrapper> pluginsForHost;
 
     private JXTable table;
@@ -172,8 +159,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     public ConfigPanelPluginForHost(Configuration configuration) {
         super();
-        this.configuration = configuration;
         pluginsForHost = JDUtilities.getPluginsForHost();
+        Collections.sort(pluginsForHost);
         initPanel();
         load();
     }
@@ -184,28 +171,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         } else if (e.getSource() == btnLoad) {
             loadEntry();
         }
-    }
-
-    public void dragEnter(DropTargetDragEvent e) {
-        draggedPlugin = pluginsForHost.get(table.getSelectedRow());
-    }
-
-    public void dragExit(DropTargetEvent dte) {
-    }
-
-    public void dragOver(DropTargetDragEvent e) {
-        int oldId = pluginsForHost.indexOf(draggedPlugin);
-        int id = table.rowAtPoint(e.getLocation());
-        pluginsForHost.remove(draggedPlugin);
-        pluginsForHost.add(id, draggedPlugin);
-        tableModel.fireTableRowsUpdated(Math.min(oldId, id), Math.max(oldId, id));
-        table.getSelectionModel().setSelectionInterval(id, id);
-    }
-
-    public void drop(DropTargetDropEvent e) {
-    }
-
-    public void dropActionChanged(DropTargetDragEvent dtde) {
     }
 
     private void editEntry(HostPluginWrapper hpw) {
@@ -255,9 +220,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         table.addHighlighter(highlighter);
         table.addHighlighter(new PainterHighlighter(HighlightPredicate.ROLLOVER_ROW, new MattePainter<Component>(Colors.getColor(getBackground().brighter(), 50))));
-        table.setDragEnabled(true);
-
-        new DropTarget(table, this);
 
         TableColumn column = null;
 
@@ -265,26 +227,21 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             column = table.getColumnModel().getColumn(c);
             switch (c) {
             case 0:
-                column.setPreferredWidth(30);
-                column.setMaxWidth(30);
-                column.setMinWidth(30);
-                break;
-            case 1:
                 column.setPreferredWidth(150);
                 break;
-            case 2:
+            case 1:
                 column.setPreferredWidth(60);
                 column.setMinWidth(60);
                 break;
-            case 3:
+            case 2:
                 column.setPreferredWidth(90);
                 column.setMaxWidth(90);
                 column.setMinWidth(90);
                 break;
-            case 4:
+            case 3:
                 column.setPreferredWidth(100);
                 break;
-            case 5:
+            case 4:
                 column.setPreferredWidth(70);
                 column.setMaxWidth(70);
                 column.setMinWidth(70);
@@ -341,19 +298,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     // @Override
     public void save() {
-        Vector<String> priority = new Vector<String>();
-        for (HostPluginWrapper plg : pluginsForHost) {
-            priority.add(plg.getHost());
-        }
-        configuration.setProperty(Configuration.PARAM_HOST_PRIORITY, priority);
     }
 
     public PropertyType hasChanges() {
-        ArrayList<HostPluginWrapper> savedOrder = JDUtilities.getPluginsForHost();
-
-        for (int i = 0; i < savedOrder.size(); i++) {
-            if (pluginsForHost.get(i) != savedOrder.get(i)) return PropertyType.NORMAL;
-        }
         return PropertyType.NONE;
     }
 

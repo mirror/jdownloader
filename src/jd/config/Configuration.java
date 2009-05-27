@@ -71,8 +71,6 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_GLOBAL_IP_PATTERN = "GLOBAL_IP_PATTERN";
 
-    public static final String PARAM_HOST_PRIORITY = "HOST_PRIORITY";
-
     public static final String PARAM_HTTPSEND_IP = "HTTPSEND_IP";
 
     public static final String PARAM_HTTPSEND_PASS = "HTTPSEND_PASS";
@@ -152,7 +150,7 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public void save() {
         JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", this);
-        changes=false;
+        changes = false;
     }
 
 }
