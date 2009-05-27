@@ -222,7 +222,15 @@ public class PackageManager extends Interaction implements Serializable {
                 data.add(tmp);
 
             }
-            PACKAGE_DATA = data;
+
+            ArrayList<PackageData> newData = new ArrayList<PackageData>();
+            for (PackageData pd : data) {
+                if (pd.getSortID() != -1) {
+                    newData.add(pd);
+                }
+            }
+
+            PACKAGE_DATA = newData;
 
             config.setProperty("PACKAGEDATA", PACKAGE_DATA);
             config.save();

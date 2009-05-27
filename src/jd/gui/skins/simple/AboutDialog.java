@@ -129,7 +129,7 @@ public class AboutDialog extends AbstractDialog {
         cp.add(new JLinkButton(JDLocale.L("gui.dialog.about.chat", "Chat"), JDLocale.L("gui.dialog.about.chaturl", "http://www.jdownloader.org/support?lng=en")), "alignx right, aligny bottom");
     }
 
-    protected void afterPacked() {
+    protected void packed() {
         this.remove(countDownLabel);
         this.setSize(800, 450);
         this.setDefaultCloseOperation(AbstractDialog.DISPOSE_ON_CLOSE);

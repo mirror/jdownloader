@@ -25,7 +25,9 @@ import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.userio.dialog.CaptchaDialog;
 import jd.gui.userio.dialog.ConfirmDialog;
 import jd.gui.userio.dialog.InputDialog;
+import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 
 public class SimpleUserIO extends UserIO {
     private SimpleUserIO() {
@@ -60,7 +62,8 @@ public class SimpleUserIO extends UserIO {
         // ), "01234", null);
         // System.out.println("result: " + res);
 
-       UserIO.getInstance().requestMessageDialog("TEST");
+        UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION, JDLocale.L("gui.cnl.install.error.title", "Click'n'Load Installation"), JDLocale.LF("gui.cnl.install.error.message", "Installation of CLick'n'Load failed. Try these alternatives:\r\n * Start JDownloader as Admin.\r\n * Try to execute %s manually.\r\n * Open Configuration->General->Click'n'load-> [Install].\r\nFor details, visit http://jdownloader.org/click-n-load.", JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath()), JDTheme.II("gui.clicknload", 48, 48), null, null);
+
     }
 
     // @Override

@@ -127,7 +127,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         }
         this.setMinimumSize(new Dimension(300, -1));
         this.pack();
-        this.setResizable(false);
+        this.setResizable(true);
 
         if (SimpleGUI.CURRENTGUI == null) {
             this.setLocation(Screen.getCenterOfComponent(null, this));
@@ -145,17 +145,13 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             countDownLabel.setVisible(false);
         }
         this.packed();
-        this.toFront();
-        this.afterPacked();
+        this.toFront();       
         this.setVisible(true);
        
 
     }
 
-    protected void afterPacked() {
-        // TODO Auto-generated method stub
-        
-    }
+
 
     /**
      * may be overwritten to set focus to special components etc.

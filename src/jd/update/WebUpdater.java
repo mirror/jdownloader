@@ -273,7 +273,7 @@ public class WebUpdater implements Serializable {
     }
 
     private ArrayList<Server> updateAvailableServers() {
-        for (int trycount = 0; trycount < 4; trycount++) {
+        for (int trycount = 1; trycount < 4; trycount++) {
             try {
                 log("Update Downloadmirrors");
                 br.getPage(getListPath(trycount) + "?t=" + System.currentTimeMillis());
