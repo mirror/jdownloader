@@ -438,7 +438,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         StringBuilder ret = new StringBuilder();
         for (int i = 0; i < Math.min(aa.length(), bb.length()); i++) {
             if (aa.charAt(i) == bb.charAt(i)) {
-                ret.append(aa.charAt(i));
+                ret.append(a.charAt(i));
             }
         }
         return ret.toString();
@@ -452,7 +452,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         name = getNameMatch(name, "(.*)\\.rar$");
         name = getNameMatch(name, "(.*)\\.r\\d+$");
         tmp = getNameMatch(name, "(.*?)\\d+$");
-        if (tmp != null && tmp.length() > 0) name = tmp;
+        if (tmp.length() > 0) name = tmp;
 
         /**
          * remove 7zip and hjmerge extensions
