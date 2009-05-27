@@ -251,6 +251,7 @@ public class WebUpdater implements Serializable {
                 for (File f : efiles) {
                     fileMap.put(f.getName().toLowerCase(), f);
                 }
+                return;
             } catch (Exception e) {
             }
             try {
