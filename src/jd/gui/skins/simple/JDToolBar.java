@@ -105,6 +105,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
         updateReconnectButtons();
         updateClipboardButton();
+        updateReconnectButtonIcon();
 
         initListeners();
     }
