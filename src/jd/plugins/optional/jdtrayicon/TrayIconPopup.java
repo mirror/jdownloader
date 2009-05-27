@@ -38,6 +38,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
+import jd.controlling.reconnect.Reconnecter;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.startmenu.actions.AddContainerAction;
@@ -256,8 +257,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             ClipboardHandler.getClipboard().setEnabled(!ClipboardHandler.getClipboard().isEnabled());
             break;
         case TrayIconPopup.ACTION_TOGGLE_RECONNECT:
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
-            JDUtilities.getConfiguration().save();
+            Reconnecter.toggleReconnect();
             break;
         case TrayIconPopup.ACTION_UPDATE:
             new WebUpdate().doWebupdate(true);

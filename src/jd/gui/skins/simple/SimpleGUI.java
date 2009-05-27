@@ -124,7 +124,7 @@ import org.jdesktop.swingx.JXLoginPane.Status;
 import org.jvnet.lafwidget.LafWidget;
 import org.jvnet.lafwidget.utils.LafConstants.AnimationKind;
 
-public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, WindowListener {
+public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
     public static SimpleGUI CURRENTGUI = null;
 
@@ -494,193 +494,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         return INSTANCE;
     }
 
-    /**
-     * Hier werden die Aktionen ausgewertet und weitergeleitet
-     * 
-     * @param e
-     *            Die erwünschte Aktion
-     */
-
-    public void actionPerformed(ActionEvent e) {
-        // JDSounds.PT("sound.gui.clickToolbar");
-        // switch (e.getID()) {
-        // // case JDAction.ITEMS_MOVE_UP:
-        // // case JDAction.ITEMS_MOVE_DOWN:
-        // // case JDAction.ITEMS_MOVE_TOP:
-        // // case JDAction.ITEMS_MOVE_BOTTOM:
-        // // linkListPane.moveSelectedItems(e.getID());
-        // // break;
-        // case JDAction.APP_ALLOW_RECONNECT:
-        // logger.finer("Allow Reconnect");
-        // boolean checked =
-        // !JDUtilities.getConfiguration().getBooleanProperty(Configuration
-        // .PARAM_DISABLE_RECONNECT, false);
-        // if (checked) {
-        // displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled",
-        // "Reconnect deaktiviert!"),
-        // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
-        // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
-        // ), 10000);
-        // }
-        //
-        // JDUtilities.getConfiguration().setProperty(Configuration.
-        // PARAM_DISABLE_RECONNECT, checked);
-        // JDUtilities.getConfiguration().save();
-        //
-        // /*
-        // * Steht hier, weil diese Funktion(toggleReconnect) direkt vom
-        // * Trayicon Addon aufgerufen wird und ich dennoch die Gui aktuell
-        // * halten will
-        // */
-        //
-        // // btnReconnect.setIcon(new
-        // // ImageIcon(JDUtilities.getImage(getDoReconnectImage())));
-        // break;
-        // // case JDAction.APP_PAUSE_DOWNLOADS:
-        // // btnPause.setSelected(!btnPause.isSelected());
-        // // fireUIEvent(new UIEvent(this, UIEvent.UI_PAUSE_DOWNLOADS,
-        // // btnPause.isSelected()));
-        // // btnPause.setIcon(new
-        // // ImageIcon(JDUtilities.getImage(getPauseImage())));
-        // // break;
-        // case JDAction.APP_CLIPBOARD:
-        // logger.finer("Clipboard");
-        // ClipboardHandler.getClipboard().toggleActivation();
-        // break;
-        //
-
-        //
-        // case JDAction.APP_EXIT:
-        // frame.setVisible(false);
-        // frame.dispose();
-        // JDUtilities.getController().exit();
-        //
-        // break;
-        // case JDAction.APP_RESTART:
-        // frame.setVisible(false);
-        // frame.dispose();
-        // JDUtilities.getController().restart();
-        // break;
-        // case JDAction.APP_LOG:
-        // logDialog.setVisible(!logDialog.isVisible());
-        // menViewLog.setSelected(!logDialog.isVisible());
-        // break;
-        // case JDAction.APP_BACKUP:
-        // JDInit.createQueueBackup();
-        // JOptionPane.showMessageDialog(null,
-        // JDLocale.L("gui.messagewindow.backupcreated",
-        // "Link list backup created successfuly."),
-        // JDLocale.L("gui.messagewindow.information", "Information"),
-        // JOptionPane.INFORMATION_MESSAGE);
-        // break;
-        // // case JDAction.APP_RECONNECT:
-        // // new Thread() {
-        // // //@Override
-        // // public void run() {
-        // // doReconnect();
-        // // }
-        // // }.start();
-        // // break;
-        // // case JDAction.APP_UPDATE:
-        // // fireUIEvent(new UIEvent(this, UIEvent.UI_INTERACT_UPDATE));
-        // //
-        // // break;
-        // // case JDAction.ITEMS_REMOVE:
-        // // if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS,
-        // // false)) {
-        // // if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete",
-        // // "Ausgewählte Links wirklich entfernen?") + " (" +
-        // // linkListPane.countSelectedLinks() + " links in " +
-        // // linkListPane.countSelectedPackages() + " packages)")) {
-        // // linkListPane.removeSelectedLinks();
-        // // }
-        // // } else {
-        // // linkListPane.removeSelectedLinks();
-        // // }
-        // // break;
-        // case JDAction.APP_OPEN_OPT_CONFIG:
-        // SimpleGUI.showConfigDialog(frame, new
-        // ConfigPanelAddons(JDUtilities.getConfiguration()), false);
-        // JDUtilities.getConfiguration().save();
-        // break;
-        // // case JDAction.APP_OPEN_HOST_CONFIG:
-        // // SimpleGUI.showConfigDialog(frame, new
-        // // ConfigPanelPluginForHost(JDUtilities.getConfiguration()), false);
-        // // JDUtilities.getConfiguration().save();
-        // // break;
-        // // case JDAction.ITEMS_REMOVE_PACKAGES:
-        // // if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS,
-        // // false)) {
-        // // if
-        // (showConfirmDialog(JDLocale.L("gui.downloadlist.delete_packages",
-        // // "Remove completed packages?"))) {
-        // // JDUtilities.getController().removeCompletedPackages();
-        // // }
-        // // } else {
-        // // JDUtilities.getController().removeCompletedPackages();
-        // // }
-        // // break;
-        // // case JDAction.ITEMS_REMOVE_LINKS:
-        // // if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS,
-        // // false)) {
-        // // if
-        // //
-        // (showConfirmDialog(JDLocale.L("gui.downloadlist.delete_downloadlinks"
-        // // , "Remove completed downloads?"))) {
-        // // JDUtilities.getController().removeCompletedDownloadLinks();
-        // // }
-        // // } else {
-        // // JDUtilities.getController().removeCompletedDownloadLinks();
-        // // }
-        // // break;
-        //
-        // case JDAction.ABOUT:
-        // JDAboutDialog.showDialog();
-        // break;
-        // case JDAction.CHANGES:
-        // showChangelogDialog();
-        // break;
-        // case JDAction.ITEMS_ADD:
-
-        // }
-        // break;
-        // case JDAction.HELP:
-        // try {
-        // JLinkButton.openURL(JDLocale.L("gui.support.forumurl",
-        // "http://board.jdownloader.org"));
-        // } catch (Exception e1) {
-        // JDLogger.exception(e1);
-        // }
-        // break;
-        // case JDAction.WIKI:
-        // try {
-        // JLinkButton.openURL(JDLocale.L("gui.support.wikiurl",
-        // "http://wiki.jdownloader.org"));
-        // } catch (Exception e1) {
-        // JDLogger.exception(e1);
-        // }
-        // break;
-        // // case JDAction.APP_CONFIGURATION:
-        // // showConfig();
-        // // break;
-    }
-
-    // public void showConfig() {
-    // if (guiConfig.getBooleanProperty(PARAM_SHOW_FENGSHUI, true) == false) {
-    // ConfigurationDialog.showConfig(frame);
-    // } else {
-    // if (SimpleGUI.CURRENTGUI != null) {
-    // if (SimpleGUI.CURRENTGUI.isVisible() == false) {
-    // FengShuiConfigPanel.getInstance();
-    // } else {
-    // ConfigurationDialog.showConfig(frame);
-    // }
-    // } else {
-    // FengShuiConfigPanel.getInstance();
-    // }
-    // }
-    // }
-
     public synchronized void addLinksToGrabber(final ArrayList<DownloadLink> links, final boolean hideGrabber) {
         new GuiRunnable<Object>() {
 
@@ -1006,13 +819,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
                 case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
                     setTitle(JDUtilities.getJDTitle());
                     break;
-                case ControlEvent.CONTROL_JDPROPERTY_CHANGED:
-                    if ((Property) event.getSource() == JDUtilities.getConfiguration()) {
-                        if (event.getParameter().equals(Configuration.PARAM_DISABLE_RECONNECT)) {
-                        } else if (event.getParameter().equals(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE)) {
-                        }
-                    }
-                    break;
                 case ControlEvent.CONTROL_DOWNLOAD_START:
                     if (speedmeter != null) speedmeter.start();
                     break;
@@ -1024,80 +830,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, ActionListener, W
         });
     }
 
-    public void displayMiniWarning(final String shortWarn, final String toolTip, final int showtime) {
-
+    public void displayMiniWarning(final String shortWarn, final String toolTip) {
         Balloon.show(shortWarn, JDTheme.II("gui.images.warning", 32, 32), toolTip);
-
-        // if (shortWarn == null) {
-        // SwingUtilities.invokeLater(new Runnable() {
-        // public void run() {
-        // warning.setVisible(false);
-        // warning.setText("");
-        // }
-        // });
-        // } else {
-        // SwingUtilities.invokeLater(new Runnable() {
-        // public void run() {
-        // warning.setVisible(true);
-        // warning.setText(shortWarn);
-        // warning.setToolTipText(toolTip);
-        // }
-        // });
-        // if (warningWorker != null) {
-        // warningWorker.interrupt();
-        // }
-        // warningWorker = new Thread() {
-        //
-        // public void run() {
-        // for (int i = 0; i < 5; i++) {
-        // try {
-        // Thread.sleep(300);
-        // } catch (Exception e) {
-        // }
-        // if (this.isInterrupted()) { return; }
-        // EventQueue.invokeLater(new Runnable() {
-        // public void run() {
-        // warning.setEnabled(false);
-        // }
-        // });
-        // if (this.isInterrupted()) { return; }
-        // try {
-        // Thread.sleep(100);
-        // } catch (Exception e) {
-        // }
-        // if (this.isInterrupted()) { return; }
-        // EventQueue.invokeLater(new Runnable() {
-        // public void run() {
-        // warning.setEnabled(true);
-        // }
-        // });
-        // if (this.isInterrupted()) { return; }
-        //
-        // }
-        //
-        // }
-        // };
-        // warningWorker.start();
-        //
-        // if (showtime > 0) {
-        // new Thread() {
-        // public void run() {
-        // try {
-        // Thread.sleep(showtime);
-        // } catch (InterruptedException e) {
-        //
-        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
-        // ,"Exception occured",e);
-        // }
-        // displayMiniWarning(null, null, 0);
-        // }
-        // }.start();
-        // }
-        // }
-
-        /**
-         * TODO
-         */
     }
 
     public void doManualReconnect() {

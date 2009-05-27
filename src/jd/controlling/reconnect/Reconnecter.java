@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.skins.simple.components.Linkgrabber.LinkCheck;
@@ -39,8 +40,15 @@ public class Reconnecter {
     private static boolean IS_RECONNECTING = false;
     private static boolean LAST_RECONNECT_SUCCESS = false;
     private static long lastIPUpdate = 0;
-    private static Logger logger = jd.controlling.JDLogger.getLogger();
+    private static Logger logger = JDLogger.getLogger();
     private static int RECONNECT_REQUESTS = 0;
+
+    public static void toggleReconnect() {
+        boolean newState = !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, newState);
+        JDUtilities.getConfiguration().save();
+        if (newState) JDUtilities.getGUI().displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."));
+    }
 
     private static boolean checkExternalIPChange() {
         lastIPUpdate = System.currentTimeMillis();
@@ -65,11 +73,10 @@ public class Reconnecter {
         if (Reconnecter.waitForRunningRequests() > 0 && LAST_RECONNECT_SUCCESS) return true;
         boolean ipChangeSuccess = false;
         IS_RECONNECTING = true;
-        if (Reconnecter.isGlobalDisabled()) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
 
             if (System.currentTimeMillis() - lastIPUpdate > 1000 * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) {
                 ipChangeSuccess = Reconnecter.checkExternalIPChange();
-//               JDUtilities.getGUI().displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."), 60000);
             }
 
             if (!ipChangeSuccess) {
@@ -149,10 +156,6 @@ public class Reconnecter {
             JDUtilities.getConfiguration().save();
         }
         return ret;
-    }
-
-    public static boolean isGlobalDisabled() {
-        return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
     }
 
     /**

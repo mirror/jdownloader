@@ -57,7 +57,7 @@ public interface UIInterface extends ControlListener {
      */
     public void addLinksToGrabber(ArrayList<DownloadLink> links, boolean hideGrabber);
 
-    public void displayMiniWarning(String shortWarn, String longWarn, int showtime);
+    public void displayMiniWarning(String shortWarn, String longWarn);
 
     /**
      * 

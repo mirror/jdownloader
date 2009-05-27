@@ -34,6 +34,7 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
+import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
@@ -223,20 +224,11 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     private void initQuickConfig() {
         /* Clipboard */
-
         add(clipboard = new JToggleButton(), BUTTON_CONSTRAINTS);
         clipboard.setToolTipText(JDLocale.L("gui.menu.action.clipboard.desc", null));
         clipboard.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                if (clipboard.isSelected()) {
-                    clipboard.setIcon(JDTheme.II("gui.images.clipboard_enabled", 24, 24));
-                } else {
-                    clipboard.setIcon(JDTheme.II("gui.images.clipboard_disabled", 24, 24));
-                }
-                // if (JDUtilities.getConfiguration().isChanges()) {
-                // JDUtilities.getConfiguration().save();
-                // }
                 ClipboardHandler.getClipboard().setEnabled(clipboard.isSelected());
             }
 
@@ -249,17 +241,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
         reconnect.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                if (reconnect.isSelected()) {
-                    reconnect.setIcon(JDTheme.II("gui.images.reconnect_enabled", 24, 24));
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
-                } else {
-                    reconnect.setIcon(JDTheme.II("gui.images.reconnect_disabled", 24, 24));
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
-
-                }
-                if (JDUtilities.getConfiguration().isChanges()) {
-                    JDUtilities.getConfiguration().save();
-                }
+                Reconnecter.toggleReconnect();
             }
 
         });
