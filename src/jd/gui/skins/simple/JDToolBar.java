@@ -57,7 +57,6 @@ public class JDToolBar extends JToolBar implements ControlListener {
     private JButton playButton;
     private JToggleButton pauseButton;
     private JButton stopButton;
-    private int pause = -1;
     private JToggleButton clipboard;
     private JToggleButton reconnect;
 
@@ -206,7 +205,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
     private void initQuickConfig() {
         /* Clipboard */
 
-        add(clipboard = new JToggleButton(JDTheme.II("gui.images.clipboard_disabled", 24, 24)), BUTTON_CONSTRAINTS);
+        add(clipboard = new JToggleButton(), BUTTON_CONSTRAINTS);
         clipboard.setToolTipText(JDLocale.L("gui.menu.action.clipboard.desc", null));
         clipboard.addActionListener(new ActionListener() {
 
@@ -224,7 +223,13 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
         });
         clipboard.setName(JDLocale.L("quickhelp.toolbar.clipboard", "Toolbar clipboard observer"));
-        clipboard.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true)) {
+            clipboard.setSelected(true);
+            clipboard.setIcon(JDTheme.II("gui.images.clipboard_enabled", 24, 24));
+        } else {
+            clipboard.setSelected(false);
+            clipboard.setIcon(JDTheme.II("gui.images.clipboard_disabled", 24, 24));
+        }
 
         /* reconect */
         add(reconnect = new JToggleButton(JDTheme.II("gui.images.reconnect_disabled", 24, 24)), BUTTON_CONSTRAINTS);
@@ -246,7 +251,14 @@ public class JDToolBar extends JToolBar implements ControlListener {
             }
 
         });
-        reconnect.setSelected(!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true));
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true)) {
+            reconnect.setSelected(true);
+            reconnect.setIcon(JDTheme.II("gui.images.reconnect_enabled", 24, 24));
+        } else {
+            reconnect.setSelected(false);
+            reconnect.setIcon(JDTheme.II("gui.images.reconnect_disabled", 24, 24));
+        }
+
         JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT) {
 
             @Override
@@ -287,10 +299,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
             public void actionPerformed(ActionEvent e) {
                 JDUtilities.getController().startDownloads();
-                if (JDToolBar.this.pause > 0) {
-                    setPause(false);
-                }
-                pauseButton.setSelected(false);
+                setPause(false);
             }
 
         });
@@ -301,11 +310,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
         pauseButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                if (pause >= 0) {
-                    setPause(false);
-                } else {
-                    setPause(true);
-                }
+                setPause(pauseButton.isSelected());
             }
 
         });
@@ -315,9 +320,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
         stopButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                if (pause > 0) {
-                    setPause(false);
-                }
+                setPause(false);
                 JDUtilities.getController().stopDownloads();
             }
 
@@ -337,16 +340,8 @@ public class JDToolBar extends JToolBar implements ControlListener {
     }
 
     private void setPause(boolean b) {
-        if (b) {
-            pauseButton.setSelected(true);
-            pause = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
-            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 1);
-        } else {
-            pauseButton.setSelected(false);
-            if (pause >= 0) SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, pause);
-            pause = -1;
-        }
-        SubConfiguration.getConfig("DOWNLOAD").save();
+        pauseButton.setSelected(b);
+        JDUtilities.getController().pauseDownloads(b);
     }
 
     public void controlEvent(final ControlEvent event) {

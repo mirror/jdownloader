@@ -55,9 +55,11 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
     private HashMap<Class<?>, Integer> activeHosts = new HashMap<Class<?>, Integer>();
 
-    private Logger logger = jd.controlling.JDLogger.getLogger();
+    private Logger logger = JDLogger.getLogger();
 
-    private boolean pause = false;
+    private boolean paused = false;
+
+    private Integer oldSpeed = null;
 
     private int totalSpeed = 0;
 
@@ -363,13 +365,20 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     }
 
     public void pause(boolean value) {
-        pause = value;
+        if (paused == value) return;
+        paused = value;
+
         if (value) {
-            logger.info("Pause enabled: Reduced Downloadspeed to 1 kb/s");
+            oldSpeed = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 1);
+            logger.info("Pause enabled: Reduced downloadspeed to 1 kb/s");
         } else {
-            logger.info("Pause disabled");
+            if (oldSpeed != null) SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, oldSpeed);
+            oldSpeed = null;
+            logger.info("Pause disabled: Switch back to old downloadspeed");
         }
 
+        SubConfiguration.getConfig("DOWNLOAD").save();
     }
 
     private synchronized void startWatchDogThread() {
@@ -488,7 +497,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                 DownloadController.getInstance().fireDownloadLinkUpdate(updates);
                             }
                             int ret = 0;
-                            if (Interaction.areInteractionsInProgress() && activeDownloads < getSimultanDownloadNum() && !pause) {
+                            if (Interaction.areInteractionsInProgress() && activeDownloads < getSimultanDownloadNum()) {
                                 if (!reachedStopMark()) {
                                     // System.out.println("stopmarke nicht");
                                     ret = setDownloadActive();
@@ -498,7 +507,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                             }
                             if (ret == 0) {
 
-                                if (pause && !hasInProgressLinks || !hasTempDisabledLinks && !hasInProgressLinks && !hasWaittimeLinks && getNextDownloadLink() == null && activeDownloads == 0) {
+                                if (!hasInProgressLinks || !hasTempDisabledLinks && !hasInProgressLinks && !hasWaittimeLinks && getNextDownloadLink() == null && activeDownloads == 0) {
                                     stopCounter--;
                                     // System.out.println("stop?");
                                     if (stopCounter == 0) {

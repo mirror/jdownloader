@@ -54,7 +54,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
 
     private static final int ACTION_START = 0;
     private static final int ACTION_STOP = 1;
-    // private static final int ACTION_PAUSE = 2;
+    private static final int ACTION_PAUSE = 2;
     private static final int ACTION_ADD = 3;
     private static final int ACTION_LOAD = 4;
     private static final int ACTION_UPDATE = 5;
@@ -97,21 +97,15 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         switch (JDUtilities.getController().getDownloadStatus()) {
         case JDController.DOWNLOAD_NOT_RUNNING:
             addMenuEntry(ACTION_START, "gui.images.next", JDLocale.L("plugins.trayicon.popup.menu.start", "Download starten"));
-            // addDisabledMenuEntry("gui.images.break",
-            // JDLocale.L("plugins.trayicon.popup.menu.pause2",
-            // "Download pausieren"));
+            addDisabledMenuEntry("gui.images.break", JDLocale.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
             break;
         case JDController.DOWNLOAD_RUNNING:
             addMenuEntry(ACTION_STOP, "gui.images.stop", JDLocale.L("plugins.trayicon.popup.menu.stop", "Download anhalten"));
-            // addMenuEntry(ACTION_PAUSE, "gui.images.break",
-            // JDLocale.L("plugins.trayicon.popup.menu.pause2",
-            // "Download pausieren"));
+            addMenuEntry(ACTION_PAUSE, "gui.images.break", JDLocale.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
             break;
         default:
             addDisabledMenuEntry("gui.images.next", JDLocale.L("plugins.trayicon.popup.menu.start", "Download starten"));
-            // addDisabledMenuEntry("gui.images.break",
-            // JDLocale.L("plugins.trayicon.popup.menu.pause2",
-            // "Download pausieren"));
+            addDisabledMenuEntry("gui.images.break", JDLocale.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
         }
 
         addMenuEntry(ACTION_ADD, "gui.images.add", JDLocale.L("plugins.trayicon.popup.menu.add", "Downloads hinzufügen"));
@@ -248,12 +242,9 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             dispose();
             AddContainerAction.addContainerDialog();
             break;
-        /*
-         * TODO
-         */
-        // case TrayIconPopup.ACTION_PAUSE:
-        // JDUtilities.getController().pauseDownloads(true);
-        // break;
+        case TrayIconPopup.ACTION_PAUSE:
+            JDUtilities.getController().pauseDownloads(true);
+            break;
         case TrayIconPopup.ACTION_RECONNECT:
             SimpleGUI.CURRENTGUI.doManualReconnect();
             break;
