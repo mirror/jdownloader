@@ -41,7 +41,7 @@ public class PackageCreaterRS {
         frame.pack();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 
-        File srcDir = new File("G:/pluginressourcen");
+        File srcDir = new File("C:\\Users\\thomas\\workspace\\JDownloader\\ressourcen\\pluginressourcen");
 
         String[] packages = srcDir.list(new FilenameFilter() {
             public boolean accept(File dir, String name) {

@@ -81,7 +81,7 @@ import jd.utils.WebUpdate;
 
 public class Main {
 
-    private static boolean BETA = true;
+    private static boolean BETA = false;
     private static Logger LOGGER;
     public static SplashScreen SPLASH;
     private static String instanceID = Main.class.getName();

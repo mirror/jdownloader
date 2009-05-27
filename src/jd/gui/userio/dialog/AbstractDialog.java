@@ -16,6 +16,7 @@
 
 package jd.gui.userio.dialog;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -48,7 +49,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
     protected JButton btnOK;
 
     protected JPanel contentpane;
-
+    protected static  Color BACKGROUND_COLOR = new Color(0xeae9d7);
     protected int flag;
 
     private int returnValue = -1;

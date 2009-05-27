@@ -55,13 +55,16 @@ public class KikinDialog extends AbstractDialog {
 * 
 */
     private static final long serialVersionUID = -7647771640756844691L;
+    private static final Color BACKGROUND_COLOR = new Color(0xeae9d7);
 
     public void contentInit(JPanel cp) {
 
         // cp.setLayout(new MigLayout("ins 0,wrap 1,debug", "[fill,grow]"));
         JPanel p = new JPanel(new MigLayout("ins 5,wrap 2"));
-        p.setBackground(Color.WHITE);
-        cp.setBackground(Color.WHITE);
+        this.setBackground(BACKGROUND_COLOR);
+        this.getContentPane().setBackground(BACKGROUND_COLOR);
+        p.setBackground(BACKGROUND_COLOR);
+        cp.setBackground(BACKGROUND_COLOR);
         p.add(new JLabel(JDLocale.L("gui.installer.kikin.message", "Personalize your search experience")), "alignx left, aligny bottom");
         p.add(new JLabel(JDImage.getImageIcon(JDUtilities.getResourceFile("tools/Windows/kikin/kikin.png"))), "alignx right,aligny top");
         p.add(new JSeparator(), "spanx,growx,pushx");
@@ -88,10 +91,10 @@ public class KikinDialog extends AbstractDialog {
 
         });
         cp.add(checkbox, "split 2,growx 0,gaptop 18");
-        checkbox.setBackground(Color.WHITE);
+        checkbox.setBackground(BACKGROUND_COLOR);
         textField = new JTextPane();
         textField.setContentType("text/html");
-        textField.setBackground(Color.WHITE);
+        textField.setBackground(BACKGROUND_COLOR);
         textField.setBorder(null);
         textField.setBackground(null);
         textField.setOpaque(false);
