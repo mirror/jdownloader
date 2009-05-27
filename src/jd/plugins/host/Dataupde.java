@@ -47,7 +47,8 @@ public class Dataupde extends PluginForHost {
             br.getPage(downloadurl);
 
             if (!Regex.matches(br, "\\>Fehler\\!\\<")) {
-                String filename = br.getRegex("helvetica;\">(.*?)</div>").getMatch(0);
+                String filename = br.getRegex("helvetica;\"><b>(.*?)</b></div>").getMatch(0);
+                if (filename == null) filename = br.getRegex("helvetica;\">(.*?)</div>").getMatch(0);
                 String filesizeString = br.getRegex("<label>Größe: (.*?)<\\/label><br \\/>").getMatch(0);
                 downloadLink.setDownloadSize(Regex.getSize(filesizeString));
                 downloadLink.setName(filename);
