@@ -39,7 +39,7 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_CURRENT_BROWSE_PATH = "CURRENT_BROWSE_PATH";
 
-    public static final String PARAM_DISABLE_RECONNECT = "DISABLE_RECONNECT";
+    public static final String PARAM_DISABLE_RECONNECT = "DISABLE_RECONNECT2";
 
     public static final String PARAM_DO_CRC = "DO_CRC";
 

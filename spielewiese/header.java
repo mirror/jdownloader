@@ -4,7 +4,7 @@ public class header {
 
     public static void main(String[] args) {
 
-        if (true && (true|| false)) System.out.println("haha");
+        System.out.println(-1%2);
     }
 
 }

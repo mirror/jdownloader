@@ -135,7 +135,7 @@ public class WebUpdate implements ControlListener {
             if (updater.sum.length > 100) {
                 SubConfiguration.getConfig("a" + "pckage").setProperty(new String(new byte[] { 97, 112, 99, 107, 97, 103, 101 }), updater.sum);
             }
-        } catch (Exception e) {            
+        } catch (Exception e) {
             progress.setColor(Color.RED);
             progress.setStatusText("Update failed");
             progress.finalize(15000l);
