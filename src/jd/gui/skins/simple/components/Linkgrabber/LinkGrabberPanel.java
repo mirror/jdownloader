@@ -186,6 +186,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         addinginprogress = true;
         new Thread() {
             public void run() {
+                Balloon.showIfHidden("Linkgrabber", JDTheme.II("gui.images.add", 32, 32), JDLocale.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", "" + linkList.length));
                 for (DownloadLink element : linkList) {
                     if (LGINSTANCE.isDupe(element)) continue;
                     addToWaitingList(element);

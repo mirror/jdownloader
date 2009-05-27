@@ -397,8 +397,8 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                 public int compare(DownloadLink a, DownloadLink b) {
                     if (a.getName().endsWith(".sfv")) { return -1; }
                     if (b.getName().endsWith(".sfv")) { return 1; }
-                    DownloadLink aa = a;
-                    DownloadLink bb = b;
+                    DownloadLink aa = b;
+                    DownloadLink bb = a;
                     if (sortasc) {
                         aa = a;
                         bb = b;
