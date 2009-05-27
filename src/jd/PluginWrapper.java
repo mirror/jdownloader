@@ -17,7 +17,6 @@
 package jd;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -30,6 +29,7 @@ import java.util.regex.Pattern;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.plugins.Plugin;
 import jd.update.FileUpdate;
@@ -140,7 +140,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
             return loadedPlugin;
         } catch (Exception e) {
             logger.info("Plugin Exception!");
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.exception(e);
         }
         return null;
     }
@@ -193,20 +193,8 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     public Plugin getNewPluginInstance() {
         try {
             return getPlugin().getClass().getConstructor(new Class[] { PluginWrapper.class }).newInstance(new Object[] { this });
-        } catch (IllegalArgumentException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-        } catch (SecurityException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-        } catch (InstantiationException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-        } catch (IllegalAccessException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-        } catch (InvocationTargetException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-        } catch (NoSuchMethodException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.exception(e);
         }
         return null;
 
@@ -229,7 +217,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
             try {
                 throw new Exception("plugin " + className + " could not be found");
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                JDLogger.exception(e);
                 return null;
             }
         }

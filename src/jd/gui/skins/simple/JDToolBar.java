@@ -110,7 +110,12 @@ public class JDToolBar extends JToolBar implements ControlListener {
         initListeners();
     }
 
+    /**
+     * TODO: Fixen! Bis dahin ohne Funktion
+     */
     public void setEnabled(int flag, boolean b, String tt) {
+        if (true) return;
+
         if ((flag & JDToolBar.ENTRY_CLIPBOARD) > 0) {
             clipboard.setEnabled(b);
             clipboard.setToolTipText(tt);
