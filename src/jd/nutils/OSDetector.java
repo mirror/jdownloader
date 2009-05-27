@@ -83,28 +83,7 @@ public class OSDetector {
 
     }
 
-    /**
-     * Tries to read a value out of the regitrsy, which is (tested on vista)
-     * only possible with admin rights
-     * 
-     * @return
-     */
-    public static boolean isWindowsAdmin() {
-        if (IS_WINDOWS_VISTA_ADMIN.hasState()) return IS_WINDOWS_VISTA_ADMIN.getState();
-
-        File file = JDUtilities.getResourceFile("tmp/ini.test");
-        JDUtilities.runCommand("regedit", new String[] { "/e", file.getName(), "HKEY_CLASSES_ROOT\\.ini" }, file.getParent(), 10);
-
-        if (file.exists()) {
-            IS_WINDOWS_VISTA_ADMIN = MultiState.TRUE;
-            JDUtilities.getResourceFile("tmp/ini.test").delete();
-            return true;
-        } else {
-            IS_WINDOWS_VISTA_ADMIN = MultiState.FALSE;
-            return false;
-        }
-
-    }
+  
 
     public static boolean isLinux() {
         byte id = OSDetector.getOSID();

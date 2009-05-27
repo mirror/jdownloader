@@ -49,7 +49,7 @@ public class JDTheme {
         if (!dir.exists()) return null;
         File[] files = dir.listFiles(new JDFileFilter(null, ".icl", false));
         Vector<String> ret = new Vector<String>();
-        ret.add("default");
+        
          for (File element : files) {
          ret.add(element.getName().split("\\.")[0]);
          }

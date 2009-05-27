@@ -47,8 +47,16 @@ public class OptionalPluginWrapper extends PluginWrapper {
         if (this.isEnabled()) {
             this.getPlugin();
         }
+        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 
-        OPTIONAL_WRAPPER.add(this);
+        try {
+            Class<?> plgClass = jdClassLoader.loadClass("jd.plugins.optional." + string);
+
+            OPTIONAL_WRAPPER.add(this);
+        } catch (ClassNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
     }
 

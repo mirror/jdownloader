@@ -73,17 +73,22 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         ConfigEntry ce;
         /* LANGUAGE */
-        ConfigGroup langGroup = new ConfigGroup(JDLocale.L("gui.config.gui.language", "Sprache"), JDTheme.II("gui.splash.languages", 32, 32));
-
+        
         ConfigContainer look = new ConfigContainer(this, JDLocale.L("gui.config.gui.look.tab", "Anzeige & Bedienung"));
+     
+        /* LOOK */
+        
+        
+        
+        ConfigGroup lookGroup = new ConfigGroup(JDLocale.L("gui.config.gui.view", "Look"), JDTheme.II("gui.images.config.gui", 32, 32));
+        
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, look));
-        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.LF("gui.config.gui.languageFileInfo", "Current Language File: %s from %s in version %s", SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, Locale.getDefault().toString()), JDLocale.getTranslater(), JDLocale.getVersion())).setGroup(langGroup));
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.LF("gui.config.gui.languageFileInfo", "Current Language File: %s from %s in version %s", SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, Locale.getDefault().toString()), JDLocale.getTranslater(), JDLocale.getVersion())).setGroup(lookGroup));
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}), "").setGroup(langGroup));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}),  JDLocale.L("gui.config.gui.language","Language")).setGroup(lookGroup));
         ce.setDefaultValue(Locale.getDefault());
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        /* LOOK */
-        ConfigGroup lookGroup = new ConfigGroup(JDLocale.L("gui.config.gui.view", "Look"), JDTheme.II("gui.images.config.gui", 32, 32));
+        
         if (JDTheme.getThemeIDs().size() <= 1) {
             JDTheme.getThemeIDs().get(0);
             subConfig.setProperty(SimpleGuiConstants.PARAM_THEME, JDTheme.getThemeIDs().get(0));

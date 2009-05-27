@@ -69,12 +69,12 @@ public class JDPremiumCollector extends PluginOptional {
             post += "&apipassword=" + subConfig.getStringProperty(PROPERTY_LOGIN_PASS);
             br.postPage(subConfig.getStringProperty(PROPERTY_API_URL), post);
         } catch (IOException e1) {
-            Balloon.show(getHost()+" "+JDLocale.L("gui.balloon.error.title","title"), JDTheme.II("gui.images.bad",32,32), JDLocale.L("plugins.optional.premiumcollector.error.url", "Probably wrong URL! See log for more infos!"));
+            Balloon.show(getHost() + " " + JDLocale.L("gui.balloon.error.title", "title"), JDTheme.II("gui.images.bad", 32, 32), JDLocale.L("plugins.optional.premiumcollector.error.url", "Probably wrong URL! See log for more infos!"));
             logger.severe(JDLocale.L("plugins.optional.premiumcollector.error.url", "Probably wrong URL! See log for more infos!"));
         }
 
         if (br.containsHTML("Login failed")) {
-            Balloon.show(getHost()+" "+JDLocale.L("gui.balloon.error.title","title"), JDTheme.II("gui.images.bad",32,32), JDLocale.L("plugins.optional.premiumcollector.error.userpass", "Wrong username/password!"));
+            Balloon.show(getHost() + " " + JDLocale.L("gui.balloon.error.title", "title"), JDTheme.II("gui.images.bad", 32, 32), JDLocale.L("plugins.optional.premiumcollector.error.userpass", "Wrong username/password!"));
             logger.severe(JDLocale.L("plugins.optional.premiumcollector.error.userpass", "Wrong username/password!"));
             return;
         }
@@ -131,7 +131,13 @@ public class JDPremiumCollector extends PluginOptional {
     // @Override
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
-            fetchAccounts();
+            new Thread() {
+                public void run() {
+                    fetchAccounts();
+                    
+                }
+
+            }.start();
             JDUtilities.getController().removeControlListener(this);
             return;
         }
