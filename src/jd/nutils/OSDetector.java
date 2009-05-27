@@ -16,10 +16,6 @@
 
 package jd.nutils;
 
-import java.io.File;
-
-import jd.utils.JDUtilities;
-
 public class OSDetector {
     private enum MultiState {
         UNCHECKED, TRUE, FALSE;

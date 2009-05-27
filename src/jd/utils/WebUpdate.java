@@ -20,7 +20,6 @@ import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.HeadlessException;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Level;
@@ -55,51 +54,77 @@ public class WebUpdate implements ControlListener {
         DynamicPluginsFinished = true;
     }
 
-    public static void updateUpdater() throws IOException {
+    private static String getUpdaterMD5(int trycount) {
+        if (trycount == 0) trycount = 1;
+        if (trycount < 0) {
+            trycount = -(trycount % WebUpdater.ServerPool);
+        } else {
+            trycount = trycount % WebUpdater.ServerPool;
+        }
+        return "http://update" + trycount + ".jdownloader.org/jdupdate.jar.md5";
+    }
+
+    private static String getUpdater(int trycount) {
+        if (trycount == 0) trycount = 1;
+        if (trycount < 0) {
+            trycount = -(trycount % WebUpdater.ServerPool);
+        } else {
+            trycount = trycount % WebUpdater.ServerPool;
+        }
+        return "http://update" + trycount + ".jdownloader.org/jdupdate.jar";
+    }
+
+    public static void updateUpdater() {
         Browser br = new Browser();
         File file;
         String localHash = JDHash.getMD5(file = JDUtilities.getResourceFile("jdupdate.jar"));
-        String remoteHash = br.getPage("http://update1.jdownloader.org/jdupdate.jar.md5" + "?t=" + System.currentTimeMillis()).trim();
-        if (localHash == null || !remoteHash.equalsIgnoreCase(localHash)) {
-
-            logger.info("Download " + file.getAbsolutePath() + "");
-            ProgressController progress = new ProgressController(JDLocale.LF("wrapper.webupdate.updateUpdater", "Download updater"), 3);
-            progress.increase(1);
-            URLConnectionAdapter con = br.openGetConnection("http://update1.jdownloader.org/jdupdate.jar" + "?t=" + System.currentTimeMillis());
-            if (con.isOK()) {
-
-                File tmp;
-                Browser.download(tmp = new File(file.getAbsolutePath() + ".tmp"), con);
-
-                localHash = JDHash.getMD5(tmp);
-                if (remoteHash.equalsIgnoreCase(localHash)) {
-
-                    if ((!file.exists() || file.delete()) && tmp.renameTo(file)) {
-                        progress.finalize(2000);
-                        logger.info("Update of " + file.getAbsolutePath() + " successfull");
-                    } else {
-                        logger.severe("Rename error: jdupdate.jar");
-                        progress.setColor(Color.RED);
-                        progress.setStatusText(JDLocale.LF("wrapper.webupdate.updateUpdater.error_rename", "Could not rename jdupdate.jar.tmp to jdupdate.jar"));
-                        progress.finalize(5000);
-                    }
-                } else {
-                    logger.severe("CRC Error while downloading jdupdate.jar");
-                    progress.setColor(Color.RED);
-                    progress.setStatusText(JDLocale.LF("wrapper.webupdate.updateUpdater.error_crc", "CRC Error while downloading jdupdate.jar"));
-                    progress.finalize(5000);
+        ProgressController progress = new ProgressController(JDLocale.LF("wrapper.webupdate.updateUpdater", "Download updater"), 3);
+        progress.increase(1);
+        String remoteHash = null;
+        for (int trycount = 1; trycount < 10; trycount++) {
+            if (remoteHash == null) {
+                try {
+                    remoteHash = br.getPage(getUpdaterMD5(trycount) + "?t=" + System.currentTimeMillis()).trim();
+                } catch (Exception e) {
+                    remoteHash = null;
+                    continue;
                 }
-
-            } else {
-                progress.setColor(Color.RED);
-                progress.setStatusText(JDLocale.LF("wrapper.webupdate.updateUpdater.error_reqeust", "Could not download jdupdate.jar"));
-                progress.finalize(5000);
-                logger.info("Update of " + file.getAbsolutePath() + " failed");
             }
-            new File(file.getAbsolutePath() + ".tmp").delete();
-
+            if (localHash == null || !remoteHash.equalsIgnoreCase(localHash)) {
+                logger.info("Download " + file.getAbsolutePath() + "");
+                try {
+                    URLConnectionAdapter con = br.openGetConnection(getUpdater(trycount) + "?t=" + System.currentTimeMillis());
+                    if (con.isOK()) {
+                        File tmp;
+                        Browser.download(tmp = new File(file.getAbsolutePath() + ".tmp"), con);
+                        localHash = JDHash.getMD5(tmp);
+                        if (remoteHash.equalsIgnoreCase(localHash)) {
+                            if ((!file.exists() || file.delete()) && tmp.renameTo(file)) {
+                                progress.finalize(2000);
+                                logger.info("Update of " + file.getAbsolutePath() + " successfull");
+                                return;
+                            } else {
+                                logger.severe("Rename error: jdupdate.jar");
+                                progress.setColor(Color.RED);
+                                progress.setStatusText(JDLocale.LF("wrapper.webupdate.updateUpdater.error_rename", "Could not rename jdupdate.jar.tmp to jdupdate.jar"));
+                                progress.finalize(5000);
+                                return;
+                            }
+                        } else {
+                            logger.severe("CRC Error while downloading jdupdate.jar");
+                        }
+                    } else {
+                        con.disconnect();
+                    }
+                } catch (Exception e) {
+                }
+                new File(file.getAbsolutePath() + ".tmp").delete();
+            }
         }
-
+        progress.setColor(Color.RED);
+        progress.setStatusText(JDLocale.LF("wrapper.webupdate.updateUpdater.error_reqeust2", "Could not download current jdupdate.jar"));
+        progress.finalize(5000);
+        logger.info("Update of " + file.getAbsolutePath() + " failed");
     }
 
     public synchronized void doWebupdate(final boolean guiCall) {
@@ -218,11 +243,7 @@ public class WebUpdate implements ControlListener {
 
         DownloadController.getInstance().backupDownloadLinksSync();
 
-        try {
-            WebUpdate.updateUpdater();
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Exception occured", e);
-        }
+        WebUpdate.updateUpdater();
         JDIO.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
         logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "jdupdate.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();

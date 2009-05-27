@@ -250,7 +250,7 @@ public class Rapidshare extends PluginForHost {
                     idlist.append("," + getID(u.getDownloadURL()));
                     namelist.append("," + getName(u.getDownloadURL()));
                 }
-                String req="http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1";
+                String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1";
                 br.getPage(req);
 
                 if (br.containsHTML("access flood")) {

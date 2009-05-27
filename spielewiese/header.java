@@ -1,4 +1,4 @@
-import jd.http.Cookie;
+
 
 public class header {
 

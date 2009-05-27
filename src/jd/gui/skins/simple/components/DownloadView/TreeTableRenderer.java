@@ -386,18 +386,13 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             statuspanel.setPainter(((JRendererLabel) co).getPainter());
 
             if (dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
-
                 statuspanel.left.setText(dLink.getLinkStatus().getStatusString());
             } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-
                 statuspanel.left.setText(dLink.getLinkStatus().getStatusString());
             } else if (dLink.getLinkStatus().isFailed()) {
-
                 statuspanel.left.setText(dLink.getLinkStatus().getStatusString());
-
             } else {
                 statuspanel.left.setText(dLink.getLinkStatus().getStatusString());
-
             }
 
             counter = 0;

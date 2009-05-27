@@ -332,8 +332,10 @@ public class AccountController extends SubConfiguration implements ActionListene
                 for (int i = 0; i < accounts.size(); i++) {
                     Account next = accounts.get(i);
                     if (!next.isTempDisabled() && next.isEnabled()) {
-                        if (!this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_GET, pluginForHost.getHost(), next))) ret = next;
-                        break;
+                        if (!this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_GET, pluginForHost.getHost(), next))) {
+                            ret = next;
+                            break;
+                        }
                     }
                 }
             }

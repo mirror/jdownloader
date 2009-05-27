@@ -117,7 +117,7 @@ public class SingleDownloadController extends Thread {
 
     private void handlePlugin() {
         try {
-            this.startTime=System.currentTimeMillis();
+            this.startTime = System.currentTimeMillis();
             linkStatus.setStatusText(JDLocale.L("gui.download.create_connection", "Connecting..."));
             System.out.println("PreDupeChecked: no mirror found!");
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, currentPlugin);
@@ -179,16 +179,16 @@ public class SingleDownloadController extends Thread {
                 onErrorAGBNotSigned(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_FILE_NOT_FOUND:
-                Balloon.showIfHidden(JDLocale.L("ballon.download.error.title","Error"), JDTheme.II("gui.images.bad",32,32), JDLocale.LF("ballon.download.fnf.message","<b>%s<b><hr>File not found",downloadLink.getName()+" ("+Formatter.formatReadable(downloadLink.getDownloadSize())+")"));
-                
+                Balloon.showIfHidden(JDLocale.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDLocale.LF("ballon.download.fnf.message", "<b>%s<b><hr>File not found", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
+
                 onErrorFileNotFound(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_LINK_IN_PROGRESS:
                 onErrorLinkBlock(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_FATAL:
-               Balloon.showIfHidden(JDLocale.L("ballon.download.error.title","Error"), JDTheme.II("gui.images.bad",32,32), JDLocale.LF("ballon.download.fatalerror.message","<b>%s<b><hr>Fatal Plugin Error",downloadLink.getHost()));
-                
+                Balloon.showIfHidden(JDLocale.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDLocale.LF("ballon.download.fatalerror.message", "<b>%s<b><hr>Fatal Plugin Error", downloadLink.getHost()));
+
                 onErrorFatal(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_CAPTCHA:
@@ -206,19 +206,19 @@ public class SingleDownloadController extends Thread {
 
             case LinkStatus.ERROR_DOWNLOAD_FAILED:
                 onErrorChunkloadFailed(downloadLink, currentPlugin);
-               Balloon.showIfHidden(JDLocale.L("ballon.download.error.title","Error"), JDTheme.II("gui.images.bad",32,32), JDLocale.LF("ballon.download.failed.message","<b>%s<b><hr>failed",downloadLink.getName()+" ("+Formatter.formatReadable(downloadLink.getDownloadSize())+")"));
-                
+                Balloon.showIfHidden(JDLocale.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDLocale.LF("ballon.download.failed.message", "<b>%s<b><hr>failed", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
+
                 break;
 
             case LinkStatus.ERROR_PLUGIN_DEFEKT:
                 onErrorPluginDefect(downloadLink, currentPlugin);
-                Balloon.showIfHidden(JDLocale.L("ballon.download.error.title","Error"), JDTheme.II("gui.images.bad",32,32), JDLocale.LF("ballon.download.plugindefect.message","<b>%s<b><hr>Plugin defect",downloadLink.getHost()));
-                
+                Balloon.showIfHidden(JDLocale.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDLocale.LF("ballon.download.plugindefect.message", "<b>%s<b><hr>Plugin defect", downloadLink.getHost()));
+
                 break;
             case LinkStatus.ERROR_NO_CONNECTION:
             case LinkStatus.ERROR_TIMEOUT_REACHED:
-               Balloon.showIfHidden(JDLocale.L("ballon.download.error.title","Error"), JDTheme.II("gui.images.bad",32,32), JDLocale.LF("ballon.download.connectionlost.message","<b>%s<b><hr>Connection lost",downloadLink.getHost()));
-                
+                Balloon.showIfHidden(JDLocale.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDLocale.LF("ballon.download.connectionlost.message", "<b>%s<b><hr>Connection lost", downloadLink.getHost()));
+
                 onErrorNoConnection(downloadLink, currentPlugin);
                 break;
 
@@ -261,7 +261,7 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onDownloadFinishedSuccessFull(DownloadLink downloadLink) {
-        if((System.currentTimeMillis()-startTime)>30000)Balloon.showIfHidden(JDLocale.L("ballon.download.successfull.title","Download"), JDTheme.II("gui.images.ok",32,32), JDLocale.LF("ballon.download.successfull.message","<b>%s<b><hr>finished successfully",downloadLink.getName()+" ("+Formatter.formatReadable(downloadLink.getDownloadSize())+")"));
+        if ((System.currentTimeMillis() - startTime) > 30000) Balloon.showIfHidden(JDLocale.L("ballon.download.successfull.title", "Download"), JDTheme.II("gui.images.ok", 32, 32), JDLocale.LF("ballon.download.successfull.message", "<b>%s<b><hr>finished successfully", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
         downloadLink.setProperty(DownloadLink.STATIC_OUTPUTFILE, downloadLink.getFileOutput());
         if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
             new PackageManager().onDownloadedPackage(downloadLink);
@@ -373,8 +373,8 @@ public class SingleDownloadController extends Thread {
                 status.addStatus(LinkStatus.ERROR_FATAL);
                 status.setErrorMessage(JDLocale.L("controller.status.fileexists.overwritefailed", "Überschreiben fehlgeschlagen ") + downloadLink.getFileOutput());
             }
-            DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
         }
+        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 
     /**

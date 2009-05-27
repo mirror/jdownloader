@@ -1708,7 +1708,7 @@ abstract public class DownloadInterface {
         if (block != null) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             linkstatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-            linkstatus.setErrorMessage(JDLocale.LF("system.download.errors.linkisBlocked", "Mirror %s is loading", block.getPlugin().getHost()));
+            linkstatus.setStatusText(JDLocale.LF("system.download.errors.linkisBlocked", "Mirror %s is loading", block.getPlugin().getHost()));
             return true;
         }
         File fileOutput = new File(downloadLink.getFileOutput());
@@ -1736,6 +1736,7 @@ abstract public class DownloadInterface {
                 }
             } else {
                 linkstatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
+                linkstatus.setErrorMessage(JDLocale.L("downloadlink.status.error.file_exists", "File exists"));
                 return true;
             }
         }

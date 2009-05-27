@@ -49,7 +49,7 @@ public class WebUpdater implements Serializable {
     private static final long serialVersionUID = 1946622313175234371L;
     private static final String UPDATE_ZIP_LOCAL_PATH = "tmp/update.zip";
 
-    private static final int ServerPool = 2;
+    public static final int ServerPool = 2;
     public static HashMap<String, FileUpdate> PLUGIN_LIST = null;
 
     private boolean ignorePlugins = true;
@@ -219,6 +219,7 @@ public class WebUpdater implements Serializable {
     }
 
     private String getZipUrl(int trycount) {
+        if (trycount == 0) trycount = 1;
         if (trycount < 0) {
             trycount = -(trycount % ServerPool);
         } else {
@@ -228,6 +229,7 @@ public class WebUpdater implements Serializable {
     }
 
     private String getZipMD5(int trycount) {
+        if (trycount == 0) trycount = 1;
         if (trycount < 0) {
             trycount = -(trycount % ServerPool);
         } else {
@@ -237,7 +239,7 @@ public class WebUpdater implements Serializable {
     }
 
     private void loadUpdateList() throws Exception {
-        for (int trycount = 0; trycount < 4; trycount++) {
+        for (int trycount = 1; trycount < 10; trycount++) {
             try {
                 String serverHash = br.getPage(getZipMD5(trycount) + "?t=" + System.currentTimeMillis()).trim();
                 String localHash = JDHash.getMD5(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH));
@@ -264,6 +266,7 @@ public class WebUpdater implements Serializable {
     }
 
     private String getListPath(int trycount) {
+        if (trycount == 0) trycount = 1;
         if (trycount < 0) {
             trycount = -(trycount % ServerPool);
         } else {
@@ -273,7 +276,7 @@ public class WebUpdater implements Serializable {
     }
 
     private ArrayList<Server> updateAvailableServers() {
-        for (int trycount = 1; trycount < 4; trycount++) {
+        for (int trycount = 1; trycount < 10; trycount++) {
             try {
                 log("Update Downloadmirrors");
                 br.getPage(getListPath(trycount) + "?t=" + System.currentTimeMillis());

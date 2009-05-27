@@ -529,26 +529,18 @@ public abstract class PluginForHost extends Plugin {
                 if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE) {
                     logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
                     account.setTempDisabled(true);
-                    account.setStatus(downloadLink.getLinkStatus().getErrorMessage());
-                    getPluginConfig().save();
+                    account.setStatus(downloadLink.getLinkStatus().getErrorMessage());                    
                 } else if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_DISABLE) {
-
                     account.setEnabled(false);
-                    account.setStatus(downloadLink.getLinkStatus().getLongErrorMessage());
-
-                    getPluginConfig().save();
+                    account.setStatus(downloadLink.getLinkStatus().getLongErrorMessage());                    
                     logger.severe("Premium Account " + account.getUser() + ": expired:" + downloadLink.getLinkStatus().getLongErrorMessage());
                 } else {
-
                     account.setEnabled(false);
-                    account.setStatus(downloadLink.getLinkStatus().getLongErrorMessage());
-                    getPluginConfig().save();
+                    account.setStatus(downloadLink.getLinkStatus().getLongErrorMessage());                    
                     logger.severe("Premium Account " + account.getUser() + ":" + downloadLink.getLinkStatus().getLongErrorMessage());
                 }
-
             } else {
-                account.setStatus(JDLocale.L("plugins.hoster.premium.status_ok", "Account is ok"));
-                getPluginConfig().save();
+                account.setStatus(JDLocale.L("plugins.hoster.premium.status_ok", "Account is ok"));                
             }
         } else {
             if (t > 0) {
