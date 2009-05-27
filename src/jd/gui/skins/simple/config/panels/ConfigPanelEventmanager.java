@@ -18,11 +18,6 @@ package jd.gui.skins.simple.config.panels;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import java.awt.dnd.DropTarget;
-import java.awt.dnd.DropTargetDragEvent;
-import java.awt.dnd.DropTargetDropEvent;
-import java.awt.dnd.DropTargetEvent;
-import java.awt.dnd.DropTargetListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -55,7 +50,7 @@ import jd.nutils.Screen;
 import jd.utils.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
-public class ConfigPanelEventmanager extends ConfigPanel implements ActionListener, MouseListener, DropTargetListener {
+public class ConfigPanelEventmanager extends ConfigPanel implements ActionListener, MouseListener {
 
     private class InternalTableModel extends AbstractTableModel {
 
@@ -115,8 +110,6 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 
     private Interaction currentInteraction;
 
-    private Interaction draggedInteraction;
-
     private Vector<Interaction> interactions;
 
     private JLabel lblTrigger;
@@ -127,11 +120,10 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 
     private boolean changes;
 
-    @SuppressWarnings("unchecked")
     public ConfigPanelEventmanager(Configuration configuration) {
         super();
         subConfig = SubConfiguration.getConfig(Configuration.CONFIG_INTERACTIONS);
-        interactions = (Vector<Interaction>) subConfig.getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
+        interactions = Interaction.getSavedInteractions();
         initPanel();
         load();
     }
@@ -173,28 +165,6 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 
     }
 
-    public void dragEnter(DropTargetDragEvent e) {
-        draggedInteraction = interactions.get(table.getSelectedRow());
-    }
-
-    public void dragExit(DropTargetEvent dte) {
-    }
-
-    public void dragOver(DropTargetDragEvent e) {
-        int oldId = interactions.indexOf(draggedInteraction);
-        int id = table.rowAtPoint(e.getLocation());
-        interactions.remove(draggedInteraction);
-        interactions.add(id, draggedInteraction);
-        tableModel.fireTableRowsUpdated(Math.min(oldId, id), Math.max(oldId, id));
-        table.getSelectionModel().setSelectionInterval(id, id);
-    }
-
-    public void drop(DropTargetDropEvent e) {
-    }
-
-    public void dropActionChanged(DropTargetDragEvent dtde) {
-    }
-
     private void editEntry() {
         changes = true;
         currentInteraction = interactions.elementAt(table.getSelectedRow());
@@ -231,8 +201,6 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
                 btnEdit.setEnabled((table.getSelectedRow() >= 0) && interactions.get(table.getSelectedRow()).getConfig().getEntries().size() != 0);
             }
         });
-        table.setDragEnabled(true);
-        new DropTarget(table, this);
 
         TableColumn column = null;
         for (int c = 0; c < tableModel.getColumnCount(); c++) {

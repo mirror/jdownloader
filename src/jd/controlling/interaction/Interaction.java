@@ -81,16 +81,19 @@ public abstract class Interaction extends Property implements Serializable {
         INTERACTION_EXIT = new InteractionTrigger(20, JDLocale.L("interaction.trigger.exit", "JD wird beendet"), JDLocale.L("interaction.trigger.exit.desc", "Wird beim Beenden vor dem Schließen des Programms aufgerufen"));
     }
 
+    @SuppressWarnings("unchecked")
+    public static Vector<Interaction> getSavedInteractions() {
+        return (Vector<Interaction>) SubConfiguration.getConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
+    }
+
     /**
      * Gibt alle Interactionen zum Trigger zurück
      * 
      * @param trigger
      * @return Alle Interactionen zum Trigger zurück
      */
-    @SuppressWarnings("unchecked")
     public static Interaction[] getInteractions(InteractionTrigger trigger) {
-
-        Vector<Interaction> interactions = (Vector<Interaction>) SubConfiguration.getConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
+        Vector<Interaction> interactions = getSavedInteractions();
 
         Vector<Interaction> ret = new Vector<Interaction>();
         for (int i = 0; i < interactions.size(); i++) {
@@ -117,11 +120,10 @@ public abstract class Interaction extends Property implements Serializable {
      * @param param
      *            Parameter
      */
-    @SuppressWarnings("unchecked")
     public static void handleInteraction(InteractionTrigger trigger, Object param) {
         logger.finer("Interaction start: Trigger: " + trigger.getName());
         JDUtilities.getController().fireControlEvent(new ControlEvent(trigger, ControlEvent.CONTROL_INTERACTION_CALL, param));
-        Vector<Interaction> interactions = (Vector<Interaction>) SubConfiguration.getConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
+        Vector<Interaction> interactions = Interaction.getSavedInteractions();
         for (Interaction interaction : interactions) {
             if (interaction == null || interaction.getTrigger() == null) continue;
 
@@ -140,12 +142,6 @@ public abstract class Interaction extends Property implements Serializable {
     }
 
     protected transient ConfigContainer config;
-
-    @Deprecated
-    protected transient int lastCallCode = 0;
-
-    @Deprecated
-    protected transient Thread thread = null;
 
     /**
      * Gibt das Event an bei dem Diese Interaction aktiv wird
@@ -204,7 +200,6 @@ public abstract class Interaction extends Property implements Serializable {
      */
     public abstract void initConfig();
 
-
     /**
      * ruft die doInteraction Funktion auf. Und setzt das Ergebnis als callCode.
      * Der Statuscode kann mit getCallCode abgerufen werden
@@ -240,7 +235,7 @@ public abstract class Interaction extends Property implements Serializable {
         this.trigger = trigger;
     }
 
-    //@Override
+    // @Override
     public abstract String toString();
 
 }
