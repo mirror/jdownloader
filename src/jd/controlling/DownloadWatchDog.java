@@ -59,7 +59,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
     private boolean paused = false;
 
-    private Integer oldSpeed = null;
+    private int oldSpeed2 = 0;
 
     private int totalSpeed = 0;
 
@@ -367,18 +367,19 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     public void pause(boolean value) {
         if (paused == value) return;
         paused = value;
-
         if (value) {
-            oldSpeed = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
-            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 1);
-            logger.info("Pause enabled: Reduced downloadspeed to 1 kb/s");
+            oldSpeed2 = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 10);
+            logger.info("Pause enabled: Reduced downloadspeed to 10 kb/s");
         } else {
-            if (oldSpeed != null) SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, oldSpeed);
-            oldSpeed = null;
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, oldSpeed2);
             logger.info("Pause disabled: Switch back to old downloadspeed");
         }
-
         SubConfiguration.getConfig("DOWNLOAD").save();
+    }
+
+    public boolean isPause() {
+        return paused;
     }
 
     private synchronized void startWatchDogThread() {

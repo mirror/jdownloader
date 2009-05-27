@@ -112,8 +112,11 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
 
                     if (!entry.equals()) {
                         if (!manualupdate) {
-                            new WebUpdater().updateUpdatefile(entry);
-                            logger.info("Updated plugin: " + plg);
+                            if (!new WebUpdater().updateUpdatefile(entry)) {
+                                logger.severe("Could not update plugin: " + plg);
+                            } else {
+                                logger.info("Updated plugin: " + plg);
+                            }
                         } else {
                             logger.info("New plugin: " + plg + " available, but update-on-the-fly is disabled!");
                         }
@@ -135,7 +138,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
             this.loadedPlugin = (Plugin) con.newInstance(new Object[] { this });
 
             return loadedPlugin;
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.info("Plugin Exception!");
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
@@ -201,6 +204,8 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         } catch (InvocationTargetException e) {
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         } catch (NoSuchMethodException e) {
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+        } catch (Exception e) {
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
         return null;

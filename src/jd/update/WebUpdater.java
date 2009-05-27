@@ -48,9 +48,8 @@ public class WebUpdater implements Serializable {
 
     private static final long serialVersionUID = 1946622313175234371L;
     private static final String UPDATE_ZIP_LOCAL_PATH = "tmp/update.zip";
-    private static final String UPDATE_ZIP_URL = "http://update1.jdownloader.org/update.zip";
-    private static String LISTPATH = "http://update1.jdownloader.org/server.list";
-    private static String UPDATE_ZIP_HASH = "http://update1.jdownloader.org/update.md5";
+
+    private static final int ServerPool = 2;
     public static HashMap<String, FileUpdate> PLUGIN_LIST = null;
 
     private boolean ignorePlugins = true;
@@ -124,7 +123,7 @@ public class WebUpdater implements Serializable {
                 log("UPDATE AV. " + file.getLocalPath());
                 continue;
             }
-            if(new File(file.getLocalFile(),".noupdate").exists()){
+            if (new File(file.getLocalFile(), ".noupdate").exists()) {
                 log("User excluded. " + file.getLocalPath());
             }
             it.remove();
@@ -219,57 +218,105 @@ public class WebUpdater implements Serializable {
         this.ignorePlugins = ignorePlugins;
     }
 
+    private String getZipUrl(int trycount) {
+        if (trycount < 0) {
+            trycount = -(trycount % ServerPool);
+        } else {
+            trycount = trycount % ServerPool;
+        }
+        return "http://update" + trycount + ".jdownloader.org/update.zip";
+    }
+
+    private String getZipMD5(int trycount) {
+        if (trycount < 0) {
+            trycount = -(trycount % ServerPool);
+        } else {
+            trycount = trycount % ServerPool;
+        }
+        return "http://update" + trycount + ".jdownloader.org/update.md5";
+    }
+
     private void loadUpdateList() throws Exception {
-        String serverHash = br.getPage(UPDATE_ZIP_HASH + "?t=" + System.currentTimeMillis()).trim();
-        String localHash = JDHash.getMD5(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH));
-        if (!serverHash.equalsIgnoreCase(localHash)) {
-            Browser.download(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH), UPDATE_ZIP_URL + "?t=" + System.currentTimeMillis());
-        }
-        UnZip u = new UnZip(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH), JDUtilities.getResourceFile("tmp/"));
+        for (int trycount = 0; trycount < 4; trycount++) {
+            try {
+                String serverHash = br.getPage(getZipMD5(trycount) + "?t=" + System.currentTimeMillis()).trim();
+                String localHash = JDHash.getMD5(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH));
+                if (!serverHash.equalsIgnoreCase(localHash)) {
+                    Browser.download(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH), getZipUrl(trycount) + "?t=" + System.currentTimeMillis());
+                }
+                UnZip u = new UnZip(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH), JDUtilities.getResourceFile("tmp/"));
 
-        File[] efiles = u.extract();
-        fileMap = new HashMap<String, File>();
-        for (File f : efiles) {
-            fileMap.put(f.getName().toLowerCase(), f);
+                File[] efiles = u.extract();
+                fileMap = new HashMap<String, File>();
+                for (File f : efiles) {
+                    fileMap.put(f.getName().toLowerCase(), f);
+                }
+            } catch (Exception e) {
+            }
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                continue;
+            }
         }
+        throw new Exception("could not load Updatelist");
+    }
 
+    private String getListPath(int trycount) {
+        if (trycount < 0) {
+            trycount = -(trycount % ServerPool);
+        } else {
+            trycount = trycount % ServerPool;
+        }
+        return "http://update" + trycount + ".jdownloader.org/server.list";
     }
 
     private ArrayList<Server> updateAvailableServers() {
-        try {
-            log("Update Downloadmirrors");
-            br.getPage(LISTPATH + "?t=" + System.currentTimeMillis());
-            int total = 0;
-            ArrayList<Server> servers = new ArrayList<Server>();
-            Server serv;
-            boolean auto = false;
-            for (String[] match : br.getRegex("(\\-?\\d+)\\:([^\r^\n]*)").getMatches()) {
-
-                servers.add(serv = new Server(Integer.parseInt(match[0]), match[1].trim()));
-                if (serv.getPercent() < 0) auto = true;
-                total += serv.getPercent();
-            }
-            for (Server s : servers) {
-                if (auto) {
-                    s.setPercent(-1);
-                } else {
-                    s.setPercent((s.getPercent() * 100) / total);
+        for (int trycount = 0; trycount < 4; trycount++) {
+            try {
+                log("Update Downloadmirrors");
+                br.getPage(getListPath(trycount) + "?t=" + System.currentTimeMillis());
+                int total = 0;
+                ArrayList<Server> servers = new ArrayList<Server>();
+                Server serv;
+                boolean auto = false;
+                for (String[] match : br.getRegex("(\\-?\\d+)\\:([^\r^\n]*)").getMatches()) {
+                    servers.add(serv = new Server(Integer.parseInt(match[0]), match[1].trim()));
+                    if (serv.getPercent() < 0) auto = true;
+                    total += serv.getPercent();
                 }
-                log("Updateserver: " + s);
+                for (Server s : servers) {
+                    if (auto) {
+                        s.setPercent(-1);
+                    } else {
+                        s.setPercent((s.getPercent() * 100) / total);
+                    }
+                    log("Updateserver: " + s);
+                }
+                if (servers.size() > 0) {
+                    WebUpdater.getConfig("WEBUPDATE").setProperty("SERVERLIST", servers);
+                }
+                return getAvailableServers();
+            } catch (Exception e) {
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
             }
-            if (servers.size() > 0) {
-                WebUpdater.getConfig("WEBUPDATE").setProperty("SERVERLIST", servers);
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                continue;
             }
-        } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }
         return getAvailableServers();
-
     }
 
     @SuppressWarnings("unchecked")
     private ArrayList<Server> getAvailableServers() {
-        return (ArrayList<Server>) WebUpdater.getConfig("WEBUPDATE").getProperty("SERVERLIST");
+        try {
+            return (ArrayList<Server>) WebUpdater.getConfig("WEBUPDATE").getProperty("SERVERLIST");
+        } catch (Exception e) {
+            WebUpdater.getConfig("WEBUPDATE").setProperty("SERVERLIST", new ArrayList<Server>());
+            return (ArrayList<Server>) WebUpdater.getConfig("WEBUPDATE").getProperty("SERVERLIST");
+        }
     }
 
     public StringBuilder getLogger() {
@@ -328,20 +375,16 @@ public class WebUpdater implements Serializable {
         for (FileUpdate file : files) {
             try {
                 log("Update file: " + file.getLocalPath());
-
                 if (updateUpdatefile(file)) {
-
                     log(file.toString());
                     log("Successfull\r\n");
-
                 } else {
                     log(file.toString());
                     log("Failed\r\n");
                     if (progressload != null) progressload.setForeground(Color.RED);
-
                 }
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 log(e.getLocalizedMessage());
                 log(file.toString());
                 log("Failed\r\n");
@@ -359,11 +402,8 @@ public class WebUpdater implements Serializable {
         }
     }
 
-    public boolean updateUpdatefile(FileUpdate file) throws IOException {
-
-        file.reset(getAvailableServers());
-        return file.update();
-
+    public boolean updateUpdatefile(FileUpdate file) {
+        return file.update(getAvailableServers());
     }
 
     /**
