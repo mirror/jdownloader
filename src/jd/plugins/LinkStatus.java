@@ -237,24 +237,13 @@ public class LinkStatus implements Serializable {
             }
             return ret;
         }
-        if (hasStatus(LinkStatus.FINISHED)) {
-
-        return (this.getStatusText() != null ? "> " + this.getStatusText() : ""); }
+        if (hasStatus(LinkStatus.FINISHED)) return this.getStatusText() != null ? "> " + this.getStatusText() : "";
 
         if (!downloadLink.isEnabled() && !hasStatus(LinkStatus.FINISHED)) {
-            if (downloadLink.isAborted()) {
-                ret += JDLocale.L("gui.downloadlink.aborted", "[interrupted]");
-            } else {
-                // ret += JDLocale.L("gui.downloadlink.disabled",
-                // "[deaktiviert]");
-            }
-            if (errorMessage != null) {
-
-                ret += ": " + errorMessage;
-            }
+            if (downloadLink.isAborted()) ret += JDLocale.L("gui.downloadlink.aborted", "[interrupted]") + ": ";
+            if (errorMessage != null) ret += errorMessage;
             return ret;
         }
-
         if (isFailed()) { return getLongErrorMessage(); }
 
         if (hasStatus(ERROR_IP_BLOCKED) && downloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
