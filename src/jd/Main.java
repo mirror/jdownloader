@@ -490,7 +490,7 @@ public class Main {
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
 
-        JDFileReg.registerFileExts();
+       
 
         try {
             Thread.sleep(3000);

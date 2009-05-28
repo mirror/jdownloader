@@ -36,6 +36,7 @@ import jd.nutils.Executer;
 import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.nutils.Screen;
+import jd.utils.JDFileReg;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -143,6 +144,7 @@ public class Installer {
             exec.start();
 
         }
+        JDFileReg.registerFileExts();
 
     }
 

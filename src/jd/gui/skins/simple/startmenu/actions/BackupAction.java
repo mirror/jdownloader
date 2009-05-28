@@ -41,7 +41,7 @@ public class BackupAction extends StartAction {
             public void run() {
                 inprogress = true;
                 DownloadController.getInstance().backupDownloadLinksSync();
-                Balloon.show("Backup", JDTheme.II("gui.images.save", 32, 32), JDLocale.LF("gui.backup.finished", "Linklist successfully backuped!"));
+                Balloon.show(JDLocale.L("gui.balloon.backup.title","Backup"), JDTheme.II("gui.images.save", 32, 32), JDLocale.LF("gui.backup.finished", "Linklist successfully backuped!"));
                 inprogress = false;
             }
         }.start();

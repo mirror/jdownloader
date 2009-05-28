@@ -802,7 +802,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                         }
                     }
                     logger.info("All downloads finished");
-//                    Balloon.show(title, icon, htmlmessage)
+                       
                     break;
                 case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                     break;
@@ -813,9 +813,13 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     setTitle(JDUtilities.getJDTitle());
                     break;
                 case ControlEvent.CONTROL_DOWNLOAD_START:
+                    Balloon.showIfHidden(JDLocale.L("ballon.download.title", "Download"), JDTheme.II("gui.images.play", 32, 32), JDLocale.L("ballon.download.finished.started", "Download started"));
+                    
                     if (speedmeter != null) speedmeter.start();
                     break;
                 case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                    Balloon.showIfHidden(JDLocale.L("ballon.download.title", "Download"), JDTheme.II("gui.images.play", 32, 32), JDLocale.L("ballon.download.finished.stopped", "Download stopped"));
+                    
                     if (speedmeter != null) speedmeter.stop();
                     break;
                 }
