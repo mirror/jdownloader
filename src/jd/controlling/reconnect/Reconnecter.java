@@ -141,7 +141,7 @@ public class Reconnecter {
         /* überhaupt ein reconnect angefragt? */
         if (RECONNECT_REQUESTS > 0) {
             /* erstma schau ob überhaupt eingeschalten */
-            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
+            if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
                 if (System.currentTimeMillis() - lastIPUpdate > 1000 * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) ret = Reconnecter.checkExternalIPChange();
                 return ret;
             }
@@ -218,15 +218,33 @@ public class Reconnecter {
 
         if (!ret) {
             progress.setColor(Color.RED);
-            progress.setStatusText(JDLocale.LF("gui.reconnect.progress.status.failed", "Reconnect failed"));
+            progress.setStatusText(JDLocale.L("gui.reconnect.progress.status.failed", "Reconnect failed"));
 
         } else {
-            progress.setStatusText(JDLocale.LF("gui.reconnect.progress.status.success", "Reconnect successfull"));
+            progress.setStatusText(JDLocale.L("gui.reconnect.progress.status.success", "Reconnect successfull"));
 
         }
 
         progress.finalize(4000);
         return ret;
+    }
+
+    public static boolean doManualReconnect() {
+        boolean oldState = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
+
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
+
+        boolean restartDownloads = JDUtilities.getController().stopDownloads();
+
+        boolean success = Reconnecter.waitForNewIP(1);
+
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, oldState);
+
+        if (restartDownloads) {
+            JDUtilities.getController().startDownloads();
+        }
+
+        return success;
     }
 
 }

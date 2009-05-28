@@ -134,36 +134,26 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
             new Thread() {
                 // @Override
                 public void run() {
-                    boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
-                    if (Reconnecter.waitForNewIP(1)) {
+                    if (Reconnecter.doManualReconnect()) {
                         progress.setStatusText(JDLocale.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
 
                         message.setText(JDLocale.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
                         success.setIcon(JDTheme.II("gui.images.selected", 32, 32));
                         success.setEnabled(true);
                         currentip.setText(JDUtilities.getIPAddress(null));
-
                     } else {
-
                         progress.setStatusText(JDLocale.L("gui.warning.reconnectFailed", "Reconnect failed!"));
+                        progress.setColor(Color.RED);
 
+                        message.setText(JDLocale.L("gui.warning.reconnectFailed", "Reconnect failed!"));
                         success.setIcon(JDTheme.II("gui.images.unselected", 32, 32));
                         success.setEnabled(true);
                         currentip.setText(JDUtilities.getIPAddress(null));
-                        message.setText(JDLocale.L("gui.warning.reconnectFailed", "Reconnect failed!"));
-                        if (JDUtilities.getController().getRunningDownloadNum() > 0) {
-                            message.setText(JDLocale.L("gui.warning.reconnectFailedRunningDownloads", "Please stop all running Downloads first!"));
-                            progress.setStatusText(JDLocale.L("gui.warning.reconnectFailedRunningDownloads", "Please stop all running Downloads first!"));
-                        }
-                        progress.setColor(Color.RED);
                     }
 
                     timer.interrupt();
                     progress.setStatus(100);
                     progress.finalize(5000);
-
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, tmp);
 
                 }
             }.start();

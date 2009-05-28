@@ -270,20 +270,14 @@ public class JDSimpleWebserverRequestHandler {
                         try {
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
-
                             JDLogger.exception(e);
                         }
-                        boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
-                        if (JDUtilities.getController().getRunningDownloadNum() > 0) {
-                            JDUtilities.getController().stopDownloads();
-                        }
-                        if (Reconnecter.waitForNewIP(1)) {
+
+                        if (Reconnecter.doManualReconnect()) {
                             logger.info("Reconnect erfolgreich");
                         } else {
                             logger.info("Reconnect fehlgeschlagen");
                         }
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, tmp);
                     }
                 }).start();
 

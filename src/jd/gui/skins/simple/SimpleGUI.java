@@ -835,49 +835,17 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public void doManualReconnect() {
-
-        if (!SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-            int confirm = JOptionPane.showConfirmDialog(this, JDLocale.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"), "", JOptionPane.YES_NO_OPTION);
-            if (confirm == JOptionPane.YES_OPTION) {
-                final boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
-
-                new Thread(new Runnable() {
-                    public void run() {
-
-                        boolean restart = false;
-                        restart = JDUtilities.getController().stopDownloads();
-                        if (Reconnecter.waitForNewIP(1)) {
-                            showMessageDialog(JDLocale.L("gui.reconnect.success", "Reconnect erfolgreich"));
-                        } else {
-                            showMessageDialog(JDLocale.L("gui.reconnect.failed", "Reconnect fehlgeschlagen"));
-                        }
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, tmp);
-
-                        if (restart) {
-                            JDUtilities.getController().startDownloads();
-                        }
-                    }
-                }).start();
-
-            }
-        } else {
-            new Thread() {
+        if (JOptionPane.showConfirmDialog(SimpleGUI.this, JDLocale.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"), "", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+            new Thread(new Runnable() {
                 public void run() {
-                    boolean restart = false;
-                    restart = JDUtilities.getController().stopDownloads();
-                    if (Reconnecter.waitForNewIP(1)) {
+                    if (Reconnecter.doManualReconnect()) {
                         showMessageDialog(JDLocale.L("gui.reconnect.success", "Reconnect erfolgreich"));
                     } else {
                         showMessageDialog(JDLocale.L("gui.reconnect.failed", "Reconnect fehlgeschlagen"));
                     }
-                    if (restart) {
-                        JDUtilities.getController().startDownloads();
-                    }
                 }
-            }.start();
+            }).start();
         }
-
     }
 
     public String showCountdownUserInputDialog(final String message, final String def) {

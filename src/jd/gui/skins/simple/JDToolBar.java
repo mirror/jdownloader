@@ -62,7 +62,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     private JButton reconnectButton;
 
-    private JToggleButton update;
+    private JButton update;
 
     public static final int ENTRY_PAUSE = 1 << 0;
     public static final int ENTRY_RECONNECT = 1 << 1;
@@ -186,7 +186,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
         });
 
-        add(update = new JToggleButton(JDTheme.II("gui.images.update", 24, 24)), BUTTON_CONSTRAINTS);
+        add(update = new JButton(JDTheme.II("gui.images.update", 24, 24)), BUTTON_CONSTRAINTS);
         update.setToolTipText(JDLocale.L("gui.menu.action.update.desc", "Check for new updates"));
 
         if (Main.isBeta()) {
