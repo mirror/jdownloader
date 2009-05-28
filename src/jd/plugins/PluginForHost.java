@@ -520,7 +520,7 @@ public abstract class PluginForHost extends Plugin {
             }
 
             long traffic = downloadLink.getDownloadCurrent() - before;
-            if (traffic>0&&account.getProperty(AccountInfo.PARAM_INSTANCE) != null) {
+            if (traffic > 0 && account.getProperty(AccountInfo.PARAM_INSTANCE) != null) {
                 AccountInfo ai = (AccountInfo) account.getProperty(AccountInfo.PARAM_INSTANCE);
                 ai.setTrafficLeft(ai.getTrafficLeft() - traffic);
             }
@@ -529,18 +529,18 @@ public abstract class PluginForHost extends Plugin {
                 if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE) {
                     logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
                     account.setTempDisabled(true);
-                    account.setStatus(downloadLink.getLinkStatus().getErrorMessage());                    
+                    account.setStatus(downloadLink.getLinkStatus().getErrorMessage());
                 } else if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_DISABLE) {
                     account.setEnabled(false);
-                    account.setStatus(downloadLink.getLinkStatus().getLongErrorMessage());                    
+                    account.setStatus(downloadLink.getLinkStatus().getLongErrorMessage());
                     logger.severe("Premium Account " + account.getUser() + ": expired:" + downloadLink.getLinkStatus().getLongErrorMessage());
                 } else {
                     account.setEnabled(false);
-                    account.setStatus(downloadLink.getLinkStatus().getLongErrorMessage());                    
+                    account.setStatus(downloadLink.getLinkStatus().getLongErrorMessage());
                     logger.severe("Premium Account " + account.getUser() + ":" + downloadLink.getLinkStatus().getLongErrorMessage());
                 }
             } else {
-                account.setStatus(JDLocale.L("plugins.hoster.premium.status_ok", "Account is ok"));                
+                account.setStatus(JDLocale.L("plugins.hoster.premium.status_ok", "Account is ok"));
             }
         } else {
             if (t > 0) {
