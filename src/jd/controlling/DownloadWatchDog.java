@@ -507,7 +507,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                 if (!reachedStopMark()) ret = setDownloadActive();
                             }
                             if (ret == 0) {
-                                if (!hasInProgressLinks || !hasTempDisabledLinks && !hasInProgressLinks && !hasWaittimeLinks && getNextDownloadLink() == null && activeDownloads == 0) {
+                                if (!hasTempDisabledLinks && !hasInProgressLinks && !hasWaittimeLinks && getNextDownloadLink() == null && activeDownloads == 0) {
                                     /*
                                      * nur runterzählen falls auch erlaubt war
                                      * nen download zu starten
