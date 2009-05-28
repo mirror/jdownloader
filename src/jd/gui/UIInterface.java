@@ -45,10 +45,6 @@ public interface UIInterface extends ControlListener {
      * GUI normal anzeigen (Defaulteinstellungen)
      */
     public static int WINDOW_STATUS_NORMAL = 3;
-    /**
-     * GUI in den Tray legen
-     */
-    public static int WINDOW_STATUS_TRAYED = 2;
 
     /**
      * Fügt Links zum Linkgrabber hinzu

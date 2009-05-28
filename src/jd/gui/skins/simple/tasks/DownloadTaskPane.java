@@ -34,7 +34,6 @@ import jd.utils.JDUtilities;
 public class DownloadTaskPane extends TaskPanel {
 
     private static final long serialVersionUID = -9134449913836967453L;
-    public static final int ACTION_SHOW_PANEL = 1;
 
     private JLabel packages;
     private JLabel downloadlinks;

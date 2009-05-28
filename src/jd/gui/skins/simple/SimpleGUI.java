@@ -68,7 +68,6 @@ import jd.controlling.LinkGrabberControllerListener;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
-import jd.controlling.interaction.Interaction;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.gui.JDLookAndFeelManager;
@@ -743,7 +742,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
             public void run() {
                 switch (event.getID()) {
                 case ControlEvent.CONTROL_INIT_COMPLETE:
-                    setTitle(JDUtilities.getJDTitle());
+                    // setTitle(JDUtilities.getJDTitle());
                     SimpleGUI.this.setWaiting(false);
 
                     SimpleGUI.this.setEnabled(true);
@@ -776,9 +775,12 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     break;
                 case ControlEvent.CONTROL_PLUGIN_ACTIVE:
                     logger.info("Module started: " + event.getSource());
-                    if (event.getSource() instanceof Interaction) {
-                        setTitle(JDUtilities.JD_TITLE + " | " + JDLocale.L("gui.titleaddaction", "Action: ") + " " + ((Interaction) event.getSource()).getInteractionName());
-                    }
+                    // if (event.getSource() instanceof Interaction) {
+                    // setTitle(JDUtilities.JD_TITLE + " | " +
+                    // JDLocale.L("gui.titleaddaction", "Action: ") + " " +
+                    // ((Interaction) event.getSource()).getInteractionName());
+                    // }
+                    setTitle(JDUtilities.getJDTitle());
                     break;
                 case ControlEvent.CONTROL_SYSTEM_EXIT:
                     SimpleGUI.this.setVisible(false);
@@ -786,13 +788,13 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     break;
                 case ControlEvent.CONTROL_PLUGIN_INACTIVE:
                     logger.info("Module finished: " + event.getSource());
-                    if (event.getSource() instanceof Interaction) {
-                        if (Interaction.areInteractionsInProgress()) {
-                            setTitle(JDUtilities.getJDTitle());
-                        }
-                    }
+                    // if (event.getSource() instanceof Interaction) {
+                    // if (Interaction.areInteractionsInProgress()) {
+                    // setTitle(JDUtilities.getJDTitle());
+                    // }
+                    // }
+                    setTitle(JDUtilities.getJDTitle());
                     break;
-
                 case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                     if (speedmeter != null) speedmeter.stop();
                     for (DownloadLink link : DownloadController.getInstance().getAllDownloadLinks()) {
@@ -804,14 +806,14 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     logger.info("All downloads finished");
                        
                     break;
-                case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-                    break;
-                case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE:
-                    setTitle(JDUtilities.getJDTitle() + " - terminate");
-                    break;
-                case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
-                    setTitle(JDUtilities.getJDTitle());
-                    break;
+                // case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
+                // break;
+                // case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE:
+                // setTitle(JDUtilities.getJDTitle() + " - terminate");
+                // break;
+                // case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
+                // setTitle(JDUtilities.getJDTitle());
+                // break;
                 case ControlEvent.CONTROL_DOWNLOAD_START:
                     Balloon.showIfHidden(JDLocale.L("ballon.download.title", "Download"), JDTheme.II("gui.images.play", 32, 32), JDLocale.L("ballon.download.finished.started", "Download started"));
                     
@@ -869,8 +871,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
     public void setFrameStatus(int id) {
         switch (id) {
-        case UIInterface.WINDOW_STATUS_TRAYED:
-            break;
         case UIInterface.WINDOW_STATUS_MAXIMIZED:
             setState(JFrame.MAXIMIZED_BOTH);
             break;
