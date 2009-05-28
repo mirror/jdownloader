@@ -96,25 +96,25 @@ public class Updater {
     public static void main(String[] args) throws Exception {
 
         Updater upd = new Updater();
-//        System.out.println("STATUS: Webupdate");
-//        upd.webupdate();
-//        System.out.println("STATUS: Webupdate ende");
-//        System.out.println("STATUS: Scan local");
-//        upd.removeFileOverhead();
-//        if (JOptionPane.showConfirmDialog(upd.getFrame(), "SVN UPdate") == JOptionPane.OK_OPTION) {
-//            System.out.println("STATUS: update svn");
-//            upd.updateSource();
-//        }
-////        System.out.println("STATUS: move plugins");
-////        upd.movePlugins(getCFG("plugins_dir"));
-//        System.out.println("STATUS: FINISHED");
-//        ArrayList<File> list = upd.getFileList();
+        System.out.println("STATUS: Webupdate");
+        upd.webupdate();
+        System.out.println("STATUS: Webupdate ende");
+        System.out.println("STATUS: Scan local");
+        upd.removeFileOverhead();
+        if (JOptionPane.showConfirmDialog(upd.getFrame(), "SVN UPdate") == JOptionPane.OK_OPTION) {
+            System.out.println("STATUS: update svn");
+            upd.updateSource();
+        }
+        System.out.println("STATUS: move plugins");
+        upd.movePlugins(getCFG("plugins_dir"));
+        System.out.println("STATUS: FINISHED");
+        ArrayList<File> list = upd.getFileList();
 
-//        upd.upload(list);
+        upd.upload(list);
 
-//        upd.merge();
+        upd.merge();
         upd.uploadHashList();
-//        upd.spread(list);
+        upd.spread(list);
         System.exit(0);
     }
 

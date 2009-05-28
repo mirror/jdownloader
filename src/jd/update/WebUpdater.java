@@ -301,7 +301,7 @@ public class WebUpdater implements Serializable {
                 }
                 return getAvailableServers();
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                e.printStackTrace();
             }
             try {
                 Thread.sleep(250);
@@ -387,8 +387,8 @@ public class WebUpdater implements Serializable {
                     if (progressload != null) progressload.setForeground(Color.RED);
                 }
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-                log(e.getLocalizedMessage());
+              e.printStackTrace();
+              log(e.getLocalizedMessage());
                 log(file.toString());
                 log("Failed\r\n");
                 if (progressload != null) progressload.setForeground(Color.RED);

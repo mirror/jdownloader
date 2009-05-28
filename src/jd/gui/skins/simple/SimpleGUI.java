@@ -48,6 +48,7 @@ import javax.swing.JRootPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
@@ -110,6 +111,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.utils.JDFileReg;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -354,6 +356,16 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         // glass.setOpaque(false);
 
         glass.setVisible(true);
+        
+        
+//        JDUtilities.getController().addControlListener(new ConfigPropertyListener(Configuration.PARAM_USE_GLOBAL_PREMIUM) {
+//
+//            @Override
+//            public void onPropertyChanged(Property source, String valid) {
+//            
+//            }
+//
+//        } );
     }
 
     public void setWaiting(boolean b) {

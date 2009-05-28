@@ -39,7 +39,7 @@ public class SimpleGuiConstants {
     public transient static SubConfiguration GUI_CONFIG = null;
     public static final String GUICONFIGNAME = "simpleGUI";
     public static final String PARAM_SIDEBAR_COLLAPSED = "PARAM_SIDEBAR_COLLAPSED";
-    public static final String ANIMATION_ENABLED = "ANIMATION_ENABLED";
+    public static final String ANIMATION_ENABLED = "ANIMATION_ENABLED2";
     public static final String DECORATION_ENABLED = "DECORATION_ENABLED";
     public static final String PARAM_INSERT_NEW_LINKS_AT = "PARAM_INSERT_NEW_LINKS_AT2";
     public static final int TOP = 1<<0;

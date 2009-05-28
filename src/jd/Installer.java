@@ -87,6 +87,7 @@ public class Installer {
         }
         int answer = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("installer.firefox.title", "Install firefox integration?"), JDLocale.L("installer.firefox.message", "Do you want to integrate JDownloader to Firefox?"), null, null, null);
         if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) installFirefoxaddon();
+        JDFileReg.registerFileExts();
         JDUtilities.getConfiguration().save();
 
         if (OSDetector.isWindows()) {
@@ -144,7 +145,7 @@ public class Installer {
             exec.start();
 
         }
-        JDFileReg.registerFileExts();
+       
 
     }
 

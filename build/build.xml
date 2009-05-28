@@ -99,6 +99,7 @@
 				<include name="jd/update/*.class" />
 				<include name="jd/config/*.class" />
 				<include name="jd/http/**" />
+				<include name="jd/controlling/**" />
 				<include name="jd/nutils/**" />
 				<include name="jd/JDClassLoader.class" />
 				<include name="jd/utils/*.class" />
@@ -109,7 +110,7 @@
 			</fileset>
 			<zipfileset src="ressourcen/libs/hsqldb.jar" excludes="META-INF/*" />
 		</jar>
-
+	
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
 

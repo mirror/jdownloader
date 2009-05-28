@@ -44,14 +44,23 @@ public class OptionalPluginWrapper extends PluginWrapper {
         this.id = id;
         this.version = d;
         this.name = name;
-        if (this.isEnabled()) {
-            this.getPlugin();
-        }
+
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 
         try {
-            jdClassLoader.loadClass("jd.plugins.optional." + string);
-            OPTIONAL_WRAPPER.add(this);
+            Class<?> cl;
+            if ((cl = jdClassLoader.loadClass(this.getClassName())) != null) {
+                System.out.println("OPTIONAL loaded " + string + " : " + cl);
+
+                OPTIONAL_WRAPPER.add(this);
+
+                if (this.isEnabled()) {
+                    this.getPlugin();
+                }
+            } else {
+                System.out.println("OPTIONAL NOT loaded " + string + " : " + cl);
+
+            }
         } catch (ClassNotFoundException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -82,6 +91,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
 
     // @Override
     public PluginOptional getPlugin() {
+        if (!OPTIONAL_WRAPPER.contains(this)) return null;
         if (!isEnabled()) return null;
         if (loadedPlugin == null) loadPlugin();
         return (PluginOptional) loadedPlugin;

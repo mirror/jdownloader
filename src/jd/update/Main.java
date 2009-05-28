@@ -37,7 +37,7 @@ import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.EmptyBorder;
 
 import jd.config.SubConfiguration;
-import jd.controlling.JDLogger;
+
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -170,7 +170,7 @@ public class Main {
             JDIO.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
             System.exit(0);
         } catch (Exception e) {
-            JDLogger.exception(e);
+         e.printStackTrace();
 
             Main.log(log, "ERROR " + e.getLocalizedMessage());
 
@@ -214,7 +214,7 @@ public class Main {
                 }
             } catch (Exception e) {
 
-                JDLogger.exception(e);
+           e.printStackTrace();
 
                 StackTraceElement[] trace = e.getStackTrace();
                 for (int i = 0; i < trace.length; i++)
@@ -386,7 +386,7 @@ public class Main {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e1) {
-            JDLogger.exception(e1);
+        e1.printStackTrace();
         }
 
         int n = 5;
