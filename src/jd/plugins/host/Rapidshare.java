@@ -558,7 +558,7 @@ public class Rapidshare extends PluginForHost {
                 }
 
             }
-          if(true) throw new PluginException(LinkStatus.ERROR_PREMIUM, "TEST", LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+          if(false) throw new PluginException(LinkStatus.ERROR_PREMIUM, "TEST", LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
                 if (Sniffy.hasSniffer()) throw new SnifferException();
             }

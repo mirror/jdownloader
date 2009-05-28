@@ -322,7 +322,11 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     public Account getValidAccount(PluginForHost pluginForHost) {
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return null;
+      
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)){
+            logger.finest("Premium globally disabled") ;
+            return null;
+        }
         synchronized (hosteraccounts) {
             ArrayList<Account> accounts = new ArrayList<Account>();
             accounts.addAll(provider.collectAccountsFor(pluginForHost));
@@ -332,12 +336,16 @@ public class AccountController extends SubConfiguration implements ActionListene
                 for (int i = 0; i < accounts.size(); i++) {
                     Account next = accounts.get(i);
                     if (!next.isTempDisabled() && next.isEnabled()) {
+                        logger.finest("Found account "+next.getUser()) ;
                         if (!this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_GET, pluginForHost.getHost(), next))) {
                             ret = next;
                             break;
                         }
                     }
                 }
+            }
+            if(ret==null){
+                logger.finest("No Account found") ;
             }
             return ret;
         }

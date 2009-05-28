@@ -59,7 +59,15 @@ public class Account extends Property {
     }
 
     public boolean isTempDisabled() {
-        if (tempDisabled && (System.currentTimeMillis() - tmpDisabledTime) > this.getTmpDisabledInterval()) tempDisabled = false;
+        logger.finest(user + " tempDisabled: " + tempDisabled);
+        logger.finest(user + " tmpDisabledTime: " + tmpDisabledTime + " " + (System.currentTimeMillis() - tmpDisabledTime) + ">" + getTmpDisabledInterval());
+        if (!tempDisabled) {
+            logger.finest(user + " ret: " + tempDisabled);
+            return false;
+        }
+
+        if ((System.currentTimeMillis() - tmpDisabledTime) > this.getTmpDisabledInterval()) tempDisabled = false;
+        logger.finest(user + " ret: " + tempDisabled);
         return tempDisabled;
     }
 
@@ -85,8 +93,13 @@ public class Account extends Property {
     }
 
     public void setTempDisabled(boolean tempDisabled) {
-        if (this.tempDisabled == tempDisabled) return;
         this.tmpDisabledTime = System.currentTimeMillis();
+        if (tempDisabled) {
+            logger.finest("Account " + user + " disabled for " + tmpDisabledInterval + "ms");
+        } else {
+            logger.finest("Account " + user + " free to use");
+        }
+        if (this.tempDisabled == tempDisabled) return;
         this.tempDisabled = tempDisabled;
     }
 
