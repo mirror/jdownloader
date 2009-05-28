@@ -210,9 +210,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
     }
 
     private String jacKeyForMethod(int index) {
-        String serviceName = methods.get(index).getServiceName();
-        if (serviceName != null) serviceName = serviceName.toLowerCase();
-        return Configuration.PARAM_JAC_METHODS + "_" + serviceName;
+        return Configuration.PARAM_JAC_METHODS + "_" + methods.get(index).getServiceName();
     }
 
 }

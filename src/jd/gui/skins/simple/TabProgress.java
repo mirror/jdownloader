@@ -235,7 +235,7 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
             cancel.setContentAreaFilled(false);
             cancel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             cancel.setOpaque(false);
-
+            cancel.setFocusable(false);
             cancel.addActionListener(this);
             // this.add(new JSeparator(), "span");
         }

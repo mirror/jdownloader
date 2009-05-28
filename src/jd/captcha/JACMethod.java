@@ -128,11 +128,9 @@ public class JACMethod implements Comparable<JACMethod> {
 
     private static boolean isAvailableExternMethod(String content) {
         if (content != null && content.contains("extern")) {
-            if (OSDetector.isLinux() && !content.contains("linux")) {
-                return false;
-            } else if (OSDetector.isMac() && !content.contains("mac")) {
-                return false;
-            } else if (OSDetector.isWindows() && !content.contains("windows")) { return false; }
+            if (OSDetector.isLinux() && !content.contains("linux")) return false;
+            if (OSDetector.isMac() && !content.contains("mac")) return false;
+            if (OSDetector.isWindows() && !content.contains("windows")) return false;
         }
         return true;
     }
@@ -145,7 +143,7 @@ public class JACMethod implements Comparable<JACMethod> {
 
     public JACMethod(String filename, String servicename, String author) {
         this.filename = filename;
-        this.servicename = servicename;
+        if (servicename != null) this.servicename = servicename.toLowerCase();
         this.author = author;
     }
 
