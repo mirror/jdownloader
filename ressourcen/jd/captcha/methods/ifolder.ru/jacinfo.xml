@@ -1,4 +1,0 @@
-<jDownloader>
-  <method type="extern" os="windows" name="ifolder.ru" author="ManiacMansion" />
-  <command cmd="tools\windows\captcha\Cap\IfolderRu.bat" src="tools\windows\captcha\Cap\tmp\ifolder.gif" dst="tools\windows\captcha\Cap\tmp\ifolder.txt" />
-</jDownloader>
