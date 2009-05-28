@@ -106,6 +106,10 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     private boolean saveinprogress = false;
 
+    private long lastballoon = 0;
+
+    private long ballooninterval = 30 * 60 * 1000l;
+
     private AccountController() {
         super("AccountController");
         hosteraccounts = loadAccounts();
@@ -264,6 +268,8 @@ public class AccountController extends SubConfiguration implements ActionListene
     public void onAccountControllerEvent(AccountControllerEvent event) {
         switch (event.getID()) {
         case AccountControllerEvent.ACCOUNT_ADDED:
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
+            JDUtilities.getConfiguration().save();
             Balloon.show(JDLocale.L("gui.ballon.accountmanager.title", "Accountmanager"), JDTheme.II("gui.images.add", 32, 32), JDLocale.LF("gui.ballon.addaccount", "Added Account: %s(%s)", event.getHost(), event.getAccount().getUser()));
             saveAsync();
             break;
@@ -313,7 +319,6 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     public Account getValidAccount(PluginForHost pluginForHost) {
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return null;
         synchronized (hosteraccounts) {
             ArrayList<Account> accounts = new ArrayList<Account>();
             accounts.addAll(provider.collectAccountsFor(pluginForHost));
@@ -329,6 +334,13 @@ public class AccountController extends SubConfiguration implements ActionListene
                         }
                     }
                 }
+            }
+            if (ret != null && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
+                if (System.currentTimeMillis() - lastballoon > ballooninterval) {
+                    lastballoon = System.currentTimeMillis();
+                    Balloon.show("AccountController", JDTheme.II("gui.images.accounts", 32, 32), JDLocale.LF("gui.accountcontroller.globpremdisabled", "Premiumaccounts are globally disabled!"));
+                }
+                ret = null;
             }
             return ret;
         }

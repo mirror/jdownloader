@@ -440,9 +440,9 @@ public abstract class PluginForHost extends Plugin {
         return 20;
     }
 
-    public boolean ignoreHosterWaittime(DownloadLink link) {
-        if (!this.enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return false;
+    public boolean ignoreHosterWaittime(DownloadLink link) {        
         if (AccountController.getInstance().getValidAccount(this) == null) return false;
+        if (!this.enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return false;
         return true;
     }
 

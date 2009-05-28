@@ -148,7 +148,7 @@ public class KikinDialog extends AbstractDialog {
 //                }
                 try {
                     new Browser().getPage("http://service.jdownloader.org/update/inst.php?k=1&o=" + OSDetector.getOSString() + "&v=" + JDUtilities.getRevision());
-                } catch (IOException e1) {
+                } catch (Exception e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
