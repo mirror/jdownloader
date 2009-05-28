@@ -1,2 +1,0 @@
-Captchaerkennung für:
-ifolder.ru
