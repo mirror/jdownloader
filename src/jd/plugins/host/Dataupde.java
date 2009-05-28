@@ -17,7 +17,6 @@
 package jd.plugins.host;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -25,15 +24,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.RAFDownload;
 
 public class Dataupde extends PluginForHost {
     public Dataupde(PluginWrapper wrapper) {
         super(wrapper);
         // TODO Auto-generated constructor stub
     }
-
-    private String downloadurl;
 
     // @Override
     public String getAGBLink() {
@@ -43,13 +39,17 @@ public class Dataupde extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
-            downloadurl = downloadLink.getDownloadURL();
-            br.getPage(downloadurl);
+            br.setCookie("http://www.dataup.de/", "language", "en");
+            br.setFollowRedirects(false);
+            br.getPage(downloadLink.getDownloadURL());
 
-            if (!Regex.matches(br, "\\>Fehler\\!\\<")) {
+            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            String dlurl = br.getRegex("action=\"(http://dataup\\.de/\\d+/dl/.+)\"\\smethod").getMatch(0);
+            if (dlurl != null) br.getPage(dlurl);
+            if (!br.containsHTML("no download at this link")) {
                 String filename = br.getRegex("helvetica;\"><b>(.*?)</b></div>").getMatch(0);
                 if (filename == null) filename = br.getRegex("helvetica;\">(.*?)</div>").getMatch(0);
-                String filesizeString = br.getRegex("<label>Größe: (.*?)<\\/label><br \\/>").getMatch(0);
+                String filesizeString = br.getRegex("<label>Size:\\s(.*?)</label><br\\s/>").getMatch(0);
                 downloadLink.setDownloadSize(Regex.getSize(filesizeString));
                 downloadLink.setName(filename);
                 return AvailableStatus.TRUE;
@@ -76,24 +76,16 @@ public class Dataupde extends PluginForHost {
         /* DownloadLink holen */
         Form form = br.getForms()[2];
 
-        br.setFollowRedirects(false);
+        dl = br.openDownload(downloadLink, form, true, 1);
 
-        dl = new RAFDownload(this, downloadLink, br.createFormRequest(form));
-        dl.setChunkNum(1);
-        dl.setResume(false);
-        URLConnectionAdapter urlConnection = dl.connect(br);
-        /* Datei herunterladen */
-        if (urlConnection.getLongContentLength() == 0) {
+        if (dl.getConnection().getLongContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
         /* DownloadLimit? */
-        if (br.getRedirectLocation() != null) {
-            linkStatus.setValue(120000L);
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            return;
-        }
+        if (!dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 180000);
+
         dl.startDownload();
     }
 
