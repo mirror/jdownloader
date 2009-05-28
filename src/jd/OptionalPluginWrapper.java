@@ -138,7 +138,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
 
     // @Override
     public int compareTo(PluginWrapper plg) {
-        return getHost().toLowerCase().compareTo(getHost().toLowerCase());
+        return getHost().toLowerCase().compareTo(plg.getHost().toLowerCase());
     }
 
     public boolean isEnabled() {

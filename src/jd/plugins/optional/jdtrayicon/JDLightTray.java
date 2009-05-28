@@ -71,7 +71,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     private long lastDeIconifiedEvent = System.currentTimeMillis() - 1000;
 
-    private TrayIconTooltip tit;
+    private TrayIconTooltip trayIconTooltip;
 
     public static int getAddonInterfaceVersion() {
         return 3;
@@ -170,7 +170,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         trayIcon.addMouseListener(ma);
         trayIcon.addMouseMotionListener(ma);
 
-        tit = new TrayIconTooltip();
+        trayIconTooltip = new TrayIconTooltip();
 
         try {
             systemTray.add(trayIcon);
@@ -183,17 +183,15 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void mouseEntered(MouseEvent e) {
-
     }
 
     public void mouseExited(MouseEvent e) {
-
-        tit.hide();
+        trayIconTooltip.hideWindow();
     }
 
     public void mousePressed(MouseEvent e) {
 
-        tit.hide();
+        trayIconTooltip.hideWindow();
         if (e.getSource() instanceof TrayIcon) {
             if (!OSDetector.isMac()) {
                 if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
@@ -334,7 +332,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     /**
-     * gets called if mouse stays over the tray. Edit delay in TrayJDMouseAdapter
+     * gets called if mouse stays over the tray. Edit delay in
+     * TrayJDMouseAdapter
      * 
      * @param me
      */
@@ -343,7 +342,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         if (!subConfig.getBooleanProperty(PROPERTY_TOOLTIP, true)) return;
         if (trayIconPopup != null && trayIconPopup.isVisible()) return;
 
-        tit.show(e, ((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft(), this.trayIcon);
+        trayIconTooltip.show(e, ((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft(), this.trayIcon);
 
     }
 }

@@ -838,11 +838,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         if (JOptionPane.showConfirmDialog(SimpleGUI.this, JDLocale.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"), "", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             new Thread(new Runnable() {
                 public void run() {
-                    if (Reconnecter.doManualReconnect()) {
-                        showMessageDialog(JDLocale.L("gui.reconnect.success", "Reconnect erfolgreich"));
-                    } else {
-                        showMessageDialog(JDLocale.L("gui.reconnect.failed", "Reconnect fehlgeschlagen"));
-                    }
+                    Reconnecter.doManualReconnect();
                 }
             }).start();
         }

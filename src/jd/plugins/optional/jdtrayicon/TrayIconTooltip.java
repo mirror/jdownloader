@@ -38,9 +38,10 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class TrayIconTooltip {
-    private JWindow toolParent;
-    private JPanel toolPanel;
+public class TrayIconTooltip extends JWindow {
+
+    private static final long serialVersionUID = -400023413449818691L;
+
     private TrayInfo trayInfo;
 
     private JLabel lblSpeed;
@@ -51,16 +52,12 @@ public class TrayIconTooltip {
     private JLabel lblETA;
     private JLabel lblProgress;
 
-    // private int counter = 0;
-//    private boolean inside = false;
     private Point estimatedTopLeft;
     private TrayIcon trayIcon;
 
     public TrayIconTooltip() {
 
-        toolPanel = new JPanel();
-        toolPanel.setLayout(new MigLayout("wrap 2", "[fill, grow][fill, grow]"));
-        toolPanel.setVisible(true);
+        JPanel toolPanel = new JPanel(new MigLayout("wrap 2", "[fill, grow][fill, grow]"));
         toolPanel.setOpaque(true);
         toolPanel.setBackground(new Color(0xb9cee9));
         toolPanel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, toolPanel.getBackground().darker()));
@@ -74,38 +71,33 @@ public class TrayIconTooltip {
         toolPanel.add(lblDlTotal = new JLabel(""));
         toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.speed", "Speed:")));
         toolPanel.add(lblSpeed = new JLabel(""));
-        toolPanel.add(lblProgress = new JLabel(""), "newline, spanx 2");
+        toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.progress", "Progress: ")));
+        toolPanel.add(lblProgress = new JLabel(""));
         toolPanel.add(prgTotal = new JDProgressBar(), "spanx 2");
         toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.eta", "ETA:")));
         toolPanel.add(lblETA = new JLabel(""));
 
-        toolParent = new JWindow();
-        toolParent.setAlwaysOnTop(true);
-        toolParent.add(toolPanel);
-        toolParent.pack();
-        toolParent.setVisible(false);
+        this.setAlwaysOnTop(true);
+        this.add(toolPanel);
+        this.pack();
+        this.setVisible(false);
 
     }
 
     public void show(MouseEvent e, Point point, TrayIcon trayIcon) {
-        // if (counter > 0) {
-        // counter = 2;
-        // return;
-        // }
-        // counter = 2;
         this.trayIcon = trayIcon;
         this.estimatedTopLeft = point;
         if (trayInfo != null) trayInfo.interrupt();
-        trayInfo = new TrayInfo(e.getPoint());
+        trayInfo = new TrayInfo();
         trayInfo.start();
     }
 
-    public void hide() {
+    public void hideWindow() {
         new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
-                toolParent.setVisible(false);
+                TrayIconTooltip.this.setVisible(false);
                 return null;
             }
 
@@ -114,7 +106,7 @@ public class TrayIconTooltip {
         // inside = false;
     }
 
-    private void calcLocation(final JWindow window, final Point p) {
+    private void setLocation() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -122,42 +114,38 @@ public class TrayIconTooltip {
                 int limitY = (int) screenSize.getHeight() / 2;
                 Point pp = estimatedTopLeft;
                 if (pp.x <= limitX) {
-                    if (pp.y <= limitY)
-                        window.setLocation(pp.x, pp.y + trayIcon.getSize().height);
-                    else
-                        window.setLocation(pp.x, pp.y - window.getHeight());
+                    if (pp.y <= limitY) {
+                        setLocation(pp.x, pp.y + trayIcon.getSize().height);
+                    } else {
+                        setLocation(pp.x, pp.y - getHeight());
+                    }
                 } else {
-                    if (pp.y <= limitY)
-                        window.setLocation(pp.x - window.getWidth(), pp.y + trayIcon.getSize().height);
-                    else
-                        window.setLocation(pp.x - window.getWidth(), pp.y - window.getHeight());
+                    if (pp.y <= limitY) {
+                        setLocation(pp.x - getWidth(), pp.y + trayIcon.getSize().height);
+                    } else {
+                        setLocation(pp.x - getWidth(), pp.y - getHeight());
+                    }
                 }
             }
         });
     }
 
-    private class TrayInfo extends Thread {
-        private Point p;
-
-        public TrayInfo(Point p) {
-            this.p = p;
-        }
+    private class TrayInfo extends Thread implements Runnable {
 
         // @Override
         public void run() {
 
-            toolParent.pack();
-            calcLocation(toolParent, p);
-            toolParent.setVisible(true);
-            toolParent.toFront();
+            pack();
+            setLocation();
+            setVisible(true);
+            toFront();
 
             final DownloadController dlc = JDUtilities.getDownloadController();
 
-            while (toolParent.isVisible()) {
+            while (TrayIconTooltip.this.isVisible()) {
                 SwingUtilities.invokeLater(new Runnable() {
 
                     public void run() {
-
                         long tot = 0;
                         long loaded = 0;
                         int finished = 0;
@@ -173,7 +161,7 @@ public class TrayIconTooltip {
                         lblDlTotal.setText(String.valueOf(dlc.getAllDownloadLinks().size()));
                         lblSpeed.setText(Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s");
 
-                        lblProgress.setText(JDLocale.L("plugins.optional.trayIcon.progress", "Progress: ") + Formatter.formatFilesize(loaded, 0) + " / " + Formatter.formatFilesize(tot, 0));
+                        lblProgress.setText(Formatter.formatFilesize(loaded, 0) + " / " + Formatter.formatFilesize(tot, 0));
                         prgTotal.setMaximum(tot);
                         prgTotal.setValue(loaded);
 
@@ -182,8 +170,9 @@ public class TrayIconTooltip {
 
                         lblETA.setText(Formatter.formatSeconds(etanum));
 
-                        toolParent.pack();
+                        pack();
                     }
+
                 });
 
                 try {
@@ -193,7 +182,7 @@ public class TrayIconTooltip {
                 }
             }
 
-            hide();
+            hideWindow();
         }
     }
 
