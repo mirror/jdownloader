@@ -19,6 +19,7 @@ import jd.config.SubConfiguration;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
+import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
@@ -33,17 +34,10 @@ public class Balloon {
     private static String LASTSTRING;
 
     public static void main(String args[]) throws InterruptedException {
-
-        Balloon.show("title", null, JDTheme.II("gui.images.help", 32, 32), "This is <b>just dummy</b><br/> text. you added 5 links");
-        Thread.sleep(1000);
-        Balloon.show("title", null, JDTheme.II("gui.images.help", 32, 32), "This is <b>just dummy</b><br/> text. you added 5 links");
-
-        Thread.sleep(1000);
-        Balloon.show("title", null, JDTheme.II("gui.images.help", 32, 32), "This is <b>just dummy</b><br/> text. you added 5 links");
-
-        Thread.sleep(1000);
-        Balloon.show("title", null, JDTheme.II("gui.images.help", 32, 32), "This is <b>just dummy</b><br/> text. you added 5 links");
-    }
+        Balloon.show("AccountController", JDTheme.II("gui.images.accounts", 32, 32), JDLocale.L("gui.accountcontroller.globpremdisabled", "Premiumaccounts are globally disabled!<br/>Click <a href='http://jdownloader.org/knowledge/wiki/gui/premiummenu'>here</a> for help."));
+        
+//        Balloon.show("title", null, JDTheme.II("gui.images.help", 32, 32), "This is <b>just dummy</b><br/> text.<a href='http://www.google.de'>LINK</a> you added 5 links");
+       }
 
     public static void show(String title, final ImageIcon icon, final String htmlmessage) {
         if (LASTSTRING != null && LASTSTRING.equals(title + htmlmessage)) return;

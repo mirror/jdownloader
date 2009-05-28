@@ -802,6 +802,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                         }
                     }
                     logger.info("All downloads finished");
+//                    Balloon.show(title, icon, htmlmessage)
                     break;
                 case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                     break;
