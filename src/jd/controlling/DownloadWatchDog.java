@@ -382,6 +382,11 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         return paused;
     }
 
+    public boolean newDLStartAllowed() {
+        if (paused || Reconnecter.isReconnecting()) return false;
+        return true;
+    }
+
     private synchronized void startWatchDogThread() {
         if (this.watchDogThread == null || !this.watchDogThread.isAlive()) {
             /**
@@ -505,18 +510,15 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                             }
                             int ret = 0;
                             if (Interaction.areInteractionsInProgress() && activeDownloads < getSimultanDownloadNum()) {
-                                if (!reachedStopMark()) {
-                                    // System.out.println("stopmarke nicht");
-                                    ret = setDownloadActive();
-                                } else {
-                                    System.out.println("stopmarke!!");
-                                }
+                                if (!reachedStopMark()) ret = setDownloadActive();
                             }
                             if (ret == 0) {
-
                                 if (!hasInProgressLinks || !hasTempDisabledLinks && !hasInProgressLinks && !hasWaittimeLinks && getNextDownloadLink() == null && activeDownloads == 0) {
-                                    stopCounter--;
-                                    // System.out.println("stop?");
+                                    /*
+                                     * nur runterzählen falls auch erlaubt war
+                                     * nen download zu starten
+                                     */
+                                    if (newDLStartAllowed()) stopCounter--;
                                     if (stopCounter == 0) {
                                         totalSpeed = 0;
                                         break;
@@ -557,6 +559,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     private int setDownloadActive() {
         DownloadLink dlink;
         int ret = 0;
+        if (!newDLStartAllowed()) return ret;
         while (activeDownloads < getSimultanDownloadNum()) {
             dlink = getNextDownloadLink();
             if (dlink == null) {
