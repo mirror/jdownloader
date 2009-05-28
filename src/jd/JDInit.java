@@ -599,7 +599,7 @@ public class JDInit {
         // "http://.*?filesdump\\.com/file/[a-f0-9]+/.*?");
         new HostPluginWrapper("UpMusic.in", "UpMusicIn", "http://[\\w\\.]*?upmusic\\.in/[a-z0-9]+.*?");
         new HostPluginWrapper("SuperShare.pl", "SuperSharePl", "http://[\\w\\.]*?supershare\\.pl/\\?d=[A-F0-9]+");
-        new HostPluginWrapper("FileFront.com", "FileFrontCom", "http://files.filefront\\.com/.*?\\d+");
+        new HostPluginWrapper("FileFront.com", "FileFrontCom", "http://files.filefront\\.com/[^\\s]+/;\\d+(;/fileinfo.html|;)");
         new HostPluginWrapper("FileQube.com", "FileQubeCom", "http://[\\w\\.]*?fileqube\\.com/(file|shared)/[A-Za-z0-9]+");
         new HostPluginWrapper("MegaShare.com", "MegaShareCom", "http://[\\w\\.]*?megashare\\.com/[0-9]+");
         new HostPluginWrapper("RapidShark.pl", "RapidSharkPl", "http://[\\w\\.]*?rapidshark\\.pl/.*?[A-Za-z0-9]+/?");
@@ -614,8 +614,8 @@ public class JDInit {
         new HostPluginWrapper("BitRoad.net", "BitRoadNet", "http://[\\w\\.]*?bitroad\\.net/download/[A-Fa-f0-9]+/[^\\s]+\\.html");
         new HostPluginWrapper("MaxUpload.eu", "MaxUploadEu", "http://[\\w\\.]*?maxupload\\.eu/../\\d+");
         new HostPluginWrapper("NetGull.com", "NetGullCom", "http://[\\w\\.]*?netgull\\.com/\\?d=[0-9a-fA-F]+");
-        new HostPluginWrapper("myupload.dk", "MyuploadDK", "http://[\\w\\.]*?myupload\\.dk/showfile/[0-9a-fA-F]+");
-        new HostPluginWrapper("indowebster.com", "Indowebster", "http://[\\w\\.]*?indowebster\\.com/[^\\s]+\\.html");
+        new HostPluginWrapper("MyUpload.dk", "MyuploadDK", "http://[\\w\\.]*?myupload\\.dk/showfile/[0-9a-fA-F]+");
+        new HostPluginWrapper("IndoWebster.com", "Indowebster", "http://[\\w\\.]*?indowebster\\.com/[^\\s]+\\.html");
         new HostPluginWrapper("QuickShare.cz", "QuickShareCz", "http://[\\w\\.]*?quickshare\\.cz/stahnout-soubor/\\d+:[^\\s]+");
 
         // Hoster from Extern
