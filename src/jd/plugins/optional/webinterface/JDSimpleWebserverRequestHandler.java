@@ -27,6 +27,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadController;
+import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
 import jd.controlling.reconnect.Reconnecter;
@@ -129,9 +130,9 @@ public class JDSimpleWebserverRequestHandler {
 
                 if (!requestParameter.containsKey("selected_dowhat_link_adder")) {
                     if (requestParameter.containsKey("autoreconnect")) {
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
                     } else {
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, false);
                     }
                 }
                 if (requestParameter.containsKey("package_single_add_counter")) {
@@ -264,22 +265,16 @@ public class JDSimpleWebserverRequestHandler {
                 }
 
             } else if (requestParameter.get("do").compareToIgnoreCase("reconnect") == 0) {
-                class JDReconnect implements Runnable {
-
-                    // Zeitverzögertes neustarten
-                    JDReconnect() {
-                        new Thread(this).start();
-                    }
-
+                new Thread(new Runnable() {
                     public void run() {
                         try {
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
 
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            JDLogger.exception(e);
                         }
-                        boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
+                        boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
                         if (JDUtilities.getController().getRunningDownloadNum() > 0) {
                             JDUtilities.getController().stopDownloads();
                         }
@@ -288,54 +283,37 @@ public class JDSimpleWebserverRequestHandler {
                         } else {
                             logger.info("Reconnect fehlgeschlagen");
                         }
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, tmp);
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, tmp);
                     }
-                }
-                @SuppressWarnings("unused")
-                JDReconnect jdrc = new JDReconnect();
+                }).start();
 
             } else if (requestParameter.get("do").compareToIgnoreCase("close") == 0) {
-                class JDClose implements Runnable { /* zeitverzögertes beenden */
-                    JDClose() {
-                        new Thread(this).start();
-                    }
-
+                new Thread(new Runnable() {
                     public void run() {
                         try {
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            JDLogger.exception(e);
                         }
                         JDUtilities.getController().exit();
                     }
-                }
-                @SuppressWarnings("unused")
-                JDClose jdc = new JDClose();
-
+                }).start();
             } else if (requestParameter.get("do").compareToIgnoreCase("start") == 0) {
                 JDUtilities.getController().startDownloads();
             } else if (requestParameter.get("do").compareToIgnoreCase("stop") == 0) {
                 JDUtilities.getController().stopDownloads();
             } else if (requestParameter.get("do").compareToIgnoreCase("restart") == 0) {
-                class JDRestart implements Runnable {
-
-                    // Zeitverzögertes neustarten
-                    JDRestart() {
-                        new Thread(this).start();
-                    }
-
+                new Thread(new Runnable() {
                     public void run() {
                         try {
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
 
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            JDLogger.exception(e);
                         }
                         JDUtilities.restartJD();
                     }
-                }
-                @SuppressWarnings("unused")
-                JDRestart jdrs = new JDRestart();
+                }).start();
 
             } else if (requestParameter.get("do").compareToIgnoreCase("add") == 0) {
                 if (requestParameter.containsKey("addlinks")) {

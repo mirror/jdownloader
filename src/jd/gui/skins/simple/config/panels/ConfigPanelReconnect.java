@@ -134,8 +134,8 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
             new Thread() {
                 // @Override
                 public void run() {
-                    boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
+                    boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
                     if (Reconnecter.waitForNewIP(1)) {
                         progress.setStatusText(JDLocale.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
 
@@ -163,7 +163,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
                     progress.setStatus(100);
                     progress.finalize(5000);
 
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, tmp);
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, tmp);
 
                 }
             }.start();

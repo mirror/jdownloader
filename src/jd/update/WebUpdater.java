@@ -41,8 +41,10 @@ import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 /**
- * @author JD-Team Webupdater lädt pfad und hash infos von einem server und
- *         vergleicht sie mit den lokalen versionen
+ * Webupdater lädt pfad und hash infos von einem server und vergleicht sie mit
+ * den lokalen versionen
+ * 
+ * @author JD-Team
  */
 public class WebUpdater implements Serializable {
 

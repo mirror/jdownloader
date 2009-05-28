@@ -16,14 +16,10 @@
 
 package jd.update;
 
-import java.awt.Component;
-import java.awt.Container;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -64,88 +60,6 @@ public class Main {
     private static JTextArea logWindow;
 
     private static JProgressBar progressload;
-
-    /**
-     * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
-     * 
-     * @param cont
-     *            Der Container, dem eine Komponente hinzugefuegt werden soll
-     * @param comp
-     *            Die Komponente, die hinzugefuegt werden soll
-     * @param x
-     *            X-Position innerhalb des GriBagLayouts
-     * @param y
-     *            Y-Position innerhalb des GriBagLayouts
-     * @param width
-     *            Anzahl der Spalten, ueber die sich diese Komponente erstreckt
-     * @param height
-     *            Anzahl der Reihen, ueber die sich diese Komponente erstreckt
-     * @param weightX
-     *            Verteilung von zur Verfuegung stehendem Platz in X-Richtung
-     * @param weightY
-     *            Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
-     * @param insets
-     *            Abstände der Komponente
-     * @param fill
-     *            Verteilung der Komponente innerhalb der zugewiesen Zelle/n
-     * @param anchor
-     *            Positionierung der Komponente innerhalb der zugewiesen Zelle/n
-     */
-    public static void addToGridBag(Container cont, Component comp, int x, int y, int width, int height, int weightX, int weightY, Insets insets, int fill, int anchor) {
-        if (cont == null) return;
-        if (comp == null) return;
-        Main.addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
-    }
-
-    /**
-     * Diese Klasse fuegt eine Komponente einem Container hinzu
-     * 
-     * @param cont
-     *            Der Container, dem eine Komponente hinzugefuegt werden soll
-     * @param comp
-     *            Die Komponente, die hinzugefuegt werden soll
-     * @param x
-     *            X-Position innerhalb des GriBagLayouts
-     * @param y
-     *            Y-Position innerhalb des GriBagLayouts
-     * @param width
-     *            Anzahl der Spalten, ueber die sich diese Komponente erstreckt
-     * @param height
-     *            Anzahl der Reihen, ueber die sich diese Komponente erstreckt
-     * @param weightX
-     *            Verteilung von zur Verfuegung stehendem Platz in X-Richtung
-     * @param weightY
-     *            Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
-     * @param insets
-     *            Abständer der Komponente
-     * @param iPadX
-     *            Leerraum zwischen einer GridBagZelle und deren Inhalt
-     *            (X-Richtung)
-     * @param iPadY
-     *            Leerraum zwischen einer GridBagZelle und deren Inhalt
-     *            (Y-Richtung)
-     * @param fill
-     *            Verteilung der Komponente innerhalb der zugewiesen Zelle/n
-     * @param anchor
-     *            Positionierung der Komponente innerhalb der zugewiesen Zelle/n
-     */
-    public static void addToGridBag(Container cont, Component comp, int x, int y, int width, int height, int weightX, int weightY, Insets insets, int iPadX, int iPadY, int fill, int anchor) {
-        GridBagConstraints cons = new GridBagConstraints();
-        cons.gridx = x;
-        cons.gridy = y;
-        cons.gridwidth = width;
-        cons.gridheight = height;
-        cons.weightx = weightX;
-        cons.weighty = weightY;
-        cons.fill = fill;
-        cons.anchor = anchor;
-        if (insets != null) {
-            cons.insets = insets;
-        }
-        cons.ipadx = iPadX;
-        cons.ipady = iPadY;
-        cont.add(comp, cons);
-    }
 
     private static void log(StringBuilder log, String string) {
         log.append(string);
@@ -253,12 +167,12 @@ public class Main {
             JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
 
             logWindow.setText(log.toString());
-            Main.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
+            JDIO.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
             System.exit(0);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.exception(e);
 
-            Main.log(log, "ERORR " + e.getLocalizedMessage());
+            Main.log(log, "ERROR " + e.getLocalizedMessage());
 
         }
     }
@@ -300,7 +214,7 @@ public class Main {
                 }
             } catch (Exception e) {
 
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                JDLogger.exception(e);
 
                 StackTraceElement[] trace = e.getStackTrace();
                 for (int i = 0; i < trace.length; i++)
@@ -355,7 +269,7 @@ public class Main {
                         JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
 
                         logWindow.setText(log.toString());
-                        Main.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
+                        JDIO.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
                         System.exit(0);
                         return;
                     }
@@ -369,7 +283,10 @@ public class Main {
         if (JDUtilities.getResourceFile("updateLog.txt").exists()) {
             if (!JDUtilities.getResourceFile("/backup/").exists()) {
                 JDUtilities.getResourceFile("/backup/").mkdirs();
-
+                /*
+                 * Ordner wurde doch gerade angelegt, warum dann Fehlermeldung
+                 * dass er nicht angelegt werden konnte? - Greeny
+                 */
                 Main.log(log, "Not found: " + (JDUtilities.getResourceFile("/backup/").getAbsolutePath()) + "\r\n");
                 JOptionPane.showMessageDialog(frame, "JDownloader could not create a backup. Please make sure that\r\n " + JDUtilities.getResourceFile("/backup/").getAbsolutePath() + " exists and is writable before starting the update");
                 JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
@@ -458,13 +375,13 @@ public class Main {
         logWindow.setEditable(false);
         logWindow.setAutoscrolls(true);
 
-        Main.addToGridBag(frame, new JLabel("Webupdate is running..."), REL, REL, REM, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
+        JDUtilities.addToGridBag(frame, new JLabel("Webupdate is running..."), REL, REL, REM, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
 
-        Main.addToGridBag(frame, new JLabel("Download: "), REL, REL, REL, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
-        Main.addToGridBag(frame, progressload, REL, REL, REM, 1, 1, 0, INSETS, BOTHRESIZE, NORTHWEST);
+        JDUtilities.addToGridBag(frame, new JLabel("Download: "), REL, REL, REL, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
+        JDUtilities.addToGridBag(frame, progressload, REL, REL, REM, 1, 1, 0, INSETS, BOTHRESIZE, NORTHWEST);
         Main.log(log, "Starting...");
         logWindow.setText(log.toString());
-        Main.addToGridBag(frame, scrollPane, REL, REL, REM, 1, 1, 1, INSETS, BOTHRESIZE, NORTHWEST);
+        JDUtilities.addToGridBag(frame, scrollPane, REL, REL, REM, 1, 1, 1, INSETS, BOTHRESIZE, NORTHWEST);
 
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -497,30 +414,6 @@ public class Main {
             System.out.println(arg.toString());
         } catch (Exception e) {
             System.out.println(arg);
-        }
-    }
-
-    /**
-     * Schreibt content in eine Lokale textdatei
-     * 
-     * @param file
-     * @param content
-     * @return true/False je nach Erfolg des Schreibvorgangs
-     */
-    public static boolean writeLocalFile(File file, String content) {
-        try {
-            if (file.isFile() && !file.delete()) { return false; }
-            if (file.getParent() != null && !file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
-            }
-            file.createNewFile();
-            BufferedWriter f = new BufferedWriter(new FileWriter(file));
-            f.write(content);
-            f.close();
-            return true;
-        } catch (Exception e) {
-            // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
-            return false;
         }
     }
 

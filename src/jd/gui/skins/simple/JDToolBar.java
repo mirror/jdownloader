@@ -153,7 +153,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
     }
 
     private void initListeners() {
-        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT, Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, Configuration.PARAM_DISABLE_RECONNECT) {
+        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT, Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, Configuration.PARAM_ALLOW_RECONNECT) {
 
             @Override
             public void onPropertyChanged(Property source, final String key) {
@@ -164,7 +164,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
                             updateReconnectButtons();
                         } else if (key == Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE) {
                             updateClipboardButton();
-                        } else if (key == Configuration.PARAM_DISABLE_RECONNECT) {
+                        } else if (key == Configuration.PARAM_ALLOW_RECONNECT) {
                             updateReconnectButtonIcon();
                         }
                     }
@@ -260,7 +260,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
     }
 
     private void updateReconnectButtonIcon() {
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
             reconnect.setSelected(true);
             reconnect.setIcon(JDTheme.II("gui.images.reconnect_enabled", 24, 24));
         } else {

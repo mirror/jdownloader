@@ -839,10 +839,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         if (!SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
             int confirm = JOptionPane.showConfirmDialog(this, JDLocale.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"), "", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
-                final boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
+                final boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
 
-                new Thread() {
+                new Thread(new Runnable() {
                     public void run() {
 
                         boolean restart = false;
@@ -852,13 +852,13 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                         } else {
                             showMessageDialog(JDLocale.L("gui.reconnect.failed", "Reconnect fehlgeschlagen"));
                         }
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, tmp);
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, tmp);
 
                         if (restart) {
                             JDUtilities.getController().startDownloads();
                         }
                     }
-                }.start();
+                }).start();
 
             }
         } else {

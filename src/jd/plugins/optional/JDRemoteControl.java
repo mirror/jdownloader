@@ -390,7 +390,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 response.addContent(JDUtilities.getController().getSpeedMeter() / 1000);
             } else if (request.getRequestUrl().equals("/get/isreconnect")) {
                 // Get IsReconnect
-                response.addContent(!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
+                response.addContent(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
             } else if (request.getRequestUrl().equals("/action/start")) {
                 // Do Start Download
                 JDUtilities.getController().startDownloads();
@@ -423,8 +423,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 // Do Reconnect
                 response.addContent("Do Reconnect...");
 
-                boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
+                boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
 
                 if (JDUtilities.getController().stopDownloads()) {
                     Reconnecter.waitForNewIP(1);
@@ -433,7 +433,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     Reconnecter.waitForNewIP(1);
                 }
 
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, tmp);
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, tmp);
 
             } else if (request.getRequestUrl().equals("/action/restart")) {
                 // Do Restart JD
@@ -536,8 +536,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 boolean disprc = newrc;
                 newrc = !newrc;
                 logger.fine("RemoteControl - Set ReConnect: " + disprc);
-                if (newrc != JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, newrc);
+                if (newrc != JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, newrc);
                     JDUtilities.getConfiguration().save();
 
                     response.addContent("reconnect=" + disprc + " (CHANGED=true)");

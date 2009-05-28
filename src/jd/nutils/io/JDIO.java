@@ -67,11 +67,9 @@ public class JDIO {
      */
     public static boolean writeLocalFile(File file, String content, boolean append) {
         try {
-            if (!append && file.isFile()) {
-                if (!file.delete()) {
-                    System.err.println("Konnte Datei nicht löschen " + file);
-                    return false;
-                }
+            if (!append && file.isFile() && !file.delete()) {
+                System.err.println("Konnte Datei nicht löschen " + file);
+                return false;
             }
             if (file.getParent() != null && !file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
@@ -83,7 +81,7 @@ public class JDIO {
             f.close();
             return true;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            JDLogger.exception(e);
             return false;
         }
     }
@@ -117,7 +115,7 @@ public class JDIO {
             output.close();
             return true;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            JDLogger.exception(e);
             return false;
         }
     }
@@ -182,9 +180,9 @@ public class JDIO {
                 buff.close();
                 fos.close();
             } catch (FileNotFoundException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                JDLogger.exception(e);
             } catch (IOException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                JDLogger.exception(e);
             }
             String hashPost = JDHash.getMD5(fileOutput);
             if (hashPost == null) {
@@ -207,7 +205,7 @@ public class JDIO {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
 
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                JDLogger.exception(e);
             }
         }
     }
@@ -290,7 +288,7 @@ public class JDIO {
             return ret.toString();
         } catch (IOException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            JDLogger.exception(e);
         }
         return "";
     }
@@ -306,8 +304,6 @@ public class JDIO {
         return getFileExtension(ret.getAbsolutePath());
 
     }
-
-
 
     public static String getFileExtension(String str) {
         if (str == null) { return null; }
@@ -353,13 +349,13 @@ public class JDIO {
                     }
                 } catch (IOException e) {
 
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    JDLogger.exception(e);
                     return false;
                 }
             }
             return false;
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            JDLogger.exception(e);
         }
         try {
             if (inChannel != null) {
@@ -370,7 +366,7 @@ public class JDIO {
                 outChannel.close();
             }
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            JDLogger.exception(e);
             return false;
         }
         return true;

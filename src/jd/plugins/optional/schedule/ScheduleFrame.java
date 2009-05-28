@@ -164,7 +164,7 @@ public class ScheduleFrame extends JPanel implements ActionListener {
             SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls.getValue());
             SubConfiguration.getConfig("DOWNLOAD").save();
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, !reconnect.isSelected());
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, reconnect.isSelected());
             JDUtilities.getConfiguration().save();
             if (stop_start.isSelected() == true) {
                 JDUtilities.getController().toggleStartStop();

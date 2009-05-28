@@ -31,6 +31,7 @@ import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
+import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
@@ -394,10 +395,10 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         t.setParam("config_max_downloads", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
         t.setParam("config_max_speed", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
 
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false) == true) {
-            t.setParam("config_autoreconnect", "");
-        } else {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
             t.setParam("config_autoreconnect", "checked");
+        } else {
+            t.setParam("config_autoreconnect", "");
         }
 
         if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
@@ -456,13 +457,13 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             response.setOk();
         } catch (FileNotFoundException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.exception(e);
         } catch (IllegalStateException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.exception(e);
         } catch (IOException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.exception(e);
         }
     }
 }

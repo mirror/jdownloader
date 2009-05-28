@@ -170,7 +170,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     }
 
     private String getReconnectImage() {
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
             return "gui.images.reconnect_enabled";
         } else {
             return "gui.images.reconnect_disabled";

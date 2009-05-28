@@ -35,11 +35,11 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_CAPTCHA_JAC_DISABLE = "CAPTCHA_JAC_DISBALE";
 
-    public static final String PARAM_CLIPBOARD_ALWAYS_ACTIVE = "CLIPBOARD_ALWAYS_ACTIVE";
+    public static final String PARAM_CLIPBOARD_ALWAYS_ACTIVE = "CLIPBOARD_ALWAYS_ACTIVE2";
 
     public static final String PARAM_CURRENT_BROWSE_PATH = "CURRENT_BROWSE_PATH";
 
-    public static final String PARAM_DISABLE_RECONNECT = "DISABLE_RECONNECT2";
+    public static final String PARAM_ALLOW_RECONNECT = "ALLOW_RECONNECT";
 
     public static final String PARAM_DO_CRC = "DO_CRC";
 
@@ -85,7 +85,7 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_INTERACTIONS = "INTERACTIONS";
 
-    public static final String PARAM_JAC_METHODS = "JAC_METHODS";
+    public static final String PARAM_JAC_METHODS = "JAC_METHODS_";
 
     public static final String PARAM_LOGGER_LEVEL = "LOGGER_LEVEL";
 
