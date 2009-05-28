@@ -304,7 +304,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 } else if (col.getWidth() < 170) {
                     sb.append(c.format(10000 * progress.getPercentComplete() / 100.0)).append('%');
                 } else {
-                    sb.append(c.format(10000 * progress.getPercentComplete() / 100.0)).append("% (").append(progress.getValue() / 1000).append('/').append(progress.getMaximum() / 1000).append(strSecondsAbrv).append(')');
+                    sb.append(c.format(10000 * progress.getPercentComplete() / 100.0)).append("% (").append(progress.getRealValue() / 1000).append('/').append(progress.getRealMax() / 1000).append(strSecondsAbrv).append(')');
                 }
                 progress.setString(sb.toString());
                 // progress.setToolTipText(null);

@@ -255,7 +255,7 @@ public class LinkStatus implements Serializable {
             }
             return ret;
         }
-        if (downloadLink.getPlugin() != null && downloadLink.getPlugin().getRemainingHosterWaittime() > 0) { return JDLocale.L("gui.downloadlink.hosterwaittime", "[wait for new ip]"); }
+        if (downloadLink.getPlugin() != null && downloadLink.getPlugin().getRemainingHosterWaittime() > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDLocale.L("gui.downloadlink.hosterwaittime", "[wait for new ip]"); }
 
         if (downloadLink.getDownloadInstance() == null && hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
             removeStatus(DOWNLOADINTERFACE_IN_PROGRESS);
