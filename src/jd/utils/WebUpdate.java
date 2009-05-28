@@ -54,8 +54,7 @@ public class WebUpdate implements ControlListener {
         DynamicPluginsFinished = true;
     }
 
-    private static String getUpdaterMD5(int trycount) {
-        if (trycount == 0) trycount = 1;
+    private static String getUpdaterMD5(int trycount) {       
         if (trycount < 0) {
             trycount = -(trycount % WebUpdater.ServerPool);
         } else {
@@ -64,8 +63,7 @@ public class WebUpdate implements ControlListener {
         return "http://update" + trycount + ".jdownloader.org/jdupdate.jar.md5";
     }
 
-    private static String getUpdater(int trycount) {
-        if (trycount == 0) trycount = 1;
+    private static String getUpdater(int trycount) {        
         if (trycount < 0) {
             trycount = -(trycount % WebUpdater.ServerPool);
         } else {
@@ -81,7 +79,7 @@ public class WebUpdate implements ControlListener {
         ProgressController progress = new ProgressController(JDLocale.LF("wrapper.webupdate.updateUpdater", "Download updater"), 3);
         progress.increase(1);
         String remoteHash = null;
-        for (int trycount = 1; trycount < 10; trycount++) {
+        for (int trycount = 0; trycount < 10; trycount++) {
             if (remoteHash == null) {
                 try {
                     remoteHash = br.getPage(getUpdaterMD5(trycount) + "?t=" + System.currentTimeMillis()).trim();
