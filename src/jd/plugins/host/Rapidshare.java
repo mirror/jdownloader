@@ -337,8 +337,7 @@ public class Rapidshare extends PluginForHost {
 
             // if (getRemainingWaittime() > 0) { return
             // handleDownloadLimit(downloadLink); }
-            String freeOrPremiumSelectPostURL = null;
-            br.forceDebug(true);
+            String freeOrPremiumSelectPostURL = null;            
             br.setAcceptLanguage(ACCEPT_LANGUAGE);
             br.setFollowRedirects(false);
 

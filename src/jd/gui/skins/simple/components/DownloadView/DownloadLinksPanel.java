@@ -421,10 +421,12 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     Set<String> List = new HashSet<String>();
                     StringBuilder build = new StringBuilder();
                     for (int i = 0; i < selected_links.size(); i++) {
-                        String url = selected_links.get(i).getBrowserUrl();
-                        if (!List.contains(url)) {
-                            List.add(url);
-                            build.append(url + "\n");
+                        if (selected_links.get(i).getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
+                            String url = selected_links.get(i).getBrowserUrl();
+                            if (!List.contains(url)) {
+                                List.add(url);
+                                build.append(url + "\n\r");
+                            }
                         }
                     }
                     String builded = build.toString();
