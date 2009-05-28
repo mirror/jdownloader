@@ -906,7 +906,7 @@ public class JDUtilities {
         String ret = name;
         while (true) {
             if (ret.endsWith(".")) {
-                ret = ret.substring(0, ret.length() - 1);
+                ret = ret.substring(0, ret.length() - 1); 
             } else {
                 break;
             }
