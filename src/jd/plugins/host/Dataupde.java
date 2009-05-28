@@ -84,8 +84,10 @@ public class Dataupde extends PluginForHost {
             return;
         }
         /* DownloadLimit? */
-        if (!dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 180000);
-
+        if (!dl.getConnection().isContentDisposition()) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 180000);
+        }
         dl.startDownload();
     }
 

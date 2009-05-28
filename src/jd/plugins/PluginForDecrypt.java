@@ -348,6 +348,11 @@ public abstract class PluginForDecrypt extends Plugin {
         }
         return chits.toArray((new CryptedLink[chits.size()]));
     }
+    
+    protected void setBrowserExclusive() {
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
+    }
 
     /**
      * Gibt den namen des internen CryptedLinks zurück

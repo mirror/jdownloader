@@ -77,7 +77,11 @@ public class FileBaseTo extends PluginForHost {
         }
 
         String dlAction = br.getRegex("<form action=\"(http.*?)\"").getMatch(0);
-        br.openDownload(downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName())).startDownload();
+        if (dlAction == null) dlAction = br.getRegex("value=\"(http.*?/download/ticket.*?)\"").getMatch(0);
+        if (dlAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.setDebug(true);
+        dl = br.openDownload(downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName()));
+        dl.startDownload();
     }
 
     // @Override
