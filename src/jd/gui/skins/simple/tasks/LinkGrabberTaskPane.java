@@ -75,6 +75,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         initGUI();
         fadeTimer = new Thread() {
             public void run() {
+                this.setName("LinkGrabberTask: infoupdate");
                 while (true) {
                     if (!isCollapsed()) update();
                     try {
@@ -197,7 +198,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     }
 
     public void actionPerformed(ActionEvent e) {
-       
+
         if (e.getSource() == panel_add_links) {
             this.broadcastEvent(new ActionEvent(this, LinkGrabberTreeTableAction.GUI_ADD, null));
             return;

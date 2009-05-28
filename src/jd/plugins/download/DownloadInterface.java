@@ -469,7 +469,7 @@ abstract public class DownloadInterface {
                     logger.log(Level.SEVERE, "Exception occured", e);
                 } else {
                     logger.log(Level.SEVERE, "Exception occured", e);
-                    if (e.getMessage().contains("503")) {
+                    if (e.getMessage() != null && e.getMessage().contains("503")) {
                         linkStatus.setValue(10 * 60000l);
                         error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("download.error.message.unavailable", "Service temp. unavailable"));
                     } else {

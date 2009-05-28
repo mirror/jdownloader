@@ -728,14 +728,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                 case DownloadTaskPane.ACTION_CLICK:
                     contentPanel.display(dlTskPane.getPanel(0));
                     break;
-                case DownloadTaskPane.ACTION_STARTSTOP:
-
-                    if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
-                        JDUtilities.getController().stopDownloads();
-                    } else {
-                        JDUtilities.getController().startDownloads();
-                    }
-                    break;
                 }
 
             }
@@ -835,13 +827,18 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public void doManualReconnect() {
-        if (JOptionPane.showConfirmDialog(SimpleGUI.this, JDLocale.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"), "", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-            new Thread(new Runnable() {
-                public void run() {
-                    Reconnecter.doManualReconnect();
+        new GuiRunnable<Object>() {
+            public Object runSave() {
+                if (JOptionPane.showConfirmDialog(SimpleGUI.this, JDLocale.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"), "", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                    new Thread(new Runnable() {
+                        public void run() {
+                            Reconnecter.doManualReconnect();
+                        }
+                    }).start();
                 }
-            }).start();
-        }
+                return null;
+            }
+        }.start();
     }
 
     public String showCountdownUserInputDialog(final String message, final String def) {

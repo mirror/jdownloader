@@ -34,6 +34,7 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
+import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -181,7 +182,11 @@ public class JDToolBar extends JToolBar implements ControlListener {
         reconnectButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                SimpleGUI.CURRENTGUI.doManualReconnect();
+                new Thread() {
+                    public void run() {
+                        SimpleGUI.CURRENTGUI.doManualReconnect();
+                    }
+                }.start();
             }
 
         });
@@ -276,8 +281,12 @@ public class JDToolBar extends JToolBar implements ControlListener {
         playButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                setPause(false);
-                JDUtilities.getController().startDownloads();
+                new Thread() {
+                    public void run() {
+                        setPause(false);
+                        JDUtilities.getController().startDownloads();
+                    }
+                }.start();
             }
 
         });
@@ -298,8 +307,28 @@ public class JDToolBar extends JToolBar implements ControlListener {
         stopButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                setPause(false);
-                JDUtilities.getController().stopDownloads();
+                new Thread() {
+                    public void run() {
+                        setPause(false);
+                        final ProgressController pc = new ProgressController(JDLocale.L("gui.downloadstop", "Stopping current downloads..."));
+                        Thread test = new Thread() {
+                            public void run() {
+                                while (true) {
+                                    pc.increase(1);
+                                    try {
+                                        sleep(1000);
+                                    } catch (InterruptedException e) {
+                                        break;
+                                    }
+                                }
+                            }
+                        };
+                        test.start();
+                        JDUtilities.getController().stopDownloads();
+                        test.interrupt();
+                        pc.finalize();
+                    }
+                }.start();
             }
 
         });
@@ -317,9 +346,15 @@ public class JDToolBar extends JToolBar implements ControlListener {
         }
     }
 
-    private void setPause(boolean b) {
-        pauseButton.setSelected(b);
-        JDUtilities.getController().pauseDownloads(b);
+    private void setPause(final boolean b) {
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                pauseButton.setSelected(b);
+                JDUtilities.getController().pauseDownloads(b);
+                return null;
+            }
+        }.waitForEDT();
     }
 
     public void controlEvent(final ControlEvent event) {
@@ -337,6 +372,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
                 case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 case ControlEvent.CONTROL_DOWNLOAD_STOP:
                     stopButton.setEnabled(false);
+                    setPause(false);
                     pauseButton.setEnabled(false);
                     playButton.setEnabled(true);
                     if (speedmeter != null) speedmeter.stop();

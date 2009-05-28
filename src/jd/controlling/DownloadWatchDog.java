@@ -130,38 +130,35 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         logger.finer("Breche alle activeLinks ab");
         aborting = true;
         aborted = true;
-
         ProgressController progress = new ProgressController("Termination", activeDownloads);
         progress.setStatusText("Stopping all downloads " + activeDownloads);
         ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
 
-        synchronized (DownloadControllers) {
-            ArrayList<SingleDownloadController> cons = new ArrayList<SingleDownloadController>(DownloadControllers.values());
-            for (SingleDownloadController singleDownloadController : cons) {
-                al.add(singleDownloadController.abortDownload().getDownloadLink());
-            }
-            DownloadController.getInstance().fireDownloadLinkUpdate(al);
-            boolean check = true;
-            // Warteschleife bis alle activelinks abgebrochen wurden
-            logger.finer("Warten bis alle activeLinks abgebrochen wurden.");
+        ArrayList<SingleDownloadController> cons = new ArrayList<SingleDownloadController>(DownloadControllers.values());
+        for (SingleDownloadController singleDownloadController : cons) {
+            al.add(singleDownloadController.abortDownload().getDownloadLink());
+        }
+        DownloadController.getInstance().fireDownloadLinkUpdate(al);
+        boolean check = true;
+        // Warteschleife bis alle activelinks abgebrochen wurden
+        logger.finer("Warten bis alle activeLinks abgebrochen wurden.");
 
-            while (true) {
-                progress.setStatusText("Stopping all downloads " + activeDownloads);
-                check = true;
-                ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(DownloadControllers.keySet());
-                for (DownloadLink link : links) {
-                    if (link.getLinkStatus().isPluginActive()) {
-                        check = false;
-                        break;
-                    }
-                }
-                if (check) {
+        while (true) {
+            progress.setStatusText("Stopping all downloads " + activeDownloads);
+            check = true;
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(DownloadControllers.keySet());
+            for (DownloadLink link : links) {
+                if (link.getLinkStatus().isPluginActive()) {
+                    check = false;
                     break;
                 }
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                }
+            }
+            if (check) {
+                break;
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
             }
         }
         DownloadController.getInstance().fireDownloadLinkUpdate(al);
@@ -378,22 +375,18 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         SubConfiguration.getConfig("DOWNLOAD").save();
     }
 
-    public boolean isPause() {
-        return paused;
-    }
-
     public boolean newDLStartAllowed() {
-        if (paused || Reconnecter.isReconnecting()) return false;
+        if (paused || Reconnecter.isReconnecting() || aborting || aborted) return false;
         return true;
     }
 
     private synchronized void startWatchDogThread() {
         if (this.watchDogThread == null || !this.watchDogThread.isAlive()) {
             /**
-             * Workaround, due to activeDownloads bug. 
+             * Workaround, due to activeDownloads bug.
              */
             synchronized (this.activeDownloads) {
-                this.activeDownloads=0;
+                this.activeDownloads = 0;
             }
             watchDogThread = new Thread() {
                 public void run() {
@@ -408,6 +401,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     boolean hasInProgressLinks;
                     boolean hasTempDisabledLinks;
                     aborted = false;
+                    aborting = false;
                     int stopCounter = 5;
                     int currentTotalSpeed = 0;
                     int inProgress = 0;

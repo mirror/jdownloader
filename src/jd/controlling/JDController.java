@@ -768,6 +768,7 @@ public class JDController implements ControlListener {
      * und aktiviert die ersten downloads.
      */
     public boolean startDownloads() {
+        if (getDownloadStatus() == DOWNLOAD_TERMINATION_IN_PROGRESS) return false;
         synchronized (StartStopSync) {
             if (getDownloadStatus() == DOWNLOAD_NOT_RUNNING) {
                 setDownloadStatus(DOWNLOAD_RUNNING);
@@ -785,13 +786,13 @@ public class JDController implements ControlListener {
      * Bricht den Download ab und blockiert bis er abgebrochen wurde.
      */
     public boolean stopDownloads() {
+        if (getDownloadStatus() == DOWNLOAD_TERMINATION_IN_PROGRESS) return false;
         synchronized (StartStopSync) {
             if (getDownloadStatus() == DOWNLOAD_RUNNING) {
                 setDownloadStatus(DOWNLOAD_TERMINATION_IN_PROGRESS);
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE, this));
 
                 watchdog.abort();
-                setDownloadStatus(DOWNLOAD_NOT_RUNNING);
                 ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
                 synchronized (packages) {
                     for (FilePackage fp : packages) {
@@ -806,6 +807,7 @@ public class JDController implements ControlListener {
                 logger.info("termination broadcast");
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE, this));
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_STOP, this));
+                setDownloadStatus(DOWNLOAD_NOT_RUNNING);
                 return true;
             } else {
                 return false;

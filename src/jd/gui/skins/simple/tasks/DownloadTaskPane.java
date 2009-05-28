@@ -35,7 +35,6 @@ public class DownloadTaskPane extends TaskPanel {
 
     private static final long serialVersionUID = -9134449913836967453L;
     public static final int ACTION_SHOW_PANEL = 1;
-    public static final int ACTION_STARTSTOP = 2;
 
     private JLabel packages;
     private JLabel downloadlinks;
@@ -57,6 +56,7 @@ public class DownloadTaskPane extends TaskPanel {
 
         fadeTimer = new Thread() {
             public void run() {
+                this.setName("DownloadTask: infoupdate");
                 while (true) {
                     if (!isCollapsed()) update();
                     try {
@@ -96,14 +96,14 @@ public class DownloadTaskPane extends TaskPanel {
                 progress.setMaximum(tot);
                 progress.setValue(loaded);
                 progress.setToolTipText(Math.round((loaded * 10000.0) / tot) / 100.0 + "%");
-                //if (speedm > 1024) {
-                    speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(speedm) + "/s"));
-                    long etanum = speedm==0?0:(tot - loaded) / speedm;
-                    eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", Formatter.formatSeconds(etanum)));
-//                } else {
-//                    eta.setText("");
-//                    speed.setText("");
-//                }
+                // if (speedm > 1024) {
+                speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(speedm) + "/s"));
+                long etanum = speedm == 0 ? 0 : (tot - loaded) / speedm;
+                eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", Formatter.formatSeconds(etanum)));
+                // } else {
+                // eta.setText("");
+                // speed.setText("");
+                // }
                 return null;
             }
         }.start();

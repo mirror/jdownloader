@@ -27,7 +27,7 @@ public class Account extends Property {
 
     private boolean enabled = true;
     private String status = null;
-    private int tmpDisabledInterval;
+    private int tmpDisabledIntervalv2 = 10 * 60 * 1000;
 
     private transient boolean tempDisabled = false;
     private transient long tmpDisabledTime = 0;
@@ -59,15 +59,7 @@ public class Account extends Property {
     }
 
     public boolean isTempDisabled() {
-        logger.finest(user + " tempDisabled: " + tempDisabled);
-        logger.finest(user + " tmpDisabledTime: " + tmpDisabledTime + " " + (System.currentTimeMillis() - tmpDisabledTime) + ">" + getTmpDisabledInterval());
-        if (!tempDisabled) {
-            logger.finest(user + " ret: " + tempDisabled);
-            return false;
-        }
-
-        if ((System.currentTimeMillis() - tmpDisabledTime) > this.getTmpDisabledInterval()) tempDisabled = false;
-        logger.finest(user + " ret: " + tempDisabled);
+        if ((System.currentTimeMillis() - tmpDisabledTime) > this.getTmpDisabledInterval()) tempDisabled = false;        
         return tempDisabled;
     }
 
@@ -92,14 +84,9 @@ public class Account extends Property {
         this.status = status;
     }
 
-    public void setTempDisabled(boolean tempDisabled) {
-        this.tmpDisabledTime = System.currentTimeMillis();
-        if (tempDisabled) {
-            logger.finest("Account " + user + " disabled for " + tmpDisabledInterval + "ms");
-        } else {
-            logger.finest("Account " + user + " free to use");
-        }
+    public void setTempDisabled(boolean tempDisabled) {        
         if (this.tempDisabled == tempDisabled) return;
+        this.tmpDisabledTime = System.currentTimeMillis();
         this.tempDisabled = tempDisabled;
     }
 
@@ -123,11 +110,11 @@ public class Account extends Property {
      * @return
      */
     public int getTmpDisabledInterval() {
-        return tmpDisabledInterval;
+        return tmpDisabledIntervalv2;
     }
 
     public void setTmpDisabledInterval(int tmpDisabledInterval) {
-        this.tmpDisabledInterval = tmpDisabledInterval;
+        this.tmpDisabledIntervalv2 = tmpDisabledInterval;
     }
 
     public boolean equals(Account account2) {

@@ -583,15 +583,6 @@ public abstract class PluginForHost extends Plugin {
         HOSTER_WAIT_UNTIL_TIMES.put(this.getClass(), 0l);
     }
 
-    /**
-     * Führt alle resetvorgänge aus und bereitet das Plugin dadurch auf einen
-     * Neustart vor. Sollte nicht überschrieben werden
-     */
-    public final void resetPlugin() {
-        reset();
-        AccountController.getInstance().resetAllAccounts(this);
-    }
-
     public void resetPluginGlobals() {
         br = new Browser();
     }

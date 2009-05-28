@@ -53,7 +53,7 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST = "DOWNLOAD_MAX_SIMULTAN_PER_HOST";
 
-    public static final String PARAM_DOWNLOAD_MAX_SPEED = "DOWNLOAD_MAX_SPEED";
+    public static final String PARAM_DOWNLOAD_MAX_SPEED = "DOWNLOAD_MAX_SPEED_V2";
 
     public static final String PARAM_DOWNLOAD_READ_TIMEOUT = "DOWNLOAD_READ_TIMEOUT_V2";
 

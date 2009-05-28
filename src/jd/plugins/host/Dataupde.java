@@ -39,6 +39,7 @@ public class Dataupde extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
+            this.setBrowserExclusive();
             br.setCookie("http://www.dataup.de/", "language", "en");
             br.setFollowRedirects(false);
             br.getPage(downloadLink.getDownloadURL());
@@ -79,6 +80,7 @@ public class Dataupde extends PluginForHost {
         dl = br.openDownload(downloadLink, form, true, 1);
 
         if (dl.getConnection().getLongContentLength() == 0) {
+            dl.getConnection().disconnect();
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
             return;
