@@ -367,6 +367,13 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public void setWaiting(boolean b) {
+        
+        if(b){
+            this.getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        }else{
+            this.getGlassPane().setCursor(null);
+        }
+        
         if (b == isWaiting()) return;
         // super.setWaiting(b);
     }

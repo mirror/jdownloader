@@ -19,6 +19,7 @@ package jd.gui.skins.simple.config.subpanels;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Cursor;
+import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.ClipboardOwner;
@@ -48,9 +49,7 @@ import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
 import jd.config.ConfigEntry;
-import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
@@ -60,7 +59,6 @@ import jd.gui.JDLookAndFeelManager;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.JDTextField;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -357,9 +355,15 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
             // account.setEnabled(false);
 
-            info = new JXCollapsiblePane();
+            info = new JXCollapsiblePane() {
+                public void paint(Graphics g) {
+                    super.paint(g);
+                    SimpleGUI.CURRENTGUI.setWaiting(false);
+                }
+
+            };
             info.setAnimated(false);
-      
+
             info.setCollapsed(true);
             info.addPropertyChangeListener(new PropertyChangeListener() {
 
@@ -428,6 +432,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             }
             if (e.getSource() == btnCheck) {
                 if (info.isCollapsed()) {
+                    SimpleGUI.CURRENTGUI.setWaiting(true);
                     AccountInfo ai;
                     try {
                         Account acc = getAccount();
