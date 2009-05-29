@@ -295,7 +295,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     try {
                         Thread.sleep(5000);
                     } catch (InterruptedException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                        JDLogger.exception(e);
                     }
                 }
             }
@@ -354,16 +354,16 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         // glass.setOpaque(false);
 
         glass.setVisible(true);
-        
-        
-//        JDUtilities.getController().addControlListener(new ConfigPropertyListener(Configuration.PARAM_USE_GLOBAL_PREMIUM) {
-//
-//            @Override
-//            public void onPropertyChanged(Property source, String valid) {
-//            
-//            }
-//
-//        } );
+
+        // JDUtilities.getController().addControlListener(new
+        // ConfigPropertyListener(Configuration.PARAM_USE_GLOBAL_PREMIUM) {
+        //
+        // @Override
+        // public void onPropertyChanged(Property source, String valid) {
+        //            
+        // }
+        //
+        // } );
     }
 
     public void setWaiting(boolean b) {
@@ -814,7 +814,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                         }
                     }
                     logger.info("All downloads finished");
-                       
+
                     break;
                 // case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                 // break;
@@ -826,12 +826,12 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                 // break;
                 case ControlEvent.CONTROL_DOWNLOAD_START:
                     Balloon.showIfHidden(JDLocale.L("ballon.download.title", "Download"), JDTheme.II("gui.images.play", 32, 32), JDLocale.L("ballon.download.finished.started", "Download started"));
-                    
+
                     if (speedmeter != null) speedmeter.start();
                     break;
                 case ControlEvent.CONTROL_DOWNLOAD_STOP:
                     Balloon.showIfHidden(JDLocale.L("ballon.download.title", "Download"), JDTheme.II("gui.images.play", 32, 32), JDLocale.L("ballon.download.finished.stopped", "Download stopped"));
-                    
+
                     if (speedmeter != null) speedmeter.stop();
                     break;
                 }
@@ -1119,7 +1119,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     ai = pluginForHost.getAccountInformation(account);
                 } catch (Exception e) {
                     account.setEnabled(false);
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    JDLogger.exception(e);
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("gui.accountcheck.pluginerror", "Plugin %s may be defect. Inform support!", pluginForHost.getPluginID()));
                     return null;
                 }
@@ -1153,7 +1153,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                 freeTrafficChart.fetchImage();
 
                 for (int j = 0; j < data.length; j++) {
-                    if (data[j] != null && !data[j].equals("-1")) {
+                    if (data[j] != null && !data[j].equals("-1") && !data[j].equals("-1 B")) {
                         panel.add(new JLabel(label[j]), "gapleft 20");
                         if (label[j].equals(JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
                             JPanel panel2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -1191,7 +1191,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
             try {
                 JLinkButton.openURL("http://jdownloader.org/changes/index");
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                JDLogger.exception(e);
             }
         }
     }

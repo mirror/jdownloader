@@ -19,8 +19,8 @@ package jd.gui.skins.simple;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.TreeMap;
 
 import javax.swing.JLabel;
@@ -53,7 +53,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class PremiumStatus extends JPanel implements AccountControllerListener, ActionListener {
+public class PremiumStatus extends JPanel implements AccountControllerListener, ActionListener, MouseListener {
 
     private static final long serialVersionUID = 7290466989514173719L;
     private static final long UNLIMITED = 10l * 1024l * 1024l * 1024l;
@@ -61,7 +61,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private static final long ACCOUNT_UPDATE_DELAY = 15 * 60 * 1000;
     private TreeMap<String, ArrayList<AccountInfo>> map;
     private TreeMap<String, Long> mapSize;
-    private TinyProgressBar[] bars;
+    private PremiumBar[] bars;
 
     private long trafficTotal = 0l;
 
@@ -79,7 +79,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     @SuppressWarnings("unchecked")
     public PremiumStatus() {
         super();
-        bars = new TinyProgressBar[BARCOUNT];
+        bars = new PremiumBar[BARCOUNT];
         lbl = new JLabel(JDLocale.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
         setName(JDLocale.L("quickhelp.premiumstatusbar", "Premium statusbar"));
         this.setLayout(new MigLayout("ins 0", "", "[center]"));
@@ -103,64 +103,16 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         premium.setBorderPainted(false);
         updatePremiumButton();
         add(premium);
-        premium.addMouseListener(new JDMouseAdapter() {
-
-            public void mouseClicked(MouseEvent e) {
-                if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-                    SimpleGUI.CURRENTGUI.setWaiting(true);
-                    JPopupMenu popup = new JPopupMenu();
-                    for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
-                        if (!wrapper.isLoaded()) continue;
-                        if (!wrapper.isPremiumEnabled()) continue;
-                        JMenu pluginPopup = new JMenu(wrapper.getHost());
-                        ArrayList<MenuItem> entries = wrapper.getPlugin().createMenuitems();
-                        for (MenuItem next : entries) {
-                            JMenuItem mi = JDMenu.getJMenuItem(next);
-                            if (mi == null) {
-                                pluginPopup.addSeparator();
-                            } else {
-                                pluginPopup.add(mi);
-                            }
-                        }
-                        popup.add(pluginPopup);
-
-                    }
-
-                    popup.show(premium, e.getPoint().x, e.getPoint().y);
-                    SimpleGUI.CURRENTGUI.setWaiting(false);
-                }
-            }
-
-        });
+        premium.addMouseListener(this);
         add(new JSeparator(JSeparator.VERTICAL), "growy");
         add(lbl, "hidemode 3");
 
         for (int i = 0; i < BARCOUNT; i++) {
-            TinyProgressBar pg = new TinyProgressBar();
+            PremiumBar pg = new PremiumBar();
 
             pg.setOpaque(false);
             bars[i] = pg;
-            bars[i].addMouseListener(new JDMouseAdapter() {
-
-                public void mouseClicked(MouseEvent arg0) {
-
-                    for (int i = 0; i < BARCOUNT; i++) {
-                        if (bars[i] == arg0.getSource()) {
-                            for (Iterator<String> it = getMap().keySet().iterator(); it.hasNext();) {
-                                String host = it.next();
-
-                                if (i == 0) {
-                                    showDetails(JDUtilities.getPluginForHost(host));
-                                    return;
-                                }
-                                i--;
-                            }
-
-                        }
-                    }
-                }
-
-            });
+            bars[i].addMouseListener(this);
 
             pg.setVisible(false);
             add(pg, "hidemode 3");
@@ -229,10 +181,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                 bars[i].setEnabled(premium.isSelected());
             }
         }
-    }
-
-    private void showDetails(PluginForHost plugin) {
-        SimpleGUI.displayConfig(plugin.getConfig(), 1);
     }
 
     public JToolTip createToolTip() {
@@ -321,8 +269,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                     }
 
                     int i = 0;
-                    for (Iterator<String> it = getMap().keySet().iterator(); it.hasNext();) {
-                        String host = it.next();
+                    for (String host : getMap().keySet()) {
                         ArrayList<AccountInfo> list = getMap().get(host);
 
                         PluginForHost plugin = JDUtilities.getPluginForHost(host);
@@ -330,28 +277,23 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                         long left = 0l;
 
                         for (AccountInfo ai : list) {
-
                             max += ai.getTrafficMax();
                             left += ai.getTrafficLeft();
                         }
+
                         bars[i].setVisible(true);
                         bars[i].setIcon(plugin.getHosterIcon());
-                        bars[i].setMaximum(max);
                         bars[i].setAlignmentX(RIGHT_ALIGNMENT);
-                        bars[i].setValue(left);
+                        bars[i].setPlugin(plugin);
 
                         if (left >= 0) {
-                            // bars[i].setString(JDUtilities.formatKbReadable
-                            // (left
-                            // /
-                            // 1024));
+                            bars[i].setMaximum(max);
+                            bars[i].setValue(left);
                             bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), Formatter.formatReadable(left)));
                         } else {
                             bars[i].setMaximum(10);
                             bars[i].setValue(10);
-
                             bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.unlimited_traffic.tooltip", "%s -- Unlimited traffic! You can download as much as you want to.", host));
-
                         }
                         i++;
                         if (i >= BARCOUNT) break;
@@ -429,6 +371,86 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         if (e.getSource() == this.updateIntervalTimer) {
             doUpdate();
         }
+    }
+
+    public void mouseClicked(MouseEvent e) {
+        if (e.getSource() == premium) {
+            if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+                SimpleGUI.CURRENTGUI.setWaiting(true);
+                JPopupMenu popup = new JPopupMenu();
+                for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
+                    if (!wrapper.isLoaded()) continue;
+                    if (!wrapper.isPremiumEnabled()) continue;
+                    JMenu pluginPopup = new JMenu(wrapper.getHost());
+                    ArrayList<MenuItem> entries = wrapper.getPlugin().createMenuitems();
+                    for (MenuItem next : entries) {
+                        JMenuItem mi = JDMenu.getJMenuItem(next);
+                        if (mi == null) {
+                            pluginPopup.addSeparator();
+                        } else {
+                            pluginPopup.add(mi);
+                        }
+                    }
+                    popup.add(pluginPopup);
+
+                }
+
+                popup.show(premium, e.getPoint().x, e.getPoint().y);
+                SimpleGUI.CURRENTGUI.setWaiting(false);
+            }
+            return;
+        }
+        for (int i = 0; i < BARCOUNT; i++) {
+            if (bars[i] == e.getSource()) {
+                if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+                    SimpleGUI.CURRENTGUI.setWaiting(true);
+                    JPopupMenu popup = new JPopupMenu();
+                    ArrayList<MenuItem> entries = bars[i].getPlugin().createMenuitems();
+                    for (MenuItem next : entries) {
+                        JMenuItem mi = JDMenu.getJMenuItem(next);
+                        if (mi == null) {
+                            popup.addSeparator();
+                        } else {
+                            popup.add(mi);
+                        }
+                    }
+                    popup.show(premium, e.getPoint().x, e.getPoint().y);
+                    SimpleGUI.CURRENTGUI.setWaiting(false);
+                } else {
+                    SimpleGUI.displayConfig(bars[i].getPlugin().getConfig(), 1);
+                }
+                return;
+            }
+        }
+
+    }
+
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    public void mouseExited(MouseEvent e) {
+    }
+
+    public void mousePressed(MouseEvent e) {
+    }
+
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    private class PremiumBar extends TinyProgressBar {
+
+        private static final long serialVersionUID = 1212293549298358656L;
+
+        private PluginForHost plugin;
+
+        public void setPlugin(PluginForHost plugin) {
+            this.plugin = plugin;
+        }
+
+        public PluginForHost getPlugin() {
+            return plugin;
+        }
+
     }
 
 }
