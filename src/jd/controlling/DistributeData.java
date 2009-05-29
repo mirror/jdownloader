@@ -365,7 +365,10 @@ public class DistributeData extends Thread {
             }
 
             public void run() {
-                decryptedLinks.addAll(plg.decryptLinks(decryptableLinks));
+                ArrayList<DownloadLink> tmp = plg.decryptLinks(decryptableLinks);
+                synchronized (decryptedLinks) {
+                    decryptedLinks.addAll(tmp);
+                }
             }
 
             public void go() throws Exception {

@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -80,13 +81,9 @@ public class Vipfilecom extends PluginForHost {
         br.getPage(link);
         link = br.getRedirectLocation();
         if (!link.contains("vip-file.com")) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
-        br.getPage(link);
-        link = br.getRedirectLocation();
-        if (!link.contains("vip-file.com")) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
-        link = link.replaceAll("file.com.*?/", "file.com:8080/");
+        //link = link.replaceAll("file.com.*?/", "file.com:8080/");
         br.setFollowRedirects(true);
-
-        br.openDownload(downloadLink, link, true, 0).startDownload();
+        br.openDownload(downloadLink, link, true, 1).startDownload();
     }
 
     // @Override

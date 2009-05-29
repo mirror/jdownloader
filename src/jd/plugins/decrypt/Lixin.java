@@ -83,6 +83,7 @@ public class Lixin extends PluginForDecrypt {
                     /* KEIN EinzelLink gefunden, evtl ist es ein Folder */
                     Form[] forms = br.getForms();
                     for (Form element : forms) {
+                        if (element.containsHTML("Download")) continue;
                         br.submitForm(element);
                         /* EinzelLink gefunden */
                         link = br.getRegex("<iframe.*?src=\"(.+?)\"").getMatch(0);
