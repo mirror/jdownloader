@@ -20,6 +20,7 @@ import java.awt.Color;
 import java.io.IOException;
 import java.util.Vector;
 
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -53,8 +54,8 @@ public class AboutDialog extends AbstractDialog {
 
     private static final long serialVersionUID = -7647771640756844691L;
 
-    public void contentInit(JPanel cp) {
-
+    public JComponent contentInit() {
+        JPanel cp = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
         cp.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[][grow,fill][]"));
         JPanel p = new JPanel(new MigLayout("ins 0,wrap 2", "", "[shrink]"));
         p.setBackground(Color.WHITE);
@@ -127,6 +128,7 @@ public class AboutDialog extends AbstractDialog {
         cp.add(new JLinkButton(JDLocale.L("gui.dialog.about.homepage", "Homepage"), JDLocale.L("gui.dialog.about.homeurl", "http://www.jdownloader.org/home?lng=en")), "alignx right, aligny bottom");
         cp.add(new JLinkButton(JDLocale.L("gui.dialog.about.forum", "Support board"), JDLocale.L("gui.dialog.about.forumurl", "http://board.jdownloader.org")), "alignx right, aligny bottom");
         cp.add(new JLinkButton(JDLocale.L("gui.dialog.about.chat", "Chat"), JDLocale.L("gui.dialog.about.chaturl", "http://www.jdownloader.org/support?lng=en")), "alignx right, aligny bottom");
+        return cp;
     }
 
     protected void packed() {

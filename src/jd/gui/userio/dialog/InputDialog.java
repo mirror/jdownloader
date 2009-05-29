@@ -16,6 +16,7 @@
 
 package jd.gui.userio.dialog;
 
+import java.awt.Dimension;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -23,12 +24,14 @@ import java.awt.event.MouseListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
+import net.miginfocom.swing.MigLayout;
 
 public class InputDialog extends AbstractDialog implements KeyListener, MouseListener {
 
@@ -50,15 +53,15 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
     private static final long serialVersionUID = 9206575398715006581L;
 
     @Override
-    public void contentInit(JPanel contentpane) {
+    public JComponent contentInit() {
+        JPanel contentpane = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
         messageArea = new JTextPane();
         messageArea.setBorder(null);
         messageArea.setBackground(null);
         messageArea.setOpaque(false);
         messageArea.setText(this.message);
         messageArea.setEditable(false);
-        
-        
+
         contentpane.add(messageArea);
         if (JDFlags.hasAllFlags(flag, UserIO.STYLE_LARGE)) {
             input = new JTextPane();
@@ -67,17 +70,21 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
             input.addKeyListener(this);
             input.addMouseListener(this);
 
-            contentpane.add(new JScrollPane(input), "height 20:60:n,pushy,growy");
+            JScrollPane sp;
+            contentpane.add(sp = new JScrollPane(input), "height 20:60:n,pushy,growy");
+            sp.setBounds(0, 0, 450, 600);
+            sp.setMaximumSize(new Dimension(450, 600));
         } else {
             input = new JTextPane();
             input.setBorder(BorderFactory.createEtchedBorder());
             input.setText(this.defaultMessage);
             input.addKeyListener(this);
             input.addMouseListener(this);
-
+            input.setBounds(0, 0, 450, 600);
+            input.setMaximumSize(new Dimension(450, 600));
             contentpane.add(input, "pushy,growy, width n:n:450");
         }
-
+        return contentpane;
     }
 
     protected void packed() {

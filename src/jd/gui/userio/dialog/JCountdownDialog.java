@@ -39,7 +39,7 @@ public abstract class JCountdownDialog extends JDialog {
 
     public JCountdownDialog(SimpleGUI currentgui) {
         super(currentgui);
-        this.countDownLabel = new JLabel();
+        this.countDownLabel = new JLabel("no countdown");
         countDownLabel.setIcon(JDTheme.II("gui.images.cancel", 16, 16));
         countDownLabel.setToolTipText(JDLocale.L("gui.dialog.countdown.tooltip", "This dialog closes after a certain time. Click here to stop the countdown"));
         countDownLabel.addMouseListener(new JDMouseAdapter() {

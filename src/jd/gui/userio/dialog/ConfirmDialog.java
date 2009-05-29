@@ -16,8 +16,10 @@
 
 package jd.gui.userio.dialog;
 
+import java.awt.Dimension;
+
 import javax.swing.ImageIcon;
-import javax.swing.JPanel;
+import javax.swing.JComponent;
 import javax.swing.JTextPane;
 
 import jd.gui.UserIO;
@@ -39,21 +41,25 @@ public class ConfirmDialog extends AbstractDialog {
      */
     private static final long serialVersionUID = -7647771640756844691L;
 
-    public void contentInit(JPanel cp) {
+    public JComponent contentInit() {
         textField = new JTextPane();
 
         if (JDFlags.hasAllFlags(this.flag, UserIO.STYLE_HTML)) {
             textField.setContentType("text/html");
             // textPane.setEditable(false);
         }
-        textField.setBorder(null);
-        textField.setBackground(null);
+        textField.setContentType("text/html");
+        // textField.setBorder(null);
+        // textField.setBackground(null);
         textField.setOpaque(false);
         textField.setText(this.message);
         textField.setEditable(false);
 
-        cp.add(textField, "width n:n:450");
-      
+        // cp.add(textField, "width n:n:450");
+        textField.setBounds(0, 0, 450, 600);
+        textField.setMaximumSize(new Dimension(450, 600));
+        return textField;
+
     }
 
     public Integer getReturnID() {

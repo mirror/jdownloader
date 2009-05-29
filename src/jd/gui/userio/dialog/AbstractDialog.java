@@ -24,9 +24,9 @@ import java.awt.event.ActionListener;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 
 import jd.config.SubConfiguration;
@@ -48,8 +48,8 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     protected JButton btnOK;
 
-    protected JPanel contentpane;
-    protected static  Color BACKGROUND_COLOR = new Color(0xeae9d7);
+    protected JComponent contentpane;
+    protected static Color BACKGROUND_COLOR = new Color(0xeae9d7);
     protected int flag;
 
     private int returnValue = -1;
@@ -64,7 +64,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     public AbstractDialog(int flag, String title, ImageIcon icon, String okOption, String cancelOption) {
         super(SimpleGUI.CURRENTGUI);
-        contentpane = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
+
         this.flag = flag;
         setTitle(title);
 
@@ -92,24 +92,22 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             }
 
         }
-        this.setModal(true);
+        this.setModal(false);
 
-        this.setLayout(new MigLayout("ins 10,wrap 1", "[fill,grow]"));
+        this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
 
+        this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         btnOK = new JButton(this.okOption);
         btnOK.addActionListener(this);
-
         btnCancel = new JButton(this.cancelOption);
         btnCancel.addActionListener(this);
-
-        this.getRootPane().setDefaultButton(btnOK);
-        this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         if (icon != null) {
             add(new JLabel(this.icon), "split 2,alignx left,aligny center,shrinkx,gapright 10");
         }
-        contentInit(contentpane);
+        contentpane = contentInit();
         add(contentpane, "pushx,growx,pushy,growy,spanx,aligny center,wrap");
-        add(this.countDownLabel, "split 6,growx");
+
+        add(this.countDownLabel, "split 4,growx,growy,pushy");
 
         if ((flag & UserIO.DONT_SHOW_AGAIN) > 0) {
             dont = new JCheckBox();
@@ -119,14 +117,20 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             add(new JLabel(JDLocale.L("gui.dialogs.dontshowthisagain", "Don't show this again")));
             add(dont, "alignx right");
         }
+
         if ((flag & UserIO.NO_OK_OPTION) == 0) {
+
+            this.getRootPane().setDefaultButton(btnOK);
             add(btnOK, "alignx right");
         }
         if ((flag & UserIO.NO_CANCEL_OPTION) == 0) {
+
             add(btnCancel, "alignx right");
+            if ((flag & UserIO.NO_OK_OPTION) != 0) {
+                this.getRootPane().setDefaultButton(btnCancel);
+            }
         }
         this.setMinimumSize(new Dimension(300, -1));
-       
 
         if (SimpleGUI.CURRENTGUI == null) {
             this.setLocation(Screen.getCenterOfComponent(null, this));
@@ -135,25 +139,26 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         } else {
             this.setLocation(Screen.getCenterOfComponent(SimpleGUI.CURRENTGUI, this));
         }
-     
 
         if (JDFlags.hasNoFlags(flag, UserIO.NO_COUNTDOWN)) {
             this.countdown(UserIO.getCountdownTime());
         } else {
             countDownLabel.setVisible(false);
         }
+
         this.setAlwaysOnTop(true);
+        this.invalidate();
         this.pack();
         this.setResizable(true);
+        Dimension pref = this.getPreferredSize();
+
         this.packed();
-        this.toFront();     
+        this.toFront();
         this.setMinimumSize(this.getPreferredSize());
         this.setVisible(true);
-       
+        this.pack();
 
     }
-
-
 
     /**
      * may be overwritten to set focus to special components etc.
@@ -165,7 +170,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         return "dialog-" + this.getTitle();
     }
 
-    abstract public void contentInit(JPanel contentpane);
+    abstract public JComponent contentInit();
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnOK) {
