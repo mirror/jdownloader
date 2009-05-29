@@ -27,7 +27,7 @@ public class Account extends Property {
 
     private boolean enabled = true;
     private String status = null;
-    private int tmpDisabledIntervalv2 = 10 * 60 * 1000;
+    private transient long tmpDisabledIntervalv3 = 10 * 60 * 1000;
 
     private transient boolean tempDisabled = false;
     private transient long tmpDisabledTime = 0;
@@ -35,7 +35,7 @@ public class Account extends Property {
     public Account(String user, String pass) {
         this.user = user;
         this.pass = pass;
-        this.setTmpDisabledInterval(10 * 60 * 1000);
+        this.setTmpDisabledIntervalv3(10 * 60 * 1000l);
         if (this.user != null) this.user = this.user.trim();
         if (this.pass != null) this.pass = this.pass.trim();
     }
@@ -58,8 +58,16 @@ public class Account extends Property {
         return enabled;
     }
 
+    private void readObject(java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
+        /* nach dem deserialisieren sollen die transienten neu geholt werden */
+        stream.defaultReadObject();
+        tmpDisabledIntervalv3 = 10 * 60 * 1000l;
+        tempDisabled = false;
+        tmpDisabledTime = 0;
+    }
+
     public boolean isTempDisabled() {
-        if ((System.currentTimeMillis() - tmpDisabledTime) > this.getTmpDisabledInterval()) tempDisabled = false;        
+        if (tempDisabled && (System.currentTimeMillis() - tmpDisabledTime) > this.getTmpDisabledIntervalv3()) tempDisabled = false;
         return tempDisabled;
     }
 
@@ -84,7 +92,7 @@ public class Account extends Property {
         this.status = status;
     }
 
-    public void setTempDisabled(boolean tempDisabled) {        
+    public void setTempDisabled(boolean tempDisabled) {
         if (this.tempDisabled == tempDisabled) return;
         this.tmpDisabledTime = System.currentTimeMillis();
         this.tempDisabled = tempDisabled;
@@ -109,12 +117,12 @@ public class Account extends Property {
      * 
      * @return
      */
-    public int getTmpDisabledInterval() {
-        return tmpDisabledIntervalv2;
+    public long getTmpDisabledIntervalv3() {
+        return tmpDisabledIntervalv3;
     }
 
-    public void setTmpDisabledInterval(int tmpDisabledInterval) {
-        this.tmpDisabledIntervalv2 = tmpDisabledInterval;
+    public void setTmpDisabledIntervalv3(long tmpDisabledInterval) {
+        this.tmpDisabledIntervalv3 = tmpDisabledInterval;
     }
 
     public boolean equals(Account account2) {
