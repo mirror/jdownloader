@@ -19,7 +19,7 @@ package jd.controlling;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
@@ -158,7 +158,7 @@ public class PasswordListController implements ActionListener, DownloadControlle
 
     private void removeDups() {
         synchronized (LIST2) {
-            Set<String> list = new HashSet<String>();
+            Set<String> list = new LinkedHashSet<String>();
             for (String pw : LIST2) {
                 list.add(pw);
             }
