@@ -685,8 +685,8 @@ public abstract class PluginForHost extends Plugin {
         return "";
     }
 
-    public boolean useIcon() {
-        return false;
+    public final boolean hasHosterIcon() {
+        return JDImage.getImage("hosterlogos/" + getHost()) != null;
     }
 
     public final ImageIcon getHosterIcon() {
@@ -697,11 +697,9 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * CReates a dummyHosterIcon
-     * 
-     * @return
+     * Creates a dummyHosterIcon
      */
-    private Image createDefaultIcon() {
+    private final Image createDefaultIcon() {
         int w = 16;
         int h = 16;
         int size = 9;

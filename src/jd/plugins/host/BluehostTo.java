@@ -162,12 +162,8 @@ public class BluehostTo extends PluginForHost {
         return true;
     }
 
-    public boolean useIcon() {
-        return true;
-    }
-
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {        
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         // dateiname, dateihash, dateisize, dateidownloads, zeit bis HH
         this.setBrowserExclusive();
         br.setCookie("http://bluehost.to", "bluehost_lang", "DE");

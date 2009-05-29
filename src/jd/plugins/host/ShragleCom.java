@@ -124,10 +124,6 @@ public class ShragleCom extends PluginForHost {
         dl.startDownload();
     }
 
-    public boolean useIcon() {
-        return true;
-    }
-
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();

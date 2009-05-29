@@ -87,10 +87,10 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
     }
 
     private void initLocale() {
-        strOnline = JDLocale.L("linkgrabber.onlinestatus.online","online");
-        strOffline = JDLocale.L("linkgrabber.onlinestatus.offline","offline");
-        strUnchecked = JDLocale.L("linkgrabber.onlinestatus.unchecked","not checked");
-        strUnCheckable=JDLocale.L("linkgrabber.onlinestatus.uncheckable","temp. uncheckable");
+        strOnline = JDLocale.L("linkgrabber.onlinestatus.online", "online");
+        strOffline = JDLocale.L("linkgrabber.onlinestatus.offline", "offline");
+        strUnchecked = JDLocale.L("linkgrabber.onlinestatus.unchecked", "not checked");
+        strUnCheckable = JDLocale.L("linkgrabber.onlinestatus.uncheckable", "temp. uncheckable");
     }
 
     private void initIcons() {
@@ -141,7 +141,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             break;
         case LinkGrabberTreeTableModel.COL_HOSTER:
 
-            if (dLink.getPlugin().useIcon()) {
+            if (dLink.getPlugin().hasHosterIcon()) {
                 co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 clearSB();
                 sb.append(dLink.getPlugin().getHost());
@@ -192,7 +192,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
                         case UNCHECKABLE:
                             ((JRendererLabel) co).setIcon(this.imgUnknown);
                             clearSB();
-                            sb.append(strUnCheckable );
+                            sb.append(strUnCheckable);
                             break;
 
                         default:
@@ -201,7 +201,6 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
 
                     }
 
-                   
                 } else {
                     ((JRendererLabel) co).setIcon(imgFailed);
                     sb.append(strOffline);

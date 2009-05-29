@@ -336,7 +336,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
             fp = downloadLink.getFilePackage();
             this.txtpathlabel.setText(downloadLink.getFileOutput());
             this.typeicon.setIcon(downloadLink.getIcon());
-            if (downloadLink.getPlugin() != null) {
+            if (downloadLink.getPlugin() != null && downloadLink.getPlugin().hasHosterIcon()) {
                 this.hosterlabel.setIcon(downloadLink.getPlugin().getHosterIcon());
             } else {
                 this.hosterlabel.setIcon(null);

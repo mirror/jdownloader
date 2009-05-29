@@ -132,15 +132,17 @@ public class JDImage {
      * gibt ein bild zu dem übergebenem pfad zurück. nutzt einen cache
      * 
      * @param imageName
-     *            Name des Bildes das zurückgeliefert werden soll
+     *            Name des Bildes das zurückgeliefert werden soll (Endung ist
+     *            .png)
      * @return Das gewünschte Bild oder null, falls es nicht gefunden werden
      *         kann
      */
     public static BufferedImage getImage(String imageName) {
-        File file;
-        if (!(file = JDUtilities.getResourceFile("jd/img/" + imageName + ".png")).exists()) return null;
-        BufferedImage ret;
-        if ((ret = BUFFERED_IMAGE_CACHE.get(imageName)) != null) { return ret; }
+        File file = JDUtilities.getResourceFile("jd/img/" + imageName + ".png");
+        if (!file.exists()) return null;
+
+        BufferedImage ret = BUFFERED_IMAGE_CACHE.get(imageName);
+        if (ret != null) return ret;
 
         try {
             ret = ImageIO.read(file);
@@ -152,8 +154,9 @@ public class JDImage {
         return ret;
 
     }
+
     public static BufferedImage getImage(File file) {
- 
+
         BufferedImage ret;
         if ((ret = BUFFERED_IMAGE_CACHE.get(file.getAbsolutePath())) != null) { return ret; }
 
@@ -167,6 +170,7 @@ public class JDImage {
         return ret;
 
     }
+
     public static ImageIcon getImageIcon(String string) {
         ImageIcon ret;
         if ((ret = IMAGE_ICON_CACHE.get(string)) != null) { return ret; }
@@ -174,6 +178,7 @@ public class JDImage {
         IMAGE_ICON_CACHE.put(string, ret);
         return ret;
     }
+
     public static ImageIcon getImageIcon(File pat) {
         ImageIcon ret;
         if ((ret = IMAGE_ICON_CACHE.get(pat.getAbsolutePath())) != null) { return ret; }
@@ -181,6 +186,5 @@ public class JDImage {
         IMAGE_ICON_CACHE.put(pat.getAbsolutePath(), ret);
         return ret;
     }
-
 
 }

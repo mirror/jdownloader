@@ -243,7 +243,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
                 // ((JComponent) co).setToolTipText(null);
                 ((JRendererLabel) co).setText("plugin missing");
             } else {
-                if (dLink.getPlugin().useIcon()) {
+                if (dLink.getPlugin().hasHosterIcon()) {
                     sb.append(dLink.getPlugin().getHost());
                     sb.append(dLink.getPlugin().getSessionInfo());
                     ((JRendererLabel) co).setText(dLink.getPlugin().getSessionInfo());

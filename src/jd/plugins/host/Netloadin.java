@@ -313,10 +313,6 @@ public class Netloadin extends PluginForHost {
         return 800;
     }
 
-    public boolean useIcon() {
-        return true;
-    }
-
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);

@@ -564,7 +564,7 @@ public class Rapidshare extends PluginForHost {
             String freeOrPremiumSelectPostURL = null;
             Request request = null;
             String error = null;
-            
+
             // long startTime = System.currentTimeMillis();
             br = login(account, true);
 
@@ -1036,10 +1036,6 @@ public class Rapidshare extends PluginForHost {
 
             return br;
         }
-    }
-
-    public boolean useIcon() {
-        return true;
     }
 
     // @Override

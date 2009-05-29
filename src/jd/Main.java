@@ -533,7 +533,7 @@ public class Main {
         for (String clazz : classes) {
             try {
                 Class<?> plgClass;
-                plgClass = classLoader.loadClass(clazz.replace("/", ".").replace(".class", ""));
+                plgClass = classLoader.loadClass(clazz.replace("/", ".").replace(".class", "").substring(1));
                 if (plgClass == null) {
                     JDLogger.getLogger().info("Could not load " + clazz);
                     continue;
