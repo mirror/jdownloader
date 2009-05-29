@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class Megauploadcom extends PluginForHost {
+public class MegaPornCom extends PluginForHost {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
     private static final String CAPTCHA_MODE = "CAPTCHAMODE";
@@ -59,10 +59,10 @@ public class Megauploadcom extends PluginForHost {
 
     private static Boolean DL = false;
 
-    public Megauploadcom(PluginWrapper wrapper) {
+    public MegaPornCom(PluginWrapper wrapper) {
         super(wrapper);
 
-        this.enablePremium("http://megaupload.com/premium/en/");
+        this.enablePremium("http://megaporn.com/premium/en/");
         setConfigElements();
     }
 
@@ -78,7 +78,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public boolean isPremium() throws IOException {
-        br.getPage("http://www.megaupload.com/?c=account");
+        br.getPage("http://www.megaporn.com/?c=account");
         String type = br.getRegex(Pattern.compile("<TD>Account type:</TD>.*?<TD><b>(.*?)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (type == null || type.equalsIgnoreCase("regular")) return false;
         return true;
@@ -140,7 +140,7 @@ public class Megauploadcom extends PluginForHost {
         String url = null;
 
         br.setFollowRedirects(false);
-        br.getPage("http://megaupload.com/?d=" + getDownloadID(link));
+        br.getPage("http://megaporn.com/?d=" + getDownloadID(link));
 
         if (br.getRedirectLocation() == null) {
             Form form = br.getForm(0);
@@ -181,7 +181,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     private void doDownload(DownloadLink link, String url, boolean resume, int chunks) throws Exception {
-        url = url.replaceFirst("megaupload\\.com/", "megaupload\\.com:" + usePort() + "/");
+        url = url.replaceFirst("megaporn\\.com/", "megaporn\\.com:" + usePort() + "/");
         br.setFollowRedirects(true);
         br.setDebug(true);
         try {
@@ -220,25 +220,25 @@ public class Megauploadcom extends PluginForHost {
 
     // @Override
     public String getAGBLink() {
-        return "http://megaupload.com/terms/";
+        return "http://megaporn.com/terms/";
     }
 
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://megaupload.com", "l", "en");
+        br.setCookie("http://megaporn.com", "l", "en");
         if (account.getUser().trim().equalsIgnoreCase("cookie")) {
-            br.setCookie("http://megaupload.com", "user", account.getPass());
-            br.setCookie("http://www.megaupload.com", "user", account.getPass());
+            br.setCookie("http://megaporn.com", "user", account.getPass());
+            br.setCookie("http://www.megaporn.com", "user", account.getPass());
             br.setDebug(true);
-            br.getPage("http://megaupload.com/");
+            br.getPage("http://megaporn.com/");
         } else {
-            br.setCookie("http://megaupload.com", "l", "en");
-            br.getPage("http://megaupload.com/?c=login");
-            br.postPage("http://megaupload.com/?c=login", "login=1&redir=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            br.setCookie("http://megaporn.com", "l", "en");
+            br.getPage("http://megaporn.com/?c=login");
+            br.postPage("http://megaporn.com/?c=login", "login=1&redir=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         }
-        user = br.getCookie("http://megaupload.com", "user");
-        br.setCookie("http://megaupload.com", "user", user);
-        br.setCookie("http://www.megaupload.com", "user", user);
+        user = br.getCookie("http://megaporn.com", "user");
+        br.setCookie("http://megaporn.com", "user", user);
+        br.setCookie("http://www.megaporn.com", "user", user);
         if (user == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
@@ -265,7 +265,7 @@ public class Megauploadcom extends PluginForHost {
         // Accept-Encoding: *;q=0.1
         // TE: trailers
         // Expect: 100-continue
-        // Host: www.megaupload.com
+        // Host: www.megaporn.com
         // Connection: TE
         // Date: Tue, 10 Mar 2009 16:15:47 GMT
         // Cookie:
@@ -286,7 +286,7 @@ public class Megauploadcom extends PluginForHost {
         br.getHeaders().put("Accept-Encoding", "*;q=0.1");
         br.getHeaders().put("TE", "trailers");
         br.getHeaders().put("Expect", "100-continue");
-        br.getHeaders().put("Host", "www.megaupload.com");
+        br.getHeaders().put("Host", "www.megaporn.com");
         br.getHeaders().put("Connection", "TE");
         SimpleDateFormat df = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss", Locale.ENGLISH);
 
@@ -304,7 +304,7 @@ public class Megauploadcom extends PluginForHost {
 
         try {
 
-            String[] Dls = br.postPage("http://megaupload.com/mgr_linkcheck.php", map).split("&?(?=id[\\d]+=)");
+            String[] Dls = br.postPage("http://megaporn.com/mgr_linkcheck.php", map).split("&?(?=id[\\d]+=)");
             br.getHeaders().clear();
             br.getHeaders().setDominant(false);
             for (i = 1; i < Dls.length; i++) {
@@ -344,7 +344,7 @@ public class Megauploadcom extends PluginForHost {
 
     public void handleFree1(DownloadLink link, Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setCookie("http://megaupload.com", "l", "en");
+        br.setCookie("http://megaporn.com", "l", "en");
         initHeaders(br);
 
         if (account != null) {
@@ -356,7 +356,7 @@ public class Megauploadcom extends PluginForHost {
 
         while (captchTries-- >= 0) {
 
-            br.getPage("http://megaupload.com/?d=" + getDownloadID(link));
+            br.getPage("http://megaporn.com/?d=" + getDownloadID(link));
             String red = br.getRegex("document\\.location='(.*?)'").getMatch(0);
             if (red != null) {
                 logger.severe("YOur IP got banned");
@@ -486,14 +486,14 @@ public class Megauploadcom extends PluginForHost {
         br.getHeaders().put("Accept", "text/plain,text/html,*/*;q=0.3");
         br.getHeaders().put("Accept-Encoding", "*;q=0.1");
         br.getHeaders().put("TE", "trailers");
-        br.getHeaders().put("Host", "www.megaupload.com");
+        br.getHeaders().put("Host", "www.megaporn.com");
         br.getHeaders().put("Connection", "TE");
         br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
 
         if (user != null) {
-            getRedirect("http://megaupload.com/mgr_dl.php?d=" + dlID + "&u=" + user, link);
+            getRedirect("http://megaporn.com/mgr_dl.php?d=" + dlID + "&u=" + user, link);
         } else {
-            getRedirect("http://megaupload.com/mgr_dl.php?d=" + dlID, link);
+            getRedirect("http://megaporn.com/mgr_dl.php?d=" + dlID, link);
         }
         if (br.getRedirectLocation() == null || br.getRedirectLocation().toUpperCase().contains(dlID)) {
             if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 2) {
@@ -528,7 +528,7 @@ public class Megauploadcom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         user = null;
-        br.setCookie("http://megaupload.com", "l", "en");
+        br.setCookie("http://megaporn.com", "l", "en");
         requestFileInformation(parameter);
         handleFree0(parameter, null);
     }
