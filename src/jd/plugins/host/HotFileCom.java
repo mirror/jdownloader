@@ -65,7 +65,7 @@ public class HotFileCom extends PluginForHost {
             ai.setValid(false);
             return ai;
         }
-        String validUntil = br.getRegex("<td>Until.*?</td><td>(.*?2009-06-08 22:28:16)</td>").getMatch(0);
+        String validUntil = br.getRegex("<td>Until.*?</td><td>(.*?)</td>").getMatch(0);
         if (validUntil == null) {
             ai.setValid(false);
         } else {
