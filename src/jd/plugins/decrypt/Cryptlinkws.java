@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -82,19 +81,12 @@ public class Cryptlinkws extends PluginForDecrypt {
                         /* Eingabefeld für Passwort vorhanden */
                         String password = getUserInput(null, param);
                         forms[0].put("folderpass", password);
-
                     }
 
                     if (forms[0].hasInputFieldByName("captchainput")) {
-                        /* Eingabefeld für Captcha vorhanden */
-
-                        File captchaFile = getLocalCaptchaFile();
-                        String captchaCode;
-                        br.cloneBrowser().getDownload(captchaFile, "http://www.cryptlink.ws/captcha.php");
                         /* CaptchaCode holen */
-                        captchaCode = getCaptchaCode(captchaFile, param);
+                        String captchaCode = getCaptchaCode("http://www.cryptlink.ws/captcha.php", param);
                         forms[0].put("captchainput", captchaCode);
-
                     }
 
                     br.submitForm(forms[0]);

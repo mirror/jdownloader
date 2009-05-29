@@ -91,20 +91,16 @@ public class Stealth extends PluginForDecrypt {
                     }
                     logger.finest("Captcha Protected");
                     String captchaAdress = "http://stealth.to/captcha_img.php?PHPSESSID=" + sessid;
-                    File file = this.getLocalCaptchaFile();
+                    String code = getCaptchaCode(captchaAdress, param);
                     Form form = br.getForm(0);
-                    Browser.download(file, br.cloneBrowser().openGetConnection(captchaAdress));
-                    String code = getCaptchaCode(file, param);
                     form.put("txtCode", code);
                     br.submitForm(form);
                 } else if (br.containsHTML("libs/captcha.php")) {
                     /* Neue Captcha Seite */
                     valid = false;
                     logger.finest("Captcha Protected");
-                    File file = this.getLocalCaptchaFile();
+                    String code = getCaptchaCode("http://stealth.to/libs/captcha.php", param);
                     Form form = br.getForm(0);
-                    Browser.download(file, br.cloneBrowser().openGetConnection("http://stealth.to/libs/captcha.php"));
-                    String code = getCaptchaCode(file, param);
                     form.put("code", code);
                     br.submitForm(form);
                 } else if (br.containsHTML("libs/crosshair.php")) {

@@ -39,7 +39,6 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTMLEntities;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.Screen;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -118,11 +117,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
             if (!mirrors.get(i).getUse() && !mirrors.get(i).getUseForSample()) continue;
             for (int retry = 1; retry <= 5; retry++) {
                 String captchaURL = "/captcha" + form.getRegex("<img\\ssrc=\"/captcha(.*?)\"").getMatch(0);
-                if (captchaURL == null) return null;
-                URLConnectionAdapter con = br.openGetConnection(captchaURL);
-                File captchaFile = this.getLocalCaptchaFile();
-                Browser.download(captchaFile, con);
-                String code = getCaptchaCode(captchaFile, param);
+                String code = getCaptchaCode(captchaURL, param);
                 br.postPage(parameter, "captcha=" + code + "&" + mirrors.get(i).getKey() + "=");
                 if (!br.containsHTML("Fehler: Der Sicherheits-Code")) {
                     break;

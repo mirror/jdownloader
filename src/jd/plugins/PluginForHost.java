@@ -68,6 +68,10 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException {
+        return getCaptchaCode(getHost(), captchaAddress, downloadLink);
+    }
+
+    protected String getCaptchaCode(String method, String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException {
         if (captchaAddress == null) {
             logger.severe("Captcha Adresse nicht definiert");
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -79,12 +83,12 @@ public abstract class PluginForHost extends Plugin {
             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        String captchaCode = getCaptchaCode(this.getHost(), captchaFile, 0, downloadLink, null, null);
+        String captchaCode = getCaptchaCode(method, captchaFile, downloadLink);
         return captchaCode;
     }
 
     protected String getCaptchaCode(File captchaFile, DownloadLink downloadLink) throws PluginException {
-        return getCaptchaCode(this.getHost(), captchaFile, downloadLink);
+        return getCaptchaCode(getHost(), captchaFile, downloadLink);
     }
 
     protected String getCaptchaCode(String methodname, File captchaFile, DownloadLink downloadLink) throws PluginException {

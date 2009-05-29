@@ -16,13 +16,10 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -46,10 +43,7 @@ public class CrystalWarezIN extends PluginForDecrypt {
             if (parameter.matches(patternLink_Protected)) {
                 String code = null;
                 while (code == null) {
-                    File file = this.getLocalCaptchaFile();
-                    URLConnectionAdapter con = br.cloneBrowser().openGetConnection("http://crystal-warez.in/securimage_show.php");
-                    Browser.download(file, con);
-                    code = getCaptchaCode(file, param);
+                    code = getCaptchaCode("http://crystal-warez.in/securimage_show.php", param);
                     Form form = br.getForm(2);
                     form.put("captcha", code);
                     br.submitForm(form);

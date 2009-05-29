@@ -16,14 +16,12 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -60,10 +58,7 @@ public class BestMovies extends PluginForDecrypt {
 
             if (br.getRegex(patternCaptcha_Needed).matches()) {
                 /* Captcha vorhanden */
-                File captchaFile = this.getLocalCaptchaFile();
-                Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://" + host + "/clockcaptcha.php"));
-
-                String captchaCode = getCaptchaCode(captchaFile, param);
+                String captchaCode = getCaptchaCode("http://" + host + "/clockcaptcha.php", param);
 
                 String time[] = new Regex(captchaCode, "(\\d+)[\\.\\:\\-\\,](\\d+)").getRow(0);
 

@@ -16,12 +16,10 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -44,9 +42,7 @@ public class UUCannaTo extends PluginForDecrypt {
         for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
             Form captchaForm = br.getFormbyProperty("name", "download_form");
             String captchaUrl = br.getRegex("<img\\s+src=\"(captcha/captcha\\.php\\?id=[\\d]+)\"").getMatch(0);
-            File captchaFile = this.getLocalCaptchaFile();
-            Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
-            String captchaCode = getCaptchaCode(captchaFile, param);
+            String captchaCode = getCaptchaCode(captchaUrl, param);
             captchaForm.put("sicherheitscode", captchaCode);
             br.submitForm(captchaForm);
 

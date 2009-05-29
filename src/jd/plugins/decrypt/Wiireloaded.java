@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -58,21 +57,17 @@ public class Wiireloaded extends PluginForDecrypt {
                 return null;
             }
             String adr = "http://wii-reloaded.ath.cx/protect/captcha/captcha.php";
-            File captchaFile = getLocalCaptchaFile();
-            Browser.download(captchaFile, br.cloneBrowser().openGetConnection(adr));
+
             progress.addToMax(1);
-            if (!captchaFile.exists() || captchaFile.length() == 0) {
-                return null;
-            } else {
-                String capTxt = getCaptchaCode(captchaFile, param);
-                Form post = br.getForm(0);
-                post.put("sicherheitscode", capTxt);
-                try {
-                    Thread.sleep(500);
-                } catch (Exception e) {
-                }
-                br.submitForm(post);
+
+            String capTxt = getCaptchaCode(adr, param);
+            Form post = br.getForm(0);
+            post.put("sicherheitscode", capTxt);
+            try {
+                Thread.sleep(500);
+            } catch (Exception e) {
             }
+            br.submitForm(post);
         }
         String[] ids = br.getRegex("onClick=\"popup_dl\\((.*?)\\)\"").getColumn(0);
         logger.finer("ids found" + ids.length);
@@ -83,16 +78,12 @@ public class Wiireloaded extends PluginForDecrypt {
                 brc.getPage("http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element);
                 if (brc.containsHTML("captcha/numeric.php")) {
                     String adr = "http://wii-reloaded.ath.cx/protect/captcha/numeric.php";
-                    File captchaFile = getLocalCaptchaFile();
-                    Browser.download(captchaFile, brc.cloneBrowser().openGetConnection(adr));
-                    if (!captchaFile.exists() || captchaFile.length() == 0) {
-                        return null;
-                    } else {
-                        String capTxt = getCaptchaCode("wii-numeric", captchaFile, param);
-                        Form post = brc.getForm(0);
-                        post.put("insertvalue", capTxt);
-                        brc.submitForm(post);
-                    }
+
+                    String capTxt = getCaptchaCode("wii-numeric", adr, param);
+                    Form post = brc.getForm(0);
+                    post.put("insertvalue", capTxt);
+                    brc.submitForm(post);
+
                 } else {
                     Form form = brc.getForm(0);
                     form.put("insertvalue", submitvalue + "");

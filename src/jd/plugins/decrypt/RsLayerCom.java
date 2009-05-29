@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -77,10 +76,7 @@ public class RsLayerCom extends PluginForDecrypt {
                     String captchaFileName = br.getRegex(strCaptchaPattern).getMatch(0);
                     if (captchaFileName == null) { return null; }
                     String captchaUrl = "http://rs-layer.com/" + captchaFileName;
-                    File captchaFile = getLocalCaptchaFile(".png");
-                    Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
-
-                    String captchaCode = getCaptchaCode(captchaFile, param);
+                    String captchaCode = getCaptchaCode(captchaUrl, param);
                     captchaForm.put("captcha_input", captchaCode);
                     br.submitForm(captchaForm);
 

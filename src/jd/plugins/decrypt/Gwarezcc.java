@@ -25,7 +25,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -139,11 +138,8 @@ public class Gwarezcc extends PluginForDecrypt {
                             form.put("recaptcha_response_field", code);
                             br.submitForm(form);
                         } else {
+                            String code = getCaptchaCode("captcha/captcha.php", param);
                             Form cap = br.getForm(0);
-                            URLConnectionAdapter con = br.cloneBrowser().openGetConnection("captcha/captcha.php");
-                            File captchaFile = this.getLocalCaptchaFile();
-                            Browser.download(captchaFile, con);
-                            String code = getCaptchaCode(captchaFile, param);
                             cap.put("sicherheitscode", code);
                             br.submitForm(cap);
                         }

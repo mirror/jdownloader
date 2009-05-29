@@ -16,12 +16,10 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -56,10 +54,7 @@ public class Lixin extends PluginForDecrypt {
                     String capturl = form.getRegex("<img src=\"(.*?captcha.*?)\"").getMatch(0);
                     if (capturl != null) {
                         lix_continue = false;
-                        String captchaAddress = "http://" + getHost() + "/" + capturl;
-                        File captchaFile = this.getLocalCaptchaFile();
-                        Browser.download(captchaFile, captchaAddress);
-                        String captchaCode = getCaptchaCode(captchaFile, param);
+                        String captchaCode = getCaptchaCode("http://" + getHost() + "/" + capturl, param);
                         captchaCode = captchaCode.toUpperCase();
                         form.put("capt", captchaCode);
                         br.submitForm(form);

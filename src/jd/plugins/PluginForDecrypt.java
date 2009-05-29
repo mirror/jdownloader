@@ -18,6 +18,7 @@ package jd.plugins;
 
 import java.awt.Color;
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
@@ -33,6 +34,7 @@ import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.Formatter;
 import jd.nutils.jobber.JDRunnable;
@@ -195,12 +197,32 @@ public abstract class PluginForDecrypt extends Plugin {
         return tmpLinks;
     }
 
-    protected String getCaptchaCode(String methodname, File captchaFile, CryptedLink param) throws DecrypterException {
-        return this.getCaptchaCode(methodname, captchaFile, 0, param, null, null);
+    protected String getCaptchaCode(String captchaAddress, CryptedLink param) throws IOException, DecrypterException {
+        return getCaptchaCode(getHost(), captchaAddress, param);
+    }
+
+    protected String getCaptchaCode(String method, String captchaAddress, CryptedLink param) throws IOException, DecrypterException {
+        if (captchaAddress == null) {
+            logger.severe("Captcha Adresse nicht definiert");
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
+        File captchaFile = this.getLocalCaptchaFile();
+        try {
+            Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
+        } catch (Exception e) {
+            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
+        String captchaCode = getCaptchaCode(method, captchaFile, param);
+        return captchaCode;
     }
 
     protected String getCaptchaCode(File captchaFile, CryptedLink param) throws DecrypterException {
-        return this.getCaptchaCode(this.getHost(), captchaFile, 0, param, null, null);
+        return getCaptchaCode(getHost(), captchaFile, param);
+    }
+
+    protected String getCaptchaCode(String methodname, File captchaFile, CryptedLink param) throws DecrypterException {
+        return getCaptchaCode(methodname, captchaFile, 0, param, null, null);
     }
 
     /**
@@ -348,7 +370,7 @@ public abstract class PluginForDecrypt extends Plugin {
         }
         return chits.toArray((new CryptedLink[chits.size()]));
     }
-    
+
     protected void setBrowserExclusive() {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());

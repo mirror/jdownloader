@@ -62,9 +62,7 @@ public class CryptMeCom extends PluginForDecrypt {
                 cont = false;
                 Form form = br.getForm(0);
                 String captchaAddress = "http://crypt-me.com/rechen-captcha.php";
-                File captchaFile = this.getLocalCaptchaFile();
-                Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
-                String captchaCode = getCaptchaCode("crypt-me.com.Calc", captchaFile, param);
+                String captchaCode = getCaptchaCode("crypt-me.com.Calc", captchaAddress, param);
                 /* Calculation process */
                 captchaCode = captchaCode.replaceAll("_", "-").replaceAll("=", "").replaceAll("!", "");
                 if (captchaCode.contains("-")) {
@@ -81,9 +79,7 @@ public class CryptMeCom extends PluginForDecrypt {
                 cont = false;
                 Form form = br.getForm(0);
                 String captchaAddress = br.getRegex("<img src=\"(http://crypt-me\\.com/captchanew/show\\.php.*?)\"").getMatch(0);
-                File captchaFile = this.getLocalCaptchaFile();
-                Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
-                String captchaCode = getCaptchaCode("linkprotect.in", captchaFile, param);
+                String captchaCode = getCaptchaCode("linkprotect.in", captchaAddress, param);
                 form.put("code", captchaCode);
                 br.submitForm(form);
             } else {

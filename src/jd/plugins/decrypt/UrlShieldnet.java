@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -33,10 +32,6 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
 public class UrlShieldnet extends PluginForDecrypt {
-
-    private String captchaCode;
-    private File captchaFile;
-    private String passCode = null;
 
     public UrlShieldnet(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,7 +57,7 @@ public class UrlShieldnet extends PluginForDecrypt {
                 do_continue = false;
                 /* Passwort */
                 form = br.getForm(0);
-                passCode = getUserInput(null, param);
+                String passCode = getUserInput(null, param);
                 form.put("password", passCode);
 
                 br.submitForm(form);
@@ -103,12 +98,9 @@ public class UrlShieldnet extends PluginForDecrypt {
                 if (br.containsHTML("getkey\\.php\\?id")) {
                     String captchaurl = br.getRegex(Pattern.compile("src=\"(/getkey\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                     form = br.getForm(0);
-                    /* Captcha zu verarbeiten */
-                    captchaFile = getLocalCaptchaFile();
 
-                    br.cloneBrowser().getDownload(captchaFile, "http://www.urlshield.net" + captchaurl);
                     /* CaptchaCode holen */
-                    captchaCode = getCaptchaCode(captchaFile, param);
+                    String captchaCode = getCaptchaCode("http://www.urlshield.net" + captchaurl, param);
                     form.put("userkey", captchaCode);
 
                     br.submitForm(form);

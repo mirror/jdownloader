@@ -101,10 +101,8 @@ public class ProtectorTO extends PluginForDecrypt {
             int retry = 1;
             while ((img = br.getRegex("<img id=[\"']cryptogram[\"'] src=[\"']([^\"']*)[\"']").getMatch(0)) != null) {
                 if (retry > 5) throw new DecrypterException(DecrypterException.CAPTCHA);
-                File file = this.getLocalCaptchaFile();
-                Browser.download(file, img);
                 Form form = br.getForm(0);
-                String captchaCode = getCaptchaCode(file, param);
+                String captchaCode = getCaptchaCode(img, param);
                 if (captchaCode == null) return null;
                 form.put("code", captchaCode);
                 br.submitForm(form);
@@ -124,9 +122,7 @@ public class ProtectorTO extends PluginForDecrypt {
                 String challenge = rcBr.getRegex("challenge : '(.*?)',").getMatch(0);
                 String server = rcBr.getRegex("server : '(.*?)',").getMatch(0);
                 String captchaAddress = server + "image?c=" + challenge;
-                File captchaFile = this.getLocalCaptchaFile();
-                Browser.download(captchaFile, rcBr.openGetConnection(captchaAddress));
-                String code = getCaptchaCode(captchaFile, param);
+                String code = getCaptchaCode(captchaAddress, param);
                 if (code == null) continue;
                 form.put("recaptcha_challenge_field", challenge);
                 form.put("recaptcha_response_field", code);

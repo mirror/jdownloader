@@ -16,12 +16,10 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -49,9 +47,7 @@ public class XinkIt extends PluginForDecrypt {
 
                 String captchaAdress = "http://xink.it/captcha-" + br.getRegex("src=\"captcha-(.*?)\"").getMatch(0);
 
-                File captchaFile = getLocalCaptchaFile();
-                Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAdress));
-                String captchaCode = getCaptchaCode(captchaFile, param);
+                String captchaCode = getCaptchaCode(captchaAdress, param);
 
                 Form captchaForm = br.getForm(0);
                 captchaForm.put("captcha", captchaCode);

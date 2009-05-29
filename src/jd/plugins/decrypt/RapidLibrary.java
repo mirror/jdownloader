@@ -16,12 +16,10 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
@@ -58,9 +56,7 @@ public class RapidLibrary extends PluginForDecrypt {
             Form captchaForm = br.getForms()[1];
             if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             captchaForm.setAction(br.getURL());
-            Browser capRead = br.cloneBrowser();
-            File captchaFile = capRead.getDownloadTemp("http://rapidlibrary.com/code2.php");
-            String captchaCode = getCaptchaCode(captchaFile, parameter);
+            String captchaCode = getCaptchaCode("http://rapidlibrary.com/code2.php", parameter);
             InputField nv = new InputField("c_code", captchaCode);
             captchaForm.addInputField(nv);
             br.submitForm(captchaForm);

@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -125,14 +124,8 @@ public class LinkbaseBiz extends PluginForDecrypt {
                 }
                 String captchaurl = br.getRegex("<img src='(.*?captcha.*?)'").getMatch(0);
                 if (captchaurl != null) {
+                    String captchaCode = getCaptchaCode("http://linkbase.biz/" + captchaurl, param);
                     Form form = br.getForm(0);
-                    File captchaFile = this.getLocalCaptchaFile();
-                    try {
-                        Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://linkbase.biz/" + captchaurl));
-                    } catch (Exception e) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
-                    }
-                    String captchaCode = getCaptchaCode(captchaFile, param);
                     form.put("captcha", captchaCode);
                     br.submitForm(form);
                     if (br.containsHTML("Das war leider Falsch")) {

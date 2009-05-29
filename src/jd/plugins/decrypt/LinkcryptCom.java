@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -41,16 +40,11 @@ public class LinkcryptCom extends PluginForDecrypt {
         br.getPage(parameter);
 
         if (br.containsHTML("Sicherheitscode")) {
-            Form f = br.getForm(0);
             String url = br.getRegex("(captcha\\-.*?\\.gif)").getMatch(0);
-            File captchaFile = this.getLocalCaptchaFile();
-            Browser.download(captchaFile, br.cloneBrowser().openGetConnection(url));
-
-            String captchaCode = getCaptchaCode(captchaFile, param);
-            if (captchaCode == null) return null;
+            String captchaCode = getCaptchaCode(url, param);
+            Form f = br.getForm(0);
             f.put("captcha", captchaCode);
             br.submitForm(f);
-
         }
         String[] ids = br.getRegex("startDownload\\(\\'(.*?)\\'\\)").getColumn(0);
         if (ids.length > 0) {

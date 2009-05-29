@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
@@ -52,11 +51,8 @@ public class DreiDlAm extends PluginForDecrypt {
             br.getPage(parameter);
             String captcha = br.getRegex(Pattern.compile("><img src=\"/images/captcha5\\.php(.*?)\" /></td>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (captcha != null) {
-                File file = this.getLocalCaptchaFile();
+                String capTxt = getCaptchaCode("http://3dl.am/images/captcha5.php" + captcha, link);
                 Form form = br.getForm(3);
-                br.cloneBrowser().getDownload(file, "http://3dl.am/images/captcha5.php" + captcha);
-
-                String capTxt = getCaptchaCode(file, link);
                 form.put("antwort", capTxt);
                 br.submitForm(form);
                 if (!br.containsHTML("/failed.html';")) break;

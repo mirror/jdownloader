@@ -16,13 +16,10 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
@@ -44,10 +41,7 @@ public class CineTo extends PluginForDecrypt {
         synchronized (lock) {
             br.getPage(parameter);
             if (parameter.matches(patternLink_Protected)) {
-                File file = this.getLocalCaptchaFile();
-                URLConnectionAdapter con = br.openGetConnection("http://cine.to/securimage_show.php");
-                Browser.download(file, con);
-                String code = getCaptchaCode(file, param);
+                String code = getCaptchaCode("http://cine.to/securimage_show.php", param);
                 br.postPage(param.toString(), "captcha=" + code + "&submit=Senden");
                 if (br.containsHTML("Code ist falsch")) throw new DecrypterException(DecrypterException.CAPTCHA);
                 String[] links = br.getRegex("window\\.open\\('(.*?)'").getColumn(0);

@@ -16,12 +16,10 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -39,9 +37,7 @@ public class ScumIn extends PluginForDecrypt {
 
         br.getPage(parameter);
 
-        File captchaFile = this.getLocalCaptchaFile();
-        Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://scum.in/share/includes/captcha.php?t="));
-        String captchaCode = getCaptchaCode(captchaFile, param);
+        String captchaCode = getCaptchaCode("http://scum.in/share/includes/captcha.php?t=", param);
 
         br.postPage("http://scum.in/plugins/home/links.callback.php", "id=" + parameter.substring(parameter.lastIndexOf("=") + 1) + "&captcha=" + captchaCode);
 

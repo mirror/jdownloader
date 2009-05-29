@@ -16,13 +16,11 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -275,9 +273,7 @@ public class Secured extends PluginForDecrypt {
             while (br.getRegex(PAT_CAPTCHA).matches()) {
 
                 String captchaAdress = "http://secured.in/" + br.getRegex(PAT_CAPTCHA).getMatch(0);
-                File captchaFile = getLocalCaptchaFile();
-                Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAdress));
-                String captchaCode = getCaptchaCode(captchaFile, param);
+                String captchaCode = getCaptchaCode(captchaAdress, param);
 
                 Form captchaForm = br.getForm(0);
                 captchaForm.put("captcha_key", captchaCode.toUpperCase());

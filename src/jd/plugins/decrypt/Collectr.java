@@ -16,14 +16,12 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -74,10 +72,7 @@ public class Collectr extends PluginForDecrypt {
             fp.setName(new Regex(page, PATTERN_FOLDERNAME).getMatch(0));
             if (saptcha != null) {
                 // Captcha on
-                File file = this.getLocalCaptchaFile();
-                Browser c = br.cloneBrowser();
-                Browser.download(file, c.openGetConnection("http://collectr.net/img/saptcha" + saptcha + ".gif"));
-                String captchaCode = getCaptchaCode(file, param);
+                String captchaCode = getCaptchaCode("http://collectr.net/img/saptcha" + saptcha + ".gif", param);
                 HashMap<String, String> post = new HashMap<String, String>();
                 post.put("saptcha", captchaCode);
                 post.put("id", saptcha);

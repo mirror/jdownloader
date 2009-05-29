@@ -84,13 +84,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         setName(JDLocale.L("quickhelp.premiumstatusbar", "Premium statusbar"));
         this.setLayout(new MigLayout("ins 0", "", "[center]"));
         premium = new JToggleButton();
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
-            premium.setSelected(true);
-            premium.setIcon(JDTheme.II("gui.images.premium_enabled", 16, 16));
-        } else {
-            premium.setSelected(false);
-            premium.setIcon(JDTheme.II("gui.images.premium_disabled", 16, 16));
-        }
         premium.setToolTipText(JDLocale.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
 
         premium.addActionListener(new ActionListener() {
@@ -108,6 +101,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         premium.setFocusPainted(false);
         premium.setContentAreaFilled(false);
         premium.setBorderPainted(false);
+        updatePremiumButton();
         add(premium);
         premium.addMouseListener(new JDMouseAdapter() {
 
@@ -208,7 +202,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                 SwingUtilities.invokeLater(new Runnable() {
 
                     public void run() {
-                        premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
                         updateGUI();
                     }
 
@@ -218,12 +211,18 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         });
     }
 
-    private void updateGUI() {
-        if (premium.isSelected()) {
+    private void updatePremiumButton() {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
+            premium.setSelected(true);
             premium.setIcon(JDTheme.II("gui.images.premium_enabled", 16, 16));
         } else {
+            premium.setSelected(false);
             premium.setIcon(JDTheme.II("gui.images.premium_disabled", 16, 16));
         }
+    }
+
+    private void updateGUI() {
+        updatePremiumButton();
 
         for (int i = 0; i < BARCOUNT; i++) {
             if (bars[i] != null) {
