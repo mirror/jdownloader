@@ -59,7 +59,7 @@ public class CPluginWrapper extends PluginWrapper {
             this.loadedPlugin = (PluginsC) con.newInstance(new Object[] { this });
             logger.finer("Successfully loaded " + this.getClassName());
             return (PluginsC) loadedPlugin;
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.info("Plugin Exception!");
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
         }

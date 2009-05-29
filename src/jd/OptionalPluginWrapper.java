@@ -50,16 +50,14 @@ public class OptionalPluginWrapper extends PluginWrapper {
         try {
             Class<?> cl;
             if ((cl = jdClassLoader.loadClass(this.getClassName())) != null) {
-                System.out.println("OPTIONAL loaded " + string + " : " + cl);
-
+                logger.finer("OPTIONAL loaded " + string + " : " + cl);
                 OPTIONAL_WRAPPER.add(this);
 
                 if (this.isEnabled()) {
                     this.getPlugin();
                 }
             } else {
-                System.out.println("OPTIONAL NOT loaded " + string + " : " + cl);
-
+                logger.finer("OPTIONAL NOT loaded " + string + " : " + cl);
             }
         } catch (ClassNotFoundException e) {
             // TODO Auto-generated catch block
@@ -134,7 +132,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
                 logger.severe("Addon " + this.getClassName() + " is outdated and incompatible. Please update(Packagemanager) :" + e.getLocalizedMessage());
             }
 
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.info("Plugin Exception!");
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
