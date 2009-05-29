@@ -16,14 +16,12 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Encoding;
 import jd.parser.Regex;
@@ -140,14 +138,7 @@ public class EasyShareCom extends PluginForHost {
         String captcha = br.getRegex("<p><img src=\"(.*?)\"").getMatch(0);
         String captchaUrl = "http://" + br.getHost() + "/" + captcha;
         if (captcha != null) {
-            File captchaFile = this.getLocalCaptchaFile();
-            try {
-                Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
-            } catch (Exception e) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            String captchaCode = getCaptchaCode(captchaFile, downloadLink);
-
+            String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
             form.put("captcha", captchaCode);
         }
         /* Datei herunterladen */

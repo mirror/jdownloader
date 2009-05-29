@@ -16,10 +16,7 @@
 
 package jd.plugins.host;
 
-import java.io.File;
-
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -61,14 +58,12 @@ public class FilesTo extends PluginForHost {
     }
 
     // @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {        
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         this.requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         String captchaAddress = br.getRegex("<img src=\"(http://www\\.files\\.to/captcha_[\\d]+\\.jpg\\?)").getMatch(0);
 
-        File captchaFile = this.getLocalCaptchaFile();
-        Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
-        String code = getCaptchaCode(captchaFile, downloadLink);
+        String code = getCaptchaCode(captchaAddress, downloadLink);
 
         Form captchaForm = br.getForm(0);
         captchaForm.put("txt_ccode", code);

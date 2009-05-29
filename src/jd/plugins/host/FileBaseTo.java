@@ -67,9 +67,9 @@ public class FileBaseTo extends PluginForHost {
         String formact = downloadLink.getDownloadURL();
         if (br.containsHTML("/captcha/CaptchaImage")) {
             File captchaFile = getLocalCaptchaFile(".png");
-            String CaptchaFileURL = br.getRegex("src=\"(/captcha/CaptchaImage\\.php.*?)\"").getMatch(0);
+            String captchaFileURL = br.getRegex("src=\"(/captcha/CaptchaImage\\.php.*?)\"").getMatch(0);
             String filecid = br.getRegex("cid\"\\s+value=\"(.*?)\"").getMatch(0);
-            Browser.download(captchaFile, br.openGetConnection("http://filebase.to" + CaptchaFileURL));
+            Browser.download(captchaFile, br.openGetConnection("http://filebase.to" + captchaFileURL));
             String capTxt = getCaptchaCode(captchaFile, downloadLink);
             br.postPage(formact, "uid=" + capTxt + "&cid=" + Encoding.urlEncode(filecid) + "&submit=+++Best%E4tigung+++&session_code=");
             // if captcha error

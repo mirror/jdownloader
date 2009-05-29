@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -25,7 +24,6 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -154,14 +152,8 @@ public class Moosharenet extends PluginForHost {
             sleep(Integer.parseInt(wait) * 100l, downloadLink);
         } else
             sleep(15000, downloadLink);
-        File captchaFile = this.getLocalCaptchaFile();
-        try {
-            String captchaurl = br.getRegex("<img src=\"(http://mooshare.net/html/images/captcha.php.*?)\" alt=\"captcha\"").getMatch(0);
-            Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaurl));
-        } catch (Exception e) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        String captchaCode = getCaptchaCode(captchaFile, downloadLink);
+        String captchaurl = br.getRegex("<img src=\"(http://mooshare.net/html/images/captcha.php.*?)\" alt=\"captcha\"").getMatch(0);
+        String captchaCode = getCaptchaCode(captchaurl, downloadLink);
         Form form = br.getForm(1);
         form.put("captcha", captchaCode);
         br.setFollowRedirects(false);

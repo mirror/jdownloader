@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -81,10 +80,7 @@ public class BitRoadNet extends PluginForHost {
             if (code.length() > 7 || code.length() < 3) {
                 logger.warning("Cannot use psp's captcha method, trying normal OCR...");
                 captchaurl = captchaurl + ".jpg";
-                URLConnectionAdapter con = br.openGetConnection(captchaurl);
-                File file = this.getLocalCaptchaFile();
-                Browser.download(file, con);
-                code = getCaptchaCode(file, downloadLink);
+                code = getCaptchaCode(captchaurl, downloadLink);
             }
             dl1.put("cap", code);
             br.submitForm(dl1);

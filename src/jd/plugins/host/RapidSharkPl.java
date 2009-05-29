@@ -16,12 +16,10 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -63,10 +61,7 @@ public class RapidSharkPl extends PluginForHost {
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             // TODO: AntiCaptcha Method would allow simultanous connections
             String captchaurl = br.getRegex(Pattern.compile("below:</b></td></tr>\\s+<tr><td><img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-            URLConnectionAdapter con = br.openGetConnection(captchaurl);
-            File file = this.getLocalCaptchaFile();
-            Browser.download(file, con);
-            String code = getCaptchaCode(file, downloadLink);
+            String code = getCaptchaCode(captchaurl, downloadLink);
             form.put("code", code);
             form.setAction(downloadLink.getDownloadURL());
             // Ticket Time

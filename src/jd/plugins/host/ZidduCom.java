@@ -16,13 +16,10 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -48,35 +45,14 @@ public class ZidduCom extends PluginForHost {
         if (br.containsHTML("File\\snot\\s+found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         form = br.getFormbyProperty("name", "securefrm");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        URLConnectionAdapter con = br.openGetConnection("http://www.ziddu.com/CaptchaSecurityImages.php?width=40&height=38&characters=2");
-        File file = this.getLocalCaptchaFile();
-        Browser.download(file, con);
-        String code = getCaptchaCode(file, downloadLink);
+        String code = getCaptchaCode("http://www.ziddu.com/CaptchaSecurityImages.php?width=40&height=38&characters=2", downloadLink);
         form.put("securitycode", code);
-        // br.submitForm(form);
-        // String test2 = br.toString();
-        // URLConnectionAdapter con2 = br.getHttpConnection();
-        // if (con2.getContentType().contains("html")) {
-        // String error =
-        // br.getRegex("class=\"error\">(.*?)</span>").getMatch(0);
-        // error=error;
-        // if (error != "") {
-        // logger.warning(error);
-        // if
-        // (error.equalsIgnoreCase("Please Enter Correct Verification Code.")) {
-        // throw new PluginException(LinkStatus.ERROR_CAPTCHA,
-        // JDLocale.L("downloadlink.status.error.captcha_wrong",
-        // "Captcha wrong"));
-        // } else {
-        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
-        // error, 10000);
-        // }
-        // }
-        // }
+
         dl = br.openDownload(downloadLink, form, true, 1);
-        // Folgendes nicht optimal da bei .isContentDisposition == false immer
-        // angenommen wird
-        // dass das Captcha falsch war.
+        /*
+         * Folgendes nicht optimal da bei .isContentDisposition == false immer
+         * angenommen wird dass das Captcha falsch war.
+         */
         if (!dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
         dl.setResume(true);
         dl.startDownload();

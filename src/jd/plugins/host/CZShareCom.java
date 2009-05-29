@@ -16,12 +16,10 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -44,7 +42,7 @@ public class CZShareCom extends PluginForHost {
         enablePremium("http://czshare.com/create_user.php");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setDebug(true);
         String captchaurl = downloadLink.getStringProperty("captcha", null);
@@ -57,29 +55,26 @@ public class CZShareCom extends PluginForHost {
             if (down == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.submitForm(down);
             down = null;
-            if (br.containsHTML("Chyba 6 / Error 6")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,  60 * 60 * 1000);
+            if (br.containsHTML("Chyba 6 / Error 6")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
             br.setFollowRedirects(true);
             String freepage = br.getRegex("form action=\"(.*?)\"").getMatch(0);
             String freesubmit = br.getRegex("type=\"submit\" value=\"(.*?)\"").getMatch(0);
             String freeid = br.getRegex("name=\"id\" value=\"(.*?)\"").getMatch(0);
             String freefile = br.getRegex("name=\"file\" value=\"(.*?)\"").getMatch(0);
             String freeticket = br.getRegex("name=\"ticket\" value=\"(.*?)\"").getMatch(0);
-            dlurl = "http://czshare.com/"+freepage+"?id="+freeid+"&file="+freefile+"&ticket="+freeticket+"&captchastring=CAPTCHACODEGOESHERE&submit="+freesubmit;
+            dlurl = "http://czshare.com/" + freepage + "?id=" + freeid + "&file=" + freefile + "&ticket=" + freeticket + "&captchastring=CAPTCHACODEGOESHERE&submit=" + freesubmit;
             captchaurl = br.getRegex("img src=\"(captcha\\.php\\?ticket=.*?)\"").getMatch(0);
             captchaurl = "http://czshare.com/" + captchaurl;
             downloadLink.setProperty("captcha", captchaurl);
             downloadLink.setProperty("dlurl", dlurl);
         }
-        
-        URLConnectionAdapter con = br.openGetConnection(captchaurl);
-        File file = this.getLocalCaptchaFile();
-        Browser.download(file, con);
-        String code = getCaptchaCode(file, downloadLink);
+
+        String code = getCaptchaCode(captchaurl, downloadLink);
         dlurl = dlurl.replace("CAPTCHACODEGOESHERE", code);
         br.getPage(dlurl);
-        if (br.containsHTML("Chyba 6 / Error 6")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,  60 * 60 * 1000);
+        if (br.containsHTML("Chyba 6 / Error 6")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
         if (br.containsHTML("Nesouhlasi kontrolni kod")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        Form down2 = br.getFormbyProperty("name","pre_download_form");
+        Form down2 = br.getFormbyProperty("name", "pre_download_form");
         if (down2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dl = br.openDownload(downloadLink, down2, false, 1);
         downloadLink.setProperty("captcha", captchaurl);
@@ -87,15 +82,15 @@ public class CZShareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
     private void login(Account account) throws Exception {
-        //this.setBrowserExclusive();
+        // this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        //br.clearCookies("czshare.com");
+        // br.clearCookies("czshare.com");
         br.getPage("http://czshare.com/prihlasit.php");
         Form login = br.getForm(0);
         login.put("jmeno", Encoding.urlEncode(account.getUser()));
@@ -105,8 +100,7 @@ public class CZShareCom extends PluginForHost {
         if (!br.containsHTML("odhl.sit")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
-
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -122,21 +116,21 @@ public class CZShareCom extends PluginForHost {
             return ai;
         }
         String trafficleft = br.getRegex("Platnost do</td>[^d]*d>(.*?)</td>").getMatch(0);
-        String expires = br.getRegex("Platnost do</td>.*<td>.*<td>(.*?)</td>").getMatch(0); 
+        String expires = br.getRegex("Platnost do</td>.*<td>.*<td>(.*?)</td>").getMatch(0);
         if (expires != null) ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy HH:mm", Locale.GERMANY));
         if (trafficleft != null) ai.setTrafficLeft(trafficleft);
-        
-        //Logout
-        br.getPage("http://czshare.com/profi/index.php?odhlasit=ano"); 
+
+        // Logout
+        br.getPage("http://czshare.com/profi/index.php?odhlasit=ano");
         return ai;
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         br.setFollowRedirects(true);
         String linkurl = null;
@@ -156,18 +150,15 @@ public class CZShareCom extends PluginForHost {
             // find premium links
             String[] links = br.getRegex("<td class=\"table2-black\"><a href=\"(.*?)\"").getColumn(0);
             // choose link with proper ID
-            for (int i=0; i<links.length; i++)
-            {
-                if (links[i].contains("="+id+"&"))
-                {
+            for (int i = 0; i < links.length; i++) {
+                if (links[i].contains("=" + id + "&")) {
                     linkurl = links[i];
                     break;
                 }
             }
-            
-            if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);  
-        }    
-        else {
+
+            if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        } else {
             linkurl = previousLink;
         }
         dl = br.openDownload(downloadLink, linkurl, true, 0);
@@ -184,20 +175,20 @@ public class CZShareCom extends PluginForHost {
         dl.startDownload();
         // Remove link if finished
         if (downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-        String kod = new Regex(linkurl, "kod=([a-zA-Z0-9_]+)&").getMatch(0); 
-        if (kod != null) br.postPage("http://czshare.com/profi/smazat_profi.php", "smaz%5B%5D="+kod);
+            String kod = new Regex(linkurl, "kod=([a-zA-Z0-9_]+)&").getMatch(0);
+            if (kod != null) br.postPage("http://czshare.com/profi/smazat_profi.php", "smaz%5B%5D=" + kod);
         }
         // Logout
-        br.getPage("http://czshare.com/profi/index.php?odhlasit=ano"); 
+        br.getPage("http://czshare.com/profi/index.php?odhlasit=ano");
 
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.czshare.com/pravidla.html";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -210,22 +201,22 @@ public class CZShareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
-        link.setProperty("directLink", null);  
+        link.setProperty("directLink", null);
         link.setProperty("captcha", null);
         link.setProperty("dlurl", null);
     }

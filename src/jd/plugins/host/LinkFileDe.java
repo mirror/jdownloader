@@ -17,11 +17,9 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -66,12 +64,9 @@ public class LinkFileDe extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-
         requestFileInformation(downloadLink);
-        String captchaAddress = br.getBaseURL() + "captcha.php";
-        File captchaFile = this.getLocalCaptchaFile();
-        Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
-        String code = getCaptchaCode(captchaFile, downloadLink);
+
+        String code = getCaptchaCode(br.getBaseURL() + "captcha.php", downloadLink);
 
         Form captchaForm = br.getForm(0);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

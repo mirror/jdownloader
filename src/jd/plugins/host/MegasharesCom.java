@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -147,13 +146,10 @@ public class MegasharesCom extends PluginForHost {
         // Captchacheck
         if (br.containsHTML("Your Passport needs to be reactivated.")) {
             String captchaAddress = br.getRegex("<dt>Enter the passport reactivation code in the graphic, then hit the \"Reactivate Passport\" button.</dt>.*?<dd><img src=\"(.*?)\" alt=\"Security Code\" style=.*?>").getMatch(0);
-            File file = this.getLocalCaptchaFile();
-            Browser c = br.cloneBrowser();
-            Browser.download(file, c.openGetConnection(captchaAddress));
 
             HashMap<String, String> input = HTMLParser.getInputHiddenFields(br + "");
 
-            String code = getCaptchaCode(file, downloadLink);
+            String code = getCaptchaCode(captchaAddress, downloadLink);
             String geturl = downloadLink.getDownloadURL() + "&rs=check_passport_renewal&rsargs[]=" + code + "&rsargs[]=" + input.get("random_num") + "&rsargs[]=" + input.get("passport_num") + "&rsargs[]=replace_sec_pprenewal&rsrnd=" + (new Date().getTime());
             br.getPage(geturl);
 

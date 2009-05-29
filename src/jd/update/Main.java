@@ -37,7 +37,6 @@ import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.EmptyBorder;
 
 import jd.config.SubConfiguration;
-
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;

@@ -16,12 +16,10 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
@@ -33,10 +31,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 public class NetGullCom extends PluginForHost {
-
-    private String captchaCode;
-    private String passCode = null;
-    private String url;
 
     public NetGullCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,23 +61,17 @@ public class NetGullCom extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        url = downloadLink.getDownloadURL();
+        String url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
 
-        File captchaFile = this.getLocalCaptchaFile();
-        try {
-            Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://www.netgull.com/captcha.php"));
-        } catch (Exception e) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
         /* CaptchaCode holen */
-        captchaCode = getCaptchaCode(captchaFile, downloadLink);
+        String captchaCode = getCaptchaCode("http://www.netgull.com/captcha.php", downloadLink);
         Form form = br.getFormbyProperty("name", "myform");
         if (form == null) form = br.getForm(1);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        ;
         form.setMethod(MethodType.POST);
+        String passCode = null;
         if (form.containsHTML("name=downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput(null, downloadLink);

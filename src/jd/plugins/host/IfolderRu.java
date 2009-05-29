@@ -16,12 +16,9 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
@@ -97,10 +94,7 @@ public class IfolderRu extends PluginForHost {
             captchaForm.setAction(br.getURL());
 
             /* Captcha */
-            URLConnectionAdapter con = br.openGetConnection(captchaurl);
-            File file = this.getLocalCaptchaFile();
-            Browser.download(file, con);
-            String captchaCode = getCaptchaCode(file, downloadLink);
+            String captchaCode = getCaptchaCode(captchaurl, downloadLink);
             captchaForm.put("confirmed_number", captchaCode);
 
             br.submitForm(captchaForm);

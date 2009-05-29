@@ -16,13 +16,11 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.Request;
@@ -80,81 +78,79 @@ public class Netloadin extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        try{
-        requestFileInformation(downloadLink);
-        br.setDebug(true);
+        try {
+            requestFileInformation(downloadLink);
+            br.setDebug(true);
 
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+            LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-        br.getPage(downloadLink.getDownloadURL());
-        checkPassword(downloadLink);
-      
-        if (linkStatus.isFailed()) return;
-        if (br.containsHTML("download_fast_link")) {
-            handleFastLink(downloadLink);
-            return;
-        }
-        String url = br.getRegex(Pattern.compile("<div class=\"Free_dl\">.*?<a href=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (br.containsHTML(FILE_NOT_FOUND)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
-        if (br.containsHTML(FILE_DAMAGED)) {
-            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"));
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
+            br.setCookiesExclusive(true);
+            br.clearCookies(getHost());
+            br.getPage(downloadLink.getDownloadURL());
+            checkPassword(downloadLink);
 
-        if (!br.containsHTML(DOWNLOAD_START) || url == null) {
-            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
-            logger.severe(br.toString());
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            return;
-        }
-        url = url.replaceAll("\\&amp\\;", "&");
-        br.getPage(url);
-        if (br.containsHTML(FILE_DAMAGED)) {
-            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"));
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-
-        if (!br.containsHTML(DOWNLOAD_CAPTCHA)) {
-            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.captchanotfound", "Captcha not found"));
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            return;
-        }
-
-        String captchaURL = br.getRegex("<img style=\".*?\" src=\"(.*?)\" alt=\"Sicherheitsbild\" \\/>").getMatch(0);
-        Form[] forms = br.getForms();
-        Form captchaPost = forms[0];
-        captchaPost.setAction("index.php?id=10");
-        if (captchaURL == null) {
-            if (br.containsHTML("download_load.tpl")) {
-                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            if (linkStatus.isFailed()) return;
+            if (br.containsHTML("download_fast_link")) {
+                handleFastLink(downloadLink);
                 return;
             }
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            return;
-        }
-        File file = this.getLocalCaptchaFile();
-        Browser c = br.cloneBrowser();
-        Browser.download(file, c.openGetConnection(captchaURL));
-        captchaPost.put("captcha_check", getCaptchaCode(file, downloadLink));
-        br.submitForm(captchaPost);
-        handleErrors(downloadLink);
+            String url = br.getRegex(Pattern.compile("<div class=\"Free_dl\">.*?<a href=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+            if (br.containsHTML(FILE_NOT_FOUND)) {
+                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                return;
+            }
+            if (br.containsHTML(FILE_DAMAGED)) {
+                linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"));
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.setValue(20 * 60 * 1000l);
+                return;
+            }
 
-        String finalURL = br.getRegex(NEW_HOST_URL).getMatch(0);
-        sleep(20000, downloadLink);
-        dl = RAFDownload.download(downloadLink, br.createRequest(finalURL));
-        dl.startDownload();
-        }catch(IOException e){
-          throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,30000);
-            
+            if (!br.containsHTML(DOWNLOAD_START) || url == null) {
+                linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
+                logger.severe(br.toString());
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                return;
+            }
+            url = url.replaceAll("\\&amp\\;", "&");
+            br.getPage(url);
+            if (br.containsHTML(FILE_DAMAGED)) {
+                linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"));
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.setValue(20 * 60 * 1000l);
+                return;
+            }
+
+            if (!br.containsHTML(DOWNLOAD_CAPTCHA)) {
+                linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.netloadin.errors.captchanotfound", "Captcha not found"));
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                return;
+            }
+
+            String captchaURL = br.getRegex("<img style=\".*?\" src=\"(.*?)\" alt=\"Sicherheitsbild\" \\/>").getMatch(0);
+            Form[] forms = br.getForms();
+            Form captchaPost = forms[0];
+            captchaPost.setAction("index.php?id=10");
+            if (captchaURL == null) {
+                if (br.containsHTML("download_load.tpl")) {
+                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+                    return;
+                }
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                return;
+            }
+
+            captchaPost.put("captcha_check", getCaptchaCode(captchaURL, downloadLink));
+            br.submitForm(captchaPost);
+            handleErrors(downloadLink);
+
+            String finalURL = br.getRegex(NEW_HOST_URL).getMatch(0);
+            sleep(20000, downloadLink);
+            dl = RAFDownload.download(downloadLink, br.createRequest(finalURL));
+            dl.startDownload();
+        } catch (IOException e) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30000);
+
         }
     }
 

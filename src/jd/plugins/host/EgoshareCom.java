@@ -16,12 +16,10 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -72,14 +70,8 @@ public class EgoshareCom extends PluginForHost {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
 
-        File captchaFile = this.getLocalCaptchaFile();
-        try {
-            Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://www.egoshare.com/captcha.php"));
-        } catch (Exception e) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
         /* CaptchaCode holen */
-        captchaCode = getCaptchaCode(captchaFile, downloadLink);
+        captchaCode = getCaptchaCode("http://www.egoshare.com/captcha.php", downloadLink);
         Form form = br.getForm(1);
         if (form.containsHTML("name=downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {

@@ -68,7 +68,6 @@ import jd.nutils.OSDetector;
 import jd.update.FileUpdate;
 import jd.update.WebUpdater;
 import jd.utils.CheckJava;
-import jd.utils.JDFileReg;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

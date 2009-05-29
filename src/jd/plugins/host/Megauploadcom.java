@@ -409,13 +409,8 @@ public class Megauploadcom extends PluginForHost {
                 URLConnectionAdapter con = c.openGetConnection(captcha);
                 Browser.download(file, con);
 
-                code = null;
+                code = getCaptchaCode(file, link);
 
-                if (code == null) {
-
-                    code = getCaptchaCode(file, link);
-
-                }
                 if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 1) {
                     if (code == null || code.contains("-") || code.trim().length() != 4) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 1000l); }
                 }

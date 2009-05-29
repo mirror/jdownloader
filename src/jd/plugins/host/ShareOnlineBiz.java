@@ -16,12 +16,10 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -166,21 +164,13 @@ public class ShareOnlineBiz extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
         String id = new Regex(downloadLink.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
         br.getPage("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
-        if (br.containsHTML("Probleme mit einem Fileserver")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
+        if (br.containsHTML("Probleme mit einem Fileserver")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
 
-        }
-        File captchaFile = this.getLocalCaptchaFile();
-        try {
-            Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://www.share-online.biz/captcha.php"));
-        } catch (Exception e) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
         /* CaptchaCode holen */
-        String captchaCode = getCaptchaCode(captchaFile, downloadLink);
+        String captchaCode = getCaptchaCode("http://www.share-online.biz/captcha.php", downloadLink);
         Form form = br.getForm(1);
         String passCode = null;
         if (form.containsHTML("name=downloadpw")) {
@@ -201,16 +191,11 @@ public class ShareOnlineBiz extends PluginForHost {
                 /* PassCode war falsch, also Löschen */
                 downloadLink.setProperty("pass", null);
             }
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
 
         /* Downloadlimit erreicht */
-        if (br.containsHTML("max allowed download sessions") | br.containsHTML("this download is too big")) {
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            linkStatus.setValue(3600000l);
-            return;
-        }
+        if (br.containsHTML("max allowed download sessions") | br.containsHTML("this download is too big")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
 
         /* PassCode war richtig, also Speichern */
         if (passCode != null) downloadLink.setProperty("pass", passCode);

@@ -16,11 +16,7 @@
 
 package jd.plugins.host;
 
-import java.io.File;
-
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -70,12 +66,9 @@ public class UploadBoxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, ((Integer.parseInt(strWaittimeArray[0]) * 3600) + (Integer.parseInt(strWaittimeArray[1]) * 60) + Integer.parseInt(strWaittimeArray[2])) * 1000l);
         }
         form = br.getForm(1);
-        File file = this.getLocalCaptchaFile();
         String captchaUrl = form.getRegex("captcha.*?src=\"(.*?)\"").getMatch(0);
         if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        URLConnectionAdapter con = br.cloneBrowser().openGetConnection(captchaUrl);
-        Browser.download(file, con);
-        String code = getCaptchaCode(file, link);
+        String code = getCaptchaCode(captchaUrl, link);
         form.put("enter", code);
         br.submitForm(form);
         if (br.containsHTML("read the captcha code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);

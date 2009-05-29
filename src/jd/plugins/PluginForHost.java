@@ -67,52 +67,31 @@ public abstract class PluginForHost extends Plugin {
         super(wrapper);
     }
 
-    /**
-     * 
-     * @param captchaAddress
-     * @param downloadLink
-     * @return
-     * @throws IOException
-     * @throws PluginException
-     * @throws InterruptedException
-     */
-    public String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
+    protected String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException {
+        if (captchaAddress == null) {
+            logger.severe("Captcha Adresse nicht definiert");
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         File captchaFile = this.getLocalCaptchaFile();
         try {
-            Browser.download(captchaFile, br.openGetConnection(captchaAddress));
+            Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
         } catch (Exception e) {
             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         String captchaCode = getCaptchaCode(this.getHost(), captchaFile, 0, downloadLink, null, null);
         return captchaCode;
-
     }
 
-    protected String getCaptchaCode(String methodname, File captchaFile, DownloadLink downloadLink) throws PluginException, InterruptedException {
+    protected String getCaptchaCode(File captchaFile, DownloadLink downloadLink) throws PluginException {
+        return getCaptchaCode(this.getHost(), captchaFile, downloadLink);
+    }
+
+    protected String getCaptchaCode(String methodname, File captchaFile, DownloadLink downloadLink) throws PluginException {
         return getCaptchaCode(methodname, captchaFile, 0, downloadLink, null, null);
     }
 
-    protected String getCaptchaCode(File captchaFile, DownloadLink downloadLink) throws PluginException, InterruptedException {
-        String status = downloadLink.getLinkStatus().getStatusText();
-        downloadLink.getLinkStatus().setStatusText(JDLocale.L("gui.downloadview.statustext.jac", "Captcha recognition"));
-        try {
-            BufferedImage img = ImageIO.read(captchaFile);
-            downloadLink.getLinkStatus().setStatusIcon(JDImage.getScaledImageIcon(img, 16, 16));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
-        try {
-            return getCaptchaCode(this.getHost(), captchaFile, 0, downloadLink, null, null);
-        } finally {
-            downloadLink.getLinkStatus().setStatusText(status);
-            downloadLink.getLinkStatus().setStatusIcon(null);
-            DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
-        }
-    }
-
-    protected String getCaptchaCode(String method, File file, int flag, DownloadLink link, String defaultValue, String explain) throws PluginException, InterruptedException {
+    protected String getCaptchaCode(String method, File file, int flag, DownloadLink link, String defaultValue, String explain) throws PluginException {
         String status = link.getLinkStatus().getStatusText();
         try {
             link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
@@ -440,7 +419,7 @@ public abstract class PluginForHost extends Plugin {
         return 20;
     }
 
-    public boolean ignoreHosterWaittime(DownloadLink link) {        
+    public boolean ignoreHosterWaittime(DownloadLink link) {
         if (AccountController.getInstance().getValidAccount(this) == null) return false;
         if (!this.enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return false;
         return true;

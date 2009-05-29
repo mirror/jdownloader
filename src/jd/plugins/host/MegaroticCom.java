@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -26,9 +25,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.URLConnectionAdapter;
 import jd.http.requests.Request;
 import jd.nutils.Formatter;
 import jd.parser.Regex;
@@ -166,7 +163,7 @@ public class MegaroticCom extends PluginForHost {
         }
     }
 
-    public void correctDownloadLink(DownloadLink link) throws MalformedURLException {        
+    public void correctDownloadLink(DownloadLink link) throws MalformedURLException {
         String link2 = link.getDownloadURL().replaceAll("/de", "");
         String id = Request.parseQuery(link2).get("d");
         link.setUrlDownload("http://megarotic.com/?d=" + id);
@@ -247,13 +244,9 @@ public class MegaroticCom extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
         }
 
-        File file = this.getLocalCaptchaFile();
         logger.info("Captcha " + captchaURL);
-        URLConnectionAdapter con = br.cloneBrowser().openGetConnection(captchaURL);
 
-        Browser.download(file, con);
-
-        String code = getCaptchaCode(file, downloadLink);
+        String code = getCaptchaCode(captchaURL, downloadLink);
 
         br.postPage(captchaPost, HTMLParser.joinMap(fields, "=", "&") + "&imagestring=" + code);
         if (br.containsHTML(SIMPLEPATTERN_CAPTCHA_URl)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);

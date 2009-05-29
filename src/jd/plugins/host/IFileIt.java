@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -70,10 +69,7 @@ public class IFileIt extends PluginForHost {
             Browser br2 = br.cloneBrowser();
             br2.getPage("http://ifile.it/download:dl_request?it=" + it + ",type=na,esn=1");
             if (br2.containsHTML("show_captcha")) {
-                URLConnectionAdapter con = br.openGetConnection("http://ifile.it/download:captcha?" + Math.random());
-                File file = this.getLocalCaptchaFile();
-                Browser.download(file, con);
-                String code = getCaptchaCode(file, downloadLink);
+                String code = getCaptchaCode("http://ifile.it/download:captcha?" + Math.random(), downloadLink);
                 br2 = br.cloneBrowser();
                 br2.getPage("http://ifile.it/download:dl_request?it=" + it + ",type=simple,esn=1,0d149=" + code + ",0d149x=0");
                 if (br2.containsHTML("retry")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
