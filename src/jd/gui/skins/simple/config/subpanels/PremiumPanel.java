@@ -358,16 +358,8 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             // account.setEnabled(false);
 
             info = new JXCollapsiblePane();
-            info.setAnimated(SimpleGuiConstants.isAnimated());
-            JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
-
-                // @Override
-                public void onPropertyChanged(Property source, String propertyName) {
-                    info.setAnimated(SimpleGuiConstants.isAnimated());
-
-                }
-
-            });
+            info.setAnimated(false);
+      
             info.setCollapsed(true);
             info.addPropertyChangeListener(new PropertyChangeListener() {
 

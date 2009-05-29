@@ -92,7 +92,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             }
 
         }
-        this.setModal(false);
+        this.setModal(true);
 
         this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
 

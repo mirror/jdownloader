@@ -99,7 +99,7 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_UPDATE_VERSION = "UPDATE_VERSION";
 
-    public static final String PARAM_USE_GLOBAL_PREMIUM = "USE_PREMIUM_V2";
+    public static final String PARAM_USE_GLOBAL_PREMIUM = "USE_PREMIUM_V3";
 
     public static final String PARAM_USE_PACKETNAME_AS_SUBFOLDER = "USE_PACKETNAME_AS_SUBFOLDER";
 

@@ -44,7 +44,9 @@ import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.controlling.JDController;
+import jd.gui.UserIO;
 import jd.nutils.Formatter;
+import jd.nutils.JDFlags;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
@@ -150,11 +152,22 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_USE_GLOBAL_PREMIUM) {
 
             @Override
-            public void onPropertyChanged(Property source, String valid) {
+            public void onPropertyChanged(final Property source, final String valid) {
+
+                if (!source.getBooleanProperty(valid, true)) {
+                    
+                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN|UserIO.NO_COUNTDOWN, JDLocale.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDLocale.L("dialogs.premiumstatus.global.message", "Do you realy want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No"));
+                    if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL)&&!JDFlags.hasAllFlags(answer, UserIO.RETURN_SKIPPED_BY_DONT_SHOW)) {
+                        source.setProperty(valid, true);
+                        return;
+                    }
+                }
+
                 SwingUtilities.invokeLater(new Runnable() {
 
                     public void run() {
                         updateGUI();
+
                     }
 
                 });
