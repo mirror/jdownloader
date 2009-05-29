@@ -61,7 +61,10 @@ public class SimpleUserIO extends UserIO {
         // "C:\\Users\\oem\\.jd_home\\captchas\\megaupload.com\\23.04.2009_12.28.22.245.jpg"
         // ), "01234", null);
         // System.out.println("result: " + res);
-
+        
+        //test this 
+        
+        UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION, "JD Update", "<h3>New Update available!</h3> The following restart may take afew minutes. <b>This is not a crash!</b> Just wait.",null, null, null);
         UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION, JDLocale.L("gui.cnl.install.error.title", "Click'n'Load Installation"), JDLocale.LF("gui.cnl.install.error.message", "Installation of CLick'n'Load failed. Try these alternatives:\r\n * Start JDownloader as Admin.\r\n * Try to execute %s manually.\r\n * Open Configuration->General->Click'n'load-> [Install].\r\nFor details, visit http://jdownloader.org/click-n-load.", JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath()), JDTheme.II("gui.clicknload", 48, 48), null, null);
 
     }

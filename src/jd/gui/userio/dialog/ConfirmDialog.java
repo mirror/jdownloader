@@ -53,6 +53,7 @@ public class ConfirmDialog extends AbstractDialog {
         textField.setEditable(false);
 
         cp.add(textField, "width n:n:450");
+      
     }
 
     public Integer getReturnID() {

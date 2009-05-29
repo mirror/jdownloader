@@ -168,6 +168,7 @@ public class WebUpdater implements Serializable {
                 entry = new FileUpdate(m[0], m[1]);
             }
             sum.add((byte) entry.getRemoteHash().charAt(0));
+            System.out.println(""+entry.getLocalPath());
             if (entry.getLocalPath().endsWith(".class")) {
                 plugins.put(entry.getLocalPath(), entry);
             }

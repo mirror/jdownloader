@@ -94,7 +94,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         }
         this.setModal(true);
 
-        this.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]"));
+        this.setLayout(new MigLayout("ins 10,wrap 1", "[fill,grow]"));
 
         btnOK = new JButton(this.okOption);
         btnOK.addActionListener(this);
@@ -126,8 +126,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             add(btnCancel, "alignx right");
         }
         this.setMinimumSize(new Dimension(300, -1));
-        this.pack();
-        this.setResizable(true);
+       
 
         if (SimpleGUI.CURRENTGUI == null) {
             this.setLocation(Screen.getCenterOfComponent(null, this));
@@ -136,16 +135,19 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         } else {
             this.setLocation(Screen.getCenterOfComponent(SimpleGUI.CURRENTGUI, this));
         }
-        this.toFront();
-        this.setAlwaysOnTop(true);
+     
 
         if (JDFlags.hasNoFlags(flag, UserIO.NO_COUNTDOWN)) {
             this.countdown(UserIO.getCountdownTime());
         } else {
             countDownLabel.setVisible(false);
         }
+        this.setAlwaysOnTop(true);
+        this.pack();
+        this.setResizable(true);
         this.packed();
-        this.toFront();       
+        this.toFront();     
+        this.setMinimumSize(this.getPreferredSize());
         this.setVisible(true);
        
 

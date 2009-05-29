@@ -489,8 +489,6 @@ public class Main {
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
 
-       
-
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
@@ -513,6 +511,7 @@ public class Main {
         ArrayList<FileUpdate> filelist = new ArrayList<FileUpdate>();
         ArrayList<String> classes = new ArrayList<String>();
         for (Entry<String, FileUpdate> entry : WebUpdater.PLUGIN_LIST.entrySet()) {
+            System.out.println("PLugins: " + entry.getKey());
             if (entry.getKey().startsWith("/jd/dynamics/")) {
                 filelist.add(entry.getValue());
                 if (!entry.getKey().contains("$")) {
@@ -533,7 +532,9 @@ public class Main {
         for (String clazz : classes) {
             try {
                 Class<?> plgClass;
+
                 plgClass = classLoader.loadClass(clazz.replace("/", ".").replace(".class", "").substring(1));
+
                 if (plgClass == null) {
                     JDLogger.getLogger().info("Could not load " + clazz);
                     continue;
