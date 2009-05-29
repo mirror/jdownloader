@@ -44,6 +44,7 @@ gui.images.remove_all=default/remove-all
 gui.images.remove_dupes=default/remove-dupes
 gui.images.remove_failed=default/remove-failed
 gui.images.remove_disabled=default/list-remove_disabled
+gui.images.play = default/media-playback-start
 gui.images.next = default/media-playback-start
 gui.images.save = default/document-save
 gui.images.close = default/close

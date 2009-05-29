@@ -41,9 +41,9 @@ public class JDImage {
     /**
      * Alle verfügbaren Bilder werden hier gespeichert
      */
-    public static HashMap<String, BufferedImage> BUFFERED_IMAGE_CACHE = new HashMap<String, BufferedImage>();
-    public static HashMap<String, ImageIcon> IMAGE_ICON_CACHE = new HashMap<String, ImageIcon>();
-    public static HashMap<String, Image> SCALED_IMAGE_CACHE = new HashMap<String, Image>();
+    private static HashMap<String, BufferedImage> BUFFERED_IMAGE_CACHE = new HashMap<String, BufferedImage>();
+    private static HashMap<String, ImageIcon> IMAGE_ICON_CACHE = new HashMap<String, ImageIcon>();
+    private static HashMap<String, Image> SCALED_IMAGE_CACHE = new HashMap<String, Image>();
 
     public static ImageIcon iconToImage(Icon icon) {
         if (icon == null) return null;
