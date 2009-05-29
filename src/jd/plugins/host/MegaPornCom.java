@@ -409,7 +409,7 @@ public class MegaPornCom extends PluginForHost {
                 URLConnectionAdapter con = c.openGetConnection(captcha);
                 Browser.download(file, con);
 
-                code = getCaptchaCode(file, link);
+                code = getCaptchaCode("megaupload.com",file, link);
 
                 if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 1) {
                     if (code == null || code.contains("-") || code.trim().length() != 4) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 1000l); }
