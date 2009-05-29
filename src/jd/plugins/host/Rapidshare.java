@@ -1039,10 +1039,9 @@ public class Rapidshare extends PluginForHost {
     }
 
     // @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {        
         AccountInfo ai = new AccountInfo(this, account);
-        String api = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + account.getUser() + "&password=" + account.getPass() + "&type=prem";
+        String api = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&type=prem";
         br.getPage(api);
         String error = br.getRegex("ERROR:(.*)").getMatch(0);
         if (error != null) {
