@@ -500,15 +500,16 @@ public class SingleDownloadController extends Thread {
             downloadLink.setEnabled(false);
             fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
             Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);
+            linkStatus.setInProgress(false);
             return;
         }
         /* check ob Datei existiert oder bereits geladen wird */
         if (DownloadInterface.preDownloadCheckFailed(downloadLink)) {
             onErrorLinkBlock(downloadLink, currentPlugin);
             fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
+            linkStatus.setInProgress(false);
             return;
         }
-        linkStatus.setInProgress(true);
         handlePlugin();
         linkStatus.setInProgress(false);
         fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
