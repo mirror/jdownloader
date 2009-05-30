@@ -27,7 +27,9 @@ import java.util.logging.Level;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.ByteBufferEntry;
 import jd.controlling.JDLogger;
+import jd.controlling.MemoryController;
 import jd.http.requests.Request;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -41,12 +43,12 @@ import jd.utils.JDUtilities;
 
 public class RAFDownload extends DownloadInterface {
     class ChunkBuffer {
-        public ByteBuffer buffer;
+        public ByteBufferEntry buffer;
         public int chunkID;
         public long chunkPosition;
         public long position;
 
-        public ChunkBuffer(ByteBuffer buffer, long position, long chunkposition, int chunkid) {
+        public ChunkBuffer(ByteBufferEntry buffer, long position, long chunkposition, int chunkid) {
             this.buffer = buffer;
             this.position = position;
             chunkPosition = chunkposition;
@@ -63,7 +65,7 @@ public class RAFDownload extends DownloadInterface {
             start();
         }
 
-        //@Override
+        // @Override
         public void run() {
             ChunkBuffer buf;
             while (!isInterrupted() || bufferList.size() > 0) {
@@ -87,7 +89,7 @@ public class RAFDownload extends DownloadInterface {
 
                         synchronized (outputChannel) {
                             outputFile.seek(buf.position);
-                            outputChannel.write(buf.buffer);
+                            outputChannel.write(buf.buffer.getBuffer());
 
                             if (buf.chunkID >= 0) {
                                 downloadLink.getChunksProgress()[buf.chunkID] = buf.chunkPosition;
@@ -99,10 +101,12 @@ public class RAFDownload extends DownloadInterface {
 
                     } catch (Exception e) {
 
-                        JDLogger.getLogger().log(Level.SEVERE,"Exception occured",e);
+                        JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
                         error(LinkStatus.ERROR_LOCAL_IO, JDUtilities.convertExceptionReadable(e));
 
                         addException(e);
+                    } finally {
+                        if (buf != null) buf.buffer.setUnused();
                     }
                 }
                 waitFlag = true;
@@ -110,6 +114,7 @@ public class RAFDownload extends DownloadInterface {
             }
 
         }
+
     }
 
     private ArrayList<ChunkBuffer> bufferList = new ArrayList<ChunkBuffer>();
@@ -146,7 +151,7 @@ public class RAFDownload extends DownloadInterface {
 
     }
 
-    //@Override
+    // @Override
     protected void onChunksReady() {
         logger.finer("onCHunksReady");
         if (writer != null) {
@@ -168,13 +173,13 @@ public class RAFDownload extends DownloadInterface {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
 
-                    JDLogger.getLogger().log(Level.SEVERE,"Exception occured",e);
+                    JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
                 }
             }
-        }       
+        }
         //
         logger.info("Close connections if the are not closed yet");
-        for(Chunk c:this.getChunks()){
+        for (Chunk c : this.getChunks()) {
             c.closeConnections();
         }
         logger.info("Close File. Let AV programs run");
@@ -277,13 +282,13 @@ public class RAFDownload extends DownloadInterface {
 
             }
         } catch (Exception e) {
-            JDLogger.getLogger().log(Level.SEVERE,"Exception occured",e);
+            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
             addException(e);
         }
 
     }
 
-    //@Override
+    // @Override
     protected void setupChunks() throws Exception {
         try {
 
@@ -403,12 +408,12 @@ public class RAFDownload extends DownloadInterface {
 
     }
 
-    //@Override
+    // @Override
     protected boolean writeChunkBytes(Chunk chunk) {
         if (writeType) {
-            ByteBuffer buffer = ByteBuffer.allocateDirect(chunk.buffer.limit());
-            buffer.put(chunk.buffer);
-            buffer.flip();
+            ByteBufferEntry buffer = MemoryController.getInstance().getByteBufferEntry(chunk.buffer.getBuffer().limit());
+            buffer.getBuffer().put(chunk.buffer.getBuffer());
+            buffer.getBuffer().flip();
             synchronized (bufferList) {
                 bufferList.add(new ChunkBuffer(buffer, chunk.getWritePosition(), chunk.getCurrentBytesPosition() - 1, chunk.getID()));
                 // logger.info("new buffer. size: " + bufferList.size());
@@ -430,7 +435,7 @@ public class RAFDownload extends DownloadInterface {
             try {
                 synchronized (outputChannel) {
                     outputFile.seek(chunk.getWritePosition());
-                    outputChannel.write(chunk.buffer);
+                    outputChannel.write(chunk.buffer.getBuffer());
                     if (chunk.getID() >= 0) {
                         downloadLink.getChunksProgress()[chunk.getID()] = chunk.getCurrentBytesPosition() - 1;
                     }
@@ -439,8 +444,8 @@ public class RAFDownload extends DownloadInterface {
                 }
 
             } catch (Exception e) {
-                if(writer==null||writer.isInterrupted())return false;
-           
+                if (writer == null || writer.isInterrupted()) return false;
+
                 JDLogger.exception(e);
                 error(LinkStatus.ERROR_LOCAL_IO, JDUtilities.convertExceptionReadable(e));
                 addException(e);

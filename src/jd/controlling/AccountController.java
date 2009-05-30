@@ -196,6 +196,18 @@ public class AccountController extends SubConfiguration implements ActionListene
         }
     }
 
+    public int validAccounts() {
+        int count = 0;
+        synchronized (hosteraccounts) {
+            for (ArrayList<Account> accs : hosteraccounts.values()) {
+                for (Account acc : accs) {
+                    if (acc.isEnabled()) count++;
+                }
+            }
+        }
+        return count;
+    }
+
     private void addAccount(String host, Account account) {
         if (host == null) return;
         if (account == null) return;

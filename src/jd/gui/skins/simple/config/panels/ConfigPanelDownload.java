@@ -22,6 +22,7 @@ import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.controlling.MemoryController;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
@@ -61,9 +62,11 @@ public class ConfigPanelDownload extends ConfigPanel {
         cep.save();
         config.save();
     }
+
     public boolean needsViewport() {
         return false;
     }
+
     public PropertyType hasChanges() {
 
         return PropertyType.getMax(super.hasChanges(), cep.hasChanges());
@@ -123,8 +126,9 @@ public class ConfigPanelDownload extends ConfigPanel {
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "USEWRITERTHREAD", JDLocale.L("gui.config.download.downloadThread", "Gleichzeitig downloaden und auf Festplatte schreiben")));
         ce.setDefaultValue(false);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "MAX_BUFFER_SIZE", JDLocale.L("gui.config.download.buffersize", "Max. Buffersize[MB]"), 1, 4));
-        ce.setDefaultValue(1);
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, MemoryController.MAXBUFFERSIZE, JDLocale.L("gui.config.download.buffersize2", "Max. Buffersize[KB]"), 1000, 2000));
+        ce.setStep(100);
+        ce.setDefaultValue(100);
 
     }
 
