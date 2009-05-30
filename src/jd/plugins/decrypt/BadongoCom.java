@@ -17,12 +17,16 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 public class BadongoCom extends PluginForDecrypt {
@@ -32,7 +36,7 @@ public class BadongoCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -40,22 +44,41 @@ public class BadongoCom extends PluginForDecrypt {
         br.setCookiesExclusive(true);
         br.clearCookies(host);
         br.setCookie("http://www.badongo.com", "badongoL", "de");
+        br.setFollowRedirects(false);
         br.getPage(parameter);
         parameter = parameter.replaceFirst("badongo.com", "badongo.viajd");
         if (!br.containsHTML("Diese Datei wurde gesplittet")) {
+            /* For single video links */
+            if (!parameter.endsWith("/1")) parameter = parameter + "/1";
+            /* For audio files */
+            if (parameter.contains("audio/")) parameter = parameter.replace("audio/", "file/");
             DownloadLink dlLink = createDownloadlink(Encoding.htmlDecode(parameter));
             dlLink.setProperty("type", "single");
             decryptedLinks.add(dlLink);
         } else {
-            String[] links = br.getRegex("<div class=\"m\">Download Teil(.*?)</div>").getColumn(0);
-            progress.setRange(links.length);
-            for (String partId : links) {
-
-                DownloadLink dlLink = createDownloadlink(Encoding.htmlDecode(parameter) + "?" + partId.trim());
-                dlLink.setName(dlLink.getName() + "." + partId.trim());
+            /* Get CaptchaCode */
+            for (int i = 0; i <= 5; i++) {
+                br.getPage(param.toString() + "?rs=displayCaptcha&rst=&rsrnd=" + new Date().getTime() + "&rsargs[]=yellow");
+                Form form = br.getForm(0);
+                String cid = br.getRegex("cid\\=(\\d+)").getMatch(0);
+                String code = getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, param);
+                form.setAction(br.getRegex("action=.\"(.+?).\"").getMatch(0));
+                form.put("user_code", code);
+                form.put("cap_id", br.getRegex("cap_id.\"\\svalue=.\"(\\d+).\"").getMatch(0));
+                form.put("cap_secret", br.getRegex("cap_secret.\"\\svalue=.\"([a-z0-9]+).\"").getMatch(0));
+                br.submitForm(form);
+                if (br.getRedirectLocation() == null) break;
+            }
+            /* Collect Splitfiles */
+            String[] partLinks = br.getRegex("<a\\shref=\"(http://www\\.badongo\\.com/de/c?vid/\\d+/\\d/\\w\\w)\"").getColumn(0);
+            if (partLinks == null || partLinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            progress.setRange(partLinks.length);
+            for (int i = 0; i <= partLinks.length - 1; i++) {
+                DownloadLink dlLink = createDownloadlink(partLinks[i].replaceFirst("badongo.com", "badongo.viajd"));
+                dlLink.setName(dlLink.getName() + "." + (i + 1));
                 dlLink.setProperty("type", "split");
-                dlLink.setProperty("part", Integer.parseInt(partId.trim()));
-                dlLink.setProperty("parts", links.length);
+                dlLink.setProperty("part", i + 1);
+                dlLink.setProperty("parts", partLinks.length);
                 decryptedLinks.add(dlLink);
                 progress.increase(1);
             }
@@ -64,7 +87,7 @@ public class BadongoCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
