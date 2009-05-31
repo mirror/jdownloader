@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -87,6 +88,7 @@ public class RelinkUs extends PluginForDecrypt {
         String parameter = param.toString();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         String page = br.getPage(parameter);
         boolean okay = true;
         for (int i = 0; i < 4; i++) {
