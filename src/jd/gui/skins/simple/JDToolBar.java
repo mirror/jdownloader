@@ -20,6 +20,7 @@ import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JSeparator;
@@ -34,11 +35,14 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
+import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -283,6 +287,17 @@ public class JDToolBar extends JToolBar implements ControlListener {
             public void actionPerformed(ActionEvent e) {
                 new Thread() {
                     public void run() {
+                        if (LinkGrabberPanel.getLinkGrabber().isVisible()) {
+                            ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
+                            synchronized (LinkGrabberController.ControllerLock) {
+                                synchronized (LinkGrabberPanel.getLinkGrabber()) {
+                                    for (LinkGrabberFilePackage fp : fps) {
+                                        LinkGrabberPanel.getLinkGrabber().confirmPackage(fp, null);
+                                    }
+                                }
+                            }
+                            SimpleGUI.CURRENTGUI.getTaskPane().switcher(SimpleGUI.CURRENTGUI.getDlTskPane());
+                        }
                         setPause(false);
                         JDUtilities.getController().startDownloads();
                     }

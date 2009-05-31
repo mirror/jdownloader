@@ -15,7 +15,7 @@ public class MemoryController {
     protected Integer BufferCreated = new Integer(0);
     protected Integer BufferFreed = new Integer(0);
     protected boolean MemoryControllerEnabled = true;
-    protected boolean MemoryDebug = false;
+    protected boolean MemoryDebug = true;
 
     public synchronized static MemoryController getInstance() {
         if (INSTANCE == null) INSTANCE = new MemoryController();
@@ -29,7 +29,7 @@ public class MemoryController {
                 while (true) {
                     MemoryController.getInstance().printDebug();
                     try {
-                        sleep(10000);
+                        sleep(1000*60);
                     } catch (InterruptedException e) {
                         break;
                     }
@@ -40,7 +40,7 @@ public class MemoryController {
     }
 
     public void printDebug() {
-        System.out.println("MemoryController: " + Formatter.formatReadable(BufferCreated) + " in " + bufferpool.size() + " BufferEntries!");
+        JDLogger.getLogger().info("MemoryController: " + Formatter.formatReadable(BufferCreated) + " in " + bufferpool.size() + " BufferEntries!");
     }
 
     protected void increaseCreated(int size) {

@@ -82,7 +82,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     private LinkCheck lc = LinkCheck.getLinkChecker();
     private Timer Update_Async;
     private static LinkGrabberPanel INSTANCE;
-    private boolean visible = true;
+    private boolean visible = false;
 
     private LinkGrabberController LGINSTANCE = null;
 
@@ -99,8 +99,11 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     }
 
     public boolean needsViewport() {
-
         return false;
+    }
+
+    public boolean isVisible() {
+        return visible;
     }
 
     private LinkGrabberPanel() {
@@ -595,10 +598,10 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     }
 
     private void confirmPackages(ArrayList<LinkGrabberFilePackage> all) {
+        if (all.size() == 0) return;
         for (int i = 0; i < all.size(); ++i) {
             confirmPackage(all.get(i), null);
-        }
-        if (all.size() == 0) return;
+        }        
         LGINSTANCE.throwLinksAdded();
         if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
             JDController.getInstance().startDownloads();
