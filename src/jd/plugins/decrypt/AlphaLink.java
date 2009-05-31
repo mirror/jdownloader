@@ -32,7 +32,7 @@ public class AlphaLink extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -40,21 +40,32 @@ public class AlphaLink extends PluginForDecrypt {
         br.getPage(parameter);
 
         Form form = br.getForm(1);
-        String[] ids = br.getRegex("class=\\'btn\\' name=\\'id\\' value=\\'(\\d+)\\'").getColumn(0);
-
+        for (int i = 0; i <= 5; i++) {
+            String code = getCaptchaCode("http://alpha-link.eu/captcha/captcha.php", param);
+            form.put("captcha", code);
+            form.setAction(parameter);
+            br.submitForm(form);
+            if (!br.containsHTML("(Code ist falsch)|(kein Code eingegeben)")) break;
+        }
+        form = br.getForm(1);
+        String[] ids = br.getRegex("class='btn' name='id' value='(\\d+)'").getColumn(0);
+        if (ids.length == 0) return null;
+        progress.setRange(ids.length);
         for (String id : ids) {
             form.put("id", id);
             br.submitForm(form);
 
-            String code = br.getRegex("src\\=\\\\\"(\\&.*?)\\\\\"").getMatch(0);
-            String link = Encoding.htmlDecode(code);
+            String codedLink = br.getRegex("src=.\"(.*?).\"").getMatch(0);
+            if (codedLink == null) return null;
+            String link = Encoding.htmlDecode(codedLink);
 
             decryptedLinks.add(createDownloadlink(link));
+            progress.increase(1);
         }
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
