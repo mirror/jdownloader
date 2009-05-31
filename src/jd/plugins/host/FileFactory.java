@@ -72,6 +72,8 @@ public class FileFactory extends PluginForHost {
     public void handleFree(DownloadLink parameter) throws Exception {
         try {
             handleFree0(parameter);
+        } catch (InterruptedException e2) {
+            return;
         } catch (IOException e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
             if (e.getMessage() != null && e.getMessage().contains("502")) {
@@ -125,7 +127,7 @@ public class FileFactory extends PluginForHost {
                 parameter.requestGuiUpdate();
                 captchaCode = getCaptchaCode(captchaFile, parameter);
             } catch (Exception e) {
-                continue;
+                return;                
             }
             captchaCode = captchaCode.replaceAll("\\-", "");
             if (captchaCode.length() < 4) continue;

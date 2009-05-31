@@ -160,6 +160,10 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 Thread.sleep(100);
             } catch (InterruptedException e) {
             }
+            cons = new ArrayList<SingleDownloadController>(DownloadControllers.values());
+            for (SingleDownloadController singleDownloadController : cons) {
+                al.add(singleDownloadController.abortDownload().getDownloadLink());
+            }
         }
         DownloadController.getInstance().fireDownloadLinkUpdate(al);
         progress.finalize();
