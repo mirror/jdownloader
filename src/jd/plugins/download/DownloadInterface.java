@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.Channels;
 import java.nio.channels.ClosedByInterruptException;

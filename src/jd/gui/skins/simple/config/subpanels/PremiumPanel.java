@@ -356,6 +356,11 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             // account.setEnabled(false);
 
             info = new JXCollapsiblePane() {
+                /**
+                 * 
+                 */
+                private static final long serialVersionUID = -6257425518692601676L;
+
                 public void paint(Graphics g) {
                     super.paint(g);
                     SimpleGUI.CURRENTGUI.setWaiting(false);

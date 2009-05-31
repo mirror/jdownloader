@@ -64,7 +64,6 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.gui.UIInterface;
 import jd.http.Browser;
-import jd.http.JDProxy;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.nutils.OSDetector;

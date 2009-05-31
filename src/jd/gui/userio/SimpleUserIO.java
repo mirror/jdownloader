@@ -25,9 +25,7 @@ import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.userio.dialog.CaptchaDialog;
 import jd.gui.userio.dialog.ConfirmDialog;
 import jd.gui.userio.dialog.InputDialog;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 
 public class SimpleUserIO extends UserIO {
     private SimpleUserIO() {
