@@ -442,7 +442,7 @@ public class Main {
         new WebUpdate().doWebupdate(false);
         try {
             loadDynamics();
-        } catch (IOException e1) {
+        } catch (Exception e1) {
             JDLogger.exception(Level.FINEST, e1);
         }
         WebUpdate.DynamicPluginsFinished();

@@ -500,6 +500,7 @@ public abstract class PluginForHost extends Plugin {
                 }
             } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
+                logger.severe(downloadLink.getLinkStatus().getLongErrorMessage());
             }
 
             long traffic = downloadLink.getDownloadCurrent() - before;
@@ -540,6 +541,7 @@ public abstract class PluginForHost extends Plugin {
                 }
             } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
+                logger.severe(downloadLink.getLinkStatus().getLongErrorMessage());
             }
         }
         return;

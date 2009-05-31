@@ -15,6 +15,7 @@ public class MemoryController {
     protected Integer BufferCreated = new Integer(0);
     protected Integer BufferFreed = new Integer(0);
     protected boolean MemoryControllerEnabled = true;
+    protected boolean MemoryDebug = false;
 
     public synchronized static MemoryController getInstance() {
         if (INSTANCE == null) INSTANCE = new MemoryController();
@@ -35,7 +36,7 @@ public class MemoryController {
                 }
             }
         };
-        if (MemoryControllerEnabled) thread.start();
+        if (MemoryControllerEnabled && MemoryDebug) thread.start();
     }
 
     public void printDebug() {
