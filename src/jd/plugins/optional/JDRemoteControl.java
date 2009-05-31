@@ -207,17 +207,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             } else if (request.getRequestUrl().equals("/get/downloads/currentcount")) {
                 // Get Current DLs COUNT
                 int counter = 0;
-                FilePackage filePackage;
-                DownloadLink dLink;
-                Integer Package_ID;
-                Integer Download_ID;
-
-                for (Package_ID = 0; Package_ID < JDUtilities.getController().getPackages().size(); Package_ID++) {
-                    filePackage = JDUtilities.getController().getPackages().get(Package_ID);
-                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinkList().size(); Download_ID++) {
-
-                        dLink = filePackage.getDownloadLinkList().get(Download_ID);
-                        if (dLink.getLinkStatus().isPluginActive()) {
+                for (FilePackage fp : JDUtilities.getController().getPackages()) {
+                    for (DownloadLink dl : fp.getDownloadLinkList()) {
+                        if (dl.getLinkStatus().isPluginActive()) {
                             counter++;
                         }
                     }
@@ -225,118 +217,43 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 response.addContent(counter);
             } else if (request.getRequestUrl().equals("/get/downloads/currentlist")) {
                 // Get Current DLs
-                FilePackage filePackage;
-                DownloadLink dLink;
-                Integer Package_ID;
-                Integer Download_ID;
+                for (FilePackage fp : JDUtilities.getController().getPackages()) {
+                    addFilePackage(output, fp);
 
-                for (Package_ID = 0; Package_ID < JDUtilities.getController().getPackages().size(); Package_ID++) {
-                    filePackage = JDUtilities.getController().getPackages().get(Package_ID);
-
-                    /* Paket Infos */
-                    output.append("<package");// Open Package
-                    output.append(" package_name=\"" + filePackage.getName() + "\"");
-                    output.append(" package_id=\"" + Package_ID.toString() + "\"");
-                    output.append(" package_percent=\"" + f.format(filePackage.getPercent()) + "\"");
-                    output.append(" package_linksinprogress=\"" + filePackage.getLinksInProgress() + "\"");
-                    output.append(" package_linkstotal=\"" + filePackage.size() + "\"");
-                    output.append(" package_ETA=\"" + Formatter.formatSeconds(filePackage.getETA()) + "\"");
-                    output.append(" package_speed=\"" + Formatter.formatReadable(filePackage.getTotalDownloadSpeed()) + "/s\"");
-                    output.append(" package_loaded=\"" + Formatter.formatReadable(filePackage.getTotalKBLoaded()) + "\"");
-                    output.append(" package_size=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize()) + "\"");
-                    output.append(" package_todo=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"");
-                    output.append(" >");// Close Package
-
-                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinkList().size(); Download_ID++) {
-
-                        dLink = filePackage.getDownloadLinkList().get(Download_ID);
-                        if (dLink.getLinkStatus().isPluginActive()) {
-                            /* Download Infos */
-                            output.append("<file");// Open File
-                            output.append(" file_name=\"" + dLink.getName() + "\"");
-                            output.append(" file_id=\"" + Download_ID.toString() + "\"");
-                            output.append(" file_package=\"" + Package_ID.toString() + "\"");
-                            output.append(" file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadSize())) + "\"");
-                            output.append(" file_hoster=\"" + dLink.getHost() + "\"");
-                            output.append(" file_status=\"" + dLink.getLinkStatus().getStatusString().toString() + "\"");
-                            output.append(" file_speed=\"" + dLink.getDownloadSpeed() + "\"");
-                            output.append(" /> ");// Close File
+                    for (DownloadLink dl : fp.getDownloadLinkList()) {
+                        if (dl.getLinkStatus().isPluginActive()) {
+                            addDownloadLink(output, dl);
                         }
                     }
-                    output.append("</package> ");// Close Package
+
+                    output.append("</package> ");
                 }
                 response.addContent(output.toString());
             } else if (request.getRequestUrl().equals("/get/downloads/allcount")) {
                 // Get DLList COUNT
                 int counter = 0;
-                FilePackage filePackage;
-                Integer Package_ID;
-                Integer Download_ID;
-
-                for (Package_ID = 0; Package_ID < JDUtilities.getController().getPackages().size(); Package_ID++) {
-                    filePackage = JDUtilities.getController().getPackages().get(Package_ID);
-
-                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinkList().size(); Download_ID++) {
-                        counter++;
-                    }
+                for (FilePackage fp : JDUtilities.getController().getPackages()) {
+                    counter += fp.getDownloadLinkList().size();
                 }
                 response.addContent(counter);
             } else if (request.getRequestUrl().equals("/get/downloads/alllist")) {
                 // Get DLList
-                FilePackage filePackage;
-                DownloadLink dLink;
-                Integer Package_ID;
-                Integer Download_ID;
+                for (FilePackage fp : JDUtilities.getController().getPackages()) {
+                    addFilePackage(output, fp);
 
-                for (Package_ID = 0; Package_ID < JDUtilities.getController().getPackages().size(); Package_ID++) {
-                    filePackage = JDUtilities.getController().getPackages().get(Package_ID);
-
-                    /* Paket Infos */
-                    output.append("<package");// Open Package
-                    output.append(" package_name=\"" + filePackage.getName() + "\"");
-                    output.append(" package_id=\"" + Package_ID.toString() + "\"");
-                    output.append(" package_percent=\"" + f.format(filePackage.getPercent()) + "\"");
-                    output.append(" package_linksinprogress=\"" + filePackage.getLinksInProgress() + "\"");
-                    output.append(" package_linkstotal=\"" + filePackage.size() + "\"");
-                    output.append(" package_ETA=\"" + Formatter.formatSeconds(filePackage.getETA()) + "\"");
-                    output.append(" package_speed=\"" + Formatter.formatReadable(filePackage.getTotalDownloadSpeed()) + "/s\"");
-                    output.append(" package_loaded=\"" + Formatter.formatReadable(filePackage.getTotalKBLoaded()) + "\"");
-                    output.append(" package_size=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize()) + "\"");
-                    output.append(" package_todo=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"");
-                    output.append(" >");// Close Package
-
-                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinkList().size(); Download_ID++) {
-
-                        dLink = filePackage.getDownloadLinkList().get(Download_ID);
-                        /* Download Infos */
-                        output.append("<file");// Open File
-                        output.append(" file_name=\"" + dLink.getName() + "\"");
-                        output.append(" file_id=\"" + Download_ID.toString() + "\"");
-                        output.append(" file_package=\"" + Package_ID.toString() + "\"");
-                        output.append(" file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadSize())) + "\"");
-                        output.append(" file_hoster=\"" + dLink.getHost() + "\"");
-                        output.append(" file_status=\"" + dLink.getLinkStatus().getStatusString().toString() + "\"");
-                        output.append(" file_speed=\"" + dLink.getDownloadSpeed() + "\"");
-                        output.append(" /> ");// Close File
+                    for (DownloadLink dl : fp.getDownloadLinkList()) {
+                        addDownloadLink(output, dl);
                     }
-                    output.append("</package> ");// Close Package
+
+                    output.append("</package> ");
                 }
                 response.addContent(output.toString());
             } else if (request.getRequestUrl().equals("/get/downloads/finishedcount")) {
                 // Get finished DLs COUNT
                 int counter = 0;
-                FilePackage filePackage;
-                DownloadLink dLink;
-                Integer Package_ID;
-                Integer Download_ID;
-
-                for (Package_ID = 0; Package_ID < JDUtilities.getController().getPackages().size(); Package_ID++) {
-                    filePackage = JDUtilities.getController().getPackages().get(Package_ID);
-
-                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinkList().size(); Download_ID++) {
-
-                        dLink = filePackage.getDownloadLinkList().get(Download_ID);
-                        if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                for (FilePackage fp : JDUtilities.getController().getPackages()) {
+                    for (DownloadLink dl : fp.getDownloadLinkList()) {
+                        if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                             counter++;
                         }
                     }
@@ -344,45 +261,16 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 response.addContent(counter);
             } else if (request.getRequestUrl().equals("/get/downloads/finishedlist")) {
                 // Get finished DLs
-                FilePackage filePackage;
-                DownloadLink dLink;
-                Integer Package_ID;
-                Integer Download_ID;
+                for (FilePackage fp : JDUtilities.getController().getPackages()) {
+                    addFilePackage(output, fp);
 
-                for (Package_ID = 0; Package_ID < JDUtilities.getController().getPackages().size(); Package_ID++) {
-                    filePackage = JDUtilities.getController().getPackages().get(Package_ID);
-
-                    /* Paket Infos */
-                    output.append("<package");// Open Package
-                    output.append(" package_name=\"" + filePackage.getName() + "\"");
-                    output.append(" package_id=\"" + Package_ID.toString() + "\"");
-                    output.append(" package_percent=\"" + f.format(filePackage.getPercent()) + "\"");
-                    output.append(" package_linksinprogress=\"" + filePackage.getLinksInProgress() + "\"");
-                    output.append(" package_linkstotal=\"" + filePackage.size() + "\"");
-                    output.append(" package_ETA=\"" + Formatter.formatSeconds(filePackage.getETA()) + "\"");
-                    output.append(" package_speed=\"" + Formatter.formatReadable(filePackage.getTotalDownloadSpeed()) + "/s\"");
-                    output.append(" package_loaded=\"" + Formatter.formatReadable(filePackage.getTotalKBLoaded()) + "\"");
-                    output.append(" package_size=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize()) + "\"");
-                    output.append(" package_todo=\"" + Formatter.formatReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"");
-                    output.append(" >");// Close Package
-
-                    for (Download_ID = 0; Download_ID < filePackage.getDownloadLinkList().size(); Download_ID++) {
-
-                        dLink = filePackage.getDownloadLinkList().get(Download_ID);
-                        if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                            /* Download Infos */
-                            output.append("<file");// Open File
-                            output.append(" file_name=\"" + dLink.getName() + "\"");
-                            output.append(" file_id=\"" + Download_ID.toString() + "\"");
-                            output.append(" file_package=\"" + Package_ID.toString() + "\"");
-                            output.append(" file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadSize())) + "\"");
-                            output.append(" file_hoster=\"" + dLink.getHost() + "\"");
-                            output.append(" file_status=\"" + dLink.getLinkStatus().getStatusString().toString() + "\"");
-                            output.append(" file_speed=\"" + dLink.getDownloadSpeed() + "\"");
-                            output.append(" /> ");// Close File
+                    for (DownloadLink dl : fp.getDownloadLinkList()) {
+                        if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                            addDownloadLink(output, dl);
                         }
                     }
-                    output.append("</package> ");// Close Package
+
+                    output.append("</package> ");
                 }
                 response.addContent(output.toString());
             } else if (request.getRequestUrl().equals("/get/speed")) {
@@ -550,6 +438,31 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             } else {
                 response.addContent("JDRemoteControl - Malformed Request. use /help");
             }
+        }
+
+        private void addFilePackage(StringBuilder output, FilePackage fp) {
+            output.append("<package");
+            output.append(" package_name=\"" + fp.getName() + "\"");
+            output.append(" package_percent=\"" + f.format(fp.getPercent()) + "\"");
+            output.append(" package_linksinprogress=\"" + fp.getLinksInProgress() + "\"");
+            output.append(" package_linkstotal=\"" + fp.size() + "\"");
+            output.append(" package_ETA=\"" + Formatter.formatSeconds(fp.getETA()) + "\"");
+            output.append(" package_speed=\"" + Formatter.formatReadable(fp.getTotalDownloadSpeed()) + "/s\"");
+            output.append(" package_loaded=\"" + Formatter.formatReadable(fp.getTotalKBLoaded()) + "\"");
+            output.append(" package_size=\"" + Formatter.formatReadable(fp.getTotalEstimatedPackageSize()) + "\"");
+            output.append(" package_todo=\"" + Formatter.formatReadable(fp.getTotalEstimatedPackageSize() - fp.getTotalKBLoaded()) + "\"");
+            output.append(" >");
+        }
+
+        private void addDownloadLink(StringBuilder output, DownloadLink dl) {
+            output.append("<file");
+            output.append(" file_name=\"" + dl.getName() + "\"");
+            output.append(" file_package=\"" + dl.getFilePackage().getName() + "\"");
+            output.append(" file_percent=\"" + f.format(dl.getDownloadCurrent() * 100.0 / Math.max(1, dl.getDownloadSize())) + "\"");
+            output.append(" file_hoster=\"" + dl.getHost() + "\"");
+            output.append(" file_status=\"" + dl.getLinkStatus().getStatusString().toString() + "\"");
+            output.append(" file_speed=\"" + dl.getDownloadSpeed() + "\"");
+            output.append(" /> ");
         }
     }
 

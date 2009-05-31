@@ -150,7 +150,6 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         this.invalidate();
         this.pack();
         this.setResizable(true);
-        Dimension pref = this.getPreferredSize();
 
         this.packed();
         this.toFront();

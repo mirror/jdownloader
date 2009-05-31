@@ -258,6 +258,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         return downloadLinkList;
     }
 
+    @Deprecated
     public Vector<DownloadLink> getDownloadLinks() {
         return downloadLinks;
     }
