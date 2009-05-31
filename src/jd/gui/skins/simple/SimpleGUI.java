@@ -696,7 +696,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     taskPane.switcher(dlTskPane);
                     break;
                 case LinkGrabberControllerEvent.EMPTY:
-                    lgTaskPane.setPanelID(0);
+//                    lgTaskPane.setPanelID(0);
                     break;
                 }
             }
