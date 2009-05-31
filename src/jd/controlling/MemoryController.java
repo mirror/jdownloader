@@ -29,7 +29,7 @@ public class MemoryController {
                 while (true) {
                     MemoryController.getInstance().printDebug();
                     try {
-                        sleep(1000*60);
+                        sleep(1000 * 60);
                     } catch (InterruptedException e) {
                         break;
                     }
@@ -68,7 +68,7 @@ public class MemoryController {
     // 2);
     // }
 
-    public ByteBufferEntry getByteBufferEntry(int size) {
+    public ByteBufferEntry getByteBufferEntry(int size) {        
         if (!MemoryControllerEnabled) return new ByteBufferEntry(size).getByteBufferEntry();
         synchronized (bufferpool) {
             for (ByteBufferEntry entry : bufferpool) {

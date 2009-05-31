@@ -24,6 +24,7 @@ public class ByteBufferEntry {
     public ByteBufferEntry getByteBufferEntry() {
         inuse = true;
         lastaccess = System.currentTimeMillis();
+        buffer.clear();
         return this;
     }
 
