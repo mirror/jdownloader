@@ -91,7 +91,10 @@ public class Browser {
     private static HashMap<URL, Browser> URL_LINK_MAP = new HashMap<URL, Browser>();
 
     private HashMap<String, String[]> logins = new HashMap<String, String[]>();
-
+/**
+ * Clears all cookies for the givven url. URL has to be a valid url
+ * @param url
+ */
     public void clearCookies(String url) {
         String host = url;
         try {
@@ -171,7 +174,12 @@ public class Browser {
         cookies.put(key.trim(), cookie);
 
     }
-
+/**
+ * Returns the host for url. input: http://srv2.bluehost.to/dsdsf  ->out bluehost.to
+ * @param url
+ * @return
+ * @throws MalformedURLException
+ */
     public static String getHost(Object url) throws MalformedURLException {
 
         String ret = new URL(url + "").getHost();
@@ -184,7 +192,7 @@ public class Browser {
 
     }
 
-    public void updateCookies(Request request) throws MalformedURLException {
+    private void updateCookies(Request request) throws MalformedURLException {
         if (request == null) { return; }
         String host = Browser.getHost(request.getUrl());
         LinkedHashMap<String, Cookie> cookies = getCookies().get(host);
@@ -1200,6 +1208,7 @@ public class Browser {
                         continue;
                     }
                 }
+                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop"); }
 
             }
         }
@@ -1226,7 +1235,7 @@ public class Browser {
                         continue;
                     }
                 }
-
+                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop"); }
             }
         }
         if (downloadLink.getPlugin().getBrowser() == this) {
@@ -1253,6 +1262,7 @@ public class Browser {
                         continue;
                     }
                 }
+                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop"); }
 
             }
         }
@@ -1280,6 +1290,7 @@ public class Browser {
                         continue;
                     }
                 }
+                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop"); }
 
             }
         }
@@ -1307,7 +1318,7 @@ public class Browser {
                         continue;
                     }
                 }
-
+                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop"); }
             }
         }
         if (downloadLink.getPlugin().getBrowser() == this) {
@@ -1366,10 +1377,10 @@ public class Browser {
         // JDProxy p = new JDProxy(JDProxy.Type.SOCKS, "localhost", 1080);
         // this.setProxy(p);
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
             // für evtl authentifizierung:
-            //http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
+            // http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
             // -proxy-authentication/
             // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich
             // wäre
@@ -1390,7 +1401,7 @@ public class Browser {
 
         }
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
 
             String user = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
