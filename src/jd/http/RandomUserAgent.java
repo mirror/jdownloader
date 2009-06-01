@@ -23,6 +23,8 @@ import java.util.Random;
 
 import jd.nutils.Formatter;
 
+// @SuppressWarnings("unchecked")
+@SuppressWarnings("unchecked")
 public class RandomUserAgent {
 
     /**
@@ -33,58 +35,90 @@ public class RandomUserAgent {
     /**
      * Browser-Language
      */
-    private static final ArrayList<String> langs = new ArrayList<String>();
+    private static ArrayList<String> langs = new ArrayList<String>();
 
     /**
      * Firefox branch revision, version and release date triplet. They MUST
-     * match! As of Firefox version > 3.0 buildHour is appended. Use ".xx"
+     * match! Release date in form of "YYYY.MM.DD[.HH]". As of Firefox version >
+     * 3.0 buildHour is appended. Use ".xx"
      */
-    private static final ArrayList<String> ffVersionInfos = new ArrayList<String>();
+    private static ArrayList<String> ffVersionInfos = new ArrayList<String>();
 
     /**
-     * Windows: .NET addon-string, to make the user-agent more random
+     * Internet Explorer versions
      */
-    private static final ArrayList<String> winAddons = new ArrayList<String>();
+    private static ArrayList<String> ieVersions = new ArrayList<String>();
 
     /**
-     * Linux: distribution addon-string, to make the user-agent more random
+     * Windows Versions. E.g. NT 5.1 is Windows XP
      */
-    private static final ArrayList<String> linuxAddons = new ArrayList<String>();
+    private static String winVersions = "";
 
     /**
-     * Macintosh: version addon-string, to make the user-agent more random
+     * Windows: dotNet addon-strings, to make the user-agent more random
      */
-    private static final ArrayList<String> macAddons = new ArrayList<String>();
+    private static ArrayList<String>[] winAddons = new ArrayList[4];
+
+    /**
+     * Linux: distribution addon-strings, to make the user-agent more random
+     */
+    private static ArrayList<String> linuxAddons = new ArrayList<String>();
+
+    /**
+     * Macintosh: version addon-strings, to make the user-agent more random
+     */
+    private static ArrayList<String> macAddons = new ArrayList<String>();
 
     /**
      * Information about the system: platform, OS, architecture
      */
-    private static final ArrayList<System> system = new ArrayList<System>();
+    private static ArrayList<System> system = new ArrayList<System>();
 
     /**
-     * Fill in values in all constants
+     * Fill in the values (the "configuration")
      */
     private static final void initData() {
+
+        /* Used only in generateIE */
+        ieVersions.add("6.0");
+        ieVersions.add("7.0");
+        ieVersions.add("8.0");
+
+        /* Used in both generateIE and generateFF */
+        winVersions = "NT 5.0|NT 5.1|NT 5.2|NT 6.0|NT 6.1";
+
+        for (int i = 0; i <= winAddons.length - 1; i++)
+            winAddons[i] = new ArrayList<String>();
+        winAddons[0].add("");
+        winAddons[0].add(".NET CLR 1.0.3705");
+        winAddons[0].add(".NET CLR 1.1.4322");
+
+        winAddons[1].add("");
+        winAddons[1].add(".NET CLR 2.0.40607");
+        winAddons[1].add(".NET CLR 2.0.50727");
+
+        winAddons[2].add("");
+        winAddons[2].add(".NET CLR 3.0.04506.648");
+        winAddons[2].add(".NET CLR 3.0.4506.2152");
+
+        winAddons[3].add("");
+        winAddons[3].add(".NET CLR 3.5.21022");
+        winAddons[3].add(".NET CLR 3.5.30729");
+
+        /* Used only in generateFF */
         langs.add("en");
         langs.add("en-US");
         langs.add("en-GB");
 
         ffVersionInfos.add("1.8|1.5|2005.11.11");
         ffVersionInfos.add("1.8.1|2.0|2006.10.10");
-        ffVersionInfos.add("1.9|3.0|2008.05.29");
+        ffVersionInfos.add("1.9|3.0|2008.05.29.xx");
         ffVersionInfos.add("1.9.0.5|3.0.5|2008.12.01.xx");
         ffVersionInfos.add("1.9.0.6|3.0.6|2009.01.19.xx");
         ffVersionInfos.add("1.9.0.7|3.0.7|2009.02.19.xx");
         ffVersionInfos.add("1.9.0.8|3.0.8|2009.03.26.xx");
         ffVersionInfos.add("1.9.0.9|3.0.9|2009.04.08.xx");
         ffVersionInfos.add("1.9.0.10|3.0.10|2009.04.23.xx");
-
-        winAddons.add("");
-        winAddons.add("GTB5");
-        winAddons.add("(.NET CLR 1.1.4322)");
-        winAddons.add("(.NET CLR 2.0.50727)");
-        winAddons.add("(.NET CLR 3.0.4506.2152)");
-        winAddons.add("(.NET CLR 3.5.30729)");
 
         linuxAddons.add(" ");
         linuxAddons.add("Ubuntu/8.04 (hardy)");
@@ -103,8 +137,7 @@ public class RandomUserAgent {
         macAddons.add("10.5");
         macAddons.add("10.6");
 
-        system.clear();
-        system.add(new System("Windows", "Windows", "NT 5.0|NT 5.1|NT 5.2|NT 6.0|NT 6.1", false, true));
+        system.add(new System("Windows", "Windows", winVersions, false, true));
         system.add(new System("X11", "Linux", "x86|x86_64|i586|i686", false, true));
         system.add(new System("Macintosh", "Mac OS X", "Intel|PPC|68K", true, true));
         system.add(new System("X11", "FreeBSD", "i386|amd64|sparc64|alpha", false, true));
@@ -116,11 +149,15 @@ public class RandomUserAgent {
     /**
      * The main user-agent string generator
      * 
-     * @return Random Firefox user-agent string
+     * @return Random Firefox or Internet Explorer user-agent string
      */
     public static String generate() {
-        initData();
-        return generateFF();
+        Random rand = new Random();
+
+        if ((rand.nextInt() % 2) == 0)
+            return generateFF();
+        else
+            return generateIE();
     }
 
     /**
@@ -129,10 +166,11 @@ public class RandomUserAgent {
      * @return Random Firefox user-agent string
      */
     public static String generateFF() {
+        initData();
         Random rand = new Random();
 
-        String platform;
-        String osAndArch;
+        String platform = "";
+        String osAndArch = "";
         String winAddon = "";
         String linuxAddon = " ";
         String macAddon = "";
@@ -153,8 +191,8 @@ public class RandomUserAgent {
 
         /* Get optional strings */
         if (system.get(i).osName.equalsIgnoreCase("Windows")) {
-            winAddon = winAddons.get(rand.nextInt(winAddons.size()));
-            if (winAddon != "") winAddon = " " + winAddon.trim();
+            winAddon = dotNetString();
+            if (winAddon.trim() != "") winAddon = (" (" + winAddon.trim() + ")").replace("(; ", "(");
         } else if (system.get(i).osName.equalsIgnoreCase("Linux")) {
             linuxAddon = linuxAddons.get(rand.nextInt(linuxAddons.size()));
             if (linuxAddon != " ") linuxAddon = " " + linuxAddon.trim() + " ";
@@ -166,13 +204,48 @@ public class RandomUserAgent {
         /* Get Browser language */
         String lang = langs.get(rand.nextInt(langs.size()));
 
-        /* Get Firefox branch revision and version */
+        /* Get Firefox branch revision, version and release date */
         String[] tmpFFVersionInfos = ffVersionInfos.get(rand.nextInt(ffVersionInfos.size())).split("\\|");
         String ffRev = tmpFFVersionInfos[0];
         String ffVersion = tmpFFVersionInfos[1];
         String[] ffReleaseDate = tmpFFVersionInfos[2].split("\\.");
 
         return "Mozilla/5.0 (" + platform + "; U; " + osAndArch + macAddon + "; " + lang + "; rv:" + ffRev + ") Gecko/" + randomDate(ffReleaseDate) + linuxAddon + "Firefox/" + ffVersion + winAddon;
+    }
+
+    /**
+     * The Internet Explorer user-agent string generator
+     * 
+     * @return Random Internet Explorer user-agent string
+     */
+    public static String generateIE() {
+        initData();
+        Random rand = new Random();
+
+        String ieVersion = ieVersions.get(rand.nextInt(ieVersions.size()));
+        String winVersion = winVersions.split("\\|")[rand.nextInt(winVersions.split("\\|").length)];
+        String trident = "";
+        if (ieVersion.equalsIgnoreCase("8.0")) trident = "; Trident/4.0";
+
+        return "Mozilla/4.0 (compatible; MSIE " + ieVersion + "; Windows " + winVersion + trident + dotNetString() + ")";
+    }
+
+    private static String dotNetString() {
+        Random rand = new Random();
+
+        String dotNet10 = "; " + winAddons[0].get(rand.nextInt(winAddons[0].size()));
+        if (dotNet10.equalsIgnoreCase("; ")) dotNet10 = "";
+
+        String dotNet20 = "; " + winAddons[1].get(rand.nextInt(winAddons[1].size()));
+        if (dotNet20.equalsIgnoreCase("; ")) dotNet20 = "";
+        String dotNet30 = "";
+        if (!dotNet20.isEmpty()) dotNet30 = "; " + winAddons[2].get(rand.nextInt(winAddons[2].size()));
+        if (dotNet30.equalsIgnoreCase("; ")) dotNet30 = "";
+        String dotNet35 = "";
+        if (!dotNet30.isEmpty()) dotNet35 = "; " + winAddons[3].get(rand.nextInt(winAddons[3].size()));
+        if (dotNet35.equalsIgnoreCase("; ")) dotNet35 = "";
+
+        return dotNet10 + dotNet20 + dotNet30 + dotNet35;
     }
 
     /**
