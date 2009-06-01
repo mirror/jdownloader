@@ -40,8 +40,7 @@ public class Wiireloaded extends PluginForDecrypt {
         link_passwds.add("wii-reloaded.info");
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        br.setCookiesExclusive(true);
-        br.clearCookies("wii-reloaded.ath.cx");
+        this.setBrowserExclusive();
         progress.setRange(3);
         br.getPage(parameter);
         try {
@@ -73,6 +72,7 @@ public class Wiireloaded extends PluginForDecrypt {
         logger.finer("ids found" + ids.length);
         progress.addToMax(ids.length);
         Browser brc = br.cloneBrowser();
+        brc.setDebug(true);
         for (String element : ids) {
             for (int retry = 1; retry < 5; retry++) {
                 brc.getPage("http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element);
@@ -86,31 +86,33 @@ public class Wiireloaded extends PluginForDecrypt {
 
                 } else {
                     Form form = brc.getForm(0);
-                    form.put("insertvalue", submitvalue + "");
-                    brc.submitForm(form);
-                    if (brc.getRedirectLocation() == null) {
-                        /* neuer submit value suchen */
-                        logger.info("Searching new SubmitValue");
-                        boolean found = false;
-                        for (int i = 0; i <= 100; i++) {
-                            try {
-                                Thread.sleep(100);
-                            } catch (Exception e) {
+                    if (form != null) {
+                        form.put("insertvalue", submitvalue + "");
+                        brc.submitForm(form);
+                        if (brc.getRedirectLocation() == null) {
+                            /* neuer submit value suchen */
+                            logger.info("Searching new SubmitValue");
+                            boolean found = false;
+                            for (int i = 0; i <= 100; i++) {
+                                try {
+                                    Thread.sleep(100);
+                                } catch (Exception e) {
+                                }
+                                form.put("insertvalue", i + "");
+                                brc.submitForm(form);
+                                if (brc.getRedirectLocation() != null) {
+                                    found = true;
+                                    getPluginConfig().setProperty("WIIReloaded_SubmitValue", i);
+                                    submitvalue = i;
+                                    logger.info("SubmitValue found!");
+                                    break;
+                                }
                             }
-                            form.put("insertvalue", i + "");
-                            brc.submitForm(form);
-                            if (brc.getRedirectLocation() != null) {
-                                found = true;
-                                getPluginConfig().setProperty("WIIReloaded_SubmitValue", i);
-                                submitvalue = i;
-                                logger.info("SubmitValue found!");
-                                break;
+                            if (found == false) {
+                                logger.info("SubmitValue NOT found!");
+                                getPluginConfig().setProperty("WIIReloaded_SubmitValue", -1);
+                                return null;
                             }
-                        }
-                        if (found == false) {
-                            logger.info("SubmitValue NOT found!");
-                            getPluginConfig().setProperty("WIIReloaded_SubmitValue", -1);
-                            return null;
                         }
                     }
                 }
@@ -120,6 +122,7 @@ public class Wiireloaded extends PluginForDecrypt {
                     decryptedLinks.add(link);
                     break;
                 }
+
             }
             progress.increase(1);
         }
