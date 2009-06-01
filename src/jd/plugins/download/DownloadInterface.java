@@ -110,6 +110,8 @@ abstract public class DownloadInterface {
 
         private DownloadInterface dl;
 
+        private boolean connectionclosed = false;
+
         /**
          * Die Connection wird entsprechend der start und endbytes neu
          * aufgebaut.
@@ -345,7 +347,7 @@ abstract public class DownloadInterface {
                             miniblock = -1;
                             break;
                         } catch (AsynchronousCloseException e3) {
-                            if (!isExternalyAborted()) throw e3;
+                            if (!isExternalyAborted() && !connectionclosed) throw e3;
                             miniblock = -1;
                             break;
                         }
@@ -453,7 +455,7 @@ abstract public class DownloadInterface {
                 if (getCurrentBytesPosition() < endByte && endByte > 0 || getCurrentBytesPosition() <= 0) {
 
                     inputStream.close();
-                    source.close();
+                    if (source.isOpen()) source.close();
 
                     logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endByte);
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
@@ -461,7 +463,7 @@ abstract public class DownloadInterface {
                 miniBuffer.setUnused();
                 buffer.setUnused();
                 inputStream.close();
-                source.close();
+                if (source.isOpen()) source.close();
 
             } catch (FileNotFoundException e) {
                 logger.severe("file not found. " + e.getLocalizedMessage());
@@ -504,7 +506,7 @@ abstract public class DownloadInterface {
             }
             try {
                 if (source != null) {
-                    source.close();
+                    if (source.isOpen()) source.close();
                 }
             } catch (IOException e) {
                 logger.log(Level.SEVERE, "Exception occured", e);
@@ -944,20 +946,20 @@ abstract public class DownloadInterface {
         }
 
         public void startChunk() {
-
             start();
-
         }
 
         public void closeConnections() {
+            connectionclosed = true;
             try {
                 inputStream.close();
-                source.close();
-                logger.info("Closed connection before closing file");
             } catch (Exception e) {
-
             }
-
+            try {
+                source.close();
+            } catch (Exception e) {
+            }
+            logger.info("Closed connection before closing file");
         }
 
     }

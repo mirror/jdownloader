@@ -16,7 +16,10 @@
 
 package jd.plugins.host;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -37,33 +40,20 @@ public class Dataupde extends PluginForHost {
     }
 
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
-        try {
-            this.setBrowserExclusive();
-            br.setCookie("http://www.dataup.de/", "language", "en");
-            br.setFollowRedirects(false);
-            br.getPage(downloadLink.getDownloadURL());
-
-            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            String dlurl = br.getRegex("action=\"(http://dataup\\.de/\\d+/dl/.+)\"\\smethod").getMatch(0);
-            if (dlurl != null) br.getPage(dlurl);
-            if (!br.containsHTML("no download at this link")) {
-                String filename = br.getRegex("helvetica;\"><b>(.*?)</b></div>").getMatch(0);
-                if (filename == null) filename = br.getRegex("helvetica;\">(.*?)</div>").getMatch(0);
-                String filesizeString = br.getRegex("<label>Size:\\s(.*?)</label><br\\s/>").getMatch(0);
-                downloadLink.setDownloadSize(Regex.getSize(filesizeString));
-                downloadLink.setName(filename);
-                return AvailableStatus.TRUE;
-            }
-        } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
-        }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+        this.setBrowserExclusive();
+        String id = new Regex(downloadLink.getDownloadURL(), "dataup\\.de/(\\d+)").getMatch(0);
+        br.getPage("http://dataup.de/data/api/status.php?id=" + id.trim());
+        String[] data = br.getRegex("(.*?)#(\\d+)#(\\d+)#(.*)").getRow(0);
+        downloadLink.setFinalFileName(data[0]);
+        downloadLink.setDownloadSize(Long.parseLong(data[1]));
+        if (data[2].equalsIgnoreCase("0")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setMD5Hash(data[3].trim());
+        return AvailableStatus.TRUE;
     }
 
     // @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
@@ -71,11 +61,24 @@ public class Dataupde extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
+        this.setBrowserExclusive();
+        br.setCookie("http://www.dataup.de/", "language", "en");
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
 
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         /* 10 seks warten, kann weggelassen werden */
-        // this.sleep(10000, downloadLink);
+
         /* DownloadLink holen */
-        Form form = br.getForms()[2];
+        Form form;
+        if (br.containsHTML("class=\"button_divx\" value")) {
+            form = br.getForms()[3];
+            br.submitForm(form);
+            form = br.getForms()[2];
+        } else {
+            form = br.getForms()[2];
+        }
+        this.sleep(10000, downloadLink);
 
         dl = br.openDownload(downloadLink, form, true, 1);
 
