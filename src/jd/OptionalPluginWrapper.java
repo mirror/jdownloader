@@ -59,7 +59,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
             } else {
                 logger.finer("OPTIONAL NOT loaded " + string + " : " + cl);
             }
-        } catch (ClassNotFoundException e) {
+        } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
