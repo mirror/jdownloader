@@ -46,7 +46,8 @@ public class Stealth extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception, DecrypterException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
+        this.setBrowserExclusive();
+        br.setDebug(true);
         String id = new Regex(parameter, Pattern.compile("\\?id\\=([a-zA-Z0-9]+)")).getMatch(0);
         if (id != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
@@ -134,11 +135,15 @@ public class Stealth extends PluginForDecrypt {
             }
             /* Neue Links Seite */
             String[][] links2 = br.getRegex("download\\('(\\d+)', '(\\d+)'\\);\"></td>").getMatches();
+            Browser brc;
             if (links2.length > 0) {
                 for (String[] element : links2) {
-                    br.getPage("http://stealth.to/index.php?go=download&id=" + element[0]);
-                    String link = br.getRegex("(.*?)\\|\\|\\|").getMatch(0);
-                    decryptedLinks.add(createDownloadlink("http://" + link));
+                    brc = br.cloneBrowser();
+                    brc.postPage("http://stealth.to/index.php?go=download&id=" + element[0], "");
+                    String link = brc.getRegex("(.*?)\\|\\|\\|").getMatch(0);
+                    if (!link.contains("/?")) link = link.replaceAll("\\?", "/\\?");
+                    link = "http://" + link;
+                    decryptedLinks.add(createDownloadlink(link));
                 }
             }
         }
