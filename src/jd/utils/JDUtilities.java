@@ -30,6 +30,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -51,6 +52,12 @@ import java.util.zip.CheckedInputStream;
 
 import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import jd.CPluginWrapper;
 import jd.HostPluginWrapper;
@@ -436,7 +443,7 @@ public class JDUtilities {
 
         if (br == null) {
             br = new Browser();
-            //br.setProxy(JDProxy.NO_PROXY);
+            // br.setProxy(JDProxy.NO_PROXY);
 
             br.setConnectTimeout(5000);
             br.setReadTimeout(5000);
@@ -610,7 +617,7 @@ public class JDUtilities {
             ret.append(' ');
             ret.append(JDLocale.L("gui.mainframe.title.beta", "-->BETA Version<--"));
         }
-         if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0) {
+        if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0) {
             ret.append(' ');
             ret.append(JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR:"));
             ret.append(' ');
@@ -677,7 +684,7 @@ public class JDUtilities {
      * @return Plugins zum Downloaden von einem Anbieter
      */
     public static ArrayList<HostPluginWrapper> getPluginsForHost() {
-       return HostPluginWrapper.getHostWrapper();
+        return HostPluginWrapper.getHostWrapper();
     }
 
     /**
@@ -905,7 +912,7 @@ public class JDUtilities {
         String ret = name;
         while (true) {
             if (ret.endsWith(".")) {
-                ret = ret.substring(0, ret.length() - 1); 
+                ret = ret.substring(0, ret.length() - 1);
             } else {
                 break;
             }
@@ -1008,6 +1015,25 @@ public class JDUtilities {
 
             return doc;
         } catch (Exception e) {
+            JDLogger.exception(e);
+        }
+        return null;
+    }
+
+    public static String createXmlString(Document doc) {
+        try {
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+
+            // initialize StreamResult with File object to save to file
+            StreamResult result = new StreamResult(new StringWriter());
+            DOMSource source = new DOMSource(doc);
+
+            transformer.transform(source, result);
+
+            return result.getWriter().toString();
+
+        } catch (TransformerException e) {
             JDLogger.exception(e);
         }
         return null;

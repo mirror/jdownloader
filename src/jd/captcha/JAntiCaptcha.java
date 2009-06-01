@@ -26,7 +26,6 @@ import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,12 +44,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
 import jd.captcha.configuration.JACScript;
 import jd.captcha.gui.BasicWindow;
@@ -144,7 +137,7 @@ public class JAntiCaptcha {
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, methodName);
         File[] entries = captchaDir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
                 if (pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
 
@@ -436,7 +429,7 @@ public class JAntiCaptcha {
                 if (JAntiCaptcha.isLoggerActive()) {
                     logger.severe("Fehler in useLettercomparatorFilter:" + e.getLocalizedMessage() + " / " + getJas().getString("useLettercomparatorFilter"));
                 }
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                JDLogger.exception(e);
             }
 
         }
@@ -596,7 +589,7 @@ public class JAntiCaptcha {
                 }
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.exception(e);
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.severe("Fehler bein lesen der MTH Datei!!. Methode kann nicht funktionieren!");
             }
@@ -921,7 +914,7 @@ public class JAntiCaptcha {
                     preValueFilterMethod = newClass.getMethod(methodname, preValueFilterParameterTypes);
 
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    JDLogger.exception(e);
                 }
             }
             Method postValueFilterMethod = null;
@@ -944,7 +937,7 @@ public class JAntiCaptcha {
                     postValueFilterMethod = newClass.getMethod(methodname, postValueFilterParameterTypes);
 
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    JDLogger.exception(e);
                 }
             }
             for (Letter tmp : letterDB) {
@@ -1012,7 +1005,7 @@ public class JAntiCaptcha {
 
         } catch (Exception e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.exception(e);
         }
         if (res != null && res.getB() != null) {
             if (JAntiCaptcha.isLoggerActive()) {
@@ -1110,7 +1103,7 @@ public class JAntiCaptcha {
                     preValueFilterMethod = newClass.getMethod(methodname, preValueFilterParameterTypes);
 
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    JDLogger.exception(e);
                 }
             }
             Method postValueFilterMethod = null;
@@ -1133,7 +1126,7 @@ public class JAntiCaptcha {
                     postValueFilterMethod = newClass.getMethod(methodname, postValueFilterParameterTypes);
 
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    JDLogger.exception(e);
                 }
             }
             for (angle = UTILITIES.getJumperStart(leftAngle, rightAngle); UTILITIES.checkJumper(angle, leftAngle, rightAngle); angle = UTILITIES.nextJump(angle, leftAngle, rightAngle, steps)) {
@@ -1244,7 +1237,7 @@ public class JAntiCaptcha {
             }
             // w.refreshUI();
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            JDLogger.exception(e);
         }
 
         if (res != null && res.getB() != null) {
@@ -1358,7 +1351,7 @@ public class JAntiCaptcha {
             try {
                 image = ImageIO.read(element);
             } catch (IOException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                JDLogger.exception(e);
             }
             System.out.println(element.getAbsolutePath());
             int width = image.getWidth(null);
@@ -1541,28 +1534,12 @@ public class JAntiCaptcha {
      * Speichert die MTH File
      */
     public void saveMTHFile() {
-        try {
-            Transformer transformer = TransformerFactory.newInstance().newTransformer();
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-
-            // initialize StreamResult with File object to save to file
-            StreamResult result = new StreamResult(new StringWriter());
-            DOMSource source = new DOMSource(createXMLFromLetterDB());
-
-            transformer.transform(source, result);
-
-            String xmlString = result.getWriter().toString();
-
-            if (!JDIO.writeLocalFile(getResourceFile("letters.mth"), xmlString)) {
-                if (JAntiCaptcha.isLoggerActive()) {
-                    logger.severe("MTHO file Konnte nicht gespeichert werden");
-                }
+        String xmlString = JDUtilities.createXmlString(createXMLFromLetterDB());
+        if (!JDIO.writeLocalFile(getResourceFile("letters.mth"), xmlString)) {
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("MTHO file Konnte nicht gespeichert werden");
             }
-
-        } catch (TransformerException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
         }
-
     }
 
     /**
@@ -1741,7 +1718,7 @@ public class JAntiCaptcha {
             }
 
             // String methodsPath = UTILITIES.getFullPath(new String[] {
-            //JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
+            // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
             // "jd", "captcha", "methods" });
             // String hoster = "rscat.com";
             // JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);

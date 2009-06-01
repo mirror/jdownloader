@@ -55,6 +55,9 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
 public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     private static final String PARAM_PORT = "PORT";
@@ -75,7 +78,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     private class Serverhandler implements Handler {
 
         public void handle(Request request, Response response) {
-            StringBuilder output = new StringBuilder();
+            Document xml = JDUtilities.parseXmlString("<jdownloader></jdownloader>", false);
 
             response.setReturnType("text/html");
             response.setReturnStatus(Response.OK);
@@ -218,17 +221,15 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             } else if (request.getRequestUrl().equals("/get/downloads/currentlist")) {
                 // Get Current DLs
                 for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                    addFilePackage(output, fp);
+                    Element fp_xml = addFilePackage(xml, fp);
 
                     for (DownloadLink dl : fp.getDownloadLinkList()) {
                         if (dl.getLinkStatus().isPluginActive()) {
-                            addDownloadLink(output, dl);
+                            fp_xml.appendChild(addDownloadLink(xml, dl));
                         }
                     }
-
-                    output.append("</package> ");
                 }
-                response.addContent(output.toString());
+                response.addContent(JDUtilities.createXmlString(xml));
             } else if (request.getRequestUrl().equals("/get/downloads/allcount")) {
                 // Get DLList COUNT
                 int counter = 0;
@@ -239,15 +240,13 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             } else if (request.getRequestUrl().equals("/get/downloads/alllist")) {
                 // Get DLList
                 for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                    addFilePackage(output, fp);
+                    Element fp_xml = addFilePackage(xml, fp);
 
                     for (DownloadLink dl : fp.getDownloadLinkList()) {
-                        addDownloadLink(output, dl);
+                        fp_xml.appendChild(addDownloadLink(xml, dl));
                     }
-
-                    output.append("</package> ");
                 }
-                response.addContent(output.toString());
+                response.addContent(JDUtilities.createXmlString(xml));
             } else if (request.getRequestUrl().equals("/get/downloads/finishedcount")) {
                 // Get finished DLs COUNT
                 int counter = 0;
@@ -262,17 +261,15 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             } else if (request.getRequestUrl().equals("/get/downloads/finishedlist")) {
                 // Get finished DLs
                 for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                    addFilePackage(output, fp);
+                    Element fp_xml = addFilePackage(xml, fp);
 
                     for (DownloadLink dl : fp.getDownloadLinkList()) {
                         if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                            addDownloadLink(output, dl);
+                            fp_xml.appendChild(addDownloadLink(xml, dl));
                         }
                     }
-
-                    output.append("</package> ");
                 }
-                response.addContent(output.toString());
+                response.addContent(JDUtilities.createXmlString(xml));
             } else if (request.getRequestUrl().equals("/get/speed")) {
                 // Get current Speed
                 response.addContent(JDUtilities.getController().getSpeedMeter() / 1000);
@@ -440,30 +437,32 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
         }
 
-        private void addFilePackage(StringBuilder output, FilePackage fp) {
-            output.append("<package");
-            output.append(" package_name=\"" + fp.getName() + "\"");
-            output.append(" package_percent=\"" + f.format(fp.getPercent()) + "\"");
-            output.append(" package_linksinprogress=\"" + fp.getLinksInProgress() + "\"");
-            output.append(" package_linkstotal=\"" + fp.size() + "\"");
-            output.append(" package_ETA=\"" + Formatter.formatSeconds(fp.getETA()) + "\"");
-            output.append(" package_speed=\"" + Formatter.formatReadable(fp.getTotalDownloadSpeed()) + "/s\"");
-            output.append(" package_loaded=\"" + Formatter.formatReadable(fp.getTotalKBLoaded()) + "\"");
-            output.append(" package_size=\"" + Formatter.formatReadable(fp.getTotalEstimatedPackageSize()) + "\"");
-            output.append(" package_todo=\"" + Formatter.formatReadable(fp.getTotalEstimatedPackageSize() - fp.getTotalKBLoaded()) + "\"");
-            output.append(" >");
+        private Element addFilePackage(Document xml, FilePackage fp) {
+            Element element = xml.createElement("package");
+            xml.getFirstChild().appendChild(element);
+            element.setAttribute("package_name", fp.getName());
+            element.setAttribute("package_percent", f.format(fp.getPercent()));
+            element.setAttribute("package_linksinprogress", fp.getLinksInProgress() + "");
+            element.setAttribute("package_linkstotal", fp.size() + "");
+            element.setAttribute("package_ETA", Formatter.formatSeconds(fp.getETA()));
+            element.setAttribute("package_speed", Formatter.formatReadable(fp.getTotalDownloadSpeed()));
+            element.setAttribute("package_loaded", Formatter.formatReadable(fp.getTotalKBLoaded()));
+            element.setAttribute("package_size", Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
+            element.setAttribute("package_todo", Formatter.formatReadable(fp.getTotalEstimatedPackageSize() - fp.getTotalKBLoaded()));
+            return element;
         }
 
-        private void addDownloadLink(StringBuilder output, DownloadLink dl) {
-            output.append("<file");
-            output.append(" file_name=\"" + dl.getName() + "\"");
-            output.append(" file_package=\"" + dl.getFilePackage().getName() + "\"");
-            output.append(" file_percent=\"" + f.format(dl.getDownloadCurrent() * 100.0 / Math.max(1, dl.getDownloadSize())) + "\"");
-            output.append(" file_hoster=\"" + dl.getHost() + "\"");
-            output.append(" file_status=\"" + dl.getLinkStatus().getStatusString().toString() + "\"");
-            output.append(" file_speed=\"" + dl.getDownloadSpeed() + "\"");
-            output.append(" /> ");
+        private Element addDownloadLink(Document xml, DownloadLink dl) {
+            Element element = xml.createElement("file");
+            element.setAttribute("file_name", dl.getName());
+            element.setAttribute("file_package", dl.getFilePackage().getName());
+            element.setAttribute("file_percent", f.format(dl.getDownloadCurrent() * 100.0 / Math.max(1, dl.getDownloadSize())));
+            element.setAttribute("file_hoster", dl.getHost());
+            element.setAttribute("file_status", dl.getLinkStatus().getStatusString().toString());
+            element.setAttribute("file_speed", dl.getDownloadSpeed() + "");
+            return element;
         }
+
     }
 
     public static int getAddonInterfaceVersion() {
