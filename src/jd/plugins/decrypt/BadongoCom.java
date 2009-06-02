@@ -70,7 +70,7 @@ public class BadongoCom extends PluginForDecrypt {
                 if (br.getRedirectLocation() == null) break;
             }
             /* Collect Splitfiles */
-            String[] partLinks = br.getRegex("<a\\shref=\"(http://www\\.badongo\\.com/de/c?vid/\\d+/\\d/\\w\\w)\"").getColumn(0);
+            String[] partLinks = br.getRegex("<a\\shref=\"(http://www\\.badongo\\.com/de/c?(vid|file)/\\d+(/\\d)?/\\w\\w)\"").getColumn(0);
             if (partLinks == null || partLinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             progress.setRange(partLinks.length);
             for (int i = 0; i <= partLinks.length - 1; i++) {

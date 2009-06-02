@@ -151,7 +151,13 @@ public class BadongoCom extends PluginForHost {
             handleErrors(br);
             /* Waittime */
             sleep(45500, downloadLink);
-            br.getPage(realURL + "?rs=getVidLink&rst=&rsrnd=" + new Date().getTime() + "&rsargs[]=yellow");
+            /* File or Video Link */
+            String fileOrVid = "";
+            if (realURL.contains("file/"))
+                fileOrVid = "getFileLink";
+            else
+                fileOrVid = "getVidLink";
+            br.getPage(realURL + "?rs=" + fileOrVid + "&rst=&rsrnd=" + new Date().getTime() + "&rsargs[]=yellow");
             link = br.getRegex("doDownload\\(.'(.*?).'").getMatch(0);
             if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.getPage(link + "/ifr?pr=1&zenc=");
