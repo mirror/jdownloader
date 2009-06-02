@@ -84,7 +84,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
     private static final Color ACTIVE = new Color(0x7cd622);
     private static final Color INACTIVE = new Color(0xa40604);
 
-    private static final int PIE_WIDTH = 450;
+    private static final int PIE_WIDTH = 500;
 
     private static final int PIE_HEIGHT = 70;
 
