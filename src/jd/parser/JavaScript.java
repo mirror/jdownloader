@@ -22,8 +22,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Set;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -31,6 +29,7 @@ import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.Encoding;
 
 import org.lobobrowser.html.io.WritableLineReader;
@@ -207,15 +206,15 @@ public final class JavaScript {
         String host2 = br.getHost();
 
         if (host2.matches(".*\\..*\\..*")) host2 = host2.replaceFirst(".*?\\.", "");
-        Set<Entry<String, Cookie>> cookies = br.getCookies().get(host2).entrySet();
+        Cookies cookies = br.getCookies().get(host2);
         StringBuilder c = new StringBuilder();
         boolean b = false;
-        for (Entry<String, Cookie> entry : cookies) {
+        for (Cookie cookie : cookies.getCookies()) {
             if (b == true) {
                 c.append("; ");
             } else
                 b = true;
-            c.append(entry.getValue().getKey() + "=" + entry.getValue().getValue());
+            c.append(cookie.getKey() + "=" + cookie.getValue());
         }
         uacontext.setCookie(new URL(br.getURL()), c.toString());
         Reader reader = new InputStreamReader(ba);

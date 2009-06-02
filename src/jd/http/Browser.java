@@ -31,7 +31,6 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -83,18 +82,20 @@ public class Browser {
         return GLOBAL_PROXY;
     }
 
-    private static HashMap<String, LinkedHashMap<String, Cookie>> COOKIES = new HashMap<String, LinkedHashMap<String, Cookie>>();
-    private HashMap<String, LinkedHashMap<String, Cookie>> cookies = new HashMap<String, LinkedHashMap<String, Cookie>>();
+    private static HashMap<String, Cookies> COOKIES = new HashMap<String, Cookies>();
+    private HashMap<String, Cookies> cookies = new HashMap<String, Cookies>();
 
     private boolean debug = false;
 
     private static HashMap<URL, Browser> URL_LINK_MAP = new HashMap<URL, Browser>();
 
     private HashMap<String, String[]> logins = new HashMap<String, String[]>();
-/**
- * Clears all cookies for the givven url. URL has to be a valid url
- * @param url
- */
+
+    /**
+     * Clears all cookies for the givven url. URL has to be a valid url
+     * 
+     * @param url
+     */
     public void clearCookies(String url) {
         String host = url;
         try {
@@ -106,7 +107,7 @@ public class Browser {
         while (it.hasNext()) {
             check = it.next();
             if (check.contains(host)) {
-                cookies.remove(check);
+                cookies.get(check).clear();
                 break;
             }
 
@@ -116,72 +117,64 @@ public class Browser {
     public void forwardCookies(Request request) throws MalformedURLException {
         if (request == null) { return; }
         String host = Browser.getHost(request.getUrl());
-        LinkedHashMap<String, Cookie> cookies = getCookies().get(host);
+        Cookies cookies = getCookies().get(host);
         if (cookies == null) { return; }
 
-        for (Iterator<Entry<String, Cookie>> it = cookies.entrySet().iterator(); it.hasNext();) {
-            Cookie cookie = it.next().getValue();
-
+        for (Cookie cookie : cookies.getCookies()) {
             // Pfade sollten verarbeitet werden...TODO
             if (cookie.isExpired()) {
                 continue;
             }
             request.getCookies().add(cookie);
         }
-
     }
 
     public void forwardCookies(URLConnectionAdapter con) throws MalformedURLException {
         if (con == null) { return; }
         String host = Browser.getHost(con.getURL().toString());
-        HashMap<String, Cookie> cookies = getCookies().get(host);
+        Cookies cookies = getCookies().get(host);
         String cs = Request.getCookieString(cookies);
         if (cs != null && cs.trim().length() > 0) con.setRequestProperty("Cookie", cs);
     }
 
     public String getCookie(String url, String string) throws MalformedURLException {
         String host;
-
         host = Browser.getHost(url);
-
-        HashMap<String, Cookie> cookies = getCookies().get(host);
-        if (cookies != null && cookies.containsKey(string)) {
-            return cookies.get(string).getValue();
-        } else
-            return null;
+        Cookies cookies = getCookies().get(host);
+        Cookie cookie = cookies.get(string);
+        if (cookie != null) return cookie.getValue();
+        return null;
     }
 
-    public HashMap<String, LinkedHashMap<String, Cookie>> getCookies() {
-
+    public HashMap<String, Cookies> getCookies() {
         if (this.cookiesExclusive) return cookies;
         return COOKIES;
     }
 
     public void setCookie(String url, String key, String value) throws MalformedURLException {
         String host;
-
         host = Browser.getHost(url);
-        LinkedHashMap<String, Cookie> cookies;
+        Cookies cookies;
         if (!getCookies().containsKey(host) || (cookies = getCookies().get(host)) == null) {
-            cookies = new LinkedHashMap<String, Cookie>();
+            cookies = new Cookies();
             getCookies().put(host, cookies);
         }
-
         Cookie cookie = new Cookie();
         cookie.setHost(host);
         cookie.setKey(key);
         cookie.setValue(value);
-        cookies.put(key.trim(), cookie);
-
+        cookies.add(cookie);
     }
-/**
- * Returns the host for url. input: http://srv2.bluehost.to/dsdsf  ->out bluehost.to
- * @param url
- * @return
- * @throws MalformedURLException
- */
-    public static String getHost(Object url) throws MalformedURLException {
 
+    /**
+     * Returns the host for url. input: http://srv2.bluehost.to/dsdsf ->out
+     * bluehost.to
+     * 
+     * @param url
+     * @return
+     * @throws MalformedURLException
+     */
+    public static String getHost(Object url) throws MalformedURLException {
         String ret = new URL(url + "").getHost();
         int id = 0;
         while ((id = ret.indexOf(".")) != ret.lastIndexOf(".")) {
@@ -189,21 +182,17 @@ public class Browser {
 
         }
         return ret;
-
     }
 
     private void updateCookies(Request request) throws MalformedURLException {
         if (request == null) { return; }
         String host = Browser.getHost(request.getUrl());
-        LinkedHashMap<String, Cookie> cookies = getCookies().get(host);
+        Cookies cookies = getCookies().get(host);
         if (cookies == null) {
-            cookies = new LinkedHashMap<String, Cookie>();
+            cookies = new Cookies();
             getCookies().put(host, cookies);
         }
-        for (Cookie cookie : request.getCookies()) {
-            cookies.put(cookie.getKey(), cookie);
-        }
-
+        cookies.add(request.getCookies());
     }
 
     private String acceptLanguage = "de, en-gb;q=0.9, en;q=0.8";
@@ -1085,19 +1074,15 @@ public class Browser {
         this.cookiesExclusive = b;
         if (b) {
             this.cookies.clear();
-
-            for (Iterator<Entry<String, LinkedHashMap<String, Cookie>>> it = COOKIES.entrySet().iterator(); it.hasNext();) {
-                Entry<String, LinkedHashMap<String, Cookie>> next = it.next();
-                LinkedHashMap<String, Cookie> tmp;
-                cookies.put(next.getKey(), tmp = new LinkedHashMap<String, Cookie>());
-                tmp.putAll(next.getValue());
-
+            for (Iterator<Entry<String, Cookies>> it = COOKIES.entrySet().iterator(); it.hasNext();) {
+                Entry<String, Cookies> next = it.next();
+                Cookies tmp;
+                cookies.put(next.getKey(), tmp = new Cookies());
+                tmp.add(next.getValue());
             }
-
         } else {
             this.cookies.clear();
         }
-
     }
 
     public boolean isCookiesExclusive() {

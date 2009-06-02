@@ -80,7 +80,7 @@ abstract public class DownloadInterface {
         ByteBufferEntry buffer = null;
         ByteBufferEntry miniBuffer = null;
 
-        private double bufferTimeFaktor;
+        private double bufferTimeFaktor = 1.0d;
 
         private long bytesPerSecond = -1;
 
@@ -302,7 +302,7 @@ abstract public class DownloadInterface {
                 long bytes;
                 long miniblock = 0;
                 long tempBuff = 0;
-                long addWait;
+                long addWait = 0;
                 miniBuffer = MemoryController.getInstance().getByteBufferEntry(1024 * 10);
                 miniBuffer.getBuffer().clear();
                 int ti = 0;
@@ -433,10 +433,11 @@ abstract public class DownloadInterface {
                         // ein paar wenige bytes/sekunde in der speederfassung
                         // aus.
                         addWait = (long) (0.995 * (ti - (System.currentTimeMillis() - timer)));
+
                         if (speedDebug) {
-                            logger.finer("Wait " + addWait);
+                            logger.finer("Wait " + addWait + " " + ti);
                         }
-                        if (addWait > 0) {
+                        if (addWait > 0 && downloadLink.isLimited()) {
                             Thread.sleep(addWait);
                         }
                     } catch (Exception e) {
@@ -640,7 +641,6 @@ abstract public class DownloadInterface {
          */
         private int getTimeInterval() {
             if (!downloadLink.isLimited()) { return TIME_BASE; }
-
             return Math.min(TIME_BASE * 5, (int) (TIME_BASE * bufferTimeFaktor));
 
         }
@@ -1006,7 +1006,7 @@ abstract public class DownloadInterface {
 
     private boolean fixWrongContentDispositionHeader = false;
 
-    protected boolean speedDebug = false;
+    protected boolean speedDebug = true;
 
     protected long totaleLinkBytesLoaded = 0;
 

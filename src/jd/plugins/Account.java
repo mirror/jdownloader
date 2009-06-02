@@ -126,6 +126,7 @@ public class Account extends Property {
     }
 
     public boolean equals(Account account2) {
+        if (account2 == this) return true;
         if (this.user == null) {
             if (account2.user != null) return false;
         } else {

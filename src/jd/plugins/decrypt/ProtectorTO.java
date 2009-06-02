@@ -18,13 +18,11 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.parser.JavaScript;
 import jd.parser.Regex;
@@ -44,7 +42,7 @@ public class ProtectorTO extends PluginForDecrypt {
         super(wrapper);
     }
 
-    @SuppressWarnings("unchecked")
+    
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -69,13 +67,13 @@ public class ProtectorTO extends PluginForDecrypt {
                 br.getHeaders().put("Referer", param.getStringProperty("referer", null));
             }
             if (param.getProperty("protector_cookies", null) != null) {
-                br.getCookies().putAll((HashMap<String, LinkedHashMap<String, Cookie>>) param.getProperty("protector_cookies", null));
+                br.getCookies().get(this.getHost()).add((Cookies) param.getProperty("protector_cookies", null));
             }
             br.getPage(parameter + "?jd=1");
             if (br.getRedirectLocation() != null) {
                 DownloadLink dl;
                 decryptedLinks.add(dl = createDownloadlink(br.getRedirectLocation()));
-                dl.setProperty("protector_cookies", br.getCookies());
+                dl.setProperty("protector_cookies", br.getCookies().get(this.getHost()));
                 return decryptedLinks;
             }
             if (br.containsHTML("Source was protected")) {

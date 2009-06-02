@@ -21,9 +21,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -34,6 +35,7 @@ import java.util.zip.GZIPInputStream;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.Encoding;
 import jd.http.JDProxy;
 import jd.http.RequestHeader;
@@ -70,7 +72,7 @@ public abstract class Request {
     }
 
     private int connectTimeout;
-    private ArrayList<Cookie> cookies = null;
+    private Cookies cookies = null;
     private int followCounter = 0;
     private boolean followRedirects = false;
 
@@ -127,15 +129,15 @@ public abstract class Request {
         collectCookiesFromConnection();
     }
 
-    public static ArrayList<Cookie> parseCookies(String cookieString, String host, String Date) {
-        ArrayList<Cookie> cookies = new ArrayList<Cookie>();
+    public static Cookies parseCookies(String cookieString, String host, String Date) {
+        Cookies cookies = new Cookies();
 
         String header = cookieString;
 
         String path = null;
         String expires = null;
         String domain = null;
-        HashMap<String, String> tmp = new HashMap<String, String>();
+        LinkedHashMap<String, String> tmp = new LinkedHashMap<String, String>();
         /* einzelne Cookie Elemente */
         StringTokenizer st = new StringTokenizer(header, ";");
         while (true) {
@@ -202,15 +204,14 @@ public abstract class Request {
         String Date = httpConnection.getHeaderField("Date");
         if (cookieHeaders == null) { return; }
         if (cookies == null) {
-            cookies = new ArrayList<Cookie>();
+            cookies = new Cookies();
         }
 
         String host = httpConnection.getURL().getHost();
 
         for (int i = cookieHeaders.size() - 1; i >= 0; i--) {
             String header = cookieHeaders.get(i);
-
-            cookies.addAll(parseCookies(header, host, Date));
+            cookies.add(parseCookies(header, host, Date));
         }
     }
 
@@ -240,7 +241,7 @@ public abstract class Request {
         return htmlCode.contains(html);
     }
 
-    public void setCookies(ArrayList<Cookie> cookies) {
+    public void setCookies(Cookies cookies) {
         this.cookies = cookies;
     }
 
@@ -253,9 +254,9 @@ public abstract class Request {
         return httpConnection.getLongContentLength();
     }
 
-    public ArrayList<Cookie> getCookies() {
+    public Cookies getCookies() {
         if (cookies == null) {
-            cookies = new ArrayList<Cookie>();
+            cookies = new Cookies();
         }
         return cookies;
     }
@@ -271,45 +272,16 @@ public abstract class Request {
     // }
 
     public String getCookieString() {
-
         return getCookieString(cookies);
-
     }
 
-    public static String getCookieString(HashMap<String, Cookie> cookies) {
+    public static String getCookieString(Cookies cookies) {
         if (cookies == null) { return null; }
 
         StringBuilder buffer = new StringBuilder();
         boolean first = true;
-
-        for (Iterator<Entry<String, Cookie>> it = cookies.entrySet().iterator(); it.hasNext();) {
-            Cookie cookie = it.next().getValue();
-
-            // Pfade sollten verarbeitet werden...TODO
-            if (cookie.isExpired()) {
-                continue;
-            }
-
-            if (first) {
-                first = false;
-            } else {
-                buffer.append("; ");
-            }
-            buffer.append(cookie.getKey());
-            buffer.append("=");
-            buffer.append(cookie.getValue());
-        }
-        return buffer.toString();
-    }
-
-    public static String getCookieString(ArrayList<Cookie> cookies) {
-        if (cookies == null) { return null; }
-
-        StringBuilder buffer = new StringBuilder();
-        boolean first = true;
-
-        for (Cookie cookie : cookies) {
-
+        LinkedList<Cookie> cookies2 = new LinkedList<Cookie>(cookies.getCookies());
+        for (Cookie cookie : cookies2) {
             // Pfade sollten verarbeitet werden...TODO
             if (cookie.isExpired()) {
                 continue;
@@ -586,10 +558,9 @@ public abstract class Request {
         this.htmlCode = htmlCode;
     }
 
-    @SuppressWarnings("unchecked")
+    
     public Request toHeadRequest() throws MalformedURLException {
         Request ret = new Request(this.getUrl() + "") {
-
             // @Override
             public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
             }
@@ -598,20 +569,15 @@ public abstract class Request {
             public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
                 httpConnection.setRequestMethod("HEAD");
             }
-
         };
         ret.connectTimeout = this.connectTimeout;
-
-        ret.cookies = (ArrayList<Cookie>) this.getCookies().clone();
+        ret.cookies = new Cookies(this.getCookies());
         ret.followRedirects = this.followRedirects;
         ret.headers = (RequestHeader) this.getHeaders().clone();
         ret.setProxy(proxy);
         ret.readTime = this.readTimeout;
-
         ret.httpConnection = this.httpConnection;
-
         return ret;
-
     }
 
     public Request cloneRequest() {

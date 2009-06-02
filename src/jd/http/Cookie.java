@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import jd.controlling.JDLogger;
+import jd.plugins.Account;
 
 public class Cookie {
 
@@ -43,6 +44,9 @@ public class Cookie {
     }
 
     public Cookie() {
+        host = "";
+        key = "";
+        value = "";
     }
 
     public void setHost(String host) {
@@ -67,7 +71,7 @@ public class Cookie {
                 sdf.setLenient(false);
                 expireDate = sdf.parse(expires);
                 break;
-            } catch (Exception e2) {                
+            } catch (Exception e2) {
             }
         }
         if (expireDate != null) {
@@ -169,6 +173,13 @@ public class Cookie {
 
     public String toString() {
         return key + "=" + value + " @" + host;
+    }
+
+    public boolean equals(Cookie cookie2) {
+        if (cookie2 == this) return true;
+        if (!cookie2.getHost().equalsIgnoreCase(this.getHost())) return false;
+        if (!cookie2.getKey().equalsIgnoreCase(this.getKey())) return false;
+        return true;
     }
 
 }

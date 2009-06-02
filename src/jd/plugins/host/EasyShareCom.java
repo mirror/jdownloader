@@ -18,11 +18,11 @@ package jd.plugins.host;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -68,7 +68,7 @@ public class EasyShareCom extends PluginForHost {
     }
 
     private Cookie isExpired(Account account) throws MalformedURLException, PluginException {
-        HashMap<String, Cookie> cookies = br.getCookies().get("easy-share.com");
+        Cookies cookies = br.getCookies().get("easy-share.com");
         Cookie premstatus = cookies.get("PREMIUMSTATUS");
         if (premstatus == null || !premstatus.getValue().equalsIgnoreCase("ACTIVE")) {
             account.setEnabled(false);
