@@ -622,6 +622,7 @@ public class JDInit {
         new HostPluginWrapper("MyUpload.dk", "MyuploadDK", "http://[\\w\\.]*?myupload\\.dk/showfile/[0-9a-fA-F]+");
         new HostPluginWrapper("IndoWebster.com", "Indowebster", "http://[\\w\\.]*?indowebster\\.com/[^\\s]+\\.html");
         new HostPluginWrapper("QuickShare.cz", "QuickShareCz", "http://[\\w\\.]*?quickshare\\.cz/stahnout-soubor/\\d+:[^\\s]+");
+        new HostPluginWrapper("RuTube.ru", "RuTubeRu", "http://[\\w\\.]*?rutube\\.ru/tracks/\\d+\\.html");
 
         // Hoster from Extern
         new HostPluginWrapper("iFolder.ru", "IfolderRu", "http://[\\-\\w\\.]*?ifolder\\.ru/\\d+");
