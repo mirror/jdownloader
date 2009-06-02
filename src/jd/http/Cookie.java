@@ -21,7 +21,6 @@ import java.util.Date;
 import java.util.Locale;
 
 import jd.controlling.JDLogger;
-import jd.plugins.Account;
 
 public class Cookie {
 

@@ -1184,7 +1184,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                 progress.setStatus(0);
                                 int inc = 100 / linksar.length;
                                 linksar[0].getPlugin().checkLinks(linksar);
-                                for (DownloadLink downloadLink2 : linksar) {
+                                for (DownloadLink downloadLink2 : linksar) {                                    
                                     if (!downloadLink2.isAvailable()) {
                                         finaldls = null;
                                         break;
@@ -1226,7 +1226,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                             progress.setStatus(0);
                                             int inc = 100 / linksar.length;
                                             linksar[0].getPlugin().checkLinks(linksar);
-                                            for (DownloadLink downloadLink2 : linksar) {
+                                            for (DownloadLink downloadLink2 : linksar) {                                                
                                                 if (!downloadLink2.isAvailable()) {
                                                     finaldls = null;
                                                     break;
@@ -1244,16 +1244,15 @@ public class Serienjunkies extends PluginForDecrypt {
                                 if (finaldls != null) break;
                             }
                         }
-                        if (finaldls == null) {
-                            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-                            linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.archiveincomplete", "Archiv nicht komplett"));
+                    }
+                    if (finaldls == null) {
+                        linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+                        linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.archiveincomplete", "Archiv nicht komplett"));
 
-                        } else {
-                            for (DownloadLink downloadLink2 : finaldls) {
-                                downloadLink2.addSourcePluginPasswordList(passwords);
-                            }
+                    } else {
+                        for (DownloadLink downloadLink2 : finaldls) {
+                            downloadLink2.addSourcePluginPasswordList(passwords);
                         }
-
                     }
                     result = finaldls;
                 }

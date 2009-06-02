@@ -423,6 +423,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
             }
             if (bestSim < 99) {
                 LinkGrabberFilePackage fp = new LinkGrabberFilePackage(packageName, this);
+                fp.setPassword(link.getFilePackage().getPassword());
                 fp.add(link);
             } else {
                 String newPackageName = autoPackage ? getSimString(bestp.getName(), packageName) : packageName;
@@ -446,13 +447,12 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     private String cleanFileName(String name) {
         /** remove rar extensions */
-        String tmp;
+
         name = getNameMatch(name, "(.*)\\.part[0]*[1].rar$");
         name = getNameMatch(name, "(.*)\\.part[0-9]+.rar$");
         name = getNameMatch(name, "(.*)\\.rar$");
         name = getNameMatch(name, "(.*)\\.r\\d+$");
-        tmp = getNameMatch(name, "(.*?)\\d+$");
-        if (tmp.length() > 0) name = tmp;
+        name = getNameMatch(name, "(.*)\\.\\d+$");
 
         /**
          * remove 7zip and hjmerge extensions
