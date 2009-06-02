@@ -24,6 +24,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -160,7 +161,31 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public ConfigPanelPluginForHost(Configuration configuration) {
         super();
         pluginsForHost = JDUtilities.getPluginsForHost();
-        Collections.sort(pluginsForHost);
+        Collections.sort(pluginsForHost, new Comparator<HostPluginWrapper>() {
+
+            public int compare(HostPluginWrapper a, HostPluginWrapper b) {
+                if (a.isLoaded() && b.isLoaded()) {
+                    if (a.isPremiumEnabled() && b.isPremiumEnabled()) {
+                        return a.getHost().compareToIgnoreCase(b.getHost());
+                    } else {
+                        if (!a.isPremiumEnabled() && !b.isPremiumEnabled()) return a.getHost().compareToIgnoreCase(b.getHost());
+                        if (a.isPremiumEnabled() && !b.isPremiumEnabled()) {
+                            return -1;
+                        } else {
+                            return +1;
+                        }
+                    }
+                } else {
+                    if (!a.isLoaded() && !b.isLoaded()) return a.getHost().compareToIgnoreCase(b.getHost());
+                    if (a.isLoaded() && !b.isLoaded()) {
+                        return -1;
+                    } else {
+                        return +1;
+                    }
+                }
+            }
+
+        });
         initPanel();
         load();
     }
@@ -199,6 +224,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         tableModel = new InternalTableModel();
         table = new JXTable(tableModel);
+        table.setSortable(false);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {

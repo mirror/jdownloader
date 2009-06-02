@@ -4,6 +4,8 @@ import java.nio.ByteBuffer;
 
 public class ByteBufferEntry {
     private ByteBuffer buffer = null;
+    private long used = 0;
+    private long freed = 0;
     private long lastaccess = 0;
     private long lastfree = 0;
     boolean inuse = false;
@@ -23,6 +25,7 @@ public class ByteBufferEntry {
 
     public ByteBufferEntry getByteBufferEntry() {
         inuse = true;
+        used++;
         lastaccess = System.currentTimeMillis();
         buffer.clear();
         return this;
@@ -41,6 +44,7 @@ public class ByteBufferEntry {
     }
 
     public void setUnused() {
+        freed++;
         lastfree = System.currentTimeMillis();
         inuse = false;
     }

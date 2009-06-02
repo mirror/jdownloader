@@ -1006,7 +1006,7 @@ abstract public class DownloadInterface {
 
     private boolean fixWrongContentDispositionHeader = false;
 
-    protected boolean speedDebug = true;
+    protected boolean speedDebug = false;
 
     protected long totaleLinkBytesLoaded = 0;
 
