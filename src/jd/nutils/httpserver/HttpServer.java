@@ -44,7 +44,7 @@ public class HttpServer extends Thread {
         running = true;
         try {
             ssocket = new ServerSocket(port);
-            ssocket.setSoTimeout(1000);
+            //ssocket.setSoTimeout(1000);
         } catch (IOException e) {
             JDLogger.exception(e);
         }

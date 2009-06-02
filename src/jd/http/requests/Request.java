@@ -18,6 +18,7 @@ package jd.http.requests;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -473,38 +474,35 @@ public abstract class Request {
         long tima = System.currentTimeMillis();
         this.htmlCode = read(httpConnection);
         readTime = System.currentTimeMillis() - tima;
-
         return htmlCode.toString();
     }
 
     public static String read(URLConnectionAdapter con) throws IOException {
         BufferedReader rd;
+        InputStreamReader isr;
+        InputStream is;
         if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-
-            rd = new BufferedReader(new InputStreamReader(new GZIPInputStream(con.getInputStream())));
-
+            is = new GZIPInputStream(con.getInputStream());
         } else {
-            String cs = con.getCharset();
-            if (cs == null) {
-                rd = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            } else {
-                try {
-                    rd = new BufferedReader(new InputStreamReader(con.getInputStream(), cs));
-
-                } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-                    System.err.println(con);
-                    try {
-                        rd = new BufferedReader(new InputStreamReader(con.getInputStream(), cs.replace("-", "")));
-                    } catch (Exception e2) {
-
-                        rd = new BufferedReader(new InputStreamReader(con.getInputStream()));
-                    }
-                }
-
-            }
-
+            is = con.getInputStream();
         }
+        String cs = con.getCharset();
+        if (cs == null) {
+            isr = new InputStreamReader(is);
+        } else {
+            try {
+                isr = new InputStreamReader(is, cs);
+            } catch (Exception e) {
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Could not Handle Charset " + cs, e);
+                try {
+                    isr = new InputStreamReader(is, cs.replace("-", ""));
+                } catch (Exception e2) {
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Could not Handle Charset " + cs, e);
+                    isr = new InputStreamReader(is);
+                }
+            }
+        }
+        rd = new BufferedReader(isr);
         String line;
         StringBuilder htmlCode = new StringBuilder();
         while ((line = rd.readLine()) != null) {
@@ -558,7 +556,6 @@ public abstract class Request {
         this.htmlCode = htmlCode;
     }
 
-    
     public Request toHeadRequest() throws MalformedURLException {
         Request ret = new Request(this.getUrl() + "") {
             // @Override

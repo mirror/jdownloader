@@ -1,10 +1,13 @@
+import java.io.IOException;
+
+import jd.http.Browser;
+
 
 
 public class header {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
-        System.out.println(3%3);
     }
 
 }
