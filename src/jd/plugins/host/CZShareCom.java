@@ -155,6 +155,15 @@ public class CZShareCom extends PluginForHost {
                     linkurl = links[i];
                     break;
                 }
+                if (links[i].contains("/"+id+"/")) {
+                    linkurl = null;
+                    br.setFollowRedirects(false);
+                    br.getPage(links[i]);
+                    linkurl = br.getRedirectLocation();
+                    if (linkurl == null) linkurl = links[i];
+                    br.setFollowRedirects(true);
+                    break;
+                }
             }
 
             if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
