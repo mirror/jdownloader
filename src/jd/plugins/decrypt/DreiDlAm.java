@@ -41,6 +41,7 @@ public class DreiDlAm extends PluginForDecrypt {
     private void decryptFromDownload(String parameter) throws Exception {
         parameter.replace("&quot;", "\"");
         br.getPage(parameter);
+        Thread.sleep(500);
         // passwort auslesen
         password = br.getRegex(Pattern.compile("<b>Passwort:</b></td><td><input type='text' value='(.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (password != null && (password.contains("kein") || password.contains("kein P"))) {
@@ -49,6 +50,7 @@ public class DreiDlAm extends PluginForDecrypt {
         if (br.containsHTML("Versuche es in ein paar Minuten wieder.")) { throw new DecrypterException("Too many wrong captcha codes. Try it again in few minutes, please."); }
         for (int retry = 1; retry < 5; retry++) {
             br.getPage(parameter);
+            Thread.sleep(500);
             String captcha = br.getRegex(Pattern.compile("><img src=\"/images/captcha5\\.php(.*?)\" /></td>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (captcha != null) {
                 String capTxt = getCaptchaCode("http://3dl.am/images/captcha5.php" + captcha, link);
@@ -85,11 +87,12 @@ public class DreiDlAm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setCookiesExclusive(true);
+        this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.clearCookies("3dl.am");
         br.getPage("http://3dl.am");
+        Thread.sleep(500);
         br.getPage("http://3dl.am/index.php");
+        Thread.sleep(500);
         link = param;
         if (new Regex(parameter, PluginPattern.DECRYPTER_3DLAM_2).matches()) {
             ArrayList<String> links = decryptFromStart(parameter);
