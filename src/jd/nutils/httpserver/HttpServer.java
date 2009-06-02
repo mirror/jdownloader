@@ -19,7 +19,8 @@ package jd.nutils.httpserver;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
+
+import jd.controlling.JDLogger;
 
 public class HttpServer extends Thread {
     private ServerSocket ssocket;
@@ -45,7 +46,7 @@ public class HttpServer extends Thread {
             ssocket = new ServerSocket(port);
             ssocket.setSoTimeout(1000);
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            JDLogger.exception(e);
         }
         run = new Thread(this);
         run.start();
@@ -58,16 +59,15 @@ public class HttpServer extends Thread {
             try {
                 csocket = ssocket.accept();
                 new RequestHandler(csocket, handler).run();
-            } catch (SocketTimeoutException e) {
-            } catch (IOException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            } catch (Exception e) {
+                JDLogger.exception(e);
             }
         }
 
         try {
             ssocket.close();
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            JDLogger.exception(e);
         }
     }
 

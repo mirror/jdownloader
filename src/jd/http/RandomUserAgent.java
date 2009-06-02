@@ -23,8 +23,6 @@ import java.util.Random;
 
 import jd.nutils.Formatter;
 
-// @SuppressWarnings("unchecked")
-@SuppressWarnings("unchecked")
 public class RandomUserAgent {
 
     /**
@@ -57,7 +55,7 @@ public class RandomUserAgent {
     /**
      * Windows: dotNet addon-strings, to make the user-agent more random
      */
-    private static ArrayList<String>[] winAddons = new ArrayList[4];
+    private static ArrayList<String[]> winAddons = new ArrayList<String[]>();
 
     /**
      * Linux: distribution addon-strings, to make the user-agent more random
@@ -87,23 +85,10 @@ public class RandomUserAgent {
         /* Used in both generateIE and generateFF */
         winVersions = "NT 5.0|NT 5.1|NT 5.2|NT 6.0|NT 6.1";
 
-        for (int i = 0; i <= winAddons.length - 1; i++)
-            winAddons[i] = new ArrayList<String>();
-        winAddons[0].add("");
-        winAddons[0].add(".NET CLR 1.0.3705");
-        winAddons[0].add(".NET CLR 1.1.4322");
-
-        winAddons[1].add("");
-        winAddons[1].add(".NET CLR 2.0.40607");
-        winAddons[1].add(".NET CLR 2.0.50727");
-
-        winAddons[2].add("");
-        winAddons[2].add(".NET CLR 3.0.04506.648");
-        winAddons[2].add(".NET CLR 3.0.4506.2152");
-
-        winAddons[3].add("");
-        winAddons[3].add(".NET CLR 3.5.21022");
-        winAddons[3].add(".NET CLR 3.5.30729");
+        winAddons.add(new String[] { "", ".NET CLR 1.0.3705", ".NET CLR 1.1.4322" });
+        winAddons.add(new String[] { "", ".NET CLR 2.0.40607", ".NET CLR 2.0.50727" });
+        winAddons.add(new String[] { "", ".NET CLR 3.0.04506.648", ".NET CLR 3.0.4506.2152" });
+        winAddons.add(new String[] { "", ".NET CLR 3.5.21022", ".NET CLR 3.5.30729" });
 
         /* Used only in generateFF */
         langs.add("en");
@@ -233,16 +218,18 @@ public class RandomUserAgent {
     private static String dotNetString() {
         Random rand = new Random();
 
-        String dotNet10 = "; " + winAddons[0].get(rand.nextInt(winAddons[0].size()));
+        String dotNet10 = "; " + winAddons.get(0)[rand.nextInt(winAddons.get(0).length)];
         if (dotNet10.equalsIgnoreCase("; ")) dotNet10 = "";
 
-        String dotNet20 = "; " + winAddons[1].get(rand.nextInt(winAddons[1].size()));
+        String dotNet20 = "; " + winAddons.get(1)[rand.nextInt(winAddons.get(1).length)];
         if (dotNet20.equalsIgnoreCase("; ")) dotNet20 = "";
+
         String dotNet30 = "";
-        if (!dotNet20.isEmpty()) dotNet30 = "; " + winAddons[2].get(rand.nextInt(winAddons[2].size()));
+        if (!dotNet20.isEmpty()) dotNet30 = "; " + winAddons.get(2)[rand.nextInt(winAddons.get(2).length)];
         if (dotNet30.equalsIgnoreCase("; ")) dotNet30 = "";
+
         String dotNet35 = "";
-        if (!dotNet30.isEmpty()) dotNet35 = "; " + winAddons[3].get(rand.nextInt(winAddons[3].size()));
+        if (!dotNet30.isEmpty()) dotNet35 = "; " + winAddons.get(3)[rand.nextInt(winAddons.get(3).length)];
         if (dotNet35.equalsIgnoreCase("; ")) dotNet35 = "";
 
         return dotNet10 + dotNet20 + dotNet30 + dotNet35;

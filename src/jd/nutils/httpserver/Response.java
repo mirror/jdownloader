@@ -19,22 +19,22 @@ package jd.nutils.httpserver;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
-import java.util.Iterator;
 
 import jd.nutils.Executer;
 
 public class Response {
-    private StringBuilder data = new StringBuilder();
-
-    private HashMap<String, String> headers = new HashMap<String, String>();
-
-    private String returnStatus = "200 OK";
-
-    private String returnType = "text/html";
 
     public final static String OK = "200 OK";
 
     public final static String ERROR = "404 ERROR";
+
+    private StringBuilder data = new StringBuilder();
+
+    private HashMap<String, String> headers = new HashMap<String, String>();
+
+    private String returnStatus = Response.OK;
+
+    private String returnType = "text/html";
 
     public Response() {
     }
@@ -57,16 +57,14 @@ public class Response {
 
     public void writeToStream(OutputStream out) throws IOException {
         StringBuilder help = new StringBuilder();
-        help.append("HTTP/1.1 " + returnStatus + "\r\n");
+        help.append("HTTP/1.1 ").append(returnStatus).append("\r\n");
         help.append("Connection: close\r\n");
         help.append("Server: jDownloader HTTP Server\r\n");
-        help.append("Content-Type: " + returnType + "\r\n");
-        help.append("Content-Length: " + data.toString().getBytes(Executer.CODEPAGE).length + "\r\n");
+        help.append("Content-Type: ").append(returnType).append("\r\n");
+        help.append("Content-Length: ").append(data.toString().getBytes(Executer.CODEPAGE).length).append("\r\n");
 
-        Iterator<String> it = headers.keySet().iterator();
-        while (it.hasNext()) {
-            String key = it.next();
-            help.append(key + ": " + headers.get(it) + "\r\n");
+        for (String key : headers.keySet()) {
+            help.append(key).append(": ").append(headers.get(key)).append("\r\n");
         }
 
         help.append("\r\n");
@@ -74,4 +72,5 @@ public class Response {
         out.write(help.toString().getBytes(Executer.CODEPAGE));
         out.write(data.toString().getBytes(Executer.CODEPAGE));
     }
+
 }

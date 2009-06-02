@@ -19,6 +19,7 @@ package jd.nutils.httpserver;
 import java.util.HashMap;
 
 public class Request {
+
     private HashMap<String, String> headers = new HashMap<String, String>();
 
     private HashMap<String, String> parameter = new HashMap<String, String>();
@@ -97,4 +98,5 @@ public class Request {
     public HashMap<String, String> getParameters() {
         return parameter;
     }
+
 }

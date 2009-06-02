@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 
+import jd.controlling.JDLogger;
+
 public class RequestHandler extends Thread {
     private Socket socket;
     private Handler handler;
@@ -65,12 +67,12 @@ public class RequestHandler extends Thread {
             out.close();
 
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            JDLogger.exception(e);
         } finally {
             try {
                 socket.close();
             } catch (IOException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                JDLogger.exception(e);
             }
         }
     }
@@ -82,10 +84,11 @@ public class RequestHandler extends Thread {
             entry = entry.trim();
             int index = entry.indexOf("=");
 
-            if (index > 0)
+            if (index > 0) {
                 req.addParameter(entry.substring(0, index), entry.substring(index + 1));
-            else
+            } else {
                 req.addParameter(entry, "");
+            }
         }
     }
 
@@ -113,7 +116,7 @@ public class RequestHandler extends Thread {
                 index++;
             }
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            JDLogger.exception(e);
         }
         return new String(buffer).substring(0, index);
     }
