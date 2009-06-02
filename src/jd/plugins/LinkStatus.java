@@ -118,6 +118,8 @@ public class LinkStatus implements Serializable {
      */
     public static final int PLUGIN_IN_PROGRESS = 1 << 18;
 
+    public static final int PLUGIN_ACTIVE = 1 << 29;
+
     /**
      * Zeigt an, das auf User-Eingaben gewartet wird
      */
@@ -308,10 +310,14 @@ public class LinkStatus implements Serializable {
     }
 
     public boolean isFailed() {
-        return !hasOnlyStatus(FINISHED | ERROR_IP_BLOCKED | TODO | PLUGIN_IN_PROGRESS | DOWNLOADINTERFACE_IN_PROGRESS | WAITING_USERIO);
+        return !hasOnlyStatus(FINISHED | ERROR_IP_BLOCKED | TODO | PLUGIN_ACTIVE | PLUGIN_IN_PROGRESS | DOWNLOADINTERFACE_IN_PROGRESS | WAITING_USERIO);
     }
 
     public boolean isPluginActive() {
+        return hasStatus(PLUGIN_ACTIVE);
+    }
+
+    public boolean isPluginInProgress() {
         return hasStatus(PLUGIN_IN_PROGRESS);
     }
 
@@ -350,6 +356,14 @@ public class LinkStatus implements Serializable {
             addStatus(PLUGIN_IN_PROGRESS);
         } else {
             removeStatus(PLUGIN_IN_PROGRESS);
+        }
+    }
+
+    public void setActive(boolean b) {
+        if (b) {
+            addStatus(PLUGIN_ACTIVE);
+        } else {
+            removeStatus(PLUGIN_ACTIVE);
         }
     }
 

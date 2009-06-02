@@ -603,7 +603,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_DOWNLOAD, dlink);
         SingleDownloadController download = new SingleDownloadController(dlink);
         logger.info("Start new Download: " + dlink.getHost());
-        dlink.getLinkStatus().setInProgress(true);
+        dlink.getLinkStatus().setActive(true);
         this.activateDownload(dlink, download);
         download.start();
 

@@ -49,6 +49,8 @@ import jd.utils.JDUtilities;
 public class SingleDownloadController extends Thread {
     public static final String WAIT_TIME_ON_CONNECTION_LOSS = "WAIT_TIME_ON_CONNECTION_LOSS";
 
+    private static final Object DUPELOCK = new Object();
+
     private boolean aborted;
 
     /**
@@ -483,37 +485,50 @@ public class SingleDownloadController extends Thread {
      */
     // @Override
     public void run() {
-        /**
-         * Das Plugin, das den aktuellen Download steuert
-         */
-        PluginForHost plugin;
-        linkStatus.setStatusText(null);
-        linkStatus.setErrorMessage(null);
-        linkStatus.resetWaitTime();
-        logger.info("Start working on " + downloadLink.getName());
-        currentPlugin = plugin = (PluginForHost) downloadLink.getPlugin();
-        fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_ACTIVE, this));
-        if (downloadLink.getDownloadURL() == null) {
-            downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.containererror", "Container Error"));
-            downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("controller.status.containererror", "Container Error"));
-            downloadLink.setEnabled(false);
+        try {
+            /**
+             * Das Plugin, das den aktuellen Download steuert
+             */
+            PluginForHost plugin;
+            linkStatus.setStatusText(null);
+            linkStatus.setErrorMessage(null);
+            linkStatus.resetWaitTime();
+            logger.info("Start working on " + downloadLink.getName());
+            currentPlugin = plugin = (PluginForHost) downloadLink.getPlugin();
+            fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_ACTIVE, this));
+            if (downloadLink.getDownloadURL() == null) {
+                downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.containererror", "Container Error"));
+                downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("controller.status.containererror", "Container Error"));
+                downloadLink.setEnabled(false);
+                fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
+                Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);
+                return;
+            }
+            /* check ob Datei existiert oder bereits geladen wird */
+            synchronized (DUPELOCK) {
+                /*
+                 * dieser sync block dient dazu das immer nur ein link gestartet
+                 * wird und dann der dupe check durchgeführt werden kann
+                 */
+                if (DownloadInterface.preDownloadCheckFailed(downloadLink)) {
+                    onErrorLinkBlock(downloadLink, currentPlugin);
+                    fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
+                    return;
+                }
+                /*
+                 * setinprogress innerhalb des sync damit keine 2 downloads
+                 * gleichzeitig in progress übergehen können
+                 */
+                linkStatus.setInProgress(true);
+            }
+            handlePlugin();
             fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
-            Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);
+            plugin.clean();
+            downloadLink.requestGuiUpdate();
+        } finally {
             linkStatus.setInProgress(false);
-            return;
+            linkStatus.setActive(false);
         }
-        /* check ob Datei existiert oder bereits geladen wird */
-        if (DownloadInterface.preDownloadCheckFailed(downloadLink)) {
-            onErrorLinkBlock(downloadLink, currentPlugin);
-            fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
-            linkStatus.setInProgress(false);
-            return;
-        }
-        handlePlugin();
-        linkStatus.setInProgress(false);
-        fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
-        plugin.clean();
-        downloadLink.requestGuiUpdate();
     }
 
 }

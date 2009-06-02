@@ -21,6 +21,7 @@ import java.net.Socket;
 import java.util.Vector;
 
 import jd.config.SubConfiguration;
+import jd.parser.Regex;
 
 public class JDRR {
 
@@ -32,14 +33,20 @@ public class JDRR {
     static String auth;
 
     static public void startServer(String serverip, boolean rawmode) {
-        steps = new Vector<String>();
+        steps = new Vector<String>();        
         auth = null;
         running = true;
         steps.add("[[[HSRC]]]");
+        int port = 80;
         try {
             Server_Socket_HTTP = new ServerSocket(SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
             Server_Socket_HTTPS = new ServerSocket(SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + 1);
-            new JDRRServer(Server_Socket_HTTP, serverip, 80, false, rawmode).start();
+            if (serverip.contains(":")) {
+                String ports = new Regex(serverip, ".*?:(\\d+)").getMatch(0);
+                port = Integer.parseInt(ports);
+                serverip = new Regex(serverip, "(.*?):").getMatch(0);
+            }
+            new JDRRServer(Server_Socket_HTTP, serverip, port, false, rawmode).start();
             new JDRRServer(Server_Socket_HTTPS, serverip, 443, true, rawmode).start();
         } catch (Exception e) {
             jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);

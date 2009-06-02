@@ -350,6 +350,10 @@ abstract public class DownloadInterface {
                             if (!isExternalyAborted() && !connectionclosed) throw e3;
                             miniblock = -1;
                             break;
+                        } catch (IOException e4) {
+                            if (!isExternalyAborted() && !connectionclosed) throw e4;
+                            miniblock = -1;
+                            break;
                         }
                         if (miniblock > 0) {
                             blockStart = System.currentTimeMillis();

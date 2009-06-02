@@ -133,24 +133,34 @@ public class JDRRGui extends JDialog implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnStart && JDRR.running == false) {
-            if (routerip.getText() != null && !routerip.getText().matches("\\s*")) JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText().trim());
+            if (routerip.getText() != null && !routerip.getText().matches("\\s*")) {
+                String host = routerip.getText().trim();
+                boolean startwithhttps = false;
+                if (host.contains("https")) startwithhttps = true;
+                host = host.replaceAll("http://", "").replaceAll("https://", "");
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, host);
 
-            ip_before = JDUtilities.getIPAddress(null);
-            JDRR.startServer(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null), rawmode.isSelected());
+                ip_before = JDUtilities.getIPAddress(null);
+                JDRR.startServer(host, rawmode.isSelected());
 
-            try {
-                JLinkButton.openURL("http://localhost:" + (SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972)));
-            } catch (Exception e1) {
-                JDLogger.exception(e1);
-            }
-            final JDRRInfoPopup popup = new JDRRInfoPopup(ip_before);
-            popup.startCheck();
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    popup.setVisible(true);
+                try {
+                    if (startwithhttps) {
+                        JLinkButton.openURL("http://localhost:" + (SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + 1));
+                    } else {
+                        JLinkButton.openURL("http://localhost:" + (SubConfiguration.getConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972)));
+                    }
+                } catch (Exception e1) {
+                    JDLogger.exception(e1);
                 }
-            });
-            return;
+                final JDRRInfoPopup popup = new JDRRInfoPopup(ip_before);
+                popup.startCheck();
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        popup.setVisible(true);
+                    }
+                });
+                return;
+            }
         }
         dispose();
     }
