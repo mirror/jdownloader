@@ -64,7 +64,7 @@ public class Zippysharecom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
-        String linkurl = br.getRegex(Pattern.compile("'fckr(http.*?)';", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String linkurl = br.getRegex(Pattern.compile("comeonguys\\s+=\\s+'(.*?)';", Pattern.CASE_INSENSITIVE)).getMatch(0);
         br.setFollowRedirects(true);
         String downloadURL = Encoding.htmlDecode(linkurl);
         dl = br.openDownload(downloadLink, downloadURL);

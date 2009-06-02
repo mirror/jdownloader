@@ -28,6 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDLocale;
 
 public class UploadlineCom extends PluginForHost {
 
@@ -79,6 +80,7 @@ public class UploadlineCom extends PluginForHost {
 
         if (dllink != null && dllink != "") {
             dl = br.openDownload(downloadLink, dllink, true, -20);
+            dl.setResume(true);
             dl.startDownload();
         } else
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -102,6 +104,10 @@ public class UploadlineCom extends PluginForHost {
         br.setCookie("http://www.uploadline.com/", "lang", "english");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(No such file)|(No such user exist)|(Link expired)|(File Not Found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("available for Premium users only")) {
+            logger.warning(JDLocale.L("plugins.host.uploadlinecom.premiumonly", "Uploadline.com: Files over 1 Gb are available for Premium users only"));
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "See log");
+        }
         if (br.getForm(0) == null) {
             filename = Encoding.htmlDecode(br.getRegex("Filename:\\s<b>(.*?)</b>").getMatch(0));
             filesize = br.getRegex("<br>\\s+Size:\\s(.*?)\\s<small>").getMatch(0);
