@@ -164,6 +164,10 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             boolean newadded = false;
             synchronized (downloadLinkList) {
                 if (downloadLinkList.contains(link)) {
+                    int posa = this.indexOf(link);
+                    if (posa < index) {
+                        index--;
+                    }
                     downloadLinkList.remove(link);
                     if (index > downloadLinkList.size() - 1) {
                         downloadLinkList.add(link);

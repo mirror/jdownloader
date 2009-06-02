@@ -113,7 +113,7 @@ public class TreeTableTransferHandler extends TransferHandler {
             this.draggingType = DRAG_PACKAGES;
         } else {
             this.draggingObjects = downloadLinks;
-            if (downloadLinks.get(0).getLinkType() == DownloadLink.LINKTYPE_NORMAL) url = downloadLinks.get(0).getBrowserUrl();
+            if (downloadLinks.size() != 0 && downloadLinks.get(0).getLinkType() == DownloadLink.LINKTYPE_NORMAL) url = downloadLinks.get(0).getBrowserUrl();
             this.draggingType = DRAG_LINKS;
         }
         return new StringSelection(url);
@@ -174,7 +174,7 @@ public class TreeTableTransferHandler extends TransferHandler {
                             synchronized (DownloadController.ControllerLock) {
                                 synchronized (DownloadController.getInstance().getPackages()) {
                                     FilePackage fp = ((DownloadLink) current.getLastPathComponent()).getFilePackage();
-                                    fp.addLinksAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()) - 1);
+                                    fp.addLinksAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()));
                                 }
                             }
                         }

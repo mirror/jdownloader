@@ -107,7 +107,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
             this.draggingType = DRAG_PACKAGES;
         } else {
             this.draggingObjects = downloadLinks;
-            if (downloadLinks.get(0).getLinkType() == DownloadLink.LINKTYPE_NORMAL) url = downloadLinks.get(0).getBrowserUrl();
+            if (downloadLinks.size() != 0 && downloadLinks.get(0).getLinkType() == DownloadLink.LINKTYPE_NORMAL) url = downloadLinks.get(0).getBrowserUrl();
             this.draggingType = DRAG_LINKS;
         }
         return new StringSelection(url);
@@ -169,7 +169,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
                             synchronized (LinkGrabberController.ControllerLock) {
                                 synchronized (LinkGrabberController.getInstance().getPackages()) {
                                     LinkGrabberFilePackage fp = LGINSTANCE.getFPwithLink(((DownloadLink) current.getLastPathComponent()));
-                                    if (fp != null) fp.addAllAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()) - 1);
+                                    if (fp != null) fp.addAllAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()));
                                 }
                             }
                         }

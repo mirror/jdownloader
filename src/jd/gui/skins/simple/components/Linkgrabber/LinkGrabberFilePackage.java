@@ -237,6 +237,10 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                 boolean newadded = false;
                 LinkGrabberFilePackage fp = null;
                 if (downloadLinks.contains(link)) {
+                    int posa = this.indexOf(link);
+                    if (posa < index) {
+                        index--;
+                    }
                     downloadLinks.remove(link);
                     if (index > downloadLinks.size() - 1) {
                         downloadLinks.add(link);

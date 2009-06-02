@@ -277,6 +277,10 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 }
                 boolean newadded = false;
                 if (packages.contains(fp)) {
+                    int posa = this.indexOf(fp);
+                    if (posa < index) {
+                        index--;
+                    }
                     packages.remove(fp);
                     if (index > packages.size() - 1) {
                         packages.add(fp);
