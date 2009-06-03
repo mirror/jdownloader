@@ -22,7 +22,6 @@ import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.EventQueue;
-import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -367,13 +366,13 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public void setWaiting(boolean b) {
-        
-        if(b){
+
+        if (b) {
             this.getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        }else{
+        } else {
             this.getGlassPane().setCursor(null);
         }
-        
+
         if (b == isWaiting()) return;
         // super.setWaiting(b);
     }
@@ -696,7 +695,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     taskPane.switcher(dlTskPane);
                     break;
                 case LinkGrabberControllerEvent.EMPTY:
-//                    lgTaskPane.setPanelID(0);
+                    // lgTaskPane.setPanelID(0);
                     break;
                 }
             }
@@ -1144,42 +1143,43 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
                     return null;
                 }
-                JPanel panel = new JPanel(new MigLayout("ins 22", "[right]10[grow,fill]40"));
+
                 String def = JDLocale.LF("plugins.host.premium.info.title", "Accountinformation from %s for %s", account.getUser(), pluginForHost.getHost());
                 String[] label = new String[] { JDLocale.L("plugins.host.premium.info.validUntil", "Valid until"), JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDLocale.L("plugins.host.premium.info.files", "Files"), JDLocale.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"), JDLocale.L("plugins.host.premium.info.usedSpace", "Used Space"), JDLocale.L("plugins.host.premium.info.cash", "Cash"), JDLocale.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"), JDLocale.L("plugins.host.premium.info.status", "Info") };
 
                 DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
-                String validUntil = (ai.isExpired() ? "[expired] " : "") + formater.format(new Date(ai.getValidUntil())) + "";
+                String validUntil = (ai.isExpired() ? JDLocale.L("plugins.host.premium.info.expiredInfo", "[expired]") + " " : "") + formater.format(new Date(ai.getValidUntil())) + "";
                 if (ai.getValidUntil() == -1) validUntil = null;
                 String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
                 String[] data = new String[] { validUntil, Formatter.formatReadable(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, Formatter.formatReadable(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", Formatter.formatReadable(ai.getTrafficShareLeft()), ai.getStatus() };
-                panel.add(new JXTitledSeparator(def), "spanx, pushx, growx, gapbottom 15");
-                PieChartAPI freeTrafficChart = new PieChartAPI("", 125, 60);
-                freeTrafficChart.addEntity(new ChartAPIEntity("Free", ai.getTrafficLeft(), new Color(50, 200, 50)));
-                freeTrafficChart.addEntity(new ChartAPIEntity("", ai.getTrafficMax() - ai.getTrafficLeft(), new Color(150, 150, 150)));
-                freeTrafficChart.fetchImage();
+
+                JPanel panel = new JPanel(new MigLayout("ins 5", "[right]10[grow,fill]10[]"));
+                panel.add(new JXTitledSeparator("<html><b>" + def + "</b></html>"), "spanx, pushx, growx, gapbottom 15");
 
                 for (int j = 0; j < data.length; j++) {
                     if (data[j] != null && !data[j].equals("-1") && !data[j].equals("-1 B")) {
                         panel.add(new JLabel(label[j]), "gapleft 20");
                         if (label[j].equals(JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
-                            JPanel panel2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-                            JTextField tf;
-                            panel2.add(tf = new JTextField(data[j]));
-                            tf.setBorder(null);
-                            tf.setBackground(null);
-                            tf.setEditable(false);
-                            tf.setOpaque(false);
-                            panel2.add(freeTrafficChart);
-                            panel.add(panel2, "wrap");
-                        } else {
-                            JTextField tf;
-                            panel.add(tf = new JTextField(data[j]), "wrap");
+                            PieChartAPI freeTrafficChart = new PieChartAPI("", 150, 60);
+                            freeTrafficChart.addEntity(new ChartAPIEntity(JDLocale.L("plugins.host.premium.info.freeTraffic", "Free"), ai.getTrafficLeft(), new Color(50, 200, 50)));
+                            freeTrafficChart.addEntity(new ChartAPIEntity("", ai.getTrafficMax() - ai.getTrafficLeft(), new Color(150, 150, 150)));
+                            freeTrafficChart.fetchImage();
+
+                            JTextField tf = new JTextField(data[j]);
                             tf.setBorder(null);
                             tf.setBackground(null);
                             tf.setEditable(false);
                             tf.setOpaque(false);
 
+                            panel.add(tf);
+                            panel.add(freeTrafficChart, "spany, wrap");
+                        } else {
+                            JTextField tf = new JTextField(data[j]);
+                            tf.setBorder(null);
+                            tf.setBackground(null);
+                            tf.setEditable(false);
+                            tf.setOpaque(false);
+                            panel.add(tf, "span 2, wrap");
                         }
                     }
 
