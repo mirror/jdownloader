@@ -42,7 +42,8 @@ public class LinksaveIn extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setCookie("http://linksave.in/", "Linksave_Language", "german");
         br.getPage(param.getCryptedUrl());
-        if (br.containsHTML("Ordner nicht gefunden")) return new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        if (br.containsHTML("Ordner nicht gefunden")) return decryptedLinks;
 
         Form form = br.getFormbyProperty("name", "form");
         for (int retry = 0; retry < 5; retry++) {
@@ -68,8 +69,6 @@ public class LinksaveIn extends PluginForDecrypt {
 
         String[] container = br.getRegex("link\\'\\)\\.href\\=unescape\\(\\'(.*?)\\'\\)\\;").getColumn(0);
         if (container != null && container.length > 0) {
-
-            File file = null;
             for (String c : container) {
                 /*
                  * Context cx = Context.enter(); Scriptable scope =
@@ -80,27 +79,34 @@ public class LinksaveIn extends PluginForDecrypt {
                  * c=result.toString();
                  */
                 String test = Encoding.htmlDecode(c);
+                File file = null;
                 if (test.endsWith(".cnl")) {
                     URLConnectionAdapter con = br.openGetConnection("http://linksave.in/" + test.replace("dlc://linksave.in/", ""));
                     if (con.getResponseCode() == 200) {
                         file = JDUtilities.getResourceFile("tmp/linksave/" + test.replace(".cnl", ".dlc").replace("dlc://", "http://").replace("http://linksave.in", ""));
                         br.downloadConnection(file, con);
-                        break;
+                    } else {
+                        con.disconnect();
+                    }
+                } else if (test.endsWith(".rsdf")) {
+                    URLConnectionAdapter con = br.openGetConnection(test);
+                    if (con.getResponseCode() == 200) {
+                        file = JDUtilities.getResourceFile("tmp/linksave/" + test.replace("http://linksave.in", ""));
+                        br.downloadConnection(file, con);
                     } else {
                         con.disconnect();
                     }
                 }
-
+                if (file != null && file.exists() && file.length() > 100) {
+                    decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                    if (decryptedLinks.size() > 0) return decryptedLinks;
+                }
             }
-            if (file != null && file.exists() && file.length() > 100) {
-                JDUtilities.getController().loadContainerFile(file);
-            } else {
-                throw new DecrypterException("Out of date. Try Click'n'Load");
-            }
+            if (decryptedLinks.size() == 0) throw new DecrypterException("Out of date. Try Click'n'Load");
         } else {
             throw new DecrypterException("Out of date. Try Click'n'Load");
         }
-        return new ArrayList<DownloadLink>();
+        return decryptedLinks;
     }
 
     // @Override

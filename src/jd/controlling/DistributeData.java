@@ -193,7 +193,9 @@ public class DistributeData extends Thread {
                             /* Das Plugin konnte arbeiten */
                             coulddecrypt = true;
                             if (dLinks != null && dLinks.size() > 0) {
-                                newdecryptedLinks.addAll(dLinks);
+                                synchronized (newdecryptedLinks) {
+                                    newdecryptedLinks.addAll(dLinks);
+                                }
                             }
                             break;
                         } catch (Exception e) {
@@ -202,7 +204,9 @@ public class DistributeData extends Thread {
                     }
                 }
                 if (coulddecrypt == false) {
-                    notdecryptedLinks.add(link);
+                    synchronized (notdecryptedLinks) {
+                        notdecryptedLinks.add(link);
+                    }
                 }
             }
 

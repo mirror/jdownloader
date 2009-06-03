@@ -62,7 +62,9 @@ public class HTTPAllgemein extends PluginForHost {
         String url = link.getDownloadURL();
         String basicauth = new Regex(url, "http.*?/([^/]{1}.*?)@").getMatch(0);
         if (basicauth != null && basicauth.contains(":")) {
-            url = new Regex(url, "http.*?@(.+)").getMatch(0);
+            url = new Regex(url, "https.*?@(.+)").getMatch(0);
+            if (url != null) link.setUrlDownload("https://" + url);
+            if (url == null) url = new Regex(url, "http.*?@(.+)").getMatch(0);
             if (url != null) link.setUrlDownload("http://" + url);
             link.setProperty("basicauth", basicauth);
         }
@@ -111,7 +113,10 @@ public class HTTPAllgemein extends PluginForHost {
             this.contentType = urlConnection.getContentType();
             urlConnection.disconnect();
             return AvailableStatus.TRUE;
+        } catch (PluginException e2) {
+            throw e2;
         } catch (Exception e) {
+        } finally {
             if (urlConnection != null && urlConnection.isConnected() == true) urlConnection.disconnect();
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -153,7 +153,7 @@ public class HTMLParser {
      */
     public static String[] getHttpLinks(String data, String url) {
         data = data.trim();
-        String protocolPattern = "(h.{2,3}|httpviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist)";
+        String protocolPattern = "(h.{2,3}|httpviajd|httpsviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist)";
         if (!data.matches(".*<.*>.*")) {
             int c = new Regex(data, "(" + protocolPattern + "://|(?<!://)www\\.)").count();
             if (c == 0)
