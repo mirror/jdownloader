@@ -171,7 +171,7 @@ public class WebUpdate implements ControlListener {
 
         // LASTREQUEST = System.currentTimeMillis();
         final WebUpdater updater = new WebUpdater();
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
+        if (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
             updater.ignorePlugins(false);
         }
         logger.finer("Get available files");
@@ -197,7 +197,7 @@ public class WebUpdate implements ControlListener {
                 if (files != null) {
                     JDUtilities.getController().setWaitingUpdates(files);
                 }
-                if ((!guiCall && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) || Main.isBeta()) {
+                if ((!guiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) || Main.isBeta()) {
                     logger.severe("Webupdater disabled");
                     progress.finalize();
                     return;

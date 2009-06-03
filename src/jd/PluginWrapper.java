@@ -89,7 +89,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
 
     public synchronized Plugin getPlugin() {
         if (loadedPlugin != null) return loadedPlugin;
-        boolean manualupdate = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
+        boolean manualupdate = SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
         if (Main.isBeta()) manualupdate = true;
         try {
 
