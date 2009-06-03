@@ -69,7 +69,7 @@ public class HotFileCom extends PluginForHost {
         if (validUntil == null) {
             ai.setValid(false);
         } else {
-            ai.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyy-dd-MM HH:mm:ss", null));
+            ai.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyy-MM-dd HH:mm:ss", null));
             ai.setValid(true);
         }
         return ai;
