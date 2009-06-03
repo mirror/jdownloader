@@ -1159,32 +1159,28 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                 for (int j = 0; j < data.length; j++) {
                     if (data[j] != null && !data[j].equals("-1") && !data[j].equals("-1 B")) {
                         panel.add(new JLabel(label[j]), "gapleft 20");
+
+                        JTextField tf = new JTextField(data[j]);
+                        tf.setBorder(null);
+                        tf.setBackground(null);
+                        tf.setEditable(false);
+                        tf.setOpaque(false);
+
                         if (label[j].equals(JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
                             PieChartAPI freeTrafficChart = new PieChartAPI("", 150, 60);
                             freeTrafficChart.addEntity(new ChartAPIEntity(JDLocale.L("plugins.host.premium.info.freeTraffic", "Free"), ai.getTrafficLeft(), new Color(50, 200, 50)));
                             freeTrafficChart.addEntity(new ChartAPIEntity("", ai.getTrafficMax() - ai.getTrafficLeft(), new Color(150, 150, 150)));
                             freeTrafficChart.fetchImage();
 
-                            JTextField tf = new JTextField(data[j]);
-                            tf.setBorder(null);
-                            tf.setBackground(null);
-                            tf.setEditable(false);
-                            tf.setOpaque(false);
-
                             panel.add(tf);
                             panel.add(freeTrafficChart, "spany, wrap");
                         } else {
-                            JTextField tf = new JTextField(data[j]);
-                            tf.setBorder(null);
-                            tf.setBackground(null);
-                            tf.setEditable(false);
-                            tf.setOpaque(false);
                             panel.add(tf, "span 2, wrap");
                         }
                     }
 
                 }
-                JOptionPane.showMessageDialog(null, panel, def, JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(SimpleGUI.this, panel, def, JOptionPane.INFORMATION_MESSAGE);
 
                 return null;
             }
