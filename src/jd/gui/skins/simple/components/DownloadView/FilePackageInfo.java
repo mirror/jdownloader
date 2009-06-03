@@ -224,7 +224,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.saveto", "Save to")));
         panel.add(txtpathlabel, "growx, span 2");
         panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.url", "URL")));
-        panel.add(txtURL = new JDTextField(), "growx, span 2");
+        panel.add(txtURL = new JDTextField(true), "growx, span 2");
         txtURL.setEditable(false);
         panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.filesize", "Filesize")));
         panel.add(lblSize = new JLabel(""), "growx, span 2");

@@ -138,7 +138,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
         return cellRenderer;
     }
 
-    public synchronized void fireTableChanged() {
+    public void fireTableChanged() {
         TreeModelSupport supporter = getLinkGrabberV2TreeTableModel().getModelSupporter();
         supporter.fireTreeStructureChanged(new TreePath(model.getRoot()));
         updateSelectionAndExpandStatus();

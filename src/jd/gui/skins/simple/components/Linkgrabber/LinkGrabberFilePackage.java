@@ -149,7 +149,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void setDownloadDirectory(String dir) {
-        downloadDirectory = dir;
+        downloadDirectory = JDUtilities.removeEndingPoints(dir);
         broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 

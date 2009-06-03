@@ -295,7 +295,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         return cols;
     }
 
-    public synchronized void fireTableChanged(int id, ArrayList<DownloadLink> links) {
+    public void fireTableChanged(int id, ArrayList<DownloadLink> links) {
         TreeModelSupport supporter = getDownladTreeTableModel().getModelSupporter();
         switch (id) {
         case DownloadLinksPanel.REFRESH_SPECIFIED_LINKS:
@@ -588,7 +588,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
      * Diese Methode setzt die gespeicherten Werte für die Selection und
      * Expansion
      */
-    public synchronized void updateSelectionAndExpandStatus() {
+    public void updateSelectionAndExpandStatus() {
         int i = 0;
         while (getPathForRow(i) != null) {
             if (getPathForRow(i).getLastPathComponent() instanceof FilePackage) {

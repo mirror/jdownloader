@@ -37,6 +37,11 @@ public class JDTextField extends JTextField implements FocusListener {
         this(null);
     }
 
+    public JDTextField(boolean b) {
+        this(null);
+        autoselect = b;
+    }
+
     public void setAutoSelect(boolean b) {
         autoselect = b;
     }

@@ -909,7 +909,7 @@ public class JDUtilities {
 
     public static String removeEndingPoints(String name) {
         if (name == null) { return null; }
-        String ret = name;
+        String ret = name.trim();
         while (true) {
             if (ret.endsWith(".")) {
                 ret = ret.substring(0, ret.length() - 1);

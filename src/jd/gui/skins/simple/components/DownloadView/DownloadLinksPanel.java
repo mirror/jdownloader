@@ -109,14 +109,26 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     public void showFilePackageInfo(FilePackage fp) {
         filePackageInfo.setPackage(fp);
-        JDCollapser.getInstance().setContentPanel(filePackageInfo);
-        JDCollapser.getInstance().setTitle(JDLocale.L("gui.linkgrabber.packagetab.title", "FilePackage"));
-        JDCollapser.getInstance().setVisible(true);
-        JDCollapser.getInstance().setCollapsed(false);
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                JDCollapser.getInstance().setContentPanel(filePackageInfo);
+                JDCollapser.getInstance().setTitle(JDLocale.L("gui.linkgrabber.packagetab.title", "FilePackage"));
+                JDCollapser.getInstance().setVisible(true);
+                JDCollapser.getInstance().setCollapsed(false);
+                return null;
+            }
+        }.start();
     }
 
     public void hideFilePackageInfo() {
-        JDCollapser.getInstance().setCollapsed(true);
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                JDCollapser.getInstance().setCollapsed(true);
+                return null;
+            }
+        }.start();
     }
 
     public void fireTableChanged(int id, ArrayList<DownloadLink> links) {
@@ -160,7 +172,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     }
 
     @SuppressWarnings("unchecked")
-    private synchronized void updateTableTask(int id, Object Param) {
+    private void updateTableTask(int id, Object Param) {
         if (!visible) {
             Update_Async.stop();
             return;
@@ -228,7 +240,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         Update_Async.restart();
     }
 
-    private synchronized void fireTableTask() {
+    private void fireTableTask() {
         last_async_update = System.currentTimeMillis();
         synchronized (job_links) {
             if (visible && job_ID != NO_JOB) fireTableChanged(this.job_ID, this.job_links);

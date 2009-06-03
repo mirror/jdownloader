@@ -125,14 +125,26 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     public void showFilePackageInfo(LinkGrabberFilePackage fp) {
         filePackageInfo.setPackage(fp);
-        JDCollapser.getInstance().setContentPanel(filePackageInfo);
-        JDCollapser.getInstance().setTitle(JDLocale.L("gui.linkgrabber.packagetab.title", "File package"));
-        JDCollapser.getInstance().setVisible(true);
-        JDCollapser.getInstance().setCollapsed(false);
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                JDCollapser.getInstance().setContentPanel(filePackageInfo);
+                JDCollapser.getInstance().setTitle(JDLocale.L("gui.linkgrabber.packagetab.title", "File package"));
+                JDCollapser.getInstance().setVisible(true);
+                JDCollapser.getInstance().setCollapsed(false);
+                return null;
+            }
+        }.start();
     }
 
     public void hideFilePackageInfo() {
-        JDCollapser.getInstance().setCollapsed(true);
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                JDCollapser.getInstance().setCollapsed(true);
+                return null;
+            }
+        }.start();
     }
 
     public void fireTableChanged() {
@@ -149,11 +161,11 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                             for (LinkGrabberFilePackage fp : fps) {
                                 count += 1 + fp.size();
                             }
-                            if (count > (internalTreeTable.getSize().getHeight() / 16.0)) {
+                            if (count > (internalTreeTable.getVisibleRect().getHeight() / 16.0)) {                                
                                 for (LinkGrabberFilePackage fp : fps) {
                                     if (!(Boolean) fp.getProperty(LinkGrabberTreeTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false);
                                 }
-                            } else {
+                            } else {                               
                                 for (LinkGrabberFilePackage fp : fps) {
                                     if (!(Boolean) fp.getProperty(LinkGrabberTreeTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, true);
                                 }
@@ -185,7 +197,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         }.start();
     }
 
-    public synchronized void addLinks(final DownloadLink[] linkList) {
+    public void addLinks(final DownloadLink[] linkList) {
         addinginprogress = true;
         new Thread() {
             public void run() {
@@ -205,8 +217,10 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         return addinginprogress;
     }
 
-    public synchronized void addToWaitingList(DownloadLink element) {
-        waitingList.add(element);
+    public void addToWaitingList(DownloadLink element) {
+        synchronized (waitingList) {
+            waitingList.add(element);
+        }
         checkAlreadyinList(element);
         LGINSTANCE.attachToPackagesFirstStage(element);
     }
@@ -294,7 +308,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         gatherer.start();
     }
 
-    private synchronized void afterLinkGrabber(ArrayList<DownloadLink> links) {
+    private void afterLinkGrabber(ArrayList<DownloadLink> links) {
         for (DownloadLink link : links) {
             if (!gatherer_running) break;
             if (!link.getBooleanProperty("removed", false)) LGINSTANCE.attachToPackagesSecondStage(link);
@@ -601,7 +615,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         if (all.size() == 0) return;
         for (int i = 0; i < all.size(); ++i) {
             confirmPackage(all.get(i), null);
-        }        
+        }
         LGINSTANCE.throwLinksAdded();
         if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
             JDController.getInstance().startDownloads();
