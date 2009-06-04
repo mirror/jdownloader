@@ -136,60 +136,62 @@ public class JDSimpleWebserverRequestHandler {
                     }
                 }
                 if (requestParameter.containsKey("package_single_add_counter")) {
-                    synchronized (lgi) {
-                        /* aktionen in der adder liste ausführen */
-                        Integer download_id = 0;
-                        Integer package_id = 0;
-                        String[] ids;
-                        int counter_max = Formatter.filterInt(requestParameter.get("package_single_add_counter"));
-                        int counter_index = 0;
-                        DownloadLink link;
-                        ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-                        ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
-                        for (counter_index = 1; counter_index <= counter_max; counter_index++) {
-                            if (requestParameter.containsKey("package_single_add_" + counter_index)) {
-                                ids = requestParameter.get("package_single_add_" + counter_index).toString().split("[+]", 2);
-                                package_id = Formatter.filterInt(ids[0].toString());
-                                download_id = Formatter.filterInt(ids[1].toString());
-                                links.add(lgi.getPackages().get(package_id).get(download_id));
-                                if (!packages.contains(lgi.getPackages().get(package_id))) packages.add(lgi.getPackages().get(package_id));
-                            }
-                        }
-                        if (requestParameter.containsKey("selected_dowhat_link_adder")) {
-                            String dowhat = requestParameter.get("selected_dowhat_link_adder");
-                            /* packages-namen des link-adders aktuell halten */
-
-                            for (int i = 0; i < lgi.getPackages().size(); i++) {
-                                if (requestParameter.containsKey("adder_package_name_" + i)) {
-                                    lgi.getPackages().get(i).setName(Encoding.htmlDecode(requestParameter.get("adder_package_name_" + i).toString()));
+                    synchronized (LinkGrabberController.ControllerLock) {
+                        synchronized (lgi.getPackages()) {
+                            /* aktionen in der adder liste ausführen */
+                            Integer download_id = 0;
+                            Integer package_id = 0;
+                            String[] ids;
+                            int counter_max = Formatter.filterInt(requestParameter.get("package_single_add_counter"));
+                            int counter_index = 0;
+                            DownloadLink link;
+                            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+                            ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
+                            for (counter_index = 1; counter_index <= counter_max; counter_index++) {
+                                if (requestParameter.containsKey("package_single_add_" + counter_index)) {
+                                    ids = requestParameter.get("package_single_add_" + counter_index).toString().split("[+]", 2);
+                                    package_id = Formatter.filterInt(ids[0].toString());
+                                    download_id = Formatter.filterInt(ids[1].toString());
+                                    links.add(lgi.getPackages().get(package_id).get(download_id));
+                                    if (!packages.contains(lgi.getPackages().get(package_id))) packages.add(lgi.getPackages().get(package_id));
                                 }
                             }
+                            if (requestParameter.containsKey("selected_dowhat_link_adder")) {
+                                String dowhat = requestParameter.get("selected_dowhat_link_adder");
+                                /* packages-namen des link-adders aktuell halten */
 
-                            if (dowhat.compareToIgnoreCase("remove") == 0) {
-                                /* entfernen */
-                                for (LinkGrabberFilePackage fp : packages) {
-                                    fp.remove(links);
-                                }
-                            } else if (dowhat.compareToIgnoreCase("remove+offline") == 0) {
-                                /* entfernen(offline) */
-                                links = new ArrayList<DownloadLink>();
                                 for (int i = 0; i < lgi.getPackages().size(); i++) {
-                                    for (int ii = 0; ii < lgi.getPackages().get(i).size(); ii++) {
-                                        links.add(lgi.getPackages().get(i).get(ii));
+                                    if (requestParameter.containsKey("adder_package_name_" + i)) {
+                                        lgi.getPackages().get(i).setName(Encoding.htmlDecode(requestParameter.get("adder_package_name_" + i).toString()));
                                     }
-                                }
-                                for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
-                                    link = it.next();
-                                    if (link.isAvailabilityStatusChecked() == true && link.isAvailable() == false) {
-                                        link.getFilePackage().remove(link);
-                                    }
-                                }
-                            } else if (dowhat.compareToIgnoreCase("add") == 0) {
-                                /* link adden */
-                                for (LinkGrabberFilePackage fp : packages) {
-                                    LinkGrabberPanel.getLinkGrabber().confirmPackage(fp, null);
                                 }
 
+                                if (dowhat.compareToIgnoreCase("remove") == 0) {
+                                    /* entfernen */
+                                    for (LinkGrabberFilePackage fp : packages) {
+                                        fp.remove(links);
+                                    }
+                                } else if (dowhat.compareToIgnoreCase("remove+offline") == 0) {
+                                    /* entfernen(offline) */
+                                    links = new ArrayList<DownloadLink>();
+                                    for (int i = 0; i < lgi.getPackages().size(); i++) {
+                                        for (int ii = 0; ii < lgi.getPackages().get(i).size(); ii++) {
+                                            links.add(lgi.getPackages().get(i).get(ii));
+                                        }
+                                    }
+                                    for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
+                                        link = it.next();
+                                        if (link.isAvailabilityStatusChecked() == true && link.isAvailable() == false) {
+                                            link.getFilePackage().remove(link);
+                                        }
+                                    }
+                                } else if (dowhat.compareToIgnoreCase("add") == 0) {
+                                    /* link adden */
+                                    for (LinkGrabberFilePackage fp : packages) {
+                                        LinkGrabberPanel.getLinkGrabber().confirmPackage(fp, null);
+                                    }
+
+                                }
                             }
                         }
                     }

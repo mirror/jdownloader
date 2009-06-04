@@ -296,6 +296,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
                                     }
                                 }
                             }
+                            fps = null;
                             SimpleGUI.CURRENTGUI.getTaskPane().switcher(SimpleGUI.CURRENTGUI.getDlTskPane());
                         }
                         setPause(false);

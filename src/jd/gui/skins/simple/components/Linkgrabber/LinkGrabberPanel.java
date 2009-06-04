@@ -161,11 +161,11 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                             for (LinkGrabberFilePackage fp : fps) {
                                 count += 1 + fp.size();
                             }
-                            if (count > (internalTreeTable.getVisibleRect().getHeight() / 16.0)) {                                
+                            if (count > (internalTreeTable.getVisibleRect().getHeight() / 16.0)) {
                                 for (LinkGrabberFilePackage fp : fps) {
                                     if (!(Boolean) fp.getProperty(LinkGrabberTreeTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false);
                                 }
-                            } else {                               
+                            } else {
                                 for (LinkGrabberFilePackage fp : fps) {
                                     if (!(Boolean) fp.getProperty(LinkGrabberTreeTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, true);
                                 }
@@ -301,8 +301,9 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 int links = 0;
                 for (LinkGrabberFilePackage fp : fps) {
                     links += fp.getDownloadLinks().size();
-                }
+                }                
                 Balloon.showIfHidden("Linkgrabber", JDTheme.II("gui.images.add", 32, 32), JDLocale.LF("gui.linkgrabber.finished", "Grabbed %s link(s) in %s Package(s)", "" + links, "" + fps.size()));
+                fps = null;
             }
         };
         gatherer.start();
