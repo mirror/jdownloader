@@ -241,7 +241,7 @@ public class AccountController extends SubConfiguration implements ActionListene
         }
     }
 
-    public boolean removeAccount(PluginForHost pluginForHost, Account account) {
+    public boolean removeAccount(PluginForHost pluginForHost, Account account) {        
         if (pluginForHost == null) return false;
         if (account == null) return false;
         String host = pluginForHost.getHost();

@@ -484,8 +484,12 @@ public class DownloadController implements FilePackageListener, DownloadControll
     }
 
     public void addAllAt(ArrayList<FilePackage> links, int index) {
-        for (int i = 0; i < links.size(); i++) {
-            addPackageAt(links.get(i), index + i);
+        synchronized (DownloadController.ControllerLock) {
+            synchronized (packages) {
+                for (int i = 0; i < links.size(); i++) {
+                    addPackageAt(links.get(i), index + i);
+                }
+            }
         }
     }
 
@@ -501,9 +505,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
     }
 
     public int size() {
-        synchronized (packages) {
-            return packages.size();
-        }
+        return packages.size();
     }
 
     /**

@@ -57,10 +57,10 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     private JLabel packages;
     private JLabel totalsize;
     private Thread fadeTimer;
-    private ArrayList<LinkGrabberFilePackage> fps;
     private LinkGrabberController lgi;
     private JCheckBox topOrBottom;
     private JCheckBox startAfterAdding;
+    private ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>();
     protected boolean updateinprogress = false;
 
     private long tot = 0;
@@ -69,7 +69,6 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     public LinkGrabberTaskPane(String string, ImageIcon ii) {
         super(string, ii, "linkgrabber");
         lgi = LinkGrabberController.getInstance();
-        fps = lgi.getPackages();
         lgi.addListener(this);
         linkgrabberButtonsEnabled = false;
         initGUI();
@@ -79,7 +78,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
                 while (true) {
                     if (!isCollapsed()) update();
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(2000);
                     } catch (InterruptedException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
@@ -113,12 +112,13 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     private void update() {
         tot = 0;
         links = 0;
-        synchronized (fps) {
-            for (LinkGrabberFilePackage fp : fps) {
-                tot += fp.getDownloadSize(false);
-                links += fp.getDownloadLinks().size();
-            }
+        fps.clear();
+        fps.addAll(lgi.getPackages());
+        for (LinkGrabberFilePackage fp : fps) {
+            tot += fp.getDownloadSize(false);
+            links += fp.getDownloadLinks().size();
         }
+        fps.clear();
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {

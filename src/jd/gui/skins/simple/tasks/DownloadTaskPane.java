@@ -48,6 +48,7 @@ public class DownloadTaskPane extends TaskPanel {
     private long tot = 0;
     private long loaded = 0;
     private long speedm = 0;
+    private DownloadController dlc = JDUtilities.getDownloadController();
 
     public DownloadTaskPane(String string, ImageIcon ii) {
         super(string, ii, "downloadtask");
@@ -59,7 +60,7 @@ public class DownloadTaskPane extends TaskPanel {
                 while (true) {
                     if (!isCollapsed()) update();
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(2000);
                     } catch (InterruptedException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
@@ -75,7 +76,6 @@ public class DownloadTaskPane extends TaskPanel {
      * TODO: soll mal über events aktuallisiert werden
      */
     private void update() {
-        final DownloadController dlc = JDUtilities.getDownloadController();
         tot = 0;
         loaded = 0;
         for (DownloadLink l : dlc.getAllDownloadLinks()) {

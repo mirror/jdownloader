@@ -1,7 +1,5 @@
 import java.io.IOException;
 
-import jd.http.Browser;
-
 
 
 public class header {

@@ -167,15 +167,11 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     }
 
     public ArrayList<LinkGrabberFilePackage> getPackages() {
-        synchronized (packages) {
-            return packages;
-        }
+        return packages;
     }
 
     public int indexOf(LinkGrabberFilePackage fp) {
-        synchronized (packages) {
-            return packages.indexOf(fp);
-        }
+        return packages.indexOf(fp);
     }
 
     public boolean isExtensionFiltered(DownloadLink link) {
@@ -262,8 +258,12 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     }
 
     public void addAllAt(ArrayList<LinkGrabberFilePackage> links, int index) {
-        for (int i = 0; i < links.size(); i++) {
-            addPackageAt(links.get(i), index + i);
+        synchronized (LinkGrabberController.ControllerLock) {
+            synchronized (packages) {
+                for (int i = 0; i < links.size(); i++) {
+                    addPackageAt(links.get(i), index + i);
+                }
+            }
         }
     }
 
@@ -396,9 +396,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     }
 
     public int size() {
-        synchronized (packages) {
-            return packages.size();
-        }
+        return packages.size();
     }
 
     public void attachToPackagesSecondStage(DownloadLink link) {

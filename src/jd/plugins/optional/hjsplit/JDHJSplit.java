@@ -269,13 +269,16 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
                     if (output.exists()) output.delete();
                 }
-                join.run();
-                if (getPluginConfig().getBooleanProperty(CONFIG_KEY_REMOVE_MERGED, false)) {
-                    ArrayList<File> list = getFileList(new File(link.getFileOutput()));
-                    for (File f : list) {
-                        f.delete();
-                        f.deleteOnExit();
+                try {
+                    join.run();
+                    if (join.wasSuccessfull() && getPluginConfig().getBooleanProperty(CONFIG_KEY_REMOVE_MERGED, false)) {
+                        ArrayList<File> list = getFileList(new File(link.getFileOutput()));
+                        for (File f : list) {
+                            f.delete();
+                            f.deleteOnExit();
+                        }
                     }
+                } catch (Exception e) {
                 }
                 progress.finalize();
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_FILEOUTPUT, new File[] { output }));

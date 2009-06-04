@@ -40,6 +40,7 @@ public class JAxeJoiner extends AxeWriterWorker {
     protected String sDestDir;
     protected String sFileToJoin;
     protected String sJoinedFile;
+    protected boolean successfull = false;
 
     public JAxeJoiner(String sFile) {
         sFileToJoin = sFile;
@@ -51,14 +52,14 @@ public class JAxeJoiner extends AxeWriterWorker {
         sDestDir = sDir;
     }
 
-    //@Override
+    // @Override
     protected boolean checkNoOverwrite(File f) {
         File fTemp = new File(sJoinedFile);
 
         return !fTemp.exists();
     }
 
-    //@Override
+    // @Override
     protected void computeJobSize() {
         long lReturn = 0;
         int i = 1;
@@ -77,7 +78,11 @@ public class JAxeJoiner extends AxeWriterWorker {
         new File(sJoinedFile).delete();
     }
 
-    //@Override
+    public boolean wasSuccessfull() {
+        return successfull;
+    }
+
+    // @Override
     public void run() {
         File fToJoin, fTemp = null;
         InputStream is = null;
@@ -188,8 +193,10 @@ public class JAxeJoiner extends AxeWriterWorker {
             doCleanup();
             dispatchEvent(new JobEndEvent(this, "Join stopped by user."));
         } else {
+            successfull = true;
             dispatchProgress(lJobSize);
             dispatchEvent(new JobEndEvent(this, "Join terminated."));
         }
+
     }
 }
