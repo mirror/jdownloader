@@ -21,14 +21,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
 import java.util.logging.Level;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ByteBufferEntry;
 import jd.controlling.JDLogger;
-import jd.controlling.MemoryController;
 import jd.http.requests.Request;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -55,69 +53,6 @@ public class RAFDownload extends DownloadInterface {
         }
     }
 
-    class WriterWorker extends Thread {
-
-        public boolean waitFlag = true;
-
-        public WriterWorker() {
-            this.setName("RAFWriterWorker");
-            start();
-        }
-
-        // @Override
-        public void run() {
-            ChunkBuffer buf;
-            while (!isInterrupted() || bufferList.size() > 0) {
-                synchronized (this) {
-
-                    while (!isInterrupted() && waitFlag) {
-                        try {
-                            wait();
-                        } catch (Exception e) {
-                            // JDLogger.getLogger().log(Level.SEVERE,"Exception occured",e);
-                            // return;
-                        }
-                    }
-                }
-
-                while (bufferList.size() > 0) {
-                    synchronized (bufferList) {
-                        buf = bufferList.remove(0);
-                    }
-                    try {
-
-                        synchronized (outputChannel) {
-                            outputFile.seek(buf.position);
-                            outputChannel.write(buf.buffer.getBuffer());
-
-                            if (buf.chunkID >= 0) {
-                                downloadLink.getChunksProgress()[buf.chunkID] = buf.chunkPosition;
-                            }
-
-                            // logger.info("Wrote buffer. rest: " +
-                            // bufferList.size());
-                        }
-
-                    } catch (Exception e) {
-
-                        JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
-                        error(LinkStatus.ERROR_LOCAL_IO, JDUtilities.convertExceptionReadable(e));
-
-                        addException(e);
-                    } finally {
-                        if (buf != null) buf.buffer.setUnused();
-                    }
-                }
-                waitFlag = true;
-
-            }
-
-        }
-
-    }
-
-    private ArrayList<ChunkBuffer> bufferList = new ArrayList<ChunkBuffer>();
-
     protected FileChannel[] channels;
 
     protected long hdWritesPerSecond;
@@ -129,11 +64,8 @@ public class RAFDownload extends DownloadInterface {
     protected File[] partFiles;
 
     protected long writeCount = 0;
-    private WriterWorker writer;
 
     protected long writeTimer = System.currentTimeMillis();
-
-    private Boolean writeType;
 
     // public RAFDownload(PluginForHost plugin, DownloadLink downloadLink,
     // HTTPConnection urlConnection) {
@@ -146,36 +78,12 @@ public class RAFDownload extends DownloadInterface {
     public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
 
         super(plugin, downloadLink, request);
-        writeType = SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("USEWRITERTHREAD", false);
 
     }
 
     // @Override
     protected void onChunksReady() {
         logger.finer("onCHunksReady");
-        if (writer != null) {
-            synchronized (writer) {
-                if (writer.waitFlag) {
-                    writer.waitFlag = false;
-                    writer.notify();
-                }
-
-            }
-            downloadLink.getLinkStatus().setStatusText(null);
-            if (!handleErrors()) {
-
-                writer.interrupt();
-            }
-
-            while (writer.isAlive() && bufferList.size() > 0) {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-
-                    JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
-                }
-            }
-        }
         //
         logger.info("Close connections if the are not closed yet");
         for (Chunk c : this.getChunks()) {
@@ -409,51 +317,21 @@ public class RAFDownload extends DownloadInterface {
 
     // @Override
     protected boolean writeChunkBytes(Chunk chunk) {
-        if (writeType) {
-            ByteBufferEntry buffer = MemoryController.getInstance().getByteBufferEntry(chunk.buffer.getBuffer().limit());
-            buffer.getBuffer().put(chunk.buffer.getBuffer());
-            buffer.getBuffer().flip();
-            synchronized (bufferList) {
-                bufferList.add(new ChunkBuffer(buffer, chunk.getWritePosition(), chunk.getCurrentBytesPosition() - 1, chunk.getID()));
-                // logger.info("new buffer. size: " + bufferList.size());
-            }
-
-            if (writer == null) {
-                writer = new WriterWorker();
-
-            }
-
-            synchronized (writer) {
-                if (writer.waitFlag) {
-                    writer.waitFlag = false;
-                    writer.notify();
+        try {
+            synchronized (outputChannel) {
+                outputFile.seek(chunk.getWritePosition());
+                outputChannel.write(chunk.buffer.getBuffer());
+                if (chunk.getID() >= 0) {
+                    downloadLink.getChunksProgress()[chunk.getID()] = chunk.getCurrentBytesPosition() - 1;
                 }
-
+                return true;
             }
-        } else {
-            try {
-                synchronized (outputChannel) {
-                    outputFile.seek(chunk.getWritePosition());
-                    outputChannel.write(chunk.buffer.getBuffer());
-                    if (chunk.getID() >= 0) {
-                        downloadLink.getChunksProgress()[chunk.getID()] = chunk.getCurrentBytesPosition() - 1;
-                    }
-
-                    return true;
-                }
-
-            } catch (Exception e) {
-                if (writer == null || writer.isInterrupted()) return false;
-
-                JDLogger.exception(e);
-                error(LinkStatus.ERROR_LOCAL_IO, JDUtilities.convertExceptionReadable(e));
-                addException(e);
-                return false;
-            }
-
+        } catch (Exception e) {
+            JDLogger.exception(e);
+            error(LinkStatus.ERROR_LOCAL_IO, JDUtilities.convertExceptionReadable(e));
+            addException(e);
+            return false;
         }
-        return true;
-
     }
 
     /**

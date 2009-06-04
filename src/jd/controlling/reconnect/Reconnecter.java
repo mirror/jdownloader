@@ -169,7 +169,7 @@ public class Reconnecter {
         synchronized (packages) {
             for (FilePackage fp : packages) {
                 for (DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
-                    if (nextDownloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
+                    if (nextDownloadLink.getPlugin() != null && nextDownloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
                         if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED)) {
                             nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
 

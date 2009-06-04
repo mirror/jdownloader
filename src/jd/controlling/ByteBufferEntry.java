@@ -4,15 +4,26 @@ import java.nio.ByteBuffer;
 
 public class ByteBufferEntry {
     private ByteBuffer buffer = null;
-    private long used = 0;
-    private long freed = 0;
-    private long lastaccess = 0;
-    private long lastfree = 0;
+    private int used = 0;
     boolean inuse = false;
 
-    public ByteBufferEntry(int size) {
-        MemoryController.getInstance().increaseCreated(size);
+    public static ByteBufferEntry getByteBufferEntry(int size) {
+        ByteBufferEntry ret = ByteBufferController.getInstance().getByteBufferEntry(size);
+        if (ret != null) {
+            ByteBufferController.getInstance().increaseReused(ret.size());
+            ByteBufferController.getInstance().decreaseFree(ret.size());
+            //System.out.println("Reuse old ByteBufferEntry " + ret.size());
+            return ret.getByteBufferEntry();
+        } else {
+            //System.out.println("Create new ByteBufferEntry " + size);
+            return new ByteBufferEntry(size).getByteBufferEntry();
+        }
+    }
+
+    private ByteBufferEntry(int size) {
+        ByteBufferController.getInstance().increaseFresh(size);
         buffer = ByteBuffer.allocateDirect(size);
+        used = 0;
     }
 
     public int size() {
@@ -23,30 +34,31 @@ public class ByteBufferEntry {
         return buffer;
     }
 
-    public ByteBufferEntry getByteBufferEntry() {
-        inuse = true;
+    protected ByteBufferEntry getByteBufferEntry() {
         used++;
-        lastaccess = System.currentTimeMillis();
+        inuse = true;
         buffer.clear();
         return this;
-    }
-
-    public long lastAccess() {
-        return lastaccess;
-    }
-
-    public long lastFree() {
-        return lastfree;
     }
 
     public boolean inUse() {
         return inuse;
     }
 
+    public int used() {
+        return used;
+    }
+
     public void setUnused() {
-        freed++;
-        lastfree = System.currentTimeMillis();
+        if (!inuse) return;
         inuse = false;
+        ByteBufferController.getInstance().increaseFree(size());
+        if (used > 1) {
+            ByteBufferController.getInstance().decreaseReused(size());
+        } else {
+            ByteBufferController.getInstance().decreaseFresh(size());
+        }
+        ByteBufferController.getInstance().putByteBufferEntry(this);
     }
 
 }

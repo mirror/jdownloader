@@ -765,8 +765,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             if (path != null && path.length() != 0) {
                 String curhash = JDHash.getMD5(path);
                 if (curhash.equalsIgnoreCase(hash)) return;
-                path = null;
             }
+            path = null;
+            hash = null;
         }
         if (path == null || path.length() == 0) {
             if (OSDetector.isWindows()) {

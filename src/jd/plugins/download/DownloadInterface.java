@@ -40,7 +40,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ByteBufferEntry;
 import jd.controlling.JDLogger;
-import jd.controlling.MemoryController;
+import jd.controlling.ByteBufferController;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
@@ -126,7 +126,7 @@ abstract public class DownloadInterface {
             this.connection = connection;
             this.dl = dl;
             setPriority(Thread.MIN_PRIORITY);
-            MAX_BUFFERSIZE = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(MemoryController.MAXBUFFERSIZE, 1000) * 1024;
+            MAX_BUFFERSIZE = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(ByteBufferController.MAXBUFFERSIZE, 1000) * 1024;
         }
 
         private void addChunkBytesLoaded(long limit) {
@@ -275,7 +275,7 @@ abstract public class DownloadInterface {
                 }
                 bufferSize = Math.max((int) bufferSize, 1);
                 /* max 2gb buffer */
-                buffer = MemoryController.getInstance().getByteBufferEntry((int) bufferSize);
+                buffer = ByteBufferEntry.getByteBufferEntry((int) bufferSize);
 
             } catch (OutOfMemoryError e) {
                 error(LinkStatus.ERROR_FATAL, JDLocale.L("download.error.message.outofmemory", "The downloadsystem is out of memory"));
@@ -303,7 +303,7 @@ abstract public class DownloadInterface {
                 long miniblock = 0;
                 long tempBuff = 0;
                 long addWait = 0;
-                miniBuffer = MemoryController.getInstance().getByteBufferEntry(1024 * 10);
+                miniBuffer = ByteBufferEntry.getByteBufferEntry(1024 * 10);
                 miniBuffer.getBuffer().clear();
                 int ti = 0;
                 blockStart = System.currentTimeMillis();
@@ -367,6 +367,10 @@ abstract public class DownloadInterface {
                         bytes += miniblock;
                     }
 
+                    if (isExternalyAborted() || connectionclosed) {
+                        break;
+                    }
+
                     if (miniblock == -1 && bytes == 0) {
                         break;
                     }
@@ -381,6 +385,7 @@ abstract public class DownloadInterface {
                     if (speedDebug) {
                         logger.finer("write bytes");
                     }
+
                     writeBytes(this);
 
                     buffer.getBuffer().clear();
@@ -417,7 +422,7 @@ abstract public class DownloadInterface {
                         /* max 2gb buffer */
                         if ((int) bufferSize > buffer.getBuffer().capacity()) {
                             buffer.setUnused();
-                            buffer = MemoryController.getInstance().getByteBufferEntry((int) bufferSize);
+                            buffer = ByteBufferEntry.getByteBufferEntry((int) bufferSize);
                             buffer.getBuffer().clear();
                         } else {
                             buffer.getBuffer().clear();
@@ -523,6 +528,8 @@ abstract public class DownloadInterface {
             if (speedDebug) {
                 logger.finer("Finalized: " + downloadLink + " : " + getID());
             }
+            if (buffer != null) buffer.setUnused();
+            if (miniBuffer != null) miniBuffer.setUnused();
         }
 
         /**
@@ -1895,15 +1902,8 @@ abstract public class DownloadInterface {
 
     }
 
-    protected synchronized void writeBytes(Chunk chunk) {
-        if (writeChunkBytes(chunk)) {
-            // if (maxBytes > 0 && getChunkNum() == 1 &&
-            // this.totaleLinkBytesLoaded >= maxBytes) {
-            // error(ERROR_NIBBLE_LIMIT_REACHED);
-            // }
-        }
-        // 152857135
-        // logger.info("Bytes " + totalLoadedBytes);
+    protected synchronized boolean writeBytes(Chunk chunk) {
+        return writeChunkBytes(chunk);
     }
 
     /**

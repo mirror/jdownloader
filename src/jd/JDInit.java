@@ -28,7 +28,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
-import jd.controlling.MemoryController;
+import jd.controlling.ByteBufferController;
 import jd.controlling.PasswordListController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.JDLookAndFeelManager;
@@ -140,7 +140,7 @@ public class JDInit {
         PasswordListController.getInstance();
         DownloadController.getInstance().addListener(PasswordListController.getInstance());
         AccountController.getInstance();
-        MemoryController.getInstance();
+        ByteBufferController.getInstance();
         // LinkGrabberController.getInstance();
     }
 
