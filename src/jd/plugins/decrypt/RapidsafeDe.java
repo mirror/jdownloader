@@ -163,7 +163,7 @@ public class RapidsafeDe extends PluginForDecrypt {
                 postdata = new Regex(postdata, "RapidSafePSC\\('(.*?)'", 0).getMatch(0);
 
                 br.postPage(parameter, postdata);
-                Map<String, List<String>> headers = br.getHttpConnection().getHeaderFields();
+                Map<String, ArrayList<String>> headers = br.getHttpConnection().getHeaderFields();
                 String content = "";
 
                 int counter = 0;

@@ -41,20 +41,23 @@ public class ZidduCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setDebug(true);
         Form form = br.getFormbyProperty("name", "dfrm");
+        Thread.sleep(500);
         br.submitForm(form);
-        if (br.containsHTML("File\\snot\\s+found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("File.*?not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         form = br.getFormbyProperty("name", "securefrm");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String code = getCaptchaCode("http://www.ziddu.com/CaptchaSecurityImages.php?width=40&height=38&characters=2", downloadLink);
-        form.put("securitycode", code);
+        String capurl = form.getRegex("(/CaptchaSecurityImages\\.php\\?width=\\d+&height=\\d+&characters=\\d+)").getMatch(0);
+        if (capurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String code = getCaptchaCode("gibtsnochnet", "http://downloads.ziddu.com" + capurl, downloadLink);
 
-        dl = br.openDownload(downloadLink, form, true, 1);
+        form.put("securitycode", code);
+        br.setFollowRedirects(true);
+        dl = br.openDownload(downloadLink, form, false, 1);
         /*
          * Folgendes nicht optimal da bei .isContentDisposition == false immer
          * angenommen wird dass das Captcha falsch war.
          */
         if (!dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
-        dl.setResume(true);
         dl.startDownload();
     }
 
@@ -73,6 +76,7 @@ public class ZidduCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         String Url = downloadLink.getDownloadURL();
+        br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage(Url);
         if (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("errortracking") || br.getRedirectLocation().contains("notfound"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

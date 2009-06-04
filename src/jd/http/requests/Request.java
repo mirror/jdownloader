@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -35,6 +36,7 @@ import java.util.zip.GZIPInputStream;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Encoding;
@@ -208,7 +210,7 @@ public abstract class Request {
             cookies = new Cookies();
         }
 
-        String host = httpConnection.getURL().getHost();
+        String host = Browser.getHost(httpConnection.getURL());
 
         for (int i = cookieHeaders.size() - 1; i >= 0; i--) {
             String header = cookieHeaders.get(i);
@@ -362,7 +364,7 @@ public abstract class Request {
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, List<String>> getResponseHeaders() {
+    public Map<String, ArrayList<String>> getResponseHeaders() {
         if (httpConnection == null) { return null; }
         return httpConnection.getHeaderFields();
     }

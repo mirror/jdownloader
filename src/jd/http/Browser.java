@@ -97,11 +97,7 @@ public class Browser {
      * @param url
      */
     public void clearCookies(String url) {
-        String host = url;
-        try {
-            host = Browser.getHost(url);
-        } catch (MalformedURLException e) {
-        }
+        String host = Browser.getHost(url);
         Iterator<String> it = getCookies().keySet().iterator();
         String check = null;
         while (it.hasNext()) {
@@ -174,8 +170,17 @@ public class Browser {
      * @return
      * @throws MalformedURLException
      */
-    public static String getHost(Object url) throws MalformedURLException {
-        String ret = new URL(url + "").getHost();
+
+    public static String getHost(URL url) {
+        return getHost(url.getHost());
+    }
+
+    public static String getHost(String url) {
+        String ret = url;
+        try {
+            ret = new URL(url + "").getHost();
+        } catch (Exception e) {
+        }
         int id = 0;
         while ((id = ret.indexOf(".")) != ret.lastIndexOf(".")) {
             ret = ret.substring(id + 1);
