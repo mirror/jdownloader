@@ -471,7 +471,7 @@ public class JDInit {
         new DecryptPluginWrapper("pspisos.org", "PspIsosOrg", "http://[\\w\\.]*?pspisos\\.org/(d\\d\\d?wn|d3741l5)/.+(/\\d+)?");
         new DecryptPluginWrapper("fileducky.com", "Fileducky", "http://[\\w\\.]*?fileducky\\.com/[a-zA-Z0-9]+/?");
         new DecryptPluginWrapper("megarotic.com", "MegaRoticCom", "http://[\\w\\.]*?(megarotic|sexuploader)\\.com/.*?(\\?|&)d=[a-zA-Z0-9]+");
-        new DecryptPluginWrapper("foxlink.info", "FoxLinkInfo", "http://[\\w\\.]*?foxlink\\.info/\\d+");
+        new DecryptPluginWrapper("foxlink.info", "FoxLinkInfo", "http://[\\w\\.]*?(fox|vip)link\\.info/\\d+");
         new DecryptPluginWrapper("referhush.com", "ReferHushCom", "http://[\\w\\.]*?referhush\\.com/\\?rh=[a-f0-9]+");
 
         // Decrypter from Extern

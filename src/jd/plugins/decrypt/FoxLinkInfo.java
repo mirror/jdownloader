@@ -32,20 +32,20 @@ public class FoxLinkInfo extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        String linkid;
-        linkid = new Regex(parameter, ".*?foxlink\\.info/([^/]*)").getMatch(0);
-        br.getPage("http://foxlink.info/m1.php?id=" + linkid);
+        String domainID = new Regex(parameter, ".*?(fox|vip)link\\.info/([^/]*)").getMatch(0);
+        String linkid = new Regex(parameter, ".*?(fox|vip)link\\.info/([^/]*)").getMatch(1);
+        br.getPage("http://" + domainID + "link.info/m1.php?id=" + linkid);
         String declink = br.getRegex("onclick=\"NewWindow\\('(.*?)','name'").getMatch(0);
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(declink)));
 
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
