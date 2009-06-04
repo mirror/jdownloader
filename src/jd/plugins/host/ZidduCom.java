@@ -46,9 +46,9 @@ public class ZidduCom extends PluginForHost {
         if (br.containsHTML("File.*?not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         form = br.getFormbyProperty("name", "securefrm");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String capurl = form.getRegex("(/CaptchaSecurityImages\\.php\\?width=\\d+&height=\\d+&characters=\\d+)").getMatch(0);
+        String capurl = form.getRegex("(/CaptchaSecurityImages\\.php\\?width=\\d+&height=\\d+&characters=\\d)").getMatch(0);
         if (capurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String code = getCaptchaCode("gibtsnochnet", "http://downloads.ziddu.com" + capurl, downloadLink);
+        String code = getCaptchaCode("http://downloads.ziddu.com" + capurl, downloadLink);
 
         form.put("securitycode", code);
         br.setFollowRedirects(true);
@@ -57,7 +57,10 @@ public class ZidduCom extends PluginForHost {
          * Folgendes nicht optimal da bei .isContentDisposition == false immer
          * angenommen wird dass das Captcha falsch war.
          */
-        if (!dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
+        if (!dl.getConnection().isContentDisposition()) {
+        	dl.getConnection().disconnect();
+        	throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
+        }
         dl.startDownload();
     }
 
