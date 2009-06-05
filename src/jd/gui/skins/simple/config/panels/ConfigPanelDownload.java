@@ -123,7 +123,7 @@ public class ConfigPanelDownload extends ConfigPanel {
 
         ce.setDefaultValue(true);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, ByteBufferController.MAXBUFFERSIZE, JDLocale.L("gui.config.download.buffersize2", "Max. Buffersize[KB]"), 1000, 2000));
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, ByteBufferController.MAXBUFFERSIZE, JDLocale.L("gui.config.download.buffersize2", "Max. Buffersize[KB]"), 500, 2000));
         ce.setStep(100);
         ce.setDefaultValue(100);
 
@@ -245,6 +245,12 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setDefaultValue(false);
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("DOWNLOAD"), "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", JDLocale.L("gui.config.download.autoresume", "Let Reconnects interrupt resumeable downloads")).setDefaultValue(true));
+
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("DOWNLOAD"), "PARAM_DOWNLOAD_PREFER_RECONNECT", JDLocale.L("gui.config.download.preferreconnect", "Waiting Reconnects will not allow new downloads to start")).setDefaultValue(true));
+
+        container.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("DOWNLOAD"), Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, JDLocale.L("gui.config.download.pausespeed", "Speed of pause in kb/s"), 10, 500));
+        conditionEntry.setDefaultValue(10);
+        conditionEntry.setStep(10);
 
     }
 

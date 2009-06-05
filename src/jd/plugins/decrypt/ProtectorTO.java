@@ -42,7 +42,6 @@ public class ProtectorTO extends PluginForDecrypt {
         super(wrapper);
     }
 
-    
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -67,13 +66,13 @@ public class ProtectorTO extends PluginForDecrypt {
                 br.getHeaders().put("Referer", param.getStringProperty("referer", null));
             }
             if (param.getProperty("protector_cookies", null) != null) {
-                br.getCookies().get(this.getHost()).add((Cookies) param.getProperty("protector_cookies", null));
+                br.getCookies(this.getHost()).add((Cookies) param.getProperty("protector_cookies", null));
             }
             br.getPage(parameter + "?jd=1");
             if (br.getRedirectLocation() != null) {
                 DownloadLink dl;
                 decryptedLinks.add(dl = createDownloadlink(br.getRedirectLocation()));
-                dl.setProperty("protector_cookies", br.getCookies().get(this.getHost()));
+                dl.setProperty("protector_cookies", br.getCookies(this.getHost()));
                 return decryptedLinks;
             }
             if (br.containsHTML("Source was protected")) {

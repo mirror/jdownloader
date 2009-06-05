@@ -48,6 +48,8 @@ public class Configuration extends SubConfiguration implements Serializable {
     public static final String PARAM_DOWNLOAD_DIRECTORY = "DOWNLOAD_DIRECTORY";
 
     public static final String PARAM_DOWNLOAD_MAX_CHUNKS = "DOWNLOAD_MAX_CHUNKS";
+    
+    public static final String PARAM_DOWNLOAD_PAUSE_SPEED = "PAUSE_SPEED";
 
     public static final String PARAM_DOWNLOAD_MAX_SIMULTAN = "DOWNLOAD_MAX_SIMULTAN";
 

@@ -96,8 +96,7 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
         add(sav, D1_BUTTON_ICON);
     }
 
-    public void actionPerformed(ActionEvent e) {
-        SimpleGUI.CURRENTGUI.setWaiting(true);
+    public void actionPerformed(ActionEvent e) {        
         if (e.getSource() == general) {
             this.broadcastEvent(new ActionEvent(this, ACTION_GENERAL, ((JButton) e.getSource()).getName()));
             return;

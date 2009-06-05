@@ -8,7 +8,7 @@ public class ByteBufferController {
 
     private ArrayList<ByteBufferEntry> bufferpool;
 
-    public final static String MAXBUFFERSIZE = "MAX_BUFFER_SIZE_V2";
+    public final static String MAXBUFFERSIZE = "MAX_BUFFER_SIZE_V3";
 
     private static ByteBufferController INSTANCE;
 

@@ -37,7 +37,6 @@ import jd.http.Encoding;
 import jd.http.HTMLEntities;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.Request;
-import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -451,7 +450,7 @@ public class Rapidshare extends PluginForHost {
                 pendingTime *= 1000;
             }
 
-            waitTicketTime(downloadLink, pendingTime);
+            sleep(pendingTime, downloadLink);
 
             String postTarget = getDownloadTarget(downloadLink, ticketCode);
 
@@ -1052,13 +1051,13 @@ public class Rapidshare extends PluginForHost {
         String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
         HashMap<String, String> data = getMap(matches);
 
-        ai.setTrafficLeft((long)(Long.parseLong(data.get("premkbleft"))/1000.0) * 1024l*1024l);
+        ai.setTrafficLeft((long) (Long.parseLong(data.get("premkbleft")) / 1000.0) * 1024l * 1024l);
         ai.setTrafficMax(25 * 1024 * 1024 * 1024l);
         ai.setFilesNum(Long.parseLong(data.get("curfiles")));
         ai.setPremiumPoints(Long.parseLong(data.get("points")));
         ai.setNewPremiumPoints(Long.parseLong(data.get("prempoints")));
         ai.setUsedSpace(Long.parseLong(data.get("curspace")));
-        ai.setTrafficShareLeft((long)(Long.parseLong(data.get("bodkb"))/1000.0) * 1024l*1024l);
+        ai.setTrafficShareLeft((long) (Long.parseLong(data.get("bodkb")) / 1000.0) * 1024l * 1024l);
 
         ai.setValidUntil(Long.parseLong(data.get("validuntil")) * 1000);
 
@@ -1075,24 +1074,6 @@ public class Rapidshare extends PluginForHost {
         for (String[] m : matches)
             map.put(m[0].trim(), m[1].trim());
         return map;
-    }
-
-    /**
-     * Wartet die angegebene Ticketzeit ab
-     * 
-     * @param step
-     * @param downloadLink
-     * @param pendingTime
-     * @throws InterruptedException
-     */
-    private void waitTicketTime(DownloadLink downloadLink, long pendingTime) throws InterruptedException {
-
-        while (pendingTime > 0 && !downloadLink.isAborted()) {
-            downloadLink.getLinkStatus().setStatusText(JDLocale.LF("plugin.rapidshare.tickettime", "Wait %s for ticket", Formatter.formatSeconds((int) (pendingTime / 1000))));
-            downloadLink.requestGuiUpdate();
-            Thread.sleep(1000);
-            pendingTime -= 1000;
-        }
     }
 
     // @Override

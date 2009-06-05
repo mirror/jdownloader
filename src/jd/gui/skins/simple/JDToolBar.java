@@ -158,7 +158,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
     }
 
     private void initListeners() {
-        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT, Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, Configuration.PARAM_ALLOW_RECONNECT) {
+        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT, Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, Configuration.PARAM_ALLOW_RECONNECT, Configuration.PARAM_DOWNLOAD_PAUSE_SPEED) {
 
             @Override
             public void onPropertyChanged(Property source, final String key) {
@@ -171,6 +171,8 @@ public class JDToolBar extends JToolBar implements ControlListener {
                             updateClipboardButton();
                         } else if (key == Configuration.PARAM_ALLOW_RECONNECT) {
                             updateReconnectButtonIcon();
+                        } else if (key == Configuration.PARAM_DOWNLOAD_PAUSE_SPEED) {
+                            updatePauseButton();
                         }
                     }
 
@@ -258,12 +260,12 @@ public class JDToolBar extends JToolBar implements ControlListener {
             reconnectButton.setIcon(JDTheme.II("gui.images.reconnect_warning", 24, 24));
             reconnectButton.setToolTipText(JDLocale.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
             reconnect.setEnabled(true);
-            reconnect.setToolTipText(JDLocale.L("gui.menu.action.doreconnect.desc", null));
+            reconnect.setToolTipText(JDLocale.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
         } else {
             reconnectButton.setToolTipText(JDLocale.L("gui.menu.action.reconnectman.desc", "Manual reconnect. Get a new IP by resetting your internet connection"));
             reconnectButton.setIcon(JDTheme.II("gui.images.reconnect", 24, 24));
             reconnect.setEnabled(true);
-            reconnect.setToolTipText(JDLocale.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
+            reconnect.setToolTipText(JDLocale.L("gui.menu.action.reconnectauto.desc", "Auto reconnect. Get a new IP by resetting your internet connection"));
 
         }
     }
@@ -276,6 +278,10 @@ public class JDToolBar extends JToolBar implements ControlListener {
             reconnect.setSelected(false);
             reconnect.setIcon(JDTheme.II("gui.images.reconnect_disabled", 24, 24));
         }
+    }
+
+    private void updatePauseButton() {
+        pauseButton.setToolTipText(JDLocale.LF("gui.menu.action.break2.desc", "Pause downloads. Limits global speed to %s kb/s", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
     }
 
     private void initController() {
@@ -308,8 +314,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
         });
 
         add(pauseButton = new JToggleButton(JDTheme.II("gui.images.break", 24, 24)), BUTTON_CONSTRAINTS);
-        pauseButton.setToolTipText(JDLocale.L("gui.menu.action.break.desc", null));
-
+        updatePauseButton();
         pauseButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

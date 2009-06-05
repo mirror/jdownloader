@@ -134,17 +134,26 @@ public class Browser {
     }
 
     public String getCookie(String url, String string) throws MalformedURLException {
-        String host;
-        host = Browser.getHost(url);
-        Cookies cookies = getCookies().get(host);
+        String host = Browser.getHost(url);
+        Cookies cookies = getCookies(host);
         Cookie cookie = cookies.get(string);
         if (cookie != null) return cookie.getValue();
         return null;
     }
 
-    public HashMap<String, Cookies> getCookies() {
+    private HashMap<String, Cookies> getCookies() {
         if (this.cookiesExclusive) return cookies;
         return COOKIES;
+    }
+
+    public Cookies getCookies(String url) {
+        String host = Browser.getHost(url);
+        Cookies cookies2 = getCookies().get(host);
+        if (cookies2 == null) {
+            cookies2 = new Cookies();
+            getCookies().put(host, cookies2);
+        }
+        return cookies2;
     }
 
     public void setCookie(String url, String key, String value) throws MalformedURLException {

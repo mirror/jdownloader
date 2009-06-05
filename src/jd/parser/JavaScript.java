@@ -206,7 +206,7 @@ public final class JavaScript {
         String host2 = br.getHost();
 
         if (host2.matches(".*\\..*\\..*")) host2 = host2.replaceFirst(".*?\\.", "");
-        Cookies cookies = br.getCookies().get(host2);
+        Cookies cookies = br.getCookies(host2);
         StringBuilder c = new StringBuilder();
         boolean b = false;
         for (Cookie cookie : cookies.getCookies()) {

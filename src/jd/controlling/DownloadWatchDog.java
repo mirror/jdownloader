@@ -176,15 +176,13 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      * Setzt den Status der Downloadliste zurück. zB. bei einem Abbruch
      */
     private void clearDownloadListStatus() {
-        synchronized (DownloadControllers) {
-            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(DownloadControllers.keySet());
-            for (DownloadLink link : links) {
-                this.deactivateDownload(link);
-            }
+        ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(DownloadControllers.keySet());
+        for (DownloadLink link : links) {
+            this.deactivateDownload(link);
         }
+
         PluginForHost.resetStatics();
         ArrayList<FilePackage> fps;
-        ArrayList<DownloadLink> links;
         fps = dlc.getPackages();
         synchronized (fps) {
             for (FilePackage filePackage : fps) {
@@ -370,7 +368,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         paused = value;
         if (value) {
             oldSpeed2 = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
-            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 10);
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10));
             logger.info("Pause enabled: Reduced downloadspeed to 10 kb/s");
         } else {
             SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, oldSpeed2);
@@ -380,7 +378,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     }
 
     public boolean newDLStartAllowed() {
-        if (paused || Reconnecter.isReconnecting() || aborting || aborted) return false;
+        if (paused || Reconnecter.isReconnecting() || aborting || aborted || Reconnecter.preferReconnect()) return false;
         return true;
     }
 
