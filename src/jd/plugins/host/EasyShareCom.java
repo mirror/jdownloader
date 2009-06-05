@@ -89,7 +89,7 @@ public class EasyShareCom extends PluginForHost {
         try {
             ai.setValidUntil(isExpired(account).getExpireDate());
         } catch (PluginException e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             ai.setValid(false);
             ai.setExpired(true);
             return ai;

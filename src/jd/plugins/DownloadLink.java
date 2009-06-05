@@ -622,14 +622,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                     // logger.severe("Hoster Plugin Version: " +
                     // getPlugin().getVersion());
                     // JDLogger.getLogger().log(java.util.logging.
-                    // Level.SEVERE,"Exception occured",e);
+                    // Level.SEVERE,"Exception occurred",e);
                     break;
                 }
             } catch (Exception e) {
                 // logger.severe("Hoster Plugin Version: " +
                 // getPlugin().getVersion());
                 // JDLogger.getLogger().log(java.util.logging.Level
-                // .SEVERE,"Exception occured",e);
+                // .SEVERE,"Exception occurred",e);
                 availableStatus = AvailableStatus.UNCHECKABLE;
                 break;
             }
@@ -677,7 +677,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
 
-                    JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
+                    JDLogger.getLogger().log(Level.SEVERE, "Exception occurred", e);
                 }
             }
         }

@@ -136,7 +136,7 @@ public class HTTPDownload extends DownloadInterface {
 
                         } catch (Exception e) {
                             // TODO Auto-generated catch block
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
                         }
 
                     }
@@ -150,15 +150,15 @@ public class HTTPDownload extends DownloadInterface {
                     System.out.println("CRC FAULT");
                 }
             } catch (BrowserException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
                 if (e.getType() == BrowserException.TYPE_LOCAL_IO) {
                     new File(destPath).delete();
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
                 }
             }
         } catch (Exception e) {
             // TODO Auto-generated catch block
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
         }
     }
 
@@ -299,10 +299,10 @@ public class HTTPDownload extends DownloadInterface {
     // writeWaitingChunk();
     // } catch (InterruptedException e) {
     // // TODO Auto-generated catch block
-    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
     // } catch (IOException e) {
     // // TODO Auto-generated catch block
-    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
     // }
     //
     // }
@@ -317,17 +317,17 @@ public class HTTPDownload extends DownloadInterface {
         try {
             outputChannel.force(false);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
         }
         try {
             outputRAF.close();
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
         }
         try {
             outputChannel.close();
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
         }
 
     }
@@ -449,7 +449,7 @@ public class HTTPDownload extends DownloadInterface {
             //@Override
             public void onThreadException(Threader th, JDRunnable job, Exception e) {
                 System.err.println(job);
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
             }
 
             //@Override
@@ -466,10 +466,10 @@ public class HTTPDownload extends DownloadInterface {
                     updateChunks();
                 } catch (BrowserException e) {
                     // TODO Auto-generated catch block
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
                 } catch (InterruptedException e) {
                     // TODO Auto-generated catch block
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
                 }
                 updateSpeedMeters();
             }
@@ -491,10 +491,10 @@ public class HTTPDownload extends DownloadInterface {
                     updateChunks();
                 } catch (BrowserException e) {
                     // TODO Auto-generated catch block
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
                 } catch (InterruptedException e) {
                     // TODO Auto-generated catch block
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
                 }
 
             }

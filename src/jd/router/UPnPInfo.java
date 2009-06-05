@@ -179,12 +179,12 @@ public class UPnPInfo {
             System.out.println("\n** Parsing error, line " + spe.getLineNumber() + ", uri " + spe.getSystemId());
             System.out.println("   " + spe.getMessage());
             Exception e = (spe.getException() != null) ? spe.getException() : spe;
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
         } catch (SAXException sxe) {
             Exception e = (sxe.getException() != null) ? sxe.getException() : sxe;
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
         } catch (ParserConfigurationException pce) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",pce);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",pce);
         } catch (IOException ioe) {
            JDLogger.exception(ioe);
         }

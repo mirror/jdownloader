@@ -42,8 +42,11 @@ public class ContentPanel extends JPanel {
         synchronized (LOCK) {
             // System.out.println(panel);
             // new Exception().printStackTrace();
-            if (rightPanel == panel) return;
-            SimpleGUI.CURRENTGUI.setWaiting(true);
+            if (rightPanel == panel) {
+                SimpleGUI.CURRENTGUI.setWaiting(false);
+                return;
+            }
+
             JDCollapser.getInstance().setCollapsed(true);
             if (rightPanel != null) {
 

@@ -282,7 +282,7 @@ public class PackageManager extends Interaction implements Serializable {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            logger.log(Level.SEVERE, "Exception occured", e);
+                            logger.log(Level.SEVERE, "Exception occurred", e);
                         }
                         downloadLink.getFilePackage().remove(downloadLink);
                         boolean ch = false;

@@ -178,9 +178,9 @@ public class ConfigPanelGUI extends ConfigPanel {
 //                launcher = new BrowserLauncher();
 //                ar = launcher.getBrowserList();
 //            } catch (BrowserLaunchingInitializingException e) {
-//                JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
+//                JDLogger.getLogger().log(Level.SEVERE, "Exception occurred", e);
 //            } catch (UnsupportedOperatingSystemException e) {
-//                JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
+//                JDLogger.getLogger().log(Level.SEVERE, "Exception occurred", e);
 //            }
 //            if (ar == null || ar.size() < 2) {
 //                browserArray = new Object[] { "JavaBrowser" };
@@ -208,7 +208,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                       
                         JLinkButton.openURL("http://jdownloader.org");
                     } catch (Exception e) {
-                        JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
+                        JDLogger.getLogger().log(Level.SEVERE, "Exception occurred", e);
                         SimpleGUI.CURRENTGUI.showMessageDialog(JDLocale.LF("gui.config.gui.testbrowser.error", "Browser launcher failed: %s", e.getLocalizedMessage()));
                     }
                 }
@@ -311,7 +311,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                             SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
                             SimpleGUI.CURRENTGUI.onLAFChanged();
                         } catch (Exception e) {
-                            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
+                            JDLogger.getLogger().log(Level.SEVERE, "Exception occurred", e);
                         }
                         return null;
                     }

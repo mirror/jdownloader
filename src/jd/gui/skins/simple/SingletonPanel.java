@@ -45,7 +45,7 @@ public class SingletonPanel {
 
                 createPanel();
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
                 return null;
             }
 

@@ -87,7 +87,7 @@ public abstract class GuiRunnable<T> implements Runnable {
                         // System.out.println(id + " unlocked ");
                     } catch (InterruptedException e) {
                         // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,
-                        // "Exception occured", e);
+                        // "Exception occurred", e);
                     }
                 }
             } else {

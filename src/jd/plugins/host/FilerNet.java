@@ -180,7 +180,7 @@ public class FilerNet extends PluginForHost {
              * urlConnection.disconnect(); } catch (IOException e) {
              * jd.controlling
              * .JDLogger.getLogger().log(java.util.logging.Level.SEVERE
-             * ,"Exception occured",e); } return true;
+             * ,"Exception occurred",e); } return true;
              */
         }
 
@@ -216,7 +216,7 @@ public class FilerNet extends PluginForHost {
                 }
                 return AvailableStatus.TRUE;
             } catch (Exception e) {
-                logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             }
             tries++;
         }

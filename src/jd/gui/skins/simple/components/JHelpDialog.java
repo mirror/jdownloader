@@ -74,7 +74,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
                 try {
                     JLinkButton.openURL(url);
                 } catch (Exception e) {
-                    JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                 }
                 return true;
             }

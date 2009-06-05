@@ -478,7 +478,7 @@ public class Updater {
             System.out.println("UPdate: " + update);
             webupdater.updateFiles(update);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
             remoteFileList = new ArrayList<FileUpdate>();
         }
 

@@ -254,7 +254,7 @@ public class MegaPornCom extends PluginForHost {
             try {
                 id = getDownloadID(u);
             } catch (Exception e) {
-                logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             }
             map.put("id" + i, id);
             i++;

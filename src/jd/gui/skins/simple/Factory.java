@@ -50,7 +50,7 @@ public class Factory {
             label.setIconTextGap(8);
             label.setBorder(null);
         } catch (MalformedURLException e) {
-            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
+            JDLogger.getLogger().log(Level.SEVERE, "Exception occurred", e);
         }
         ret.add(new JSeparator());
         ret.add(new JLabel(JDTheme.II("gui.images.config.tip", 16, 16)));

@@ -115,7 +115,7 @@ public class MultiThreadDetection {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
 
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
                 return;
             }
         }

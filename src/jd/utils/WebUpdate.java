@@ -232,7 +232,7 @@ public class WebUpdate implements ControlListener {
                                         doUpdate();
                                     }
                                 } catch (HeadlessException e) {
-                                    logger.log(Level.SEVERE, "Exception occured", e);
+                                    logger.log(Level.SEVERE, "Exception occurred", e);
                                 }
                             }
                         }

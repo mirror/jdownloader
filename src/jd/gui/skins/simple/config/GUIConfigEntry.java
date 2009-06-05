@@ -105,7 +105,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
             } catch (MalformedURLException e) {
                 input[0] = new JLabel(configEntry.getPropertyName());
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             }
             input[0].setEnabled(configEntry.isEnabled());
 
@@ -461,7 +461,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
                 ((JSpinner) input[0]).setModel(new SpinnerNumberModel(value, configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
 
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             }
             break;
         case ConfigContainer.TYPE_RADIOFIELD:

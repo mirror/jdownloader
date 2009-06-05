@@ -175,7 +175,7 @@ public class Form extends Property {
     // } catch (NullPointerException e) {
     // //
     // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,
-    // "Exception occured",e);
+    // "Exception occurred",e);
     // }
     // }
     // return false;
@@ -191,7 +191,7 @@ public class Form extends Property {
                 baseurl = new URL(baseURL);
             } catch (MalformedURLException e) {
 
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             }
         }
         String ret = action;

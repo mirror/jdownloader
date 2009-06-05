@@ -52,7 +52,7 @@ public class JDHash {
             byte[] digest = md.digest();
             return byteArrayToHex(digest);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
             return null;
         }
     }
@@ -72,7 +72,7 @@ public class JDHash {
             byte[] digest = md.digest(arg.getBytes());
             return byteArrayToHex(digest);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
             return null;
         }
     }

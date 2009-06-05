@@ -186,7 +186,7 @@ public class RapidShareDe extends PluginForHost {
             downloadLink.setName(regExp[0][0]);
             return AvailableStatus.TRUE;
         } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
         return AvailableStatus.FALSE;
 

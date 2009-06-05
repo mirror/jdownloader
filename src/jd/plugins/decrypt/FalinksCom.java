@@ -48,7 +48,7 @@ public class FalinksCom extends PluginForDecrypt {
                 progress.increase(1);
             }
         } catch (IOException e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             return null;
         }
         return decryptedLinks;

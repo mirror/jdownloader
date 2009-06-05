@@ -157,7 +157,7 @@ public class DepositFiles extends PluginForHost {
             date = dateFormat.parse(expire);
             ai.setValidUntil(date.getTime());
         } catch (ParseException e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
 
         return ai;

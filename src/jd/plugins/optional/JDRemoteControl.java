@@ -321,7 +321,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                             Thread.sleep(5000);
                         } catch (InterruptedException e) {
 
-                            logger.log(Level.SEVERE, "Exception occured", e);
+                            logger.log(Level.SEVERE, "Exception occurred", e);
                         }
                         JDUtilities.restartJD();
                     }
@@ -338,7 +338,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                             Thread.sleep(5000);
                         } catch (InterruptedException e) {
 
-                            logger.log(Level.SEVERE, "Exception occured", e);
+                            logger.log(Level.SEVERE, "Exception occurred", e);
                         }
                         JDUtilities.getController().exit();
                     }

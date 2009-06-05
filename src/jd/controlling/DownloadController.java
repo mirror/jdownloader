@@ -315,7 +315,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         try {
                             pluginForHost = JDUtilities.getNewPluginForHostInstance(localLink.getHost());
                         } catch (Exception e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                         }
                         // Gibt es einen Names für ein Containerformat,
                         // wird ein passendes Plugin gesucht
@@ -327,7 +327,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                                 }
                             }
                         } catch (NullPointerException e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                         }
                         if (pluginForHost != null) {
                             localLink.setLoadedPlugin(pluginForHost);
@@ -391,7 +391,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         try {
                             pluginForHost = JDUtilities.getNewPluginForHostInstance(localLink.getHost());
                         } catch (Exception e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                         }
                         // Gibt es einen Names für ein Containerformat,
                         // wird ein passendes Plugin gesucht
@@ -403,7 +403,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                                 }
                             }
                         } catch (NullPointerException e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                         }
                         if (pluginForHost != null) {
                             localLink.setLoadedPlugin(pluginForHost);

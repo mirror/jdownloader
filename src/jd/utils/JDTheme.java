@@ -138,7 +138,7 @@ public class JDTheme {
             return new ImageIcon(getImage(V(key), width, height));
         } catch (Exception e) {
             logger.severe("image not found: " + key + "(" + V(key) + "_" + width + "_" + height);
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
         return null;
     }

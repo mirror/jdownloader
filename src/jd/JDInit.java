@@ -167,7 +167,7 @@ public class JDInit {
                     }
                 } catch (Throwable e) {
                     logger.severe("Error loading Optional Plugin: " + e.getMessage());
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                 }
             }
         }
@@ -257,7 +257,7 @@ public class JDInit {
                     // System.exit(0);
                     // } catch (Exception e) {
                     // jd.controlling.JDLogger.getLogger().log(java.util.logging.
-                    // Level.SEVERE,"Exception occured",e);
+                    // Level.SEVERE,"Exception occurred",e);
                     // // System.exit(0);
                     // }
 

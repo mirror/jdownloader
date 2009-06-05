@@ -33,7 +33,7 @@ class ExceptionHandler implements Thread.UncaughtExceptionHandler {
 
     public void handle(Throwable throwable) {
         try {
-            logger.log(Level.SEVERE, "Uncaught Exception occured", throwable);
+            logger.log(Level.SEVERE, "Uncaught Exception occurred", throwable);
         } catch (Throwable t) {
             // don't let the exception get thrown out, will cause infinite
             // looping!

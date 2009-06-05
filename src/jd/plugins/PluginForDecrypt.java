@@ -174,7 +174,7 @@ public abstract class PluginForDecrypt extends Plugin {
             tmpLinks = new ArrayList<DownloadLink>();
         } catch (Exception e) {
             progress.finalize();
-            logger.log(Level.SEVERE, "Exception occured", e);
+            logger.log(Level.SEVERE, "Exception occurred", e);
         }
         if (tmpLinks == null) {
             logger.severe("Decrypter out of date: " + this);

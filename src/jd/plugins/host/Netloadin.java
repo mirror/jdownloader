@@ -439,11 +439,11 @@ public class Netloadin extends PluginForHost {
         } catch (PluginException e2) {
             throw e2;
         } catch (IOException e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             return AvailableStatus.UNCHECKABLE;
 
         } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }

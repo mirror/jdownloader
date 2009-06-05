@@ -195,7 +195,7 @@ public class RapidsafeDe extends PluginForDecrypt {
         } catch (DecrypterException e2) {
             throw e2;
         } catch (IOException e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             return null;
         }
         return decryptedLinks;

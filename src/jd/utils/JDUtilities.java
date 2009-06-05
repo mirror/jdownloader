@@ -384,7 +384,7 @@ public class JDUtilities {
                 // fileSize = file.length();
 
             } catch (FileNotFoundException e) {
-                JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
+                JDLogger.getLogger().log(Level.SEVERE, "Exception occurred", e);
                 return 0;
             }
 
@@ -396,7 +396,7 @@ public class JDUtilities {
             return checksum;
 
         } catch (IOException e) {
-            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
+            JDLogger.getLogger().log(Level.SEVERE, "Exception occurred", e);
             return 0;
         }
 
@@ -578,7 +578,7 @@ public class JDUtilities {
                 currentDir = currentDir.getParentFile();
             }
         } catch (URISyntaxException e) {
-            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
+            JDLogger.getLogger().log(Level.SEVERE, "Exception occurred", e);
         }
 
         // JDUtilities.getLogger().info("RunDir: " + currentDir);
@@ -960,7 +960,7 @@ public class JDUtilities {
         try {
             return new GetExplorer().openExplorer(path);
         } catch (Exception e) {
-            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
+            JDLogger.getLogger().log(Level.SEVERE, "Exception occurred", e);
             return false;
         }
     }

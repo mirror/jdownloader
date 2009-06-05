@@ -114,7 +114,7 @@ public class JACScript {
             parseScriptFile();
             executeParameterCommands();
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
 
     }
@@ -217,7 +217,7 @@ public class JACScript {
                             if (JAntiCaptcha.isLoggerActive()) {
                                 logger.severe("Fehler in doSpecial:" + e.getLocalizedMessage());
                             }
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                         }
 
                     } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByColor")) {
@@ -296,7 +296,7 @@ public class JACScript {
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.severe("Syntax Error in " + method + "/script.jas");
             }
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
 
         }
         // BasicWindow.showImage(captcha.getImage(),120,80);
@@ -350,7 +350,7 @@ public class JACScript {
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.severe("Syntax Error in " + method + "/+script.jas");
             }
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
 
     }
@@ -455,7 +455,7 @@ public class JACScript {
                             if (JAntiCaptcha.isLoggerActive()) {
                                 logger.severe("Fehler in doSpecial:" + e.getLocalizedMessage());
                             }
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                         }
 
                     } else if (cmd[1].equalsIgnoreCase("saveImageasJpg")) {
@@ -538,7 +538,7 @@ public class JACScript {
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.severe("Syntax Error in " + method + "/script.jas (captcha)");
             }
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
 
         }
         // BasicWindow.showImage(captcha.getImage(),120,80);

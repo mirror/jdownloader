@@ -63,7 +63,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         try {
             list = (Vector<String>) SubConfiguration.getConfig("GUI").getProperty(string, new Vector<String>());
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             list = new Vector<String>();
         }
         setFiles(list);

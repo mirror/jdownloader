@@ -76,6 +76,10 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         return INSTANCE;
     }
 
+    public int getActiveDownloads() {
+        return activeDownloads;
+    }
+
     private DownloadWatchDog() {
         dlc = DownloadController.getInstance();
         dlc.addListener(this);
@@ -314,7 +318,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             }
         } catch (Exception e) {
             // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.
-            // SEVERE,"Exception occured",e);
+            // SEVERE,"Exception occurred",e);
             // Fängt concurrentmodification Exceptions ab
         }
         return returnDownloadLink;

@@ -38,7 +38,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
             try {
                 onExit();
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Exception occured", e);
+                logger.log(Level.SEVERE, "Exception occurred", e);
             }
 
         }

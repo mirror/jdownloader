@@ -91,7 +91,7 @@ public class ProtectorTO extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(link));
                     return decryptedLinks;
                 } catch (SAXException e) {
-                    logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                 }
             }
             String img = null;

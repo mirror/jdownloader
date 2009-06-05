@@ -122,7 +122,7 @@ public class DnDWebBrowser extends JDialog {
             toolBar.urlTextField.setText(url.toString());
         } catch (IOException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
         }
     }
 }

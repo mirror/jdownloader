@@ -70,7 +70,7 @@ public class JDLogger {
     }
 
     public static void exception(Level finest, Exception e) {
-        getLogger().log(finest, finest.getName() + " Exception occured", e);
+        getLogger().log(finest, finest.getName() + " Exception occurred", e);
 
     }
 

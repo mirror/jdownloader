@@ -268,7 +268,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             }
         } catch (Exception e) {
             this.exception = e;
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
         }
 
@@ -445,7 +445,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         // str = cbuf.toString();
         // } catch (CharacterCodingException e) {
         // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE
-        // ,"Exception occured",e);
+        // ,"Exception occurred",e);
         // }
         //
         // JDUtilities.writeLocalFile(fileFile,str);
@@ -612,7 +612,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 return false;
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             return false;
         }
     }
@@ -876,7 +876,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             try {
                 lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition), JDUnrar.CODEPAGE);
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                 lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));
             }
             if (new Regex(lastLine, Pattern.compile("Write error.*?bort ", Pattern.CASE_INSENSITIVE)).matches()) {

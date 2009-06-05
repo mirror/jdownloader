@@ -54,27 +54,27 @@ public class JavaScriptTest {
             System.out.println("---------- rs.com downloadlinkgrabber");
             System.out.println(getRSCOMServer("http://rapidshare.com/files/157971450/Om_Jai_Laxmi_Mata.pdf"));
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
         }
         try {
 
             System.out.println("---------- zshare linkdecyption");
             System.out.println(getZshare("http://www.zshare.net/download/12230432d2e1bc81/"));
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
         }
         try {
 
             System.out.println("---------- sendspace linkdecyption");
             System.out.println(getSendspace("http://www.sendspace.com/file/ueknde"));
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
         }
         try {
 
             dwdstest();
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
         }
     }
 

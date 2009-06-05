@@ -76,7 +76,7 @@ public class RelinkUs extends PluginForDecrypt {
                 progress.increase(1);
             } catch (Exception e) {
                 // TODO Auto-generated catch block
-                logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             }
         }
     }

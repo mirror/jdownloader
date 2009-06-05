@@ -218,14 +218,14 @@ public class DDLWarez extends PluginForDecrypt {
                             decryptedLinks.add(link);
                         }
                     } catch (InterruptedException e) {
-                        logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                        logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                     }
                 }
                 return decryptedLinks;
             } catch (DecrypterException e) {
                 throw e;
             } catch (Exception e) {
-                logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                 logger.finest("DDLWarez: PostRequest-Error, try again!");
             }
         }
@@ -253,7 +253,7 @@ public class DDLWarez extends PluginForDecrypt {
     // try {
     // pg.grabPixels();
     // } catch (Exception e) {
-    // logger.log(java.util.logging.Level.SEVERE,"Exception occured",e);
+    // logger.log(java.util.logging.Level.SEVERE,"Exception occurred",e);
     // }
     // ColorModel cm = pg.getColorModel();
     // tmp.setColorModel(cm);
@@ -286,7 +286,7 @@ public class DDLWarez extends PluginForDecrypt {
     // return new File(file.getAbsoluteFile() + ".png");
     // } catch (Exception e) {
     // // TODO Auto-generated catch block
-    // logger.log(java.util.logging.Level.SEVERE,"Exception occured",e);
+    // logger.log(java.util.logging.Level.SEVERE,"Exception occurred",e);
     // }
     // return null;
     //

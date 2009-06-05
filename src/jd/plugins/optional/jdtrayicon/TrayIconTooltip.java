@@ -30,6 +30,7 @@ import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
 import jd.controlling.DownloadController;
+import jd.controlling.DownloadWatchDog;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.nutils.Formatter;
@@ -156,7 +157,7 @@ public class TrayIconTooltip extends JWindow {
                             if (tot == loaded) finished++;
                         }
 
-                        lblDlRunning.setText(String.valueOf(JDUtilities.getController().getRunningDownloadNum()));
+                        lblDlRunning.setText(String.valueOf(DownloadWatchDog.getInstance().getActiveDownloads()));
                         lblDlFinished.setText(String.valueOf(finished));
                         lblDlTotal.setText(String.valueOf(dlc.getAllDownloadLinks().size()));
                         lblSpeed.setText(Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s");

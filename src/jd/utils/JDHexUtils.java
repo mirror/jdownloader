@@ -80,7 +80,7 @@ public class JDHexUtils {
             return new String(hex, "ASCII");
         } catch (UnsupportedEncodingException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
             return null;
         }
     }
@@ -101,7 +101,7 @@ public class JDHexUtils {
             return new String(hex, "ASCII");
         } catch (UnsupportedEncodingException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
             return null;
         }
     }

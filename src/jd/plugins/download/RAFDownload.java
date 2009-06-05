@@ -93,17 +93,17 @@ public class RAFDownload extends DownloadInterface {
         try {
             outputChannel.force(false);
         } catch (Exception e) {
-            // JDLogger.getLogger().log(Level.SEVERE,"Exception occured",e);
+            // JDLogger.getLogger().log(Level.SEVERE,"Exception occurred",e);
         }
         try {
             outputFile.close();
         } catch (Exception e) {
-            // JDLogger.getLogger().log(Level.SEVERE,"Exception occured",e);
+            // JDLogger.getLogger().log(Level.SEVERE,"Exception occurred",e);
         }
         try {
             outputChannel.close();
         } catch (Exception e) {
-            // JDLogger.getLogger().log(Level.SEVERE,"Exception occured",e);
+            // JDLogger.getLogger().log(Level.SEVERE,"Exception occurred",e);
         }
         if (!handleErrors()) {
 
@@ -189,7 +189,7 @@ public class RAFDownload extends DownloadInterface {
 
             }
         } catch (Exception e) {
-            JDLogger.getLogger().log(Level.SEVERE, "Exception occured", e);
+            JDLogger.getLogger().log(Level.SEVERE, "Exception occurred", e);
             addException(e);
         }
 

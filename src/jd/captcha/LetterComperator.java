@@ -374,7 +374,7 @@ public class LetterComperator {
             ret.clean();
             return ret;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
             return getA();
         }
 
@@ -888,7 +888,7 @@ public class LetterComperator {
                     extensionCodeArguments[1] = tmpError / divider;
                     extensionCodeMethod.invoke(null, extensionCodeArguments);
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
                 }
             }
 
@@ -1120,7 +1120,7 @@ public class LetterComperator {
                 extensionCodeMethod = newClass.getMethod(methodname, extensionCodeParameterTypes);
 
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
             }
         }
 

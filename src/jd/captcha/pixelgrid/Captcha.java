@@ -929,7 +929,7 @@ public class Captcha extends PixelGrid {
                 if (JAntiCaptcha.isLoggerActive()) {
                     logger.severe("Fehler in useLetterFilter:" + e.getLocalizedMessage() + " / " + owner.getJas().getString("useSpecialGetLetters"));
                 }
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             }
             seperatedLetters = ret;
             return ret;
@@ -1088,7 +1088,7 @@ public class Captcha extends PixelGrid {
                 if (JAntiCaptcha.isLoggerActive()) {
                     logger.severe("Fehler in useSpecialGetLetters:" + e.getLocalizedMessage() + " / " + owner.getJas().getString("useSpecialGetLetters"));
                 }
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             }
             return null;
         }
@@ -1598,13 +1598,13 @@ public class Captcha extends PixelGrid {
             fos.close();
         } catch (FileNotFoundException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         } catch (ImageFormatException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         } catch (IOException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
     }
 
@@ -1665,7 +1665,7 @@ public class Captcha extends PixelGrid {
 
                     pixel[i] = ((IndexColorModel) colorModel).getRGB(bpixel[i] & pixel_mask);
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                     pixel[i] = 0;
                 }
 

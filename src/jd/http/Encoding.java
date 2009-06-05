@@ -51,7 +51,7 @@ public class Encoding {
         try {
             str = URLDecoder.decode(str, "UTF-8");
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
         }
         return HTMLEntities.unhtmlentities(str);
     }
@@ -61,7 +61,7 @@ public class Encoding {
         try {
             return URLEncoder.encode(str, "UTF-8");
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
         }
         return str;
     }
@@ -111,7 +111,7 @@ public class Encoding {
                 try {
                     sb.append(URLEncoder.encode(String.valueOf(ch), "UTF-8"));
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
                     return url;
                 }
             }
@@ -133,7 +133,7 @@ public class Encoding {
             try {
                 urlcoded = URLDecoder.decode(urlcoded, "UTF-8");
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
             }
         }
         return urlcoded;
@@ -158,7 +158,7 @@ public class Encoding {
                 return new String(str.getBytes(), "UTF-8");
             }
         } catch (UnsupportedEncodingException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
             return str;
         }
     }
@@ -172,7 +172,7 @@ public class Encoding {
         try {
             return new String(str.getBytes("UTF-8"));
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
             return null;
         }
     }

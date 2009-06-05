@@ -283,7 +283,7 @@ public class Jobber {
                 try {
                     ra.go();
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                     fireJobException(ra, e);
                 }
                 synchronized (jobsFinished) {

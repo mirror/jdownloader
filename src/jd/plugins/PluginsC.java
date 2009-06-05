@@ -323,9 +323,9 @@ public abstract class PluginsC extends Plugin {
             PLUGINS.put(containerFile, newPlugin);
             return newPlugin;
         } catch (InstantiationException e) {
-            logger.log(Level.SEVERE, "Exception occured", e);
+            logger.log(Level.SEVERE, "Exception occurred", e);
         } catch (IllegalAccessException e) {
-            logger.log(Level.SEVERE, "Exception occured", e);
+            logger.log(Level.SEVERE, "Exception occurred", e);
         }
         return null;
     }

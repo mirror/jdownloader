@@ -80,7 +80,7 @@ public class GoogleGroups extends PluginForHost {
                 }
             } catch (IOException e) {
                 // TODO Auto-generated catch block
-                logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                 return false;
             }
         }

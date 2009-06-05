@@ -146,14 +146,14 @@ public abstract class UnitTest {
                         System.out.println("Successfull");
                         // System.out.println(testInstance.getLog());
                     } catch (Exception e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                         System.out.println("FAILED");
                         // System.err.println(testInstance.getLog());
                     }
 
                 }
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             }
         }
     }

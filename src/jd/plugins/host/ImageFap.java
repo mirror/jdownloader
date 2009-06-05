@@ -65,7 +65,7 @@ public class ImageFap extends PluginForHost {
             // JDUtilities.htmlDecode(t));
             return Encoding.htmlDecode(t);
         } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
         return null;
     }
@@ -97,7 +97,7 @@ public class ImageFap extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
         return AvailableStatus.FALSE;
     }

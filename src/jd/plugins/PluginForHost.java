@@ -289,7 +289,7 @@ public abstract class PluginForHost extends Plugin {
                 }
 
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Exception occured", e);
+                logger.log(Level.SEVERE, "Exception occurred", e);
             }
         }
         if (premium.getSize() != 0) {
@@ -359,7 +359,7 @@ public abstract class PluginForHost extends Plugin {
                     try {
                         correctDownloadLink(link);
                     } catch (Exception e) {
-                        logger.log(Level.SEVERE, "Exception occured", e);
+                        logger.log(Level.SEVERE, "Exception occurred", e);
                     }
                     links.add(link);
                     if (fp != null) {
@@ -367,9 +367,9 @@ public abstract class PluginForHost extends Plugin {
                     }
 
                 } catch (IllegalArgumentException e) {
-                    logger.log(Level.SEVERE, "Exception occured", e);
+                    logger.log(Level.SEVERE, "Exception occurred", e);
                 } catch (SecurityException e) {
-                    logger.log(Level.SEVERE, "Exception occured", e);
+                    logger.log(Level.SEVERE, "Exception occurred", e);
                 }
             }
         }

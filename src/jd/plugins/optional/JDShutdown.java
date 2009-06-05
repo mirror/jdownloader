@@ -192,7 +192,7 @@ public class JDShutdown extends PluginOptional {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            logger.log(Level.SEVERE, "Exception occured", e);
+                            logger.log(Level.SEVERE, "Exception occurred", e);
                         }
                         Object obj = wrapper.getPlugin().interact("isWorking", null);
                         if (obj == null || (obj instanceof Boolean && obj.equals(false))) break;

@@ -181,7 +181,7 @@ public class Threader {
                     broadcaster.get(i).onThreadException(Threader.this, getRunnable(), e);
                 }
 
-                // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
             } finally {
                 this.runnableAlive = false;
             }

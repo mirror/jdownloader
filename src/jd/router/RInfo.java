@@ -81,7 +81,7 @@ public class RInfo implements Serializable {
                             try {
                                 StrCont = JDUtilities.objectToXml(content);
                             } catch (IOException e) {
-                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
                             }
                         }
                         int c = 0;
@@ -106,13 +106,13 @@ public class RInfo implements Serializable {
                         try {
                             ret.put(field.getName(), URLEncoder.encode(StrCont, "UTF-8"));
                         } catch (UnsupportedEncodingException e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
                         }
                     }
                 } catch (IllegalArgumentException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
                 } catch (IllegalAccessException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
                 }
             }
         }
@@ -209,7 +209,7 @@ public class RInfo implements Serializable {
             if (reconnectMethode != null) System.out.println(SQLRouterData.br.postPage("http://localhost/router/setIntegrety2.php", getHashMap()));
 
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
         }
     }
 

@@ -169,7 +169,7 @@ public class HTMLParser {
                     }
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                 }
                 if (con != null) con.disconnect();
             }

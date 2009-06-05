@@ -77,7 +77,7 @@ public class JDController implements ControlListener {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                             return;
                         }
                     }
@@ -94,7 +94,7 @@ public class JDController implements ControlListener {
                         try {
                             wait();
                         } catch (Exception e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                         }
                     }
                 }
@@ -129,7 +129,7 @@ public class JDController implements ControlListener {
                     // JDUtilities.getLogger().severe("THREAD2");
 
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                     eventStart = 0;
                 }
             }
@@ -346,7 +346,7 @@ public class JDController implements ControlListener {
             if (dlcKey == null) return null;
             return xml + dlcKey;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
         return null;
     }
@@ -493,37 +493,6 @@ public class JDController implements ControlListener {
     }
 
     /**
-     * Liefert die Anzahl der gerade laufenden Downloads. (nur downloads die
-     * sich wirklich in der downloadphase befinden
-     * 
-     * @return Anzahld er laufenden Downloadsl
-     */
-    public int getRunningDownloadNum() {
-        int ret = 0;
-        synchronized (JDUtilities.getDownloadController().getPackages()) {
-            for (FilePackage fp : JDUtilities.getDownloadController().getPackages()) {
-                ret += (fp.getLinksListbyStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS).size());
-            }
-        }
-        return ret;
-    }
-
-    public int getRunningDownloadNumByHost(PluginForHost pluginForHost) {
-        int ret = 0;
-        synchronized (JDUtilities.getDownloadController().getPackages()) {
-            for (FilePackage fp : JDUtilities.getDownloadController().getPackages()) {
-                ArrayList<DownloadLink> links = fp.getLinksListbyStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-                for (DownloadLink dl : links) {
-                    if (dl.getPlugin().getClass() == pluginForHost.getClass()) {
-                        ret++;
-                    }
-                }
-            }
-        }
-        return ret;
-    }
-
-    /**
      * @return gibt das globale speedmeter zurück
      */
     public int getSpeedMeter() {
@@ -584,7 +553,7 @@ public class JDController implements ControlListener {
                         break;
                     }
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                 }
             }
             progress.increase(1);
@@ -681,7 +650,7 @@ public class JDController implements ControlListener {
                                 break;
                             }
                         } catch (Exception e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                         }
                     }
                     progress.increase(1);
@@ -867,7 +836,7 @@ public class JDController implements ControlListener {
                 }
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
         return null;
 
@@ -893,7 +862,7 @@ public class JDController implements ControlListener {
                 }
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
         return ret;
     }
@@ -918,7 +887,7 @@ public class JDController implements ControlListener {
                 }
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
         return ret;
     }

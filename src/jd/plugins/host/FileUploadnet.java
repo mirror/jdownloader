@@ -82,7 +82,7 @@ public class FileUploadnet extends PluginForHost {
                 }
             }
         } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }

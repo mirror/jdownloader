@@ -249,7 +249,7 @@ public class PixelGrid extends Property {
     // } catch (ArrayIndexOutOfBoundsException e) {
     // UTILITIES.trace("ERROR: Nicht im grid; [" + x + "][" + y
     // + "] grid " + localGrid.length);
-    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
     //
     // }
     // }
@@ -296,7 +296,7 @@ public class PixelGrid extends Property {
         // } catch (ArrayIndexOutOfBoundsException e) {
         // UTILITIES.trace("ERROR: Nicht im grid; [" + x + "][" + y + "] grid "
         // + localGrid.length);
-        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
         //
         // }
     }
@@ -1133,7 +1133,7 @@ public class PixelGrid extends Property {
                 }
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
 
         return;
@@ -1701,13 +1701,13 @@ public class PixelGrid extends Property {
             fos.close();
         } catch (FileNotFoundException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         } catch (ImageFormatException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         } catch (IOException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
     }
 
