@@ -1,5 +1,5 @@
 $translater$ = thartist (thartist@hotmail.com)
-$version$ = $Revision: jD 0.5 - 5949 $
+$version$ = $Revision$
 addons.jdgrowlnotification.menu = Gruñir Mensajes
 addons.jdshutdown.menu = Apagar el equipo al finalizar las descargas
 addons.jdshutdown.statusmessage.disabled = jDownloader NO apagara el sistema

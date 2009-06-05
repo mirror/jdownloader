@@ -1,5 +1,5 @@
 $translater$ = gilmarcalmon@gmail.com
-$version$ = $Revision: 5949 $
+$version$ = $Revision$
 addons.jdgrowlnotification.menu = Growl Messages
 addons.jdshutdown.menu = abilitado
 addons.jdshutdown.statusmessage.disabled = O sistema não será desligado por JDownloader
