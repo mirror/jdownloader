@@ -188,7 +188,7 @@ public class JDSimpleWebserverRequestHandler {
                                 } else if (dowhat.compareToIgnoreCase("add") == 0) {
                                     /* link adden */
                                     for (LinkGrabberFilePackage fp : packages) {
-                                        LinkGrabberPanel.getLinkGrabber().confirmPackage(fp, null);
+                                        LinkGrabberPanel.getLinkGrabber().confirmPackage(fp, null,-1);
                                     }
 
                                 }

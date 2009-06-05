@@ -298,7 +298,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
                             synchronized (LinkGrabberController.ControllerLock) {
                                 synchronized (LinkGrabberPanel.getLinkGrabber()) {
                                     for (LinkGrabberFilePackage fp : fps) {
-                                        LinkGrabberPanel.getLinkGrabber().confirmPackage(fp, null);
+                                        LinkGrabberPanel.getLinkGrabber().confirmPackage(fp, null, -1);
                                     }
                                 }
                             }

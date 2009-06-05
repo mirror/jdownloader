@@ -172,12 +172,8 @@ public class ParameterManager {
 
                 logger.info("Add password: " + currentArg);
 
-                for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
-                    if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
-                        PasswordListController.getInstance().addPassword(currentArg);
-                        break;
-                    }
-                }
+                PasswordListController.getInstance().addPassword(currentArg);
+
             } else if (currentArg.contains("http://") && !(currentArg.charAt(0) == '-')) {
 
                 addContainersSwitch = false;
