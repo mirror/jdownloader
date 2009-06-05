@@ -660,7 +660,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             exec.start();
             exec.waitTimeout();
             if (exec.getException() != null && exec.getException().getMessage().contains("Cannot run")) {
-                logger.finest(exec.getException().getMessage());
+                logger.severe(exec.getException().getMessage());
                 fireEvent(JDUnrarConstants.INVALID_BINARY);
                 return false;
             }

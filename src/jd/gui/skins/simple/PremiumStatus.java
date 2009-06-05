@@ -155,9 +155,9 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             public void onPropertyChanged(final Property source, final String valid) {
 
                 if (!source.getBooleanProperty(valid, true)) {
-                    
-                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN|UserIO.NO_COUNTDOWN, JDLocale.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDLocale.L("dialogs.premiumstatus.global.message", "Do you realy want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No"));
-                    if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL)&&!JDFlags.hasAllFlags(answer, UserIO.RETURN_SKIPPED_BY_DONT_SHOW)) {
+
+                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDLocale.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDLocale.L("dialogs.premiumstatus.global.message", "Do you realy want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No"));
+                    if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL) && !JDFlags.hasAllFlags(answer, UserIO.RETURN_SKIPPED_BY_DONT_SHOW)) {
                         source.setProperty(valid, true);
                         return;
                     }
@@ -241,9 +241,9 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                     }
 
                                     map.get(wrapper.getHost()).add(ai);
-                                    mapSize.put(wrapper.getHost(), mapSize.get(wrapper.getHost()) + (ai.getTrafficLeft() > 0 ? ai.getTrafficLeft() : UNLIMITED));
+                                    mapSize.put(wrapper.getHost(), mapSize.get(wrapper.getHost()) + (ai.getTrafficLeft() > -1 ? ai.getTrafficLeft() : UNLIMITED));
 
-                                    trafficTotal += (ai.getTrafficLeft() > 0 ? ai.getTrafficLeft() : UNLIMITED);
+                                    trafficTotal += (ai.getTrafficLeft() > -1 ? ai.getTrafficLeft() : UNLIMITED);
 
                                 }
                             } catch (Exception e) {
@@ -299,10 +299,14 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                         bars[i].setAlignmentX(RIGHT_ALIGNMENT);
                         bars[i].setPlugin(plugin);
 
-                        if (left >= 0) {
+                        if (left > 0) {
                             bars[i].setMaximum(max);
                             bars[i].setValue(left);
                             bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), Formatter.formatReadable(left)));
+                        } else if (left == 0) {
+                            bars[i].setMaximum(10);
+                            bars[i].setValue(0);
+                            bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.expired_traffic.tooltip", "%s - %s account(s) -- At the moment no premium traffic is available.", host, list.size()));
                         } else {
                             bars[i].setMaximum(10);
                             bars[i].setValue(10);
