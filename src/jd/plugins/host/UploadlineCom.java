@@ -44,8 +44,8 @@ public class UploadlineCom extends PluginForHost {
 
         /* variation 1 for small files */
         if (br.containsHTML("for your IP next 24 hours")) {
-            if (!br.containsHTML("7px;\">\\s+<a\\shref=\"(.*?)\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dllink = br.getRegex("7px;\">\\s+<a\\shref=\"(.*?)\"").getMatch(0);
+            if (!br.containsHTML("hours<br><br>\\s+<a\\shref=\"(.*?)\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            dllink = br.getRegex("hours<br><br>\\s+<a\\shref=\"(.*?)\"").getMatch(0);
         }
 
         /* variation 2 for big files */
@@ -69,17 +69,18 @@ public class UploadlineCom extends PluginForHost {
                 form = br.getFormbyProperty("name", "F1");
                 if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 form.setAction(downloadLink.getDownloadURL());
+                sleep(20500, downloadLink);
                 br.submitForm(form);
                 URLConnectionAdapter con2 = br.getHttpConnection();
                 dllink = br.getRedirectLocation();
                 if (con2.getContentType().contains("html")) {
-                    if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("7px;\">\\s+<a\\shref=\"(.*?)\">").getMatch(0);
+                    if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("hours<br><br>\\s+<a\\shref=\"(.*?)\">").getMatch(0);
                 }
             }
         }
 
         if (dllink != null && dllink != "") {
-            dl = br.openDownload(downloadLink, dllink, true, -20);
+            dl = br.openDownload(downloadLink, dllink, true, -4);
             dl.setResume(true);
             dl.startDownload();
         } else
