@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -48,11 +47,9 @@ public class Freaksharenet extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("We are back soon")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         if (br.containsHTML("Sorry but this File is not avaible")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1[^>]*>(.*?)\\s\\s+</h1>").getMatch(0);
-        String filesize = br.getRegex("Filesize:</b>\\s+</td>\\s+<td[^>]*>\\s+(.*?)\\s\\s\\s+</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h1[^>]*>(.*?)</h1>").getMatch(0).trim();
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
-        downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 
@@ -64,11 +61,14 @@ public class Freaksharenet extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        
         if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10*60*1001);
-        Form form = br.getFormbyProperty("name", "waitform");
-        form.put("wait", "Download");
-        br.setDebug(true);
+        Form form = br.getForm(1);
+        sleep(50 * 1000l, downloadLink);
+        br.submitForm(form);
+        form = br.getForm(0);
         dl = br.openDownload(downloadLink, form, false, 1);
+        
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType().contains("text")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30*60*1001);
         dl.startDownload();
