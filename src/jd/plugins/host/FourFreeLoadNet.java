@@ -17,12 +17,17 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -34,6 +39,7 @@ public class FourFreeLoadNet extends PluginForHost {
 
     public FourFreeLoadNet(PluginWrapper wrapper) {
         super(wrapper);
+        enablePremium("http://4freeload.net/register.php");
     }
 
     // @Override
@@ -114,8 +120,104 @@ public class FourFreeLoadNet extends PluginForHost {
     }
 
     // @Override
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        requestFileInformation(parameter);
+        login(account);
+        isPremium();
+        br.getPage(parameter.getDownloadURL());
+        dl = br.openDownload(parameter, br.getRedirectLocation(), false, 1);
+        dl.startDownload();
+    }
+
+    public void login(Account account) throws Exception {
+        setBrowserExclusive();
+        br.setCookie("http://www.4freeload.net", "yab_mylang", "de");
+        br.getPage("http://4freeload.net/login.php");
+        Form form = br.getFormbyProperty("name", "lOGIN");
+        if (form == null) form = br.getForm(0);
+        form.put("user", Encoding.urlEncode(account.getUser()));
+        form.put("pass", Encoding.urlEncode(account.getPass()));
+        form.put("autologin", "0");
+        br.submitForm(form);
+
+        if (br.getCookie("http://www.4freeload.net", "yab_passhash") == null || br.getCookie("http://www.4freeload.net", "yab_uid").equals("0")) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
+    // @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        try {
+            isPremium();
+        } catch (PluginException e) {
+            ai.setStatus("Not a premium membership");
+            ai.setValid(false);
+            return ai;
+        }
+
+        String expired = br.getRegex("Paket abgelaufen\\?.+?left\">(.*?)<a").getMatch(0).trim();
+        if (expired != null) {
+            if (expired.equalsIgnoreCase("Nein"))
+                ai.setExpired(false);
+            else if (expired.equalsIgnoreCase("Ja")) ai.setExpired(true);
+        }
+
+        String expires = br.getRegex("Paket läuft ab am.+?left\">(.*?)</td>").getMatch(0).trim();
+        if (expires != null) {
+            String[] e = expires.split("/");
+            Calendar cal = new GregorianCalendar(Integer.parseInt("20" + e[2]), Integer.parseInt(e[0]) - 1, Integer.parseInt(e[1]));
+            ai.setValidUntil(cal.getTimeInMillis());
+        }
+
+        String create = br.getRegex("Registriert am.+?left\">(.*?)</td>").getMatch(0).trim();
+        if (create != null) {
+            String[] c = create.split("/");
+            Calendar cal = new GregorianCalendar(Integer.parseInt("20" + c[2]), Integer.parseInt(c[0]) - 1, Integer.parseInt(c[1]));
+            ai.setCreateTime(cal.getTimeInMillis());
+        }
+
+        ai.setFilesNum(0);
+        String files = br.getRegex("Hochgeladene Dateien.+?left\">(.*?)<a").getMatch(0).trim();
+        if (files != null) {
+            ai.setFilesNum(Integer.parseInt(files));
+        }
+
+        ai.setPremiumPoints(0);
+        String points = br.getRegex("Bonuspunkte insgesamt.+?left\">(.*?)</td>").getMatch(0).trim();
+        if (points != null) {
+            ai.setPremiumPoints(Integer.parseInt(points));
+        }
+
+        ai.setStatus("Account OK");
+        ai.setValid(true);
+
+        return ai;
+    }
+
+    public boolean isPremium() throws PluginException, IOException {
+        br.getPage("http://4freeload.net/members.php");
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.php")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        } else if (br.containsHTML("Du bist eingeloggt")) return true;
+        return false;
+    }
+
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
+    }
+
+    // @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 20;
     }
 
     // @Override
