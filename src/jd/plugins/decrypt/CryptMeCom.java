@@ -60,7 +60,7 @@ public class CryptMeCom extends PluginForDecrypt {
             /* Calculation-Captcha */
             if (br.containsHTML("<img src=\"http://crypt-me.com/rechen-captcha.php\">")) {
                 cont = false;
-                Form form = br.getForm(0);
+                Form form = br.getForm(1);
                 String captchaAddress = "http://crypt-me.com/rechen-captcha.php";
                 String captchaCode = getCaptchaCode("crypt-me.com.Calc", captchaAddress, param);
                 /* Calculation process */
@@ -77,7 +77,7 @@ public class CryptMeCom extends PluginForDecrypt {
                 /* "Normal" Captcha */
             } else if (br.containsHTML("Bitte geben sie Captcha ein")) {
                 cont = false;
-                Form form = br.getForm(0);
+                Form form = br.getForm(1);
                 String captchaAddress = br.getRegex("<img src=\"(http://crypt-me\\.com/captchanew/show\\.php.*?)\"").getMatch(0);
                 String captchaCode = getCaptchaCode("linkprotect.in", captchaAddress, param);
                 form.put("code", captchaCode);
@@ -90,7 +90,7 @@ public class CryptMeCom extends PluginForDecrypt {
         if (!cont) throw new DecrypterException(DecrypterException.CAPTCHA);
 
         // Angebotene Containerformate herausfinden
-        String[][] containers = br.getRegex("<a href='(http://crypt-me.com/dl\\.php\\?file=.*?(\\..*?))' target='_blank'>").getMatches();
+        String[][] containers = br.getRegex("<a href='(http://crypt-me\\.com/dl\\.php\\?file=.*?(\\..*?))' target='").getMatches();
 
         for (String[] container : containers) {
             File containerFile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + container[1]);
@@ -102,6 +102,7 @@ public class CryptMeCom extends PluginForDecrypt {
         String folderId = new Regex(parameter, "folder/([a-zA-Z0-9]+)\\.html").getMatch(0);
         int folderSize = br.getRegex("<a onclick=\"return newpopup\\(('.*?', '.*?')\\);\" ").count();
         Browser brc = null;
+        progress.setRange(folderSize);
         for (int i = 1; i <= folderSize; i++) {
             String url = "http://crypt-me.com/go.php?id=" + folderId + "&lk=" + i;
             for (int retry = 0; retry < 5; retry++) {
@@ -124,6 +125,7 @@ public class CryptMeCom extends PluginForDecrypt {
                 String encodedLink = new Regex(tmp2, "<iframe src=\"(.*?)\"").getMatch(0);
                 if (encodedLink != null) {
                     decryptedLinks.add(createDownloadlink(encodedLink));
+                    progress.increase(1);
                     break;
                 }
             }
