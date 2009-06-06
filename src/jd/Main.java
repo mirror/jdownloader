@@ -384,6 +384,19 @@ public class Main {
             System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
             System.setProperty("apple.laf.useScreenMenuBar", "true");
             new MacOSController();
+            
+            /*
+             * TODO: Pfade müssen nicht absolut angegeben werden. 
+             */
+            if (System.getProperty("java.version").startsWith("1.5")) {
+                File info15 = JDUtilities.getResourceFile("../../info_15.plist");
+                File info = JDUtilities.getResourceFile("../../info.plist");
+                if (info15.exists()) {
+                    if (info.delete()) {
+                        info15.renameTo(JDUtilities.getResourceFile("../../info.plist"));
+                    }
+                }                
+            }
         }
     }
 
