@@ -476,6 +476,7 @@ public class JDInit {
         new DecryptPluginWrapper("amigura.co.uk", "AmiguraCoUk", "http://[\\w\\.]*?amigura\\.co\\.uk/(s\\d+|send_file)\\.php\\?d=(\\d+(-|/)[A-Z0-9]+(-|/)\\d+(-|/)|\\d+/).+");
         new DecryptPluginWrapper("hotfile.com", "HotfileCom", "http://[\\w\\.]*?hotfile\\.com/list/\\d+/[a-zA-Z0-9]+");
         new DecryptPluginWrapper("adf.ly", "AdfLy", "http://[\\w\\.]*?adf\\.ly/[a-zA-Z0-9]+");
+        new DecryptPluginWrapper("uploadr.eu", "UploadrEu", "http://[\\w\\.]*?uploadr\\.eu/(link/[a-zA-Z0-9]+|folder/\\d+/)");
 
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
