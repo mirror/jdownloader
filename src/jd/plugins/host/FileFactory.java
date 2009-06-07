@@ -16,15 +16,11 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.config.Configuration;
-import jd.config.SubConfiguration;
-import jd.controlling.reconnect.Reconnecter;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
@@ -40,21 +36,15 @@ import jd.utils.JDLocale;
 
 public class FileFactory extends PluginForHost {
 
-    private static Pattern baseLink = Pattern.compile("<a class=\"download\" href=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
-    private static final String CAPTCHA_WRONG = "Download code was incorrect";
-    private static final String DOWNLOAD_LIMIT = "(Thank you for waiting|exceeded the download limit)";
+    private static Pattern baseLink = Pattern.compile("action=\"(\\/dlf.*).\\ ", Pattern.CASE_INSENSITIVE);
 
     private static final String FILESIZE = "<span>(.*? (B|KB|MB)) file";
 
     private static final String NO_SLOT = "no free download slots";
     private static final String NOT_AVAILABLE = "class=\"box error\"";
-    private static final String PATTERN_DOWNLOADING_TOO_MANY_FILES = "currently downloading too many files at once";
-    private static final String WAIT_TIME = "have exceeded the download limit for free users.  Please wait ([0-9]+) minutes to download more files";
-
     private static final String LOGIN_ERROR = "The email or password you have entered is incorrect";
-
-    private static Pattern patternForCaptcha = Pattern.compile("<img class=\"captchaImage\" src=\"(.*?)\"");
-    private static Pattern patternForDownloadlink = Pattern.compile("<p><a href=\"(.*?)\" class=\"download\">");
+    
+    private static Pattern patternForDownloadlink = Pattern.compile("downloadLink.*href..(.*)..Click", Pattern.DOTALL);
 
     private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
 
@@ -91,6 +81,7 @@ public class FileFactory extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink parameter) throws Exception {
+
         br.setFollowRedirects(true);
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("there are currently no free download slots")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 3 * 60 * 1000l); }
@@ -98,87 +89,21 @@ public class FileFactory extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(SERVER_DOWN) || br.containsHTML(NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
 
-        br.getPage(Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(baseLink).getMatch(0)));
+        //URL von zweiter Seite ermitteln
+        String urlWithFilename = Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(baseLink).getMatch(0));
 
-        br.setCookie(br.getURL(), "viewad11", "yes");
-        String captchaCode = null;
-        int vp = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18);
-        int i = 30;
-        File captchaFile = null;
+        //br.setCookie(br.getURL(), "viewad11", "yes");
 
-        while (i-- > 0) {
+        //Zweite Seite laden
+        br.getPage(urlWithFilename);
 
-            int ii = 5;
-            while (ii-- >= 0)
-                try {
-                    captchaFile = this.getLocalCaptchaFile();
-                    Browser.download(captchaFile, Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(patternForCaptcha).getMatch(0)));
-                    break;
-                } catch (IOException e) {
-                    logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
-                    try {
-                        Thread.sleep(200);
-                    } catch (Exception e2) {
-                        return;
-                    }
-                }
-            try {
-                parameter.getLinkStatus().setStatusText(JDLocale.L("plugin.filefactory.jac.running", "JAC running"));
-                parameter.requestGuiUpdate();
-                captchaCode = getCaptchaCode(captchaFile, parameter);
-            } catch (Exception e) {
-                return;                
-            }
-            captchaCode = captchaCode.replaceAll("\\-", "");
-            if (captchaCode.length() < 4) continue;
-            parameter.getLinkStatus().setStatusText(JDLocale.LF("plugin.filefactory.jac.returned", "JAntiCaptcha: %s", captchaCode));
-            parameter.requestGuiUpdate();
+        //Datei Downloadlink filtern
+        String downloadUrl = Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0));
 
-            if (captchaCode != null && captchaCode.length() == 4) break;
-
-        }
-        Thread.sleep(2000);
-        parameter.getLinkStatus().setStatusText(JDLocale.LF("plugin.filefactory.jac.send", "JAC send: %s", captchaCode));
-        parameter.requestGuiUpdate();
-        SubConfiguration.getConfig("JAC").setProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, vp);
-        Form captchaForm = br.getForm(1);
-        captchaForm.put("captchaText", captchaCode);
-        br.submitForm(captchaForm);
-
-        if (br.containsHTML(CAPTCHA_WRONG)) {
-            captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_BAD.png"));
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-
-        captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_OK.png"));
-
-        // Match die verbindung auf, Alle header werden ausgetauscht, aber keine
-        // Daten geladen
-        br.openDownload(parameter, Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0)));
-        // dl = RAFDownload.download(parameter,
-        // br.createPostRequest(Encoding.htmlDecode
-        // (br.getRegex(patternForDownloadlink).getMatch(0)), ""));
-        // dl.connect(br);
-        // Prüft ob content disposition header da sind
-        if (br.getHttpConnection().isContentDisposition()) {
-            long cu = parameter.getDownloadCurrent();
-            dl.startDownload();
-            long loaded = parameter.getDownloadCurrent() - cu;
-            if (loaded > 30 * 1024 * 1024l) {
-                Reconnecter.requestReconnect();
-            }
-        } else {
-            // Falls nicht wird die html seite geladen
-            br.followConnection();
-            if (br.containsHTML(DOWNLOAD_LIMIT)) {
-                logger.info("Traffic Limit for Free User reached");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex(WAIT_TIME).getMatch(0)) * 60 * 1000l);
-            } else if (br.containsHTML(PATTERN_DOWNLOADING_TOO_MANY_FILES)) {
-                logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) and retry afterwards");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);
-            }
-        }
-
+        sleep(31000, parameter);
+        dl = br.openDownload(parameter, downloadUrl);
+        dl.startDownload();
+        sleep(3000, parameter);
     }
 
     // @Override
@@ -296,7 +221,7 @@ public class FileFactory extends PluginForHost {
     }
 
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         for (int i = 0; i < 4; i++) {
             try {
