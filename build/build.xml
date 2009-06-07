@@ -113,7 +113,32 @@
 	
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
-
+	<target name="jarhostservvice">
+			<!--Webupdater-->
+			<manifest file="Manifest.MF">
+				<attribute name="Created-By" value="coalado" />
+				<attribute name="Main-Class" value="hostservice.HostService" />
+				<attribute name="Class-Path" value="${class-path}" />
+			</manifest>
+			<jar jarfile="${dist}/jdhostservice.jar" manifest="Manifest.MF">
+				<fileset dir="${cls}">
+					<include name="**/*.class" />
+					<exclude name="jd/http/**" />
+								<exclude name="jd/captcha/**" />
+								<exclude name="jd/gui/**" />
+								<exclude name="it/**" />				
+								<exclude name="jd/plugins/host/**" />
+								<exclude name="jd/plugins/decrypt/**" />
+						<exclude name="jd/captcha/methods/**" />
+					<exclude name="jd/plugins/optional/**" />
+					<exclude name="sun/net/www/protocol/**" />
+					<include name="jd/plugins/host/HTTPAllgemein*" />
+				</fileset>
+			
+			</jar>
+		
+			<delete file="Manifest.MF" failonerror="false" />
+		</target>
 	<target name="jarOptionals">
 		<!-- Optional Plugins -->
 		<manifest file="Manifest.MF">
@@ -248,8 +273,10 @@
 		<delete file="${dist}/JDownloader.jar" failonerror="no" />
 		<move file="${dist}/JDownloader_obfuscated.jar" tofile="${dist}/JDownloader.jar" />
 	</target>
-	<target name="standardBuild" depends="compile,jar,jarOptionals,jarWebupdater">
+	<target name="standardBuild" depends="compile,jar,jarOptionals,jarWebupdater,jarhostservvice">
 	</target>
+	<target name="hostservice" depends="compile,jar,jarhostservvice">
+		</target>
 	<target name="dlcEnabledBuild" depends="standardBuild,cryptContainer,sign">
 	</target>
 	<target name="signedBuild" depends="standardBuild,sign">

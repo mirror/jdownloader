@@ -117,4 +117,6 @@ public class SubConfiguration extends Property implements Serializable {
         return getConfig(object.getClass().getSimpleName());
     }
 
+
+
 }

@@ -26,6 +26,8 @@ import jd.controlling.JDLogger;
 public class RequestHandler extends Thread {
     private Socket socket;
     private Handler handler;
+    private boolean eof = false;
+
 
     public RequestHandler(Socket socket, Handler handler) {
         this.socket = socket;
@@ -39,9 +41,28 @@ public class RequestHandler extends Thread {
 
             Request req = new Request();
 
-            while ((line = readline(reader)) != null && line.trim().length() > 0) {
+            while (!eof && (line = readline(reader)) != null) {
                 String key = null;
                 String value = null;
+                if (line.equals("\r\n") && req.getRequestType().equals("GET")) {
+                    eof = true;
+                    continue;
+                }
+
+                if (line.equals("\r\n") && req.getRequestType().equals("POST")) {
+                    // TODO: only post data < 2 gb (int range) possible
+                    int data = (int) req.getContentLength();
+                    byte[] buffer = new byte[data];
+                    int offset = 0;
+                    while (data - offset > 0) {
+                        offset += reader.read(buffer, offset, data - offset);
+                    }
+                   req.setPostData(buffer);
+this.parseParameter(req, new String(buffer));
+                    eof = true;
+                    continue;
+                }
+                line = line.trim();
                 if (line.startsWith("GET ") || line.startsWith("POST ")) {
                     String[] help = line.split(" ");
                     req.setRequestType(help[0]);
@@ -56,7 +77,9 @@ public class RequestHandler extends Thread {
                     key = line.substring(0, line.indexOf(": ")).toLowerCase();
                     value = line.substring(line.indexOf(": ") + 2);
                 }
-                req.addHeader(key, value);
+                if (key != null) {
+                    req.addHeader(key, value);
+                }
             }
 
             Response res = new Response();
@@ -77,7 +100,9 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private void parseParameter(Request req, String parameter) {
+ 
+
+    public void parseParameter(Request req, String parameter) {
         String[] help = parameter.split("\\&");
 
         for (String entry : help) {
@@ -96,28 +121,44 @@ public class RequestHandler extends Thread {
         int max_buf = 1024;
         byte[] buffer = new byte[max_buf];
         int index = 0;
-        int byteread = 0;
+        int byteread = -6;
         try {
 
             while ((byteread = reader.read()) != -1) {
+
                 if (byteread == 10 || byteread == 13) {
+
                     reader.mark(0);
+
+                    if (index > max_buf) { return null; }
+                    buffer[index++] = (byte) byteread;
                     if ((byteread = reader.read()) != -1) {
+
                         if (byteread == 13 || byteread == 10) {
+
+                            if (index > max_buf) { return null; }
+                            buffer[index++] = (byte) byteread;
+
                             break;
                         } else {
                             reader.reset();
                             break;
                         }
                     }
+
                 }
                 if (index > max_buf) { return null; }
-                buffer[index] = (byte) byteread;
-                index++;
+                buffer[index++] = (byte) byteread;
+
             }
+            if (byteread == -1) {
+                eof = true;
+            }
+
         } catch (IOException e) {
             JDLogger.exception(e);
         }
+        if (index == 0) return null;
         return new String(buffer).substring(0, index);
     }
 }

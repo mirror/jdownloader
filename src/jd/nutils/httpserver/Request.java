@@ -32,6 +32,10 @@ public class Request {
 
     private String data = "";
 
+    private long contentLength=-1;
+
+    private byte[] postData;
+
     public Request() {
     }
 
@@ -53,6 +57,13 @@ public class Request {
 
     protected void addHeader(String key, String value) {
         headers.put(key, value);
+        if (key.equalsIgnoreCase("Content-Length")) {
+            try{
+            contentLength = Long.parseLong(value.trim());
+            }catch(Exception e){
+                
+            }
+        }
     }
 
     protected void setHeader(HashMap<String, String> headers) {
@@ -99,4 +110,20 @@ public class Request {
         return parameter;
     }
 
+    public String toString() {
+        return this.headers + "";
+    }
+
+    public long getContentLength() {
+      return contentLength;
+    }
+
+    public void setPostData(byte[] buffer) {
+      postData=buffer;
+        
+    }
+
+    public byte[] getPostData() {
+        return postData;
+    }
 }
