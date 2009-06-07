@@ -141,7 +141,11 @@ public class Megauploadcom extends PluginForHost {
 
         br.setFollowRedirects(false);
         br.getPage("http://megaupload.com/?d=" + getDownloadID(link));
-
+        
+        if(br.containsHTML("Unfortunately, the link you have clicked is not available")) {
+        	throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        
         if (br.getRedirectLocation() == null) {
             Form form = br.getForm(0);
             if (form != null && form.containsHTML("logout")) form = br.getForm(1);
