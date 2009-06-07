@@ -100,7 +100,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                        JDLogger.exception(e);
                     }
                 }
                 int c = countdown;

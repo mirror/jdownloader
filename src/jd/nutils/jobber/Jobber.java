@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Vector;
 
+import jd.controlling.JDLogger;
+
 public class Jobber {
 
     private int paralellWorkerNum;
@@ -283,7 +285,7 @@ public class Jobber {
                 try {
                     ra.go();
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                    JDLogger.exception(e);
                     fireJobException(ra, e);
                 }
                 synchronized (jobsFinished) {

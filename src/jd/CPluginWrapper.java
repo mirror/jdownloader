@@ -19,6 +19,7 @@ package jd;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
+import jd.controlling.JDLogger;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 
@@ -61,7 +62,7 @@ public class CPluginWrapper extends PluginWrapper {
             return (PluginsC) loadedPlugin;
         } catch (Exception e) {
             logger.info("Plugin Exception!");
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
 
         return null;

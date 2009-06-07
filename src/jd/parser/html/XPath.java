@@ -26,6 +26,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import jd.controlling.JDLogger;
+
 import org.htmlcleaner.CleanerProperties;
 import org.htmlcleaner.DomSerializer;
 import org.htmlcleaner.HtmlCleaner;
@@ -60,11 +62,11 @@ public class XPath {
                 doc = builder.parse(new InputSource(new ByteArrayInputStream(source.getBytes())));
             }
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         } catch (SAXException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         } catch (ParserConfigurationException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
 
         XPathFactory factory = XPathFactory.newInstance();
@@ -89,7 +91,7 @@ public class XPath {
             return result.item(group).getAttributes().item(attr).getNodeValue();
 
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return null;
     }
@@ -111,7 +113,7 @@ public class XPath {
                 erg.add(result.item(i).getAttributes().item(attr).getNodeValue());
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return erg;
     }
@@ -126,7 +128,7 @@ public class XPath {
             return result.getLength();
 
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return 0;
     }
@@ -147,7 +149,7 @@ public class XPath {
             return result.item(0).getAttributes().item(attr).getNodeValue();
 
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return null;
     }
@@ -160,7 +162,7 @@ public class XPath {
             NodeList result = (NodeList) xpath.compile(query + "/text()").evaluate(doc, XPathConstants.NODESET);
             return result.item(0).getNodeValue();
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return null;
     }
@@ -173,7 +175,7 @@ public class XPath {
             NodeList result = (NodeList) xpath.compile(query + "/text()").evaluate(doc, XPathConstants.NODESET);
             return result.item(group).getNodeValue();
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return null;
     }
@@ -189,7 +191,7 @@ public class XPath {
                 erg.add(result.item(i).getNodeValue());
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return erg;
     }
@@ -203,7 +205,7 @@ public class XPath {
             CleanerProperties props = cleaner.getProperties();
             return new SimpleXmlSerializer(props).getXmlAsString(cleaner.clean(source));
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return null;
     }

@@ -18,6 +18,7 @@ package jd.plugins.optional.jdunrar;
 
 import java.util.regex.Pattern;
 
+import jd.controlling.JDLogger;
 import jd.nutils.DynByteBuffer;
 import jd.nutils.Executer;
 import jd.nutils.ProcessListener;
@@ -38,7 +39,7 @@ public class PasswordListener implements ProcessListener {
         try {
             lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition), JDUnrar.CODEPAGE);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
             lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));
         }
 

@@ -21,6 +21,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
+import jd.controlling.JDLogger;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -31,7 +32,7 @@ public class GetMacAdress {
             return new GetMacAdress().getMacAddress(RouterInfoCollector.getRouterIP());
         } catch (Exception e) {
             // TODO Auto-generated catch block
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return null;
 
@@ -117,16 +118,16 @@ public class GetMacAdress {
             System.out.println(new GetMacAdress().getMacAddress(new GetRouterInfo(null).getAdress()));
         } catch (SocketException e) {
             // TODO Auto-generated catch block
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         } catch (UnknownHostException e) {
             // TODO Auto-generated catch block
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         } catch (IOException e) {
             // TODO Auto-generated catch block
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
     }
 }

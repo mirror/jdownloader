@@ -20,6 +20,7 @@ import java.awt.event.ActionListener;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.tasks.TaskPanel;
 
 public class SingletonPanel {
@@ -45,7 +46,7 @@ public class SingletonPanel {
 
                 createPanel();
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                JDLogger.exception(e);
                 return null;
             }
 

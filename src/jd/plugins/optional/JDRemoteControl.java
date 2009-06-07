@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
-import java.util.logging.Level;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -321,7 +320,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                             Thread.sleep(5000);
                         } catch (InterruptedException e) {
 
-                            logger.log(Level.SEVERE, "Exception occurred", e);
+                            JDLogger.exception(e);
                         }
                         JDUtilities.restartJD();
                     }
@@ -338,7 +337,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                             Thread.sleep(5000);
                         } catch (InterruptedException e) {
 
-                            logger.log(Level.SEVERE, "Exception occurred", e);
+                            JDLogger.exception(e);
                         }
                         JDUtilities.getController().exit();
                     }

@@ -7,6 +7,7 @@ import javax.swing.JOptionPane;
 
 import jd.DecryptPluginWrapper;
 import jd.PluginWrapper;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -50,7 +51,7 @@ public class DecrypterTester {
         try {
             dLinks = decrypter.decryptIt(new CryptedLink(testlink), new ProgressController("Test for decrypter " + classname + " with link " + testlink));
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         if (dLinks == null) {
             System.out.println("Decrypter returned null!");
@@ -84,7 +85,7 @@ public class DecrypterTester {
             return (PluginForDecrypt) con.newInstance(new Object[] { new DecryptPluginWrapper(classname.toLowerCase(), classname, "") });
         } catch (Exception e) {
             System.out.println("Decrypter Exception!");
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return null;
     }

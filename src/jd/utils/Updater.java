@@ -30,6 +30,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import jd.config.CFGConfig;
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -478,7 +479,7 @@ public class Updater {
             System.out.println("UPdate: " + update);
             webupdater.updateFiles(update);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
             remoteFileList = new ArrayList<FileUpdate>();
         }
 

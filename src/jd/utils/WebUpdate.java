@@ -22,7 +22,6 @@ import java.awt.HeadlessException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jd.Main;
@@ -232,7 +231,7 @@ public class WebUpdate implements ControlListener {
                                         doUpdate();
                                     }
                                 } catch (HeadlessException e) {
-                                    logger.log(Level.SEVERE, "Exception occurred", e);
+                                    JDLogger.exception(e);
                                 }
                             }
                         }

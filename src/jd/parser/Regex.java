@@ -282,7 +282,7 @@ public class Regex {
         } catch (ParseException e) {
             JDLogger.getLogger().severe("Could not format date " + expire + " with formater " + timeformat + ": " + dateFormat.format(new Date()));
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return -1;
 

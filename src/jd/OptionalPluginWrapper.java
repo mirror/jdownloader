@@ -20,6 +20,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
+import jd.controlling.JDLogger;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 
@@ -128,13 +129,13 @@ public class OptionalPluginWrapper extends PluginWrapper {
                     return (PluginOptional) loadedPlugin;
                 }
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
                 logger.severe("Addon " + this.getClassName() + " is outdated and incompatible. Please update(Packagemanager) :" + e.getLocalizedMessage());
             }
 
         } catch (Exception e) {
             logger.info("Plugin Exception!");
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
         return null;
 

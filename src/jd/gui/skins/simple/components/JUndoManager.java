@@ -29,6 +29,8 @@ import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoManager;
 
+import jd.controlling.JDLogger;
+
 public class JUndoManager {
 
     /**
@@ -59,7 +61,7 @@ public class JUndoManager {
                         undo.undo();
                     }
                 } catch (CannotUndoException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                    JDLogger.exception(e);
                 }
             }
 
@@ -76,7 +78,7 @@ public class JUndoManager {
                         undo.redo();
                     }
                 } catch (CannotRedoException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                    JDLogger.exception(e);
                 }
             }
 

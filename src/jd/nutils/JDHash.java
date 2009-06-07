@@ -21,6 +21,8 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
 
+import jd.controlling.JDLogger;
+
 /**
  * @author astaldo/JD-Team
  */
@@ -52,7 +54,7 @@ public class JDHash {
             byte[] digest = md.digest();
             return byteArrayToHex(digest);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
             return null;
         }
     }
@@ -72,7 +74,7 @@ public class JDHash {
             byte[] digest = md.digest(arg.getBytes());
             return byteArrayToHex(digest);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
             return null;
         }
     }

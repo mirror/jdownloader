@@ -20,6 +20,8 @@ import java.io.UnsupportedEncodingException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
+import jd.controlling.JDLogger;
+
 public class DynByteBuffer {
 
     private ByteBuffer buffer;
@@ -50,7 +52,7 @@ public class DynByteBuffer {
         try {
             return new String(this.getLast(buffer.position()), codepage);
         } catch (UnsupportedEncodingException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
             return new String(this.getLast(buffer.position()));
         }
     }

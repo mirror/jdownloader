@@ -286,7 +286,7 @@ public class Main {
                                 SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.screen", 32, 32)));
                                 SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.dllist", 32, 32)));
                             } catch (Exception e) {
-                                LOGGER.log(Level.SEVERE, "Exception occurred", e);
+                                JDLogger.exception(e);
                             }
                             return null;
                         }
@@ -505,7 +505,7 @@ public class Main {
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
-            LOGGER.log(Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
 
         if (!Main.isBeta()) new PackageManager().interact(this);

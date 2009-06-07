@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -169,7 +170,7 @@ public class HTMLParser {
                     }
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                    JDLogger.exception(e);
                 }
                 if (con != null) con.disconnect();
             }

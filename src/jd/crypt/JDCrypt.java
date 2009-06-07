@@ -24,6 +24,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import jd.controlling.JDLogger;
 import sun.security.pkcs.PKCS7;
 
 public class JDCrypt {
@@ -40,7 +41,7 @@ public class JDCrypt {
 
         } catch (Exception e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return null;
     }
@@ -56,7 +57,7 @@ public class JDCrypt {
             return new String(cipher.doFinal(b));
         } catch (Exception e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return null;
     }
@@ -90,7 +91,7 @@ public class JDCrypt {
                     in.close();
                 } catch (IOException e) {
 
-                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                    // JDLogger.exception(e);
                 }
             }
         }
@@ -103,7 +104,7 @@ public class JDCrypt {
             return signature;
 
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
 
         }
 

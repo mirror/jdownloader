@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
 
+import jd.controlling.JDLogger;
 import jd.http.Encoding;
 import jd.nutils.JDImage;
 import jd.nutils.io.JDFileFilter;
@@ -138,7 +139,7 @@ public class JDTheme {
             return new ImageIcon(getImage(V(key), width, height));
         } catch (Exception e) {
             logger.severe("image not found: " + key + "(" + V(key) + "_" + width + "_" + height);
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
         return null;
     }

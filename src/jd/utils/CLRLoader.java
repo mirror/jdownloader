@@ -22,6 +22,8 @@ import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import jd.controlling.JDLogger;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -119,7 +121,7 @@ public class CLRLoader {
             // logger.info(hlh.toString());
             return new String[] { routerName, hlh.toString() };
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
             return null;
         }
 

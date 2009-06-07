@@ -26,6 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.config.Property;
+import jd.controlling.JDLogger;
 import jd.http.requests.RequestVariable;
 import jd.parser.Regex;
 import jd.utils.EditDistance;
@@ -191,7 +192,7 @@ public class Form extends Property {
                 baseurl = new URL(baseURL);
             } catch (MalformedURLException e) {
 
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
             }
         }
         String ret = action;

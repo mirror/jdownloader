@@ -1580,7 +1580,7 @@ public class Browser {
                             br.getPage(string);
                         } catch (IOException e) {
                             // TODO Auto-generated catch block
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                            JDLogger.exception(e);
                         }
                     }
 

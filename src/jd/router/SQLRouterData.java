@@ -32,6 +32,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.parser.Regex;
 
@@ -70,7 +71,7 @@ public class SQLRouterData {
             f.close();
             return true;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
             // 
             return false;
         }
@@ -126,7 +127,7 @@ public class SQLRouterData {
                         Method inf = infoc.getMethod("set" + node.getNodeName().substring(0, 1).toUpperCase() + node.getNodeName().substring(1), parameterTypes);
                         inf.invoke(info, new Object[] { node.getTextContent() });
                     } catch (Exception e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                        JDLogger.exception(e);
                     }
                 }
             }
@@ -139,7 +140,7 @@ public class SQLRouterData {
             }
             return info;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return null;
     }

@@ -25,6 +25,7 @@ import javax.swing.JOptionPane;
 import jd.JDInit;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
+import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
@@ -146,14 +147,14 @@ public abstract class UnitTest {
                         System.out.println("Successfull");
                         // System.out.println(testInstance.getLog());
                     } catch (Exception e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                        JDLogger.exception(e);
                         System.out.println("FAILED");
                         // System.err.println(testInstance.getLog());
                     }
 
                 }
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
             }
         }
     }

@@ -31,6 +31,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.controlling.PasswordListController;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
@@ -145,7 +146,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     }
 
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                    JDLogger.exception(e);
                 }
             }
             break;
@@ -431,7 +432,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
             return new File(ret, path);
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
             return ret;
         }
     }
@@ -726,7 +727,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     // n.getKey()));
                 }
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
             }
         }
 

@@ -53,9 +53,8 @@ public class JDLogger {
         return LOGGER;
     }
 
-    public static void exception(Exception e) {
+    public static void exception(Throwable e) {
         exception(Level.SEVERE, e);
-
     }
 
     public static void removeConsoleHandler() {
@@ -69,9 +68,8 @@ public class JDLogger {
 
     }
 
-    public static void exception(Level finest, Exception e) {
-        getLogger().log(finest, finest.getName() + " Exception occurred", e);
-
+    public static void exception(Level level, Throwable e) {
+        getLogger().log(level, level.getName() + " Exception occurred", e);
     }
 
     public static void quickLog() {

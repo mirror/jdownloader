@@ -189,7 +189,7 @@ public class RAFDownload extends DownloadInterface {
 
             }
         } catch (Exception e) {
-            JDLogger.getLogger().log(Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
             addException(e);
         }
 

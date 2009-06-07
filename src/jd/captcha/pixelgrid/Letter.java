@@ -23,6 +23,7 @@ import jd.captcha.LetterComperator;
 import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
+import jd.controlling.JDLogger;
 
 /**
  * Diese Klasse beinhaltet alle Methoden für einzellne Letter.
@@ -851,7 +852,7 @@ public class Letter extends PixelGrid {
                     grid[x][y] = Integer.parseInt(String.valueOf(line.charAt(x))) * getMaxPixelValue();
                 } catch (Exception e) {
 
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                    JDLogger.exception(e);
                     return false;
                 }
                 if (grid[x][y] == 0) {

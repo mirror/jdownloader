@@ -91,7 +91,7 @@ public final class Sniffy {
 
             return check2;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return true;
     }

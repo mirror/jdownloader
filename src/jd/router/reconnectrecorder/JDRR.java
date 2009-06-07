@@ -21,6 +21,7 @@ import java.net.Socket;
 import java.util.Vector;
 
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.parser.Regex;
 
 public class JDRR {
@@ -49,7 +50,7 @@ public class JDRR {
             new JDRRServer(Server_Socket_HTTP, serverip, port, false, rawmode).start();
             new JDRRServer(Server_Socket_HTTPS, serverip, 443, true, rawmode).start();
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
     }
 
@@ -59,12 +60,12 @@ public class JDRR {
         try {
             Server_Socket_HTTP.close();
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
         try {
             Server_Socket_HTTPS.close();
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
     }
 
@@ -101,7 +102,7 @@ public class JDRR {
             try {
                 Server_Socket.close();
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
             }
         }
     }

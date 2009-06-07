@@ -104,7 +104,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                             }
                         }
                     } catch (Exception e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                        JDLogger.exception(e);
                     }
                 }
             }
@@ -132,7 +132,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                         }
 
                     } catch (IOException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                        JDLogger.exception(e);
                     }
                 }
             }
@@ -296,7 +296,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                         // "/")+"!/"+entry.getName());
                         urls.add(new URL("jar", "", url));
                     } catch (MalformedURLException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                        JDLogger.exception(e);
                     }
                 }
             }
@@ -338,9 +338,9 @@ public class JDClassLoader extends java.lang.ClassLoader {
                         c = defineClass(name, data, 0, data.length, getClass().getProtectionDomain());
                         if (c == null) { throw new ClassNotFoundException(name); }
                     } catch (ClassFormatError e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                        JDLogger.exception(e);
                     } catch (IOException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                        JDLogger.exception(e);
                     }
                 }
             }

@@ -37,6 +37,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.http.Encoding;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -319,7 +320,7 @@ public class JDSimpleWebserver extends Thread {
                 Thread client_thread = new Thread(new JDRequestHandler(Client_Socket));
                 client_thread.start();
             } catch (IOException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
                 logger.severe("WebInterface: Client-Connection failed");
             }
         }

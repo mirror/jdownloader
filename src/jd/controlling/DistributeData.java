@@ -199,7 +199,7 @@ public class DistributeData extends Thread {
                             }
                             break;
                         } catch (Exception e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                            JDLogger.exception(e);
                         }
                     }
                 }
@@ -322,7 +322,7 @@ public class DistributeData extends Thread {
                 }
             } catch (Exception e) {
                 logger.severe("Decrypter/Search Fehler: " + e.getMessage());
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
             }
         }
         return gothost;
@@ -396,7 +396,7 @@ public class DistributeData extends Thread {
                     DThread dthread = new DThread(plg, decryptableLinks);
                     decryptJobbers.add(dthread);
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                    JDLogger.exception(e);
                 }
             }
         }

@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.utils.JDHexUtils;
@@ -82,7 +83,7 @@ public class JDRRUtils {
                 }
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
         bigbuffer.flip();
         return bigbuffer;

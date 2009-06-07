@@ -26,6 +26,7 @@ import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 
+import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 
@@ -161,7 +162,7 @@ public class PostFormDataRequest extends Request {
             System.out.println(code);
 
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
 
         }
 

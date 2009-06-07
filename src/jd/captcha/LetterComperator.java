@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 import jd.captcha.configuration.JACScript;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.UTILITIES;
+import jd.controlling.JDLogger;
 
 /**
  * Diese Klasse berechnet die Unterschiede zwischen zwei letter instanzen. Über
@@ -374,7 +375,7 @@ public class LetterComperator {
             ret.clean();
             return ret;
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
             return getA();
         }
 
@@ -888,7 +889,7 @@ public class LetterComperator {
                     extensionCodeArguments[1] = tmpError / divider;
                     extensionCodeMethod.invoke(null, extensionCodeArguments);
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                    JDLogger.exception(e);
                 }
             }
 
@@ -1120,7 +1121,7 @@ public class LetterComperator {
                 extensionCodeMethod = newClass.getMethod(methodname, extensionCodeParameterTypes);
 
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                JDLogger.exception(e);
             }
         }
 

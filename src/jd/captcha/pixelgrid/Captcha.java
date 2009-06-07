@@ -38,6 +38,7 @@ import jd.captcha.LetterComperator;
 import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
+import jd.controlling.JDLogger;
 import jd.nutils.Colors;
 
 import com.sun.image.codec.jpeg.ImageFormatException;
@@ -929,7 +930,7 @@ public class Captcha extends PixelGrid {
                 if (JAntiCaptcha.isLoggerActive()) {
                     logger.severe("Fehler in useLetterFilter:" + e.getLocalizedMessage() + " / " + owner.getJas().getString("useSpecialGetLetters"));
                 }
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
             }
             seperatedLetters = ret;
             return ret;
@@ -1088,7 +1089,7 @@ public class Captcha extends PixelGrid {
                 if (JAntiCaptcha.isLoggerActive()) {
                     logger.severe("Fehler in useSpecialGetLetters:" + e.getLocalizedMessage() + " / " + owner.getJas().getString("useSpecialGetLetters"));
                 }
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
             }
             return null;
         }
@@ -1598,13 +1599,13 @@ public class Captcha extends PixelGrid {
             fos.close();
         } catch (FileNotFoundException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         } catch (ImageFormatException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         } catch (IOException e) {
 
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
     }
 
@@ -1665,7 +1666,7 @@ public class Captcha extends PixelGrid {
 
                     pixel[i] = ((IndexColorModel) colorModel).getRGB(bpixel[i] & pixel_mask);
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                    JDLogger.exception(e);
                     pixel[i] = 0;
                 }
 

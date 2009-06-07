@@ -1125,11 +1125,11 @@ public class Base64 {
             obj = ois.readObject();
         } // end try
         catch (java.io.IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
             obj = null;
         } // end catch
         catch (java.lang.ClassNotFoundException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
             obj = null;
         } // end catch
         finally {
@@ -1354,7 +1354,7 @@ public class Base64 {
                 gzos.close();
             } // end try
             catch (java.io.IOException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
                 return null;
             } // end catch
             finally {
@@ -1572,7 +1572,7 @@ public class Base64 {
             oos.writeObject(serializableObject);
         } // end try
         catch (java.io.IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
             return null;
         } // end catch
         finally {

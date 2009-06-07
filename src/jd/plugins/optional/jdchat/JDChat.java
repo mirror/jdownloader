@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
@@ -1108,7 +1107,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                 break;
             } catch (IOException e) {
                 addToText(null, STYLE_SYSTEM_MESSAGE, "Connect Timeout. Server not reachable...");
-                logger.log(Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
                 try {
                     Thread.sleep(15000);
                 } catch (InterruptedException e1) {
@@ -1445,7 +1444,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                     try {
                         Thread.sleep(10000);
                     } catch (InterruptedException e) {
-                        logger.log(Level.SEVERE, "Exception occurred", e);
+                        JDLogger.exception(e);
                     }
                 }
             }

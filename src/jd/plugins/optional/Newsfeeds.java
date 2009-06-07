@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Vector;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import javax.swing.JButton;
@@ -45,6 +44,7 @@ import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.SimpleGuiUtils;
 import jd.gui.skins.simple.listener.LocationListener;
 import jd.http.Browser;
@@ -435,7 +435,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             logger.info("finished!");
 
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
 
         return vector;
@@ -813,9 +813,9 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                 }
 
             } catch (MalformedURLException e) {
-                logger.log(Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
             } catch (IOException e) {
-                logger.log(Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
             }
 
         } else {

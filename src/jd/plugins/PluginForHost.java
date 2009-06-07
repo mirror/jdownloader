@@ -30,7 +30,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.logging.Level;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -45,6 +44,7 @@ import jd.controlling.AccountController;
 import jd.controlling.CaptchaController;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.nutils.Formatter;
@@ -289,7 +289,7 @@ public abstract class PluginForHost extends Plugin {
                 }
 
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
             }
         }
         if (premium.getSize() != 0) {
@@ -359,7 +359,7 @@ public abstract class PluginForHost extends Plugin {
                     try {
                         correctDownloadLink(link);
                     } catch (Exception e) {
-                        logger.log(Level.SEVERE, "Exception occurred", e);
+                        JDLogger.exception(e);
                     }
                     links.add(link);
                     if (fp != null) {
@@ -367,9 +367,9 @@ public abstract class PluginForHost extends Plugin {
                     }
 
                 } catch (IllegalArgumentException e) {
-                    logger.log(Level.SEVERE, "Exception occurred", e);
+                    JDLogger.exception(e);
                 } catch (SecurityException e) {
-                    logger.log(Level.SEVERE, "Exception occurred", e);
+                    JDLogger.exception(e);
                 }
             }
         }

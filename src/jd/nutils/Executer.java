@@ -25,6 +25,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import jd.controlling.JDLogger;
+
 public class Executer extends Thread {
     public static final String CODEPAGE = OSDetector.isWindows() ? "ISO-8859-1" : "UTF-8";
     private boolean debug = true;
@@ -80,7 +82,7 @@ public class Executer extends Thread {
                         try {
                             line = new String(dynbuf.getLast(num), codepage).trim();
                         } catch (UnsupportedEncodingException e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                            JDLogger.exception(e);
                             line = new String(dynbuf.getLast(num)).trim();
 
                         }
@@ -100,9 +102,9 @@ public class Executer extends Thread {
                     }
                 }
             } catch (IOException e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
             } catch (InterruptedException e) {
-                // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                // JDLogger.exception(e);
             }
 
         }
@@ -301,7 +303,7 @@ public class Executer extends Thread {
             this.exception = e1;
             return;
         } catch (InterruptedException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
             this.exception = e;
         }
     }
@@ -335,7 +337,7 @@ public class Executer extends Thread {
             outputStream.flush();
         } catch (IOException e) {
             // TODO Auto-generated catch block
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
     }
 
@@ -365,7 +367,7 @@ public class Executer extends Thread {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
 
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
             }
 
         }

@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 
+import jd.controlling.JDLogger;
 import jd.nutils.io.JDIO;
 
 /**
@@ -101,9 +102,9 @@ public class RouterParser {
             logger.info(count + " router data loaded");
             return routerData;
         } catch (FileNotFoundException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         } catch (IOException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return null;
     }

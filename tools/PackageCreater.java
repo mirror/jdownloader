@@ -24,6 +24,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
+import jd.controlling.JDLogger;
 import jd.nutils.zip.Zip;
 import jd.utils.Upload;
 
@@ -99,7 +100,7 @@ public class PackageCreater {
 
             } catch (Exception e) {
 
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                JDLogger.exception(e);
             }
         }
         sb.append("</packages>");

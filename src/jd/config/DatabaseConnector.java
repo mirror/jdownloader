@@ -113,7 +113,7 @@ public class DatabaseConnector implements Serializable {
                         }
                     }
                 } catch (Exception e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                    JDLogger.exception(e);
                 }
             }
         }
@@ -279,7 +279,7 @@ public class DatabaseConnector implements Serializable {
 
             con.close();
         } catch (SQLException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
     }
 
@@ -314,7 +314,7 @@ public class DatabaseConnector implements Serializable {
                 pst.execute();
             }
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
     }
 

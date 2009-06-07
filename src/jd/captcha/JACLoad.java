@@ -19,6 +19,7 @@ package jd.captcha;
 import java.io.File;
 import java.io.IOException;
 
+import jd.controlling.JDLogger;
 import jd.http.Browser;
 
 /**
@@ -57,7 +58,7 @@ public class JACLoad {
                         String cap = "http://gwarez.cc/captcha/captcha.php";
                         br.getDownload(new File(dir + System.currentTimeMillis() + ".png"), cap);
                     } catch (IOException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                        JDLogger.exception(e);
                     }
                 }
             }).start();
@@ -76,7 +77,7 @@ public class JACLoad {
                         String cap = br.getRegex("<img src=\"([^\"]*gencap.php[^\"]*)\"").getMatch(0);
                         br.getDownload(new File(dir + cap.replaceFirst(".*?gencap.php.", "") + ".gif"), cap);
                     } catch (IOException e) {
-                        jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                        JDLogger.exception(e);
                     }
                 }
             }).start();

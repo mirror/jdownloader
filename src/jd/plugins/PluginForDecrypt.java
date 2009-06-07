@@ -25,11 +25,11 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.logging.Level;
 
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.CaptchaController;
+import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
@@ -174,7 +174,7 @@ public abstract class PluginForDecrypt extends Plugin {
             tmpLinks = new ArrayList<DownloadLink>();
         } catch (Exception e) {
             progress.finalize();
-            logger.log(Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
         if (tmpLinks == null) {
             logger.severe("Decrypter out of date: " + this);

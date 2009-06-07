@@ -24,6 +24,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
+import jd.controlling.JDLogger;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.nutils.io.JDIO;
 import jd.nutils.zip.Zip;
@@ -155,7 +156,7 @@ public class PackageCreaterRS {
                 }
             } catch (Exception e) {
 
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                JDLogger.exception(e);
             }
             i = 1;
             filename = null;
@@ -213,7 +214,7 @@ public class PackageCreaterRS {
                 }
             } catch (Exception e) {
 
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                JDLogger.exception(e);
             }
 
         }

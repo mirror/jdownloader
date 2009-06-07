@@ -28,7 +28,6 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
-import java.util.logging.Level;
 
 import javax.swing.JFrame;
 import javax.swing.JWindow;
@@ -40,6 +39,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
@@ -175,7 +175,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         try {
             systemTray.add(trayIcon);
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
     }
 

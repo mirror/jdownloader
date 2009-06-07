@@ -21,7 +21,6 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.logging.Level;
 
 import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
@@ -29,6 +28,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
 import jd.event.ControlEvent;
@@ -192,7 +192,7 @@ public class JDShutdown extends PluginOptional {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            logger.log(Level.SEVERE, "Exception occurred", e);
+                            JDLogger.exception(e);
                         }
                         Object obj = wrapper.getPlugin().interact("isWorking", null);
                         if (obj == null || (obj instanceof Boolean && obj.equals(false))) break;

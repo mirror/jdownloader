@@ -21,12 +21,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.logging.Level;
 
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.DistributeData;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.nutils.JDHash;
@@ -323,9 +323,9 @@ public abstract class PluginsC extends Plugin {
             PLUGINS.put(containerFile, newPlugin);
             return newPlugin;
         } catch (InstantiationException e) {
-            logger.log(Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         } catch (IllegalAccessException e) {
-            logger.log(Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
         return null;
     }

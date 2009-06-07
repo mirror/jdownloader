@@ -33,6 +33,7 @@ import javax.swing.event.HyperlinkListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.userio.dialog.AbstractDialog;
@@ -86,7 +87,7 @@ public class AboutDialog extends AbstractDialog {
                         }
                     });
                 } catch (IOException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                    JDLogger.exception(e);
                 }
             }
 

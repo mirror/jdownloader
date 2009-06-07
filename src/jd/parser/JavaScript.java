@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -126,7 +127,7 @@ public final class JavaScript {
                         cx.evaluateString(scope, parseJS(reg[i][2]), "<cmd>", 1, null);
                     } catch (Exception e) {
                         if (debug) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                            JDLogger.exception(e);
                             System.err.println(reg[i][2]);
                         }
                     }
@@ -165,7 +166,7 @@ public final class JavaScript {
                                 cx.evaluateString(scope, parseJS(page), "<cmd>", 1, null);
                             } catch (Exception e) {
                                 if (debug) {
-                                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                                    JDLogger.exception(e);
                                     System.err.println(link);
                                 }
                             }

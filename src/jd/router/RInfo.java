@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.util.HashMap;
 
+import jd.controlling.JDLogger;
 import jd.parser.Regex;
 import jd.utils.EditDistance;
 import jd.utils.JDUtilities;
@@ -81,7 +82,7 @@ public class RInfo implements Serializable {
                             try {
                                 StrCont = JDUtilities.objectToXml(content);
                             } catch (IOException e) {
-                                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                                JDLogger.exception(e);
                             }
                         }
                         int c = 0;
@@ -106,13 +107,13 @@ public class RInfo implements Serializable {
                         try {
                             ret.put(field.getName(), URLEncoder.encode(StrCont, "UTF-8"));
                         } catch (UnsupportedEncodingException e) {
-                            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                            JDLogger.exception(e);
                         }
                     }
                 } catch (IllegalArgumentException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                    JDLogger.exception(e);
                 } catch (IllegalAccessException e) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+                    JDLogger.exception(e);
                 }
             }
         }
@@ -209,7 +210,7 @@ public class RInfo implements Serializable {
             if (reconnectMethode != null) System.out.println(SQLRouterData.br.postPage("http://localhost/router/setIntegrety2.php", getHashMap()));
 
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
     }
 

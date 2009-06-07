@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 
 import jd.JDInit;
 import jd.config.Configuration;
+import jd.controlling.JDLogger;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.http.Browser;
@@ -67,7 +68,7 @@ public class RouterInfoCollector {
             return InetAddress.getByName(routerIp);
         } catch (UnknownHostException e) {
             // TODO Auto-generated catch block
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return null;
     }

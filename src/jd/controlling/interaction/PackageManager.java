@@ -20,13 +20,13 @@ import java.io.File;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.logging.Level;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.Main;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
+import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -282,7 +282,7 @@ public class PackageManager extends Interaction implements Serializable {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            logger.log(Level.SEVERE, "Exception occurred", e);
+                            JDLogger.exception(e);
                         }
                         downloadLink.getFilePackage().remove(downloadLink);
                         boolean ch = false;

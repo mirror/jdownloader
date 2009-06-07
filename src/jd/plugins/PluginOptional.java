@@ -16,10 +16,10 @@
 
 package jd.plugins;
 
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 
@@ -38,7 +38,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
             try {
                 onExit();
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Exception occurred", e);
+                JDLogger.exception(e);
             }
 
         }

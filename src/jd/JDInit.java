@@ -29,6 +29,7 @@ import jd.controlling.AccountController;
 import jd.controlling.ByteBufferController;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
+import jd.controlling.JDLogger;
 import jd.controlling.PasswordListController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.JDLookAndFeelManager;
@@ -167,7 +168,7 @@ public class JDInit {
                     }
                 } catch (Throwable e) {
                     logger.severe("Error loading Optional Plugin: " + e.getMessage());
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                    JDLogger.exception(e);
                 }
             }
         }

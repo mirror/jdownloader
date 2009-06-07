@@ -16,6 +16,8 @@
 
 package jd.utils;
 
+import jd.controlling.JDLogger;
+
 public class binCode {
     private static String addZero(String bin, int minCount) {
         for (int j = bin.length(); j < minCount; j++) {
@@ -69,7 +71,7 @@ public class binCode {
             }
             return ret.toString();
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,"Exception occurred",e);
+            JDLogger.exception(e);
         }
         return null;
     }

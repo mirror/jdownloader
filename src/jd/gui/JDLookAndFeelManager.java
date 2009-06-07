@@ -181,7 +181,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
             }
 
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
     }
 
@@ -201,7 +201,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
             JDLogger.getLogger().info("Use Look & Feel: " + getPlaf().getClassName());
             UIManager.setLookAndFeel(getPlaf().getClassName());
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            JDLogger.exception(e);
         }
 
         // try {

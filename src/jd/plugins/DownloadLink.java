@@ -677,7 +677,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
 
-                    JDLogger.getLogger().log(Level.SEVERE, "Exception occurred", e);
+                    JDLogger.exception(e);
                 }
             }
         }
