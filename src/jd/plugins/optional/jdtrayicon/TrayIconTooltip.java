@@ -31,11 +31,9 @@ import javax.swing.SwingUtilities;
 
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadInformations;
-import jd.controlling.DownloadWatchDog;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.nutils.Formatter;
-import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;

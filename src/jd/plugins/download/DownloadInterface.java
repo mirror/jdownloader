@@ -38,9 +38,9 @@ import java.util.zip.GZIPInputStream;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.ByteBufferController;
 import jd.controlling.ByteBufferEntry;
 import jd.controlling.JDLogger;
-import jd.controlling.ByteBufferController;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;

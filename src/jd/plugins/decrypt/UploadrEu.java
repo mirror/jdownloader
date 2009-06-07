@@ -16,13 +16,10 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -32,11 +29,11 @@ import jd.utils.JDLocale;
 
 public class UploadrEu extends PluginForDecrypt {
 
-    public UploadrEu (PluginWrapper wrapper) {
+    public UploadrEu(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
@@ -52,37 +49,27 @@ public class UploadrEu extends PluginForDecrypt {
             if (link == null) return null;
             decryptedLinks.add(createDownloadlink(link));
             return decryptedLinks;
-        }
-        else if(parameter.contains("/folder/"))
-        {
+        } else if (parameter.contains("/folder/")) {
             boolean captcha = false;
             boolean password = false;
             String captchastring = null;
             String passwordstring = null;
             String captchaurl = null;
-            if (!br.containsHTML("<strong>Status:</strong>")) {   
-                for(int i=0;i<5;i++)
-                {
+            if (!br.containsHTML("<strong>Status:</strong>")) {
+                for (int i = 0; i < 5; i++) {
                     Form passcap = br.getFormbyProperty("name", "captcha");
                     if (passcap == null) br.getForm(0);
-                    if (br.containsHTML("Ordnerpasswort:"))
-                    {
+                    if (br.containsHTML("Ordnerpasswort:")) {
                         passwordstring = getUserInput(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
                         password = true;
                     }
 
-
-                    if (br.containsHTML("Nicht lesbar?"))
-                    {
+                    if (br.containsHTML("Nicht lesbar?")) {
                         captchaurl = br.getRegex("img id='captcha' src='(.*?)'").getMatch(0);
                         if (captchaurl == null) captchaurl = br.getRegex("captchaimage'><img src='(.*?)'").getMatch(0);
                         if (captchaurl == null) captchaurl = br.getRegex("captcha.src=\"(.*?)\"").getMatch(0);
                         if (captchaurl != null) captchaurl = captchaurl.replaceFirst("\\.\\./", "http://uploadr.eu/");
-                        URLConnectionAdapter con = br.openGetConnection(captchaurl);
-                        File file = this.getLocalCaptchaFile();
-                        Browser.download(file, con);
-                        captchastring = getCaptchaCode(file, param);
-                        con.disconnect();
+                        captchastring = getCaptchaCode(captchaurl, param);
                         captcha = true;
                     }
                     if (captcha) passcap.put("captchastring", captchastring);
@@ -91,27 +78,24 @@ public class UploadrEu extends PluginForDecrypt {
 
                     br.submitForm(passcap);
                     if (!br.containsHTML("Eingabe falsch!")) break;
-                    if (i==4) {
-                        throw new DecrypterException(JDLocale.L("plugins.decrypter.uploadreu.badpassorcaptcha","You entered bad password or captcha code 5 times. Please review your data."));
-                    }
+                    if (i == 4) { throw new DecrypterException(JDLocale.L("plugins.decrypter.uploadreu.badpassorcaptcha", "You entered bad password or captcha code 5 times. Please review your data.")); }
                     br.getPage(parameter);
 
                 }
             }
-            
+
             String[] links = br.getRegex("onclick='window\\.open\\(\"(.*?)\"").getColumn(0);
             br.setFollowRedirects(false);
-            for(int j=0;j<links.length;j++)
-            {
+            for (int j = 0; j < links.length; j++) {
                 br.getPage(links[j]);
                 decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
             }
-            return decryptedLinks;   
-        }
-        else return null;
+            return decryptedLinks;
+        } else
+            return null;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

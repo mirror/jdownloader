@@ -91,12 +91,19 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         premium.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
+                if (!premium.isSelected()) {
+                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDLocale.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDLocale.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No"));
+                    if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL) && !JDFlags.hasAllFlags(answer, UserIO.RETURN_SKIPPED_BY_DONT_SHOW)) {
+                        premium.setSelected(true);
+                        return;
+                    }
+                }
+
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
                 if (JDUtilities.getConfiguration().isChanges()) {
                     updateGUI();
                     JDUtilities.getConfiguration().save();
                 }
-
             }
 
         });
@@ -152,22 +159,12 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_USE_GLOBAL_PREMIUM) {
 
             @Override
-            public void onPropertyChanged(final Property source, final String valid) {
-
-                if (!source.getBooleanProperty(valid, true)) {
-
-                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDLocale.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDLocale.L("dialogs.premiumstatus.global.message", "Do you realy want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No"));
-                    if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL) && !JDFlags.hasAllFlags(answer, UserIO.RETURN_SKIPPED_BY_DONT_SHOW)) {
-                        source.setProperty(valid, true);
-                        return;
-                    }
-                }
+            public void onPropertyChanged(Property source, String valid) {
 
                 SwingUtilities.invokeLater(new Runnable() {
 
                     public void run() {
                         updateGUI();
-
                     }
 
                 });
