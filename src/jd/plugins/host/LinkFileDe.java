@@ -73,7 +73,10 @@ public class LinkFileDe extends PluginForHost {
         captchaForm.put("captcha", code);
 
         dl = br.openDownload(downloadLink, captchaForm, true, 1);
-        if (!dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
+        if (!dl.getConnection().isContentDisposition()) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
+        }
         dl.setResume(true);
         dl.startDownload();
     }

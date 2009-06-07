@@ -78,14 +78,19 @@ public class UpMusicIn extends PluginForHost {
         if (!con.isOK()) {
             if (previousLink != null) {
                 downloadLink.setProperty("directLink", null);
+                con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
+                con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
         }
         if (con.getContentType().contains("text")) {
             br.getPage(linkurl);
-            if (br.containsHTML("Premiums\\s+Plans")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10000);
+            if (br.containsHTML("Premiums\\s+Plans")) {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10000);
+            }
         }
         dl.startDownload();
     }

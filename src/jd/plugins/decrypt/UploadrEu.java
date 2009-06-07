@@ -82,6 +82,7 @@ public class UploadrEu extends PluginForDecrypt {
                         File file = this.getLocalCaptchaFile();
                         Browser.download(file, con);
                         captchastring = getCaptchaCode(file, param);
+                        con.disconnect();
                         captcha = true;
                     }
                     if (captcha) passcap.put("captchastring", captchastring);

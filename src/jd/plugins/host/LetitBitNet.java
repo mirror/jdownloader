@@ -108,6 +108,7 @@ public class LetitBitNet extends PluginForHost {
         URLConnectionAdapter con = br.openGetConnection(captchaurl);
         File file = this.getLocalCaptchaFile();
         Browser.download(file, con);
+        con.disconnect();
         down.setMethod(Form.MethodType.POST);
         down.put("frameset", "Download+file");
         String id2 = dl1.getVarsMap().get("uid");

@@ -175,8 +175,10 @@ public class CZShareCom extends PluginForHost {
         if (!con.isOK()) {
             if (previousLink != null) {
                 downloadLink.setProperty("directLink", null);
+                con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
+                con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_PREMIUM);
             }
         }

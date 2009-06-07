@@ -73,7 +73,10 @@ public class MaxUploadEu extends PluginForHost {
         // this.sleep(3000, downloadLink); // uncomment when they introduce waittime
         dl = br.openDownload(downloadLink, getlink, false, 1);
         URLConnectionAdapter con = dl.getConnection();
-        if (!con.isOK())throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); 
+        if (!con.isOK()) {
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); 
+        }
         dl.startDownload();
     }
 

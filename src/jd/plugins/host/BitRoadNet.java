@@ -96,8 +96,10 @@ public class BitRoadNet extends PluginForHost {
         if (!cond.isOK()) {
             if (previousLink != null) {
                 downloadLink.setProperty("directLink", null);
+                cond.disconnect();
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
+                cond.disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
         }
