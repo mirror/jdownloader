@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.controlling.reconnect.Reconnecter;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
@@ -37,11 +38,15 @@ import jd.utils.JDLocale;
 public class FileFactory extends PluginForHost {
 
     private static Pattern baseLink = Pattern.compile("action=\"(\\/dlf.*).\\ ", Pattern.CASE_INSENSITIVE);
+    private static final String DOWNLOAD_LIMIT = "(Thank you for waiting|exceeded the download limit)";
 
     private static final String FILESIZE = "<span>(.*? (B|KB|MB)) file";
 
     private static final String NO_SLOT = "no free download slots";
     private static final String NOT_AVAILABLE = "class=\"box error\"";
+    private static final String PATTERN_DOWNLOADING_TOO_MANY_FILES = "currently downloading too many files at once";
+    private static final String WAIT_TIME = "have exceeded the download limit for free users.*Please wait ([0-9]+).*to download more files";
+
     private static final String LOGIN_ERROR = "The email or password you have entered is incorrect";
     
     private static Pattern patternForDownloadlink = Pattern.compile("downloadLink.*href..(.*)..Click", Pattern.DOTALL);
@@ -92,8 +97,6 @@ public class FileFactory extends PluginForHost {
         //URL von zweiter Seite ermitteln
         String urlWithFilename = Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(baseLink).getMatch(0));
 
-        //br.setCookie(br.getURL(), "viewad11", "yes");
-
         //Zweite Seite laden
         br.getPage(urlWithFilename);
 
@@ -102,8 +105,33 @@ public class FileFactory extends PluginForHost {
 
         sleep(31000, parameter);
         dl = br.openDownload(parameter, downloadUrl);
-        dl.startDownload();
-        sleep(3000, parameter);
+
+        // Prüft ob content disposition header da sind
+        if (dl.getConnection().isContentDisposition()) {
+            long cu = parameter.getDownloadCurrent();
+            dl.startDownload();
+            long loaded = parameter.getDownloadCurrent() - cu;
+            if (loaded > 30 * 1024 * 1024l) {
+                Reconnecter.requestReconnect();
+            }
+        } else {
+            // Falls nicht wird die html seite geladen
+            br.followConnection();
+            if (br.containsHTML(DOWNLOAD_LIMIT)) {
+                logger.info("Traffic Limit for Free User reached");
+                if (br.containsHTML("seconds")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex(WAIT_TIME).getMatch(0)) * 60 * 1000l);
+                } else if (br.containsHTML("minutes")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex(WAIT_TIME).getMatch(0)) * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                }
+            } else if (br.containsHTML(PATTERN_DOWNLOADING_TOO_MANY_FILES)) {
+                logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) and retry afterwards");
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);
+            }
+        }
+
     }
 
     // @Override
