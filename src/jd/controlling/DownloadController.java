@@ -522,6 +522,37 @@ public class DownloadController implements FilePackageListener, DownloadControll
         }
         return ret;
     }
+    
+    /**
+     * Returns all needful downloadinformation
+     */
+    public DownloadInformations getDownloadStatus() {
+        DownloadInformations ds = new DownloadInformations();
+        DownloadWatchDog.getInstance().getActiveDownloads();
+        
+        synchronized (packages) {
+            for (FilePackage fp : packages) {
+            	ds.addPackages(1);
+            	ds.addDownloadLinks(fp.getDownloadLinkList().size());
+                for(DownloadLink l : fp.getDownloadLinkList()) {
+                	if (!l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS) && l.isEnabled()) {
+                        ds.addTotalDownloadSize(l.getDownloadSize());
+                        ds.addCurrentDownloadSize(l.getDownloadCurrent());
+                    }
+                	
+                	if(l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+                		ds.addDuplicateDownloads(1);
+                	} else if(!l.isEnabled()) {
+                		ds.addDisabledDownloads(1);
+                	} else if(l.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                		ds.addFinishedDownloads(1);
+                	}
+                }
+            }
+        }
+        
+        return ds;
+    }
 
     // Den Optimizer muss ich noch fertig machen
     // public boolean hasDownloadLinkwithURL(String url) {

@@ -22,11 +22,10 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
 import jd.controlling.DownloadController;
+import jd.controlling.DownloadInformations;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.nutils.Formatter;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -45,8 +44,7 @@ public class DownloadTaskPane extends TaskPanel {
     private JLabel progresslabel;
     private Thread fadeTimer;
 
-    private long tot = 0;
-    private long loaded = 0;
+    private DownloadInformations ds;
     private long speedm = 0;
     private DownloadController dlc = JDUtilities.getDownloadController();
 
@@ -62,7 +60,6 @@ public class DownloadTaskPane extends TaskPanel {
                     try {
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                         return;
                     }
@@ -76,28 +73,21 @@ public class DownloadTaskPane extends TaskPanel {
      * TODO: soll mal über events aktuallisiert werden
      */
     private void update() {
-        tot = 0;
-        loaded = 0;
-        for (DownloadLink l : dlc.getAllDownloadLinks()) {
-            if (!l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS) && l.isEnabled()) {
-                tot += l.getDownloadSize();
-                loaded += l.getDownloadCurrent();
-            }
-        }
+        ds = dlc.getDownloadStatus();
 
         speedm = JDUtilities.getController().getSpeedMeter();
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
-                packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", dlc.size()));
-                downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", dlc.getAllDownloadLinks().size()));
-                totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
-                progress.setMaximum(tot);
-                progress.setValue(loaded);
-                progress.setToolTipText(Math.round((loaded * 10000.0) / tot) / 100.0 + "%");
+                packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", ds.getPackagesCount()));
+                downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", ds.getDownloadCount()));
+                totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(ds.getTotalDownloadSize())));
+                progress.setMaximum(ds.getTotalDownloadSize());
+                progress.setValue(ds.getCurrentDownloadSize());
+                progress.setToolTipText(Math.round((ds.getCurrentDownloadSize() * 10000.0) / ds.getTotalDownloadSize()) / 100.0 + "%");
                 // if (speedm > 1024) {
                 speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(speedm) + "/s"));
-                long etanum = speedm == 0 ? 0 : (tot - loaded) / speedm;
+                long etanum = speedm == 0 ? 0 : (ds.getTotalDownloadSize() - ds.getCurrentDownloadSize()) / speedm;
                 eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", Formatter.formatSeconds(etanum)));
                 // } else {
                 // eta.setText("");
@@ -109,7 +99,6 @@ public class DownloadTaskPane extends TaskPanel {
     }
 
     private void initGUI() {
-
         downloadlist = new JLabel(JDLocale.L("gui.taskpanes.download.downloadlist", "Downloadlist"));
         downloadlist.setIcon(JDTheme.II("gui.splash.dllist", 16, 16));
         packages = new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Package(s)", 0));
@@ -132,9 +121,5 @@ public class DownloadTaskPane extends TaskPanel {
         add(eta, D2_LABEL);
     }
 
-    public void actionPerformed(ActionEvent arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
+    public void actionPerformed(ActionEvent arg0) {}
 }

@@ -30,6 +30,7 @@ import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
 import jd.controlling.DownloadController;
+import jd.controlling.DownloadInformations;
 import jd.controlling.DownloadWatchDog;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
@@ -55,6 +56,8 @@ public class TrayIconTooltip extends JWindow {
 
     private Point estimatedTopLeft;
     private TrayIcon trayIcon;
+    
+    private DownloadInformations ds;
 
     public TrayIconTooltip() {
 
@@ -147,27 +150,19 @@ public class TrayIconTooltip extends JWindow {
                 SwingUtilities.invokeLater(new Runnable() {
 
                     public void run() {
-                        long tot = 0;
-                        long loaded = 0;
-                        int finished = 0;
-                        for (DownloadLink l : dlc.getAllDownloadLinks()) {
-                            tot += l.getDownloadSize();
-                            loaded += l.getDownloadCurrent();
+                        ds = dlc.getDownloadStatus();
 
-                            if (tot == loaded) finished++;
-                        }
-
-                        lblDlRunning.setText(String.valueOf(DownloadWatchDog.getInstance().getActiveDownloads()));
-                        lblDlFinished.setText(String.valueOf(finished));
-                        lblDlTotal.setText(String.valueOf(dlc.getAllDownloadLinks().size()));
+                        lblDlRunning.setText(String.valueOf(ds.getRunningDownloads()));
+                        lblDlFinished.setText(String.valueOf(ds.getFinishedDownloads()));
+                        lblDlTotal.setText(String.valueOf(ds.getDownloadCount()));
                         lblSpeed.setText(Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s");
 
-                        lblProgress.setText(Formatter.formatFilesize(loaded, 0) + " / " + Formatter.formatFilesize(tot, 0));
-                        prgTotal.setMaximum(tot);
-                        prgTotal.setValue(loaded);
+                        lblProgress.setText(Formatter.formatFilesize(ds.getCurrentDownloadSize(), 0) + " / " + Formatter.formatFilesize(ds.getTotalDownloadSize(), 0));
+                        prgTotal.setMaximum(ds.getTotalDownloadSize());
+                        prgTotal.setValue(ds.getCurrentDownloadSize());
 
                         long etanum = 0;
-                        if (JDUtilities.getController().getSpeedMeter() > 1024) etanum = (tot - loaded) / JDUtilities.getController().getSpeedMeter();
+                        if (JDUtilities.getController().getSpeedMeter() > 1024) etanum = (ds.getTotalDownloadSize() - ds.getCurrentDownloadSize()) / JDUtilities.getController().getSpeedMeter();
 
                         lblETA.setText(Formatter.formatSeconds(etanum));
 
