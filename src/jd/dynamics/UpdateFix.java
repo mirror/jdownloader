@@ -9,7 +9,7 @@ public class UpdateFix extends DynamicPluginInterface {
     @Override
     public void execute() {
         long revision = Long.parseLong(JDUtilities.getRevision().replaceAll(",|\\.", ""));
-        if (revision < 6035) {
+        if (revision < 6035) { 
             JDLogger.getLogger().info("UpdateFix: workaround enabled!");
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false);
         }

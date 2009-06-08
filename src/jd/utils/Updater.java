@@ -130,9 +130,26 @@ public class Updater {
         Browser br = new Browser();
         br.forceDebug(true);
         br.setReadTimeout(10 * 60 * 1000);
-        br.setConnectTimeout(10 * 60 * 1000);
-        System.out.println(br.getPage("http://update1.jdownloader.org/spread.php?pass=" + getCFG("server_pass")));
-
+        try {
+            System.out.println(br.getPage("http://update1.jdownloader.org/spread.php?pass=" + getCFG("server_pass") + "&server=update4ex.jdownloader.org"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            System.out.println(br.getPage("http://update1.jdownloader.org/spread.php?pass=" + getCFG("server_pass") + "&server=r22593.ovh.net"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            System.out.println(br.getPage("http://update1.jdownloader.org/spread.php?pass=" + getCFG("server_pass") + "&server=78.143.20.67"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            System.out.println(br.getPage("http://update1.jdownloader.org/spread.php?pass=" + getCFG("server_pass") + "&server=update2.jdownloader.org"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         System.out.println("Spread ok");
     }
 

@@ -19,7 +19,7 @@ package jd.dynamics;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 
-public class JDUpdateWarn extends DynamicPluginInterface {
+public class JDUpdateWarning extends DynamicPluginInterface {
 
     @Override
     public void execute() {
