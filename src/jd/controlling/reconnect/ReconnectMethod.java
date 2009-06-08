@@ -80,9 +80,7 @@ public abstract class ReconnectMethod {
 
         if (!JDUtilities.validateIP(afterIP)) {
             logger.warning("IP " + afterIP + " was filtered by mask: " + SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
-            // JDUtilities.getGUI().displayMiniWarning(JDLocale.LF("reconnect.ipfiltered.warning.short",
-            // "Die IP %s wurde als nicht erlaubt identifiziert", afterIP),
-            // null, 20);
+            JDUtilities.getGUI().displayMiniWarning(JDLocale.L("reconnect.ipfiltered.warning.title", "Wrong IP!"), JDLocale.LF("reconnect.ipfiltered.warning.short", "Die IP %s wurde als nicht erlaubt identifiziert", afterIP));
             afterIP = "offline";
         }
         logger.finer("Ip after: " + afterIP);

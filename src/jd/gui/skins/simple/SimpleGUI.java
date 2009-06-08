@@ -281,6 +281,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
         setVisible(true);
 
+        // Why this?
         ClipboardHandler.getClipboard().setTempDisabled(false);
 
         new Thread("guiworker") {
@@ -300,15 +301,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
             }
         }.start();
 
-        JPanel glass = new GlassPanel(new MigLayout("ins 0"));
         startbutton = new JLabel(new ImageIcon(mainMenuIcon));
-        // mainMenuIconRollOver
-        // startbutton.setBorderPainted(false);
         startbutton.setToolTipText(JDLocale.L("gui.menu.tooltip", "Click here to open main menu"));
-        // startbutton.setContentAreaFilled(false);
-        // startbutton.setSelectedIcon(new ImageIcon(mainMenuIconRollOver));
-        // startbutton.setFocusPainted(false);
         startbutton.addMouseListener(new JDMouseAdapter() {
+
             public void mouseEntered(MouseEvent e) {
                 startbutton.setIcon(new ImageIcon(mainMenuIconRollOver));
             }
@@ -342,27 +338,12 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
             }
 
         });
-        // startbutton.setAlignmentX(0.0f);
-        // startbutton.setBounds(0, 0, 32, 3op 2);
 
-        // startbutton.setHorizontalAlignment(SwingConstants.LEFT);
+        JPanel glass = new JPanel(new MigLayout("ins 0"));
         glass.add(startbutton, "gapleft 2,gaptop 2,alignx left,aligny top");
         glass.setOpaque(false);
         this.setGlassPane(glass);
-
-        // glass.setOpaque(false);
-
         glass.setVisible(true);
-
-        // JDUtilities.getController().addControlListener(new
-        // ConfigPropertyListener(Configuration.PARAM_USE_GLOBAL_PREMIUM) {
-        //
-        // @Override
-        // public void onPropertyChanged(Property source, String valid) {
-        //            
-        // }
-        //
-        // } );
     }
 
     public void setWaiting(boolean b) {
