@@ -25,18 +25,14 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 
 public class OptionalPluginWrapper extends PluginWrapper {
+
     private static final ArrayList<OptionalPluginWrapper> OPTIONAL_WRAPPER = new ArrayList<OptionalPluginWrapper>();
-    /**
-     * TODO: Still required?
-     */
-    public static final int FLAG_ALWAYS_ENABLED = 1 << 0;
 
     public static ArrayList<OptionalPluginWrapper> getOptionalWrapper() {
         return OPTIONAL_WRAPPER;
     }
 
     private double version;
-    private int flag;
     private String id;
     private String name;
 
@@ -61,7 +57,6 @@ public class OptionalPluginWrapper extends PluginWrapper {
                 logger.finer("OPTIONAL NOT loaded " + string + " : " + cl);
             }
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -73,19 +68,6 @@ public class OptionalPluginWrapper extends PluginWrapper {
 
     public String getHost() {
         return name;
-    }
-
-    public OptionalPluginWrapper(String string, double d, int flag) {
-        this(string, d, null, null);
-        this.flag = flag;
-    }
-
-    public int getFlag() {
-        return flag;
-    }
-
-    public void setFlag(int flag) {
-        this.flag = flag;
     }
 
     // @Override
@@ -151,11 +133,6 @@ public class OptionalPluginWrapper extends PluginWrapper {
     }
 
     public boolean isEnabled() {
-        // enable plugins by default
-        if (!JDUtilities.getConfiguration().hasProperty(getConfigParamKey())) {
-            JDUtilities.getConfiguration().setProperty(getConfigParamKey(), true);
-        }
-
-        return JDUtilities.getConfiguration().getBooleanProperty(this.getConfigParamKey(), false) || (this.flag & FLAG_ALWAYS_ENABLED) > 0;
+        return JDUtilities.getConfiguration().getBooleanProperty(getConfigParamKey(), true);
     }
 }

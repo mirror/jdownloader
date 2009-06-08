@@ -37,7 +37,6 @@ import jd.config.Configuration;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -109,13 +108,8 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
                     configuration.setProperty(plgWrapper.getConfigParamKey(), true);
                     plgWrapper.getPlugin().initAddon();
                 } else {
-                    if ((plgWrapper.getFlag() & OptionalPluginWrapper.FLAG_ALWAYS_ENABLED) > 0) {
-                        JDUtilities.getGUI().showMessageDialog(JDLocale.LF("gui.config.plugin.optional.forcedActive", "The addon %s cannot be disabled.", plgWrapper.getClassName()));
-                    } else {
-                        plgWrapper.getPlugin().onExit();
-                        configuration.setProperty(plgWrapper.getConfigParamKey(), false);
-
-                    }
+                    plgWrapper.getPlugin().onExit();
+                    configuration.setProperty(plgWrapper.getConfigParamKey(), false);
                 }
                 configuration.save();
                 SimpleGUI.CURRENTGUI.getAddonPanel().initGUI();
