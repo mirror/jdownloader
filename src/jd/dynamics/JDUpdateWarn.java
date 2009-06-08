@@ -16,14 +16,31 @@
 
 package jd.dynamics;
 
+import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 
 public class JDUpdateWarn extends DynamicPluginInterface {
 
     @Override
     public void execute() {
-        UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION|UserIO.STYLE_HTML, "JD Update", "<h3>New Update available!</h3> The following restart may take afew minutes. <b>This is not a crash!</b> Just wait.",null, null, null);
-        
+        new Thread() {
+            public void run() {
+
+                Boolean doit = SubConfiguration.getConfig("dynamics").getBooleanProperty("SHOWN", false);
+                if (!doit) {
+                    UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION | UserIO.STYLE_HTML, "JD Update", "<h3>New Update available!</h3> JDownloader now updates hoster and decrypt plugins.<br/><b>This is not a crash!</b><br/> Just wait.", null, null, null);
+
+                    try {
+                        Thread.sleep(1 * 60 * 1000);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                    SubConfiguration.getConfig("dynamics").setProperty("SHOWN", true);
+                    SubConfiguration.getConfig("dynamics").save();
+                }
+            }
+        }.start();
 
     }
 

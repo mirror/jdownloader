@@ -40,6 +40,8 @@ public class LinksaveIn extends PluginForDecrypt {
 
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+
+if(true)throw new Exception("CNL");
         br.setCookie("http://linksave.in/", "Linksave_Language", "german");
         br.getPage(param.getCryptedUrl());
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
