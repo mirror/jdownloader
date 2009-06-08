@@ -18,7 +18,6 @@ package jd;
 
 import java.awt.BorderLayout;
 import java.io.File;
-import java.util.Locale;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -32,6 +31,7 @@ import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigurationPopup;
+import jd.http.Browser;
 import jd.nutils.Executer;
 import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
@@ -53,12 +53,46 @@ public class Installer {
 
     private boolean aborted = false;
 
+    private String language;
+
     public Installer() {
         ConfigContainer configContainer;
         ConfigEntry ce;
 
         configContainer = new ConfigContainer(this, "Language");
-        configContainer.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")).setDefaultValue(Locale.getDefault()));
+        language = "us";
+        try {
+            /*determine real country id*/
+            language = new Browser().getPage("http://jdownloader.net:8081/advert/getLanguage.php");
+            if (language != null) {
+                language = language.trim();
+                SubConfiguration.getConfig(JDLocale.CONFIG).setProperty("DEFAULTLANGUAGE", language);
+                SubConfiguration.getConfig(JDLocale.CONFIG).save();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        String languageid = "english";
+        if (language.equalsIgnoreCase("de")) {
+            languageid = "german";
+        } else if (language.equalsIgnoreCase("es")) {
+            languageid = "Spanish";
+        } else if (language.equalsIgnoreCase("ar")) {
+            languageid = "Spanish";
+        } else if (language.equalsIgnoreCase("it")) {
+            languageid = "Italiano";
+        } else if (language.equalsIgnoreCase("pl")) {
+            languageid = "Polski";
+        } else if (language.equalsIgnoreCase("fr")) {
+            languageid = "French";
+        } else if (language.equalsIgnoreCase("tr")) {
+            languageid = "Turkish";
+        } else if (language.equalsIgnoreCase("ru")) {
+            languageid = "Russian";
+        }
+        SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, null);
+        configContainer.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")).setDefaultValue(languageid));
         showConfigDialog(null, configContainer, true);
         if (SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID) == null) {
             JDLogger.getLogger().severe("language not set");
@@ -91,15 +125,18 @@ public class Installer {
         JDUtilities.getConfiguration().save();
 
         if (OSDetector.isWindows()) {
-            new GuiRunnable<Object>() {
+            String lng = SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty("DEFAULTLANGUAGE", "DE");
+            if (lng.equalsIgnoreCase("de") || lng.equalsIgnoreCase("us")) {
+                new GuiRunnable<Object>() {
 
-                @Override
-                public Object runSave() {
-                    new KikinDialog();
-                    return null;
-                }
+                    @Override
+                    public Object runSave() {
+                        new KikinDialog();
+                        return null;
+                    }
 
-            }.waitForEDT();
+                }.waitForEDT();
+            }
         }
     }
 
@@ -145,7 +182,6 @@ public class Installer {
             exec.start();
 
         }
-       
 
     }
 
