@@ -535,9 +535,11 @@ public class Main {
                 }
             }
             if (dynamics == null || dynamics.size() == 0) return;
-            for (String dynamic : dynamics) {
-                System.out.println("Plugins: " + dynamic);
-                if (!dynamic.contains("$") && !classes.contains("/jd/dynamics/" + dynamic)) classes.add("/jd/dynamics/" + dynamic);
+            for (String dynamic : dynamics) {                
+                if (!dynamic.contains("$") && !classes.contains("/jd/dynamics/" + dynamic)){
+                    System.out.println("Plugins: " + dynamic);
+                    classes.add("/jd/dynamics/" + dynamic);
+                }
             }
         } else {
             /* dynamics in der public laden */
