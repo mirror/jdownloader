@@ -68,26 +68,24 @@ public class ConfigPanelGUI extends ConfigPanel {
 
     // @Override
     public void initPanel() {
-        ConfigContainer container = new ConfigContainer(this);
+        ConfigContainer container = new ConfigContainer();
 
         ConfigEntry ce;
         /* LANGUAGE */
-        
-        ConfigContainer look = new ConfigContainer(this, JDLocale.L("gui.config.gui.look.tab", "Anzeige & Bedienung"));
-     
+
+        ConfigContainer look = new ConfigContainer(JDLocale.L("gui.config.gui.look.tab", "Anzeige & Bedienung"));
+
         /* LOOK */
-        
-        
-        
+
         ConfigGroup lookGroup = new ConfigGroup(JDLocale.L("gui.config.gui.view", "Look"), JDTheme.II("gui.images.config.gui", 32, 32));
-        
+
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, look));
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.LF("gui.config.gui.languageFileInfo", "Current Language File: %s from %s in version %s", SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, Locale.getDefault().toString()), JDLocale.getTranslater(), JDLocale.getVersion())).setGroup(lookGroup));
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}),  JDLocale.L("gui.config.gui.language","Language")).setGroup(lookGroup));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Language")).setGroup(lookGroup));
         ce.setDefaultValue(Locale.getDefault());
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        
+
         if (JDTheme.getThemeIDs().size() <= 1) {
             JDTheme.getThemeIDs().get(0);
             subConfig.setProperty(SimpleGuiConstants.PARAM_THEME, JDTheme.getThemeIDs().get(0));
@@ -123,7 +121,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         // Extended Tab
-        ConfigContainer ext = new ConfigContainer(this, JDLocale.L("gui.config.gui.ext", "Advanced"));
+        ConfigContainer ext = new ConfigContainer(JDLocale.L("gui.config.gui.ext", "Advanced"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
 
         ext.setGroup(new ConfigGroup(JDLocale.L("gui.config.gui.container", "Container (RSDF,DLC,CCF,..)"), JDTheme.II("gui.images.container", 32, 32)));
@@ -155,7 +153,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         // ce.setDefaultValue(true);
         // ce.setPropertyType(PropertyType.NEEDS_RESTART);
         // if (!OSDetector.isWindows()) ce.setEnabled(false);
-        ConfigContainer lg = new ConfigContainer(this, JDLocale.L("gui.config.gui.linggrabber", "Linkgrabber"));
+        ConfigContainer lg = new ConfigContainer(JDLocale.L("gui.config.gui.linggrabber", "Linkgrabber"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lg));
 
         lg.setGroup(new ConfigGroup(JDLocale.L("gui.config.gui.linggrabber", "General Linkgrabber Settings"), JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32)));
@@ -169,33 +167,36 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setDefaultValue("#Ignorefiletype 'olo':\r\n\r\n.+?\\.olo\r\n\r\n#Ignore hoster 'examplehost.com':\r\n\r\n.*?examplehost\\.com.*?");
 
         // Browser Tab
-//        Object[] browserArray = (Object[]) subConfig.getProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, null);
-//        if (browserArray == null) {
-//            BrowserLauncher launcher;
-//            List<?> ar = null;
-//            try {
-//                launcher = new BrowserLauncher();
-//                ar = launcher.getBrowserList();
-//            } catch (BrowserLaunchingInitializingException e) {
-//                JDLogger.exception(e);
-//            } catch (UnsupportedOperatingSystemException e) {
-//                JDLogger.exception(e);
-//            }
-//            if (ar == null || ar.size() < 2) {
-//                browserArray = new Object[] { "JavaBrowser" };
-//            } else {
-//                browserArray = new Object[ar.size() + 1];
-//                for (int i = 0; i < browserArray.length - 1; i++) {
-//                    browserArray[i] = ar.get(i);
-//                }
-//                browserArray[browserArray.length - 1] = "JavaBrowser";
-//            }
-//            subConfig.setProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, browserArray);
-//            subConfig.setProperty(SimpleGuiConstants.PARAM_BROWSER, browserArray[0]);
-//            subConfig.save();
-//        }
+        // Object[] browserArray = (Object[])
+        // subConfig.getProperty(SimpleGuiConstants.PARAM_BROWSER_VARS, null);
+        // if (browserArray == null) {
+        // BrowserLauncher launcher;
+        // List<?> ar = null;
+        // try {
+        // launcher = new BrowserLauncher();
+        // ar = launcher.getBrowserList();
+        // } catch (BrowserLaunchingInitializingException e) {
+        // JDLogger.exception(e);
+        // } catch (UnsupportedOperatingSystemException e) {
+        // JDLogger.exception(e);
+        // }
+        // if (ar == null || ar.size() < 2) {
+        // browserArray = new Object[] { "JavaBrowser" };
+        // } else {
+        // browserArray = new Object[ar.size() + 1];
+        // for (int i = 0; i < browserArray.length - 1; i++) {
+        // browserArray[i] = ar.get(i);
+        // }
+        // browserArray[browserArray.length - 1] = "JavaBrowser";
+        // }
+        // subConfig.setProperty(SimpleGuiConstants.PARAM_BROWSER_VARS,
+        // browserArray);
+        // subConfig.setProperty(SimpleGuiConstants.PARAM_BROWSER,
+        // browserArray[0]);
+        // subConfig.save();
+        // }
 
-        ConfigContainer browser = new ConfigContainer(this, JDLocale.L("gui.config.gui.Browser", "Browser"));
+        ConfigContainer browser = new ConfigContainer(JDLocale.L("gui.config.gui.Browser", "Browser"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, browser));
 
         browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
@@ -204,7 +205,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                 if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.config.gui.testbrowser.message", "JDownloader now tries to open http://jdownloader.org in your browser."))) {
                     try {
                         save();
-                      
+
                         JLinkButton.openURL("http://jdownloader.org");
                     } catch (Exception e) {
                         JDLogger.exception(e);
@@ -218,10 +219,10 @@ public class ConfigPanelGUI extends ConfigPanel {
         ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_CUSTOM_BROWSER_USE, JDLocale.L("gui.config.gui.use_custom_browser", "Use custom browser"));
         conditionEntry.setDefaultValue(false);
 
-        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_BROWSER,  LocaleBrowser.getBrowserList(), JDLocale.L("gui.config.gui.Browser", "Browser")));
-      if(LocaleBrowser.getBrowserList().length>0){
-         ce.setDefaultValue(LocaleBrowser.getBrowserList()[0]);
-      }
+        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_BROWSER, LocaleBrowser.getBrowserList(), JDLocale.L("gui.config.gui.Browser", "Browser")));
+        if (LocaleBrowser.getBrowserList().length > 0) {
+            ce.setDefaultValue(LocaleBrowser.getBrowserList()[0]);
+        }
         ce.setEnabledCondidtion(conditionEntry, "==", false);
 
         browser.addEntry(conditionEntry);

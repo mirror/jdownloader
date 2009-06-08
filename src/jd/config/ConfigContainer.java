@@ -19,7 +19,7 @@ package jd.config;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.Serializable;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -111,23 +111,19 @@ public class ConfigContainer implements Serializable {
 
     private int containers = 0;
 
-    private Vector<ConfigEntry> content = new Vector<ConfigEntry>();
-    @SuppressWarnings("unused")
-    private Object instance;
+    private ArrayList<ConfigEntry> content;
     private Property propertyInstance;
     private String title;
     private ConfigGroup group;
 
-    public ConfigContainer(Object instance) {
-        this.instance = instance;
-        title = JDLocale.L("config.container.defaultname", "Allgemein");
-        propertyInstance = JDUtilities.getConfiguration();
+    public ConfigContainer() {
+        this(JDLocale.L("config.container.defaultname", "Allgemein"));
     }
 
-    public ConfigContainer(Object instance, String title) {
-        this.instance = instance;
+    public ConfigContainer(String title) {
         this.title = title;
         propertyInstance = JDUtilities.getConfiguration();
+        content = new ArrayList<ConfigEntry>();
     }
 
     /**
@@ -156,7 +152,7 @@ public class ConfigContainer implements Serializable {
      * 
      * @return Liste aller gespeicherten Konfigurationseinträge
      */
-    public Vector<ConfigEntry> getEntries() {
+    public ArrayList<ConfigEntry> getEntries() {
         return content;
     }
 
@@ -168,8 +164,8 @@ public class ConfigContainer implements Serializable {
      * @return ConfigEntry
      */
     public ConfigEntry getEntryAt(int i) {
-        if (content.size() <= i) { return null; }
-        return content.elementAt(i);
+        if (content.size() <= i) return null;
+        return content.get(i);
     }
 
     /**
@@ -191,12 +187,10 @@ public class ConfigContainer implements Serializable {
     public void requestSave() {
         if (actionListener == null) { return; }
         actionListener.actionPerformed(new ActionEvent(this, ACTION_REQUEST_SAVE, "save"));
-
     }
 
     public void setActionListener(ActionListener listener) {
         actionListener = listener;
-
     }
 
     /**
@@ -220,11 +214,9 @@ public class ConfigContainer implements Serializable {
      */
     public void setGroup(ConfigGroup configGroup) {
         this.group = configGroup;
-
     }
 
     public ConfigGroup getGroup() {
-        // TODO Auto-generated method stub
         return group;
     }
 

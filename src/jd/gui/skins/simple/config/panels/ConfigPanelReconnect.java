@@ -228,7 +228,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     private void setupContainer() {
 
-        container = new ConfigContainer(this);
+        container = new ConfigContainer();
 
         ConfigGroup group = new ConfigGroup(JDLocale.L("gui.config.reconnect.shared", "General Reconnect Settings"), JDTheme.II("gui.images.reconnect_settings", 32, 32));
         container.setGroup(group);

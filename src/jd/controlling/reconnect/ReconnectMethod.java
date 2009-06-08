@@ -14,8 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-
 package jd.controlling.reconnect;
 
 import java.util.logging.Logger;
@@ -82,7 +80,9 @@ public abstract class ReconnectMethod {
 
         if (!JDUtilities.validateIP(afterIP)) {
             logger.warning("IP " + afterIP + " was filtered by mask: " + SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
-//            JDUtilities.getGUI().displayMiniWarning(JDLocale.LF("reconnect.ipfiltered.warning.short", "Die IP %s wurde als nicht erlaubt identifiziert", afterIP), null, 20);
+            // JDUtilities.getGUI().displayMiniWarning(JDLocale.LF("reconnect.ipfiltered.warning.short",
+            // "Die IP %s wurde als nicht erlaubt identifiziert", afterIP),
+            // null, 20);
             afterIP = "offline";
         }
         logger.finer("Ip after: " + afterIP);
@@ -139,7 +139,7 @@ public abstract class ReconnectMethod {
 
     public final ConfigContainer getConfig() {
         if (config == null) {
-            config = new ConfigContainer(this);
+            config = new ConfigContainer();
             initConfig();
         }
         return config;

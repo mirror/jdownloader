@@ -576,7 +576,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         } else if (e.getSource() == mnuSVNSettings) {
 
             ConfigEntry ce, conditionEntry;
-            ConfigContainer container = new ConfigContainer(this);
+            ConfigContainer container = new ConfigContainer();
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_SVN_REPOSITORY, JDLocale.L("plugins.optional.langfileeditor.svn.repository", "SVN Repository")).setDefaultValue("https://www.syncom.org/svn/jdownloader/trunk/src/"));
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, PROPERTY_SVN_WORKING_COPY, JDLocale.L("plugins.optional.langfileeditor.svn.workingCopy", "SVN Working Copy")).setDefaultValue(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + System.getProperty("file.separator") + "svn"));
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

@@ -73,7 +73,7 @@ public class ConfigPanelDownload extends ConfigPanel {
     }
 
     public ConfigContainer setupContainer() {
-        ConfigContainer container = new ConfigContainer(this);
+        ConfigContainer container = new ConfigContainer();
         config = SubConfiguration.getConfig("DOWNLOAD");
 
         setupGeneral(container);
@@ -92,7 +92,7 @@ public class ConfigPanelDownload extends ConfigPanel {
 
         // Extended Tab
 
-        ConfigContainer extended = new ConfigContainer(this, JDLocale.L("gui.config.download.network.extended", "Erweiterte Einstellungen"));
+        ConfigContainer extended = new ConfigContainer(JDLocale.L("gui.config.download.network.extended", "Erweiterte Einstellungen"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, extended));
 
         extended.setGroup(new ConfigGroup(JDLocale.L("gui.config.download.ipcheck", "Reconnect IP-Check"), JDTheme.II("gui.images.network", 32, 32)));
@@ -134,7 +134,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         ConfigEntry conditionEntry;
         // Network Tab
 
-        ConfigContainer network = new ConfigContainer(this, JDLocale.L("gui.config.download.network.tab", "Internet & Netzwerkverbindung"));
+        ConfigContainer network = new ConfigContainer(JDLocale.L("gui.config.download.network.tab", "Internet & Netzwerkverbindung"));
 
         network.setGroup(new ConfigGroup(JDLocale.L("gui.config.download.timeout", "Timeout & Connection loss"), JDTheme.II("gui.images.networkerror", 32, 32)));
 

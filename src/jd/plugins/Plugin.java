@@ -120,16 +120,16 @@ public abstract class Plugin implements ActionListener {
         return dest;
     }
 
-    protected ConfigContainer config;
+    protected final ConfigContainer config;
 
-    protected PluginWrapper wrapper;
+    protected final PluginWrapper wrapper;
 
     protected Browser br;
 
     public Plugin(PluginWrapper wrapper) {
         this.br = new Browser();
         this.wrapper = wrapper;
-        config = new ConfigContainer(this);
+        config = new ConfigContainer();
     }
 
     public PluginWrapper getWrapper() {

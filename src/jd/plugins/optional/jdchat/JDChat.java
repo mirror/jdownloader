@@ -853,7 +853,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_PERFORM, JDLocale.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
 
-        ConfigContainer lngse = new ConfigContainer(this, JDLocale.L("plugins.optional.jdchat.locale", "Language settings"));
+        ConfigContainer lngse = new ConfigContainer(JDLocale.L("plugins.optional.jdchat.locale", "Language settings"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lngse));
 
         lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLAT, JDLocale.L("plugins.optional.jdchat.doautotranslate", "Translate Chat")));

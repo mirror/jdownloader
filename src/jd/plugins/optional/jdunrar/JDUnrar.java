@@ -672,12 +672,12 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_OVERWRITE, JDLocale.L("gui.config.unrar.overwrite", "Overwrite existing files?")));
         ce.setDefaultValue(false);
 
-        this.passwordConfig = new ConfigContainer(this, JDLocale.L("plugins.optional.jdunrar.config.passwordtab", "List of passwords"));
+        this.passwordConfig = new ConfigContainer(JDLocale.L("plugins.optional.jdunrar.config.passwordtab", "List of passwords"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, passwordConfig));
 
         passwordConfig.addEntry(new ConfigEntry(ConfigContainer.TYPE_UNRARPASSWORDS, SubConfiguration.getConfig(PasswordListController.PASSWORDCONTROLLER), "LIST", JDLocale.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", "")));
 
-        ConfigContainer ext = new ConfigContainer(this, JDLocale.L("plugins.optional.jdunrar.config.advanced", "Advanced settings"));
+        ConfigContainer ext = new ConfigContainer(JDLocale.L("plugins.optional.jdunrar.config.advanced", "Advanced settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
 
         ext.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, JDLocale.L("gui.config.unrar.use_subpath", "Use subpath")));

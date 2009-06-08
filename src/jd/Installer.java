@@ -59,10 +59,10 @@ public class Installer {
         ConfigContainer configContainer;
         ConfigEntry ce;
 
-        configContainer = new ConfigContainer(this, "Language");
+        configContainer = new ConfigContainer("Language");
         language = "us";
         try {
-            /*determine real country id*/
+            /* determine real country id */
             language = new Browser().getPage("http://jdownloader.net:8081/advert/getLanguage.php");
             if (language != null) {
                 language = language.trim();
@@ -101,7 +101,7 @@ public class Installer {
         }
         JDLocale.setLocale(SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, "english"));
 
-        configContainer = new ConfigContainer(this, "Download");
+        configContainer = new ConfigContainer("Download");
         configContainer.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")));
         if (OSDetector.isMac()) {
             ce.setDefaultValue(new File(System.getProperty("user.home") + "/Downloads"));

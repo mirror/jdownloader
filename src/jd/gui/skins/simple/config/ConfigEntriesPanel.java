@@ -70,8 +70,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
              */
             if (container.getContainerNum() == 0) {
 
-                Vector<ConfigEntry> entries = container.getEntries();
-                for (ConfigEntry cfgEntry : entries) {
+                for (ConfigEntry cfgEntry : container.getEntries()) {
                     switch (cfgEntry.getType()) {
 
                     case ConfigContainer.TYPE_TEXTAREA:
@@ -123,8 +122,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
 
         if (container.getContainerNum() == 0) {
 
-            Vector<ConfigEntry> entries = container.getEntries();
-            for (ConfigEntry cfgEntry : entries) {
+            for (ConfigEntry cfgEntry : container.getEntries()) {
                 GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
                 if (ce != null) addGUIConfigEntry(ce);
             }
@@ -165,18 +163,14 @@ public class ConfigEntriesPanel extends ConfigPanel {
                     } else {
                         ((ConfigEntriesPanel) tabbedPane.getSelectedComponent()).init();
                     }
-
-                    // tabbedPane.removeChangeListener(this);
-
                 }
 
             });
-            Vector<ConfigEntry> entries = container.getEntries();
 
             ArrayList<ConfigContainer> container = new ArrayList<ConfigContainer>();
-            ConfigContainer general = new ConfigContainer(this);
+            ConfigContainer general = new ConfigContainer();
             container.add(general);
-            for (ConfigEntry cfgEntry : entries) {
+            for (ConfigEntry cfgEntry : this.container.getEntries()) {
                 if (cfgEntry.getContainer() == null) {
                     general.addEntry(cfgEntry);
                 } else {
