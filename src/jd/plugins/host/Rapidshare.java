@@ -33,8 +33,6 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.Encoding;
 import jd.http.HTMLEntities;
 import jd.http.URLConnectionAdapter;
@@ -586,7 +584,7 @@ public class Rapidshare extends PluginForHost {
                     logger.warning(error);
                     if (Regex.matches(error, Pattern.compile("(Ihr Cookie wurde nicht erkannt)"))) {
                         account.setProperty("cookies", null);
-                   
+
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                     if (Regex.matches(error, Pattern.compile("(Verletzung unserer Nutzungsbedingungen)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -613,11 +611,11 @@ public class Rapidshare extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l);
                     } else if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
                         account.setProperty("cookies", null);
-               
+
                         logger.finest("6\r\n" + br);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.accountnotfound", "Your Premium Account has not been found."), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                       
+
                         account.setProperty("cookies", null);
                         throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
                     }
@@ -687,7 +685,7 @@ public class Rapidshare extends PluginForHost {
                     logger.warning(error);
                     if (Regex.matches(error, Pattern.compile("(Ihr Cookie wurde nicht erkannt)"))) {
                         account.setProperty("cookies", null);
-                       
+
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                     if (Regex.matches(error, Pattern.compile("(Verletzung unserer Nutzungsbedingungen)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -707,11 +705,11 @@ public class Rapidshare extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l);
                     } else if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
                         account.setProperty("cookies", null);
-                     
+
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.accountnotfound", "Your Premium Account has not been found."), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         account.setProperty("cookies", null);
-                       
+
                         throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
                     }
                 } else {
@@ -1048,11 +1046,9 @@ public class Rapidshare extends PluginForHost {
             br.setAcceptLanguage("en, en-gb;q=0.8");
             br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
 
-            Cookies remoteCookies = br.getCookies("http://rapidshare.com");
             HashMap<String, String> map = new HashMap<String, String>();
-            for (Cookie c : remoteCookies.getCookies()) {
-                map.put(c.getKey(), c.getValue());
-            }
+            map.put("user", br.getCookie("http://rapidshare.com", "user"));
+            map.put("enc", br.getCookie("http://rapidshare.com", "enc"));
 
             account.setProperty("cookies", map);
             return br;
