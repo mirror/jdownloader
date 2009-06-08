@@ -19,6 +19,7 @@ import jd.config.SubConfiguration;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
+import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingworker.SwingWorker;
@@ -30,6 +31,14 @@ public class Balloon {
     public static int COUNTDOWN = 10 * 1000;
     private static String LASTSTRING;
 
+    public static void main(String args[]) throws InterruptedException {
+        Balloon.show("AccountController", JDTheme.II("gui.images.accounts", 32, 32), "Premiumaccounts are globally disabled!<br/>Click <a href='http://jdownloader.org/knowledge/wiki/gui/premiummenu'>here</a> for help.");
+
+        Thread.sleep(2 * 1000);
+
+        Balloon.show("title", null, JDTheme.II("gui.images.help", 32, 32), "This is <b>just dummy</b><br/> text.<a href='http://www.google.de'>LINK</a> you added 5 links");
+    }
+
     /**
      * Displays only if mainframe is hidden
      */
@@ -38,7 +47,7 @@ public class Balloon {
     }
 
     public static void show(String title, ImageIcon icon, String htmlmessage) {
-        show(title, null, icon, htmlmessage);
+        Balloon.show(title, null, icon, htmlmessage);
     }
 
     public static void show(String title, ImageIcon ii, ImageIcon icon, String htmlmessage) {
@@ -109,13 +118,6 @@ public class Balloon {
 
                 };
 
-                w.setMinimumSize(new Dimension(100, 40));
-                w.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
-                JPanel container = new JPanel();
-                container.setBorder(BorderFactory.createLineBorder(container.getBackground().darker()));
-                container.setLayout(new MigLayout("ins 5,wrap 1", "[grow,fill]", "[][][grow,fill]"));
-                w.add(container);
-
                 JLabel lbl = new JLabel(title);
                 lbl.setIcon(icon);
 
@@ -137,10 +139,16 @@ public class Balloon {
                 titlePanel.add(lbl);
                 titlePanel.add(bt, "aligny top,alignx right");
 
+                JPanel container = new JPanel();
+                container.setBorder(BorderFactory.createLineBorder(container.getBackground().darker()));
+                container.setLayout(new MigLayout("ins 5,wrap 1", "[grow,fill]", "[][][grow,fill]"));
                 container.add(titlePanel);
                 container.add(new JSeparator(), "growx,pushx");
                 container.add(panel);
 
+                w.setMinimumSize(new Dimension(100, 40));
+                w.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
+                w.add(container);
                 w.pack();
                 w.setVisible(true);
                 w.setAlwaysOnTop(true);
@@ -209,35 +217,41 @@ public class Balloon {
 
     }
 
-    private static JPanel createDefault(ImageIcon ii2, String string2) {
-        JPanel p = new JPanel(new MigLayout("ins 0", "[fill,grow]"));
-        if (ii2 != null) {
-            p.add(new JLabel(ii2), "split 2,alignx left, aligny top");
-        }
-        JTextPane textField;
-        textField = new JTextPane();
-        p.add(textField, "pushx,growx");
-        textField.setContentType("text/html");
+    private static JPanel createDefault(final ImageIcon ii, final String string2) {
+        return new GuiRunnable<JPanel>() {
 
-        textField.setBorder(null);
-        textField.setOpaque(false);
-        // textField.setOpaque(false);
-        textField.setText(string2);
-        textField.setEditable(false);
+            @Override
+            public JPanel runSave() {
 
-        textField.addHyperlinkListener(new HyperlinkListener() {
-
-            public void hyperlinkUpdate(HyperlinkEvent e) {
-                if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-                    try {
-                        JLinkButton.openURL(e.getURL());
-                    } catch (Exception e1) {
-                    }
+                JPanel p = new JPanel(new MigLayout("ins 0", "[fill,grow]"));
+                if (ii != null) {
+                    p.add(new JLabel(ii), "split 2,alignx left, aligny top");
                 }
-            }
+                JTextPane textField = new JTextPane();
+                p.add(textField, "pushx,growx");
+                textField.setContentType("text/html");
+                textField.setBorder(null);
+                textField.setOpaque(false);
+                // textField.setOpaque(false);
+                textField.setText(string2);
+                textField.setEditable(false);
 
-        });
-        return p;
+                textField.addHyperlinkListener(new HyperlinkListener() {
+
+                    public void hyperlinkUpdate(HyperlinkEvent e) {
+                        if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                            try {
+                                JLinkButton.openURL(e.getURL());
+                            } catch (Exception e1) {
+                            }
+                        }
+                    }
+
+                });
+                return p;
+            }
+        }.getReturnValue();
+
     }
 
 }
