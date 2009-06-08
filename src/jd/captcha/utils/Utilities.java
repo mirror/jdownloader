@@ -102,13 +102,6 @@ public class Utilities {
     }
 
     /**
-     * @return Gibt die Millisekunen seit 1970 zurück
-     */
-    public static long getsTimer() {
-        return System.currentTimeMillis();
-    }
-
-    /**
      * Lädt file als Bildatei und wartet bis file geladen wurde. gibt file als
      * Image zurück
      * 
