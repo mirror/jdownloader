@@ -64,7 +64,7 @@ public class ShareOnlineBiz extends PluginForHost {
         }
     }
 
-    public boolean isPremium() throws IOException {
+    private boolean isPremium() throws IOException {
         if (br.getURL() == null || !br.getURL().equalsIgnoreCase("http://www.share-online.biz/members.php") || br.toString().startsWith("Not HTML Code.")) {
             br.getPage("http://www.share-online.biz/members.php");
         }
@@ -126,39 +126,38 @@ public class ShareOnlineBiz extends PluginForHost {
 
     // @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        DownloadLink downloadLink = parameter;
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(parameter);
         login(account);
-        if (!this.isPremium()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
-        String id = new Regex(downloadLink.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
+        if (!this.isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        String id = new Regex(parameter.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
         br.getPage("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
         Form form = br.getForm(0);
         if (form.containsHTML("name=downloadpw")) {
             String passCode = null;
-            if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput(null, downloadLink);
+            if (parameter.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput(null, parameter);
             } else {
                 /* gespeicherten PassCode holen */
-                passCode = downloadLink.getStringProperty("pass", null);
+                passCode = parameter.getStringProperty("pass", null);
             }
             form.put("downloadpw", passCode);
             br.submitForm(form);
             if (br.containsHTML("Unfortunately the password you entered is not correct")) {
                 /* PassCode war falsch, also Löschen */
-                downloadLink.setProperty("pass", null);
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-                return;
+                parameter.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             /* PassCode war richtig, also Speichern */
-            downloadLink.setProperty("pass", passCode);
+            parameter.setProperty("pass", passCode);
         }
+
+        if (br.containsHTML("DL_GotMaxIPPerUid")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
 
         String url = br.getRegex("loadfilelink\\.decode\\(\"(.*?)\"\\);").getMatch(0);
 
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        dl = br.openDownload(downloadLink, url, true, 1);
+        dl = br.openDownload(parameter, url, true, 1);
         dl.startDownload();
     }
 
