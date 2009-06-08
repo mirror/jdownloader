@@ -74,7 +74,6 @@ import org.jdesktop.swingx.decorator.ComponentAdapter;
 import org.jdesktop.swingx.decorator.Filter;
 import org.jdesktop.swingx.decorator.FilterPipeline;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
-import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.jdesktop.swingx.decorator.PatternFilter;
 import org.tmatesoft.svn.core.SVNException;
 
@@ -162,8 +161,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setAutoStartEditOnKeyStroke(false);
-        table.addHighlighter(HighlighterFactory.createAlternateStriping());
-        table.addHighlighter(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, null, Color.BLUE));
 
         if (colorizeDone) table.addHighlighter(doneHighlighter);
         if (colorizeMissing) table.addHighlighter(missingHighlighter);

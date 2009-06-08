@@ -1,6 +1,5 @@
 package jd.plugins.optional.langfileeditor;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,9 +13,6 @@ import jd.nutils.Screen;
 import jd.utils.JDLocale;
 
 import org.jdesktop.swingx.JXTable;
-import org.jdesktop.swingx.decorator.ColorHighlighter;
-import org.jdesktop.swingx.decorator.HighlightPredicate;
-import org.jdesktop.swingx.decorator.HighlighterFactory;
 
 public class LFEDupeDialog extends JDialog {
 
@@ -40,8 +36,6 @@ public class LFEDupeDialog extends JDialog {
         table.getColumnModel().getColumn(0).setMinWidth(50);
         table.getColumnModel().getColumn(0).setMaxWidth(50);
         table.getColumnModel().getColumn(2).setMinWidth(450);
-        table.addHighlighter(HighlighterFactory.createAlternateStriping());
-        table.addHighlighter(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, null, Color.BLUE));
 
         add(new JScrollPane(table));
 
@@ -87,13 +81,7 @@ public class LFEDupeDialog extends JDialog {
             case 1:
                 return keys.get(row);
             case 2:
-                StringBuilder ret = new StringBuilder();
-                ArrayList<String> values = tableData.get(keys.get(row));
-                for (String value : values) {
-                    if (ret.length() > 0) ret.append(" || ");
-                    ret.append(value);
-                }
-                return ret.toString();
+                return tableData.get(keys.get(row)).toString();
             }
             return "";
         }

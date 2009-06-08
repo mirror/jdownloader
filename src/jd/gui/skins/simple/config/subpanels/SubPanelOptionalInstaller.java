@@ -141,14 +141,13 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
 
     // @Override
     public void initPanel() {
-        setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
-        panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]", "[fill,grow][]"));
+        setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
+        panel.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow][]"));
+
         packageData = new PackageManager().getPackageData();
         Collections.sort(packageData, new Comparator<PackageData>() {
             public int compare(PackageData a, PackageData b) {
                 return (a.getStringProperty("category") + " " + a.getStringProperty("name")).compareToIgnoreCase(b.getStringProperty("category") + " " + b.getStringProperty("name"));
-                // return ((Integer) a.getSortID()).compareTo((Integer)
-                // b.getSortID());
             }
         });
 
@@ -156,36 +155,6 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
         table = new JTable(tableModel);
 
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        // table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer()
-        // {
-        //
-        // private static final long serialVersionUID = 1L;
-        // private Color bgNormal = null;
-        // private Color bgSelected = null;
-        //
-        // public Component getTableCellRendererComponent(JTable table, Object
-        // value, boolean isSelected, boolean hasFocus, int row, int column) {
-        // Component c = super.getTableCellRendererComponent(table, value,
-        // isSelected, hasFocus, row, column);
-        //
-        // if (bgNormal == null) bgNormal = getBackground();
-        // if (bgSelected == null && isSelected) bgSelected = getBackground();
-        //
-        // PackageData pd = packageData.get(row);
-        // if (isSelected) {
-        // c.setBackground(bgSelected);
-        // } else if (column == 0 && (pd.getInstalledVersion() != 0 ||
-        // pd.isSelected()) && pd.getInstalledVersion() <
-        // Integer.valueOf(pd.getStringProperty("version"))) {
-        // c.setBackground(Color.GREEN);
-        // } else {
-        // c.setBackground(bgNormal);
-        // }
-        //
-        // return c;
-        // }
-        //
-        // });
 
         TableColumn column = null;
         for (int c = 0; c < tableModel.getColumnCount(); ++c) {
@@ -214,21 +183,11 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
             }
         }
 
-        JScrollPane scrollpane = new JScrollPane(table);
-
         btnReset = new JButton(JDLocale.L("gui.config.packagemanager.reset", "Addons neu herunterladen"));
         btnReset.addActionListener(this);
 
-        // ConfigContainer container = new ConfigContainer(this);
-        // container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-        // WebUpdater.getConfig("JDU"), "SUPPORT_JD",
-        // JDLocale.L("gui.config.packagemanager.supportJD",
-        // "Support JD by downloading pumped-up-addons"
-        // )).setDefaultValue(true));
-        // this.add(cep = new ConfigEntriesPanel(container));
-        // cep.addPropertyChangeListener(this);
-        panel.add(scrollpane, "spanx");
-        panel.add(btnReset, "");
+        panel.add(new JScrollPane(table));
+        panel.add(btnReset, "w pref!, dock south");
         add(panel);
     }
 

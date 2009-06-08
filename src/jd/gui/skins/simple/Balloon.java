@@ -19,8 +19,6 @@ import jd.config.SubConfiguration;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
-import jd.utils.JDLocale;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingworker.SwingWorker;
@@ -29,120 +27,127 @@ public class Balloon {
     private static final int GAP = 20;
     private static final int MAX = 5;
     private static ArrayList<JWindow> WINDOWS = null;
-    private static JPanel container;
     public static int COUNTDOWN = 10 * 1000;
     private static String LASTSTRING;
 
-    public static void main(String args[]) throws InterruptedException {
-        Balloon.show("AccountController", JDTheme.II("gui.images.accounts", 32, 32), JDLocale.L("gui.accountcontroller.globpremdisabled", "Premiumaccounts are globally disabled!<br/>Click <a href='http://jdownloader.org/knowledge/wiki/gui/premiummenu'>here</a> for help."));
-        
-//        Balloon.show("title", null, JDTheme.II("gui.images.help", 32, 32), "This is <b>just dummy</b><br/> text.<a href='http://www.google.de'>LINK</a> you added 5 links");
-       }
+    /**
+     * Displays only if mainframe is hidden
+     */
+    public static void showIfHidden(String title, ImageIcon icon, String htmlmessage) {
+        if (!SimpleGUI.CURRENTGUI.isActive()) Balloon.show(title, icon, htmlmessage);
+    }
 
-    public static void show(String title, final ImageIcon icon, final String htmlmessage) {
-        if (LASTSTRING != null && LASTSTRING.equals(title + htmlmessage)) return;
-        LASTSTRING = title + htmlmessage;
-
+    public static void show(String title, ImageIcon icon, String htmlmessage) {
         show(title, null, icon, htmlmessage);
     }
 
-    public static void show(final String string, final ImageIcon ii, final ImageIcon ii2, final String string2) {
+    public static void show(String title, ImageIcon ii, ImageIcon icon, String htmlmessage) {
+        if (LASTSTRING != null && LASTSTRING.equals(title + htmlmessage)) return;
+        LASTSTRING = title + htmlmessage;
+
+        show(title, ii, createDefault(icon, htmlmessage));
+    }
+
+    public static void show(final String title, ImageIcon ii, final JPanel panel) {
         if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_BALLOON, true)) return;
+
+        final ImageIcon icon;
+        if (ii == null) {
+            icon = new ImageIcon(JDImage.getImage("logo/logo_16_16"));
+        } else {
+            icon = ii;
+        }
+
         new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
-                show(string, ii, createDefault(ii2, string2));
+
+                final JWindow w = new JWindow() {
+
+                    private static final long serialVersionUID = 8925461815465551749L;
+                    private SwingWorker<Object, Object> timer;
+
+                    public void dispose() {
+                        Balloon.remove(this);
+                        super.dispose();
+
+                    }
+
+                    public void setVisible(boolean b) {
+
+                        if (b) {
+                            Balloon.add(this);
+                            this.timer = new SwingWorker<Object, Object>() {
+
+                                @Override
+                                protected Object doInBackground() throws Exception {
+                                    Thread.sleep(COUNTDOWN);
+
+                                    return null;
+                                }
+
+                                public void done() {
+                                    try {
+                                        if (isVisible()) {
+                                            setVisible(false);
+                                            dispose();
+                                        }
+                                    } catch (Exception e) {
+
+                                    }
+                                }
+
+                            };
+                            timer.execute();
+                        } else {
+                            timer.cancel(true);
+                            timer = null;
+                        }
+                        super.setVisible(b);
+                    }
+
+                };
+
+                w.setMinimumSize(new Dimension(100, 40));
+                w.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
+                JPanel container = new JPanel();
+                container.setBorder(BorderFactory.createLineBorder(container.getBackground().darker()));
+                container.setLayout(new MigLayout("ins 5,wrap 1", "[grow,fill]", "[][][grow,fill]"));
+                w.add(container);
+
+                JLabel lbl = new JLabel(title);
+                lbl.setIcon(icon);
+
+                JLabel bt = new JLabel("[X]");
+                bt.addMouseListener(new JDMouseAdapter() {
+                    public void mouseClicked(MouseEvent e) {
+                        w.setVisible(false);
+                        w.dispose();
+                    }
+                });
+
+                JPanel titlePanel = new JPanel(new MigLayout("ins 0", "[grow,fill][]"));
+                titlePanel.addMouseListener(new JDMouseAdapter() {
+                    public void mouseClicked(MouseEvent e) {
+                        SimpleGUI.CURRENTGUI.setVisible(true);
+                        SimpleGUI.CURRENTGUI.toFront();
+                    }
+                });
+                titlePanel.add(lbl);
+                titlePanel.add(bt, "aligny top,alignx right");
+
+                container.add(titlePanel);
+                container.add(new JSeparator(), "growx,pushx");
+                container.add(panel);
+
+                w.pack();
+                w.setVisible(true);
+                w.setAlwaysOnTop(true);
                 return null;
             }
+
         }.start();
-    }
-
-    public static void show(String string, ImageIcon ii, JPanel createDefault) {
-        if (ii == null) {
-            ii = new ImageIcon(JDImage.getImage("logo/logo_16_16"));
-        }
-
-        final JWindow w = new JWindow() {
-
-            private static final long serialVersionUID = 8925461815465551749L;
-            private SwingWorker<Object, Object> timer;
-
-            public void dispose() {
-                Balloon.remove(this);
-                super.dispose();
-
-            }
-
-            public void setVisible(boolean b) {
-
-                if (b) {
-                    Balloon.add(this);
-                    this.timer = new SwingWorker<Object, Object>() {
-
-                        @Override
-                        protected Object doInBackground() throws Exception {
-                            Thread.sleep(COUNTDOWN);
-
-                            return null;
-                        }
-
-                        public void done() {
-                            try {
-                                if (isVisible()) {
-                                    setVisible(false);
-                                    dispose();
-                                }
-                            } catch (Exception e) {
-
-                            }
-                        }
-
-                    };
-                    timer.execute();
-                } else {
-                    timer.cancel(true);
-                    timer = null;
-                }
-                super.setVisible(b);
-            }
-
-        };
-
-        w.setMinimumSize(new Dimension(100, 40));
-        w.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
-        container = new JPanel();
-        container.setBorder(BorderFactory.createLineBorder(container.getBackground().darker()));
-        container.setLayout(new MigLayout("ins 5,wrap 1", "[grow,fill]", "[][][grow,fill]"));
-        w.add(container);
-
-        JPanel title = new JPanel(new MigLayout("ins 0", "[grow,fill][]"));
-
-        title.addMouseListener(new JDMouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                SimpleGUI.CURRENTGUI.setVisible(true);
-                SimpleGUI.CURRENTGUI.toFront();
-            }
-        });
-        JLabel lbl;
-        title.add(lbl = new JLabel(string));
-        lbl.setIcon(ii);
-        JLabel bt;
-        title.add(bt = new JLabel("[X]"), "aligny top,alignx right");
-        bt.addMouseListener(new JDMouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                w.setVisible(false);
-                w.dispose();
-            }
-        });
-        container.add(title);
-        container.add(new JSeparator(), "growx,pushx");
-
-        container.add(createDefault);
-        w.pack();
-
-        w.setVisible(true);
-        w.setAlwaysOnTop(true);
     }
 
     protected static void add(JWindow window) {
@@ -223,16 +228,11 @@ public class Balloon {
         textField.addHyperlinkListener(new HyperlinkListener() {
 
             public void hyperlinkUpdate(HyperlinkEvent e) {
-                // (e);
-
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-
                     try {
                         JLinkButton.openURL(e.getURL());
                     } catch (Exception e1) {
-
                     }
-                    //
                 }
             }
 
@@ -240,15 +240,4 @@ public class Balloon {
         return p;
     }
 
-    /**
-     * Displays only if mainframe is hidden
-     * 
-     * @param l
-     * @param ii
-     * @param lf
-     */
-    public static void showIfHidden(String title, ImageIcon icon, String htmlmessage) {
-        if (!SimpleGUI.CURRENTGUI.isActive()) Balloon.show(title, icon, htmlmessage);
-
-    }
 }

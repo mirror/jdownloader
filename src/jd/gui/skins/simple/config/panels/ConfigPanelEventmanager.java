@@ -191,6 +191,8 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 
     // @Override
     public void initPanel() {
+        setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
+        panel.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow][]"));
 
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
@@ -228,14 +230,14 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         btnEdit.addActionListener(this);
         btnEdit.setEnabled(false);
 
-        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         bpanel.add(btnAdd);
         bpanel.add(btnRemove);
         bpanel.add(btnEdit);
 
-        this.setLayout(new MigLayout("ins 10, wrap 1", "[grow, fill]", "[grow, fill]0[]"));
-        this.add(new JScrollPane(table), "span");
-        this.add(bpanel, "dock west, dock south, gapbottom 10");
+        panel.add(new JScrollPane(table));
+        panel.add(bpanel, "w pref!, dock south");
+        add(panel);
     }
 
     // @Override

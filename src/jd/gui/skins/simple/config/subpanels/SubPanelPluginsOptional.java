@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple.config.subpanels;
 
-import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -25,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import javax.swing.JButton;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -163,7 +161,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
     // @Override
     public void initPanel() {
-        setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
+        setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
         panel.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow][]"));
 
         tableModel = new InternalTableModel();
@@ -190,17 +188,12 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             }
         }
 
-        JScrollPane scrollpane = new JScrollPane(table);
-
         btnEdit = new JButton(JDLocale.L("gui.btn_settings", "Einstellungen"));
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
-        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
-        bpanel.add(btnEdit);
-
-        panel.add(scrollpane);
-        panel.add(bpanel, "dock south");
+        panel.add(new JScrollPane(table));
+        panel.add(btnEdit, "w pref!, dock south");
         add(panel);
 
     }
