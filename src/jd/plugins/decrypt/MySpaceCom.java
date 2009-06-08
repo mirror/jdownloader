@@ -276,6 +276,9 @@ public class MySpaceCom extends PluginForDecrypt {
         return getVersion("$Revision$");
     }
 
+    /**
+     * TODO: Umbauen!
+     */
     private void setConfigElements() {
         // Vector<String> downloadModes = new Vector<String>();
         // downloadModes.add("Mp3s immer in hoher Quallität herunterladen.");

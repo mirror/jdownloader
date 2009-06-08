@@ -62,6 +62,9 @@ public class LinkBankeu extends PluginForDecrypt {
         return getVersion("$Revision$");
     }
 
+    /**
+     * TODO: Umbauen!
+     */
     private void setConfigElements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHECK_MIRRORS, JDLocale.L("plugins.decrypt.linkbankeu", "Check Mirror Links")).setDefaultValue(false));
     }

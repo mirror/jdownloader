@@ -83,6 +83,9 @@ public class JamendoCom extends PluginForDecrypt {
         return getVersion("$Revision$");
     }
 
+    /**
+     * TODO: Umbauen!
+     */
     private void setConfigElements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_SUBFOLDERS, JDLocale.L("plugins.decrypt.jamendo", "Create a subfolder for each album")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_WHOLEALBUM, JDLocale.L("plugins.decrypt.jamendoalbum", "Prefer whole Album as Zip")).setDefaultValue(true));
