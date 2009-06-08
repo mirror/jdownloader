@@ -16,8 +16,6 @@
 
 package jd.plugins;
 
-import java.util.Date;
-
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.parser.Regex;
@@ -148,7 +146,8 @@ public class AccountInfo extends Property {
      * @return
      */
     public boolean isExpired() {
-        return account_expired || (this.getValidUntil() != -1 && this.getValidUntil() < new Date().getTime());
+        validUntilCheck();
+        return account_expired;
     }
 
     /**
@@ -256,8 +255,11 @@ public class AccountInfo extends Property {
     public void setValidUntil(long validUntil) {
         if (account_validUntil == validUntil) return;
         this.account_validUntil = validUntil;
-        if (validUntil != -1 && validUntil < new Date().getTime()) {
-            this.setExpired(true);
-        }
+        validUntilCheck();
     }
+
+    public void validUntilCheck() {
+        if (getValidUntil() != -1 && getValidUntil() < System.currentTimeMillis()) this.setExpired(true);
+    }
+
 }

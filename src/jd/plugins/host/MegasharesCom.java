@@ -150,7 +150,7 @@ public class MegasharesCom extends PluginForHost {
             HashMap<String, String> input = HTMLParser.getInputHiddenFields(br + "");
 
             String code = getCaptchaCode(captchaAddress, downloadLink);
-            String geturl = downloadLink.getDownloadURL() + "&rs=check_passport_renewal&rsargs[]=" + code + "&rsargs[]=" + input.get("random_num") + "&rsargs[]=" + input.get("passport_num") + "&rsargs[]=replace_sec_pprenewal&rsrnd=" + (new Date().getTime());
+            String geturl = downloadLink.getDownloadURL() + "&rs=check_passport_renewal&rsargs[]=" + code + "&rsargs[]=" + input.get("random_num") + "&rsargs[]=" + input.get("passport_num") + "&rsargs[]=replace_sec_pprenewal&rsrnd=" + System.currentTimeMillis();
             br.getPage(geturl);
 
             if (br.containsHTML("You already have the maximum")) {

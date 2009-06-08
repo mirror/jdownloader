@@ -17,7 +17,6 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -133,7 +132,7 @@ public class ShareNownet extends PluginForHost {
         long res = 0;
         if (days != null) res += Long.parseLong(days.trim()) * 24 * 60 * 60 * 1000;
         if (hours != null) res += Long.parseLong(hours.trim()) * 60 * 60 * 1000;
-        res += new Date().getTime();
+        res += System.currentTimeMillis();
         ai.setValidUntil(res);
         return ai;
     }

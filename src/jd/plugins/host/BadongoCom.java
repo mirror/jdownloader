@@ -17,7 +17,6 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -137,7 +136,7 @@ public class BadongoCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (downloadLink.getStringProperty("type", "single").equalsIgnoreCase("split")) {
             /* Get CaptchaCode */
-            br.getPage(realURL.toString() + "?rs=displayCaptcha&rst=&rsrnd=" + new Date().getTime() + "&rsargs[]=yellow");
+            br.getPage(realURL.toString() + "?rs=displayCaptcha&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
             Form form = br.getForm(0);
             String cid = br.getRegex("cid=(\\d+)").getMatch(0);
             String code = getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, downloadLink);
@@ -157,7 +156,7 @@ public class BadongoCom extends PluginForHost {
                 fileOrVid = "getFileLink";
             else
                 fileOrVid = "getVidLink";
-            br.getPage(realURL + "?rs=" + fileOrVid + "&rst=&rsrnd=" + new Date().getTime() + "&rsargs[]=yellow");
+            br.getPage(realURL + "?rs=" + fileOrVid + "&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
             link = br.getRegex("doDownload\\(.'(.*?).'").getMatch(0);
             if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.getPage(link + "/ifr?pr=1&zenc=");
@@ -178,7 +177,7 @@ public class BadongoCom extends PluginForHost {
             ajax.setCookiesExclusive(true);
             ajax.setFollowRedirects(false);
             /* Get CaptchaCode */
-            ajax.getPage(realURL + "?rs=refreshImage&rst=&rsrnd=" + new Date().getTime());
+            ajax.getPage(realURL + "?rs=refreshImage&rst=&rsrnd=" + System.currentTimeMillis());
             String cid = ajax.getRegex("cid=(\\d+)").getMatch(0);
             String code = getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, downloadLink);
             Form captchaForm = ajax.getForm(0);
@@ -199,7 +198,7 @@ public class BadongoCom extends PluginForHost {
                 fileOrVid = "getVidLink";
             /* Possibly wait for host */
             for (int i = 0; i <= 20; i++) {
-                ajax.getPage(realURL + "?rs=" + fileOrVid + "&rst=&rsrnd=" + new Date().getTime() + "&rsargs[]=yellow");
+                ajax.getPage(realURL + "?rs=" + fileOrVid + "&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
                 if (!ajax.containsHTML("WAITING"))
                     break;
                 else if (i == 20) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);

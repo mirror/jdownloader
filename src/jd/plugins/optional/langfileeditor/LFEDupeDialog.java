@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -60,12 +59,12 @@ public class LFEDupeDialog extends JDialog {
 
         private HashMap<String, ArrayList<String>> tableData;
 
-        private Vector<String> keys;
+        private ArrayList<String> keys;
 
         public MyDupeTableModel(HashMap<String, ArrayList<String>> data) {
             columnNames = new String[] { "*", JDLocale.L("plugins.optional.langfileeditor.string", "String"), JDLocale.L("plugins.optional.langfileeditor.keys", "Keys") };
             tableData = data;
-            keys = new Vector<String>(data.keySet());
+            keys = new ArrayList<String>(data.keySet());
         }
 
         public int getColumnCount() {

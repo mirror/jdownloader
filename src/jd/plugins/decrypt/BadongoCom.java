@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.Date;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -58,7 +57,7 @@ public class BadongoCom extends PluginForDecrypt {
         } else {
             /* Get CaptchaCode */
             for (int i = 0; i <= 5; i++) {
-                br.getPage(param.toString() + "?rs=displayCaptcha&rst=&rsrnd=" + new Date().getTime() + "&rsargs[]=yellow");
+                br.getPage(param.toString() + "?rs=displayCaptcha&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
                 Form form = br.getForm(0);
                 String cid = br.getRegex("cid\\=(\\d+)").getMatch(0);
                 String code = getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, param);
