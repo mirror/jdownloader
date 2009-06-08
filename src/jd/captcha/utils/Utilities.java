@@ -35,9 +35,17 @@ import jd.utils.JDUtilities;
  * 
  * @author JD-Team
  */
-public class UTILITIES {
+public class Utilities {
 
     private static Logger logger = JDLogger.getLogger();
+
+    public static Logger getLogger() {
+        return logger;
+    }
+
+    public static boolean isLoggerActive() {
+        return JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL;
+    }
 
     public static boolean checkJumper(int x, int from, int to) {
         return x >= from && x <= to;
@@ -88,13 +96,6 @@ public class UTILITIES {
         return from + (to - from) / 2;
     }
 
-    /**
-     * @return logger
-     */
-    public static Logger getLogger() {
-        return logger;
-    }
-
     public static int getPercent(int a, int b) {
         if (b == 0) return 100;
         return a * 100 / b;
@@ -103,7 +104,7 @@ public class UTILITIES {
     /**
      * @return Gibt die Millisekunen seit 1970 zurück
      */
-    public static long getTimer() {
+    public static long getsTimer() {
         return System.currentTimeMillis();
     }
 
@@ -117,6 +118,7 @@ public class UTILITIES {
     public static Image loadImage(final File file) {
         GuiRunnable<Image> run = new GuiRunnable<Image>() {
             // @Override
+            @Override
             public Image runSave() {
                 JFrame jf = new JFrame();
                 Image img = jf.getToolkit().getImage(file.getAbsolutePath());
@@ -136,7 +138,7 @@ public class UTILITIES {
     }
 
     public static int nextJump(int x, int from, int to, int step) {
-        int start = UTILITIES.getJumperStart(from, to);
+        int start = Utilities.getJumperStart(from, to);
         int ret;
         if (x == start) {
             ret = start + step;

@@ -33,6 +33,7 @@ public class MultiThreadDetection {
         }
 
         //@Override
+        @Override
         public void run() {
             letter.detected = jac.getLetter(letter);
             startDetection(this);

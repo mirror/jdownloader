@@ -21,11 +21,10 @@ import java.util.HashMap;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
-import jd.captcha.utils.UTILITIES;
+import jd.captcha.utils.Utilities;
 import jd.nutils.Colors;
 
 /**
@@ -62,7 +61,7 @@ public class PixelObject implements Comparable<PixelObject> {
     /**
      * Logger
      */
-    public Logger logger = UTILITIES.getLogger();
+    public Logger logger = Utilities.getLogger();
 
     /**
      * Interne prüfvariable die hochgezählt wird wenn dieneuen Pixel keine
@@ -210,7 +209,7 @@ public class PixelObject implements Comparable<PixelObject> {
         PixelObject l = turn(accuracy);
 
         int angle;
-        // UTILITIES.trace(getWidthToHeight()+" : right:"+r.getWidthToHeight()+"
+        // Utilities.trace(getWidthToHeight()+" : right:"+r.getWidthToHeight()+"
         // left:"+l.getWidthToHeight());
         if (r.getWidthToHeight() >= getWidthToHeight() && l.getWidthToHeight() >= getWidthToHeight()) { return this; }
         int steps = r.getWidthToHeight() < l.getWidthToHeight() ? -accuracy : accuracy;
@@ -218,7 +217,7 @@ public class PixelObject implements Comparable<PixelObject> {
         PixelObject ret = r.getWidthToHeight() < l.getWidthToHeight() ? r : l;
         PixelObject next;
         while ((next = turn(angle)).getWidthToHeight() < ret.getWidthToHeight()) {
-            // UTILITIES.trace("akt angle: "+angle+" wh:
+            // Utilities.trace("akt angle: "+angle+" wh:
             // "+next.getWidthToHeight());
             ret = next;
 
@@ -246,12 +245,12 @@ public class PixelObject implements Comparable<PixelObject> {
         double bestValue = Double.MAX_VALUE;
         PixelObject res = null;
         PixelObject tmp;
-        // UTILITIES.trace("ALIGN "+this.getWidthToHeight());
+        // Utilities.trace("ALIGN "+this.getWidthToHeight());
         for (int angle = angleA; angle < angleB; angle += accuracy) {
 
             tmp = turn(angle < 0 ? 360 + angle : angle);
 
-            // UTILITIES.trace((angle<0?360+angle:angle)+" test
+            // Utilities.trace((angle<0?360+angle:angle)+" test
             // "+this.getWidthToHeight());
             if (tmp.getWidthToHeight() < bestValue) {
                 bestValue = tmp.getWidthToHeight();
@@ -316,7 +315,7 @@ public class PixelObject implements Comparable<PixelObject> {
      */
     public boolean doesColorAverageFit(int color) {
         if (getSize() > 50000) {
-            if (JAntiCaptcha.isLoggerActive()) {
+            if (Utilities.isLoggerActive()) {
                 logger.severe("Objekt scheint sehr groß zu werden. objectColorContrast zu hoch?");
             }
             return false;
@@ -613,7 +612,8 @@ public class PixelObject implements Comparable<PixelObject> {
 
     }
 
-    //@Override
+    // @Override
+    @Override
     public String toString() {
         return super.toString() + " " + getLocation()[0] + "-" + getLocation()[1];
     }
@@ -628,7 +628,7 @@ public class PixelObject implements Comparable<PixelObject> {
         PixelObject po = new PixelObject(owner);
         for (int i = 0; i < getSize(); i++) {
             int[] akt = elementAt(i);
-            int[] n = UTILITIES.turnCoordinates(akt[0], akt[1], xMin + getWidth() / 2, yMin + getHeight() / 2, angle);
+            int[] n = Utilities.turnCoordinates(akt[0], akt[1], xMin + getWidth() / 2, yMin + getHeight() / 2, angle);
             po.add(n[0], n[1], avg);
         }
         return po;

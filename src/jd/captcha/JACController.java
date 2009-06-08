@@ -27,7 +27,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
-import jd.captcha.utils.UTILITIES;
+import jd.captcha.utils.Utilities;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.utils.JDLocale;
 import net.miginfocom.swing.MigLayout;
@@ -47,7 +47,7 @@ public class JACController {
         }
         frame.setAlwaysOnTop(true);
         frame.setLocation(20, 20);
-        File[] meths = new File(UTILITIES.getMethodDir()).listFiles(new FileFilter() {
+        File[] meths = new File(Utilities.getMethodDir()).listFiles(new FileFilter() {
 
             public boolean accept(File pathname) {
                 if (pathname.isDirectory()) return true;
@@ -103,7 +103,7 @@ public class JACController {
 
     public JACController(File path, String methode) {
         this.path = path;
-        jac = new JAntiCaptcha(UTILITIES.getMethodDir(), methode);
+        jac = new JAntiCaptcha(Utilities.getMethodDir(), methode);
     }
 
     public void showCaptcha() {

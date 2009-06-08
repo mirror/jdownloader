@@ -39,7 +39,7 @@ public class JACLoad {
     }
 
     private void go() {
-        // String methodsPath=UTILITIES.getFullPath(new String[] {
+        // String methodsPath=Utilities.getFullPath(new String[] {
         // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
         // "jd", "captcha", "methods"});
 

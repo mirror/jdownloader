@@ -20,7 +20,7 @@ import java.io.File;
 
 import javax.swing.JOptionPane;
 
-import jd.captcha.utils.UTILITIES;
+import jd.captcha.utils.Utilities;
 import jd.utils.JDUtilities;
 
 /**
@@ -42,13 +42,13 @@ public class JACTest {
     private void go() {
         String hoster = "megaupload.com2";
 
-        JAntiCaptcha jac = new JAntiCaptcha(UTILITIES.getMethodDir(), hoster);
+        JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
 
         // jac.setShowDebugGui(true);
         // LetterComperator.CREATEINTERSECTIONLETTER = true;
         //
         // jac.exportDB();
-        // UTILITIES.getLogger().info("has method:
+        // Utilities.getLogger().info("has method:
         // "+JAntiCaptcha.hasMethod(methodsPath, hoster));
 
         //
@@ -79,7 +79,7 @@ public class JACTest {
         if (JOptionPane.showConfirmDialog(null, "train") == JOptionPane.OK_OPTION) {
             f.renameTo(new File("C:\\Users\\coalado\\Desktop\\caps\\" + f.getName()));
         }
-        // UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.
+        // Utilities.getLogger().info(JAntiCaptcha.getCaptchaCode(Utilities.
         // loadImage(new
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()
         // +"/jd/captcha/methods"+

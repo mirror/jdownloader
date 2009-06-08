@@ -54,7 +54,7 @@ public class MegaUpload {
 
         ArrayList<Letter> ret = new ArrayList<Letter>();
         for (int i = 0; i < 4; i++) {
-            int averageWidth = Math.min(captcha.getWidth(), (int) (captcha.getWidth() / (4 - i)) + 20);
+            int averageWidth = Math.min(captcha.getWidth(), (captcha.getWidth() / (4 - i)) + 20);
             Letter first = new Letter(averageWidth, captcha.getHeight());
 
             first.setId(i);

@@ -34,7 +34,6 @@ public class CaptchaController {
 
     private String methodname;
     private File captchafile;
-    private JAntiCaptcha jac;
     private String explain;
     private String suggest;
 
@@ -43,16 +42,15 @@ public class CaptchaController {
         this.captchafile = file;
         this.explain = explain;
         this.suggest = suggest;
-        jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), methodname);
     }
 
     /**
-     * Returns of the method is enabled.
+     * Returns if the method is enabled.
      * 
      * @param method
      * @return
      */
-    public boolean isJACMethodEnabled(String method) {
+    private boolean isJACMethodEnabled(String method) {
         return (JDUtilities.getConfiguration() == null || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false)) && JACMethod.hasMethod(method) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + method.toLowerCase(), true);
     }
 
@@ -61,23 +59,12 @@ public class CaptchaController {
         if ((flag & UserIO.NO_JAC) > 0) return UserIO.getInstance().requestCaptchaDialog(flag, methodname, captchafile, suggest, explain);
         if (!isJACMethodEnabled(methodname)) {
             if ((flag & UserIO.NO_USER_INTERACTION) > 0) return null;
-
             return UserIO.getInstance().requestCaptchaDialog(flag | UserIO.NO_JAC, methodname, captchafile, suggest, explain);
-
         }
 
-        Image captchaImage;
+        JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), methodname);
         try {
-            captchaImage = ImageIO.read(captchafile);
-
-            // MediaTracker mediaTracker = new MediaTracker(jf);
-            // mediaTracker.addImage(captchaImage, 0);
-            // try {
-            // mediaTracker.waitForID(0);
-            // } catch (InterruptedException e) {
-            // return null;
-            // }
-            // mediaTracker.removeImage(captchaImage);
+            Image captchaImage = ImageIO.read(captchafile);
 
             Captcha captcha = jac.createCaptcha(captchaImage);
             String captchaCode = jac.checkCaptcha(captcha);

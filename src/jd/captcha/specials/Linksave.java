@@ -20,7 +20,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
@@ -72,8 +71,7 @@ public class Linksave {
                     }
                     int mainColor = 0;
                     int mainCount = 0;
-                    for (Iterator<Entry<Integer, Integer>> it = colors.entrySet().iterator(); it.hasNext();) {
-                        Entry<Integer, Integer> col = it.next();
+                    for (Entry<Integer, Integer> col : colors.entrySet()) {
                         if (col.getValue() > mainCount && col.getKey() > 10) {
                             mainCount = col.getValue();
                             mainColor = col.getKey();

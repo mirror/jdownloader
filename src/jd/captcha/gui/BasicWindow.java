@@ -28,7 +28,7 @@ import java.awt.event.WindowEvent;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-import jd.captcha.utils.UTILITIES;
+import jd.captcha.utils.Utilities;
 
 /**
  * Die Klasse dient als Window Basis Klasse.
@@ -62,7 +62,7 @@ public class BasicWindow extends JFrame {
         w.setSize(ic.getImageWidth() + 10, ic.getImageHeight() + 20);
         w.setTitle(title);
         w.setLayout(new GridBagLayout());
-        w.add(ic, UTILITIES.getGBC(0, 0, 1, 1));
+        w.add(ic, Utilities.getGBC(0, 0, 1, 1));
         w.setVisible(true);
         w.refreshUI();
         return w;
@@ -94,7 +94,7 @@ public class BasicWindow extends JFrame {
      */
     public GridBagConstraints getGBC(int x, int y, int width, int height) {
 
-        GridBagConstraints gbc = UTILITIES.getGBC(x, y, width, height);
+        GridBagConstraints gbc = Utilities.getGBC(x, y, width, height);
         gbc.anchor = GridBagConstraints.NORTHWEST;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weighty = 1;
@@ -109,6 +109,7 @@ public class BasicWindow extends JFrame {
     private void initWindow() {
         addWindowListener(new WindowAdapter() {
             // @Override
+            @Override
             public void windowClosing(WindowEvent event) {
                 Window window = event.getWindow();
                 window.setVisible(false);
@@ -122,6 +123,7 @@ public class BasicWindow extends JFrame {
     }
 
     // @Override
+    @Override
     public void pack() {
         try {
             super.pack();

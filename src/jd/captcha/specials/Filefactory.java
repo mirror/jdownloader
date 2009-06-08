@@ -27,7 +27,7 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
-import jd.captcha.utils.UTILITIES;
+import jd.captcha.utils.Utilities;
 import jd.nutils.Colors;
 
 /**
@@ -52,9 +52,7 @@ public class Filefactory {
                 n.add(x, y, grid.getGrid()[x][y]);
 
                 merge = new ArrayList<PixelObject>();
-                for (Iterator<PixelObject> it = ret.iterator(); it.hasNext();) {
-                    PixelObject o = it.next();
-
+                for (PixelObject o : ret) {
                     if (o.isTouching(x, y, true, 6, 6)) {
 
                         merge.add(o);
@@ -96,9 +94,7 @@ public class Filefactory {
                 n.add(x, y, grid.getGrid()[x][y]);
 
                 merge = new ArrayList<PixelObject>();
-                for (Iterator<PixelObject> it = ret.iterator(); it.hasNext();) {
-                    PixelObject o = it.next();
-
+                for (PixelObject o : ret) {
                     if (o.isTouching(x, y, true, 6, 6) && Colors.getColorDifference(grid.getGrid()[x][y], o.getAverage()) < 25) {
 
                         merge.add(o);
@@ -140,9 +136,7 @@ public class Filefactory {
                 n.add(x, y, grid.getGrid()[x][y]);
 
                 merge = new ArrayList<PixelObject>();
-                for (Iterator<PixelObject> it = ret.iterator(); it.hasNext();) {
-                    PixelObject o = it.next();
-
+                for (PixelObject o : ret) {
                     if (o.isTouching(x, y, true, 2, 2) && Colors.getColorDifference(grid.getGrid()[x][y], o.getAverage()) < 25) {
 
                         merge.add(o);
@@ -377,11 +371,11 @@ public class Filefactory {
         // w.setImage(0, y, captcha.getImage(3));
         // w.setText(1, y, "cleanYLinesX");
         y++;
-        captcha.cleanWithDetailMask(captcha.owner.createCaptcha(UTILITIES.loadImage(captcha.owner.getResourceFile("bg_mask.png"))), 10);
-        captcha.cleanWithDetailMask(captcha.owner.createCaptcha(UTILITIES.loadImage(captcha.owner.getResourceFile("bg_mask_2.png"))), 5);
-        captcha.cleanWithDetailMask(captcha.owner.createCaptcha(UTILITIES.loadImage(captcha.owner.getResourceFile("bg_mask_3.png"))), 5);
-        captcha.cleanWithDetailMask(captcha.owner.createCaptcha(UTILITIES.loadImage(captcha.owner.getResourceFile("bg_mask_4.png"))), 5);
-        captcha.cleanWithDetailMask(captcha.owner.createCaptcha(UTILITIES.loadImage(captcha.owner.getResourceFile("bg_mask_5.png"))), 5);
+        captcha.cleanWithDetailMask(captcha.owner.createCaptcha(Utilities.loadImage(captcha.owner.getResourceFile("bg_mask.png"))), 10);
+        captcha.cleanWithDetailMask(captcha.owner.createCaptcha(Utilities.loadImage(captcha.owner.getResourceFile("bg_mask_2.png"))), 5);
+        captcha.cleanWithDetailMask(captcha.owner.createCaptcha(Utilities.loadImage(captcha.owner.getResourceFile("bg_mask_3.png"))), 5);
+        captcha.cleanWithDetailMask(captcha.owner.createCaptcha(Utilities.loadImage(captcha.owner.getResourceFile("bg_mask_4.png"))), 5);
+        captcha.cleanWithDetailMask(captcha.owner.createCaptcha(Utilities.loadImage(captcha.owner.getResourceFile("bg_mask_5.png"))), 5);
 
         // w.setImage(0, y, captcha.getImage(3));
         // w.setText(1, y, "cleanWithDetailMask");
@@ -430,7 +424,7 @@ public class Filefactory {
         // for (int x = 0; x < captcha.getWidth(); x++) {
         // for (int y = 0; y < captcha.getHeight(); y++) {
         //
-        // double dif = UTILITIES.getColorDifference(captcha.grid[x][y], avg);
+        // double dif = Utilities.getColorDifference(captcha.grid[x][y], avg);
         // // if(JAntiCaptcha.isLoggerActive())logger.info(getPixelValue(x,
         // // y)+"_");
         // if (dif < 2) captcha.setPixelValue(x, y, captcha.getMaxPixelValue());
@@ -657,7 +651,7 @@ public class Filefactory {
         // if(x==0&&y==0)continue;
         // if(xx+x<0 ||xx+x>copy.length-1)continue;
         // if(yy+y<0 ||yy+y>copy[0].length-1)continue;
-        // if(UTILITIES.getColorDifference(copy[xx+x][yy+y], copy[xx][yy])<5){
+        // if(Utilities.getColorDifference(copy[xx+x][yy+y], copy[xx][yy])<5){
         // same++;
         // }else{
         // dif++;

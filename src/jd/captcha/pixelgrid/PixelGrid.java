@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
-import jd.captcha.utils.UTILITIES;
+import jd.captcha.utils.Utilities;
 import jd.config.Property;
 import jd.controlling.JDLogger;
 import jd.nutils.Colors;
@@ -248,7 +248,7 @@ public class PixelGrid extends Property {
     //			
     // localGrid[x][y] = Color.HSBtoRGB(hsb[0],hsb[1],hsb[2]);
     // } catch (ArrayIndexOutOfBoundsException e) {
-    // UTILITIES.trace("ERROR: Nicht im grid; [" + x + "][" + y
+    // Utilities.trace("ERROR: Nicht im grid; [" + x + "][" + y
     // + "] grid " + localGrid.length);
     // JDLogger.exception(e);
     //
@@ -267,9 +267,9 @@ public class PixelGrid extends Property {
         // value*=(float)((float)owner.getColorFaktor()/(float)owner.
         // getColorFaktor());
         // // String
-        // // str=UTILITIES.fillInteger(Integer.toHexString(value),6,"0");
-        // int[] v = UTILITIES.hexToRgb(value);
-        // UTILITIES.trace(value+" - "+v[0]+"/"+v[1]+"/"+v[2]);
+        // // str=Utilities.fillInteger(Integer.toHexString(value),6,"0");
+        // int[] v = Utilities.hexToRgb(value);
+        // Utilities.trace(value+" - "+v[0]+"/"+v[1]+"/"+v[2]);
         // if (owner.getColorFormat() == 0) {
         // float[] hsb = { 0.0f, 0.0f, 0.0f };
         // if (owner.getColorComponent(0) <= 2)
@@ -278,10 +278,10 @@ public class PixelGrid extends Property {
         // hsb[owner.getColorComponent(1)] = (float) ((double) v[1] / 255.0);
         // if (owner.getColorComponent(2) <= 2)
         // hsb[owner.getColorComponent(2)] = (float) ((double) v[2] / 255.0);
-        // UTILITIES.trace(value+" - "+hsb[0]+"/"+hsb[1]+"/"+hsb[2]);
+        // Utilities.trace(value+" - "+hsb[0]+"/"+hsb[1]+"/"+hsb[2]);
         // localGrid[x][y] = Color.HSBtoRGB(hsb[0], hsb[1], hsb[2]);
         // while( localGrid[x][y]<0) localGrid[x][y]+=16777216;
-        // UTILITIES.trace(localGrid[x][y]);
+        // Utilities.trace(localGrid[x][y]);
         // } else if (owner.getColorFormat() == 1) {
         // int[] rgb = { 0, 0, 0 };
         // if (owner.getColorComponent(0) <= 2)
@@ -295,7 +295,7 @@ public class PixelGrid extends Property {
         // }
         //
         // } catch (ArrayIndexOutOfBoundsException e) {
-        // UTILITIES.trace("ERROR: Nicht im grid; [" + x + "][" + y + "] grid "
+        // Utilities.trace("ERROR: Nicht im grid; [" + x + "][" + y + "] grid "
         // + localGrid.length);
         // JDLogger.exception(e);
         //
@@ -312,7 +312,7 @@ public class PixelGrid extends Property {
     /**
      * Logger
      */
-    public Logger logger = UTILITIES.getLogger();
+    public Logger logger = Utilities.getLogger();
 
     /**
      * ParameterDump
@@ -407,7 +407,7 @@ public class PixelGrid extends Property {
         }
 
         if (leftLines >= getWidth() || getWidth() - rightLines > getWidth()) {
-            if (JAntiCaptcha.isLoggerActive()) {
+            if (Utilities.isLoggerActive()) {
                 logger.severe("cleaning failed. nothing left1");
             }
 
@@ -444,7 +444,7 @@ public class PixelGrid extends Property {
         }
 
         if (getWidth() - leftLines - rightLines < 0 || getHeight() - topLines - bottomLines < 0) {
-            if (JAntiCaptcha.isLoggerActive()) {
+            if (Utilities.isLoggerActive()) {
                 logger.severe("cleaning failed. nothing left");
             }
             grid = new int[0][0];
@@ -508,7 +508,7 @@ public class PixelGrid extends Property {
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 int dif = Math.abs(avg - getPixelValue(x, y));
-                // if(JAntiCaptcha.isLoggerActive())logger.info(getPixelValue(x,
+                // if(Utilities.isLoggerActive())logger.info(getPixelValue(x,
                 // y)+"_");
                 if (dif < (int) (getMaxPixelValue() * owner.getJas().getDouble("BackgroundSampleCleanContrast"))) {
 
@@ -968,7 +968,7 @@ public class PixelGrid extends Property {
 
     public Image getFullImage() {
         if (getWidth() <= 0 || getHeight() <= 0) {
-            if (JAntiCaptcha.isLoggerActive()) {
+            if (Utilities.isLoggerActive()) {
                 logger.severe("Dimensionen falsch: " + getDim());
             }
             return null;
@@ -1022,7 +1022,7 @@ public class PixelGrid extends Property {
      */
     public Image getImage() {
         if (getWidth() <= 0 || getHeight() <= 0) {
-            if (JAntiCaptcha.isLoggerActive()) {
+            if (Utilities.isLoggerActive()) {
                 logger.severe("Dimensionen falsch: " + getDim());
             }
             return null;
@@ -1049,7 +1049,7 @@ public class PixelGrid extends Property {
      */
     public Image getImage(int faktor) {
         if (getWidth() * faktor <= 0 || getHeight() * faktor <= 0) {
-            // if(JAntiCaptcha.isLoggerActive())logger.severe("Bild zu Klein.
+            // if(Utilities.isLoggerActive())logger.severe("Bild zu Klein.
             // Fehler!!. Buhcstbaen nicht richtig erkannt?");
             BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
 
@@ -1107,7 +1107,7 @@ public class PixelGrid extends Property {
 
         if (x < 0 || y < 0 || tmpGrid.length <= x || tmpGrid[0].length <= y || tmpGrid[x][y] < 0) { return; }
         int localValue = PixelGrid.getPixelValue(x, y, tmpGrid, owner);
-        // UTILITIES.trace(x+"/"+y);
+        // Utilities.trace(x+"/"+y);
         try {
             if (object.doesColorAverageFit(localValue)) {
 
@@ -1192,14 +1192,14 @@ public class PixelGrid extends Property {
                                 break;
                             }
                         }
-                        if (JAntiCaptcha.isLoggerActive()) {
+                        if (Utilities.isLoggerActive()) {
                             logger.finer("Verfolge weiter Letztes Object: area:" + lastObject.getArea() + " dist: " + dist);
                         }
 
                     } else {
                         object = new PixelObject(this);
                         object.setContrast(contrast);
-                        // if(JAntiCaptcha.isLoggerActive())logger.info("Kontrast:
+                        // if(Utilities.isLoggerActive())logger.info("Kontrast:
                         // "+contrast+" : "+objectContrast);
                         object.setWhiteContrast(objectContrast);
                     }
@@ -1213,12 +1213,12 @@ public class PixelGrid extends Property {
                     if (tmp == object.getSize()) {
                         object = new PixelObject(this);
                         object.setContrast(contrast);
-                        // if(JAntiCaptcha.isLoggerActive())logger.info("Kontrast:
+                        // if(Utilities.isLoggerActive())logger.info("Kontrast:
                         // "+contrast+" : "+objectContrast);
                         object.setWhiteContrast(objectContrast);
                         getObject(x, y, tmpGrid, object);
                     }
-                    // if(JAntiCaptcha.isLoggerActive())logger.info(object.getSize
+                    // if(Utilities.isLoggerActive())logger.info(object.getSize
                     // ()+"
                     // avg "+object.getAverage()+" area: "+object.getArea());
                     if (object.getArea() > 20) {
@@ -1247,7 +1247,7 @@ public class PixelGrid extends Property {
                         if (object.getArea() > ret.elementAt(i).getArea()) {
 
                             ret.add(i, object);
-                            // if(JAntiCaptcha.isLoggerActive())logger.finer(
+                            // if(Utilities.isLoggerActive())logger.finer(
                             // "Found
                             // Object size:"+object.getSize()+"
                             // "+object.getWidth()+" - "+object.getArea());
@@ -1260,7 +1260,7 @@ public class PixelGrid extends Property {
                     }
                     if (object != null) {
                         ret.add(object);
-                        // if(JAntiCaptcha.isLoggerActive())logger.finer("Found
+                        // if(Utilities.isLoggerActive())logger.finer("Found
                         // Object size:"+object.getSize()+"
                         // "+object.getWidth()+" - "+object.getArea());
 
@@ -1413,7 +1413,7 @@ public class PixelGrid extends Property {
         }
 
         Double faktor = (double) (max - min) / (double) getMaxPixelValue();
-        if (JAntiCaptcha.isLoggerActive()) {
+        if (Utilities.isLoggerActive()) {
             logger.fine(min + " <> " + max + " : " + faktor);
         }
         for (int y = 0; y < getHeight(); y++) {
@@ -1431,7 +1431,7 @@ public class PixelGrid extends Property {
                 akt -= min;
                 akt /= faktor;
                 akt *= multi;
-                // if(JAntiCaptcha.isLoggerActive())logger.fine(getPixelValue(x,y
+                // if(Utilities.isLoggerActive())logger.fine(getPixelValue(x,y
                 // )+"
                 // = "+akt);
                 akt = Math.min(akt, getMaxPixelValue());
@@ -1447,7 +1447,7 @@ public class PixelGrid extends Property {
      * Gibt ein ACSI bild des Captchas aus
      */
     public void printGrid() {
-        if (JAntiCaptcha.isLoggerActive()) {
+        if (Utilities.isLoggerActive()) {
             logger.info("\r\n" + getString());
         }
     }

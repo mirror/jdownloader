@@ -18,7 +18,7 @@ package jd.captcha;
 
 import java.util.logging.Logger;
 
-import jd.captcha.utils.UTILITIES;
+import jd.captcha.utils.Utilities;
 import jd.utils.JDUtilities;
 
 /**
@@ -37,13 +37,13 @@ public class JACTrain {
         main.go();
     }
 
-    private Logger logger = UTILITIES.getLogger();
+    private Logger logger = Utilities.getLogger();
 
     private void go() {
 
         // String hoster="rscat.com";
         String hoster = "gwarez.cc";
-        JAntiCaptcha jac = new JAntiCaptcha(UTILITIES.getMethodDir(), hoster);
+        JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
         // jac.runTestMode(new File("1186941165349_captcha.jpg"));
         jac.displayLibrary();
 

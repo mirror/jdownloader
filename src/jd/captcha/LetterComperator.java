@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 
 import jd.captcha.configuration.JACScript;
 import jd.captcha.pixelgrid.Letter;
-import jd.captcha.utils.UTILITIES;
+import jd.captcha.utils.Utilities;
 import jd.controlling.JDLogger;
 
 /**
@@ -46,9 +46,10 @@ public class LetterComperator {
      */
     public static boolean CREATEINTERSECTIONLETTER = false;
     /**
-     * Matchtable kann als Stringarray gesetzt werden... z.b. {"123","456","789"} lässt auf id platz 1 nur 1,2 oder 3 zu usw.
+     * Matchtable kann als Stringarray gesetzt werden... z.b.
+     * {"123","456","789"} lässt auf id platz 1 nur 1,2 oder 3 zu usw.
      */
-    public static String[] MATCH_TABLE=null;
+    public static String[] MATCH_TABLE = null;
     /**
      * Detection IDS Keine ERkennung. fehler!
      */
@@ -105,7 +106,7 @@ public class LetterComperator {
     private JACScript jas;
     private double localHeightPercent;
     private double localWidthPercent;
-    private Logger logger = UTILITIES.getLogger();
+    private Logger logger = Utilities.getLogger();
     int minCleftSize;
     private int[] offset;
     private int overlayNoiseSize;
@@ -237,7 +238,7 @@ public class LetterComperator {
             int tmpIntersectionWidth = intersectionDimension[0];
             int tmpIntersectionHeight = intersectionDimension[1];
 
-            // long starter=UTILITIES.getTimer();
+            // long starter=Utilities.getTimer();
 
             int[][] g = new int[tmpIntersectionWidth][tmpIntersectionHeight];
 
@@ -357,7 +358,7 @@ public class LetterComperator {
             int tmpIntersectionWidth = intersectionDimension[0];
             int tmpIntersectionHeight = intersectionDimension[1];
 
-            // long starter=UTILITIES.getTimer();
+            // long starter=Utilities.getTimer();
 
             int[][] g = new int[tmpIntersectionWidth][tmpIntersectionHeight];
 
@@ -619,13 +620,12 @@ public class LetterComperator {
      */
     public void run() {
 
-        if(MATCH_TABLE!=null&&this.getA().getId()>-1&&MATCH_TABLE.length>this.getA().getId()){
+        if (MATCH_TABLE != null && this.getA().getId() > -1 && MATCH_TABLE.length > this.getA().getId()) {
             String matches = MATCH_TABLE[this.getA().getId()];
-          
-            if(!matches.contains(getB().getDecodedValue())){             
-                
-                return;
-            }
+
+            if (!matches.contains(getB().getDecodedValue())) {
+
+            return; }
         }
 
         scan();
@@ -637,7 +637,7 @@ public class LetterComperator {
      * gegeneinander verschoben.
      */
     private void scan() {
-        long startTime = UTILITIES.getTimer();
+        long startTime = System.currentTimeMillis();
         double bestValue = 20000.0;
         preValityPercent = 20000.0;
         tmpPreScanValue = 20000.0;
@@ -685,8 +685,8 @@ public class LetterComperator {
         // if (this.getDecodedValue().equals("1"))
         // logger.info(this.getDecodedValue() + " :start");
 
-        for (int xx = UTILITIES.getJumperStart(scanXFrom, scanXTo); UTILITIES.checkJumper(xx, scanXFrom, scanXTo); xx = UTILITIES.nextJump(xx, scanXFrom, scanXTo, 1)) {
-            for (int yy = UTILITIES.getJumperStart(scanYFrom, scanYTo); UTILITIES.checkJumper(yy, scanYFrom, scanYTo); yy = UTILITIES.nextJump(yy, scanYFrom, scanYTo, 1)) {
+        for (int xx = Utilities.getJumperStart(scanXFrom, scanXTo); Utilities.checkJumper(xx, scanXFrom, scanXTo); xx = Utilities.nextJump(xx, scanXFrom, scanXTo, 1)) {
+            for (int yy = Utilities.getJumperStart(scanYFrom, scanYTo); Utilities.checkJumper(yy, scanYFrom, scanYTo); yy = Utilities.nextJump(yy, scanYFrom, scanYTo, 1)) {
                 // Offsets
                 left = Math.max(0, xx);
                 right = Math.min(xx + b.getWidth(), a.getWidth());
@@ -740,7 +740,7 @@ public class LetterComperator {
                     setIntersectionWidth(tmpIntersectionWidth);
                     setIntersectionStartX(xx);
                     setIntersectionStartY(yy);
-                    setPosition(left,top);
+                    setPosition(left, top);
                     setBothElementNum(bothElements.size());
                     setCoverageFaktorA(tmpCoverageFaktorA);
                     setCoverageFaktorB(tmpCoverageFaktorB);
@@ -766,13 +766,13 @@ public class LetterComperator {
         }
         // }
 
-        scanTime = (int) (UTILITIES.getTimer() - startTime);
+        scanTime = (int) (System.currentTimeMillis() - startTime);
 
     }
 
     private void setPosition(int left, int top) {
-       this.position=new int[]{left,top};
-        
+        this.position = new int[] { left, top };
+
     }
 
     public int[] getPosition() {
@@ -795,7 +795,7 @@ public class LetterComperator {
         tmpPixelBoth = 0;
         tmpCoverageFaktorA = 0;
         tmpCoverageFaktorB = 0;
-        // long starter=UTILITIES.getTimer();
+        // long starter=Utilities.getTimer();
         bothElements.removeAllElements();
         elementGrid = new int[tmpIntersectionWidth][tmpIntersectionHeight];
 
@@ -851,7 +851,7 @@ public class LetterComperator {
             }
         }
 
-        // logger.info("Scanner: "+UTILITIES.getTimer(starter));
+        // logger.info("Scanner: "+Utilities.getTimer(starter));
         // if(getDecodedValue().equalsIgnoreCase("v")&&getBothElementsNum()==3){
         // logger.info("JJJ");
         // }
@@ -935,8 +935,8 @@ public class LetterComperator {
                 }
             }
         }
-        // logger.info((UTILITIES.getTimer() - startTime)+ "intersection
-        // scantime: "+(UTILITIES.getTimer()-starter2));
+        // logger.info((Utilities.getTimer() - startTime)+ "intersection
+        // scantime: "+(Utilities.getTimer()-starter2));
         if (pixelAll > 0) {
             tmpErrorA = (double) tmpPixelAButNotB / (double) (tmpPixelBoth + tmpPixelAButNotB);
             tmpErrorB = (double) tmpPixelBButNotA / (double) (tmpPixelBButNotA + tmpPixelBoth);
@@ -1107,7 +1107,7 @@ public class LetterComperator {
         if (jas.getString("comparatorExtension").length() > 0) {
             String[] ref = jas.getString("comparatorExtension").split("\\.");
             if (ref.length != 2) {
-                if (JAntiCaptcha.isLoggerActive()) {
+                if (Utilities.isLoggerActive()) {
                     logger.severe("comparatorExtension should have the format Class.Method");
                 }
 
@@ -1227,7 +1227,8 @@ public class LetterComperator {
      * 
      * @return parameterstring
      */
-    //@Override
+    // @Override
+    @Override
     public String toString() {
         Hashtable<String, Object> hs = new Hashtable<String, Object>();
         // if(getDecodedValue().equalsIgnoreCase("v")&&getBothElementsNum()==3){
@@ -1256,7 +1257,7 @@ public class LetterComperator {
         StringBuilder calc = new StringBuilder("Error= ");
         calc.append(getTotalPixelError());
         calc.append(" (totalPixelError) ");
-        calc.append(getTotalPixelError()* 100.0 / t);
+        calc.append(getTotalPixelError() * 100.0 / t);
         calc.append("\r\n");
         tmpError += Math.min(1.0, getCoverageFaktorA()) * coverageFaktorAWeight;
         calc.append(Math.round(Math.min(1.0, getCoverageFaktorA()) * coverageFaktorAWeight * 100.0 / t));
@@ -1300,7 +1301,7 @@ public class LetterComperator {
         calc.append(Math.min(1.0, getIntersectionAWidthFaktor()) * intersectionAWidthWeight);
         calc.append('=');
         calc.append(tmpError);
-        calc.append( " (AWidthFaktor)\r\n");
+        calc.append(" (AWidthFaktor)\r\n");
         tmpError += (getBothElementsNum() - 1) * cleftFaktor;
         calc.append(Math.round((getBothElementsNum() - 1) * cleftFaktor * 100.0 / t));
         calc.append("%          + ");
@@ -1319,11 +1320,11 @@ public class LetterComperator {
         tmpError /= divider;
         calc.append('/');
         calc.append(divider);
-        calc.append(new char[] {' ', '=', ' '});
+        calc.append(new char[] { ' ', '=', ' ' });
         calc.append(tmpError);
         calc.append(" => ");
         calc.append(tmpError * 100);
-        calc.append(new char[] {'%',' '});
+        calc.append(new char[] { '%', ' ' });
         // tmpError = Math.min(1.0, tmpError);
 
         hs.put("totalFaktor", tmpError);

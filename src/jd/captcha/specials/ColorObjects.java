@@ -19,7 +19,6 @@ package jd.captcha.specials;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 
 import jd.captcha.pixelgrid.Captcha;
@@ -46,9 +45,7 @@ public class ColorObjects {
                 n.add(x, y, grid.getGrid()[x][y]);
 
                 merge = new ArrayList<PixelObject>();
-                for (Iterator<PixelObject> it = ret.iterator(); it.hasNext();) {
-                    PixelObject o = it.next();
-
+                for (PixelObject o : ret) {
                     if (o.isTouching(x, y, true, 10, 10) && Colors.getColorDifference(grid.getGrid()[x][y], o.getAverage()) < tollerance) {
                         merge.add(o);
                     }

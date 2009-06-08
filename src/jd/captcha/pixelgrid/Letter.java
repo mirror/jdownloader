@@ -22,7 +22,7 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelobject.PixelObject;
-import jd.captcha.utils.UTILITIES;
+import jd.captcha.utils.Utilities;
 import jd.controlling.JDLogger;
 
 /**
@@ -136,14 +136,14 @@ public class Letter extends PixelGrid {
         double bestValue = Double.MAX_VALUE;
         Letter res = null;
         Letter tmp;
-        // if(JAntiCaptcha.isLoggerActive())logger.info("JJ"+angleA+" -
+        // if(Utilities.isLoggerActive())logger.info("JJ"+angleA+" -
         // "+angleB);
         for (int angle = angleA; angle < angleB; angle += accuracy) {
 
             tmp = turn(angle < 0 ? 360 + angle : angle);
-            // if(JAntiCaptcha.isLoggerActive())logger.info("..
+            // if(Utilities.isLoggerActive())logger.info("..
             // "+((double)tmp.getWidth()/(double)tmp.getHeight()));
-            //BasicWindow.showImage(tmp.getImage(1),(angle<0?360+angle:angle)+"_"
+            // BasicWindow.showImage(tmp.getImage(1),(angle<0?360+angle:angle)+"_"
             // );
             if ((double) tmp.getWidth() / (double) tmp.getHeight() < bestValue) {
                 bestValue = (double) tmp.getWidth() / (double) tmp.getHeight();
@@ -391,7 +391,7 @@ public class Letter extends PixelGrid {
                 int ax = border.get(i)[0];
 
                 int ay = border.get(i)[1];
-                if (JAntiCaptcha.isLoggerActive()) {
+                if (Utilities.isLoggerActive()) {
                     logger.info(ax + "/" + ay);
                 }
                 int[][] map = getLocalMap(grid, ax, ay);
@@ -400,7 +400,7 @@ public class Letter extends PixelGrid {
                 map[1][1] = 0xff000;
 
                 int b = getObjectsNum(map);
-                if (JAntiCaptcha.isLoggerActive()) {
+                if (Utilities.isLoggerActive()) {
                     logger.info(a + " --->> " + b);
                 }
                 if (a == b) {
@@ -408,13 +408,13 @@ public class Letter extends PixelGrid {
                     this.setPixelValue(ax, ay, 0xff0000);
                 } else {
 
-                    if (JAntiCaptcha.isLoggerActive()) {
+                    if (Utilities.isLoggerActive()) {
                         logger.info(map[0][0] + "-" + map[1][0] + "-" + map[2][0]);
                     }
-                    if (JAntiCaptcha.isLoggerActive()) {
+                    if (Utilities.isLoggerActive()) {
                         logger.info(map[0][1] + "-" + map[1][1] + "-" + map[2][1]);
                     }
-                    if (JAntiCaptcha.isLoggerActive()) {
+                    if (Utilities.isLoggerActive()) {
                         logger.info(map[0][2] + "-" + map[1][2] + "-" + map[2][2]);
                     }
                     this.setPixelValue(ax, ay, 0);
@@ -422,7 +422,7 @@ public class Letter extends PixelGrid {
 
             }
             BasicWindow.showImage(this.getImage(5));
-            if (JAntiCaptcha.isLoggerActive()) {
+            if (Utilities.isLoggerActive()) {
                 logger.info("changed " + changed);
             }
             if (firstChange == 0) {
@@ -465,7 +465,7 @@ public class Letter extends PixelGrid {
      * yy < 2; yy++) { try { // ((x + xx < 0 || x + xx > this.getWidth() - 1 ||
      * y + yy < // 0 || y + yy > this.getHeight() - 1) || if ((grid[x + xx][y +
      * yy] > 0) && angleMap[xx + 1][yy + 1] >= 0) { //
-     * if(JAntiCaptcha.isLoggerActive())logger.info(xx+","+yy+" -
+     * if(Utilities.isLoggerActive())logger.info(xx+","+yy+" -
      * "+angleMap[xx+1][yy+1]); angle = count angle + angleMap[xx + 1][yy + 1];
      * count++; angle /= count; } } catch (Exception e) { } } } return angle; }
      */
@@ -521,7 +521,7 @@ public class Letter extends PixelGrid {
         while (true) {
 
             map = getLocalMap(newGrid, x, y);
-            // if(JAntiCaptcha.isLoggerActive())logger.info(x+" - "+y);
+            // if(Utilities.isLoggerActive())logger.info(x+" - "+y);
             try {
                 filterGrid[x][y] = newGrid[x][y];
 
@@ -576,14 +576,14 @@ public class Letter extends PixelGrid {
             }
         }
 
-        // if(JAntiCaptcha.isLoggerActive())logger.info("elements: " + ret);
-        // if(JAntiCaptcha.isLoggerActive())logger.info(map[0][0] + "-" +
+        // if(Utilities.isLoggerActive())logger.info("elements: " + ret);
+        // if(Utilities.isLoggerActive())logger.info(map[0][0] + "-" +
         // map[1][0] +
         // "-" + map[2][0]);
-        // if(JAntiCaptcha.isLoggerActive())logger.info(map[0][1] + "-" +
+        // if(Utilities.isLoggerActive())logger.info(map[0][1] + "-" +
         // map[1][1] +
         // "-" + map[2][1]);
-        // if(JAntiCaptcha.isLoggerActive())logger.info(map[0][2] + "-" +
+        // if(Utilities.isLoggerActive())logger.info(map[0][2] + "-" +
         // map[1][2] +
         // "-" + map[2][2]);
         return ret;
@@ -606,7 +606,7 @@ public class Letter extends PixelGrid {
             ret.append('|');
         }
         String ps = ret.toString();
-        if(ps.length()==0){
+        if (ps.length() == 0) {
             System.out.println("IK");
         }
         return ps.substring(0, ps.length() - 1);
@@ -715,7 +715,7 @@ public class Letter extends PixelGrid {
     public void markBad() {
         badDetections++;
 
-        if (JAntiCaptcha.isLoggerActive()) {
+        if (Utilities.isLoggerActive()) {
             logger.warning("Bad detection : (" + toString() + ") ");
         }
 
@@ -726,7 +726,7 @@ public class Letter extends PixelGrid {
      */
     public void markGood() {
         goodDetections++;
-        if (JAntiCaptcha.isLoggerActive()) {
+        if (Utilities.isLoggerActive()) {
             logger.warning("GOOD detection : (" + toString() + ") ");
         }
     }
@@ -814,7 +814,8 @@ public class Letter extends PixelGrid {
      * @param owner
      *            the owner to set
      */
-    //@Override
+    // @Override
+    @Override
     public void setOwner(JAntiCaptcha owner) {
         this.owner = owner;
     }
@@ -879,7 +880,8 @@ public class Letter extends PixelGrid {
         return object;
     }
 
-    //@Override
+    // @Override
+    @Override
     public String toString() {
         return getDecodedValue() + " [" + getSourcehash() + "][" + getGoodDetections() + "/" + getBadDetections() + "]";
     }
@@ -896,7 +898,7 @@ public class Letter extends PixelGrid {
         int[][] tmp = new int[width][getHeight()];
         setLocation(new int[] { left, 0 });
         if (getWidth() < right) {
-            if (JAntiCaptcha.isLoggerActive()) {
+            if (Utilities.isLoggerActive()) {
                 logger.severe("Letter dim: " + getWidth() + " - " + getHeight() + ". Cannot trim to " + left + "-" + right);
             }
             return false;
@@ -928,7 +930,7 @@ public class Letter extends PixelGrid {
 
         int newWidth = (int) (Math.abs(Math.cos(angle * Math.PI) * getWidth()) + Math.abs(Math.sin(angle * Math.PI) * getHeight()));
         int newHeight = (int) (Math.abs(Math.sin(angle * Math.PI) * getWidth()) + Math.abs(Math.cos(angle * Math.PI) * getHeight()));
-        //if(JAntiCaptcha.isLoggerActive())logger.info(getWidth()+"/"+getHeight(
+        // if(Utilities.isLoggerActive())logger.info(getWidth()+"/"+getHeight(
         // )+"
         // --> "+newWidth+"/"+newHeight
         // +"("+angle+"/"+(angle*180)+"/"+Math.cos(sizeAngle *
@@ -939,7 +941,7 @@ public class Letter extends PixelGrid {
         int[][] newGrid = new int[newWidth][newHeight];
         for (int x = 0; x < newWidth; x++) {
             for (int y = 0; y < newHeight; y++) {
-                int[] n = UTILITIES.turnCoordinates(x - left, y - top, getWidth() / 2, getHeight() / 2, -(angle * 180));
+                int[] n = Utilities.turnCoordinates(x - left, y - top, getWidth() / 2, getHeight() / 2, -(angle * 180));
                 if (n[0] < 0 || n[0] >= getWidth() || n[1] < 0 || n[1] >= getHeight()) {
                     newGrid[x][y] = owner.getJas().getColorFaktor() - 1;
                     if (newGrid[x][y] == 0) {
