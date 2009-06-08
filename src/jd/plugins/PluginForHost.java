@@ -217,13 +217,13 @@ public abstract class PluginForHost extends Plugin {
                 account.setProperty(AccountInfo.PARAM_INSTANCE, null);
                 String shortWarn = JDLocale.LF("gui.shortwarn.accountdisabled.expired", "Account %s(%s) got disabled(expired)", this.getHost(), account.getUser());
 
-                JDController.getInstance().getUiInterface().displayMiniWarning(JDLocale.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
+               if( JDController.getInstance().getUiInterface()!=null) JDController.getInstance().getUiInterface().displayMiniWarning(JDLocale.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
             } else if (!ret.isValid()) {
                 account.setEnabled(false);
                 account.setProperty(AccountInfo.PARAM_INSTANCE, null);
                 String shortWarn = JDLocale.LF("gui.shortwarn.accountdisabled.invalid", "Account %s(%s) got disabled(invalid)", this.getHost(), account.getUser());
 
-                JDController.getInstance().getUiInterface().displayMiniWarning(JDLocale.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
+               if( JDController.getInstance().getUiInterface()!=null) JDController.getInstance().getUiInterface().displayMiniWarning(JDLocale.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
             }
 
             account.setProperty(AccountInfo.PARAM_INSTANCE, ret);
@@ -233,7 +233,7 @@ public abstract class PluginForHost extends Plugin {
             account.setProperty(AccountInfo.PARAM_INSTANCE, null);
             String shortWarn = JDLocale.LF("gui.shortwarn.accountdisabled", "Account %s(%s) got disabled: %s", this.getHost(), account.getUser(), e.getMessage());
 
-            JDController.getInstance().getUiInterface().displayMiniWarning(shortWarn, shortWarn);
+           if( JDController.getInstance().getUiInterface()!=null) JDController.getInstance().getUiInterface().displayMiniWarning(shortWarn, shortWarn);
             throw e;
         }
 

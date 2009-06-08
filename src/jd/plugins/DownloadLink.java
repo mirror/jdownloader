@@ -64,7 +64,9 @@ class DownloadLinkBroadcaster extends JDBroadcaster<DownloadLinkListener, Downlo
 public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink> {
 
     public static enum AvailableStatus {
-        UNCHECKED, FALSE, UNCHECKABLE, TRUE
+        UNCHECKED, FALSE, UNCHECKABLE, TRUE;
+        
+      
     }
 
     public static final int LINKTYPE_CONTAINER = 1;

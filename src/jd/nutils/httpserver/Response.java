@@ -30,6 +30,10 @@ public class Response {
 
     private StringBuilder data = new StringBuilder();
 
+    public StringBuilder getData() {
+        return data;
+    }
+
     private HashMap<String, String> headers = new HashMap<String, String>();
 
     private String returnStatus = Response.OK;
